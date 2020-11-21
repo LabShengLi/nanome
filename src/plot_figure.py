@@ -381,7 +381,7 @@ def corr_grid_plot(infns=load_corr_data_tsv_fns()):
     """
     filenameSuffix = current_time_str()
 
-    for infn in infns[:1]:
+    for infn in infns[:]:
         df = pd.read_csv(infn, sep='\t')
         df = df.rename(columns=dict_cor_tsv_to_abbr())
 
