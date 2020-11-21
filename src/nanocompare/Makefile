@@ -1,0 +1,3 @@
+view:
+	squeue -u liuya
+
