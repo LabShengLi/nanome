@@ -12,8 +12,8 @@ import pandas as pd
 import seaborn as sns
 from scipy.stats import pearsonr
 
-from nanocompare.collect_data import get_newly_exp_data
-from nanocompare.load_data import load_running_time_and_mem_usage, get_one_dsname_perf_data, get_performance_from_datasets_and_locations, load_box_plot_all_data, load_cor_tsv_fns, load_all_perf_data_for_dataset, load_sing_nonsing_count_df, get_performance_from_newly_and_locations
+from nanocompare.collect_data import collect_newly_exp_data
+from nanocompare.load_data import load_running_time_and_mem_usage, get_one_dsname_perf_data, get_performance_from_datasets_and_locations, load_box_plot_all_data, load_corr_data_tsv_fns, load_all_perf_data_for_dataset, load_sing_nonsing_count_df, get_performance_from_newly_and_locations
 from nanocompare.nanocompare_global_settings import tools, locations_category, locations_singleton, tools_abbr, agressiveHot, cor_tsv_fields, perf_order, dict_cor_tsv_to_abbr, cor_tsv_fields_abbr, locations_singleton2, locations_category2
 
 from global_config import *
@@ -262,7 +262,7 @@ def box_plots_two_locations(metrics=["F1_5mC", "F1_5C"]):
     :return:
     """
 
-    df = get_newly_exp_data()
+    df = collect_newly_exp_data()
 
     suffix = current_time_str()
 
@@ -374,24 +374,20 @@ def box_plots_two_locations(metrics=["F1_5mC", "F1_5C"]):
             plt.show()
 
 
-def cor_plot():
-    # files = ["Methylation_correlation_plotting_data.APL_oxBS_cut10.tsv", "Methylation_correlation_plotting_data.APL_WGBS_cut10.tsv", "Methylation_correlation_plotting_data.HL60_RRBS_rep_ENCFF000MDA_Bismark.tsv", "Methylation_correlation_plotting_data.HL60_RRBS_rep_ENCFF000MDF_Bismark.tsv",
-    #         "Methylation_correlation_plotting_data.K562_WGBS_rep_ENCFF721JMB.tsv",
-    #         "Methylation_correlation_plotting_data.K562_WGBS_rep_ENCFF867JRG.tsv"]
-    # cor_tsv_fields = ["DeepSignal_freq", "Tombo_freq", "Nanopolish_freq", "DeepMod_freq", "DeepMod_clust_freq", "BSseq"]
+def corr_grid_plot(infns=load_corr_data_tsv_fns()):
+    """
+    Plot the grid of corr COE, distribution and scatter plot based on input files
+    :return:
+    """
+    filenameSuffix = current_time_str()
 
-    # fields = ["DeepSignal_freq", "Tombo_freq", "Nanopolish_freq", "DeepMod_freq",  "BSseq"]
-
-    optionalSuffix = current_time_str()
-
-    for infn in load_cor_tsv_fns():
+    for infn in infns[:1]:
         df = pd.read_csv(infn, sep='\t')
         df = df.rename(columns=dict_cor_tsv_to_abbr())
 
-        basename = os.path.basename(infn)
-        outfileName = "{}_time_{}.png".format(basename.replace(".tsv", ""), optionalSuffix)
+        basefn = os.path.basename(infn)
+        outfileName = "{}_time_{}.png".format(basefn.replace(".tsv", ""), filenameSuffix)
         outfn = os.path.join(pic_base_dir, outfileName)
-        position = 1
 
         plt.clf()
 
@@ -404,7 +400,7 @@ def cor_plot():
         top = bottom + height
 
         gridRes = 30
-
+        position = 1
         for y in range(1, len(cor_tsv_fields) + 1):
             for x in range(1, len(cor_tsv_fields) + 1):
                 if x == y:
@@ -413,13 +409,18 @@ def cor_plot():
                     #             df[fields[x-1]].hist(bins=100)
                     params = {'legend.fontsize': 16, 'legend.handlelength': 0, 'legend.handletextpad': 0, 'legend.fancybox': True}
                     plt.rcParams.update(params)
-                    ax = sns.kdeplot(df[cor_tsv_fields_abbr[x - 1]], shade=True, color="black")
+                    ax = sns.kdeplot(df[cor_tsv_fields_abbr[x - 1]], shade=True, color="black", legend=True)
+                    leg = ax.legend(labels=[cor_tsv_fields_abbr[x - 1]])
+                    for item in leg.legendHandles:
+                        item.set_visible(False)
 
                     # ax.annotate("abcd", xy=(0.2, 0.8), xycoords='axes fraction',
                     #             fontsize=14)
 
                     ax.set_yticklabels([])
                     ax.set_xticklabels([])
+                    ax.set_ylabel('')
+                    ax.set_xlabel('')
 
                 elif x > y:
                     # upper triangle:
@@ -464,7 +465,7 @@ def smooth_scatter_cor_plot():
 
     optionalSuffix = current_time_str()
 
-    for infn in load_cor_tsv_fns():
+    for infn in load_corr_data_tsv_fns():
         df = pd.read_csv(infn, sep='\t')
         df = df.rename(columns=dict_cor_tsv_to_abbr())
 
@@ -700,7 +701,7 @@ def gen_figure_3a_4a():
     :return:
     """
 
-    ds_list4 = ['K562_WGBS_joined', 'APL_BSseq_cut10', 'HL60_AML_Bsseq_cut5', 'NA19240_RRBS_joined']
+    # ds_list4 = ['K562_WGBS_joined', 'APL_BSseq_cut10', 'HL60_AML_Bsseq_cut5', 'NA19240_RRBS_joined']
 
     measure_list = [['F1_5mC', 'F1_5C']]
 
@@ -748,7 +749,7 @@ def gen_figure_5a():
     Correlation plots
     :return:
     """
-    cor_plot()
+    corr_grid_plot()
     pass
 
 
@@ -864,11 +865,11 @@ def plot_pie_chart(data, labels, dsname="NA19240"):
 if __name__ == '__main__':
     set_log_debug_level()
 
-    # gen_figure_5a()
+    gen_figure_5a()
 
     # gen_figure_3a_4a()
 
-    gen_figure_3b_4b()
+    # gen_figure_3b_4b()
 
     # pie_plot_all()
     # gen_figure_2bc()

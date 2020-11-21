@@ -11,7 +11,7 @@ etc.
 import pandas as pd
 
 from global_config import *
-from nanocompare.collect_data import get_newly_exp_data
+from nanocompare.collect_data import collect_newly_exp_data
 from nanocompare.nanocompare_global_settings import locations_category, map_from_tool_to_abbr, locations_category2, locations_singleton2
 
 
@@ -184,43 +184,6 @@ def load_refined_perf_data_by_measurement(meas_list=['F1_5C', 'F1_5mC']):
     return refine_alld
 
 
-def load_refined_perf_data_from_newly(meas_list=['F1_5C', 'F1_5mC']):
-    """
-    load some performance index of all data, melt performance measurements for subsequent analysis and plotting
-
-    Sample
-
-    df = load_perf_data_refine_by_measurement(['F1_5C', 'F1_5mC', 'accuracy','roc_auc'])
-    logger.info(f"df={df}")
-
-    :param meas_list:
-    :return:
-    """
-    alld = get_newly_exp_data()
-
-    sel_col = ['Dataset', 'Location', 'Tool'] + meas_list
-    refine_alld = alld[sel_col]
-
-    refine_alld = pd.melt(refine_alld, id_vars=['Dataset', 'Location', 'Tool'], var_name='Measurement', value_name='Performance')
-
-    return refine_alld
-
-
-def get_performance_from_newly_and_locations(location_list=locations_category2, meas_list=['F1_5C', 'F1_5mC']):
-    """
-    Get a list of datasets results with refined, (melt to Performance and Measurement)
-    :param ds_list: a list of datasets
-    :return:
-    """
-    df = load_refined_perf_data_from_newly(meas_list=meas_list)
-
-    dfsel = df[df['Location'].isin(location_list)]
-
-    # dfsel['Tool'] = dfsel['Tool'].apply(map_from_tool_to_abbr)
-
-    return dfsel
-
-
 def load_refined_perf_data_by_measurement2(meas_list=['F1_5C', 'F1_5mC']):
     """
     load some performance index of all data, melt performance measurements for subsequent analysis and plotting
@@ -233,7 +196,7 @@ def load_refined_perf_data_by_measurement2(meas_list=['F1_5C', 'F1_5mC']):
     :param meas_list:
     :return:
     """
-    alld = get_newly_exp_data()
+    alld = collect_newly_exp_data()
 
     sel_col = ['Dataset', 'Location', 'Tool'] + meas_list
     refine_alld = alld[sel_col]
@@ -274,7 +237,70 @@ def load_box_plot_all_data():
     return df
 
 
-def load_cor_tsv_fns():
+def load_sing_nonsing_count_df():
+    infn = os.path.join(pkl_base_dir, "nanocompare", "singleton_nonsingleton_count_with_locations.csv")
+    df = pd.read_csv(infn, header=0, index_col=0)
+    logger.debug(f"df={df}")
+    return df
+
+
+def save_pivoted_sing_nonsing_count_df():
+    df = load_sing_nonsing_count_df()
+
+    df = df.drop('ds_source', axis=1)
+
+    df1 = df.pivot(index='dsname', columns='location')
+
+    df1 = df1.iloc[:, 0:3]
+    df1.columns = df1.columns.droplevel()
+
+    df1 = df1.rename(columns={'absolute': 'Singletons', 'concordant': 'Concordant', 'discordant': 'Discordant'})
+    df1['Non-Singletons'] = df1['Concordant'] + df1['Discordant']
+
+    df1 = df1[['Singletons', 'Non-Singletons', 'Concordant', 'Discordant']]
+
+    fout = os.path.join(pic_base_dir, 'dataset.singleton.nonsingleton.counts.xlsx')
+    df1.to_excel(fout)
+
+
+def load_refined_perf_data_from_newly(meas_list=['F1_5C', 'F1_5mC']):
+    """
+    load some performance index of all data, melt performance measurements for subsequent analysis and plotting
+
+    Sample
+
+    df = load_perf_data_refine_by_measurement(['F1_5C', 'F1_5mC', 'accuracy','roc_auc'])
+    logger.info(f"df={df}")
+
+    :param meas_list:
+    :return:
+    """
+    alld = collect_newly_exp_data()
+
+    sel_col = ['Dataset', 'Location', 'Tool'] + meas_list
+    refine_alld = alld[sel_col]
+
+    refine_alld = pd.melt(refine_alld, id_vars=['Dataset', 'Location', 'Tool'], var_name='Measurement', value_name='Performance')
+
+    return refine_alld
+
+
+def get_performance_from_newly_and_locations(location_list=locations_category2, meas_list=['F1_5C', 'F1_5mC']):
+    """
+    Get a list of datasets results with refined, (melt to Performance and Measurement)
+    :param ds_list: a list of datasets
+    :return:
+    """
+    df = load_refined_perf_data_from_newly(meas_list=meas_list)
+
+    dfsel = df[df['Location'].isin(location_list)]
+
+    # dfsel['Tool'] = dfsel['Tool'].apply(map_from_tool_to_abbr)
+
+    return dfsel
+
+
+def load_corr_data_tsv_fns():
     """
     Load the full file and path names of correlation on four tools tsv results
     :return:
@@ -302,32 +328,6 @@ def load_cor_tsv_fns():
     # return filesFull
 
     return na19240List + filesFull
-
-
-def load_sing_nonsing_count_df():
-    infn = os.path.join(pkl_base_dir, "nanocompare", "singleton_nonsingleton_count_with_locations.csv")
-    df = pd.read_csv(infn, header=0, index_col=0)
-    logger.debug(f"df={df}")
-    return df
-
-
-def save_pivoted_sing_nonsing_count_df():
-    df = load_sing_nonsing_count_df()
-
-    df = df.drop('ds_source', axis=1)
-
-    df1 = df.pivot(index='dsname', columns='location')
-
-    df1 = df1.iloc[:, 0:3]
-    df1.columns = df1.columns.droplevel()
-
-    df1 = df1.rename(columns={'absolute': 'Singletons', 'concordant': 'Concordant', 'discordant': 'Discordant'})
-    df1['Non-Singletons'] = df1['Concordant'] + df1['Discordant']
-
-    df1 = df1[['Singletons', 'Non-Singletons', 'Concordant', 'Discordant']]
-
-    fout = os.path.join(pic_base_dir, 'dataset.singleton.nonsingleton.counts.xlsx')
-    df1.to_excel(fout)
 
 
 if __name__ == '__main__':

@@ -520,35 +520,6 @@ def rename_reportdf(df):
     return df
 
 
-def create_report_datadf(runPrefixList=['APL_Bsseq_cut10', 'HL60_AML_Bsseq_cut5', 'K562_WGBS_joined_cut10', 'NA19240_RRBS_joined_cut10'], ret_col=ret_report_columns):
-    """
-    create report from list of runPrefix, return specified columns
-
-    data are from: pkl/nanocompare/<runPrefix>
-
-    APL_Bsseq_cut10/
-    HL60_AML_Bsseq_cut5/
-    K562_WGBS_joined_cut10/
-    NA19240_RRBS_joined_cut5/
-
-    :return:
-    """
-    dfs = []
-    for runPrefix in runPrefixList:
-        pattern = os.path.join(pkl_base_dir, 'nanocompare', runPrefix, "performance_results", "*.report.tsv")
-        # print(pattern)
-        files = glob.glob(pattern)
-        for infn in files:
-            df = pd.read_csv(infn, index_col=0, sep="\t")
-            dfs.append(df)
-    combdf = pd.concat(dfs, ignore_index=True)
-
-    retdf = rename_reportdf(combdf)
-
-    retdf = retdf[ret_col]
-    return retdf
-
-
 def select_locations_from_reportdf(df, locations=locations_category2 + locations_singleton2):
     """
     Select only interested locations
@@ -597,9 +568,44 @@ def load_singleton_nonsingleton_sites():
     df.to_excel(outfn, index=False)
 
 
-def get_newly_exp_data():
+def save_newly_df():
+    df = collect_newly_exp_data()
+    outfn = os.path.join(pic_base_dir, f"combined_results_report_time_{current_time_str()}.xlsx")
+    df.to_excel(outfn)
+
+
+def create_report_datadf(runPrefixList=['APL_Bsseq_cut10', 'HL60_AML_Bsseq_cut5', 'K562_WGBS_joined_cut10', 'NA19240_RRBS_joined_cut10'], ret_col=ret_report_columns):
     """
-    Get the currently new exp results
+    create report from list of runPrefix, return specified columns
+
+    data are from: pkl/nanocompare/<runPrefix>
+
+    APL_Bsseq_cut10/
+    HL60_AML_Bsseq_cut5/
+    K562_WGBS_joined_cut10/
+    NA19240_RRBS_joined_cut5/
+
+    :return:
+    """
+    dfs = []
+    for runPrefix in runPrefixList:
+        pattern = os.path.join(pkl_base_dir, 'nanocompare', runPrefix, "performance_results", "*.report.tsv")
+        # print(pattern)
+        files = glob.glob(pattern)
+        for infn in files:
+            df = pd.read_csv(infn, index_col=0, sep="\t")
+            dfs.append(df)
+    combdf = pd.concat(dfs, ignore_index=True)
+
+    retdf = rename_reportdf(combdf)
+
+    retdf = retdf[ret_col]
+    return retdf
+
+
+def collect_newly_exp_data():
+    """
+    Collect the currently new performance of exp results for paper
     :return:
     """
     # specify which runPrefix is the newly results you need
@@ -617,15 +623,9 @@ def get_newly_exp_data():
     return retdf
 
 
-def save_newly_df():
-    df = get_newly_exp_data()
-    outfn = os.path.join(pic_base_dir, f"combined_results_report_time_{current_time_str()}.xlsx")
-    df.to_excel(outfn)
-
-
 if __name__ == '__main__':
     # df = load_singleton_nonsingleton_sites()
-    df = get_newly_exp_data()
+    df = collect_newly_exp_data()
     logger.info(f'df={df}')
     save_newly_df()
 
