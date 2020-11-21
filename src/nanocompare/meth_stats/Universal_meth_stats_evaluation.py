@@ -30,8 +30,6 @@ import sys
 nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
 sys.path.append(nanocompare_prj)
 
-
-
 from nanocompare.nanocompare_global_settings import nanocompare_basedir
 
 from global_config import *

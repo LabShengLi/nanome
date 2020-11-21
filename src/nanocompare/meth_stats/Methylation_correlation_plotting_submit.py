@@ -7,7 +7,6 @@ python Methylation_correlation_plotting_submit.py /projects/liuya/workspace/tcga
 
 Methylation_correlation_plotting_submit.py NanoComareCorrelation_paper.tsv
 """
-import os
 
 """
 modify tombo results in tsv as follows:
@@ -15,10 +14,12 @@ modify tombo results in tsv as follows:
 /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_Tombo_runs/NA19240_perChr/bk/NA19240_allChr.bed.CpGs.bed
 """
 # example run command: python Methylation_correlation_plotting_submit.py <config file>
-# python /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/Methylation_correlation_plotting_submit.py NanoComareCorrelation_configFile_4programs.tsv
+# python /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/Methylation_correlation_plotting_submit.py NanoComareCorrelation_deprecated.tsv
 # python /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/Methylation_correlation_plotting_submit.py NanoComareCorrelation_paper.tsv
 
+
 import csv
+import os
 import subprocess
 from sys import argv
 
@@ -34,13 +35,12 @@ if __name__ == '__main__':
         if row['status'] == "submit":
             print(f"row={row}\n")
 
-            command = """set -x; sbatch --export=DeepSignal_calls="{}",Tombo_calls="{}",Nanopolish_calls="{}",DeepMod_calls="{}",DeepMod_cluster_calls="{}",bgTruth="{}",RunPrefix="{}",parser="{}" {}/{}""" \
+            command = """set -x; sbatch --export=DeepSignal_calls="{}",Tombo_calls="{}",Nanopolish_calls="{}",DeepMod_calls="{}",DeepMod_cluster_calls="{}",bgTruth="{}",RunPrefix="{}",parser="{}" --job-name=meth-corr-{} {}/{}""" \
                 .format(row['DeepSignal_calls'], row['Tombo_calls'], row['Nanopolish_calls'],
                         row['DeepMod_calls'], row['DeepMod_cluster_calls'], row['bgTruth'],
-                        row['RunPrefix'], row['parser'], baseDir, scriptFn)
+                        row['RunPrefix'], row['parser'], row['RunPrefix'], baseDir, scriptFn)
 
             print(f"command=[{command}]\n")
-
             print(f"RunPrefix={row['RunPrefix']}")
 
             # output sbatch submit a job's results to STDOUT

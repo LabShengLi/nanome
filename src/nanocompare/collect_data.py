@@ -16,7 +16,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from global_config import logger, pic_base_dir, pkl_base_dir, current_time_str
+from global_config import logger, pic_base_dir, current_time_str, pkl_base_dir
 from nanocompare.legacy import performance_plots as pp
 # from nanocompare.load_data import load_all_perf_data
 from nanocompare.nanocompare_global_settings import nanocompare_basedir, locations_category2, locations_singleton2

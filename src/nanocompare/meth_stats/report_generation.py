@@ -365,7 +365,7 @@ if __name__ == '__main__':
     # test1()
     # sys.exit(0)
 
-    # tsvFilename = '/projects/liuya/workspace/tcgajax/nanocompare/meth_stats/NanoComarePerformance_NA19240_1.tsv'
+    # tsvFilename = '/projects/liuya/workspace/tcgajax/nanocompare/meth_stats/NanoComarePerformance_deprecated.tsv'
 
     # tsvFilename = '/projects/liuya/workspace/tcgajax/nanocompare/meth_stats/NanoComarePerformance_paper.tsv'
 

@@ -864,13 +864,12 @@ def plot_pie_chart(data, labels, dsname="NA19240"):
 if __name__ == '__main__':
     set_log_debug_level()
 
-    gen_figure_5a()
+    # gen_figure_5a()
 
     # gen_figure_3a_4a()
 
-    # gen_figure_3b_4b()
+    gen_figure_3b_4b()
 
-    # gen_figure_3c_4bc()
 
     # pie_plot_all()
     # gen_figure_2bc()
