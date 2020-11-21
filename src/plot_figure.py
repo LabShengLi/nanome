@@ -870,7 +870,6 @@ if __name__ == '__main__':
 
     gen_figure_3b_4b()
 
-
     # pie_plot_all()
     # gen_figure_2bc()
 
