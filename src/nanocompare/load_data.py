@@ -305,7 +305,9 @@ def load_corr_data_tsv_fns():
     Load the full file and path names of correlation on four tools tsv results
     :return:
     """
-    nanocompare_results_dir = "/projects/li-lab/yang/NanoCompare-paper/results/corr-plot-data"
+    # nanocompare_results_dir = "/projects/li-lab/yang/NanoCompare-paper/results/corr-plot-data"
+
+    base_dir = os.path.join(data_base_dir, 'corr-plot-data')
 
     files = ["Methylation_correlation_plotting_data.APL_oxBS_cut10.tsv", "Methylation_correlation_plotting_data.APL_WGBS_cut10.tsv", "Methylation_correlation_plotting_data.HL60_RRBS_rep_ENCFF000MDA_Bismark.tsv", "Methylation_correlation_plotting_data.HL60_RRBS_rep_ENCFF000MDF_Bismark.tsv",
             "Methylation_correlation_plotting_data.K562_WGBS_rep_ENCFF721JMB.tsv",
@@ -314,7 +316,7 @@ def load_corr_data_tsv_fns():
     files = ["Methylation_correlation_plotting_data.APL_WGBS_cut10.tsv", "Methylation_correlation_plotting_data.HL60_RRBS_rep_ENCFF000MDF_Bismark.tsv",
             "Methylation_correlation_plotting_data.K562_WGBS_rep_ENCFF867JRG.tsv"]
 
-    filesFull = [os.path.join(nanocompare_results_dir, fn) for fn in files]
+    filesFull = [os.path.join(base_dir, fn) for fn in files]
 
     na19240files = ['Methylation_correlation_plotting_data.NA19240_RRBS_Origin_time_01-17-23-27-10-489023.tsv',
             'Methylation_correlation_plotting_data.NA19240_RRBS_ENCFF000LZS_time_01-18-01-55-06-136184.tsv',
@@ -323,7 +325,7 @@ def load_corr_data_tsv_fns():
 
     na19240files = ['Methylation_correlation_plotting_data.NA19240_RRBS_Origin_time_01-17-23-27-10-489023.tsv'
             ]
-    na19240List = [os.path.join(nanocompare_results_dir, fn) for fn in na19240files]
+    na19240List = [os.path.join(base_dir, fn) for fn in na19240files]
 
     # return filesFull
 

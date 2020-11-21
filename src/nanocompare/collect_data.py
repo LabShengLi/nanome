@@ -16,7 +16,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from global_config import logger, pic_base_dir, current_time_str, pkl_base_dir
+from global_config import logger, pic_base_dir, current_time_str, data_base_dir
 from nanocompare.legacy import performance_plots as pp
 # from nanocompare.load_data import load_all_perf_data
 from nanocompare.nanocompare_global_settings import nanocompare_basedir, locations_category2, locations_singleton2
@@ -588,8 +588,9 @@ def create_report_datadf(runPrefixList=['APL_Bsseq_cut10', 'HL60_AML_Bsseq_cut5'
     :return:
     """
     dfs = []
+    base_dir = os.path.join(data_base_dir, 'perf-plot-data')
     for runPrefix in runPrefixList:
-        pattern = os.path.join(pkl_base_dir, 'nanocompare', runPrefix, "performance_results", "*.report.tsv")
+        pattern = os.path.join(base_dir, runPrefix, "performance_results", "*.report.tsv")
         # print(pattern)
         files = glob.glob(pattern)
         for infn in files:

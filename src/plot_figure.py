@@ -603,6 +603,7 @@ def cor_box_plot():
         plt.savefig(outfn, bbox_inches='tight', dpi=600, format="png")
         logger.info(f"save to {outfn}")
         plt.show()
+        plt.close()
 
         # break
 
@@ -635,6 +636,7 @@ def cor_box_plot():
         plt.savefig(outfn, bbox_inches='tight', dpi=600, format="png")
         logger.info(f"save to {outfn}")
         plt.show()
+        plt.close()
         # break
 
     pass
@@ -680,6 +682,7 @@ def plot_runnnig_time_and_mem_usage():
     logger.info(f"save to {outfn}")
 
     plt.show()
+    plt.close()
 
 
 def get_df_from_gen_figure_3a():
@@ -879,6 +882,10 @@ if __name__ == '__main__':
 
     if args.cmd == 'fig5a':
         gen_figure_5a()
+    elif args.cmd == 'fig5c':
+        gen_figure_5c()
+    if args.cmd == 'fig5b':
+        gen_figure_5b()
     elif args.cmd == 'fig3a':
         gen_figure_3a_4a()
     elif args.cmd == 'fig3b':

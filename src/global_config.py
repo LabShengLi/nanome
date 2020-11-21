@@ -30,10 +30,11 @@ init_log_level_prj = logging.INFO
 if sys.platform == 'linux':  # Linux helix dir config
     # logger.debug("Running on Linux")
     print("Running on Linux")
-    dataset_base_dir = "/projects/li-lab/nmf_epihet/dataset"
-    results_base_dir = "/projects/li-lab/yang/results"
-    project_base_dir = "/projects/li-lab/yang/workspace/nano-compare/src"
-    pkl_base_dir = '/projects/liuya/results/pkl'
+    results_dir = "/projects/li-lab/yang/results"  # temp output base
+    project_base_dir = "/projects/li-lab/yang/workspace/nano-compare"  # project base
+    data_base_dir = os.path.join(project_base_dir, 'data')  # all used data base
+    src_base_dir = os.path.join(project_base_dir, 'src')  # source code base
+    pkl_base_dir = '/projects/liuya/results/pkl'  # will deprecated later
 
     # sspairr_path = "/projects/liuya/workspace/R/smooth_scatter/ss_pair.R"
 
@@ -47,7 +48,7 @@ elif sys.platform == 'darwin':  # Mac dir config
     # logger.debug("Running on MacOS")
     print("Running on MacOS")
     dataset_base_dir = "/Users/liuya/dataset"
-    results_base_dir = "/Users/liuya/results"
+    results_dir = "/Users/liuya/results"
     project_base_dir = "/Users/liuya/PycharmProjects/tcgajax"
     # sspairr_path = "/Users/liuya/Box/dev/R/smooth_scatter/ss_pair.R"
 else:
@@ -71,8 +72,8 @@ today_str = datetime.date.today().strftime("%m-%d")
 # pkl_base_dir = os.path.join(results_base_dir, "pkl")
 # pkl_base_dir = os.path.join('/projects/liuya/results', "pkl")
 
-log_base_dir = os.path.join(results_base_dir, "log")
-pic_base_dir = os.path.join(results_base_dir, today_str)
+log_base_dir = os.path.join(results_dir, "log")
+pic_base_dir = os.path.join(results_dir, today_str)
 
 logger = logging.getLogger()  # 不加名称设置root logger
 logger.setLevel(logging.DEBUG)
