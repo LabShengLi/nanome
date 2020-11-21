@@ -14,6 +14,8 @@ import sys
 nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
 sys.path.append(nanocompare_prj)
 
+from nanocompare.meth_stats.meth_stats_common import *
+
 from global_config import *
 
 # from sklearn.utils.fixes import signature
@@ -34,8 +36,8 @@ from sys import argv
 # parser = "encode"
 
 ####################
-from nanocompare.meth_stats.Universal_meth_stats_evaluation import importPredictions_Tombo, importPredictions_DeepSignal, coverageFiltering, importPredictions_Nanopolish_2, importPredictions_DeepMod, DeepMod_clusteredResultParsing, importGroundTruth_BedMethyl_from_Encode, importGroundTruth_oxBS, importGroundTruth_coverage_output_from_Bismark, \
-    importGroundTruth_coverage_output_from_Bismark_BedGraph
+# from nanocompare.meth_stats.Universal_meth_stats_evaluation import importPredictions_Tombo, importPredictions_DeepSignal, coverageFiltering, importPredictions_Nanopolish_2, importPredictions_DeepMod, DeepMod_clusteredResultParsing, importGroundTruth_BedMethyl_from_Encode, importGroundTruth_oxBS, importGroundTruth_coverage_output_from_Bismark, \
+#     importGroundTruth_coverage_output_from_Bismark_BedGraph
 
 #
 # def report2dict(cr):

@@ -1,6 +1,7 @@
 """
 Plots all Nanocompare paper figures
 """
+import argparse
 import sys
 
 nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
@@ -862,14 +863,30 @@ def plot_pie_chart(data, labels, dsname="NA19240"):
     plt.show()
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Plot figures in Nano-compare paper.')
+    parser.add_argument("cmd", help="name of command, lung or lesion")
+
+    args = parser.parse_args()
+    return args
+
+
 if __name__ == '__main__':
     set_log_debug_level()
 
-    gen_figure_5a()
+    args = parse_arguments()
+    logger.debug(args)
 
-    # gen_figure_3a_4a()
-
-    # gen_figure_3b_4b()
+    if args.cmd == 'fig5a':
+        gen_figure_5a()
+    elif args.cmd == 'fig3a':
+        gen_figure_3a_4a()
+    elif args.cmd == 'fig3b':
+        gen_figure_3b_4b()
+    elif args.cmd == 'all':
+        gen_figure_3a_4a()
+        gen_figure_3b_4b()
+        gen_figure_5a()
 
     # pie_plot_all()
     # gen_figure_2bc()
