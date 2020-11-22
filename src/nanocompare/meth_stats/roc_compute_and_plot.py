@@ -6,7 +6,7 @@ from sklearn.metrics import roc_curve, auc
 from lilab.tcga.global_tcga import logger, pic_base_dir, pkl_base_dir
 from lilab.tcga.picture import plot_roc_curve
 from nanocompare.meth_stats.Universal_meth_stats_evaluation import importPredictions_DeepMod, importGroundTruth_coverage_output_from_Bismark, nonSingletonsPostprocessing, singletonsPostprocessing, combine2programsCalls, combine2programsCalls_4Corr, \
-    importPredictions_Nanopolish_3, importPredictions_DeepSignal3, importPredictions_Tombo3, computePerReadStats2
+    importPredictions_Nanopolish_3, importPredictions_DeepSignal3, importPredictions_Tombo3, computePerReadStats_v2_for_roc_auc
 from nanocompare.nanocompare_global_settings import nanocompare_basedir
 
 
@@ -199,7 +199,7 @@ if __name__ == '__main__':
         i = 0
         for cpgDict in cpgDictList:
 
-            y_score, y = computePerReadStats2(cpgDict, cpgDict5, title="NA19240", bedFile=cordBed)
+            y_score, y = computePerReadStats_v2_for_roc_auc(cpgDict, cpgDict5, title="NA19240", bedFile=cordBed)
             fpr[i], tpr[i], _ = roc_curve(y, y_score)
             roc_auc[i] = auc(fpr[i], tpr[i])
             i = i + 1

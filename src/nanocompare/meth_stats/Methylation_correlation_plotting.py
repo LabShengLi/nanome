@@ -1399,7 +1399,7 @@ if __name__ == '__main__':
     if argv[3] == 'NO':
         Nanopolish_calls = None
     else:
-        Nanopolish_calls = importPredictions_Nanopolish_2(argv[3])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/Leukemia_ONT/K562.nanopolish/K562.methylation_calls.tsv", IncludeNonSingletons = True)
+        Nanopolish_calls = importPredictions_Nanopolish_v2(argv[3])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/Leukemia_ONT/K562.nanopolish/K562.methylation_calls.tsv", IncludeNonSingletons = True)
         Nanopolish_calls = coverageFiltering(Nanopolish_calls, minCov=minCovCutt)
 
     logger.info(f"Start DeepMod")

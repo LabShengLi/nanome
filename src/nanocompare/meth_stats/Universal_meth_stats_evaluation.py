@@ -6,6 +6,7 @@ Evaluation based on methylation calls of four tools, compute the performance res
 
 
 """
+from nanocompare.nanocompare_global_settings import singletonsFile, narrowCoord, nonsingletonsFile
 
 """
    This script will generate all performance results, bed files of singleton, non-singleton, based on results by DL call tool related to BGTruth results
@@ -39,6 +40,15 @@ if __name__ == '__main__':
 
     set_log_debug_level()
 
+    minCov = int(argv[8])
+    dsname = argv[9]
+    RunPrefix = argv[6]  # "K562_WGBS_rep_ENCFF721JMB/K562_WGBS_rep_ENCFF721JMB"
+
+    out_dir = os.path.join(pic_base_dir, RunPrefix)
+    os.makedirs(out_dir, exist_ok=True)
+
+    tool = argv[9]
+
     logger.info(f"Start DeepSignal")
     DeepSignal_calls = importPredictions_DeepSignal(argv[1])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepSignal_runs/K562/K562_DeepSignal.MethCalls.Joined.chr20.tsv")
 
@@ -46,12 +56,10 @@ if __name__ == '__main__':
     Tombo_calls = importPredictions_Tombo(argv[2])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_Tombo_runs/K562/K562_Tombo.perReadsStats.chr20.bed")
 
     logger.info(f"Start Nanopolish")
-    Nanopolish_calls = importPredictions_Nanopolish_2(argv[3])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/Leukemia_ONT/K562.nanopolish/K562.methylation_calls.chr_chr20.tsv", IncludeNonSingletons = True)
+    Nanopolish_calls = importPredictions_Nanopolish_v2(argv[3])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/Leukemia_ONT/K562.nanopolish/K562.methylation_calls.chr_chr20.tsv", IncludeNonSingletons = True)
 
     logger.info(f"Start DeepMod")
     DeepMod_calls = importPredictions_DeepMod(argv[4])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/Leukemia_ONT/K562.nanopolish/K562.methylation_calls.chr_chr20.tsv", IncludeNonSingletons = True)
-
-    minCov = int(argv[8])
 
     logger.info(f"Start bgTruth")
     if argv[7] == "encode":
@@ -64,31 +72,28 @@ if __name__ == '__main__':
         logger.error("UniversalMethStatsEvaluation.standalone_01.py ERROR: Unknown bacground truth parser configuration. Aborting. FYI: currently supported are: encode, oxBS_sudo, bismark")
         exit()
 
-    RunPrefix = argv[6]  # "K562_WGBS_rep_ENCFF721JMB/K562_WGBS_rep_ENCFF721JMB"
-
-    tool = argv[9]
-
     ####################################### Preprocessing neccessary files:
 
-    singletonsFile = "hg38_singletons.bed"
-    nonsingletonsFile = "hg38_nonsingletons.bed"
+    # singletonsFile = "hg38_singletons.bed"
+    # nonsingletonsFile = "hg38_nonsingletons.bed"
+    #
+    # narrowCoord = [False, singletonsFile, nonsingletonsFile, "ONT.hg38.cpgIslandExt.bed", "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed", "ONT.hg38.exonFeature.bed", "ONT.hg38.geneFeature.bed", "ONT.hg38.intergenic.bed", "ONT.hg38.intronFeature.bed", "ONT.hg38.promoterFeature.flank_100.bed", "ONT.hg38.promoterFeature.flank_1000.bed",
+    #         "ONT.hg38.promoterFeature.flank_200.bed", "ONT.hg38.promoterFeature.flank_2000.bed", "ONT.hg38.promoterFeature.flank_500.bed", "ONT.hg38.promoterFeature.flank_750.bed"]
 
-    narrowCoord = [False, singletonsFile, nonsingletonsFile, "ONT.hg38.cpgIslandExt.bed", "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed", "ONT.hg38.exonFeature.bed", "ONT.hg38.geneFeature.bed", "ONT.hg38.intergenic.bed", "ONT.hg38.intronFeature.bed", "ONT.hg38.promoterFeature.flank_100.bed", "ONT.hg38.promoterFeature.flank_1000.bed",
-            "ONT.hg38.promoterFeature.flank_200.bed", "ONT.hg38.promoterFeature.flank_2000.bed", "ONT.hg38.promoterFeature.flank_500.bed", "ONT.hg38.promoterFeature.flank_750.bed"]
-
+    relateCoord = narrowCoord
     ## add missing region files:
     singletonsFilePrefix = singletonsFile.replace(".bed", '')
-    narrowCoord.append("{}.{}.mixed.bed".format(RunPrefix, singletonsFilePrefix))
-    narrowCoord.append("{}.{}.absolute.bed".format(RunPrefix, singletonsFilePrefix))
+    # relateCoord.append("{}/{}.{}.mixed.bed".format(out_dir, RunPrefix, singletonsFilePrefix))
+    relateCoord.append("{}/{}.{}.absolute.bed".format(out_dir, RunPrefix, singletonsFilePrefix))
 
     nonsingletonsFilePrefix = nonsingletonsFile.replace(".bed", '')
-    narrowCoord.append("{}.{}.other.bed".format(RunPrefix, nonsingletonsFilePrefix))
-    narrowCoord.append("{}.{}.fullyMixed.bed".format(RunPrefix, nonsingletonsFilePrefix))
-    narrowCoord.append("{}.{}.discordant.bed".format(RunPrefix, nonsingletonsFilePrefix))
-    narrowCoord.append("{}.{}.concordant.bed".format(RunPrefix, nonsingletonsFilePrefix))
+    # relateCoord.append("{}/{}.{}.other.bed".format(out_dir, RunPrefix, nonsingletonsFilePrefix))
+    # relateCoord.append("{}/{}.{}.fullyMixed.bed".format(out_dir, RunPrefix, nonsingletonsFilePrefix))
+    relateCoord.append("{}/{}.{}.discordant.bed".format(out_dir, RunPrefix, nonsingletonsFilePrefix))
+    relateCoord.append("{}/{}.{}.concordant.bed".format(out_dir, RunPrefix, nonsingletonsFilePrefix))
 
-    nonSingletonsPostprocessing(bgTruth, nonsingletonsFile, RunPrefix)
-    singletonsPostprocessing(bgTruth, singletonsFile, RunPrefix)
+    singletonsPostprocessing(bgTruth, singletonsFile, RunPrefix, outdir=out_dir)
+    nonSingletonsPostprocessing(bgTruth, nonsingletonsFile, RunPrefix, outdir=out_dir)
 
     ####################################### Computing stats per program:
 
@@ -97,7 +102,7 @@ if __name__ == '__main__':
     DeepSignal_Tombo = combine2programsCalls(DeepSignal_calls, Tombo_calls)
     DeepSignal_Tombo_Nanopolish = combine2programsCalls(DeepSignal_Tombo, Nanopolish_calls)
     DeepSignal_Tombo_Nanopolish_DeepMod = combine2programsCalls(DeepSignal_Tombo_Nanopolish, DeepMod_calls)
-    DeepSignal_Tombo_Nanopolish_DeepMod_Bacground = combine2programsCalls(DeepSignal_Tombo_Nanopolish_DeepMod, bgTruth, outfileName="{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.bed".format(RunPrefix))
+    DeepSignal_Tombo_Nanopolish_DeepMod_Bacground = combine2programsCalls(DeepSignal_Tombo_Nanopolish_DeepMod, bgTruth, outfileName="{}/{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.bed".format(out_dir, RunPrefix))
 
     logger.info(f"Data points for all stats: {len(DeepSignal_Tombo_Nanopolish_DeepMod_Bacground)}")
 
@@ -105,48 +110,82 @@ if __name__ == '__main__':
     DeepSignal_Tombo_Nanopolish_corr = combine2programsCalls_4Corr(DeepSignal_Tombo_corr, Nanopolish_calls)
     DeepSignal_Tombo_Nanopolish_DeepMod_corr = combine2programsCalls_4Corr(DeepSignal_Tombo_Nanopolish_corr, DeepMod_calls)
     # DeepSignal_Tombo_Nanopolish_Bacground = combine2programsCalls_4Corr(DeepSignal_Tombo_Nanopolish_corr, oxBS, outfileName = "DeepSignal_Tombo_Nanopolish_Bacground.4Corr.bed")
-    DeepSignal_Tombo_Nanopolish_DeepMod_Bacground_corr = combine2programsCalls(DeepSignal_Tombo_Nanopolish_DeepMod_corr, bgTruth, outfileName="{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.4Corr.bed".format(RunPrefix))
+    DeepSignal_Tombo_Nanopolish_DeepMod_Bacground_corr = combine2programsCalls(DeepSignal_Tombo_Nanopolish_DeepMod_corr, bgTruth, outfileName="{}/{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.4Corr.bed".format(out_dir, RunPrefix))
 
     logger.info(f"Data points for correlation: {len(DeepSignal_Tombo_Nanopolish_DeepMod_Bacground_corr)}")
 
     logger.info("\n\n############\n\n")
 
-    # tool="DeepSignal"
-    if tool == "DeepSignal":
-        prefix = "{}.{}_calls.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground".format(RunPrefix, tool)
-        secondFilterBed = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.bed".format(RunPrefix)  # filter coordinates for stats like AUC, F1 etc.
-        secondFilterBed_4Corr = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.4Corr.bed".format(RunPrefix)  # filter coordinates for correlation
-        df = combine_ONT_and_BS(DeepSignal_calls, bgTruth, prefix, narrowedCoordinates=narrowCoord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
-        df = df[["prefix", "coord", "accuracy", "roc_auc", "precision_5C", "recall_5C", "F1_5C", "Csites", "precision_5mC", "recall_5mC", "F1_5mC", "mCsites", "referenceCpGs", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport"]]
-        df.to_csv("{}.report.tsv".format(prefix), sep='\t')
-        logger.info(df.head())
+    # RunPrefix = f'{RunPrefix}/{RunPrefix}'
 
-    # tool="Tombo"
-    if tool == "Tombo":
-        prefix = "{}.{}_calls.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground".format(RunPrefix, tool)
-        secondFilterBed = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.bed".format(RunPrefix)  # filter coordinates for stats like AUC, F1 etc.
-        secondFilterBed_4Corr = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.4Corr.bed".format(RunPrefix)  # filter coordinates for correlation
-        df = combine_ONT_and_BS(Tombo_calls, bgTruth, prefix, narrowedCoordinates=narrowCoord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
-        df = df[["prefix", "coord", "accuracy", "roc_auc", "precision_5C", "recall_5C", "F1_5C", "Csites", "precision_5mC", "recall_5mC", "F1_5mC", "mCsites", "referenceCpGs", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport"]]
-        df.to_csv("{}.report.tsv".format(prefix), sep='\t')
-        print(df.head())
+    secondFilterBed = "{}/{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.bed".format(out_dir, RunPrefix)  # If using joined together CpGs sites, or False
 
-    # tool="Nanopolish"
-    if tool == "Nanopolish":
-        prefix = "{}.{}_calls.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground".format(RunPrefix, tool)
-        secondFilterBed = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.bed".format(RunPrefix)  # filter coordinates for stats like AUC, F1 etc.
-        secondFilterBed_4Corr = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.4Corr.bed".format(RunPrefix)  # filter coordinates for correlation
-        df = combine_ONT_and_BS(Nanopolish_calls, bgTruth, prefix, narrowedCoordinates=narrowCoord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
-        df = df[["prefix", "coord", "accuracy", "roc_auc", "precision_5C", "recall_5C", "F1_5C", "Csites", "precision_5mC", "recall_5mC", "F1_5mC", "mCsites", "referenceCpGs", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport"]]
-        df.to_csv("{}.report.tsv".format(prefix), sep='\t')
-        print(df.head())
+    # secondFilterBed = False
 
-    # tool="DeepMod"
-    if tool == "DeepMod":
-        prefix = "{}.{}_calls.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground".format(RunPrefix, tool)
-        secondFilterBed = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.bed".format(RunPrefix)  # filter coordinates for stats like AUC, F1 etc.
-        secondFilterBed_4Corr = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.4Corr.bed".format(RunPrefix)  # filter coordinates for correlation
-        df = combine_ONT_and_BS(DeepMod_calls, bgTruth, prefix, narrowedCoordinates=narrowCoord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
-        df = df[["prefix", "coord", "accuracy", "roc_auc", "precision_5C", "recall_5C", "F1_5C", "Csites", "precision_5mC", "recall_5mC", "F1_5mC", "mCsites", "referenceCpGs", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport"]]
-        df.to_csv("{}.report.tsv".format(prefix), sep='\t')
-        print(df.head())
+    secondFilterBed_4Corr = "{}/{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.4Corr.bed".format(out_dir, RunPrefix)
+
+    toolCalls = {'DeepSignal': DeepSignal_calls, 'Tombo': Tombo_calls, 'Nanopolish': Nanopolish_calls, 'DeepMod': DeepMod_calls}
+
+    repCord = relateCoord
+
+    logger.debug(repCord)
+
+    perf_dir = os.path.join(out_dir, 'performance_results')
+    os.makedirs(perf_dir, exist_ok=True)
+
+    for tool in toolCalls:
+        tmpPrefix = f'{RunPrefix}.{tool}'
+        logger.info(tmpPrefix)
+
+        df = report_per_read_performance(toolCalls[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=repCord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
+        df = df[["prefix", "coord", "accuracy", "roc_auc", "F1_5C", "F1_5mC", "precision_5C", "recall_5C", "precision_5mC", "recall_5mC", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport", "Csites_called", "mCsites_called", "referenceCpGs", "Csites", "mCsites"]]
+
+        df['Tool'] = tool
+        df['Dataset'] = dsname
+
+        outfn = os.path.join(perf_dir, f"{RunPrefix}.{tool}.report.tsv")
+        df.to_csv(outfn, sep='\t')
+        logger.info(f"save to {outfn}")
+        logger.debug(df.head())
+
+    # sys.exit(0)
+    #
+    # # tool="DeepSignal"
+    # if tool == "DeepSignal":
+    #     prefix = "{}.{}_calls.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground".format(RunPrefix, tool)
+    #     secondFilterBed = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.bed".format(RunPrefix)  # filter coordinates for stats like AUC, F1 etc.
+    #     secondFilterBed_4Corr = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.4Corr.bed".format(RunPrefix)  # filter coordinates for correlation
+    #     df = combine_ONT_and_BS(DeepSignal_calls, bgTruth, prefix, narrowedCoordinates=narrowCoord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
+    #     df = df[["prefix", "coord", "accuracy", "roc_auc", "precision_5C", "recall_5C", "F1_5C", "Csites", "precision_5mC", "recall_5mC", "F1_5mC", "mCsites", "referenceCpGs", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport"]]
+    #     df.to_csv("{}.report.tsv".format(prefix), sep='\t')
+    #     logger.info(df.head())
+    #
+    # # tool="Tombo"
+    # if tool == "Tombo":
+    #     prefix = "{}.{}_calls.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground".format(RunPrefix, tool)
+    #     secondFilterBed = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.bed".format(RunPrefix)  # filter coordinates for stats like AUC, F1 etc.
+    #     secondFilterBed_4Corr = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.4Corr.bed".format(RunPrefix)  # filter coordinates for correlation
+    #     df = combine_ONT_and_BS(Tombo_calls, bgTruth, prefix, narrowedCoordinates=narrowCoord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
+    #     df = df[["prefix", "coord", "accuracy", "roc_auc", "precision_5C", "recall_5C", "F1_5C", "Csites", "precision_5mC", "recall_5mC", "F1_5mC", "mCsites", "referenceCpGs", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport"]]
+    #     df.to_csv("{}.report.tsv".format(prefix), sep='\t')
+    #     print(df.head())
+    #
+    # # tool="Nanopolish"
+    # if tool == "Nanopolish":
+    #     prefix = "{}.{}_calls.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground".format(RunPrefix, tool)
+    #     secondFilterBed = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.bed".format(RunPrefix)  # filter coordinates for stats like AUC, F1 etc.
+    #     secondFilterBed_4Corr = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.4Corr.bed".format(RunPrefix)  # filter coordinates for correlation
+    #     df = combine_ONT_and_BS(Nanopolish_calls, bgTruth, prefix, narrowedCoordinates=narrowCoord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
+    #     df = df[["prefix", "coord", "accuracy", "roc_auc", "precision_5C", "recall_5C", "F1_5C", "Csites", "precision_5mC", "recall_5mC", "F1_5mC", "mCsites", "referenceCpGs", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport"]]
+    #     df.to_csv("{}.report.tsv".format(prefix), sep='\t')
+    #     print(df.head())
+    #
+    # # tool="DeepMod"
+    # if tool == "DeepMod":
+    #     prefix = "{}.{}_calls.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground".format(RunPrefix, tool)
+    #     secondFilterBed = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.bed".format(RunPrefix)  # filter coordinates for stats like AUC, F1 etc.
+    #     secondFilterBed_4Corr = "{}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.4Corr.bed".format(RunPrefix)  # filter coordinates for correlation
+    #     df = combine_ONT_and_BS(DeepMod_calls, bgTruth, prefix, narrowedCoordinates=narrowCoord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
+    #     df = df[["prefix", "coord", "accuracy", "roc_auc", "precision_5C", "recall_5C", "F1_5C", "Csites", "precision_5mC", "recall_5mC", "F1_5mC", "mCsites", "referenceCpGs", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport"]]
+    #     df.to_csv("{}.report.tsv".format(prefix), sep='\t')
+    #     print(df.head())

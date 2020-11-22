@@ -3,12 +3,10 @@
 #SBATCH -q batch
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 10 # number of cores
-#SBATCH --mem 100g # memory pool for all cores
-#SBATCH -t 8:00:00 # time (D-HH:MM)
+#SBATCH --mem 200g # memory pool for all cores
+#SBATCH -t 2-18:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
-
-#cd $PBS_O_WORKDIR # change the drectory for the one, from which the job was submitted
 
 set -x
 
@@ -20,9 +18,9 @@ echo "bgTruth: $bgTruth"
 echo "RunPrefix: $RunPrefix"
 echo "parser: $parser"
 echo "minCov: $minCov"
-echo "tool: $tool"
+echo "dsname:" $dsname
 
-mkdir -p $(dirname $RunPrefix)
+#mkdir -p $(dirname $RunPrefix)
 
 baseDir=/projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats
 pythonFn=Universal_meth_stats_evaluation.py
@@ -30,6 +28,6 @@ pythonFn=Universal_meth_stats_evaluation.py
 prjBaseDir=/projects/li-lab/yang/workspace/nano-compare/src
 
 PYTHONPATH=${prjBaseDir} python ${baseDir}/${pythonFn} $DeepSignal_calls $Tombo_calls $Nanopolish_calls \
-			$DeepMod_calls $bgTruth $RunPrefix $parser $minCov $tool
+			$DeepMod_calls $bgTruth $RunPrefix $parser $minCov $dsname
 
 

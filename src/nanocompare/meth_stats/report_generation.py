@@ -4,8 +4,8 @@ import pickle
 import sys
 
 from lilab.tcga.global_tcga import set_log_debug_level, logger, results_base_dir, pkl_base_dir, ensure_dir, pic_base_dir
-from nanocompare.meth_stats.Universal_meth_stats_evaluation import importPredictions_DeepMod, importPredictions_DeepSignal, importPredictions_Tombo, importPredictions_Nanopolish_2, importGroundTruth_BedMethyl_from_Encode, importGroundTruth_oxBS, importGroundTruth_coverage_output_from_Bismark, nonSingletonsPostprocessing2, singletonsPostprocessing2, \
-    combine2programsCalls, combine2programsCalls_4Corr, report_df_ont_with_bgtruth, save_ontcalls_to_pkl, load_ontcalls_pkl, importGroundTruth_coverage_output_from_Bismark_BedGraph
+from nanocompare.meth_stats.Universal_meth_stats_evaluation import importPredictions_DeepMod, importPredictions_DeepSignal, importPredictions_Tombo, importPredictions_Nanopolish_v2, importGroundTruth_BedMethyl_from_Encode, importGroundTruth_oxBS, importGroundTruth_coverage_output_from_Bismark, nonSingletonsPostprocessing2, singletonsPostprocessing2, \
+    combine2programsCalls, combine2programsCalls_4Corr, report_per_read_performance, save_ontcalls_to_pkl, load_ontcalls_pkl, importGroundTruth_coverage_output_from_Bismark_BedGraph
 from nanocompare.nanocompare_global_settings import tools_abbr, narrowCoord, singletonsFile, nonsingletonsFile
 import study.venn as venn
 import matplotlib.pyplot as plt
@@ -46,7 +46,7 @@ def save_only_tool_ontcalls(tsvFilename):
             outfn = os.path.join(outdirONT, f"Ontcalls.Tombo.{dsname}.pkl")
             save_ontcalls_to_pkl(Tombo_calls, outfn)
 
-            Nanopolish_calls = importPredictions_Nanopolish_2(row['Nanopolish_calls'])
+            Nanopolish_calls = importPredictions_Nanopolish_v2(row['Nanopolish_calls'])
             outfn = os.path.join(outdirONT, f"Ontcalls.Nanopolish.{dsname}.pkl")
             save_ontcalls_to_pkl(Nanopolish_calls, outfn)
 
@@ -304,7 +304,7 @@ def report_performance_results(tsvFilename):
                 # df = combine_ONT_and_BS(DeepSignal_calls, bgTruth, prefix, narrowedCoordinates=narrowCoord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
 
                 tmpPrefix = f'{runPrefix}.{tool}'
-                df = report_df_ont_with_bgtruth(toolCalls, bgtruthCalls, tmpPrefix, narrowedCoordinatesList=repCord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
+                df = report_per_read_performance(toolCalls, bgtruthCalls, tmpPrefix, narrowedCoordinatesList=repCord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
 
                 df = df[["prefix", "coord", "accuracy", "roc_auc", "F1_5C", "F1_5mC", "precision_5C", "recall_5C", "precision_5mC", "recall_5mC", "referenceCpGs", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport", "Csites", "mCsites", "Csites1", "mCsites1"]]
 

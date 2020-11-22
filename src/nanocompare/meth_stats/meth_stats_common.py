@@ -207,7 +207,7 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_rat
     return cpgDict
 
 
-def importPredictions_Nanopolish_2(infileName, baseCount=0, logLikehoodCutt=2.5, IncludeNonSingletons=True):
+def importPredictions_Nanopolish_v2(infileName, baseCount=0, logLikehoodCutt=2.5, IncludeNonSingletons=True):
     """
     Nanopolish Parser function based on parsing script from Nanopolish:
     https://github.com/jts/nanopolish/blob/master/scripts/calculate_methylation_frequency.py
@@ -1495,6 +1495,7 @@ def txt2dict(pybed):
     return d
 
 
+# Deprecated
 def computePerReadStats(ontCalls, bsReference, title, bedFile=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBed=False, secondFilterBed_4Corr=False):
     '''
     ontCalls - dictionary of CpG coordinates with their per read methylation call (1 or 0) // Format: {"chr\tstart\tend\n" : [list of methylation calls]}
@@ -1519,11 +1520,14 @@ def computePerReadStats(ontCalls, bsReference, title, bedFile=False, ontCutt_per
 
     switch = 0
     ontCalls_narrow = []
+
+    coord_base_dir = os.path.join(data_base_dir, 'genome-annotation')
+
     if bedFile != False:
         ontCalls_bed = BedTool(dict2txt(ontCalls), from_string=True)
         ontCalls_bed = ontCalls_bed.sort()
 
-        infn = os.path.join(nanocompare_basedir, "coordinate", bedFile)
+        infn = os.path.join(coord_base_dir, bedFile)
         # narrowBed = BedTool(bedFile)
         narrowBed = BedTool(infn)
         narrowBed = narrowBed.sort()
@@ -1757,10 +1761,17 @@ def computePerReadStats(ontCalls, bsReference, title, bedFile=False, ontCutt_per
     return accuracy, roc_auc, precision_5C, recall_5C, F1_5C, Csites, precision_5mC, recall_5mC, F1_5mC, mCsites, referenceCpGs, corrMix, len(ontFrequencies_4corr_mix), corrAll, len(ontFrequencies_4corr_all)  # , leftovers, leftovers1
 
 
-def computePerReadStats3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBed=False, secondFilterBed_4Corr=False, cutoff_meth=1.0):
+def computePerReadStats_v3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBed=False, secondFilterBed_4Corr=False, cutoff_meth=1.0):
     '''
 
     90% methlation level
+
+    bedFile is coordinate: False(GenomeWide), Singleton, etc.
+    secondFilterBed is second filter coordinate: False(No filter), Joined file name (four tools joined with BGTruth)
+
+    secondFilterBed_4Corr is all tools at least four calls results joined, currently very confused results
+
+    cutoff_meth is the percentage used in evaluation, 1-fully methylated  0.9- >=90% methylated used
 
     ontCalls - dictionary of CpG coordinates with their per read methylation call (1 or 0) // Format: {"chr\tstart\tend\n" : [list of methylation calls]}
     bsReference - dictionary of CpG coordinates with their methylation frequencies (range 0 - 1). This list is already prefiltered to meet minimal coverage (e.g. 4x) at this point. // Format: {"chr\tstart\tend\n" : methylation level (format: float (0-1))}
@@ -1835,12 +1846,14 @@ def computePerReadStats3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRea
     y = []
     scores = []
 
-    ontSites = 0
-    mCsites = 0
-    Csites = 0
+    ontSites = 0  # count how many reads is methy or unmethy
+
+    mCsites = 0  # count how many read call is methy
+    Csites = 0  # count how many read call is unmethy
+
     referenceCpGs = 0
 
-    # really CpGs for fully methylation and unmethylation
+    # really CpGs for fully methylation and unmethylation,
     mCsites1 = 0
     Csites1 = 0
 
@@ -1962,7 +1975,7 @@ def computePerReadStats3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRea
     #     print("ontSites:", ontSites)
 
     ## plot AUC curve:
-    fig = plt.figure(figsize=(5, 5), dpi=300)
+    # fig = plt.figure(figsize=(5, 5), dpi=300)
 
     fprSwitch = 1
     try:
@@ -2002,7 +2015,7 @@ def computePerReadStats3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRea
         ## plot Precission-recall:
         average_precision = average_precision_score(y, scores)
         #     print('Average precision-recall score: {0:0.2f}'.format(average_precision))
-        plt.figure(figsize=(5, 5))
+        # plt.figure(figsize=(5, 5))
         precision, recall, _ = precision_recall_curve(y, scores)
         # In matplotlib < 1.5, plt.fill_between does not have a 'step' argument
         # step_kwargs = ({'step': 'post'}
@@ -2036,7 +2049,7 @@ def computePerReadStats3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRea
 
 
 # only care about AUC
-def computePerReadStats2(ontCalls, bsReference, title, bedFile=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBed=False, secondFilterBed_4Corr=False):
+def computePerReadStats_v2_for_roc_auc(ontCalls, bsReference, title, bedFile=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBed=False, secondFilterBed_4Corr=False):
     '''
 
     Only care about AUC data
@@ -2427,6 +2440,7 @@ def combine2programsCalls_4Corr(calls1, calls2, cutt=4, outfileName=False):
     #     return dict.fromkeys(set(filteredCalls1.keys()).intersection(set(filteredCalls2.keys())), cutt)
 
 
+# Deprecated
 def combine_ONT_and_BS(ontCalls, bsReference, analysisPrefix, narrowedCoordinates=False, ontCutt=4, secondFilterBed=False, secondFilterBed_4Corr=False):
     d = {"prefix"              : [],
             "coord"            : [],
@@ -2471,10 +2485,14 @@ def combine_ONT_and_BS(ontCalls, bsReference, analysisPrefix, narrowedCoordinate
     return df
 
 
-def report_df_ont_with_bgtruth(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=False, ontCutt=4, secondFilterBed=False, secondFilterBed_4Corr=False, cutoff_meth=1.0):
+def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=False, ontCutt=4, secondFilterBed=False, secondFilterBed_4Corr=False, cutoff_meth=1.0):
     """
     New performance evaluation by Yang
-    Revised the mCSites and CSites to really CpG sites count.
+    Revised the mCSites1 and CSites1 to really CpG sites count.
+
+    referenceCpGs is number of all CpGs that is fully-methylated (>=cutoff_meth) or unmethylated in BG-Truth
+    mCSites1, CSites1 are CpGs
+    mCSites, CSites are calls counted
 
     :param ontCalls:
     :param bgTruth:
@@ -2503,30 +2521,30 @@ def report_df_ont_with_bgtruth(ontCalls, bgTruth, analysisPrefix, narrowedCoordi
             "Corr_mixedSupport": [],
             "corrAll"          : [],
             "Corr_allSupport"  : [],
-            'Csites1'          : [],
-            'mCsites1'         : [],
+            'Csites_called'    : [],
+            'mCsites_called'   : [],
             }
-    for coord in narrowedCoordinatesList:
-        accuracy, roc_auc, precision_5C, recall_5C, F1_5C, Csites, precision_5mC, recall_5mC, F1_5mC, mCsites, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, Csites1, mCsites1 = computePerReadStats3(ontCalls, bgTruth, analysisPrefix, bedFile=coord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr,
-                                                                                                                                                                                                                             cutoff_meth=cutoff_meth)
+    for coord_fn in narrowedCoordinatesList:
+        accuracy, roc_auc, precision_5C, recall_5C, F1_5C, Csites, precision_5mC, recall_5mC, F1_5mC, mCsites, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, Csites1, mCsites1 = computePerReadStats_v3(ontCalls, bgTruth, analysisPrefix, bedFile=coord_fn, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr,
+                                                                                                                                                                                                                               cutoff_meth=cutoff_meth)
 
-        coord1 = os.path.basename(f'{coord}')
+        coord = os.path.basename(f'{coord_fn}')
         # logger.debug(f'coord={coord1}')
 
         d["prefix"].append(analysisPrefix)
-        d["coord"].append(coord1)
+        d["coord"].append(coord)
         d["accuracy"].append(accuracy)
         d["roc_auc"].append(roc_auc)
         d["precision_5C"].append(precision_5C)
         d["recall_5C"].append(recall_5C)
         d["F1_5C"].append(F1_5C)
-        d["Csites"].append(Csites)
-        d["Csites1"].append(Csites1)
+        d["Csites_called"].append(Csites)
+        d["Csites"].append(Csites1)
         d["precision_5mC"].append(precision_5mC)
         d["recall_5mC"].append(recall_5mC)
         d["F1_5mC"].append(F1_5mC)
-        d["mCsites"].append(mCsites)
-        d["mCsites1"].append(mCsites1)
+        d["mCsites_called"].append(mCsites)
+        d["mCsites"].append(mCsites1)
         d["referenceCpGs"].append(referenceCpGs)
         d["corrMix"].append(corrMix)
         d["Corr_mixedSupport"].append(Corr_mixedSupport)
@@ -2610,7 +2628,7 @@ def concat_dir_fn(outdir, fn):
     return outfn
 
 
-def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, dataset):
+def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir):
     '''
     This function will take the input *.bed file from "NonSingletonsScanner" funtion, which corresponds with non-singletons.
     Next it will separate them into concordant non-singletons (i.e. fully methylated or fully unmethylated), and disconcordant (those with at least one CpG fully methylated and at least one fully unmethylated), or fully mixed (i.e. all CpGs in non-singletons have methylation level >0 and < 100)
@@ -2620,7 +2638,9 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, dataset):
     refMeth = BedTool(dict2txt(referenceMeth), from_string=True)
     refMeth = refMeth.sort()
 
-    infn = os.path.join(nanocompare_basedir, "reports", regionsBedFile)
+    base_dir = os.path.join(data_base_dir, 'genome-annotation')
+
+    infn = os.path.join(base_dir, regionsBedFile)
     # regions = BedTool(regionsBedFile)
     regions = BedTool(infn)
 
@@ -2637,10 +2657,10 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, dataset):
         regions_refMeth_dict[regionKey].append(referenceMeth[methKey])
 
     outfile_prefix = regionsBedFile.replace(".bed", '')
-    outfile_concordant = open("{}.{}.concordant.bed".format(dataset, outfile_prefix), "w")
-    outfile_discordant = open("{}.{}.discordant.bed".format(dataset, outfile_prefix), "w")
-    outfile_fullyMixed = open("{}.{}.fullyMixed.bed".format(dataset, outfile_prefix), "w")
-    outfile_other = open("{}.{}.other.bed".format(dataset, outfile_prefix), "w")
+    outfile_concordant = open("{}/{}.{}.concordant.bed".format(outdir, runPrefix, outfile_prefix), "w")
+    outfile_discordant = open("{}/{}.{}.discordant.bed".format(outdir, runPrefix, outfile_prefix), "w")
+    outfile_fullyMixed = open("{}/{}.{}.fullyMixed.bed".format(outdir, runPrefix, outfile_prefix), "w")
+    outfile_other = open("{}/{}.{}.other.bed".format(outdir, runPrefix, outfile_prefix), "w")
 
     for region in regions_refMeth_dict:
         fullMeth = 0
@@ -2795,7 +2815,7 @@ def nonSingletonsPostprocessing2(referenceMeth, regionsBedFile, dataset, outdir=
     return ret
 
 
-def singletonsPostprocessing(referenceMeth, singletonsBedFile, dataset):
+def singletonsPostprocessing(referenceMeth, singletonsBedFile, runPrefix, outdir):
     '''
     This function will take the input *.bed file from "NonSingletonsScanner" funtion, which corresponds with singletons.
     Next it will separate them into absolute (i.e. fully methylated or fully unmethylated), and mixed (i.e. all CpGs in non-singletons have methylation level >0 and < 100)
@@ -2805,7 +2825,7 @@ def singletonsPostprocessing(referenceMeth, singletonsBedFile, dataset):
     refMeth = BedTool(dict2txt(referenceMeth), from_string=True)
     refMeth = refMeth.sort()
 
-    infnSingletons = os.path.join(nanocompare_basedir, "reports", singletonsBedFile)
+    infnSingletons = os.path.join(data_base_dir, 'genome-annotation', singletonsBedFile)
 
     # regions = BedTool(singletonsBedFile)
     regionsSingletons = BedTool(infnSingletons)
@@ -2815,8 +2835,8 @@ def singletonsPostprocessing(referenceMeth, singletonsBedFile, dataset):
     refMeth_regions = refMeth.intersect(regionsSingletons, wa=True, u=True)
 
     outfile_prefix = singletonsBedFile.replace(".bed", '')
-    outfile_absolute = open("{}.{}.absolute.bed".format(dataset, outfile_prefix), "w")
-    outfile_mixed = open("{}.{}.mixed.bed".format(dataset, outfile_prefix), "w")
+    outfile_absolute = open("{}/{}.{}.absolute.bed".format(outdir, runPrefix, outfile_prefix), "w")
+    outfile_mixed = open("{}/{}.{}.mixed.bed".format(outdir, runPrefix, outfile_prefix), "w")
     for ovr in refMeth_regions:
         methKey = "{}\t{}\t{}\n".format(ovr[0], ovr[1], ovr[2])
 
@@ -2888,13 +2908,13 @@ def singletonsPostprocessing2(referenceMeth, singletonsBedFile, dataset, outdir=
     return ret
 
 
-def get_bedfile_lines(bedfn):
+def get_file_lines(infn):
     """
     Count number of lines in bedfile
-    :param bedfn:
+    :param infn:
     :return:
     """
-    num_lines = sum(1 for line in open(bedfn))
+    num_lines = sum(1 for line in open(infn))
     return num_lines
 
 
