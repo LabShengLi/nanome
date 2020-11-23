@@ -120,8 +120,8 @@ def importPredictions_NanoXGBoost(infileName, chr_col=0, start_col=1, meth_col=4
     return cpgDict
 
 
-# Deprecated due to importPredictions_Nanopolish_2, which is based on Nanopolish code
-def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_ratio_col=4, sequence_col=-1, baseCount=0, logLikehoodCutt=2.5):
+# not deprecated yet, even will Deprecated due to importPredictions_Nanopolish_2, which is based on Nanopolish code
+def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_ratio_col=4, sequence_col=-1, baseCount=1, logLikehoodCutt=2.5):
     '''
     !!! This function will be needed for NanoCompare project !!!
     
@@ -152,29 +152,36 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_rat
     count = 0
     infile = open(infileName, 'r')
 
+    output_first = True
     for row in infile:
         tmp = row.strip().split("\t")
+        if output_first:
+            logger.debug(enumerate(list(tmp)))
+            output_first = False
+
         if tmp[chr_col] != "chromosome":
-            if int(tmp[-2]) == 1:  # we have singleton, i.e. only one CpG within the area
+            try:  # try to find if these columns are interpretable
+                start = int(tmp[start_col])
+                num_sites = int(tmp[-2])
+                llr = float(tmp[log_lik_ratio_col])
+            except:
+                logger.error(f'###\tError when parsing row=[{row}] in {infileName}')
+                continue
+            if num_sites == 1:  # we have singleton, i.e. only one CpG within the area
                 if baseCount == 0:
-                    key = "{}\t{}\t{}\n".format(tmp[chr_col], int(tmp[start_col]) + 1, int(tmp[start_col]) + 1)
+                    key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start + 1)
                 elif baseCount == 1:
-                    key = "{}\t{}\t{}\n".format(tmp[chr_col], int(tmp[start_col]), int(tmp[start_col]))
+                    key = "{}\t{}\t{}\n".format(tmp[chr_col], start + 1, start + 1)
                 else:
                     print("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
                     exit()
-
-                if float(tmp[log_lik_ratio_col]) >= logLikehoodCutt:
-                    if key not in cpgDict:
-                        cpgDict[key] = []
+                if key not in cpgDict:
+                    cpgDict[key] = []
+                if llr >= logLikehoodCutt:
                     cpgDict[key].append(1)
-                    count += 1
-                elif float(tmp[log_lik_ratio_col]) <= -logLikehoodCutt:
-                    if key not in cpgDict:
-                        cpgDict[key] = []
+                elif llr <= -logLikehoodCutt:
                     cpgDict[key].append(0)
-                    count += 1
-
+                count += 1
             else:  # we deal with non-singleton
                 firstCpgLoc = int(tmp[start_col]) - 5
                 sequence = tmp[sequence_col]
@@ -183,27 +190,24 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_rat
                     cpgEnd = cpgStart
 
                     if baseCount == 0:
-                        key = "{}\t{}\t{}\n".format(tmp[chr_col], cpgStart + 1, cpgStart + 1)
+                        key = "{}\t{}\t{}\n".format(tmp[chr_col], cpgStart, cpgStart + 1)
                     elif baseCount == 1:
-                        key = "{}\t{}\t{}\n".format(tmp[chr_col], cpgStart, cpgStart)
+                        key = "{}\t{}\t{}\n".format(tmp[chr_col], cpgStart + 1, cpgStart + 1)
                     else:
-                        print("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+                        logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
                         exit()
 
+                    if key not in cpgDict:
+                        cpgDict[key] = []
                     if float(tmp[log_lik_ratio_col]) >= logLikehoodCutt:
-                        if key not in cpgDict:
-                            cpgDict[key] = []
                         cpgDict[key].append(1)
-                        count += 1
                     elif float(tmp[log_lik_ratio_col]) <= -logLikehoodCutt:
-                        if key not in cpgDict:
-                            cpgDict[key] = []
                         cpgDict[key].append(0)
-                        count += 1
+                    count += 1
 
     infile.close()
 
-    print("###\timportPredictions_Nanopolish SUCCESS: {} methylation calls mapped to {} CpGs from {} file".format(count, len(cpgDict), infileName))
+    logger.info("###\timportPredictions_Nanopolish SUCCESS: {} methylation calls mapped to {} CpGs from {} file".format(count, len(cpgDict), infileName))
     return cpgDict
 
 
@@ -487,7 +491,7 @@ def importPredictions_Nanopolish_3(infileName, baseCount=0, logLikehoodCutt=2.5,
     return cpgDict
 
 
-def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, meth_col=8, baseCount=0):
+def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, meth_col=8, baseCount=1):
     '''
     Note that the function requires per read stats, not frequencies of methylation.
     !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
@@ -534,14 +538,16 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, meth_col=8,
     for row in infile:
         tmp = row.strip().split("\t")
         if baseCount == 1:
-            start = int(tmp[start_col])
-        elif baseCount == 0:
             start = int(tmp[start_col]) + 1
+            end = start
+        elif baseCount == 0:
+            start = int(tmp[start_col])
+            end = start + 1
         else:
             print("###\timportPredictions_DeepSignal InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
             exit()
         #         key = (tmp[chr_col], start)
-        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
+        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
         if key not in cpgDict:
             cpgDict[key] = []
         #         cpgDict[key].append(float(tmp[meth_col])) ##### uncomment this line to get probabilities instead of final, binary calls
@@ -624,7 +630,7 @@ def importPredictions_DeepSignal3(infileName, chr_col=0, start_col=1, meth_col=7
     return cpgDict
 
 
-def importPredictions_Tombo(infileName, chr_col=0, start_col=1, meth_col=4, baseCount=0, cutoff=2.5):
+def importPredictions_Tombo(infileName, chr_col=0, start_col=1, meth_col=4, baseCount=1, cutoff=2.5):
     '''
     Note that the function requires per read stats, not frequencies of methylation.
     !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
@@ -662,13 +668,15 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, meth_col=4, base
         tmp = row.strip().split("\t")
         if baseCount == 1:
             try:
-                start = int(tmp[start_col])
+                start = int(tmp[start_col]) + 1
+                end = start
             except:
                 logger.error(f" ####Tombo parse error at row={row}")
                 continue
         elif baseCount == 0:
             try:
-                start = int(tmp[start_col]) + 1
+                start = int(tmp[start_col])
+                end = start + 1
             except:
                 logger.error(f" ####Tombo parse error at row={row}")
                 continue
@@ -676,7 +684,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, meth_col=4, base
             print("###\timportPredictions_Tombo InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
             exit()
         #         key = (tmp[chr_col], start)
-        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
+        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
 
         try:
             methCall = float(tmp[meth_col])
@@ -878,9 +886,11 @@ def importPredictions_Tombo3(infileName, chr_col=0, start_col=1, meth_col=4, bas
     return cpgDict
 
 
-def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, meth_reads_col=12, coverage_col=10, clusteredResult=False, clustered_meth_freq_col=13, baseCount=0):
+def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, meth_reads_col=-1, coverage_col=-3, baseCount=1):
     '''
     Note that the function requires per read stats, not frequencies of methylation.
+
+    Note that DeepMod results is 0-base format, we need to convert to 1-base format before return results
     !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
     
     ### Parameters of the function:
@@ -922,17 +932,24 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, meth_reads_col
     cpgDict = {}
     count = 0
 
+    output_first = True
+
     for row in infile:
         tmp = row.strip().split(" ")
+        if output_first:
+            logger.debug(f'row = {list(enumerate(tmp))}')
+            output_first = False
         if baseCount == 1:
-            start = int(tmp[start_col])
-        elif baseCount == 0:
             start = int(tmp[start_col]) + 1
+            end = start
+        elif baseCount == 0:
+            start = int(tmp[start_col])
+            end = start + 1
         else:
-            print("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            logger.debug("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
             exit()
         #         key = (tmp[chr_col], start)
-        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
+        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
 
         methCalls = int(tmp[meth_reads_col])
         coverage = int(tmp[coverage_col])
@@ -1022,7 +1039,7 @@ def importPredictions_DeepMod3(infileName, chr_col=0, start_col=1, meth_percenta
     return cpgDict
 
 
-def DeepMod_clusteredResultParsing(infileName, chr_col=0, start_col=1, meth_reads_col=12, coverage_col=4, clusteredResult=True, clustered_meth_freq_col=13, baseCount=0):
+def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, coverage_col=4, clustered_meth_freq_col=-1, baseCount=1):
     '''
     Note that the function requires per read stats, not frequencies of methylation.
     !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
@@ -1065,18 +1082,26 @@ def DeepMod_clusteredResultParsing(infileName, chr_col=0, start_col=1, meth_read
     infile = open(infileName, "r")
     cpgDict = {}
     count = 0
+    output_first = True
 
     for row in infile:
         tmp = row.strip().split(" ")
+
+        if output_first:
+            logger.debug(f'row = {list(enumerate(tmp))}')
+            output_first = False
+
         if baseCount == 1:
-            start = int(tmp[start_col])
-        elif baseCount == 0:
             start = int(tmp[start_col]) + 1
+            end = start
+        elif baseCount == 0:
+            start = int(tmp[start_col])
+            end = start + 1
         else:
             print("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
             exit()
 
-        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
+        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
 
         methFreq = int(tmp[clustered_meth_freq_col])
         coverage = int(tmp[coverage_col])
@@ -1097,7 +1122,7 @@ def coverageFiltering(calls_dict, minCov=4, byLength=True):
 
     :param calls_dict:
     :param minCov:
-    :param byLength:
+    :param byLength: if False, will deal with DeepMod_cluster results
     :return:
     """
     result = {}
@@ -1105,7 +1130,7 @@ def coverageFiltering(calls_dict, minCov=4, byLength=True):
         if byLength:
             if len(calls_dict[cpg]) >= minCov:
                 result[cpg] = [sum(calls_dict[cpg]) / float(len(calls_dict[cpg])), len(calls_dict[cpg])]
-        else:
+        else:  # Used by DeepMod_cluster results
             if calls_dict[cpg][1] >= minCov:
                 result[cpg] = [calls_dict[cpg][0] / 100.0, calls_dict[cpg][1]]
 
@@ -1170,7 +1195,7 @@ def importGroundTruth_oxBS(infileName, chr_col='#chromosome', start_col='start',
     return cpgDict
 
 
-def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, meth_col=10, cov_col=9, covCutt=10, baseCount=0, chrFilter=False):
+def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, meth_col=10, cov_col=9, covCutt=10, baseCount=1, chrFilter=False):
     '''
     
     ### Description of the columns in this format (https://www.encodeproject.org/data-standards/wgbs/):
@@ -1224,16 +1249,18 @@ def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, 
         nrow += 1
         tmp = row.strip().split("\t")
         if baseCount == 1:
-            start = int(tmp[start_col])
-        elif baseCount == 0:
             start = int(tmp[start_col]) + 1
+            end = start
+        elif baseCount == 0:
+            start = int(tmp[start_col])
+            end = start + 1
         else:
             print("###\timportGroundTruth_BedMethyl_from_Encode InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
             exit()
 
         if chrFilter == False or chrFilter == tmp[chr_col]:
             if int(tmp[cov_col]) >= covCutt:
-                key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
+                key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
                 if key not in cpgDict:
                     cpgDict[key] = float(tmp[meth_col]) / 100.0
                 else:
@@ -1302,17 +1329,19 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
         if baseCount == 1:
             try:
                 start = int(tmp[start_col])
+                end = start
             except:
                 logger.error(f" ### error when parse ground_truth row={row}")
                 continue
         elif baseCount == 0:
             try:
-                start = int(tmp[start_col]) + 1
+                start = int(tmp[start_col])
+                end = start + 1
             except:
                 logger.error(f" ### error when parse ground_truth row={row}")
                 continue
         else:
-            print("###\timportGroundTruth_coverage_output_from_Bismark InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            logger.error("###\timportGroundTruth_coverage_output_from_Bismark InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
             exit()
 
         if chrFilter == False or chrFilter == tmp[chr_col]:
@@ -1325,12 +1354,13 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
             if temp_meth_and_unmeth >= covCutt:
                 try:
 
-                    key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
+                    key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
                     if key not in cpgDict:
                         # TODO: add coverage to values also
                         cpgDict[key] = float(tmp[meth_col]) / 100.0
                     else:
                         logger.error("###\timportGroundTruth_coverage_output_from_Bismark SanityCheckError: One CpG should not have more than 1 entry")
+                        sys.exit(0)
                 except:
                     logger.error(f" ### Error parse gbTruth row = {row}")
                     continue
@@ -2374,6 +2404,20 @@ def plot_confusion_matrix(cm, classes,
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.tight_layout()
+
+
+def save_keys_to_bed(keys, outfn):
+    """
+    Save all keys in set of ('chr\t123\t123\n', etc.) to outfn
+    :param keys:
+    :param outfn:
+    :return:
+    """
+    outfile = open(outfn, 'w')
+    for key in keys:
+        outfile.write(key)
+    outfile.close()
+    pass
 
 
 def combine2programsCalls(calls1, calls2, outfileName=False):

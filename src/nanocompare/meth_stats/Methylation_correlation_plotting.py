@@ -1377,48 +1377,55 @@ if __name__ == '__main__':
     # bgtruth coverage cutoff 10
     bsCutt = 5
 
+    logger.info(f'bgtruth cov={bsCutt}, tool cov={minCovCutt}')
+
+    RunPrefix = argv[8]  # "K562_WGBS_rep_ENCFF721JMB"
+    out_dir = os.path.join(pic_base_dir, RunPrefix)
+    os.makedirs(out_dir, exist_ok=True)
+
     logger.debug(list(enumerate(argv)))
     # for argi, arg in enumerate(argv):
     #     logger.debug(f"{argi} = {arg}")
 
-    logger.info(f"Start DeepSignal")
+    logger.debug(f"Start load DeepSignal")
     if argv[1] == 'NO':
         DeepSignal_calls = None
     else:
         DeepSignal_calls = importPredictions_DeepSignal(argv[1])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepSignal_runs/K562/K562_DeepSignal.MethCalls.Joined.tsv")
         DeepSignal_calls = coverageFiltering(DeepSignal_calls, minCov=minCovCutt)
 
-    logger.info(f"Start Tombo")
+    logger.debug(f"Start load Tombo")
     if argv[2] == 'NO':
         Tombo_calls = None
     else:
         Tombo_calls = importPredictions_Tombo(argv[2])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_Tombo_runs/K562/K562_Tombo.batch_all.batch_0.perReadsStats.bed")
         Tombo_calls = coverageFiltering(Tombo_calls, minCov=minCovCutt)
 
-    logger.info(f"Start Nanopolish")
+    logger.debug(f"Start load Nanopolish")
     if argv[3] == 'NO':
         Nanopolish_calls = None
     else:
-        Nanopolish_calls = importPredictions_Nanopolish_v2(argv[3])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/Leukemia_ONT/K562.nanopolish/K562.methylation_calls.tsv", IncludeNonSingletons = True)
+        # Nanopolish_calls = importPredictions_Nanopolish_v2(argv[3])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/Leukemia_ONT/K562.nanopolish/K562.methylation_calls.tsv", IncludeNonSingletons = True)
+        Nanopolish_calls = importPredictions_Nanopolish(argv[3])
         Nanopolish_calls = coverageFiltering(Nanopolish_calls, minCov=minCovCutt)
 
-    logger.info(f"Start DeepMod")
+    logger.debug(f"Start load DeepMod")
     if argv[4] == 'NO':
         DeepMod_calls = None
     else:
         DeepMod_calls = importPredictions_DeepMod(argv[4])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepMod_runs/K562/K562.C.combined.bed")
         DeepMod_calls = coverageFiltering(DeepMod_calls, minCov=minCovCutt)
 
-    logger.info(f"Start DeepMod_clusteredResultParsing")
+    logger.debug(f"Start load DeepMod_clusteredResultParsing")
     if argv[5] == 'NO':
         DeepMod_calls_clustered = None
     else:
-        DeepMod_calls_clustered = DeepMod_clusteredResultParsing(argv[5])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepMod_runs/K562/K562.C_clusterCpG.combined.bed")
+        DeepMod_calls_clustered = importPredictions_DeepMod_clustered(argv[5])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepMod_runs/K562/K562.C_clusterCpG.combined.bed")
         DeepMod_calls_clustered = coverageFiltering(DeepMod_calls_clustered, minCov=minCovCutt, byLength=False)
 
     # bgTruth = importGroundTruth_BedMethyl_from_Encode("/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/K562/ENCSR765JPC_WGBS_hg38/ENCFF721JMB.bed", covCutt = bsCutt)
 
-    logger.info(f"Start bgTruth")
+    logger.debug(f"Start load bgTruth")
 
     # TODO all following functions removed to Universal_meth_stats_evaluation
     if argv[7] == "encode":
@@ -1433,12 +1440,26 @@ if __name__ == '__main__':
         logger.error("Methylation_correlation_plotting.py ERROR: Unknown bacground truth parser configuration. Aborting. FYI: currently supported are: encode, oxBS_sudo, bismark")
         exit(0)
 
-    RunPrefix = argv[8]  # "K562_WGBS_rep_ENCFF721JMB"
-
-    logger.info(f"Start set intersection")
-
     name_calls = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'DeepMode_cluster']
     all_calls = [DeepSignal_calls, Tombo_calls, Nanopolish_calls, DeepMod_calls, DeepMod_calls_clustered]
+
+    logger.debug(f"Study set intersection of each tool with bgtruth")
+    dataset = []
+    bgtruthCpGs = set(list(bgTruth.keys()))
+    for call1, name1 in zip(all_calls, name_calls):
+        if call1 is None:
+            dataset.append({'bgtruth': len(bgtruthCpGs), 'tool': np.nan, 'joined': np.nan})
+            continue
+        overlapCpGs = bgtruthCpGs.intersection(set(list(call1.keys())))
+        dataset.append({'bgtruth': len(bgtruthCpGs), 'tool': len(set(list(call1.keys()))), 'joined': len(overlapCpGs)})
+        logger.info(f'BG-Truth join with {name1} get {len(overlapCpGs)} CpGs')
+        outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-bgtruth-{name1}--bsCov{bsCutt}-minCov{minCovCutt}.bed')
+        save_keys_to_bed(overlapCpGs, outfn)
+    df = pd.DataFrame(dataset, index=name_calls)
+    outfn = os.path.join(out_dir, f'{RunPrefix}-summary-bgtruth-tools-bsCov{bsCutt}-minCov{minCovCutt}.csv')
+    df.to_csv(outfn)
+
+    logger.debug(f"Start set intersection with all joined together (4+1 tools with bgtruth)")
     coveredCpGs = set(list(bgTruth.keys()))
     for call1, name1 in zip(all_calls, name_calls):
         if call1 is None:
@@ -1449,7 +1470,7 @@ if __name__ == '__main__':
     # coveredCpGs = set(list(bgTruth.keys())).intersection(set(list(DeepSignal_calls.keys()))).intersection(set(list(Tombo_calls.keys()))).intersection(set(list(Nanopolish_calls.keys()))).intersection(set(list(DeepMod_calls.keys()))).intersection(set(list(DeepMod_calls_clustered.keys())))
     logger.info(f"{len(coveredCpGs)} CpGs are covered by all tools and bgtruth")
 
-    outfn = os.path.join(pic_base_dir, f"Meth_corr_plot_data.{RunPrefix}_bsCov{bsCutt}_minCov{minCovCutt}_time_{current_time_str()}.tsv")
+    outfn = os.path.join(out_dir, f"Meth_corr_plot_data-{RunPrefix}-bsCov{bsCutt}-minCov{minCovCutt}-time-{current_time_str()}.tsv")
     logger.info(f"Start output results to {outfn}")
 
     outfile = open(outfn, 'w')
