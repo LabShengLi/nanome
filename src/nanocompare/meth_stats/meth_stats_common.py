@@ -47,7 +47,7 @@ def report2dict(cr):
 
     # Store in dictionary
     measures = tmp[0]
-    print(measures)
+    logger.debug(measures)
 
     D_class_data = {}  # defaultdict(dict)
     for row in tmp[1:]:
@@ -105,8 +105,8 @@ def importPredictions_NanoXGBoost(infileName, chr_col=0, start_col=1, meth_col=4
         elif baseCount == 0:
             start = int(tmp[start_col]) + 1
         else:
-            print("###\timportPredictions_NanoXGBoost InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            exit()
+            logger.error("###\timportPredictions_NanoXGBoost InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            sys.exit(-1)
         #         key = (tmp[chr_col], start)
         key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
         if key not in cpgDict:
@@ -116,7 +116,7 @@ def importPredictions_NanoXGBoost(infileName, chr_col=0, start_col=1, meth_col=4
 
     infile.close()
 
-    print("###\timportPredictions_NanoXGBoost SUCCESS: {} methylation calls mapped to {} CpGs from {} file".format(count, len(cpgDict), infileName))
+    logger.debug("###\timportPredictions_NanoXGBoost SUCCESS: {} methylation calls mapped to {} CpGs from {} file".format(count, len(cpgDict), infileName))
     return cpgDict
 
 
@@ -173,8 +173,8 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_rat
                 elif baseCount == 1:
                     key = "{}\t{}\t{}\n".format(tmp[chr_col], start + 1, start + 1)
                 else:
-                    print("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-                    exit()
+                    logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+                    sys.exit(-1)
                 if key not in cpgDict:
                     cpgDict[key] = []
                 if llr >= logLikehoodCutt:
@@ -195,7 +195,7 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_rat
                         key = "{}\t{}\t{}\n".format(tmp[chr_col], cpgStart + 1, cpgStart + 1)
                     else:
                         logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-                        exit()
+                        sys.exit(-1)
 
                     if key not in cpgDict:
                         cpgDict[key] = []
@@ -274,8 +274,8 @@ def importPredictions_Nanopolish_v2(infileName, baseCount=0, logLikehoodCutt=2.5
                 elif baseCount == 1:
                     key = "{}\t{}\t{}\n".format(c, s + cg_pos - first_cg_pos, s + cg_pos - first_cg_pos)
                 else:
-                    print("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-                    exit()
+                    logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+                    sys.exit(-1)
 
                 if key not in cpgDict:
                     cpgDict[key] = []
@@ -289,8 +289,8 @@ def importPredictions_Nanopolish_v2(infileName, baseCount=0, logLikehoodCutt=2.5
             elif baseCount == 1:
                 key = "{}\t{}\t{}\n".format(str(record['chromosome']), int(record['start']), int(record['end']))
             else:
-                print("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-                exit()
+                logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+                sys.exit(-1)
 
             if key not in cpgDict:
                 cpgDict[key] = []
@@ -368,8 +368,8 @@ def importPredictions_Nanopolish_2_nofilter(infileName, baseCount=0, logLikehood
                 elif baseCount == 1:
                     key = "{}\t{}\t{}\n".format(c, s + cg_pos - first_cg_pos, s + cg_pos - first_cg_pos)
                 else:
-                    print("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-                    exit()
+                    logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+                    sys.exit(-1)
 
                 if key not in cpgDict:
                     cpgDict[key] = []
@@ -383,8 +383,8 @@ def importPredictions_Nanopolish_2_nofilter(infileName, baseCount=0, logLikehood
             elif baseCount == 1:
                 key = "{}\t{}\t{}\n".format(str(record['chromosome']), int(record['start']), int(record['end']))
             else:
-                print("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-                exit()
+                logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+                sys.exit(-1)
 
             if key not in cpgDict:
                 cpgDict[key] = []
@@ -464,8 +464,8 @@ def importPredictions_Nanopolish_3(infileName, baseCount=0, logLikehoodCutt=2.5,
                 elif baseCount == 1:
                     key = "{}\t{}\t{}\n".format(c, s + cg_pos - first_cg_pos, s + cg_pos - first_cg_pos)
                 else:
-                    print("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-                    exit()
+                    logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+                    sys.exit(-1)
 
                 if key not in cpgDict:
                     cpgDict[key] = []
@@ -479,8 +479,8 @@ def importPredictions_Nanopolish_3(infileName, baseCount=0, logLikehoodCutt=2.5,
             elif baseCount == 1:
                 key = "{}\t{}\t{}\n".format(str(record['chromosome']), int(record['start']), int(record['end']))
             else:
-                print("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-                exit()
+                logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+                sys.exit(-1)
 
             if key not in cpgDict:
                 cpgDict[key] = []
@@ -544,8 +544,8 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, meth_col=8,
             start = int(tmp[start_col])
             end = start + 1
         else:
-            print("###\timportPredictions_DeepSignal InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            exit()
+            logger.error("###\timportPredictions_DeepSignal InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            sys.exit(-1)
         #         key = (tmp[chr_col], start)
         key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
         if key not in cpgDict:
@@ -614,8 +614,8 @@ def importPredictions_DeepSignal3(infileName, chr_col=0, start_col=1, meth_col=7
         elif baseCount == 0:
             start = int(tmp[start_col]) + 1
         else:
-            print("###\timportPredictions_DeepSignal InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            exit()
+            logger.error("###\timportPredictions_DeepSignal InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            sys.exit(-1)
         #         key = (tmp[chr_col], start)
         key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
         if key not in cpgDict:
@@ -681,8 +681,8 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, meth_col=4, base
                 logger.error(f" ####Tombo parse error at row={row}")
                 continue
         else:
-            print("###\timportPredictions_Tombo InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            exit()
+            logger.error("###\timportPredictions_Tombo InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            sys.exit(-1)
         #         key = (tmp[chr_col], start)
         key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
 
@@ -763,8 +763,8 @@ def importPredictions_Tombo_nofilter(infileName, chr_col=0, start_col=1, meth_co
                 logger.error(f" ####Tombo parse error at row={row}")
                 continue
         else:
-            print("###\timportPredictions_Tombo InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            exit()
+            logger.error("###\timportPredictions_Tombo InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            sys.exit(-1)
         #         key = (tmp[chr_col], start)
         key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
 
@@ -851,8 +851,8 @@ def importPredictions_Tombo3(infileName, chr_col=0, start_col=1, meth_col=4, bas
                 logger.error(f" ####Tombo parse error at row={row}")
                 continue
         else:
-            print("###\timportPredictions_Tombo InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            exit()
+            logger.error("###\timportPredictions_Tombo InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            sys.exit(-1)
         #         key = (tmp[chr_col], start)
         key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
 
@@ -947,7 +947,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, meth_reads_col
             end = start + 1
         else:
             logger.debug("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            exit()
+            sys.exit(-1)
         #         key = (tmp[chr_col], start)
         key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
 
@@ -1018,8 +1018,8 @@ def importPredictions_DeepMod3(infileName, chr_col=0, start_col=1, meth_percenta
         elif baseCount == 0:
             start = int(tmp[start_col]) + 1
         else:
-            print("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            exit()
+            logger.error("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            sys.exit(-1)
         #         key = (tmp[chr_col], start)
         key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
 
@@ -1098,8 +1098,8 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, cove
             start = int(tmp[start_col])
             end = start + 1
         else:
-            print("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            exit()
+            logger.error("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            sys.exit(-1)
 
         key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
 
@@ -1178,8 +1178,8 @@ def importGroundTruth_oxBS(infileName, chr_col='#chromosome', start_col='start',
         elif baseCount == 0:
             start = int(row[start_col]) + 1
         else:
-            print("###\timportGroundTruth_oxBS InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            exit()
+            logger.error("###\timportGroundTruth_oxBS InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            sys.exit(-1)
 
         if chrFilter == False or chrFilter == row[chr_col]:
             cov = int(row["qA"]) + int(row["qB"])
@@ -1189,7 +1189,7 @@ def importGroundTruth_oxBS(infileName, chr_col='#chromosome', start_col='start',
                 if key not in cpgDict:
                     cpgDict[key] = float(row['pmC'])
                 else:
-                    print("###\timportGroundTruth_oxBS SanityCheckError: One CpG should not have more than 1 entry")
+                    logger.error("###\timportGroundTruth_oxBS SanityCheckError: One CpG should not have more than 1 entry")
 
     infile.close()
     return cpgDict
@@ -1255,8 +1255,8 @@ def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, 
             start = int(tmp[start_col])
             end = start + 1
         else:
-            print("###\timportGroundTruth_BedMethyl_from_Encode InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            exit()
+            logger.error("###\timportGroundTruth_BedMethyl_from_Encode InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            sys.exit(-1)
 
         if chrFilter == False or chrFilter == tmp[chr_col]:
             if int(tmp[cov_col]) >= covCutt:
@@ -1264,7 +1264,7 @@ def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, 
                 if key not in cpgDict:
                     cpgDict[key] = float(tmp[meth_col]) / 100.0
                 else:
-                    print("###\timportGroundTruth_BedMethyl_from_Encode SanityCheckError: One CpG should not have more than 1 entry")
+                    logger.error("###\timportGroundTruth_BedMethyl_from_Encode SanityCheckError: One CpG should not have more than 1 entry")
 
     infile.close()
     logger.debug("###\timportGroundTruth_BedMethyl_from_Encode: loaded information for {} CpGs, ({} rows)".format(len(cpgDict), nrow))
@@ -1342,7 +1342,7 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
                 continue
         else:
             logger.error("###\timportGroundTruth_coverage_output_from_Bismark InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            exit()
+            sys.exit(-1)
 
         if chrFilter == False or chrFilter == tmp[chr_col]:
             try:
@@ -1360,7 +1360,7 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
                         cpgDict[key] = float(tmp[meth_col]) / 100.0
                     else:
                         logger.error("###\timportGroundTruth_coverage_output_from_Bismark SanityCheckError: One CpG should not have more than 1 entry")
-                        sys.exit(0)
+                        sys.exit(-1)
                 except:
                     logger.error(f" ### Error parse gbTruth row = {row}")
                     continue
@@ -1434,8 +1434,8 @@ def importGroundTruth_coverage_output_from_Bismark_BedGraph(infileName, chr_col=
                 logger.error(f" ### error when parse ground_truth row={row}")
                 continue
         else:
-            print("###\timportGroundTruth_coverage_output_from_Bismark InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            exit()
+            logger.error("###\timportGroundTruth_coverage_output_from_Bismark InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            sys.exit(-1)
 
         try:
             key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
@@ -1468,7 +1468,7 @@ def plot_AUC_curve(scores, y, ax, title="", outfile=None):
         plt.title(title)
         plt.legend(loc="lower right")
     except ValueError:
-        print("###\tERROR for plot_AUC_curve: y:", y, "scores:", scores)
+        logger.error(f"###\tERROR for plot_AUC_curve: y: {y}, scores: {scores}")
 
 
 def importGroundTruth_BS():
@@ -1724,7 +1724,7 @@ def computePerReadStats(ontCalls, bsReference, title, bedFile=False, ontCutt_per
     try:
         fpr, tpr, _ = roc_curve(y, scores)
     except ValueError:
-        print("###\tERROR for roc_curve: y:", y, "scores:", scores, "\nother settings:", title, bedFile, secondFilterBed, secondFilterBed_4Corr)
+        logger.error(f"###\tERROR for roc_curve: y:{y}, scores: {scores}, \nother settings: {title}, {bedFile}, {secondFilterBed}, {secondFilterBed_4Corr}")
         fprSwitch = 0
         roc_auc = 0
 
@@ -2011,7 +2011,7 @@ def computePerReadStats_v3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perR
     try:
         fpr, tpr, _ = roc_curve(y, scores)
     except ValueError:
-        print("###\tERROR for roc_curve: y:", y, "scores:", scores, "\nother settings:", title, bedFile, secondFilterBed, secondFilterBed_4Corr)
+        logger.error(f"###\tERROR for roc_curve: y:{y}, scores:{scores}, \nother settings: {title}, {bedFile}, {secondFilterBed}, {secondFilterBed_4Corr}")
         fprSwitch = 0
         roc_auc = 0
 
@@ -2264,7 +2264,7 @@ def computePerReadStats_v2_for_roc_auc(ontCalls, bsReference, title, bedFile=Fal
     try:
         fpr, tpr, _ = roc_curve(y, scores)
     except ValueError:
-        print("###\tERROR for roc_curve: y:", y, "scores:", scores, "\nother settings:", title, bedFile, secondFilterBed, secondFilterBed_4Corr)
+        logger.error(f"###\tERROR for roc_curve: y: {y}, scores: {scores}, \nother settings: {title}, {bedFile}, {secondFilterBed}, {secondFilterBed_4Corr}")
         fprSwitch = 0
         roc_auc = 0
 
@@ -2468,8 +2468,8 @@ def combine2programsCalls_4Corr(calls1, calls2, cutt=4, outfileName=False):
             if calls2[call] >= cutt:
                 filteredCalls2[call] = cutt  # calls2[call]
     #         else:
-    #             print("WARNING ### combine2programsCalls_4Corr ### calls2[call]: {}".format(type(calls2[call])))
-    print(len(filteredCalls1), len(filteredCalls2))
+    #             logger.error("WARNING ### combine2programsCalls_4Corr ### calls2[call]: {}".format(type(calls2[call])))
+    logger.debug(f'{len(filteredCalls1)}, {len(filteredCalls2)}')
     tmp = dict.fromkeys(set(filteredCalls1.keys()).intersection(set(filteredCalls2.keys())), cutt)
     if outfileName != False:
         outfile = open(outfileName, 'w')
@@ -2477,7 +2477,7 @@ def combine2programsCalls_4Corr(calls1, calls2, cutt=4, outfileName=False):
             outfile.write(key)
         outfile.close()
 
-    print("combine2programsCalls_4Corr DONE")
+    logger.debug("combine2programsCalls_4Corr DONE")
     return tmp
     # else:
     #     print("combine2programsCalls_4Corr DONE")
@@ -2617,7 +2617,7 @@ def NonSingletonsScanner(referenceGenomeFile, outfileName_s, outfileName_ns):
     The output file is in 1-based coordinate system.
     '''
     reference = SeqIO.to_dict(SeqIO.parse(referenceGenomeFile, "fasta"))
-    print("###\tNonSingletonsScanner: {} reference genome parsed".format(referenceGenomeFile))
+    logger.debug("###\tNonSingletonsScanner: {} reference genome parsed".format(referenceGenomeFile))
 
     outfile_s = open(outfileName_s, "w")  # "s" stands for Singletons
     outfile_ns = open(outfileName_ns, "w")  # "s" stands for Non-Singletons
@@ -2656,12 +2656,12 @@ def NonSingletonsScanner(referenceGenomeFile, outfileName_s, outfileName_ns):
             #             print(chromosome, s, e, "NON-SINGLETON")
             outfile_ns.write("{}\t{}\t{}\n".format(chromosome, s, e))
 
-        print("###\tNonSingletonsScanner: chromosome {} processed".format(chromosome))
+        logger.debug("###\tNonSingletonsScanner: chromosome {} processed".format(chromosome))
 
     outfile_s.close()
     outfile_ns.close()
 
-    print("###\tNonSingletonsScanner: {} file processed".format(referenceGenomeFile))
+    logger.debug("###\tNonSingletonsScanner: {} file processed".format(referenceGenomeFile))
 
 
 def concat_dir_fn(outdir, fn):
@@ -2976,4 +2976,4 @@ def perRead2Frequency(inputDict, outfileName):
         outfile.write("{}\t{}\t{}\t{}\n".format(cpg.strip(), round(sum(inputDict[cpg]) / float(len(inputDict[cpg])) * 100), sum(inputDict[cpg]), len(inputDict[cpg])))
 
     outfile.close()
-    print("###\tperRead2Frequency: completed frequency calculation for {} file".format(outfileName))
+    logger.debug("###\tperRead2Frequency: completed frequency calculation for {} file".format(outfileName))
