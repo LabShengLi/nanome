@@ -1271,7 +1271,7 @@ def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, 
     return cpgDict
 
 
-def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_col=1, meth_col=3, meth_reads_col=4, unmeth_reads_col=5, covCutt=10, baseCount=1, chrFilter=False, gzippedInput=True):
+def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_col=1, meth_col=3, meth_reads_col=4, unmeth_reads_col=5, covCutt=10, baseCount=1, chrFilter=False, gzippedInput=True, includeCov=False):
     '''
     
     ### Description of the columns in this format:
@@ -1335,8 +1335,8 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
                 continue
         elif baseCount == 0:
             try:
-                start = int(tmp[start_col])
-                end = start + 1
+                start = int(tmp[start_col]) - 1
+                end = int(tmp[start_col])
             except:
                 logger.error(f" ### error when parse ground_truth row={row}")
                 continue
@@ -1357,7 +1357,10 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
                     key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
                     if key not in cpgDict:
                         # TODO: add coverage to values also
-                        cpgDict[key] = float(tmp[meth_col]) / 100.0
+                        if includeCov:
+                            cpgDict[key] = [float(tmp[meth_col]) / 100.0, temp_meth_and_unmeth]
+                        else:
+                            cpgDict[key] = float(tmp[meth_col]) / 100.0
                     else:
                         logger.error("###\timportGroundTruth_coverage_output_from_Bismark SanityCheckError: One CpG should not have more than 1 entry")
                         sys.exit(-1)
@@ -2417,7 +2420,20 @@ def save_keys_to_bed(keys, outfn):
     for key in keys:
         outfile.write(key)
     outfile.close()
-    pass
+
+
+def save_call_or_bgtruth_to_bed(call, outfn):
+    outfile = open(outfn, 'w')
+    for key in call:
+        outfile.write(key[:-1])
+        ret = call[key]
+        if type(ret) is list:
+            for k in ret:
+                outfile.write(f'\t{k}')
+            outfile.write(f'\n')
+        else:
+            outfile.write(f'\t{key}\n')
+    outfile.close()
 
 
 def combine2programsCalls(calls1, calls2, outfileName=False):
