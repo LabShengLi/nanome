@@ -116,6 +116,7 @@ if __name__ == '__main__':
         logger.info(f'BG-Truth join with {name1} get {len(overlapCpGs)} CpGs')
         outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-bgtruth-{name1}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
         save_keys_to_bed(overlapCpGs, outfn)
+
     df = pd.DataFrame(dataset, index=name_calls)
     outfn = os.path.join(out_dir, f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.csv')
     df.to_csv(outfn)
