@@ -1,6 +1,5 @@
 #!/home/liuya/anaconda3/envs/nmf/bin/python
-
-
+import glob
 import logging
 import os
 import sys
@@ -23,34 +22,60 @@ dtypes = [str, np.int64, np.int64, np.float64, np.int64] + \
 
 dtype_dict = {col: dt for col, dt in zip(colnames, dtypes)}
 
+fn_base_dir = '/projects/li-lab/yang/workspace/nano-compare/src/nanocompare/bedtools'
 
-def load_df(infn='K562-WGBS-BGTruth-Tombo-closest.bed'):
-    infn = os.path.join('/projects/li-lab/yang/workspace/nano-compare/src/nanocompare/bedtools', infn)
+
+def load_df(infn):
+    """
+    Load the infile for closest operation of two bed files
+    :param infn:
+    :return:
+    """
+
+    # infn = os.path.join(fn_base_dir, infn)
     df = pd.read_csv(infn, sep='\t', header=None, dtype=dtype_dict)
     df.columns = colnames
     df['meth-freq-2'] = df['meth-freq-2'].replace('.', '0.0').astype(np.float64)
-    logging.debug(df)
-    logging.info(df.dtypes)
+    # logging.debug(df)
+    # logging.info(df.dtypes)
     return df
 
 
-def plot_hist_of_df():
-    infn = 'K562-WGBS-Tombo-BGTruth-closest.bed'
+def plot_hist_of_df(infn, nearest_cutoff=10, nearest_col=-1):
+    """
+    Plot the histogram of closest results (Nereast CpGs sites)
+    :param infn:
+    :param nearest_cutoff:
+    :return:
+    """
+    title = os.path.basename(infn).replace(".bed", '').replace('meth-cov-', '').replace('-bgtruth-closest', '')
 
     df = load_df(infn=infn)
 
-    data = df['nearest-dist']
-    data = data[data <= 10]
+    data = df.iloc[:, nearest_col]
+    data = data[data <= nearest_cutoff]
 
-    plt.figure(figsize=(5, 4))
-    # Density Plot and Histogram of all arrival delays
-    ax = sns.distplot(data, hist=True, kde=False, norm_hist=True,
-                      bins=10, color='darkblue',
-                      hist_kws={'edgecolor': 'black'},
-                      kde_kws={'linewidth': 2})
+    logging.debug(data.value_counts())
 
-    ax.set_xlim(0, 10)
-    ax.set_title('Tombo with BG-Truth on K562')
+    vc = data.value_counts()
+    num_bins = len(vc)
+    min_x = min(vc.index)
+    logging.debug(f'min_x={min_x}, num_bins={num_bins}')
+
+    plt.figure(figsize=(4, 3))
+
+    ax = sns.histplot(data=data, stat='probability', bins=num_bins)  # discrete=True,
+
+    ax.set_xlim(min_x, nearest_cutoff)
+    ax.set_title(title)
+    ax.set_xlabel('Nearest distances by closest')
+
+    mids = [rect.get_x() + rect.get_width() / 2 for rect in ax.patches]
+    ax.set_xticks(mids)
+    if min_x == 0:
+        ax.set_xticklabels(list(range(nearest_cutoff + 1)))
+    else:
+        ax.set_xticklabels([-1] + list(range(nearest_cutoff + 1)))
 
     # sns.displot(df, x="nearest-dist")
     outfn = os.path.join(pic_base_dir, f'dist-{os.path.basename(infn)}.png')
@@ -63,4 +88,8 @@ def plot_hist_of_df():
 
 if __name__ == '__main__':
     set_log_debug_level()
-    plot_hist_of_df()
+
+    fnlist = glob.glob(f"{fn_base_dir}/*closest.bed")
+
+    for fn in fnlist:
+        plot_hist_of_df(infn=fn)
