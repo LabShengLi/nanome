@@ -491,7 +491,7 @@ def importPredictions_Nanopolish_3(infileName, baseCount=0, logLikehoodCutt=2.5,
     return cpgDict
 
 
-def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, meth_col=8, baseCount=1):
+def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=2, meth_col=8, baseCount=1):
     '''
     Note that the function requires per read stats, not frequencies of methylation.
     !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
@@ -540,14 +540,16 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, meth_col=8,
         if baseCount == 1:
             start = int(tmp[start_col]) + 1
             end = start
+            strand = tmp[strand_col]
         elif baseCount == 0:
             start = int(tmp[start_col])
             end = start + 1
+            strand = tmp[strand_col]
         else:
             logger.error("###\timportPredictions_DeepSignal InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
             sys.exit(-1)
         #         key = (tmp[chr_col], start)
-        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
+        key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
         if key not in cpgDict:
             cpgDict[key] = []
         #         cpgDict[key].append(float(tmp[meth_col])) ##### uncomment this line to get probabilities instead of final, binary calls
@@ -630,7 +632,7 @@ def importPredictions_DeepSignal3(infileName, chr_col=0, start_col=1, meth_col=7
     return cpgDict
 
 
-def importPredictions_Tombo(infileName, chr_col=0, start_col=1, meth_col=4, baseCount=1, cutoff=2.5):
+def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=4, baseCount=1, cutoff=2.5):
     '''
     Note that the function requires per read stats, not frequencies of methylation.
     !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
@@ -670,6 +672,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, meth_col=4, base
             try:
                 start = int(tmp[start_col]) + 1
                 end = start
+                strand = tmp[strand_col]
             except:
                 logger.error(f" ####Tombo parse error at row={row}")
                 continue
@@ -677,6 +680,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, meth_col=4, base
             try:
                 start = int(tmp[start_col])
                 end = start + 1
+                strand = tmp[strand_col]
             except:
                 logger.error(f" ####Tombo parse error at row={row}")
                 continue
@@ -684,7 +688,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, meth_col=4, base
             logger.error("###\timportPredictions_Tombo InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
             sys.exit(-1)
         #         key = (tmp[chr_col], start)
-        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
+        key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
 
         try:
             methCall = float(tmp[meth_col])
@@ -886,7 +890,7 @@ def importPredictions_Tombo3(infileName, chr_col=0, start_col=1, meth_col=4, bas
     return cpgDict
 
 
-def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, meth_reads_col=-1, coverage_col=-3, baseCount=1):
+def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_reads_col=-1, coverage_col=-3, baseCount=1):
     '''
     Note that the function requires per read stats, not frequencies of methylation.
 
@@ -942,14 +946,16 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, meth_reads_col
         if baseCount == 1:
             start = int(tmp[start_col]) + 1
             end = start
+            strand = tmp[strand_col]
         elif baseCount == 0:
             start = int(tmp[start_col])
             end = start + 1
+            strand = tmp[strand_col]
         else:
             logger.debug("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
             sys.exit(-1)
         #         key = (tmp[chr_col], start)
-        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
+        key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
 
         methCalls = int(tmp[meth_reads_col])
         coverage = int(tmp[coverage_col])
@@ -1039,7 +1045,7 @@ def importPredictions_DeepMod3(infileName, chr_col=0, start_col=1, meth_percenta
     return cpgDict
 
 
-def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, coverage_col=4, clustered_meth_freq_col=-1, baseCount=1):
+def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=4, clustered_meth_freq_col=-1, baseCount=1):
     '''
     Note that the function requires per read stats, not frequencies of methylation.
     !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
@@ -1094,14 +1100,16 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, cove
         if baseCount == 1:
             start = int(tmp[start_col]) + 1
             end = start
+            strand = tmp[strand_col]
         elif baseCount == 0:
             start = int(tmp[start_col])
             end = start + 1
+            strand = tmp[strand_col]
         else:
             logger.error("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
             sys.exit(-1)
 
-        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
+        key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
 
         methFreq = int(tmp[clustered_meth_freq_col])
         coverage = int(tmp[coverage_col])
@@ -1271,7 +1279,7 @@ def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, 
     return cpgDict
 
 
-def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_col=1, meth_col=3, meth_reads_col=4, unmeth_reads_col=5, covCutt=10, baseCount=1, chrFilter=False, gzippedInput=True, includeCov=False):
+def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_col=1, meth_col=3, meth_reads_col=4, unmeth_reads_col=5, strand_col=6, covCutt=10, baseCount=1, chrFilter=False, gzippedInput=True, includeCov=False):
     '''
     
     ### Description of the columns in this format:
@@ -1330,6 +1338,7 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
             try:
                 start = int(tmp[start_col])
                 end = start
+                strand = tmp[strand_col]
             except:
                 logger.error(f" ### error when parse ground_truth row={row}")
                 continue
@@ -1337,6 +1346,7 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
             try:
                 start = int(tmp[start_col]) - 1
                 end = int(tmp[start_col])
+                strand = tmp[strand_col]
             except:
                 logger.error(f" ### error when parse ground_truth row={row}")
                 continue
@@ -1354,7 +1364,7 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
             if temp_meth_and_unmeth >= covCutt:
                 try:
 
-                    key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
+                    key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
                     if key not in cpgDict:
                         # TODO: add coverage to values also
                         if includeCov:
@@ -2423,13 +2433,25 @@ def save_keys_to_bed(keys, outfn):
 
 
 def save_call_or_bgtruth_to_bed(call, outfn):
+    """
+    Save to BED6 file format
+
+    See also: https://bedtools.readthedocs.io/en/latest/content/general-usage.html
+    BED6: A BED file where each feature is described by chrom, start, end, name, score, and strand.
+    For example: chr1 11873 14409 uc001aaa.3 0 +
+
+    :param call:
+    :param outfn:
+    :return:
+    """
     outfile = open(outfn, 'w')
     for key in call:
-        outfile.write(key[:-1])
+        outfile.write(key[:-3])  # chr \t start \t end
         ret = call[key]
         if type(ret) is list:
             for k in ret:
-                outfile.write(f'\t{k}')
+                outfile.write(f'\t{k}')  # each other columns
+            outfile.write(f'\t{key[-2]}')  # strand info
             outfile.write(f'\n')
         else:
             outfile.write(f'\t{key}\n')
