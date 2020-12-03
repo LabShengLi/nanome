@@ -14,11 +14,39 @@ sys.path.append(nanocompare_prj)
 
 from global_config import set_log_debug_level, pic_base_dir
 
-colnames = ['chr-1', 'start-1', 'end-1', 'strand-1', 'meth-freq-1', 'cov-1'] + \
-           ['chr-2', 'start-2', 'end-2', 'strand-2', 'meth-freq-2', 'cov-2'] + ['nearest-dist']
+"""
+Sample file:
 
-dtypes = [str, np.int64, np.int64, str, np.float64, np.int64] + \
-         [str, np.int64, np.int64, str, np.float64, np.int64] + [np.int64]
+head K562_WGBS_Joined-meth-cov-DeepMod-baseCount0.bed
+chr1	2177309	2177310	0.75	4	-
+chr1	2177329	2177330	0.5	4	-
+chr1	2177539	2177540	0.25	4	-
+chr1	2177652	2177653	0.5	4	-
+chr1	2177725	2177726	0.5	4	-
+chr1	2177773	2177774	0.25	4	-
+chr1	2177909	2177910	0.5	4	-
+chr1	2177946	2177947	0.25	4	-
+chr1	2178202	2178203	0.25	4	-
+chr1	2178228	2178229	0.25	4	-
+
+head K562_WGBS_Joined-meth-cov-DeepMod-bgtruth-closest.bed
+chr1	2177309	2177310	0.75	4	-	chr1	2177308	2177309	1.0	17	-	1
+chr1	2177329	2177330	0.5	4	-	chr1	2177328	2177329	0.893157894736842	19	-	1
+chr1	2177539	2177540	0.25	4	-	chr1	2177538	2177539	0.9737500000000001	40	-	1
+chr1	2177652	2177653	0.5	4	-	chr1	2177651	2177652	0.9637931034482758	30	-	1
+chr1	2177725	2177726	0.5	4	-	chr1	2177724	2177725	0.7933333333333333	25	-	1
+chr1	2177773	2177774	0.25	4	-	chr1	2177769	2177770	0.7715384615384616	29	-	4
+chr1	2177909	2177910	0.5	4	-	chr1	2177908	2177909	1.0	30	-	1
+chr1	2177946	2177947	0.25	4	-	chr1	2177948	2177949	0.7012547	-	2
+chr1	2178202	2178203	0.25	4	-	chr1	2178189	2178190	0.59	66	-	13
+chr1	2178228	2178229	0.25	4	-	chr1	2178232	2178233	0.9249056603773584	55	-	4
+"""
+
+colnames = ['chr-1', 'start-1', 'end-1', 'meth-freq-1', 'cov-1', 'strand-1'] + \
+           ['chr-2', 'start-2', 'end-2', 'meth-freq-2', 'cov-2', 'strand-2'] + ['nearest-dist']
+
+dtypes = [str, np.int64, np.int64, np.float64, np.int64, str] + \
+         [str, np.int64, np.int64, np.float64, np.int64, str] + [np.int64]
 
 dtype_dict = {col: dt for col, dt in zip(colnames, dtypes)}
 

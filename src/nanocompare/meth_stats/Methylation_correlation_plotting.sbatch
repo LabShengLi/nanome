@@ -24,7 +24,8 @@ echo "RunPrefix: $RunPrefix"
 # mkdir $(dirname $RunPrefix)
 set -x
 
-baseDir=/projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats
+prj_dir=/projects/li-lab/yang/workspace/nano-compare
+baseDir=${prj_dir}/src/nanocompare/meth_stats
 pythonFn=Methylation_correlation_plotting.py
 
 python ${baseDir}/${pythonFn} $DeepSignal_calls $Tombo_calls $Nanopolish_calls \
