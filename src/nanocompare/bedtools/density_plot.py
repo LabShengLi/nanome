@@ -122,10 +122,32 @@ def plot_hist_of_df(infn, nearest_cutoff=10, nearest_col=-1):
     plt.close()
 
 
+def plot_hist_all_files():
+    fnlist = glob.glob(f"{fn_base_dir}/*closest.bed")
+    for fn in fnlist:
+        plot_hist_of_df(infn=fn)
+
+
+def gen_dist1_bedfiles():
+    """
+    Generate nearest distance difference ==1, sites to sanity-check
+    :return:
+    """
+    fnlist = glob.glob(f"{fn_base_dir}/*closest.bed")
+    for fn in fnlist[:]:
+        title = os.path.basename(fn).replace(".bed", '').replace('meth-cov-', '').replace('-bgtruth-closest', '')
+
+        df = load_df(infn=fn)
+        df = df[df.iloc[:, -1] == 1]
+        df = df.loc[:, ['chr-1', 'start-1', 'end-1', 'meth-freq-1', 'cov-1', 'strand-1']]
+
+        if len(df) > 0:
+            outfn = os.path.join(pic_base_dir, f'dist1-{title}.bed')
+            df.to_csv(outfn, sep='\t', index=None, header=None)
+        logging.info(f'Read file {fn} find nearest-distance==1 number = {len(df)}')
+
+
 if __name__ == '__main__':
     set_log_debug_level()
 
-    fnlist = glob.glob(f"{fn_base_dir}/*closest.bed")
-
-    for fn in fnlist:
-        plot_hist_of_df(infn=fn)
+    gen_dist1_bedfiles()

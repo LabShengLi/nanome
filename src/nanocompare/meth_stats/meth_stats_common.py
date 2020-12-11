@@ -13,6 +13,7 @@ sys.path.append(nanocompare_prj)
 from nanocompare.nanocompare_global_settings import nanocompare_basedir
 
 from global_config import *
+import pysam
 
 import re
 import pandas as pd
@@ -57,7 +58,7 @@ def report2dict(cr):
     return D_class_data
 
 
-def importPredictions_NanoXGBoost(infileName, chr_col=0, start_col=1, meth_col=4, baseCount=1):
+def importPredictions_NanoXGBoost(infileName, chr_col=0, start_col=1, meth_col=4, baseFormat=1):
     '''
     Note that the function requires per read stats, not frequencies of methylation.
     !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
@@ -100,12 +101,12 @@ def importPredictions_NanoXGBoost(infileName, chr_col=0, start_col=1, meth_col=4
 
     for row in infile:
         tmp = row.strip().split("\t")
-        if baseCount == 1:
+        if baseFormat == 1:
             start = int(tmp[start_col])
-        elif baseCount == 0:
+        elif baseFormat == 0:
             start = int(tmp[start_col]) + 1
         else:
-            logger.error("###\timportPredictions_NanoXGBoost InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            logger.error("###\timportPredictions_NanoXGBoost InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
         #         key = (tmp[chr_col], start)
         key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
@@ -121,7 +122,7 @@ def importPredictions_NanoXGBoost(infileName, chr_col=0, start_col=1, meth_col=4
 
 
 # not deprecated yet, even will Deprecated due to importPredictions_Nanopolish_2, which is based on Nanopolish code
-def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_ratio_col=4, sequence_col=-1, baseCount=1, logLikehoodCutt=2.5):
+def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_ratio_col=4, sequence_col=-2, strand_col=-1, num_sites_col=-3, baseFormat=1, logLikehoodCutt=2.5):
     '''
     !!! This function will be needed for NanoCompare project !!!
     
@@ -156,24 +157,26 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_rat
     for row in infile:
         tmp = row.strip().split("\t")
         if output_first:
-            logger.debug(enumerate(list(tmp)))
+            logger.debug(list(enumerate(tmp)))
             output_first = False
 
         if tmp[chr_col] != "chromosome":
             try:  # try to find if these columns are interpretable
                 start = int(tmp[start_col])
-                num_sites = int(tmp[-2])
+                num_sites = int(tmp[num_sites_col])
                 llr = float(tmp[log_lik_ratio_col])
+                strand_info = tmp[strand_col]
             except:
                 logger.error(f'###\tError when parsing row=[{row}] in {infileName}')
                 continue
+
             if num_sites == 1:  # we have singleton, i.e. only one CpG within the area
-                if baseCount == 0:
-                    key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start + 1)
-                elif baseCount == 1:
-                    key = "{}\t{}\t{}\n".format(tmp[chr_col], start + 1, start + 1)
+                if baseFormat == 0:
+                    key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, start + 1, strand_info)
+                elif baseFormat == 1:
+                    key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start + 1, start + 1, strand_info)
                 else:
-                    logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+                    logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
                     sys.exit(-1)
                 if key not in cpgDict:
                     cpgDict[key] = []
@@ -189,12 +192,12 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_rat
                     cpgStart = cpg.start() + firstCpgLoc + 1
                     cpgEnd = cpgStart
 
-                    if baseCount == 0:
-                        key = "{}\t{}\t{}\n".format(tmp[chr_col], cpgStart, cpgStart + 1)
-                    elif baseCount == 1:
-                        key = "{}\t{}\t{}\n".format(tmp[chr_col], cpgStart + 1, cpgStart + 1)
+                    if baseFormat == 0:
+                        key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], cpgStart, cpgStart + 1, strand_info)
+                    elif baseFormat == 1:
+                        key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], cpgStart + 1, cpgStart + 1, strand_info)
                     else:
-                        logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+                        logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
                         sys.exit(-1)
 
                     if key not in cpgDict:
@@ -491,7 +494,7 @@ def importPredictions_Nanopolish_3(infileName, baseCount=0, logLikehoodCutt=2.5,
     return cpgDict
 
 
-def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=2, meth_col=8, baseCount=1):
+def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=2, meth_col=8, baseFormat=1):
     '''
     We treate input as 0-based format
 
@@ -539,16 +542,16 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
 
     for row in infile:
         tmp = row.strip().split("\t")
-        if baseCount == 1:
+        if baseFormat == 1:
             start = int(tmp[start_col]) + 1
             end = start
             strand = tmp[strand_col]
-        elif baseCount == 0:
+        elif baseFormat == 0:
             start = int(tmp[start_col])
             end = start + 1
             strand = tmp[strand_col]
         else:
-            logger.error("###\timportPredictions_DeepSignal InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            logger.error("###\timportPredictions_DeepSignal InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
         #         key = (tmp[chr_col], start)
         key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
@@ -634,7 +637,7 @@ def importPredictions_DeepSignal3(infileName, chr_col=0, start_col=1, meth_col=7
     return cpgDict
 
 
-def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=4, baseCount=1, cutoff=2.5):
+def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=4, baseFormat=1, cutoff=2.5):
     '''
     We treate input as 0-based format
 
@@ -672,7 +675,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
 
     for row in infile:
         tmp = row.strip().split("\t")
-        if baseCount == 1:
+        if baseFormat == 1:
             try:
                 start = int(tmp[start_col]) + 1
                 end = start
@@ -680,7 +683,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
             except:
                 logger.error(f" ####Tombo parse error at row={row}")
                 continue
-        elif baseCount == 0:
+        elif baseFormat == 0:
             try:
                 start = int(tmp[start_col])
                 end = start + 1
@@ -689,7 +692,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
                 logger.error(f" ####Tombo parse error at row={row}")
                 continue
         else:
-            logger.error("###\timportPredictions_Tombo InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            logger.error("###\timportPredictions_Tombo InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
         #         key = (tmp[chr_col], start)
         key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
@@ -894,7 +897,7 @@ def importPredictions_Tombo3(infileName, chr_col=0, start_col=1, meth_col=4, bas
     return cpgDict
 
 
-def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_reads_col=-1, coverage_col=-3, baseCount=1):
+def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_reads_col=-1, coverage_col=-3, baseFormat=1):
     '''
     We treate input as 0-based format
 
@@ -949,16 +952,16 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
         if output_first:
             logger.debug(f'row = {list(enumerate(tmp))}')
             output_first = False
-        if baseCount == 1:
+        if baseFormat == 1:
             start = int(tmp[start_col]) + 1
             end = start
             strand = tmp[strand_col]
-        elif baseCount == 0:
+        elif baseFormat == 0:
             start = int(tmp[start_col])
             end = start + 1
             strand = tmp[strand_col]
         else:
-            logger.debug("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            logger.debug("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
         #         key = (tmp[chr_col], start)
         key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
@@ -1051,7 +1054,7 @@ def importPredictions_DeepMod3(infileName, chr_col=0, start_col=1, meth_percenta
     return cpgDict
 
 
-def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=4, clustered_meth_freq_col=-1, baseCount=1):
+def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=4, clustered_meth_freq_col=-1, baseFormat=1):
     '''
     Note that the function requires per read stats, not frequencies of methylation.
     !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
@@ -1103,16 +1106,16 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
             logger.debug(f'row = {list(enumerate(tmp))}')
             output_first = False
 
-        if baseCount == 1:
+        if baseFormat == 1:
             start = int(tmp[start_col]) + 1
             end = start
             strand = tmp[strand_col]
-        elif baseCount == 0:
+        elif baseFormat == 0:
             start = int(tmp[start_col])
             end = start + 1
             strand = tmp[strand_col]
         else:
-            logger.error("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            logger.error("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
 
         key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
@@ -1133,6 +1136,8 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
 def coverageFiltering(calls_dict, minCov=4, byLength=True):
     """
     Convert orignial call object from dict[cpg] = {cpg: [meth_freq_read1, ..., meth_freq_readn]} to dict[cpg] = {cpg:[meth_freq, coverage_number]}
+
+    Read-level -> Genome-level
 
     :param calls_dict:
     :param minCov:
@@ -1285,9 +1290,8 @@ def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, 
     return cpgDict
 
 
-def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_col=1, meth_col=3, meth_reads_col=4, unmeth_reads_col=5, strand_col=6, covCutt=10, baseCount=1, chrFilter=False, gzippedInput=True, includeCov=False):
+def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_col=1, meth_col=3, meth_reads_col=4, unmeth_reads_col=5, strand_col=6, covCutt=10, baseFormat=1, chrFilter=False, gzippedInput=True, includeCov=False):
     '''
-
     We modified this function due to the histogram shows it is 0-based format, NOT 1-based format
     
     ### Description of the columns in this format:
@@ -1316,7 +1320,6 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
     cpgDict = {"chr\tstart\tend\n" : methylation level (format: float (0-1))} # have all cpgs with specified cutoff (not only 100% 5mC or 100% 5C)
     output coordinates are 1-based genome coordinates.
 
-
     Sample gbtruth file is followings:
 
     gzip -cd /pod/2/li-lab/Nanopore_methyl_compare/result/BS_seq_result/HL60_RRBS_ENCFF000MDA.Read_R1.Rep_1_trimmed_bismark_bt2.bismark.cov.gz | head
@@ -1342,7 +1345,7 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
 
     for row in infile:
         tmp = row.decode('ascii').strip().split("\t")
-        if baseCount == 1:
+        if baseFormat == 1:
             try:
                 start = int(tmp[start_col]) + 1
                 end = start
@@ -1350,7 +1353,7 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
             except:
                 logger.error(f" ### error when parse ground_truth row={row}")
                 continue
-        elif baseCount == 0:
+        elif baseFormat == 0:
             try:
                 start = int(tmp[start_col])
                 end = start + 1
@@ -1359,7 +1362,7 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
                 logger.error(f" ### error when parse ground_truth row={row}")
                 continue
         else:
-            logger.error("###\timportGroundTruth_coverage_output_from_Bismark InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
+            logger.error("###\timportGroundTruth_coverage_output_from_Bismark InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
 
         if chrFilter == False or chrFilter == tmp[chr_col]:
@@ -3022,3 +3025,104 @@ def perRead2Frequency(inputDict, outfileName):
 
     outfile.close()
     logger.debug("###\tperRead2Frequency: completed frequency calculation for {} file".format(outfileName))
+
+
+def load_nanopolish_df(infn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/APL/APL.nanopolish_methylation_calls.tsv'):
+    """
+    Load the nanopolish original results into a dataframe
+
+    head /projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/APL/APL.nanopolish_methylation_calls.tsv
+    chromosome	start	end	read_name	log_lik_ratio	log_lik_methylated	log_lik_unmethylated	num_calling_strands	num_cpgs	sequence
+    chr1	14348	14353	542a58d6-b2f8-4ccf-829f-7a1977876c6c	8.14	-244.99-253.13	1	2	GACCCCGAGACGTTTG
+    chr1	14434	14434	542a58d6-b2f8-4ccf-829f-7a1977876c6c	0.79	-126.97-127.77	1	1	TGTGCCGTTTT
+    chr1	14468	14468	542a58d6-b2f8-4ccf-829f-7a1977876c6c	-0.97	-186.33-185.36	1	1	AGTGGCGCAGG
+    :param infn:
+    :return:
+    """
+    df = pd.read_csv(infn, sep='\t')
+    # logger.debug(df)
+    # logger.info(df.iloc[:, -3].value_counts())
+
+    return df
+
+
+def sam_test(infn='/projects/li-lab/yang/workspace/nano-compare/data/bam-files/K562.sam'):
+    """
+    return format is followings:
+    2020-12-11 12:12:54,582 - [meth_stats_common.py:3066] - INFO:                                    read-name strand-info
+    0       dd31ef2a-8826-4f1a-afd9-1d7a9bdea414           +
+    1       628585d4-1947-463d-9787-04040600cb65           +
+    2       db24bf7d-086f-424f-afc4-e48dca59de80           +
+    3       a3ea655a-32ac-4b6b-b9ec-92dae00fc91c           +
+    4       be5ad23e-2379-4a6a-87e9-024676bdbbdb           +
+    ...                                      ...         ...
+    263013  60e6fb8d-0e99-4b02-91ec-562325503640           -
+    263014  c22e60d4-285c-4947-a949-a886793d4a1e           -
+    263015  635e260a-82c4-4473-894d-952008eff026           -
+    263016  39cfbc37-dcc7-4b3f-8e27-af1bd82e9d95           +
+    263017  99351046-7f42-4187-b880-3ebfcf33de86           +
+
+    [263018 rows x 2 columns]
+    :param infn:
+    :return:
+    """
+    data = {}  # key=read-name, value= + or -
+    strand_info = '+'
+    samfile = pysam.AlignmentFile(infn, "r")
+    for read in samfile.fetch():
+        # logger.debug(read)
+        # logger.debug(read.flag)
+
+        if (read.flag & 0x10) == 0x10:
+            strand_info = '-'
+        else:
+            strand_info = '+'
+        # logger.debug(type(read))
+        # logger.debug(dir(read))
+        # logger.debug(read.query_name)
+        data.update({read.query_name: strand_info})
+        # break
+    samfile.close()
+
+    df = pd.Series(data).to_frame()
+    df = df.reset_index()
+    df.columns = ['read-name', 'strand-info']
+    # df.columns[0] = 'read-name'
+    # df.columns[1] = 'strand-info'
+    logger.info(len(data))
+    logger.info(df)
+    logger.info(df['strand-info'].value_counts())
+    return df
+
+
+def add_strand_info_for_nanopolish(nanopolish_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.methylation_calls.tsv', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sam.gz'):
+    """
+     [(0, 'chromosome'), (1, 'start'), (2, 'end'), (3, 'read_name'), (4, 'log_lik_ratio'), (5, 'log_lik_methylated'), (6, 'log_lik_unmethylated'), (7, 'num_calling_strands'), (8, 'num_cpgs'), (9, 'sequence'), (10, 'strand-info')]
+
+
+    :param nanopolish_fn:
+    :param sam_fn:
+    :return:
+    """
+    df2 = sam_test(infn=sam_fn)
+    df1 = load_nanopolish_df(infn=nanopolish_fn)
+
+    df = df1.merge(df2, left_on='read_name', right_on='read-name', how='left')
+    df = df.drop('read-name', axis=1)
+    logger.info(df)
+    logger.info(list(enumerate(df.columns)))
+
+    if len(df1) != len(df):
+        raise Exception("We found the read-name of Nanopolish results is not mapped all to SAM/BAM file, please check if the BAM file is used for Nanopolish")
+
+    # df = df.iloc[:, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
+
+    outfn = os.path.join(pic_base_dir, f'{os.path.splitext(os.path.basename(nanopolish_fn))[0]}-nanopolish-strand-info.tsv')
+    df.to_csv(outfn, sep='\t', index=False)
+    logger.info(f'save to {outfn}')
+
+
+if __name__ == '__main__':
+    set_log_debug_level()
+
+    add_strand_info_for_nanopolish()
