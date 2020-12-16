@@ -117,6 +117,17 @@ if __name__ == '__main__':
         outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-bgtruth-{name1}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
         save_keys_to_bed(overlapCpGs, outfn)
 
+    logger.debug(f"Study set intersection of deepsignal, nanopolish with bgtruth")
+    dataset = []
+    bgtruthCpGs = set(list(bgTruth.keys()))
+    for call1, name1 in zip(all_calls, name_calls):
+        if call1 is None:
+            continue
+        if name1 not in ['DeepSignal', 'Nanopolish']:
+            continue
+        overlapCpGs = bgtruthCpGs.intersection(set(list(call1.keys())))
+    logger.info(f'Reporting deepsignal, nanopolish with bgtruth, joined results = {len(overlapCpGs)}')
+
     df = pd.DataFrame(dataset, index=name_calls)
     outfn = os.path.join(out_dir, f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.csv')
     df.to_csv(outfn)

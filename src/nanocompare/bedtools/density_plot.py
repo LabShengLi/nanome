@@ -81,6 +81,7 @@ def plot_hist_of_df(infn, nearest_cutoff=10, nearest_col=-1):
     df = load_df(infn=infn)
 
     data = df.iloc[:, nearest_col]
+    data = data[data != -1]
     data = data[data <= nearest_cutoff]
     # data = data[data >= 0]  # remove -1, due to no occurrance in bg-truth
 
@@ -123,6 +124,10 @@ def plot_hist_of_df(infn, nearest_cutoff=10, nearest_col=-1):
 
 
 def plot_hist_all_files():
+    """
+    Plot histogram plot of tool joined with bg-truth
+    :return:
+    """
     fnlist = glob.glob(f"{fn_base_dir}/*closest.bed")
     for fn in fnlist:
         plot_hist_of_df(infn=fn)
@@ -149,5 +154,6 @@ def gen_dist1_bedfiles():
 
 if __name__ == '__main__':
     set_log_debug_level()
-
+    plot_hist_all_files()
     gen_dist1_bedfiles()
+    # gen_dist1_bedfiles()

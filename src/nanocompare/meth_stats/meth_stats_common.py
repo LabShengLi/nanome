@@ -124,6 +124,12 @@ def importPredictions_NanoXGBoost(infileName, chr_col=0, start_col=1, meth_col=4
 # not deprecated yet, even will Deprecated due to importPredictions_Nanopolish_2, which is based on Nanopolish code
 def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_ratio_col=4, sequence_col=-2, strand_col=-1, num_sites_col=-3, baseFormat=1, logLikehoodCutt=2.5):
     '''
+    We assume the input is 0-based for the start col, such as chr10 122 122
+
+    if strand-info=='-' start, end +1 etc.
+
+    We clear the bugs in followings for correct CG, and how about reverse strand GC?
+
     !!! This function will be needed for NanoCompare project !!!
     
     ### Example input format from Nanopolish:
@@ -166,6 +172,8 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_rat
                 num_sites = int(tmp[num_sites_col])
                 llr = float(tmp[log_lik_ratio_col])
                 strand_info = tmp[strand_col]
+                if strand_info == '-':
+                    start = start + 1
             except:
                 logger.error(f'###\tError when parsing row=[{row}] in {infileName}')
                 continue
@@ -189,8 +197,9 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_rat
                 firstCpgLoc = int(tmp[start_col]) - 5
                 sequence = tmp[sequence_col]
                 for cpg in re.finditer("CG", sequence):
-                    cpgStart = cpg.start() + firstCpgLoc + 1
-                    cpgEnd = cpgStart
+                    cpgStart = cpg.start() + firstCpgLoc
+                    if strand_info == '-':
+                        cpgStart = cpgStart + 1
 
                     if baseFormat == 0:
                         key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], cpgStart, cpgStart + 1, strand_info)
@@ -3046,7 +3055,7 @@ def load_nanopolish_df(infn='/projects/li-lab/yang/workspace/nano-compare/data/t
     return df
 
 
-def sam_test(infn='/projects/li-lab/yang/workspace/nano-compare/data/bam-files/K562.sam'):
+def load_sam_as_strand_info_df(infn='/projects/li-lab/yang/workspace/nano-compare/data/bam-files/K562.sam'):
     """
     return format is followings:
     2020-12-11 12:12:54,582 - [meth_stats_common.py:3066] - INFO:                                    read-name strand-info
@@ -3073,7 +3082,7 @@ def sam_test(infn='/projects/li-lab/yang/workspace/nano-compare/data/bam-files/K
         # logger.debug(read)
         # logger.debug(read.flag)
 
-        if (read.flag & 0x10) == 0x10:
+        if (read.flag & 0x10) == 0x10:  # according to spec: https://samtools.github.io/hts-specs/SAMv1.pdf
             strand_info = '-'
         else:
             strand_info = '+'
@@ -3104,7 +3113,7 @@ def add_strand_info_for_nanopolish(nanopolish_fn='/projects/li-lab/yang/results/
     :param sam_fn:
     :return:
     """
-    df2 = sam_test(infn=sam_fn)
+    df2 = load_sam_as_strand_info_df(infn=sam_fn)
     df1 = load_nanopolish_df(infn=nanopolish_fn)
 
     df = df1.merge(df2, left_on='read_name', right_on='read-name', how='left')
@@ -3120,9 +3129,9 @@ def add_strand_info_for_nanopolish(nanopolish_fn='/projects/li-lab/yang/results/
     outfn = os.path.join(pic_base_dir, f'{os.path.splitext(os.path.basename(nanopolish_fn))[0]}-nanopolish-strand-info.tsv')
     df.to_csv(outfn, sep='\t', index=False)
     logger.info(f'save to {outfn}')
+    return df
 
 
 if __name__ == '__main__':
     set_log_debug_level()
-
     add_strand_info_for_nanopolish()
