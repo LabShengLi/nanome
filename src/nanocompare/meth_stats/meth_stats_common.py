@@ -174,6 +174,8 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_rat
                 strand_info = tmp[strand_col]
                 if strand_info == '-':
                     start = start + 1
+                elif strand_info != '+':
+                    raise Exception(f'The file [{infileName}] contains no strand-info, please check it')
             except:
                 logger.error(f'###\tError when parsing row=[{row}] in {infileName}')
                 continue
@@ -200,6 +202,8 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_rat
                     cpgStart = cpg.start() + firstCpgLoc
                     if strand_info == '-':
                         cpgStart = cpgStart + 1
+                    elif strand_info != '+':
+                        raise Exception(f'The file [{infileName}] contains no strand-info, please check it')
 
                     if baseFormat == 0:
                         key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], cpgStart, cpgStart + 1, strand_info)
@@ -3038,7 +3042,7 @@ def perRead2Frequency(inputDict, outfileName):
 
 def load_nanopolish_df(infn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/APL/APL.nanopolish_methylation_calls.tsv'):
     """
-    Load the nanopolish original results into a dataframe
+    Load the nanopolish original output results tsv into a dataframe
 
     head /projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/APL/APL.nanopolish_methylation_calls.tsv
     chromosome	start	end	read_name	log_lik_ratio	log_lik_methylated	log_lik_unmethylated	num_calling_strands	num_cpgs	sequence
@@ -3057,6 +3061,8 @@ def load_nanopolish_df(infn='/projects/li-lab/yang/workspace/nano-compare/data/t
 
 def load_sam_as_strand_info_df(infn='/projects/li-lab/yang/workspace/nano-compare/data/bam-files/K562.sam'):
     """
+    Load strand info from SAM files, and make a df of read-name and strand-info as follows:
+
     return format is followings:
     2020-12-11 12:12:54,582 - [meth_stats_common.py:3066] - INFO:                                    read-name strand-info
     0       dd31ef2a-8826-4f1a-afd9-1d7a9bdea414           +
@@ -3106,11 +3112,16 @@ def load_sam_as_strand_info_df(infn='/projects/li-lab/yang/workspace/nano-compar
 
 def add_strand_info_for_nanopolish(nanopolish_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.methylation_calls.tsv', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sam.gz'):
     """
+    Combine the nanopolish output tsv results with strand-info from SAM files.
+
+    This is due to original nanopolish output results contain no strand-info, we are going to solve this problem.
+
+    Return results columns are:
      [(0, 'chromosome'), (1, 'start'), (2, 'end'), (3, 'read_name'), (4, 'log_lik_ratio'), (5, 'log_lik_methylated'), (6, 'log_lik_unmethylated'), (7, 'num_calling_strands'), (8, 'num_cpgs'), (9, 'sequence'), (10, 'strand-info')]
 
 
-    :param nanopolish_fn:
-    :param sam_fn:
+    :param nanopolish_fn: nanopolish file name
+    :param sam_fn: SAM file name for strand-info
     :return:
     """
     df2 = load_sam_as_strand_info_df(infn=sam_fn)

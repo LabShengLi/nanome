@@ -117,6 +117,10 @@ if __name__ == '__main__':
         outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-bgtruth-{name1}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
         save_keys_to_bed(overlapCpGs, outfn)
 
+    df = pd.DataFrame(dataset, index=name_calls)
+    outfn = os.path.join(out_dir, f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.csv')
+    df.to_csv(outfn)
+
     logger.debug(f"Study set intersection of deepsignal, nanopolish with bgtruth")
     dataset = []
     bgtruthCpGs = set(list(bgTruth.keys()))
@@ -127,10 +131,6 @@ if __name__ == '__main__':
             continue
         overlapCpGs = bgtruthCpGs.intersection(set(list(call1.keys())))
     logger.info(f'Reporting deepsignal, nanopolish with bgtruth, joined results = {len(overlapCpGs)}')
-
-    df = pd.DataFrame(dataset, index=name_calls)
-    outfn = os.path.join(out_dir, f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.csv')
-    df.to_csv(outfn)
 
     logger.debug(f"Start set intersection with all joined together (4+1 tools with bgtruth)")
     coveredCpGs = set(list(bgTruth.keys()))
