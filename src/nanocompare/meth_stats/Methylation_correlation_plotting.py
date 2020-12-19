@@ -59,7 +59,7 @@ if __name__ == '__main__':
         Nanopolish_calls = None
     else:
         # Nanopolish_calls = importPredictions_Nanopolish_v2(argv[3])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/Leukemia_ONT/K562.nanopolish/K562.methylation_calls.tsv", IncludeNonSingletons = True)
-        Nanopolish_calls = importPredictions_Nanopolish(argv[3], baseFormat=baseFormat)
+        Nanopolish_calls = importPredictions_Nanopolish(argv[3], baseFormat=baseFormat, logLikehoodCutt=2.0)
         Nanopolish_calls = coverageFiltering(Nanopolish_calls, minCov=minToolCovCutt)
 
     logger.debug(f"Start load DeepMod")
@@ -123,14 +123,28 @@ if __name__ == '__main__':
 
     logger.debug(f"Study set intersection of deepsignal, nanopolish with bgtruth")
     dataset = []
-    bgtruthCpGs = set(list(bgTruth.keys()))
+    overlapCpGs = set(list(bgTruth.keys()))
     for call1, name1 in zip(all_calls, name_calls):
         if call1 is None:
             continue
         if name1 not in ['DeepSignal', 'Nanopolish']:
             continue
-        overlapCpGs = bgtruthCpGs.intersection(set(list(call1.keys())))
+        overlapCpGs = overlapCpGs.intersection(set(list(call1.keys())))
     logger.info(f'Reporting deepsignal, nanopolish with bgtruth, joined results = {len(overlapCpGs)}')
+
+    logger.debug(f"Study set intersection of deepsignal, nanopolish")
+    dataset = []
+    overlapCpGs = None
+    for call1, name1 in zip(all_calls, name_calls):
+        if call1 is None:
+            continue
+        if name1 not in ['DeepSignal', 'Nanopolish']:
+            continue
+        if overlapCpGs is None:
+            overlapCpGs = set(list(call1.keys()))
+        else:
+            overlapCpGs = overlapCpGs.intersection(set(list(call1.keys())))
+    logger.info(f'Reporting deepsignal, nanopolish joined results = {len(overlapCpGs)}')
 
     logger.debug(f"Start set intersection with all joined together (4+1 tools with bgtruth)")
     coveredCpGs = set(list(bgTruth.keys()))

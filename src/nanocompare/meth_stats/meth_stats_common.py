@@ -4,6 +4,7 @@ Common functions used by Methylation_correlation_plotting.py and Universal_meth_
 Such as import_DeepSignal, import_BGTruth, etc.
 """
 
+import argparse
 import pickle
 import sys
 
@@ -11,6 +12,7 @@ nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
 sys.path.append(nanocompare_prj)
 
 from nanocompare.nanocompare_global_settings import nanocompare_basedir
+from tqdm import tqdm
 
 from global_config import *
 import pysam
@@ -3059,6 +3061,25 @@ def load_nanopolish_df(infn='/projects/li-lab/yang/workspace/nano-compare/data/t
     return df
 
 
+def load_tombo_df(infn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.tombo_perReadsStats.bed'):
+    """
+    Load the nanopolish original output results tsv into a dataframe
+
+    head /projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/APL/APL.nanopolish_methylation_calls.tsv
+    chromosome	start	end	read_name	log_lik_ratio	log_lik_methylated	log_lik_unmethylated	num_calling_strands	num_cpgs	sequence
+    chr1	14348	14353	542a58d6-b2f8-4ccf-829f-7a1977876c6c	8.14	-244.99-253.13	1	2	GACCCCGAGACGTTTG
+    chr1	14434	14434	542a58d6-b2f8-4ccf-829f-7a1977876c6c	0.79	-126.97-127.77	1	1	TGTGCCGTTTT
+    chr1	14468	14468	542a58d6-b2f8-4ccf-829f-7a1977876c6c	-0.97	-186.33-185.36	1	1	AGTGGCGCAGG
+    :param infn:
+    :return:
+    """
+    df = pd.read_csv(infn, sep='\t', header=None)
+    # logger.debug(df)
+    # logger.info(df.iloc[:, -3].value_counts())
+
+    return df
+
+
 def load_sam_as_strand_info_df(infn='/projects/li-lab/yang/workspace/nano-compare/data/bam-files/K562.sam'):
     """
     Load strand info from SAM files, and make a df of read-name and strand-info as follows:
@@ -3112,7 +3133,7 @@ def load_sam_as_strand_info_df(infn='/projects/li-lab/yang/workspace/nano-compar
 
 def add_strand_info_for_nanopolish(nanopolish_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.methylation_calls.tsv', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sam.gz'):
     """
-    Combine the nanopolish output tsv results with strand-info from SAM files.
+    Combine the nanopolish output tsv results with strand-info from SAM files. This will add last column as strand-info.
 
     This is due to original nanopolish output results contain no strand-info, we are going to solve this problem.
 
@@ -3143,6 +3164,177 @@ def add_strand_info_for_nanopolish(nanopolish_fn='/projects/li-lab/yang/results/
     return df
 
 
+def get_dna_sequence_from_samfile(chr, start, end, bamfile):
+    """
+    Get the specific location DNA sequence at SAM files
+
+    start is 0-based format
+
+    Note: all functions of pysam need to be checked, see https://readthedocs.org/projects/pysam/downloads/pdf/latest/
+
+    :param chr:
+    :param start:
+    :param end:
+    :param bamfile:
+    :return:
+    """
+    for read in bamfile.fetch(chr, start=start, end=end):
+        # logger.debug(read.query_name)
+        # alignedRefPositions = read.query_alignment_start
+        # refStart = alignedRefPositions
+
+        refStart = read.get_reference_positions()[0]
+
+        # refSequence = read.get_reference_sequence()
+        readSequence = read.query_alignment_sequence
+        # readSequence1 = read.query_sequence
+
+        if readSequence is None:  # some read has no sequence, may return None, we only report the first read has sequence
+            continue
+
+        # logger.debug(f'ref-start={refStart} len(align) = {len(readSequence)}, len(seq) = {len(readSequence1)} compare two:\n{readSequence}\n{readSequence1}')
+
+        # logger.info(refStart)
+        # logger.info(refSequence)
+        # logger.info(readSequence)
+
+        # logger.debug(readSequence[start - refStart:end - refStart])
+        return readSequence[start - refStart:end - refStart]
+    # if all reads return None, we report None
+    return None
+
+
+def filter_noncg_sites_for_tombo(tombo_fn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.tombo_perReadsStats.bed', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', ntask=1, ttask=1):
+    """
+    Filter out rows that are non-CG patterns in Tombo results, reference sequence is based on BAM files
+
+    from SAM to BAM (with index) script is as follows:
+
+    samtools view -S -b K562.sam > K562.bam
+    samtools sort -o K562.sorted.bam K562.bam
+    samtools index K562.sorted.bam
+
+    :param tombo_fn:
+    :param sam_fn:
+    :return:
+    """
+    df = load_tombo_df(infn=tombo_fn)
+    # logger.info(df)
+
+    chrs = df.iloc[:, 0].unique()
+    chrs = np.sort(chrs)
+    logger.info(chrs)
+    logger.info(len(chrs))
+
+    all_list = list(range(len(df)))
+    sel_index = subset_of_list(all_list, ntask, ttask)
+
+    # sel_chrs = subset_of_list(chrs, ntask, ttask)
+    # logger.info(sel_chrs)
+    # df = df[df[0].isin(sel_chrs)]
+    df = df.iloc[sel_index, :]
+    logger.info(df)
+
+    rep_chr = df.iloc[0, 0]
+
+    samfile = pysam.AlignmentFile(sam_fn, "rb")
+
+    seq_col = []
+    for index, row in tqdm(df.iterrows()):
+        chr = row[0]
+        start = int(row[1])
+        strand_info = row[5]
+
+        ret = get_dna_sequence_from_samfile(chr, start, start + 4, samfile)
+        seq_col.append(ret)
+        # logger.info(f'chr={chr}, start={start}, strand={strand_info}, ret={ret}')
+        # if index > 10000:
+        #     break
+    df['sequence'] = seq_col
+    outfn = os.path.join(pic_base_dir, f'tombo-with-sequence-info-n{ntask}-t{ttask}-{rep_chr}.tsv')
+    df.to_csv(outfn, sep='\t', header=False, index=False)
+    logger.info(f"save to {outfn}")
+
+
+def subset_of_list(alist, n, t):
+    """
+    Subset of a list for multi-processing
+        n=1 to 100
+        t=1 to N
+        return subset list of alist
+    :param alist:
+    :param n:
+    :param t:
+    :return:
+    """
+    if t < 1 or t > n:
+        raise Exception(f't={t} is not accept, must be 1-N (include)')
+
+    if n > len(alist):  # if n is bigger than all list, return only 1 for t<=len
+        if t <= len(alist):
+            return [alist[t - 1]]
+        else:
+            return None
+
+    m = int(len(alist) / n)  # each task of a section of list
+
+    start_index = int((t - 1) * m)
+    if t == n:
+        sublist = alist[start_index:]
+    else:
+        sublist = alist[start_index:start_index + m]
+    logger.debug(f'n={n}, t={t}, section={m}, index={start_index}:{start_index + m}')
+    return sublist
+
+
+def parse_arguments():
+    """
+    usage: volume_calculation.py [-h] [-n N] [-t T] [--show]
+                             [--input INPUT [INPUT ...]] [--output OUTPUT]
+                             [--dcm] [--single-scan] [--lu-score LU_SCORE]
+                             [--le-score LE_SCORE]
+                             cmd
+
+    Volume calculation for lung and lesion
+
+    positional arguments:
+      cmd                   name of command: compute, combine, or gen-pixel-info
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -n N                  the total number of tasks (1-27)
+      -t T                  the current task id (1-N)
+      --show                show prediction images if using this switch
+      --input INPUT [INPUT ...]
+                            the input dir that contains scanid of pic/dcm files
+      --output OUTPUT       the input pic dir
+      --dcm                 folders are scanid that containing DCM files if using
+                            this switch
+      --single-scan         folders are directly the scanid folder if using this
+                            switch
+      --lu-score LU_SCORE   the lung field detection score
+      --le-score LE_SCORE   the lesion field detection score
+    :return:
+    """
+    parser = argparse.ArgumentParser(description='Multi-task')
+    parser.add_argument('-n', type=int, help="the total number of tasks (1-27)", default=1)
+    parser.add_argument('-t', type=int, help="the current task id (1-N)", default=1)
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
     set_log_debug_level()
-    add_strand_info_for_nanopolish()
+    args = parse_arguments()
+    # add_strand_info_for_nanopolish()
+
+    ntask = args.n
+    ttask = args.t
+    filter_noncg_sites_for_tombo(ntask=ntask, ttask=ttask)
+    # samfile = pysam.AlignmentFile('/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', "rb")
+    # #
+    # chr = 'chr1'
+    # start = 45834
+    # strand_info = '+'
+    # #
+    # ret = get_dna_sequence_from_samfile(chr, start, start + 4, samfile)
+    # logger.info(f'chr={chr}, start={start}, strand={strand_info}, ret={ret}')
