@@ -3,6 +3,8 @@
 # Usage:
 # bash meth_stats_common_array_job_pipe.sh tombo-add-seq 350
 # bash meth_stats_common_array_job_pipe.sh deepmod-add-seq 100
+# $1 - command
+# $2 - num-tasks
 
 #set -x
 

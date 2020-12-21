@@ -12,7 +12,9 @@ set -x
 
 #data_base_dir=/projects/li-lab/yang/results/11-25/K562_WGBS_Joined
 
-data_base_dir=/projects/li-lab/yang/results/12-16/K562_WGBS_Joined
+#data_base_dir=/projects/li-lab/yang/results/12-16/K562_WGBS_Joined
+
+data_base_dir=/projects/li-lab/yang/results/$(date +%F)/K562_WGBS_Joined
 
 #tool_fn_list=(K562_WGBS_Joined-meth-cov-Tombo-baseCount0.bed K562_WGBS_Joined-meth-cov-DeepMod-baseCount0.bed K562_WGBS_Joined-meth-cov-DeepSignal-baseCount0.bed K562_WGBS_Joined-meth-cov-Nanopolish-baseCount0.bed)
 
