@@ -51,7 +51,7 @@ if __name__ == '__main__':
     if argv[2] == 'NO':
         Tombo_calls = None
     else:
-        Tombo_calls = importPredictions_Tombo(argv[2], baseFormat=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_Tombo_runs/K562/K562_Tombo.batch_all.batch_0.perReadsStats.bed")
+        Tombo_calls = importPredictions_Tombo(argv[2], baseFormat=baseFormat, cutoff=2.0)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_Tombo_runs/K562/K562_Tombo.batch_all.batch_0.perReadsStats.bed")
         Tombo_calls = coverageFiltering(Tombo_calls, minCov=minToolCovCutt)
 
     logger.debug(f"Start load Nanopolish")
@@ -160,19 +160,20 @@ if __name__ == '__main__':
     logger.info(f"Start output results to {outfn}")
 
     outfile = open(outfn, 'w')
-    outfile.write("chr\tstart\tend\tstrand\tDeepSignal_freq\tDeepSignal_cov\tTombo_freq\tTombo_cov\tNanopolish_freq\tNanopolish_cov\tDeepMod_freq\tDeepMod_cov\tDeepMod_clust_freq\tDeepMod_clust_cov\tBSseq\n")
+    outfile.write("chr\tstart\tend\tBSseq_freq\tBSseq_cov\tstrand\tDeepSignal_freq\tDeepSignal_cov\tTombo_freq\tTombo_cov\tNanopolish_freq\tNanopolish_cov\tDeepMod_freq\tDeepMod_cov\tDeepMod_clust_freq\tDeepMod_clust_cov\n")
 
     for cpg in coveredCpGs:
         coords = cpg.strip().split("\t")
-        outfile.write("{}\t{}\t{}\t{}\t".format(coords[0], coords[1], coords[2], coords[3]))
+        outfile.write(f"{coords[0]}\t{coords[1]}\t{coords[2]}\t{bgTruth[cpg][0]}\t{bgTruth[cpg][1]}\t{coords[3]}")
 
-        for call1 in all_calls:
+        for call1 in all_calls[:]:
             if call1 is None:
                 outfile.write("\t\t")
                 continue
-            outfile.write(f"{call1[cpg][0]}\t{call1[cpg][1]}\t")
+            outfile.write(f"\t{call1[cpg][0]}\t{call1[cpg][1]}")
 
-        outfile.write(f"{bgTruth[cpg][0]}\n")
+        # outfile.write(f"{bgTruth[cpg][0]}\n")
+        outfile.write("\n")
 
     outfile.close()
     logger.info(f"save to {outfn}")

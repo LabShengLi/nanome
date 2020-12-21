@@ -124,38 +124,32 @@ def importPredictions_NanoXGBoost(infileName, chr_col=0, start_col=1, meth_col=4
 
 
 # not deprecated yet, even will Deprecated due to importPredictions_Nanopolish_2, which is based on Nanopolish code
-def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_ratio_col=4, sequence_col=-2, strand_col=-1, num_sites_col=-3, baseFormat=1, logLikehoodCutt=2.5):
-    '''
+def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_ratio_col=4, sequence_col=-2, strand_col=-1, num_sites_col=-3, baseFormat=0, logLikehoodCutt=2.5):
+    """
     We assume the input is 0-based for the start col, such as chr10 122 122
 
-    if strand-info=='-' start, end +1 etc.
+    Return dict of key='chr1\t123\t123\t+', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
 
-    We clear the bugs in followings for correct CG, and how about reverse strand GC?
+    if strand-info=='-', the start still point to positive sequence CG's C position, should be +1 to point to G. We clear the bugs in followings for correct CG, and for reverse strand GC, we need add 1 more to start. Because the sequence is still positive strand sequence, so report position should be at G of CG.
 
-    !!! This function will be needed for NanoCompare project !!!
-    
-    ### Example input format from Nanopolish:
-    chromosome      start   end     read_name       log_lik_ratio   log_lik_methylated      log_lik_unmethylated    num_calling_strands     num_cpgs        sequence
-    chr20   106142  106142  0b42b84b-c2a7-481b-be33-c555eb2e1fcf    2.32    -93.28  -95.61  1       1       CTCAACGTTTG
-    chr20   106226  106226  0b42b84b-c2a7-481b-be33-c555eb2e1fcf    1.46    -193.91 -195.37 1       1       TGGCACGTGGA
-    chr20   104859  104859  107a0850-7500-443c-911f-4857424c889c    4.36    -163.26 -167.62 1       1       ATTCCCGAGAG
-    
-    ### Output format:
-    result = {"chr\tstart\tend\n" : [list of methylation calls]}
-    output coordinates are 1-based genome coordinates. 
-    
+    ### Example default input format from Nanopolish (pre-processed to containing strand-info):
+    head /projects/li-lab/yang/results/12-11/K562.methylation_calls-nanopolish-strand-info.tsv
+    chromosome	start	end	read_name	log_lik_ratio	log_lik_methylated	log_lik_unmethylated	num_calling_strands	num_cpgs	sequence	strand-info
+    chr1	24450	24450	23cf5aac-6664-4fdb-9334-5b7e55f33335	-8.02	-117.7	-109.68	1	1	GAAAACGTGAA	-
+    chr1	24553	24553	23cf5aac-6664-4fdb-9334-5b7e55f33335	4.4	-142.26	-146.66	1	1	GCTCTCGGACT	-
+    chr1	24637	24637	23cf5aac-6664-4fdb-9334-5b7e55f33335	-8.97	-162.65	-153.68	1	1	AGGACCGGGAT	-
+    chr1	24784	24784	23cf5aac-6664-4fdb-9334-5b7e55f33335	1.78	-137.14	-138.91	1	1	GCATCCGCCAT	-
+    chr1	24809	24812	23cf5aac-6664-4fdb-9334-5b7e55f33335	8.49	-164.69	-173.18	1	2	CCTCTCGCCGCAGG	-
+    chr1	24837	24837	23cf5aac-6664-4fdb-9334-5b7e55f33335	12.53	-182.95	-195.47	1	1	GGGCACGGCAT	-
+    chr1	24899	24910	23cf5aac-6664-4fdb-9334-5b7e55f33335	4.19	-215.96	-220.15	1	3	TGGGTCGGAGCCGGAGCGTCAG	-
+    chr1	24925	24937	23cf5aac-6664-4fdb-9334-5b7e55f33335	25.63	-213.44	-239.06	1	3	ACCCACGACCACCGGCACGCCCC	-
     ###############
-    
-    almost ready to use code is here: http://helix122:9912/edit/li-lab/NanoporeData/WR_ONT_analyses/ai/APL_nanopolishStats/automatedSingleReadPrecission_3.py
-    in function called "nanopolishMethCallsParser_2_NanopolishCalled" - I will add this later (or earlier if asked for it:)
-    
+
     Their current script for handling with conversion of calls to frequencies:
     https://github.com/jts/nanopolish/blob/master/scripts/calculate_methylation_frequency.py
-    
-    It looks that we both do the same, or not? 
-    
-    
-    '''
+
+    It looks that we both do the same, or not?
+    """
 
     cpgDict = {}
     count = 0
@@ -509,13 +503,14 @@ def importPredictions_Nanopolish_3(infileName, baseCount=0, logLikehoodCutt=2.5,
     return cpgDict
 
 
-def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=2, meth_col=8, baseFormat=1):
+def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=2, meth_col=8, baseFormat=0):
     '''
-    We treate input as 0-based format
+    We treat input as 0-based format for start col.
+
+    Return dict of key='chr1\t123\t123\t+', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
 
     Note that the function requires per read stats, not frequencies of methylation.
-    !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
-    
+
     ### Parameters of the function:
     chr_col - name (as header) of the column with chromosome. If "header" variable == False, give integer number of the column.
     start_col - name (as header) of the column with start of CpG. If "header" variable == False, give integer number of the column.
@@ -524,10 +519,15 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     #header - True or False.
     
     ### Example input format from DeepSignal:
-    chr11   127715633       -       7370988 791c33e4-5b63-4cce-989c-186aff79db9b    t       0.16227172      0.83772826      1       AGGAAAATCGCTTGAAC
-    chr11   127715585       -       7371036 791c33e4-5b63-4cce-989c-186aff79db9b    t       0.69724774      0.3027523       0       TGCCACTGCGCTCTAGC
-    chr11   127715554       -       7371067 791c33e4-5b63-4cce-989c-186aff79db9b    t       0.786389        0.21361093      0       CAGAACTCCGTCTCAAA
-    chr11   127715423       -       7371198 791c33e4-5b63-4cce-989c-186aff79db9b    t       0.5939311       0.40606892      0       TTTTGTAGCGTTGTACA
+    head /projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.deepsignal_MethCalls.tsv
+    chr9	124877811	+	124877811	fd575bfa-96d2-41f6-852e-b3cd3b67a8e4	t	0.7913327	0.2086673	0	CCTGGTCACGTCTCCTG
+    chr9	124877883	+	124877883	fd575bfa-96d2-41f6-852e-b3cd3b67a8e4	t	0.20028716	0.79971284	1	GAACTAAACGTCAGAAA
+    chr9	124878198	+	124878198	fd575bfa-96d2-41f6-852e-b3cd3b67a8e4	t	0.15723002	0.84277	1	TTAAATTACGTATATTT
+    chr22	22922449	+	22922449	38af944b-5bbf-402f-8fc9-90ba4f3392f0	t	0.6276733	0.37232664	0	CCACTCACCGCTGACCT
+    chr22	22922479	+	22922479	38af944b-5bbf-402f-8fc9-90ba4f3392f0	t	0.84463745	0.15536247	0	CAAGGGTCCGGCCTGAG
+    chr22	22922588	+	22922588	38af944b-5bbf-402f-8fc9-90ba4f3392f0	t	0.46641168	0.5335883	1	ATCCACCCCGCAGGTCA
+    chr10	71503608	-	62293813	6579588c-6785-4cd0-ada8-c6408302aaa1	t	0.69284683	0.3071532	0	GCCCATCACGCAGCACA
+    chr10	71503427	-	62293994	6579588c-6785-4cd0-ada8-c6408302aaa1	t	0.8272412	0.17275886	0	AGCCACAACGGGAAGAG
     
     ### Input file format description:
     - chrom: the chromosome name
@@ -652,13 +652,16 @@ def importPredictions_DeepSignal3(infileName, chr_col=0, start_col=1, meth_col=7
     return cpgDict
 
 
-def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=4, baseFormat=1, cutoff=2.5):
+def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=4, baseFormat=0, cutoff=2.5):
     '''
-    We treate input as 0-based format
+    We treate input as 0-based format.
+
+    Return dict of key='chr1\t123\t123\t+', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
 
     Note that the function requires per read stats, not frequencies of methylation.
-    !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
-    
+
+    if strand-info=='-', the start still point to positive sequence CG's C position, should be more +1 to point to G. We clear the bugs in followings for correct CG, and for reverse strand GC, we need add 1 more to start. Because the sequence is still positive strand sequence, so report position should be at G of CG.
+
     ### Parameters of the function:
     chr_col - name (as header) of the column with chromosome. If "header" variable == False, give integer number of the column.
     start_col - name (as header) of the column with start of CpG. If "header" variable == False, give integer number of the column.
@@ -666,12 +669,24 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     baseCount - 0 or 1, standing for 0-based or 1-based, respectively
     cutoff - sumilarly as in case of Nanopolish, here we have cutoff for the value from the statistical test. From this conversations (https://github.com/nanoporetech/tombo/issues/151), I know this value is by default 2.5.
     
-    ### Example input format from Tombo (v1.5):
-    chr1    66047   66047   ed4a12ec-e03a-4a0a-9d08-acf3c0ee11d4    6.057825558813564       +
-    chr1    66053   66053   ed4a12ec-e03a-4a0a-9d08-acf3c0ee11d4    -0.3359579051241508     +
-    chr1    66054   66054   ed4a12ec-e03a-4a0a-9d08-acf3c0ee11d4    0.1202407639936725      +
-    chr1    66055   66055   ed4a12ec-e03a-4a0a-9d08-acf3c0ee11d4    2.1077369345267907      +
-    chr1    66076   66076   ed4a12ec-e03a-4a0a-9d08-acf3c0ee11d4    0.8979673996582611      +
+    ### Example input format from Tombo (v1.5), we need to pre-process the Tombo results by filtering out non-CG patterns firstly
+
+    more /projects/li-lab/yang/results/2020-12-21/K562.tombo_perReadsStats-with-seq-info-n350-t001-chr1.tsv
+
+    chr1    48020    48020    3526811b-6958-49f8-b78c-a205c1b5fc6e    1.185219591257949    +    TATTACACCCG
+    chr1    48022    48022    3526811b-6958-49f8-b78c-a205c1b5fc6e    1.6267354150537658    +    TTACACCCGTT
+    chr1    48023    48023    3526811b-6958-49f8-b78c-a205c1b5fc6e    2.6122662196889728    +    TACACCCGTTA
+    chr1    48024    48024    3526811b-6958-49f8-b78c-a205c1b5fc6e    2.771131774766473    +    ACACCCGTTAA
+    chr1    48041    48041    3526811b-6958-49f8-b78c-a205c1b5fc6e    6.524775544143312    +    GATTTCTAAAT
+    chr1    48048    48048    3526811b-6958-49f8-b78c-a205c1b5fc6e    1.9142728191641216    +    AAATGCATTGA
+    chr1    48054    48054    3526811b-6958-49f8-b78c-a205c1b5fc6e    1.8675210090110548    +    ATTGACATTTG
+
+    chr1    8447736    8447736    c9339e26-1898-4483-a312-b78c3fafc6a9    8.073560995614967    -    CTGTGCTGTGT
+    chr1    8447745    8447745    c9339e26-1898-4483-a312-b78c3fafc6a9    2.4467964154940858    -    GTTGACCGTGT
+    chr1    8447746    8447746    c9339e26-1898-4483-a312-b78c3fafc6a9    1.966921521322515    -    TTGACCGTGTA
+    chr1    8447754    8447754    c9339e26-1898-4483-a312-b78c3fafc6a9    5.387457000225035    -    GTATGCAATGG
+    chr1    8447761    8447761    c9339e26-1898-4483-a312-b78c3fafc6a9    -0.8580941645036908    -    ATGGACACAGA
+
 
     ### Output format:
     result = {"chr\tstart\tend\n" : [list of methylation calls (as a probability of methylation call**)]}
@@ -736,14 +751,14 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
             logger.error(f" ####Tombo parse error at row={row}")
             continue
 
-        switch = 0
-        #         if methCall > cutoff:
-        if methCall < -cutoff:
-            methCall = 1
-            switch = 1
-        #         elif methCall < -cutoff:
-        elif methCall > cutoff:
+        # TODO: check if the corrected meth-cutoff is right? before <cutoff is methylated, not true, i think.
+
+        switch = 0  # if we report this read-level results, if cutoff satisfied
+        if methCall <= -cutoff:
             methCall = 0
+            switch = 1
+        elif methCall >= cutoff:
+            methCall = 1
             switch = 1
 
         if switch == 1:
@@ -932,13 +947,12 @@ def importPredictions_Tombo3(infileName, chr_col=0, start_col=1, meth_col=4, bas
 
 def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_reads_col=-2, coverage_col=-4, baseFormat=1, sep='\t'):
     '''
-    We treate input as 0-based format
+    We treate input as 0-based format for start col.
 
-    Note that the function requires per read stats, not frequencies of methylation.
+    Return dict of key='chr1  123  123  +', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
 
-    Note that DeepMod results is 0-base format, we need to convert to 1-base format before return results
-    !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
-    
+    Note that the function requires genome-level stats.
+
     ### Parameters of the function:
     chr_col - name (as header) of the column with chromosome. If "header" variable == False, give integer number of the column.
     start_col - name (as header) of the column with start of CpG. If "header" variable == False, give integer number of the column.
@@ -948,23 +962,26 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     [[TO DO]] clustered_meth_freq_col - column with the methylation frequency after additional postprocessing step.
     baseCount - 0 or 1, standing for 0-based or 1-based, respectively
     
-    ### Example input format from DeepMod (standard):
-    chr2 110795922 110795923 C 4 -  110795922 110795923 0,0,0 4 75 3
-    chr2 110795929 110795930 C 3 -  110795929 110795930 0,0,0 3 66 2
-    chr2 110796453 110796454 C 4 -  110796453 110796454 0,0,0 4 25 1
-    
+    ### Example input format from DeepMod (standard), we also preprocess the DeepMod initial results by filetering non-CG sites, which is out of our interest.
+
+    head /projects/li-lab/yang/results/2020-12-21/K562.deepmod_combined-with-seq-info-n100-t006-chr1.tsv
+
+    chr1    75694844    75694845    C    1    +        75694844    75694845    0,0,0    1100    1    TAAGTCGTTCA
+    chr1    75696163    75696164    C    1    +        75696163    75696164    0,0,0    1100    1    CACTCCGGGAC
+    chr1    75696217    75696218    C    1    -        75696217    75696218    0,0,0    1100    1    CATACGGGATA
+    chr1    75696583    75696584    C    1    +        75696583    75696584    0,0,0    1100    1    TATGTCGACTC
+
     Description (https://github.com/WGLab/DeepMod/blob/master/docs/Results_explanation.md):
     The output is in a BED format like below. The first six columns are Chr,
     Start pos, End pos, Base, Capped coverage, and Strand, and the last three
     columns are Real coverage, Mehylation percentage and Methylation coverage.
-    
-    
+
     ### Example input format from DeepMod (clustered - following Step 4 from "Example 3: Detect 5mC on Na12878" section; https://github.com/WGLab/DeepMod/blob/master/docs/Reproducibility.md):
     chr2 241991445 241991446 C 3 -  241991445 241991446 0,0,0 3 100 3 69
     chr2 241991475 241991476 C 3 -  241991475 241991476 0,0,0 3 33 1 75
     chr2 241991481 241991482 C 2 -  241991481 241991482 0,0,0 2 50 1 76
     
-    Note: it is space-separated, not tab-separated file
+    Note: it is space-separated in original result file, not tab-separated file
     
     ### Output format:
     result = {"chr\tstart\tend\n" : [list of methylation calls (as a probability of methylation call**)]}
@@ -999,10 +1016,10 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
         #         key = (tmp[chr_col], start)
         key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
 
-        methCalls = int(tmp[meth_reads_col])
+        methReads = int(tmp[meth_reads_col])
         coverage = int(tmp[coverage_col])
 
-        methCallsList = [1] * methCalls + [0] * (coverage - methCalls)
+        methCallsList = [1] * methReads + [0] * (coverage - methReads)
         cpgDict[key] = methCallsList
 
         count += len(methCallsList)
@@ -1323,14 +1340,17 @@ def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, 
     return cpgDict
 
 
-def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_col=1, meth_col=3, meth_reads_col=4, unmeth_reads_col=5, strand_col=6, covCutt=10, baseFormat=1, chrFilter=False, gzippedInput=True, includeCov=False):
+def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_col=1, meth_col=3, meth_reads_col=4, unmeth_reads_col=5, strand_col=6, covCutt=10, baseFormat=0, chrFilter=False, gzippedInput=True, includeCov=False):
     '''
-    We modified this function due to the histogram shows it is 0-based format, NOT 1-based format
+    We modified this function due to the histogram shows it is 0-based format, NOT 1-based format.
+
+    includeCov  is True if return key->[meth-freq, meth-cov]
+                is False if return key-> meth-freq
     
     ### Description of the columns in this format:
     
     1. Reference chromosome or scaffold
-    2. Start position in chromosome (1-based) 
+    2. Start position in chromosome (1-based)  error here
     3. End position in chromosome 
     4. methylation percentage (0-100)
     5. methylated reads number
@@ -3173,6 +3193,12 @@ def add_strand_info_for_nanopolish(nanopolish_fn='/projects/li-lab/yang/results/
     :param sam_fn: SAM file name for strand-info
     :return:
     """
+    if args.i is not None:
+        nanopolish_fn = args.i
+
+    if args.ibam is not None:
+        sam_fn = args.ibam
+
     df2 = load_sam_as_strand_info_df(infn=sam_fn)
     df1 = load_nanopolish_df(infn=nanopolish_fn)
 
@@ -3341,6 +3367,9 @@ def filter_noncg_sites_ref_seq(df, tagname, ntask=1, ttask=1, num_seq=5, chr_col
 
 
 def filter_noncg_sites_for_tombo(tombo_fn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.tombo_perReadsStats.bed', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', ntask=1, ttask=1, num_seq=5):
+    if args.i is not None:
+        tombo_fn = args.i
+
     df = load_tombo_df(infn=tombo_fn)
     basefn = os.path.basename(tombo_fn)
     basename = os.path.splitext(basefn)[0]
@@ -3418,18 +3447,24 @@ def parse_arguments():
     parser.add_argument("cmd", help="name of command: compute, combine, or gen-pixel-info")
     parser.add_argument('-n', type=int, help="the total number of tasks (1-27)", default=1)
     parser.add_argument('-t', type=int, help="the current task id (1-N)", default=1)
+    parser.add_argument('-i', type=str, help="input file", default=None)
+    parser.add_argument('--ibam', type=str, help="input bam/sam file", default=None)
+
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     set_log_debug_level()
     args = parse_arguments()
-
+    logger.debug(args)
+    sys.exit(0)
     # add_strand_info_for_nanopolish()
 
     # parse faste file and turn into dictionary
-    ref_fn = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
-    ref_fasta = SeqIO.to_dict(SeqIO.parse(open(ref_fn), 'fasta'))
+
+    if args.cmd in ['tombo-add-seq', 'deepmod-add-seq']:
+        ref_fn = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
+        ref_fasta = SeqIO.to_dict(SeqIO.parse(open(ref_fn), 'fasta'))
 
     if args.cmd == 'tombo-add-seq':
         filter_noncg_sites_for_tombo(ntask=args.n, ttask=args.t)

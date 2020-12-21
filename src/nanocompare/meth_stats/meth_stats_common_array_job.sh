@@ -13,6 +13,8 @@ set -x
 
 cmd=$1
 
+inputfn=$2
+
 prj_dir=/projects/li-lab/yang/workspace/nano-compare
 
 pythonFile=${prj_dir}/src/nanocompare/meth_stats/meth_stats_common.py
@@ -21,4 +23,4 @@ mkdir -p log
 
 #python ${pythonFile} $@
 
-python ${pythonFile} ${cmd} -n ${SLURM_ARRAY_TASK_COUNT} -t ${SLURM_ARRAY_TASK_ID}
+python ${pythonFile} ${cmd} -n ${SLURM_ARRAY_TASK_COUNT} -t ${SLURM_ARRAY_TASK_ID} -i ${inputfn}

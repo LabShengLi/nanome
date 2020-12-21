@@ -14,6 +14,9 @@ cmd=${1:-tombo-add-seq}
 # Number of tasks
 N=${2:-350}
 
+# Input file of original Tombo or DeepMod
+inputfn=${3:-/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.tombo_perReadsStats.bed}
+
 output_dir=/projects/li-lab/yang/results/$(date +%F)
 
 echo cmd=${cmd}, N=$N, output_dir=${output_dir}
@@ -21,7 +24,7 @@ echo cmd=${cmd}, N=$N, output_dir=${output_dir}
 #################################################
 ### Task 1: calculate tombo sequence using job array
 #################################################
-job_array_ret=$(sbatch --job-name ${cmd}.arrjob --array=1-$N meth_stats_common_array_job.sh ${cmd})
+job_array_ret=$(sbatch --job-name ${cmd}.arrjob --array=1-$N meth_stats_common_array_job.sh ${cmd} ${inputfn})
 job_array_id=${job_array_ret##* }
 
 echo submit ${cmd} array job ok, jobid=${job_array_id}, num of jobs=$N
