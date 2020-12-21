@@ -1375,6 +1375,19 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
 
     Sample gbtruth file is followings:
 
+    gzip -cd /projects/li-lab/yang/workspace/nano-compare/data/bgtruth-data/K562_joined.bed.gz | head
+    chr17    60576    60576    0.0    0    1    +
+    chr17    61640    61640    0.0    0    1    -
+    chr17    61649    61649    100.0    1    0    -
+    chr17    61772    61772    100.0    1    0    -
+    chr17    61785    61785    100.0    1    0    -
+    chr17    61801    61801    0.0    0    1    -
+    chr17    61804    61804    100.0    1    0    -
+    chr17    62005    62005    100.0    1    0    -
+    chr17    62025    62025    100.0    1    0    -
+    chr17    62147    62147    100.0    1    0    -
+
+
     gzip -cd /pod/2/li-lab/Nanopore_methyl_compare/result/BS_seq_result/HL60_RRBS_ENCFF000MDA.Read_R1.Rep_1_trimmed_bismark_bt2.bismark.cov.gz | head
     chr4	10351	10351	100	2	0
     chr4	10435	10435	100	2	0
