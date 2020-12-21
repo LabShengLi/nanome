@@ -7,9 +7,11 @@
 #SBATCH -t 2-23:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
-#SBATCH --array=1-400 # job array index
+#SBATCH --array=1-200 # job array index
 
 set -x
+
+cmd=$1
 
 prj_dir=/projects/li-lab/yang/workspace/nano-compare
 
@@ -19,4 +21,7 @@ mkdir -p log
 
 #python ${pythonFile} $@
 
-python ${pythonFile} -n ${SLURM_ARRAY_TASK_COUNT} -t ${SLURM_ARRAY_TASK_ID}
+#python ${pythonFile} tombo-add-seq -n ${SLURM_ARRAY_TASK_COUNT} -t ${SLURM_ARRAY_TASK_ID}
+
+
+python ${pythonFile} ${cmd} -n ${SLURM_ARRAY_TASK_COUNT} -t ${SLURM_ARRAY_TASK_ID}

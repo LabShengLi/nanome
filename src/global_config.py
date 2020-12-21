@@ -62,7 +62,7 @@ else:
 
 # all pictures will be produced at this folder
 
-today_str = datetime.date.today().strftime("%m-%d")
+today_str = datetime.date.today().strftime("%Y-%m-%d")
 
 # ensure pkl is located at this folder, or pkl will be produced at this folder (depends)
 

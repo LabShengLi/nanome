@@ -3080,6 +3080,16 @@ def load_tombo_df(infn='/projects/li-lab/yang/workspace/nano-compare/data/tools-
     return df
 
 
+def load_deepmod_df(infn):
+    """
+    Load the DeepMod original output results tsv into a dataframe
+    :param infn:
+    :return:
+    """
+    df = pd.read_csv(infn, sep=' ', header=None)
+    return df
+
+
 def load_sam_as_strand_info_df(infn='/projects/li-lab/yang/workspace/nano-compare/data/bam-files/K562.sam'):
     """
     Load strand info from SAM files, and make a df of read-name and strand-info as follows:
@@ -3204,7 +3214,19 @@ def get_dna_sequence_from_samfile(chr, start, end, bamfile):
     return None
 
 
-def filter_noncg_sites_for_tombo(tombo_fn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.tombo_perReadsStats.bed', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', ntask=1, ttask=1):
+def sanity_check_get_dna_seq():
+    sam_fn = '/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam'
+    samfile = pysam.AlignmentFile(sam_fn, "rb")
+
+    chr = 'chr1'
+    start = 20664410 - 1
+    end = start + 5
+
+    ret = get_dna_sequence_from_samfile(chr, start, end, samfile)
+    logger.info(f'chr={chr}, start={start}, end={end}, ret={ret}')
+
+
+def filter_noncg_sites_ref_bamfile(df, tagname, sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', ntask=1, ttask=1, num_seq=5, chr_col=0, start_col=1, strand_col=5):
     """
     Filter out rows that are non-CG patterns in Tombo results, reference sequence is based on BAM files
 
@@ -3218,10 +3240,8 @@ def filter_noncg_sites_for_tombo(tombo_fn='/projects/li-lab/yang/workspace/nano-
     :param sam_fn:
     :return:
     """
-    df = load_tombo_df(infn=tombo_fn)
-    # logger.info(df)
 
-    chrs = df.iloc[:, 0].unique()
+    chrs = df.iloc[:, chr_col].unique()
     chrs = np.sort(chrs)
     logger.info(chrs)
     logger.info(len(chrs))
@@ -3235,25 +3255,42 @@ def filter_noncg_sites_for_tombo(tombo_fn='/projects/li-lab/yang/workspace/nano-
     df = df.iloc[sel_index, :]
     logger.info(df)
 
-    rep_chr = df.iloc[0, 0]
+    rep_chr = df.iloc[0, chr_col]
 
     samfile = pysam.AlignmentFile(sam_fn, "rb")
 
     seq_col = []
     for index, row in tqdm(df.iterrows()):
-        chr = row[0]
-        start = int(row[1])
-        strand_info = row[5]
+        chr = row[chr_col]
+        start = int(row[start_col])
+        strand_info = row[strand_col]
 
-        ret = get_dna_sequence_from_samfile(chr, start, start + 4, samfile)
+        ret = get_dna_sequence_from_samfile(chr, start, start + num_seq, samfile)  # may return None, if no sequence at all reads
         seq_col.append(ret)
+
+        # TODO: using ret if it is CG pattern, or will remove later
+
         # logger.info(f'chr={chr}, start={start}, strand={strand_info}, ret={ret}')
         # if index > 10000:
         #     break
     df['sequence'] = seq_col
-    outfn = os.path.join(pic_base_dir, f'tombo-with-sequence-info-n{ntask}-t{ttask}-{rep_chr}.tsv')
+    outfn = os.path.join(pic_base_dir, f'{tagname}-with-seq-info-n{ntask}-t{ttask:03d}-{rep_chr}.tsv')
     df.to_csv(outfn, sep='\t', header=False, index=False)
     logger.info(f"save to {outfn}")
+
+
+def filter_noncg_sites_for_tombo(tombo_fn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.tombo_perReadsStats.bed', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', ntask=1, ttask=1, num_seq=5):
+    df = load_tombo_df(infn=tombo_fn)
+    basefn = os.path.basename(tombo_fn)
+    basename = os.path.splitext(basefn)[0]
+    filter_noncg_sites_ref_bamfile(df=df, tagname=basename, sam_fn=sam_fn, ntask=ntask, ttask=ttask, num_seq=num_seq)
+
+
+def filter_noncg_sites_for_deepmod(deepmod_fn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.deepmod_combined.bed', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', ntask=1, ttask=1, num_seq=5):
+    df = load_deepmod_df(infn=deepmod_fn)
+    basefn = os.path.basename(deepmod_fn)
+    basename = os.path.splitext(basefn)[0]
+    filter_noncg_sites_ref_bamfile(df=df, tagname=basename, sam_fn=sam_fn, ntask=ntask, ttask=ttask, num_seq=num_seq, chr_col=0, start_col=1, strand_col=5)
 
 
 def subset_of_list(alist, n, t):
@@ -3317,6 +3354,7 @@ def parse_arguments():
     :return:
     """
     parser = argparse.ArgumentParser(description='Multi-task')
+    parser.add_argument("cmd", help="name of command: compute, combine, or gen-pixel-info")
     parser.add_argument('-n', type=int, help="the total number of tasks (1-27)", default=1)
     parser.add_argument('-t', type=int, help="the current task id (1-N)", default=1)
     return parser.parse_args()
@@ -3327,9 +3365,12 @@ if __name__ == '__main__':
     args = parse_arguments()
     # add_strand_info_for_nanopolish()
 
-    ntask = args.n
-    ttask = args.t
-    filter_noncg_sites_for_tombo(ntask=ntask, ttask=ttask)
+    if args.cmd == 'tombo-add-seq':
+        filter_noncg_sites_for_tombo(ntask=args.n, ttask=args.t)
+    elif args.cmd == 'deepmod-add-seq':
+        filter_noncg_sites_for_deepmod(ntask=args.n, ttask=args.t)
+    elif args.cmd == 'sanity-get-seq':
+        sanity_check_get_dna_seq()
     # samfile = pysam.AlignmentFile('/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', "rb")
     # #
     # chr = 'chr1'
