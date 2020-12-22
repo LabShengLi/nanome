@@ -387,7 +387,7 @@ def corr_grid_plot(infns=load_corr_data_tsv_fns()):
         df = df.rename(columns=dict_cor_tsv_to_abbr())
 
         basefn = os.path.basename(infn)
-        outfileName = "{}_time_{}.png".format(basefn.replace(".tsv", ""), filenameSuffix)
+        outfileName = "{}.png".format(basefn.replace(".tsv", ""))
         outfn = os.path.join(pic_base_dir, outfileName)
 
         plt.clf()

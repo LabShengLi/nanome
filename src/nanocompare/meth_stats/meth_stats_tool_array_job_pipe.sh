@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Usage:
-# bash meth_stats_common_array_job_pipe.sh tombo-add-seq 350
-# bash meth_stats_common_array_job_pipe.sh deepmod-add-seq 100
+# bash meth_stats_tool_array_job_pipe.sh tombo-add-seq 350
+# bash meth_stats_tool_array_job_pipe.sh deepmod-add-seq 100
 # $1 - command
 # $2 - num-tasks
 
@@ -24,7 +24,7 @@ echo cmd=${cmd}, N=$N, output_dir=${output_dir}
 #################################################
 ### Task 1: calculate tombo sequence using job array
 #################################################
-job_array_ret=$(sbatch --job-name ${cmd}.arrjob --array=1-$N meth_stats_common_array_job.sh ${cmd} ${inputfn})
+job_array_ret=$(sbatch --job-name ${cmd}.arrjob --array=1-$N meth_stats_tool_array_job.sh ${cmd} ${inputfn})
 job_array_id=${job_array_ret##* }
 
 echo submit ${cmd} array job ok, jobid=${job_array_id}, num of jobs=$N
@@ -41,6 +41,6 @@ done
 #################################################
 ### Task 2: combine tombo results together
 #################################################
-sbatch --job-name combine.${cmd} --dependency=afterok${ARRAY_JOB_LIST} meth_stats_common_array_job_combine.sh ${cmd} ${output_dir}
+sbatch --job-name combine.${cmd} --dependency=afterok${ARRAY_JOB_LIST} meth_stats_tool_array_job_combine.sh ${cmd} ${output_dir}
 
 echo submit combine results job ok

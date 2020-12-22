@@ -4,18 +4,17 @@ Common functions used by Methylation_correlation_plotting.py and Universal_meth_
 Such as import_DeepSignal, import_BGTruth, etc.
 """
 
-import argparse
 import pickle
 import sys
+
+import pysam
 
 nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
 sys.path.append(nanocompare_prj)
 
 from nanocompare.nanocompare_global_settings import nanocompare_basedir
-from tqdm import tqdm
 
 from global_config import *
-import pysam
 
 import re
 import pandas as pd
@@ -945,7 +944,7 @@ def importPredictions_Tombo3(infileName, chr_col=0, start_col=1, meth_col=4, bas
     return cpgDict
 
 
-def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_reads_col=-2, coverage_col=-4, baseFormat=1, sep='\t'):
+def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_reads_col=-2, coverage_col=-4, baseFormat=0, sep='\t'):
     '''
     We treate input as 0-based format for start col.
 
@@ -2534,7 +2533,7 @@ def save_call_or_bgtruth_to_bed(call, outfn):
     outfile.close()
 
 
-def combine2programsCalls(calls1, calls2, outfileName=False):
+def combine2programsCalls(calls1, calls2, outfileName=None):
     '''
     call1 and call2 should have the following format:
     {"chr\tstart\tend\n" : [list of methylation calls]}
@@ -2542,7 +2541,7 @@ def combine2programsCalls(calls1, calls2, outfileName=False):
     result: dictionary of shared sites in the same format as input
     '''
     tmp = dict.fromkeys(set(calls1.keys()).intersection(set(calls2.keys())), -1)
-    if outfileName != False:
+    if outfileName is not None:
         outfile = open(outfileName, 'w')
         for key in tmp:
             outfile.write(key)
@@ -2796,12 +2795,8 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
     refMeth = BedTool(dict2txt(referenceMeth), from_string=True)
     refMeth = refMeth.sort()
 
-    base_dir = os.path.join(data_base_dir, 'genome-annotation')
-
-    infn = os.path.join(base_dir, regionsBedFile)
-    # regions = BedTool(regionsBedFile)
+    infn = os.path.join(data_base_dir, 'genome-annotation', regionsBedFile)
     regions = BedTool(infn)
-
     regions = regions.sort()
 
     regions_refMeth = regions.intersect(refMeth, wa=True, wb=True)
@@ -2809,7 +2804,7 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
     regions_refMeth_dict = {}  # {regionCoords : [methylation percentage list]}
     for ovr in regions_refMeth:
         regionKey = "{}\t{}\t{}\n".format(ovr[0], ovr[1], ovr[2])
-        methKey = "{}\t{}\t{}\n".format(ovr[3], ovr[4], ovr[5])
+        methKey = "{}\t{}\t{}\t{}\n".format(ovr[3], ovr[4], ovr[5], ovr[6])
         if regionKey not in regions_refMeth_dict:
             regions_refMeth_dict[regionKey] = []
         regions_refMeth_dict[regionKey].append(referenceMeth[methKey])
@@ -2974,20 +2969,21 @@ def nonSingletonsPostprocessing2(referenceMeth, regionsBedFile, dataset, outdir=
 
 
 def singletonsPostprocessing(referenceMeth, singletonsBedFile, runPrefix, outdir):
-    '''
+    """
+    BG-Truth using singleton as coordinate, output absolute, and mixed bed files.
+
+    referenceMeth is key->value key=chr1  123  123  +, value=meth-freq
+
     This function will take the input *.bed file from "NonSingletonsScanner" funtion, which corresponds with singletons.
     Next it will separate them into absolute (i.e. fully methylated or fully unmethylated), and mixed (i.e. all CpGs in non-singletons have methylation level >0 and < 100)
     This kind of preprocessing will have to be done for each studied library separately.
-    '''
+    """
 
     refMeth = BedTool(dict2txt(referenceMeth), from_string=True)
     refMeth = refMeth.sort()
 
     infnSingletons = os.path.join(data_base_dir, 'genome-annotation', singletonsBedFile)
-
-    # regions = BedTool(singletonsBedFile)
     regionsSingletons = BedTool(infnSingletons)
-
     regionsSingletons = regionsSingletons.sort()
 
     refMeth_regions = refMeth.intersect(regionsSingletons, wa=True, u=True)
@@ -2996,9 +2992,9 @@ def singletonsPostprocessing(referenceMeth, singletonsBedFile, runPrefix, outdir
     outfile_absolute = open("{}/{}.{}.absolute.bed".format(outdir, runPrefix, outfile_prefix), "w")
     outfile_mixed = open("{}/{}.{}.mixed.bed".format(outdir, runPrefix, outfile_prefix), "w")
     for ovr in refMeth_regions:
-        methKey = "{}\t{}\t{}\n".format(ovr[0], ovr[1], ovr[2])
+        methKey = "{}\t{}\t{}\t{}\n".format(ovr[0], ovr[1], ovr[2], ovr[3])
 
-        if referenceMeth[methKey] == 1 or referenceMeth[methKey] == 0:
+        if referenceMeth[methKey] == 1 or referenceMeth[methKey] == 0:  # TODO: due to strand info, we need to discuss how to add strand-info into the key
             outfile_absolute.write(methKey)
         else:
             outfile_mixed.write(methKey)
@@ -3192,45 +3188,6 @@ def load_sam_as_strand_info_df(infn='/projects/li-lab/yang/workspace/nano-compar
     return df
 
 
-def add_strand_info_for_nanopolish(nanopolish_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.methylation_calls.tsv', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sam'):
-    """
-    Combine the nanopolish output tsv results with strand-info from SAM files. This will add last column as strand-info.
-
-    This is due to original nanopolish output results contain no strand-info, we are going to solve this problem.
-
-    Return results columns are:
-     [(0, 'chromosome'), (1, 'start'), (2, 'end'), (3, 'read_name'), (4, 'log_lik_ratio'), (5, 'log_lik_methylated'), (6, 'log_lik_unmethylated'), (7, 'num_calling_strands'), (8, 'num_cpgs'), (9, 'sequence'), (10, 'strand-info')]
-
-
-    :param nanopolish_fn: nanopolish file name
-    :param sam_fn: SAM file name for strand-info
-    :return:
-    """
-    if args.i is not None:
-        nanopolish_fn = args.i
-
-    if args.ibam is not None:
-        sam_fn = args.ibam
-
-    df2 = load_sam_as_strand_info_df(infn=sam_fn)
-    df1 = load_nanopolish_df(infn=nanopolish_fn)
-
-    df = df1.merge(df2, left_on='read_name', right_on='read-name', how='left')
-    df = df.drop('read-name', axis=1)
-    logger.info(df)
-    logger.info(list(enumerate(df.columns)))
-
-    if len(df1) != len(df):
-        raise Exception("We found the read-name of Nanopolish results is not mapped all to SAM/BAM file, please check if the BAM file is used for Nanopolish")
-
-    # df = df.iloc[:, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
-
-    outfn = os.path.join(pic_base_dir, f'{os.path.splitext(os.path.basename(nanopolish_fn))[0]}-nanopolish-strand-info.tsv')
-    df.to_csv(outfn, sep='\t', index=False)
-    logger.info(f'save to {outfn}')
-    return df
-
-
 def get_dna_sequence_from_samfile(chr, start, end, bamfile):
     """
     Get the specific location DNA sequence at SAM files
@@ -3274,9 +3231,12 @@ def get_dna_sequence_from_samfile(chr, start, end, bamfile):
     return None
 
 
-def get_dna_sequence_from_reference(chr, start, num_seq=5):
+def get_dna_sequence_from_reference(chr, start, num_seq=5, ref_fasta=None):
     """
     Get the sequence from start-num_seq to start+num_seq, totally 2*num_seq+1
+
+    The center start is 0-based start position
+
     :param chr:
     :param start:
     :param end:
@@ -3290,208 +3250,5 @@ def get_dna_sequence_from_reference(chr, start, num_seq=5):
     return short_seq
 
 
-def sanity_check_get_dna_seq(chr='chr1', start=24784):
-    sam_fn = '/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam'
-    samfile = pysam.AlignmentFile(sam_fn, "rb")
-
-    # chr = 'chr1'
-    # start = 20664410 - 1
-    # end = start + 5
-
-    # start = 24450
-
-    # ret = get_dna_sequence_from_samfile(chr, start, end, samfile)
-    ret = get_dna_sequence_from_reference(chr, start)
-
-    logger.info(f'chr={chr}, start={start}, ret={ret}')
-
-
-def filter_noncg_sites_ref_seq(df, tagname, ntask=1, ttask=1, num_seq=5, chr_col=0, start_col=1, strand_col=5, toolname='tombo'):
-    """
-    Filter out rows that are non-CG patterns in Tombo results, reference sequence is based on BAM files
-
-    from SAM to BAM (with index) script is as follows:
-
-    samtools view -S -b K562.sam > K562.bam
-    samtools sort -o K562.sorted.bam K562.bam
-    samtools index K562.sorted.bam
-
-    :param tombo_fn:
-    :param sam_fn:
-    :return:
-    """
-
-    chrs = df.iloc[:, chr_col].unique()
-    chrs = np.sort(chrs)
-    logger.info(chrs)
-    logger.info(len(chrs))
-
-    all_list = list(range(len(df)))
-    cpg_pattern_index = subset_of_list(all_list, ntask, ttask)
-
-    # sel_chrs = subset_of_list(chrs, ntask, ttask)
-    # logger.info(sel_chrs)
-    # df = df[df[0].isin(sel_chrs)]
-    df = df.iloc[cpg_pattern_index, :]
-    logger.info(df)
-
-    rep_chr = df.iloc[0, chr_col]
-
-    seq_col = []
-    cpg_pattern_index = []
-
-    print_first = True
-    for index, row in tqdm(df.iterrows()):
-        if print_first:
-            logger.info(f"index={index}")
-            print_first = False
-        chr = row[chr_col]
-        start = int(row[start_col])
-        strand_info = row[strand_col]
-
-        # ret = get_dna_sequence_from_samfile(chr, start, start + num_seq, samfile)  # may return None, if no sequence at all reads
-
-        ret = get_dna_sequence_from_reference(chr, start, num_seq=num_seq)
-        seq_col.append(ret)
-
-        if toolname == 'tombo':
-            if ret[5:7] == 'CG':
-                cpg_pattern_index.append(index)
-        elif toolname == 'deepmod':
-            if strand_info == '+':
-                if ret[5:7] == 'CG':
-                    cpg_pattern_index.append(index)
-            elif strand_info == '-':
-                if ret[4:6] == 'CG':
-                    cpg_pattern_index.append(index)
-
-    # TODO: using ret if it is CG pattern, or will remove later
-
-    # logger.info(f'chr={chr}, start={start}, strand={strand_info}, ret={ret}')
-    # if index > 10000:
-    #     break
-    df['sequence'] = seq_col
-
-    logger.debug(f'{len(df)}, {len(cpg_pattern_index)}')
-    df = df.loc[cpg_pattern_index, :]
-    outfn = os.path.join(pic_base_dir, f'{tagname}-with-seq-info-n{ntask}-t{ttask:03d}-{rep_chr}.tsv')
-    df.to_csv(outfn, sep='\t', header=False, index=False)
-    logger.info(f"save to {outfn}")
-
-
-def filter_noncg_sites_for_tombo(tombo_fn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.tombo_perReadsStats.bed', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', ntask=1, ttask=1, num_seq=5):
-    if args.i is not None:
-        tombo_fn = args.i
-
-    df = load_tombo_df(infn=tombo_fn)
-    basefn = os.path.basename(tombo_fn)
-    basename = os.path.splitext(basefn)[0]
-    filter_noncg_sites_ref_seq(df=df, tagname=basename, ntask=ntask, ttask=ttask, num_seq=num_seq)
-
-
-def filter_noncg_sites_for_deepmod(deepmod_fn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.deepmod_combined.bed', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', ntask=1, ttask=1, num_seq=5):
-    df = load_deepmod_df(infn=deepmod_fn)
-    basefn = os.path.basename(deepmod_fn)
-    basename = os.path.splitext(basefn)[0]
-    filter_noncg_sites_ref_seq(df=df, tagname=basename, ntask=ntask, ttask=ttask, num_seq=num_seq, chr_col=0, start_col=1, strand_col=5, toolname='deepmod')
-
-
-def subset_of_list(alist, n, t):
-    """
-    Subset of a list for multi-processing
-        n=1 to 100
-        t=1 to N
-        return subset list of alist
-    :param alist:
-    :param n:
-    :param t:
-    :return:
-    """
-    if t < 1 or t > n:
-        raise Exception(f't={t} is not accept, must be 1-N (include)')
-
-    if n > len(alist):  # if n is bigger than all list, return only 1 for t<=len
-        if t <= len(alist):
-            return [alist[t - 1]]
-        else:
-            return None
-
-    m = int(len(alist) / n)  # each task of a section of list
-
-    start_index = int((t - 1) * m)
-    if t == n:
-        sublist = alist[start_index:]
-    else:
-        sublist = alist[start_index:start_index + m]
-    logger.debug(f'n={n}, t={t}, section={m}, index={start_index}:{start_index + m}')
-    return sublist
-
-
-def parse_arguments():
-    """
-    usage: volume_calculation.py [-h] [-n N] [-t T] [--show]
-                             [--input INPUT [INPUT ...]] [--output OUTPUT]
-                             [--dcm] [--single-scan] [--lu-score LU_SCORE]
-                             [--le-score LE_SCORE]
-                             cmd
-
-    Volume calculation for lung and lesion
-
-    positional arguments:
-      cmd                   name of command: compute, combine, or gen-pixel-info
-
-    optional arguments:
-      -h, --help            show this help message and exit
-      -n N                  the total number of tasks (1-27)
-      -t T                  the current task id (1-N)
-      --show                show prediction images if using this switch
-      --input INPUT [INPUT ...]
-                            the input dir that contains scanid of pic/dcm files
-      --output OUTPUT       the input pic dir
-      --dcm                 folders are scanid that containing DCM files if using
-                            this switch
-      --single-scan         folders are directly the scanid folder if using this
-                            switch
-      --lu-score LU_SCORE   the lung field detection score
-      --le-score LE_SCORE   the lesion field detection score
-    :return:
-    """
-    parser = argparse.ArgumentParser(description='Multi-task')
-    parser.add_argument("cmd", help="name of command: compute, combine, or gen-pixel-info")
-    parser.add_argument('-n', type=int, help="the total number of tasks (1-27)", default=1)
-    parser.add_argument('-t', type=int, help="the current task id (1-N)", default=1)
-    parser.add_argument('-i', type=str, help="input file", default=None)
-    parser.add_argument('--ibam', type=str, help="input bam/sam file", default=None)
-
-    return parser.parse_args()
-
-
 if __name__ == '__main__':
     set_log_debug_level()
-    args = parse_arguments()
-    logger.debug(args)
-    sys.exit(0)
-    # add_strand_info_for_nanopolish()
-
-    # parse faste file and turn into dictionary
-
-    if args.cmd in ['tombo-add-seq', 'deepmod-add-seq']:
-        ref_fn = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
-        ref_fasta = SeqIO.to_dict(SeqIO.parse(open(ref_fn), 'fasta'))
-
-    if args.cmd == 'tombo-add-seq':
-        filter_noncg_sites_for_tombo(ntask=args.n, ttask=args.t)
-    elif args.cmd == 'deepmod-add-seq':
-        filter_noncg_sites_for_deepmod(ntask=args.n, ttask=args.t)
-    elif args.cmd == 'nanopolish-add-strand':
-        add_strand_info_for_nanopolish()
-    elif args.cmd == 'sanity-get-seq':
-        sanity_check_get_dna_seq()
-    # samfile = pysam.AlignmentFile('/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', "rb")
-    # #
-    # chr = 'chr1'
-    # start = 45834
-    # strand_info = '+'
-    # #
-    # ret = get_dna_sequence_from_samfile(chr, start, start + 4, samfile)
-    # logger.info(f'chr={chr}, start={start}, strand={strand_info}, ret={ret}')

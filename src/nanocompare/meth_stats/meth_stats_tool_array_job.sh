@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=meth-common
+#SBATCH --job-name=meth-tool
 #SBATCH -q batch
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 2 # number of cores
@@ -17,7 +17,7 @@ inputfn=$2
 
 prj_dir=/projects/li-lab/yang/workspace/nano-compare
 
-pythonFile=${prj_dir}/src/nanocompare/meth_stats/meth_stats_common.py
+pythonFile=${prj_dir}/src/nanocompare/meth_stats/meth_stats_tool.py
 
 mkdir -p log
 

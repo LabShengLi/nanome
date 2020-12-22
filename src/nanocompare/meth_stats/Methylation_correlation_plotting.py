@@ -30,7 +30,7 @@ if __name__ == '__main__':
     bgtruthCutt = 5
 
     # load into program format 0-base or 1-base
-    baseFormat = 0
+    baseFormat = 1
 
     logger.info(f'bgtruth cov={bgtruthCutt}, tool cov={minToolCovCutt}')
 

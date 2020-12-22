@@ -327,9 +327,11 @@ def load_corr_data_tsv_fns():
             ]
     na19240List = [os.path.join(base_dir, fn) for fn in na19240files]
 
+    ret_list = ['/projects/li-lab/yang/results/2020-12-21/K562_WGBS_Joined/Meth_corr_plot_data-K562_WGBS_Joined-bsCov5-minCov4-time-2020-12-21-15-57.tsv']
+
     # return filesFull
 
-    return na19240List + filesFull
+    return ret_list
 
 
 if __name__ == '__main__':
