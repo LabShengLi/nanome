@@ -1880,9 +1880,15 @@ def computePerReadStats(ontCalls, bsReference, title, bedFile=False, ontCutt_per
 
 
 def computePerReadStats_v3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBed=False, secondFilterBed_4Corr=False, cutoff_meth=1.0):
-    '''
+    """
+    Compute ontCalls with bgTruth performance results by per-read count.
+    bedFile                 -   coordinate used to eval
+    secondFilterBed         -   joined sets of four tools with bg-truth, or False with out joined sets
+    secondFilterBed_4Corr   -   for report corr purpose, currently not fixed bugs.
 
-    90% methlation level
+    Note: in our experiments, bed files of singleton, non-singleton and related files are all start 1-based format.
+
+    90% methlation level if cutoff_meth=0.9.
 
     bedFile is coordinate: False(GenomeWide), Singleton, etc.
     secondFilterBed is second filter coordinate: False(No filter), Joined file name (four tools joined with BGTruth)
@@ -1909,7 +1915,7 @@ def computePerReadStats_v3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perR
     Nice summary also at wiki: https://en.wikipedia.org/wiki/F1_score
     , where "Positive" and "Negative" corresponds with ONT based observations, while "Presence" and "Absence" is based on BS-Seq
 
-    '''
+    """
 
     switch = 0
     ontCalls_narrow = []

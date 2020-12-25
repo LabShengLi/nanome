@@ -145,7 +145,7 @@ if __name__ == '__main__':
         #       secondFilterBed - joined sites of four tools and bg-truth. points
 
         # step 1: with joined results of all tools
-        df = report_per_read_performance(toolCalls[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=False)
+        df = report_per_read_performance(toolCalls[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
         df = df[["prefix", "coord", "accuracy", "roc_auc", "F1_5C", "F1_5mC", "precision_5C", "recall_5C", "precision_5mC", "recall_5mC", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport", "Csites_called", "mCsites_called", "referenceCpGs", "Csites", "mCsites"]]
 
         df['Tool'] = tool
@@ -157,7 +157,7 @@ if __name__ == '__main__':
         # logger.debug(df.head())
 
         # step 2: no joined results eval
-        df = report_per_read_performance(toolCalls[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=False, secondFilterBed_4Corr=False)
+        df = report_per_read_performance(toolCalls[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=False, secondFilterBed_4Corr=secondFilterBed_4Corr)
         df = df[["prefix", "coord", "accuracy", "roc_auc", "F1_5C", "F1_5mC", "precision_5C", "recall_5C", "precision_5mC", "recall_5mC", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport", "Csites_called", "mCsites_called", "referenceCpGs", "Csites", "mCsites"]]
 
         df['Tool'] = tool
