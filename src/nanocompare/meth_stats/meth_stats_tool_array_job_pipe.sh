@@ -42,6 +42,6 @@ done
 #################################################
 ### Task 2: combine tombo results together
 #################################################
-sbatch --job-name combine.${cmd} --dependency=afterok${ARRAY_JOB_LIST} meth_stats_tool_array_job_combine.sh ${cmd} ${output_dir}
+sbatch --job-name combine.${cmd} --dependency=afterok${ARRAY_JOB_LIST} meth_stats_tool_array_job_combine.sh ${cmd} ${inputfn} ${output_dir} $N
 
 echo submit combine results job ok

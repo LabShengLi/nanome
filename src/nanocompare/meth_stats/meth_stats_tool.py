@@ -101,7 +101,7 @@ def filter_noncg_sites_ref_seq(df, tagname, ntask=1, ttask=1, num_seq=5, chr_col
     print_first = True
     for index, row in tqdm(df.iterrows()):
         if print_first:
-            logger.info(f"index={index}")
+            logger.info(f"index={index}, row={row}")
             print_first = False
         chr = row[chr_col]
         start = int(row[start_col])
@@ -130,7 +130,7 @@ def filter_noncg_sites_ref_seq(df, tagname, ntask=1, ttask=1, num_seq=5, chr_col
     #     break
     df['sequence'] = seq_col
 
-    logger.debug(f'{len(df)}, {len(cpg_pattern_index)}')
+    logger.debug(f'before filter:{len(df)}, after non-CG filter:{len(cpg_pattern_index)}')
     df = df.loc[cpg_pattern_index, :]
     outfn = os.path.join(pic_base_dir, f'{tagname}-with-seq-info-n{ntask}-t{ttask:03d}-{rep_chr}.tsv')
     df.to_csv(outfn, sep='\t', header=False, index=False)
@@ -148,6 +148,9 @@ def filter_noncg_sites_for_tombo(tombo_fn='/projects/li-lab/yang/workspace/nano-
 
 
 def filter_noncg_sites_for_deepmod(deepmod_fn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.deepmod_combined.bed', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', ntask=1, ttask=1, num_seq=5):
+    if args.i is not None:
+        deepmod_fn = args.i
+
     df = load_deepmod_df(infn=deepmod_fn)
     basefn = os.path.basename(deepmod_fn)
     basename = os.path.splitext(basefn)[0]

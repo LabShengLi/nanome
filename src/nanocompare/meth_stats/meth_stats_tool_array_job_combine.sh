@@ -11,12 +11,20 @@
 set -x
 
 cmd=$1
-output_dir=$2
+inputfn=$2
+output_dir=$3
+ntask=$4
+
+dsname=$(basename ${inputfn})
+dsname=$(echo "${dsname%%.*}")
 
 if [ $cmd = "tombo-add-seq" ]; then
-	rm -rf ${output_dir}/K562.tombo.combined.tsv
-    cat ${output_dir}/*tombo_*.tsv > ${output_dir}/K562.tombo.combined.onlycpg.tsv
+	rm -rf ${output_dir}/${dsname}.tombo.combined.tsv
+    cat ${output_dir}/${dsname}*tombo_*-n${ntask}*.tsv > ${output_dir}/${dsname}.tombo.combined.onlycpg.tsv
+    wc -l ${output_dir}/${dsname}.tombo.combined.onlycpg.tsv
+
 else
-	rm -rf ${output_dir}/K562.deepmod.combined.tsv
-    cat ${output_dir}/*deepmod_*.tsv > ${output_dir}/K562.deepmod.combined.onlycpg.tsv
+	rm -rf ${output_dir}/${dsname}.deepmod.combined.tsv
+    cat ${output_dir}/${dsname}*deepmod_*-n${ntask}*.tsv > ${output_dir}/${dsname}.deepmod.combined.onlycpg.tsv
+    wc -l ${output_dir}/${dsname}.deepmod.combined.onlycpg.tsv
 fi
