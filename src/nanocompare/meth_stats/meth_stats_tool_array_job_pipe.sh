@@ -5,6 +5,7 @@
 # bash meth_stats_tool_array_job_pipe.sh deepmod-add-seq 100
 # $1 - command
 # $2 - num-tasks
+# $3 - input file
 
 #set -x
 

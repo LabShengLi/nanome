@@ -3249,6 +3249,9 @@ def get_dna_sequence_from_reference(chr, start, num_seq=5, ref_fasta=None):
     :return:
     """
 
+    if ref_fasta is None:
+        raise Exception('Please specifiy params: ref_fasta')
+
     long_seq = ref_fasta[chr].seq
     short_seq = str(long_seq)[start - num_seq:start + num_seq + 1]
 
@@ -3256,5 +3259,81 @@ def get_dna_sequence_from_reference(chr, start, num_seq=5, ref_fasta=None):
     return short_seq
 
 
+def get_ref_fasta():
+    ref_fn = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
+    ref_fasta = SeqIO.to_dict(SeqIO.parse(open(ref_fn), 'fasta'))
+    return ref_fasta
+
+
+def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yang/results/2020-12-21/hl60-results-1/extractBismark/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz', chr_col=0, start_col=1, strand_col=2, meth_col=3, unmeth_col=4, ccontect_col=5, covCutt=10, baseFormat=0, includeCov=False):
+    """
+    We are sure the input file is start using 1-based format.
+    Ensure that in + strand, position is pointed to CG's C
+                in - strand, position is pointed to CG's G, (for positive strand sequence)
+            in our imported into programs.
+    We degin this due to other bismark output contains no strand-info.
+    :param infn:
+    :param chr_col:
+    :param start_col:
+    :param strand_col:
+    :param meth_col:
+    :param unmeth_col:
+    :param ccontect_col:
+    :param covCutt:
+    :param baseFormat:
+    :param includeCov:
+    :return:
+    """
+    df = pd.read_csv(infn, sep='\t', compression='gzip', header=None)
+    logger.info(df)
+
+    df['cov'] = df.iloc[:, meth_col] + df.iloc[:, unmeth_col]
+    df = df[df['cov'] >= covCutt]
+
+    df = df[df.iloc[:, ccontect_col] == 'CG']
+
+    if baseFormat == 0:
+        df.iloc[:, start_col] = df.iloc[:, start_col] - 1
+        df['end'] = df.iloc[:, start_col] + 1
+    elif baseFormat == 1:
+        df['end'] = df.iloc[:, start_col]
+
+    df['meth-freq'] = (df.iloc[:, meth_col] / df['cov'] * 100).astype(np.int32)
+
+    df = df.iloc[:, [chr_col, start_col, df.columns.get_loc("end"), df.columns.get_loc("meth-freq"), df.columns.get_loc("cov"), strand_col]]
+
+    df.columns = ['chr', 'start', 'end', 'meth-freq', 'cov', 'strand']
+    logger.info(df)
+
+    cpgDict = {}
+    for index, row in df.iterrows():
+        chr = row['chr']
+        start = row['start']
+        end = row['end']
+        strand = row['strand']
+        key = f'{chr}\t{start}\t{end}\t{strand}\n'
+        if key not in cpgDict:
+            if includeCov:
+                cpgDict[key] = [row['meth-freq'] / 100.0, row['cov']]
+            else:
+                cpgDict[key] = row['meth-freq'] / 100.0
+        else:
+            raise Exception(f'In genome-wide, we found duplicate sites: for key={key}, please check input file {infn}')
+
+    logger.info(f"###\timportGroundTruth_genome_wide_from_Bismark: loaded information for {len(cpgDict)} CpGs from file {infn}")
+
+    return cpgDict
+
+
+def sanity_check_sequence(tlist):
+    ret = get_ref_fasta()
+    for site in tlist:
+        ret_seq = get_dna_sequence_from_reference('chr8', site, ref_fasta=ret)
+        logger.info(f'{site}:{ret_seq}')
+
+
 if __name__ == '__main__':
     set_log_debug_level()
+    importGroundTruth_genome_wide_output_from_Bismark(covCutt=4)
+
+    sanity_check_sequence(tlist=[206309, 206316, 206318, 206494])

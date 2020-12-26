@@ -6,6 +6,8 @@
 # -gBwa     reference genome for BWA-meth
 # --test    output only script, but not submit to helix
 
+# Currently, only Bismark success, the BWA is always failed.
+
 set -x
 
 out_dir=/projects/li-lab/yang/results/2020-12-21/hl60-results-1
