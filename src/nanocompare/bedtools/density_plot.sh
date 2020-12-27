@@ -8,4 +8,7 @@
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
-python density_plot.py
+
+# bash density_plot.sh -i results/K562_WGBS_Joined/
+
+python density_plot.py $@

@@ -1,5 +1,5 @@
 #!/home/liuya/anaconda3/envs/nmf/bin/python
-import glob
+import argparse
 import logging
 import os
 import sys
@@ -78,8 +78,11 @@ def plot_hist_of_df(infn, nearest_cutoff=10, nearest_col=-1):
     """
     title = os.path.basename(infn).replace(".bed", '').replace('meth-cov-', '').replace('-bgtruth-closest', '')
 
-    df = load_df(infn=infn)
-
+    try:
+        df = load_df(infn=infn)
+    except:
+        logging.error(f'file {infn} can not be loaded.')
+        return
     data = df.iloc[:, nearest_col]
     data = data[data != -1]
     data = data[data <= nearest_cutoff]
@@ -123,37 +126,84 @@ def plot_hist_of_df(infn, nearest_cutoff=10, nearest_col=-1):
     plt.close()
 
 
-def plot_hist_all_files():
-    """
-    Plot histogram plot of tool joined with bg-truth
-    :return:
-    """
-    fnlist = glob.glob(f"{fn_base_dir}/*closest.bed")
-    for fn in fnlist:
-        plot_hist_of_df(infn=fn)
+# def plot_hist_all_files():
+#     """
+#     Plot histogram plot of tool joined with bg-truth
+#     :return:
+#     """
+#
+#     if args.i is None:
+#         raise Exception(f"-i option need to specify for display folder")
+#
+#     fnlist = glob.glob(f"{args.i}/*closest.bed")
+#     for fn in fnlist:
+#         logging.debug(f'Processing {fn}')
+#         plot_hist_of_df(infn=fn)
 
 
-def gen_dist1_bedfiles():
+def gen_dist1_bedfiles(infn):
     """
     Generate nearest distance difference ==1, sites to sanity-check
     :return:
     """
-    fnlist = glob.glob(f"{fn_base_dir}/*closest.bed")
-    for fn in fnlist[:]:
-        title = os.path.basename(fn).replace(".bed", '').replace('meth-cov-', '').replace('-bgtruth-closest', '')
+    title = os.path.basename(infn).replace(".bed", '').replace('meth-cov-', '').replace('-bgtruth-closest', '')
 
-        df = load_df(infn=fn)
-        df = df[df.iloc[:, -1] == 1]
-        df = df.loc[:, ['chr-1', 'start-1', 'end-1', 'meth-freq-1', 'cov-1', 'strand-1']]
+    df = load_df(infn=infn)
+    df = df[df.iloc[:, -1] == 1]
+    df = df.loc[:, ['chr-1', 'start-1', 'end-1', 'meth-freq-1', 'cov-1', 'strand-1']]
 
-        if len(df) > 0:
-            outfn = os.path.join(pic_base_dir, f'dist1-{title}.bed')
-            df.to_csv(outfn, sep='\t', index=None, header=None)
-        logging.info(f'Read file {fn} find nearest-distance==1 number = {len(df)}')
+    if len(df) > 0:
+        outfn = os.path.join(pic_base_dir, f'dist1-{title}.bed')
+        df.to_csv(outfn, sep='\t', index=None, header=None)
+    logging.info(f'Read file {infn} find nearest-distance==1 number = {len(df)}')
+
+
+def parse_arguments():
+    """
+    usage: volume_calculation.py [-h] [-n N] [-t T] [--show]
+                             [--input INPUT [INPUT ...]] [--output OUTPUT]
+                             [--dcm] [--single-scan] [--lu-score LU_SCORE]
+                             [--le-score LE_SCORE]
+                             cmd
+
+    Volume calculation for lung and lesion
+
+    positional arguments:
+      cmd                   name of command: compute, combine, or gen-pixel-info
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -n N                  the total number of tasks (1-27)
+      -t T                  the current task id (1-N)
+      --show                show prediction images if using this switch
+      --input INPUT [INPUT ...]
+                            the input dir that contains scanid of pic/dcm files
+      --output OUTPUT       the input pic dir
+      --dcm                 folders are scanid that containing DCM files if using
+                            this switch
+      --single-scan         folders are directly the scanid folder if using this
+                            switch
+      --lu-score LU_SCORE   the lung field detection score
+      --le-score LE_SCORE   the lesion field detection score
+    :return:
+    """
+    parser = argparse.ArgumentParser(description='density plot of nearest distance')
+    parser.add_argument("cmd", help="name of command: plot")
+
+    parser.add_argument('-i', type=str, help="input file directory", default=None)
+    return parser.parse_args()
 
 
 if __name__ == '__main__':
     set_log_debug_level()
-    plot_hist_all_files()
-    gen_dist1_bedfiles()
+
+    args = parse_arguments()
+    logging.debug(args)
+
+    if args.cmd == 'plot':
+        plot_hist_of_df(infn=args.i)
+    elif args.cmd == 'gen-dist1':
+        gen_dist1_bedfiles(infn=args.i)
+
+    # gen_dist1_bedfiles()
     # gen_dist1_bedfiles()

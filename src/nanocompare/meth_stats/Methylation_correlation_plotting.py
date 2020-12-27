@@ -30,7 +30,7 @@ if __name__ == '__main__':
     bgtruthCutt = 5
 
     # load into program format 0-base or 1-base
-    baseFormat = 1
+    baseFormat = 0
 
     logger.info(f'bgtruth cov={bgtruthCutt}, tool cov={minToolCovCutt}')
 
@@ -101,7 +101,7 @@ if __name__ == '__main__':
 
     # Note each tool call filtered results is in format of {'chr\t123\t123\n':[0.56, 15], etc.}
     for call1, name1 in zip(all_calls, name_calls):
-        outfn = os.path.join(out_dir, f'{RunPrefix}-meth-cov-{name1}-baseCount{baseFormat}.bed')
+        outfn = os.path.join(out_dir, f'{RunPrefix}-meth-cov-tool-{name1}-baseCount{baseFormat}.bed')
         save_call_or_bgtruth_to_bed(call1, outfn)
 
     logger.debug(f"Study set intersection of each tool with bgtruth")
@@ -130,6 +130,8 @@ if __name__ == '__main__':
         if name1 not in ['DeepSignal', 'Nanopolish']:
             continue
         overlapCpGs = overlapCpGs.intersection(set(list(call1.keys())))
+    outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-deepsignal-nanopolish-bgtruth-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
+    save_keys_to_bed(overlapCpGs, outfn)
     logger.info(f'Reporting deepsignal, nanopolish with bgtruth, joined results = {len(overlapCpGs)}')
 
     logger.debug(f"Study set intersection of deepsignal, nanopolish")
@@ -144,7 +146,16 @@ if __name__ == '__main__':
             overlapCpGs = set(list(call1.keys()))
         else:
             overlapCpGs = overlapCpGs.intersection(set(list(call1.keys())))
+    outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-deepsignal-nanopolish-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
+    save_keys_to_bed(overlapCpGs, outfn)
     logger.info(f'Reporting deepsignal, nanopolish joined results = {len(overlapCpGs)}')
+
+    logger.debug(f"Next, study set intersection of deepsignal, nanopolish but not in Tombo")
+    newOverlapCpGs = overlapCpGs - Tombo_calls.keys()
+
+    outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-deepsignal-nanopolish-notombo-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
+    save_keys_to_bed(newOverlapCpGs, outfn)
+    logger.info(f'Reporting deepsignal, nanopolish but not in Tombo results = {len(newOverlapCpGs)}')
 
     logger.debug(f"Start set intersection with all joined together (4+1 tools with bgtruth)")
     coveredCpGs = set(list(bgTruth.keys()))
@@ -153,10 +164,9 @@ if __name__ == '__main__':
             continue
         coveredCpGs = coveredCpGs.intersection(set(list(call1.keys())))
         logger.info(f'Join {name1} get {len(coveredCpGs)} CpGs')
-
     logger.info(f"{len(coveredCpGs)} CpGs are covered by all tools and bgtruth")
 
-    outfn = os.path.join(out_dir, f"Meth_corr_plot_data-{RunPrefix}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-time-{current_time_str()}.tsv")
+    outfn = os.path.join(out_dir, f"Meth_corr_plot_data-{RunPrefix}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.tsv")
     logger.info(f"Start output results to {outfn}")
 
     outfile = open(outfn, 'w')
@@ -177,3 +187,4 @@ if __name__ == '__main__':
 
     outfile.close()
     logger.info(f"save to {outfn}")
+    logger.info("Methylation correlation plotting program finished.")

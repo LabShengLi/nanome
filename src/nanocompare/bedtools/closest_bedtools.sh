@@ -8,32 +8,40 @@
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
+# Caculate the nearest distance of each tool with bg-truth bed files by bedtools's closest functions
+
 set -x
 
-#data_base_dir=/projects/li-lab/yang/results/11-25/K562_WGBS_Joined
+RunPrefix=${1:-K562_WGBS_Joined}
+baseFormat=0
 
-#data_base_dir=/projects/li-lab/yang/results/12-16/K562_WGBS_Joined
+data_base_dir=/projects/li-lab/yang/results/$(date +%F)/${RunPrefix}
 
-data_base_dir=/projects/li-lab/yang/results/$(date +%F)/K562_WGBS_Joined
+bgtruth_fn=$(ls ${data_base_dir}/${RunPrefix}*-meth-cov-bgtruth*-baseCount${baseFormat}.bed)
 
-#tool_fn_list=(K562_WGBS_Joined-meth-cov-Tombo-baseCount0.bed K562_WGBS_Joined-meth-cov-DeepMod-baseCount0.bed K562_WGBS_Joined-meth-cov-DeepSignal-baseCount0.bed K562_WGBS_Joined-meth-cov-Nanopolish-baseCount0.bed)
+mkdir -p results
+mkdir -p results/${RunPrefix}
 
-tool_fn_list=(K562_WGBS_Joined-meth-cov-DeepSignal-baseCount0.bed K562_WGBS_Joined-meth-cov-DeepMod-baseCount0.bed K562_WGBS_Joined-meth-cov-DeepMod_cluster-baseCount0.bed K562_WGBS_Joined-meth-cov-Tombo-baseCount0.bed K562_WGBS_Joined-meth-cov-Nanopolish-baseCount0.bed)
+outdir=results/${RunPrefix}
 
-bgtruth_fn=K562_WGBS_Joined-meth-cov-bgtruth-baseCount0.bed
-
-bedtools sort -i ${data_base_dir}/${bgtruth_fn} > fb-sorted.bed
+echo "Processing file:${bgtruth_fn}"
+bedtools sort -i ${bgtruth_fn} > ${outdir}/fb-sorted.bed
 
 i=1
-for tool_fn in "${tool_fn_list[@]}"
+for fn in ${data_base_dir}/${RunPrefix}*-meth-cov-tool-*-baseCount${baseFormat}.bed;
 do
-    outfn=${tool_fn/-baseCount0.bed/}-bgtruth-closest.bed
-    bedtools sort -i ${data_base_dir}/${tool_fn} > f${i}-sorted.bed
-	bedtools closest -a f${i}-sorted.bed -b fb-sorted.bed -d -s > ${outfn}
-#	rm -f f1-sorted.bed
-	echo "Save results to ${outfn}"
+	basefn=$(basename ${fn})
+	echo "Processing file:$basefn"
+
+	outfn=${basefn/-baseCount0.bed/}-bgtruth-closest.bed
+
+	bedtools sort -i ${data_base_dir}/${basefn} > ${outdir}/f${i}-sorted.bed
+	bedtools closest -a ${outdir}/f${i}-sorted.bed -b ${outdir}/fb-sorted.bed -d -s > ${outdir}/${outfn}
+
+	python density_plot.py plot -i ${outdir}/${outfn}
+	echo "Save results to ${outdir}/${outfn}"
+
 	i=$((i+1))
 done
 
-#rm -f f2-sorted.bed
 echo "Closest task is finished"

@@ -1,12 +1,23 @@
 #!/bin/bash
 
-set -x
+#set -x
 
-plot_taskid=$(bash /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/Methylation_correlation_plotting_submit.sh)
-plot_taskid=$(echo ${plot_taskid} |grep -Eo '[0-9]+$')
+meth_corr_task_ret=$(bash /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/Methylation_correlation_plotting_submit.sh)
+
+while IFS= read -r line1; do
+	read -r line2
+
+    RunPrefix=${line1[0]##*=}
+	echo RunPrefix=$RunPrefix
+
+	meth_corr_taskid=$(echo ${line2} |grep -Eo '[0-9]+$')
+	echo taskid=${meth_corr_taskid}
+
+	bedtool_taskid=$(sbatch --dependency=afterok:${meth_corr_taskid} closest_bedtools.sh ${RunPrefix})
+
+    read -r sepline
+done <<< "$meth_corr_task_ret"
 
 
-bedtool_taskid=$(sbatch --dependency=afterok:${plot_taskid} closest_bedtools.sh)
-bedtool_taskid=$(echo ${bedtool_taskid} |grep -Eo '[0-9]+$')
 
-sbatch --dependency=afterok:${bedtool_taskid} density_plot.sh
+

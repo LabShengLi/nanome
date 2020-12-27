@@ -2500,16 +2500,18 @@ def plot_confusion_matrix(cm, classes,
     plt.tight_layout()
 
 
-def save_keys_to_bed(keys, outfn):
+def save_keys_to_bed(keys, outfn, nonstr='.'):
     """
-    Save all keys in set of ('chr\t123\t123\n', etc.) to outfn
+    Save all keys in set of ('chr  123  123  .  .  +\n', etc.) to outfn.
+    We use non-string like . in 3rd, 4th columns by BED file format.
     :param keys:
     :param outfn:
     :return:
     """
     outfile = open(outfn, 'w')
     for key in keys:
-        outfile.write(key)
+        retstr = key.split('\t')
+        outfile.write(f'{retstr[0]}\t{retstr[1]}\t{retstr[2]}\t{nonstr}\t{nonstr}\t{retstr[3]}')
     outfile.close()
 
 
@@ -3188,9 +3190,9 @@ def load_sam_as_strand_info_df(infn='/projects/li-lab/yang/workspace/nano-compar
     df.columns = ['read-name', 'strand-info']
     # df.columns[0] = 'read-name'
     # df.columns[1] = 'strand-info'
-    logger.info(len(data))
-    logger.info(df)
-    logger.info(df['strand-info'].value_counts())
+    logger.debug(len(data))
+    logger.debug(df)
+    logger.debug(df['strand-info'].value_counts())
     return df
 
 
