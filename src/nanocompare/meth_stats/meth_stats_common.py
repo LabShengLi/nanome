@@ -166,6 +166,14 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_rat
                 start = int(tmp[start_col])
                 num_sites = int(tmp[num_sites_col])
                 llr = float(tmp[log_lik_ratio_col])
+                if abs(llr) < logLikehoodCutt:
+                    continue
+
+                if llr >= logLikehoodCutt:
+                    meth_indicator = 1
+                elif llr <= -logLikehoodCutt:
+                    meth_indicator = 0
+
                 strand_info = tmp[strand_col]
                 if strand_info == '-':
                     start = start + 1
@@ -183,12 +191,10 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_rat
                 else:
                     logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
                     sys.exit(-1)
+
                 if key not in cpgDict:
                     cpgDict[key] = []
-                if llr >= logLikehoodCutt:
-                    cpgDict[key].append(1)
-                elif llr <= -logLikehoodCutt:
-                    cpgDict[key].append(0)
+                cpgDict[key].append(meth_indicator)
                 count += 1
             else:  # we deal with non-singleton
                 firstCpgLoc = int(tmp[start_col]) - 5
@@ -210,15 +216,12 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_rat
 
                     if key not in cpgDict:
                         cpgDict[key] = []
-                    if float(tmp[log_lik_ratio_col]) >= logLikehoodCutt:
-                        cpgDict[key].append(1)
-                    elif float(tmp[log_lik_ratio_col]) <= -logLikehoodCutt:
-                        cpgDict[key].append(0)
+                    cpgDict[key].append(meth_indicator)
                     count += 1
 
     infile.close()
 
-    logger.info("###\timportPredictions_Nanopolish SUCCESS: {} methylation calls mapped to {} CpGs from {} file".format(count, len(cpgDict), infileName))
+    logger.info("###\timportPredictions_Nanopolish SUCCESS: {:,} methylation calls mapped to {:,} CpGs from {} file".format(count, len(cpgDict), infileName))
     return cpgDict
 
 
@@ -577,7 +580,7 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
 
     infile.close()
 
-    logger.info("###\timportPredictions_DeepSignal SUCCESS: {} methylation calls mapped to {} CpGs from {} file".format(count, len(cpgDict), infileName))
+    logger.info("###\timportPredictions_DeepSignal SUCCESS: {:,} methylation calls mapped to {:,} CpGs from {} file".format(count, len(cpgDict), infileName))
     return cpgDict
 
 
@@ -700,7 +703,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     # logger.debug(f"importPredictions_Tombo infileName={infileName}")
     infile = open(infileName, "r")
     cpgDict = {}
-    row_count = 0
+    row_count_after_cutoff = 0
 
     output_first = True
 
@@ -752,23 +755,22 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
 
         # TODO: check if the corrected meth-cutoff is right? before <cutoff is methylated, not true, i think.
 
-        switch = 0  # if we report this read-level results, if cutoff satisfied
-        if methCall <= -cutoff:
-            methCall = 0
-            switch = 1
-        elif methCall >= cutoff:
-            methCall = 1
-            switch = 1
+        if abs(methCall) < cutoff:
+            continue
 
-        if switch == 1:
-            if key not in cpgDict:
-                cpgDict[key] = []
-            cpgDict[key].append(methCall)
-        row_count += 1
+        if methCall <= -cutoff:
+            meth_indicator = 0
+        else:
+            meth_indicator = 1
+
+        if key not in cpgDict:
+            cpgDict[key] = []
+        cpgDict[key].append(meth_indicator)
+        row_count_after_cutoff += 1
 
     infile.close()
 
-    logger.info("###\timportPredictions_Tombo SUCCESS: {} methylation calls mapped to {} CpGs with cutoff={} from {} file".format(row_count, len(cpgDict), cutoff, infileName))
+    logger.info("###\timportPredictions_Tombo SUCCESS: {:,} methylation calls mapped to {:,} CpGs with cutoff={} from {} file".format(row_count_after_cutoff, len(cpgDict), cutoff, infileName))
     return cpgDict
 
 
@@ -1025,7 +1027,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
 
     infile.close()
 
-    logger.info("###\timportPredictions_DeepMod SUCCESS: {} methylation calls mapped to {} CpGs from {} file".format(count, len(cpgDict), infileName))
+    logger.info("###\timportPredictions_DeepMod SUCCESS: {:,} methylation calls mapped to {:,} CpGs from {} file".format(count, len(cpgDict), infileName))
     return cpgDict
 
 
@@ -1178,7 +1180,7 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
 
     infile.close()
 
-    logger.info("###\tDeepMod_clusteredResultParsing SUCCESS: methylation calls imported for {} CpGs from {} file".format(count, infileName))
+    logger.info("###\tDeepMod_clusteredResultParsing SUCCESS: {:,} methylation calls imported for {:,} CpGs from {} file".format(count, len(cpgDict), infileName))
     return cpgDict
 
 
@@ -1186,6 +1188,8 @@ def coverageFiltering(calls_dict, minCov=4, byLength=True):
     """
     Convert orignial call object from dict[cpg] = {cpg: [meth_freq_read1, ..., meth_freq_readn]} to dict[cpg] = {cpg:[meth_freq, coverage_number]}
 
+    meth_freq   in [0.0,1.0]
+    cov_num     in int
     Read-level -> Genome-level
 
     :param calls_dict:
@@ -1202,7 +1206,7 @@ def coverageFiltering(calls_dict, minCov=4, byLength=True):
             if calls_dict[cpg][1] >= minCov:
                 result[cpg] = [calls_dict[cpg][0] / 100.0, calls_dict[cpg][1]]
 
-    logger.info(f"###\tcoverageFiltering: completed filtering with minCov={minCov}, {len(result)} sites left")
+    logger.info(f"###\tcoverageFiltering: completed filtering with minCov={minCov}, {len(result):,} CpG sites left")
     return result
 
 
@@ -1454,7 +1458,7 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
                     continue
 
     infile.close()
-    logger.info("###\timportGroundTruth_coverage_output_from_Bismark: loaded information for {} CpGs".format(len(cpgDict)))
+    logger.info("###\timportGroundTruth_coverage_output_from_Bismark: loaded information for {:,} CpGs".format(len(cpgDict)))
     return cpgDict
 
 
@@ -2541,6 +2545,50 @@ def save_call_or_bgtruth_to_bed(call, outfn):
     outfile.close()
 
 
+def save_call_to_methykit_txt(call, outfn, is_cov=True):
+    """
+    For methykit analysis format
+
+    is_cov  True if key->value value is [freq, cov]
+            False if key->value value is list of [0000111, etc.]
+    :param call:
+    :param outfn:
+    :return:
+    """
+    logger.debug(f'save_call_to_methykit_txt:{outfn}')
+    outfile = open(outfn, 'w')
+    outfile.write("chrBase\tchr\tbase\tstrand\tcoverage\tfreqC\tfreqT\n")
+    print_first = True
+    for key in call:
+        if print_first:
+            logger.debug(f'key={key[:-1]}, value={call[key]}')
+            print_first = False
+
+        strlist = key[:-1].split('\t')
+        chr = strlist[0]
+        base = strlist[1]
+        strand = strlist[3]
+        if strand == '+':
+            strand = 'F'
+        else:
+            strand = 'R'
+
+        if is_cov:
+            freq = call[key][0]
+            cov = call[key][1]
+        else:
+            try:
+                freq = sum(call[key]) / float(len(call[key]))
+                cov = len(call[key])
+            except:
+                logger.error(f'key={key[:-1]}, value={call[key]}')
+                exit(-1)
+            pass
+        outstr = f'{chr}.{base}\t{chr}\t{base}\t{strand}\t{cov}\t{freq:.2f}\t{1 - freq:.2f}\n'
+        outfile.write(outstr)
+    outfile.close()
+
+
 def combine2programsCalls(calls1, calls2, outfileName=None):
     '''
     call1 and call2 should have the following format:
@@ -3267,7 +3315,7 @@ def get_ref_fasta():
     return ref_fasta
 
 
-def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yang/results/2020-12-21/hl60-results-1/extractBismark/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz', chr_col=0, start_col=1, strand_col=2, meth_col=3, unmeth_col=4, ccontect_col=5, covCutt=10, baseFormat=0, includeCov=False):
+def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yang/results/2020-12-21/hl60-results-1/extractBismark/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz', chr_col=0, start_col=1, strand_col=2, meth_col=3, unmeth_col=4, ccontect_col=5, covCutt=10, baseCount=0, includeCov=False):
     """
     We are sure the input file is start using 1-based format.
     Ensure that in + strand, position is pointed to CG's C
@@ -3282,7 +3330,7 @@ def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yan
     :param unmeth_col:
     :param ccontect_col:
     :param covCutt:
-    :param baseFormat:
+    :param baseCount:
     :param includeCov:
     :return:
     """
@@ -3294,10 +3342,10 @@ def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yan
 
     df = df[df.iloc[:, ccontect_col] == 'CG']
 
-    if baseFormat == 0:
+    if baseCount == 0:
         df.iloc[:, start_col] = df.iloc[:, start_col] - 1
         df['end'] = df.iloc[:, start_col] + 1
-    elif baseFormat == 1:
+    elif baseCount == 1:
         df['end'] = df.iloc[:, start_col]
 
     df['meth-freq'] = (df.iloc[:, meth_col] / df['cov'] * 100).astype(np.int32)
@@ -3322,7 +3370,7 @@ def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yan
         else:
             raise Exception(f'In genome-wide, we found duplicate sites: for key={key}, please check input file {infn}')
 
-    logger.info(f"###\timportGroundTruth_genome_wide_from_Bismark: loaded information for {len(cpgDict)} CpGs from file {infn}")
+    logger.info(f"###\timportGroundTruth_genome_wide_from_Bismark: loaded information for {len(cpgDict):,} CpGs from file {infn}")
 
     return cpgDict
 
@@ -3334,8 +3382,78 @@ def sanity_check_sequence(tlist):
         logger.info(f'{site}:{ret_seq}')
 
 
+def scatter_plot_x_y(xx, yy, tagname='', outdir=None):
+    """
+    :param xx:
+    :param yy:
+    :return:
+    """
+    if outdir is None:
+        outdir = pic_base_dir
+
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize=(4, 4))
+
+    ax = sns.scatterplot(x=xx, y=yy)
+    ax.set_title(f"Scatter of {len(xx):,} points")
+
+    plt.tight_layout()
+    outfn = os.path.join(outdir, f'scatter-plot-{tagname}.jpg')
+    plt.savefig(outfn, dpi=600, bbox_inches='tight')
+    plt.show()
+    plt.close()
+    logger.info(f"save to {outfn}")
+
+    pass
+
+
+def scatter_plot_cov_compare_df(infn=None, df=None, outdir=None):
+    if df is None:
+        if infn is None:
+            raise Exception("No data source specified.")
+
+        if os.path.splitext(infn)[1] == '.csv':
+            df = pd.read_csv(infn)
+        elif os.path.splitext(infn)[1] == '.pkl':
+            df = pd.read_pickle(infn)
+
+    if outdir is None:
+        outdir = pic_base_dir
+
+    xx = df.iloc[:, 0]
+    yy = df.iloc[:, 1]
+
+    tagname = f'cov-of-{xx.name}-vs-{yy.name}'
+    scatter_plot_x_y(xx, yy, tagname=tagname, outdir=outdir)
+
+
+def scatter_analysis_cov(Tombo_calls1, Nanopolish_calls1, outdir, RunPrefix, tool1_name='Tombo', tool2_name='nanopolish'):
+    tomboCpGs = set(Tombo_calls1.keys())
+    intersectCpGs = tomboCpGs.intersection(Nanopolish_calls1.keys())
+    key_list = []
+    tombo_list = []
+    tool_list = []
+    for cpg in intersectCpGs:
+        key_list.append(cpg[:-1])
+        tombo_list.append(len(Tombo_calls1[cpg]))
+        tool_list.append(len(Nanopolish_calls1[cpg]))
+
+    scatterDf = pd.DataFrame(data={f'{tool1_name}-cov': tombo_list, f'{tool2_name}-cov': tool_list}, index=key_list)
+    outfn = os.path.join(outdir, f'{RunPrefix}-tombo-nanopolish-scatter.csv')
+    scatterDf.to_csv(outfn)
+
+    outfn = os.path.join(outdir, f'{RunPrefix}-tombo-nanopolish-scatter.pkl')
+    scatterDf.to_pickle(outfn)
+
+    scatter_plot_cov_compare_df(df=scatterDf, outdir=outdir)
+
+
 if __name__ == '__main__':
     set_log_debug_level()
-    importGroundTruth_genome_wide_output_from_Bismark(covCutt=4)
 
-    sanity_check_sequence(tlist=[206309, 206316, 206318, 206494])
+    scatter_plot_cov_compare_df(infn='/projects/li-lab/yang/results/2020-12-28/K562_WGBS_Joined/K562_WGBS_Joinedtombo-nanopolish-scatter.pkl')
+
+    # importGroundTruth_genome_wide_output_from_Bismark(covCutt=4)
+    # sanity_check_sequence(tlist=[206309, 206316, 206318, 206494])
