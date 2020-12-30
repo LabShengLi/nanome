@@ -27,12 +27,11 @@ numk=$((SLURM_ARRAY_TASK_ID-1))
 
 #part=${numk}
 
-numKSeptInputDir=${septInputDir}/${numk}
+#numKSeptInputDir=${septInputDir}/${numk}
+#echo NumKSeptInputDir=${numKSeptInputDir}
+
 numKBasecallOutputDir=${basecallOutputDir}/${numk}
-
-echo NumKSeptInputDir=${numKSeptInputDir}
 echo NumKBasecallOutputDir=${numKBasecallOutputDir}
-
 
 ## Modify directory for processed files after basecalling:
 processedFast5DIR=$numKBasecallOutputDir/workspace/pass/0

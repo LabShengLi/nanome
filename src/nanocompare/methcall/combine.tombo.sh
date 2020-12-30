@@ -10,4 +10,6 @@
 
 set -x
 
-cat ${methCallsDir}/*.bed > ${methCallsDir}/${analysisPrefix}.tombo.combine.bed
+cat ${methCallsDir}/*perReadsStats.bed > ${methCallsDir}/${analysisPrefix}.tombo.perReadsStats.combine.bed
+
+wc -l ${methCallsDir}/${analysisPrefix}.tombo.perReadsStats.combine.bed
