@@ -10,4 +10,10 @@
 
 set -x
 
-#rm -rf  /fastscratch/liuya/nanocompare/K562_untar-1 /fastscratch/liuya/nanocompare/K562_sept-1
+source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/common-utils.sh
+
+N=6
+ret="Submitted batch job 5812809"
+
+task_ids=$(get_arrayjob_ids "${ret}" "$N")
+echo "--dependency=afterok${task_ids}"

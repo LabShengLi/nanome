@@ -25,11 +25,6 @@ processors=8
 
 numk=$((SLURM_ARRAY_TASK_ID-1))
 
-#part=${numk}
-
-#numKSeptInputDir=${septInputDir}/${numk}
-#echo NumKSeptInputDir=${numKSeptInputDir}
-
 numKBasecallOutputDir=${basecallOutputDir}/${numk}
 echo NumKBasecallOutputDir=${numKBasecallOutputDir}
 
@@ -43,6 +38,8 @@ set -x
 if [ "${run_resquiggling}" = true ] ; then
 	## Re-squiggle the data:
 	tombo resquiggle $processedFast5DIR $refGenome --processes $processors --corrected-group $correctedGroup --basecall-group Basecall_1D_000 --overwrite
+
+	echo "tombo resquiggle $processedFast5DIR $refGenome --processes $processors --corrected-group $correctedGroup --basecall-group Basecall_1D_000 --overwrite"
 	echo "###   Re-squiggling DONE"
 fi
 
@@ -51,16 +48,19 @@ date
 tombo detect_modifications alternative_model --fast5-basedirs $processedFast5DIR --statistics-file-basename $methCallsDir/$analysisPrefix.batch_${numk} --per-read-statistics-basename $methCallsDir/$analysisPrefix.batch_${numk} --alternate-bases 5mC --processes $processors --corrected-group $correctedGroup --multiprocess-region-size 10000
 date
 
+echo "tombo detect_modifications alternative_model --fast5-basedirs $processedFast5DIR --statistics-file-basename $methCallsDir/$analysisPrefix.batch_${numk} --per-read-statistics-basename $methCallsDir/$analysisPrefix.batch_${numk} --alternate-bases 5mC --processes $processors --corrected-group $correctedGroup --multiprocess-region-size 10000"
+echo "###   Tombo methylation calling DONE"
 
 ## Postprocess per read methylation calls
 python /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/Tombo_extract_per_read_stats.py $chromSizesFile $methCallsDir/$analysisPrefix.batch_${numk}.5mC.tombo.per_read_stats $methCallsDir/$analysisPrefix.batch_${numk}.perReadsStats.bed
+
+wc -l $methCallsDir/$analysisPrefix.batch_${numk}.perReadsStats.bed
+
+echo "python /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/Tombo_extract_per_read_stats.py $chromSizesFile $methCallsDir/$analysisPrefix.batch_${numk}.5mC.tombo.per_read_stats $methCallsDir/$analysisPrefix.batch_${numk}.perReadsStats.bed"
 echo "###   Postprocessing of per read stats files DONE"
 
 set +x
 conda deactivate
 set -x
 
-echo "tombo detect_modifications alternative_model --fast5-basedirs $processedFast5DIR --statistics-file-basename $methCallsDir/$analysisPrefix.batch_${numk} --per-read-statistics-basename $methCallsDir/$analysisPrefix.batch_${numk} --alternate-bases 5mC --processes $processors --corrected-group $correctedGroup --multiprocess-region-size 10000"
-echo "###   Tombo methylation calling DONE"
-
-echo "###   Tombo Meth-call DONE    ###"
+echo "###   Tombo Meth-call task is DONE    ###"

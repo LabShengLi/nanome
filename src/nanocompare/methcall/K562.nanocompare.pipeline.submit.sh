@@ -15,12 +15,14 @@
 
 ### Input parameters prepared for pipeline###
 dsname=K562
-targetNum=60
+targetNum=50
 inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K562-Nanopore_GT18-07372.fast5.tar
 
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
-ToolList=(Tombo)
+ToolList=(DeepSignal)
+#ToolList=(Tombo)
+
 ### Which step is going to run, true or false, if 'true' means running this step
 #run_preprocessing=false
 #run_basecall=false
@@ -33,10 +35,14 @@ run_basecall=true
 run_resquiggling=true
 run_methcall=true
 run_combine=true
+
 ### Reference file path configuration, used by each base or meth calling
 correctedGroup="RawGenomeCorrected_000"
 refGenome="/projects/li-lab/reference/hg38/hg38.fasta"
 chromSizesFile="/projects/li-lab/yang/workspace/nano-compare/data/genome-annotation/hg38.chrom.sizes"
+
+deepsignalModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/model.CpG.R9.4_1D.human_hx1.bn17.sn360/bn_17.sn_360.epoch_7.ckpt"
+isGPU="no"
 
 ###################################################################################
 ###################################################################################
