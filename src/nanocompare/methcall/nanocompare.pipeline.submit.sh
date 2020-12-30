@@ -70,7 +70,7 @@ if [ "$run_methcall" = true ] ; then
 
 	if [ "${Tool}" = "Tombo" ] ; then
 		# Tombo methylation call pipeline
-		meth_arrayjob_ret=$(sbatch --job-name=tombo-methcall-${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --array=1-${targetNum} --export=septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},dataname=${dsname},methCallsDir=${methCallsDir},analysisPrefix=${analysisPrefix},correctedGroup=${correctedGroup},refGenome=${refGenome},chromSizesFile=${chromSizesFile} --dependency=afterok${base_taskids} methcall.tombo.sh)
+		meth_arrayjob_ret=$(sbatch --job-name=tombo-methcall-${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --array=1-${targetNum} --export=septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},dataname=${dsname},methCallsDir=${methCallsDir},analysisPrefix=${analysisPrefix},correctedGroup=${correctedGroup},refGenome=${refGenome},chromSizesFile=${chromSizesFile},run_resquiggling=${run_resquiggling} --dependency=afterok${base_taskids} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/methcall.tombo.sh)
 	fi
 	set +x
 	meth_arrayjob_id=${meth_arrayjob_ret##* }
@@ -95,6 +95,6 @@ fi
 if [ "$run_combine" = true ] ; then
 	echo Step4: combing results
 	if [ "${Tool}" = "Tombo" ] ; then
-		sbatch --job-name=combine.tombo.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --dependency=afterok${meth_taskids} --export=analysisPrefix=${analysisPrefix},methCallsDir=${methCallsDir}  combine.tombo.sh
+		sbatch --job-name=combine.tombo.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --dependency=afterok${meth_taskids} --export=analysisPrefix=${analysisPrefix},methCallsDir=${methCallsDir}  /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/wcombine.tombo.sh
 	fi
 fi

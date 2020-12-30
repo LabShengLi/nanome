@@ -10,4 +10,4 @@
 
 set -x
 
-rm -rf  /fastscratch/liuya/nanocompare/K562_untar-1 /fastscratch/liuya/nanocompare/K562_sept-1
+#rm -rf  /fastscratch/liuya/nanocompare/K562_untar-1 /fastscratch/liuya/nanocompare/K562_sept-1

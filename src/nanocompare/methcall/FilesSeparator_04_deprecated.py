@@ -105,6 +105,6 @@ bash FilesSeparator_batch_$((SLURM_ARRAY_TASK_ID-1)).sh
     outfile.close()
 
 
-# Samples: python /projects/liuya/workspace/long_read/utils/FilesSeparator_04.py /fastscratch/liuya/AB.Nanop/input 1 /fastscratch/liuya/AB.Nanop/sept yang.liu@jax.org
+# Samples: python /projects/liuya/workspace/long_read/utils/FilesSeparator_04_deprecated.py /fastscratch/liuya/AB.Nanop/input 1 /fastscratch/liuya/AB.Nanop/sept yang.liu@jax.org
 if __name__ == "__main__":
     main()

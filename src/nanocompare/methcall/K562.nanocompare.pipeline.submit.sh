@@ -1,4 +1,12 @@
 #!/bin/bash
+#SBATCH --job-name=nano.pipeline.submit
+#SBATCH -q batch
+#SBATCH -N 1 # number of nodes
+#SBATCH -n 1 # number of cores
+#SBATCH --mem 250g # memory pool for all cores
+#SBATCH -t 2-23:00:00 # time (D-HH:MM)
+#SBATCH -o log/%x.%j.out # STDOUT
+#SBATCH -e log/%x.%j.err # STDERR
 
 # set -x
 ###################################################################################
@@ -6,20 +14,22 @@
 ###################################################################################
 ### Input parameters prepared for pipeline###
 dsname=K562
-ToolList=(Tombo DeepSignal)
-targetNum=1
-inputDataDir=/projects/li-lab/yang/results/2020-12-28/K562-Nanopore_GT18-07372.fast5.tar
+#ToolList=(Tombo DeepSignal)
+ToolList=(Tombo)
+targetNum=60
+inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K562-Nanopore_GT18-07372.fast5.tar
 
 ### Running config, if TRUE means running this step
 run_preprocessing=true
 run_basecall=true
+run_resquiggling=true
 run_methcall=true
 run_combine=true
 
 ### Reference file configuration
 correctedGroup="RawGenomeCorrected_000"
 refGenome="/projects/li-lab/reference/hg38/hg38.fasta"
-chromSizesFile="/projects/li-lab/yang/results/2020-12-28/k562-tombo/hg38.chrom.sizes"
+chromSizesFile="/projects/li-lab/yang/workspace/nano-compare/data/genome-annotation/hg38.chrom.sizes"
 
 ###################################################################################
 ###################################################################################
@@ -27,14 +37,13 @@ chromSizesFile="/projects/li-lab/yang/results/2020-12-28/k562-tombo/hg38.chrom.s
 
 
 for Tool in ${ToolList[@]}; do
-    echo ${Tool}
 	### Building output folder configuration
 	analysisPrefix=${dsname}-${Tool}-N${targetNum}
-	untaredInputDir=/fastscratch/liuya/nanocompare/${analysisPrefix}/${dsname}-untar
-	septInputDir=/fastscratch/liuya/nanocompare/${analysisPrefix}/${dsname}-sept
-	basecallOutputDir=/fastscratch/liuya/nanocompare/${analysisPrefix}/${dsname}-basecalled
+	untaredInputDir=/fastscratch/liuya/nanocompare/${analysisPrefix}/${analysisPrefix}-untar
+	septInputDir=/fastscratch/liuya/nanocompare/${analysisPrefix}/${analysisPrefix}-sept
+	basecallOutputDir=/fastscratch/liuya/nanocompare/${analysisPrefix}/${analysisPrefix}-basecall
 	methCallsDir=/fastscratch/liuya/nanocompare/${analysisPrefix}/${analysisPrefix}-meth-call
-	echo analysisPrefix=${analysisPrefix}
+	echo "Start pipeline submit for analysisPrefix=${analysisPrefix}"
 
 	###################################################################################
 	### Preserve followings to run pipeline                                         ###

@@ -54,7 +54,7 @@ def main():
         #     print(f'Processed #{k} files.')
 
 
-# Samples: python /projects/liuya/workspace/long_read/utils/FilesSeparator_04.py /fastscratch/liuya/AB.Nanop/input 1 /fastscratch/liuya/AB.Nanop/sept yang.liu@jax.org
+# Samples: python /projects/liuya/workspace/long_read/utils/FilesSeparator_04_deprecated.py /fastscratch/liuya/AB.Nanop/input 1 /fastscratch/liuya/AB.Nanop/sept yang.liu@jax.org
 if __name__ == "__main__":
     main()
     # shutil.move('test.txt', "/projects/liuya")
