@@ -94,7 +94,12 @@ fi
 
 if [ "$run_combine" = true ] ; then
 	echo Step4: combing results
+	dep_params=""
+	if [ "$run_methcall" = true ] ; then
+		dep_params="--dependency=afterok${meth_taskids}"
+	fi
+
 	if [ "${Tool}" = "Tombo" ] ; then
-		sbatch --job-name=combine.tombo.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --dependency=afterok${meth_taskids} --export=analysisPrefix=${analysisPrefix},methCallsDir=${methCallsDir}  /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/wcombine.tombo.sh
+		sbatch --job-name=combine.tombo.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ${dep_params} --export=analysisPrefix=${analysisPrefix},methCallsDir=${methCallsDir}  /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/combine.tombo.sh
 	fi
 fi
