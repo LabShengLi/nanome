@@ -44,37 +44,37 @@ if __name__ == '__main__':
     if argv[1] == 'NO':
         DeepSignal_calls = None
     else:
-        DeepSignal_calls1 = importPredictions_DeepSignal(argv[1], baseFormat=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepSignal_runs/K562/K562_DeepSignal.MethCalls.Joined.tsv")
-        DeepSignal_calls = coverageFiltering(DeepSignal_calls1, minCov=minToolCovCutt)
+        DeepSignal_calls0 = importPredictions_DeepSignal(argv[1], baseFormat=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepSignal_runs/K562/K562_DeepSignal.MethCalls.Joined.tsv")
+        DeepSignal_calls = coverageFiltering(DeepSignal_calls0, minCov=minToolCovCutt)
 
     logger.debug(f"Start load Tombo")
     if argv[2] == 'NO':
         Tombo_calls = None
     else:
-        Tombo_calls1 = importPredictions_Tombo(argv[2], baseFormat=baseFormat, cutoff=2.0)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_Tombo_runs/K562/K562_Tombo.batch_all.batch_0.perReadsStats.bed")
-        Tombo_calls = coverageFiltering(Tombo_calls1, minCov=minToolCovCutt)
+        Tombo_calls0 = importPredictions_Tombo(argv[2], baseFormat=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_Tombo_runs/K562/K562_Tombo.batch_all.batch_0.perReadsStats.bed")
+        Tombo_calls = coverageFiltering(Tombo_calls0, minCov=minToolCovCutt)
 
     logger.debug(f"Start load Nanopolish")
     if argv[3] == 'NO':
         Nanopolish_calls = None
     else:
         # Nanopolish_calls = importPredictions_Nanopolish_v2(argv[3])  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/Leukemia_ONT/K562.nanopolish/K562.methylation_calls.tsv", IncludeNonSingletons = True)
-        Nanopolish_calls1 = importPredictions_Nanopolish(argv[3], baseFormat=baseFormat, logLikehoodCutt=2.0)
-        Nanopolish_calls = coverageFiltering(Nanopolish_calls1, minCov=minToolCovCutt)
+        Nanopolish_calls0 = importPredictions_Nanopolish(argv[3], baseFormat=baseFormat, logLikehoodCutt=2.0)
+        Nanopolish_calls = coverageFiltering(Nanopolish_calls0, minCov=minToolCovCutt)
 
     logger.debug(f"Start load DeepMod")
     if argv[4] == 'NO':
         DeepMod_calls = None
     else:
-        DeepMod_calls1 = importPredictions_DeepMod(argv[4], baseFormat=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepMod_runs/K562/K562.C.combined.bed")
-        DeepMod_calls = coverageFiltering(DeepMod_calls1, minCov=minToolCovCutt)
+        DeepMod_calls0 = importPredictions_DeepMod(argv[4], baseFormat=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepMod_runs/K562/K562.C.combined.bed")
+        DeepMod_calls = coverageFiltering(DeepMod_calls0, minCov=minToolCovCutt)
 
     logger.debug(f"Start load DeepMod_clusteredResultParsing")
     if argv[5] == 'NO':
         DeepMod_calls_clustered = None
     else:
-        DeepMod_calls_clustered1 = importPredictions_DeepMod_clustered(argv[5], baseFormat=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepMod_runs/K562/K562.C_clusterCpG.combined.bed")
-        DeepMod_calls_clustered = coverageFiltering(DeepMod_calls_clustered1, minCov=minToolCovCutt, byLength=False)
+        DeepMod_calls_clustered0 = importPredictions_DeepMod_clustered(argv[5], baseFormat=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepMod_runs/K562/K562.C_clusterCpG.combined.bed")
+        DeepMod_calls_clustered = coverageFiltering(DeepMod_calls_clustered0, minCov=minToolCovCutt, byLength=False)
 
     logger.debug(f"Start load bgTruth")
 
@@ -94,7 +94,18 @@ if __name__ == '__main__':
 
     name_calls = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'DeepMod_cluster']
     all_calls = [DeepSignal_calls, Tombo_calls, Nanopolish_calls, DeepMod_calls, DeepMod_calls_clustered]
-    all_calls_before_cutoff = [DeepSignal_calls1, Tombo_calls1, Nanopolish_calls1, DeepMod_calls1, DeepMod_calls_clustered1]
+
+    all_calls_before_cutoff = [DeepSignal_calls0, Tombo_calls0, Nanopolish_calls0, DeepMod_calls0, DeepMod_calls_clustered0]
+
+    logger.debug(f'Study and find high cov in DeepSignal and Nanopolish, but low in Tombo (before cutoff)')
+
+    df = get_high_cov_call1_low_cov_call2_df(Nanopolish_calls0, Tombo_calls0)
+    logger.debug(df)
+    outfn = os.path.join(out_dir, f'{RunPrefix}-high-cov-nanopolish-low-cov-tombo-baseCount{baseFormat}.bed')
+    df.to_csv(outfn, sep='\t', index=False)
+
+    outfn = os.path.join(out_dir, f'{RunPrefix}-high-cov-nanopolish-low-cov-tombo-baseCount{baseFormat}.pkl')
+    df.to_pickle(outfn)
 
     logger.debug(f"Output bed files of each tool, and bgtruth")
 
@@ -117,8 +128,8 @@ if __name__ == '__main__':
 
     logger.debug(f"Study scatter plot of coverage for Tombo with other tool with no cutoff")
 
-    scatter_analysis_cov(Tombo_calls1, Nanopolish_calls1, outdir=out_dir, RunPrefix=RunPrefix, tool1_name='Tombo', tool2_name='Nanopolish')
-    scatter_analysis_cov(Tombo_calls1, DeepSignal_calls1, outdir=out_dir, RunPrefix=RunPrefix, tool1_name='Tombo', tool2_name='Deepsignal')
+    scatter_analysis_cov(Tombo_calls0, Nanopolish_calls0, outdir=out_dir, RunPrefix=RunPrefix, tool1_name='Tombo', tool2_name='Nanopolish')
+    scatter_analysis_cov(Tombo_calls0, DeepSignal_calls0, outdir=out_dir, RunPrefix=RunPrefix, tool1_name='Tombo', tool2_name='Deepsignal')
 
     logger.debug(f"Study set intersection of each tool with bgtruth")
     dataset = []

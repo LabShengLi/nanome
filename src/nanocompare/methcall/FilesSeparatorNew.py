@@ -1,15 +1,15 @@
 """
 This file will seperate all fast5 file into some subfolders
-
 """
+
+import os
 import shutil
 from sys import argv
-import os
-from math import ceil
-import subprocess
-
 
 # return all .fast5 file to a list
+from tqdm import tqdm
+
+
 def recursiveFast5(path):
     fast5files = []
     for root, dirs, files in os.walk(path):
@@ -38,7 +38,7 @@ def main():
     MainOutputDir = argv[3]  # "/fastscratch/rosikw/APL_newSept"
 
     fast5files = recursiveFast5(path)  # [1,2,3,4,5,6,7,8,9,0]
-    print(f'total files: {len(fast5files)}')
+    print(f'total files: {len(fast5files)}, indir={path}, TargetNum={TargetNum}, outdir={MainOutputDir}')
 
     for k in range(TargetNum):
         fdir = os.path.join(MainOutputDir, f'{k}')
@@ -46,20 +46,12 @@ def main():
             os.umask(0)
             os.makedirs(fdir, exist_ok=True)
 
-    for k, fn in enumerate(fast5files):
-
-        basefn = os.path.basename(fn)
+    for k, fn in tqdm(enumerate(fast5files)):
         destdir = os.path.join(MainOutputDir, f'{k % TargetNum}')
-
-        destfn = os.path.join(MainOutputDir, f'{k % TargetNum}', basefn)
-
-        # print(f'from [{fn}] to [{destfn}]')
-
-        # shutil.move(fn, destfn)
         shutil.move(fn, destdir)
-
-        if k % 1000 == 0:
-            print(f'Processed #{k} files.')
+        #
+        # if k % 1000 == 0:
+        #     print(f'Processed #{k} files.')
 
 
 # Samples: python /projects/liuya/workspace/long_read/utils/FilesSeparator_04.py /fastscratch/liuya/AB.Nanop/input 1 /fastscratch/liuya/AB.Nanop/sept yang.liu@jax.org

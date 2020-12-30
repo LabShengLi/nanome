@@ -1107,6 +1107,9 @@ def importPredictions_DeepMod3(infileName, chr_col=0, start_col=1, meth_percenta
 
 def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=4, clustered_meth_freq_col=-1, baseFormat=1):
     '''
+    Note: results of cluster is differ from other tools like:
+    [methFrequency, coverage]
+
     Note that the function requires per read stats, not frequencies of methylation.
     !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
 
@@ -3448,6 +3451,32 @@ def scatter_analysis_cov(Tombo_calls1, Nanopolish_calls1, outdir, RunPrefix, too
     scatterDf.to_pickle(outfn)
 
     scatter_plot_cov_compare_df(df=scatterDf, outdir=outdir)
+
+
+def get_high_cov_call1_low_cov_call2_df(call1, call2, call1_name='nanopolish', call2_name='tombo', low_cutoff=4):
+    """
+    Get the high cov of call1, but low cov of call2
+    :param call1:
+    :param call2:
+    :param call1_name:
+    :param call2_name:
+    :param low_cutoff:
+    :return:
+    """
+    interCpGs = set(call1.keys()).intersection(call2.keys())
+    dataset = []
+    for key in interCpGs:
+        kettext = key[:-1].split("\t")
+        ret = {'chr': kettext[0], 'start': kettext[1], 'end': kettext[2], 'strand': kettext[3]}
+        ret.update({call1_name: len(call1[key]), call2_name: len(call2[key])})
+        dataset.append(ret)
+    df = pd.DataFrame(dataset)
+    df = df[df['tombo'] < low_cutoff]
+    df['cov-diff'] = df['nanopolish'] - df['tombo']
+    df = df.sort_values(by='cov-diff', ascending=False)
+    df = df[['chr', 'start', 'end', 'nanopolish', 'tombo', 'strand', 'cov-diff']]
+    return df
+    pass
 
 
 if __name__ == '__main__':
