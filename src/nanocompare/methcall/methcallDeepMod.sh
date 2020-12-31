@@ -61,7 +61,7 @@ set -x
 basecallInput=${basecalledFast5DIR}/${jobindex}/workspace/pass/0
 
 ## Call methylation from processed fast5 files:
-python /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/DeepMod/DeepMod/bin/DeepMod.py detect --wrkBase ${basecallInput} --Ref $refGenome --FileID batch_${jobindex} --modfile $deepModModel --threads $processors --outFolder $methCallsDir
+python /projects/li-lab/yang/tools/DeepMod/bin/DeepMod.py detect --wrkBase ${basecallInput} --Ref $refGenome --FileID batch_${jobindex} --modfile $deepModModel --threads $processors --outFolder $methCallsDir
 
 
 set +x

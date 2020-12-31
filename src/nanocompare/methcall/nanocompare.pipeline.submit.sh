@@ -22,6 +22,7 @@ for Tool in ${ToolList[@]}; do
 
 	### Start script for submiting jobs
 	echo "Start pipeline submit for tool with analysisPrefix=${analysisPrefix}"
+	echo "Basedir=${outbasedir}/${analysisPrefix}"
 	source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.pipeline.eachtool.submit.sh
 done
 ###################################################################################

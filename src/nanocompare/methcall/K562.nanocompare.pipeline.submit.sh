@@ -20,8 +20,9 @@ inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K5
 
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
-ToolList=(DeepSignal)
-#ToolList=(Tombo)
+#ToolList=(DeepMod)
+ToolList=(DeepSignal Tombo DeepMod Nanopolish)
+
 
 ### Which step is going to run, true or false, if 'true' means running this step
 #run_preprocessing=false
@@ -32,6 +33,7 @@ ToolList=(DeepSignal)
 
 run_preprocessing=true
 run_basecall=true
+
 run_resquiggling=true
 run_methcall=true
 run_combine=true
@@ -42,6 +44,8 @@ refGenome="/projects/li-lab/reference/hg38/hg38.fasta"
 chromSizesFile="/projects/li-lab/yang/workspace/nano-compare/data/genome-annotation/hg38.chrom.sizes"
 
 deepsignalModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/model.CpG.R9.4_1D.human_hx1.bn17.sn360/bn_17.sn_360.epoch_7.ckpt"
+deepModModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0"
+clusterDeepModModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25"
 isGPU="no"
 
 ###################################################################################
