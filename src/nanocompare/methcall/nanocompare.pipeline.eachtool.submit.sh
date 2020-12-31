@@ -117,7 +117,7 @@ if [ "$run_combine" = true ] ; then
 	if [ "$run_methcall" = true ] ; then
 		depend_param="--dependency=afterok${meth_taskids}"
 	fi
-	sbatch --job-name=combine.tombo.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ${depend_param} --export=analysisPrefix=${analysisPrefix},methCallsDir=${methCallsDir},Tool=${Tool},dsname=${dsname} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/combine.results.sh
+	sbatch --job-name=combine.${Tool}.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ${depend_param} --export=analysisPrefix=${analysisPrefix},methCallsDir=${methCallsDir},Tool=${Tool},dsname=${dsname},clusterDeepModModel=${clusterDeepModModel},refGenome=${refGenome} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/combine.results.sh
 
 	echo "Submitted combine results task for ${Tool}."
 fi

@@ -21,9 +21,11 @@ for Tool in ${ToolList[@]}; do
 	methCallsDir=${outbasedir}/${analysisPrefix}/${analysisPrefix}-meth-call
 
 	### Start script for submiting jobs
+	echo "########################################################################"
 	echo "Start pipeline submit for tool with analysisPrefix=${analysisPrefix}"
 	echo "Basedir=${outbasedir}/${analysisPrefix}"
 	source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.pipeline.eachtool.submit.sh
+	echo ""
 done
 ###################################################################################
 ###################################################################################
