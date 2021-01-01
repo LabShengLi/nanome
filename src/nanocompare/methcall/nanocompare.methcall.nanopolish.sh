@@ -13,6 +13,7 @@
 # DeepMod methylation call workflow
 # Need to populate the parameters into this script
 ################################################################################
+set -e
 set +x
 source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
 
@@ -20,14 +21,29 @@ set -x
 
 processors=8
 
-numk=$((SLURM_ARRAY_TASK_ID-1))
+job_index=$((SLURM_ARRAY_TASK_ID-1))
 
-numKBasecallOutputDir=${basecallOutputDir}/${numk}
-echo NumKBasecallOutputDir=${numKBasecallOutputDir}
+jobkBasecallOutputDir=${basecallOutputDir}/${job_index}
 
 ## Modify directory for processed files after basecalling:
-processedFast5DIR=$numKBasecallOutputDir/workspace/pass/0
+processedFast5DIR=${jobkBasecallOutputDir}/workspace/pass/0
 echo ${processedFast5DIR}
+
+set -u
+echo "##################"
+echo "dsname: ${dsname}"
+echo "Tool: ${Tool}"
+echo "targetNum: ${targetNum}"
+echo "analysisPrefix: ${analysisPrefix}"
+echo "basecallOutputDir: ${basecallOutputDir}"
+echo "jobkBasecallOutputDir: ${jobkBasecallOutputDir}"
+echo "processedFast5DIR: ${processedFast5DIR}"
+echo "methCallsDir: ${methCallsDir}"
+echo "refGenome: ${refGenome}"
+echo "run_resquiggling: ${run_resquiggling}"
+echo "##################"
+set +u
+
 
 set +x
 conda activate nanoai
@@ -37,18 +53,21 @@ set -x
 export PATH=/projects/li-lab/yang/tools/nanopolish:${PATH}
 date
 
+fastqFile=${jobkBasecallOutputDir}/workspace/pass/reads.fq
+fastqNoDupFile="${fastqFile}.noDups.fq"
+
+bamFileName="${analysisPrefix}.batch_${job_index}.sorted.bam"
+
+
 if [ "${run_resquiggling}" = true ] ; then
-	fastqFile=${numKBasecallOutputDir}/workspace/pass/reads.fq
+
 	rm -rf ${fastqFile}
 	touch ${fastqFile}
-	for f in $(ls -1 ${numKBasecallOutputDir}/workspace/pass/*.fastq)
+	for f in $(ls -1 ${jobkBasecallOutputDir}/workspace/pass/*.fastq)
 	do
 		cat $f >> $fastqFile
 		echo "cat $f >> $fastqFile - COMPLETED"
 	done
-
-	bamFileName="${analysisPrefix}.batch_${numk}.sorted.bam"
-	fastqNoDupFile="${fastqFile}.noDups.fq"
 
 	rm -rf ${bamFileName} ${fastqNoDupFile}
 
@@ -58,17 +77,15 @@ if [ "${run_resquiggling}" = true ] ; then
 	nanopolish index -d ${processedFast5DIR} ${fastqNoDupFile}
 
 	# Reads align to the reference genome:
-	minimap2 -t ${processors} -a -x map-ont ${refGenome} ${fastqNoDupFile} | samtools sort -T tmp -o ${numKBasecallOutputDir}/${bamFileName}
+	minimap2 -t ${processors} -a -x map-ont ${refGenome} ${fastqNoDupFile} | samtools sort -T tmp -o ${jobkBasecallOutputDir}/${bamFileName}
 	echo "### minimap2 finished"
 
-	samtools index -@ threads ${numKBasecallOutputDir}/$bamFileName
+	samtools index -@ threads ${jobkBasecallOutputDir}/$bamFileName
 	echo "### samtools finished"
 fi
 
 # calling methylation:
-nanopolish call-methylation -t ${processors} -r ${fastqNoDupFile} -b ${numKBasecallOutputDir}/${bamFileName} -g ${refGenome} > ${methCallsDir}/${analysisPrefix}.batch_${numk}.nanopolish.methylation_calls.tsv
-
-echo "nanopolish call-methylation -t ${processors} -r ${fastqNoDupFile} -b ${numKBasecallOutputDir}/${bamFileName} -g ${refGenome} > ${methCallsDir}/${analysisPrefix}.batch_${numk}.nanopolish.methylation_calls.tsv"
+nanopolish call-methylation -t ${processors} -r ${fastqNoDupFile} -b ${jobkBasecallOutputDir}/${bamFileName} -g ${refGenome} > ${methCallsDir}/${analysisPrefix}.batch_${job_index}.nanopolish.methylation_calls.tsv
 
 echo "### Nanopolish methylation calling DONE"
 

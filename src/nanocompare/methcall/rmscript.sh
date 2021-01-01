@@ -12,8 +12,8 @@ set -x
 
 source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/common-utils.sh
 
-N=6
-ret="Submitted batch job 5812809"
+cd /fastscratch/liuya/nanocompare/
 
-task_ids=$(get_arrayjob_ids "${ret}" "$N")
-echo "--dependency=afterok${task_ids}"
+ls -d *-N70 *-N60 *-N51
+
+rm -rf *-N70 *-N60 *-N51

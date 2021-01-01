@@ -9,23 +9,43 @@
 #SBATCH -e log/%x.%j.err # STDERR
 
 ################################################################################
-# Combine nanopore methylation call results to a single file
+# Combine nanopore methylation call results and postpone processing of the final single file
 # Need to populate the parameters into this script
+# Output file name is "<dsname>.<tool>.*.combine.tsv"
 ################################################################################
-
+set -e
 set -x
+
+set -u
+echo "##################"
+echo "dsname: ${dsname}"
+echo "Tool: ${Tool}"
+echo "methCallsDir: ${methCallsDir}"
+echo "clusterDeepModModel: ${clusterDeepModModel}"
+echo "##################"
+set +u
 
 if [ "${Tool}" = "Tombo" ] ; then
 	ls ${methCallsDir}/*perReadsStats.bed | wc -l
 
-	cat ${methCallsDir}/*perReadsStats.bed > ${methCallsDir}/${dsname}.tombo.perReadsStats.combine.bed
+	rm -rf ${methCallsDir}/${dsname}.tombo.perReadsStats.combine.tsv
 
-	wc -l ${methCallsDir}/${dsname}.tombo.perReadsStats.combine.bed
+	cat ${methCallsDir}/*perReadsStats.bed > ${methCallsDir}/${dsname}.tombo.perReadsStats.combine.tsv
+
+	wc -l ${methCallsDir}/${dsname}.tombo.perReadsStats.combine.tsv
+
 	echo "### Tombo combine results DONE. ###"
+
+	# we need do filter out non-CG patterns also
+	bash /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_array_job_pipe.sh tombo-add-seq 300 ${methCallsDir}/${dsname}.tombo.perReadsStats.combine.tsv ${methCallsDir}
+
+	echo "### Tombo filter out NON-CG patterns post-process jobs submitted. ###"
 fi
 
 if [ "${Tool}" = "DeepSignal" ] ; then
 	ls ${methCallsDir}/*.deepsignal.call_mods.tsv | wc -l
+
+	rm -rf  ${methCallsDir}/${dsname}.deepsignal.call_mods.combine.tsv
 
 	cat ${methCallsDir}/*.deepsignal.call_mods.tsv > ${methCallsDir}/${dsname}.deepsignal.call_mods.combine.tsv
 
@@ -36,13 +56,15 @@ fi
 if [ "${Tool}" = "DeepMod" ] ; then
 	## Step:  join results from different batches
 	cd ${methCallsDir}
+
+	# Usage: python {} pred_folder-of-DeepMod Base-of-interest unique-fileid-in-sum-file [chr-list]
 	python /projects/li-lab/yang/tools/DeepMod/tools/sum_chr_mod.py ${methCallsDir}/ C ${dsname}.C
 
 	## Step: CpG index in a human genome: (must be done only once per genome)
 	## TODO: check why only once, generate common file for all dataset used? CHeck results firstly running. DeepMod N70
 	## Must firstly generate these files to a folder like:/projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C
-	## No need any modifications later
-	python /projects/li-lab/yang/tools/DeepMod/tools/generate_motif_pos.py ${refGenome} /projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C C CG 0
+	## No need any modifications later, I failed to generate with correct log, so use WR results instead.
+	#	python /projects/li-lab/yang/tools/DeepMod/tools/generate_motif_pos.py ${refGenome} /projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C C CG 0
 
 	set +x
 	source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
@@ -50,33 +72,40 @@ if [ "${Tool}" = "DeepMod" ] ; then
 	set -x
 	## Step: to consider cluster effect
 	## Need nanoai env, using tf 1.8.0, or will be some compilation error
-	python /projects/li-lab/yang/tools/DeepMod/tools/hm_cluster_predict.py ${methCallsDir}/${dsname}.C /projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C ${clusterDeepModModel}
+	## $1-sys.argv[1]+'.%s.C.bed', (save to sys.argv[1]+'_clusterCpG.%s.C.bed'),
+	## $2-gmotfolder ('%s/motif_%s_C.bed')   $3-not used
+	python /projects/li-lab/yang/tools/DeepMod/tools/hm_cluster_predict.py ${methCallsDir}/${dsname}.C /projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C1 ${clusterDeepModModel}
 
 	set +x
 	conda deactivate
 	set -x
 
-	rm -rf ${dsname}.deepmod.C.combined.bed
-	touch ${dsname}.deepmod.C.combined.bed
+	rm -rf ${dsname}.deepmod.C.combine.tsv
+	touch ${dsname}.deepmod.C.combine.tsv
 
-	for f in $(ls -1 ${dsname}.C.chr*)
+	for f in $(ls -1 ${dsname}.C.chr*.C.bed)
 	do
-	  cat $f >> ${dsname}.deepmod.C.combined.bed
+	  cat $f >> ${dsname}.deepmod.C.combine.tsv
 	done
 
-	wc -l ${dsname}.deepmod.C.combined.bed
+	wc -l ${dsname}.deepmod.C.combine.tsv
 
-	rm -rf ${dsname}.deepmod.C_clusterCpG.combined.bed
-	touch ${dsname}.deepmod.C_clusterCpG.combined.bed
+	rm -rf ${dsname}.deepmod.C_clusterCpG.combine.tsv
+	touch ${dsname}.deepmod.C_clusterCpG.combine.tsv
 
-	for f in $(ls -1 ${dsname}.C_clusterCpG.chr*)
+	for f in $(ls -1 ${dsname}.C_clusterCpG.chr*.C.bed)
 	do
-	  cat $f >> ${dsname}.deepmod.C_clusterCpG.combined.bed
+	  cat $f >> ${dsname}.deepmod.C_clusterCpG.combine.tsv
 	done
 
-	wc -l ${dsname}.deepmod.C_clusterCpG.combined.bed
+	wc -l ${dsname}.deepmod.C_clusterCpG.combine.tsv
 
 	echo "### DeepMod combine results DONE. ###"
+
+	bash /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_array_job_pipe.sh deepmod-add-seq 100 ${methCallsDir}/${dsname}.deepmod.C.combine.tsv ${methCallsDir}
+
+	echo "### DeepMod filter out NON-CG patterns post-process jobs submitted. ###"
+
 fi
 
 if [ "${Tool}" = "Nanopolish" ] ; then

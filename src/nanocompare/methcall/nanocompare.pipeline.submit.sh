@@ -1,10 +1,9 @@
 #!/bin/bash
 
 ###################################################################################
-### Run pipeline for each tool in ToolList                                      ###
+### Run pipeline for multiple nanopore tool in ToolList                         ###
 ###################################################################################
 
-outbasedir=/fastscratch/liuya/nanocompare
 mkdir -p ${outbasedir}
 
 for Tool in ${ToolList[@]}; do

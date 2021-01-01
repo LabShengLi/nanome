@@ -9,13 +9,16 @@
 #SBATCH -e log/%x.%j.err # STDERR
 
 ###################################################################################
-### Input parameter settings for K562 dataset                                   ###
+### Settings for K562 dataset experimentation                                   ###
+### This is the only file we need to modify for different data                  ###
+### Nanopore tools tested for DeepSignal, Nanopolish, DeepMod and Tombo         ###
+### Nano-compare project by Yang Liu                                            ###
 ###################################################################################
 # set -x
 
 ### Input parameters prepared for pipeline###
 dsname=K562
-targetNum=70
+targetNum=50
 inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K562-Nanopore_GT18-07372.fast5.tar
 
 ### Running configurations
@@ -36,9 +39,17 @@ run_basecall=false
 
 run_resquiggling=false
 run_methcall=false
-run_combine=true
+run_combine=false
+run_clean=true
+
+# true if inputDataDir is a folder contains *.tar or *.tar.gz
+multipleInputs=false
+
+clean_preprocessing=true
+clean_basecall=true
 
 ### Reference file path configuration, used by each base or meth calling
+outbasedir=/fastscratch/liuya/nanocompare
 correctedGroup="RawGenomeCorrected_000"
 refGenome="/projects/li-lab/reference/hg38/hg38.fasta"
 chromSizesFile="/projects/li-lab/yang/workspace/nano-compare/data/genome-annotation/hg38.chrom.sizes"

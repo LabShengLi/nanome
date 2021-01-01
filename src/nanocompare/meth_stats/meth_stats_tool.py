@@ -21,6 +21,7 @@ from Bio import SeqIO
 
 def add_strand_info_for_nanopolish(nanopolish_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.methylation_calls.tsv', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sam'):
     """
+    No need for new nanopolish output
     Combine the nanopolish output tsv results with strand-info from SAM files. This will add last column as strand-info.
 
     This is due to original nanopolish output results contain no strand-info, we are going to solve this problem.
@@ -132,7 +133,10 @@ def filter_noncg_sites_ref_seq(df, tagname, ntask=1, ttask=1, num_seq=5, chr_col
 
     logger.debug(f'before filter:{len(df)}, after non-CG filter:{len(cpg_pattern_index)}')
     df = df.loc[cpg_pattern_index, :]
-    outfn = os.path.join(pic_base_dir, f'{tagname}-with-seq-info-n{ntask}-t{ttask:03d}-{rep_chr}.tsv')
+
+    # tagname is like 'K562.tombo.perReadsStats.combine'
+    # then outfn is like 'K562.tombo.perReadsStats.combine-with-seq-info-n300-t001-chr1.tsv'
+    outfn = os.path.join(args.o, f'{tagname}-with-seq-info-n{ntask}-t{ttask:03d}-{rep_chr}.tsv')
     df.to_csv(outfn, sep='\t', header=False, index=False)
     logger.info(f"save to {outfn}")
 
@@ -222,6 +226,7 @@ def parse_arguments():
     parser.add_argument('-n', type=int, help="the total number of tasks (1-27)", default=1)
     parser.add_argument('-t', type=int, help="the current task id (1-N)", default=1)
     parser.add_argument('-i', type=str, help="input file", default=None)
+    parser.add_argument('-o', type=str, help="output dir or file", default=pic_base_dir)
     parser.add_argument('--ibam', type=str, help="input bam/sam file", default=None)
 
     return parser.parse_args()

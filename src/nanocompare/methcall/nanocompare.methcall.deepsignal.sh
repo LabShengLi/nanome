@@ -9,13 +9,11 @@
 #SBATCH -e log/%x.%j.err # STDERR
 ##SBATCH --array=1-11
 
-
 ################################################################################
 # DeepSignal methylation call workflow
 # Need to populate the parameters into this script
 ################################################################################
-
-
+set -e
 set +x
 source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
 
@@ -23,13 +21,32 @@ set -x
 
 processors=8
 
-numk=$((SLURM_ARRAY_TASK_ID-1))
+job_index=$((SLURM_ARRAY_TASK_ID-1))
 
-numKBasecallOutputDir=${basecallOutputDir}/${numk}
-echo NumKBasecallOutputDir=${numKBasecallOutputDir}
+jobkBasecallOutputDir=${basecallOutputDir}/${job_index}
+echo jobkBasecallOutputDir=${jobkBasecallOutputDir}
 
 ## Modify directory for processed files after basecalling:
-processedFast5DIR=$numKBasecallOutputDir/workspace/pass/0
+processedFast5DIR=${jobkBasecallOutputDir}/workspace/pass/0
+
+set -u
+echo "##################"
+echo "dsname: ${dsname}"
+echo "Tool: ${Tool}"
+echo "targetNum: ${targetNum}"
+echo "analysisPrefix: ${analysisPrefix}"
+echo "basecallOutputDir: ${basecallOutputDir}"
+echo "jobkBasecallOutputDir: ${jobkBasecallOutputDir}"
+echo "processedFast5DIR: ${processedFast5DIR}"
+echo "methCallsDir: ${methCallsDir}"
+echo "refGenome: ${refGenome}"
+echo "run_resquiggling: ${run_resquiggling}"
+echo "correctedGroup: ${correctedGroup}"
+echo "chromSizesFile: ${chromSizesFile}"
+echo "deepsignalModel: ${deepsignalModel}"
+echo "isGPU: ${isGPU}"
+echo "##################"
+set +u
 
 set +x
 conda activate nanoai
@@ -39,15 +56,12 @@ if [ "${run_resquiggling}" = true ] ; then
 	## Re-squiggle the data:
 	tombo resquiggle $processedFast5DIR $refGenome --processes $processors --corrected-group $correctedGroup --basecall-group Basecall_1D_000 --overwrite
 
-	echo "tombo resquiggle $processedFast5DIR $refGenome --processes $processors --corrected-group $correctedGroup --basecall-group Basecall_1D_000 --overwrite"
 	echo "###   Re-squiggling DONE"
 fi
 
 ## Call methylation from processed fast5 files:
 date
-deepsignal call_mods --input_path $processedFast5DIR --model_path $deepsignalModel --result_file $methCallsDir/$analysisPrefix.batch_${numk}.CpG.deepsignal.call_mods.tsv --reference_path $refGenome --corrected_group $correctedGroup --nproc $processors --is_gpu $isGPU
-
-echo "deepsignal call_mods --input_path $processedFast5DIR --model_path $deepsignalModel --result_file $methCallsDir/$analysisPrefix.batch_${numk}.CpG.deepsignal.call_mods.tsv --reference_path $refGenome --corrected_group $correctedGroup --nproc $processors --is_gpu $isGPU"
+deepsignal call_mods --input_path $processedFast5DIR --model_path $deepsignalModel --result_file $methCallsDir/$analysisPrefix.batch_${job_index}.CpG.deepsignal.call_mods.tsv --reference_path $refGenome --corrected_group $correctedGroup --nproc $processors --is_gpu $isGPU
 
 echo "###   DeepSignal methylation calling DONE"
 

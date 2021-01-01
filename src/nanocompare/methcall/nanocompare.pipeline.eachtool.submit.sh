@@ -6,28 +6,26 @@
 
 # set -x
 
-source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/common-utils.sh
+source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/utils.common.sh
 
 ################################################################################
 # Step 1: Pre-processing (Untar, seperate files)
 ################################################################################
 if [ "$run_preprocessing" = true ] ; then
-	echo Step1: pre-processing
+	echo "Step1: pre-processing"
 
-	# Remove basedir if pre-processing
-	rm -rf /fastscratch/liuya/nanocompare/${analysisPrefix}
-	mkdir -p /fastscratch/liuya/nanocompare/${analysisPrefix}
-
-	rm -rf ${untaredInputDir}
-	rm -rf ${septInputDir}
+	# Remove dataset running dir if pre-processing
+	rm -rf ${outbasedir}/${analysisPrefix}
+	mkdir -p ${outbasedir}/${analysisPrefix}
 
 	mkdir -p ${untaredInputDir}
 	mkdir -p ${septInputDir}
 	mkdir -p ${septInputDir}/log
 
-	prep_ret=$(sbatch --job-name=prep.fast5.${analysisPrefix} --output=${septInputDir}/log/%x.%j.out --error=${septInputDir}/log/%x.%j.err --export=targetNum=${targetNum},inputDataDir=${inputDataDir},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir}, /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/preprocessing.fast5.sh)
+	prep_ret=$(sbatch --job-name=prep.fast5.${analysisPrefix} --output=${septInputDir}/log/%x.%j.out --error=${septInputDir}/log/%x.%j.err --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},inputDataDir=${inputDataDir},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},analysisPrefix=${analysisPrefix},multipleInputs=${multipleInputs} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.preprocessing.fast5.sh)
 	prep_taskid=$(echo ${prep_ret} |grep -Eo '[0-9]+$')
 	echo ${prep_ret}
+	echo "### Submitted preprocessing task for ${analysisPrefix}."
 fi
 
 ################################################################################
@@ -39,7 +37,7 @@ fi
 # Step 2: Basecalling with Albacore
 ################################################################################
 if [ "$run_basecall" = true ] ; then
-	echo Step2: basecalling
+	echo "Step2: basecalling"
 
 	depend_param=""
 	if [ "$run_preprocessing" = true ] ; then
@@ -50,13 +48,14 @@ if [ "$run_basecall" = true ] ; then
 	mkdir -p ${basecallOutputDir}
 	mkdir -p ${basecallOutputDir}/log
 
-	basecall_task_ret=$(sbatch --job-name=albacore.${analysisPrefix} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.%j.out --error=${basecallOutputDir}/log/%x.%j.err ${depend_param} --export=septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/basecall.sh)
+	basecall_task_ret=$(sbatch --job-name=albacore.${analysisPrefix} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.%j.out --error=${basecallOutputDir}/log/%x.%j.err ${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.basecall.albacore.sh)
 
+	# Get the job id as :123_1:123_2, etc.
 	base_taskids=$(get_arrayjob_ids "${basecall_task_ret}" "${targetNum}")
 
 	# set -x
 	echo ${basecall_task_ret}
-	echo "Submitted all basecalling by Albacore array-job finished."
+	echo "### Submitted all basecalling for ${analysisPrefix} by Albacore array-job finished."
 fi
 ################################################################################
 ################################################################################
@@ -67,12 +66,17 @@ fi
 # Step 3: Methylation call
 ################################################################################
 if [ "$run_methcall" = true ] ; then
-	echo Step3: methylation calling
+	echo "Step3: methylation calling"
 
 	depend_param=""
 	if [ "$run_basecall" = true ] ; then
-		depend_param="--dependency=afterok${base_taskids}"
+		depend_param="afterok${base_taskids}"
 	fi
+
+	exp_param="dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},correctedGroup=${correctedGroup},refGenome=${refGenome},chromSizesFile=${chromSizesFile},run_resquiggling=${run_resquiggling},isGPU=${isGPU},deepsignalModel=${deepsignalModel},deepModModel=${deepModModel}"
+
+	out_param="${methCallsDir}/log/%x.%j.out"
+	err_param="${methCallsDir}/log/%x.%j.err"
 
 	rm -rf ${methCallsDir}
 	mkdir -p ${methCallsDir}
@@ -80,28 +84,29 @@ if [ "$run_methcall" = true ] ; then
 
 	if [ "${Tool}" = "Tombo" ] ; then
 		# Tombo methylation call pipeline
-		meth_arrayjob_ret=$(sbatch --job-name=tombo-methcall-${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --array=1-${targetNum} --export=septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},dataname=${dsname},methCallsDir=${methCallsDir},analysisPrefix=${analysisPrefix},correctedGroup=${correctedGroup},refGenome=${refGenome},chromSizesFile=${chromSizesFile},run_resquiggling=${run_resquiggling} ${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/methcall.tombo.sh)
+		meth_arrayjob_ret=$(sbatch --job-name=tmb-mcal-${analysisPrefix} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.tombo.sh)
 	fi
 
 	if [ "${Tool}" = "DeepSignal" ] ; then
 		# DeepSignal methylation call pipeline
-		meth_arrayjob_ret=$(sbatch --job-name=deepsignal-methcall-${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --array=1-${targetNum} --export=septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},dataname=${dsname},methCallsDir=${methCallsDir},analysisPrefix=${analysisPrefix},correctedGroup=${correctedGroup},refGenome=${refGenome},chromSizesFile=${chromSizesFile},run_resquiggling=${run_resquiggling},deepsignalModel=${deepsignalModel},isGPU=${isGPU} ${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/methcall.deepsignal.sh)
+		meth_arrayjob_ret=$(sbatch --job-name=dpsig-mcal-${analysisPrefix} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.deepsignal.sh)
 	fi
 
 	if [ "${Tool}" = "DeepMod" ] ; then
 		# DeepSignal methylation call pipeline
-		meth_arrayjob_ret=$(sbatch --job-name=deepmod-methcall-${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --array=1-${targetNum} --export=septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},dataname=${dsname},methCallsDir=${methCallsDir},analysisPrefix=${analysisPrefix},refGenome=${refGenome},deepModModel=${deepModModel},isGPU=${isGPU} ${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/methcall.deepmod.sh)
+		meth_arrayjob_ret=$(sbatch --job-name=dpmod-mcal-${analysisPrefix} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.deepmod.sh)
 	fi
 
 	if [ "${Tool}" = "Nanopolish" ] ; then
 		# Nanopolish methylation call pipeline
-		meth_arrayjob_ret=$(sbatch --job-name=nanopolish-methcall-${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --array=1-${targetNum} --export=basecallOutputDir=${basecallOutputDir},dataname=${dsname},methCallsDir=${methCallsDir},analysisPrefix=${analysisPrefix},refGenome=${refGenome},isGPU=${isGPU},run_resquiggling=${run_resquiggling} ${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/methcall.nanopolish.sh)
+		meth_arrayjob_ret=$(sbatch --job-name=napol-mcal-${analysisPrefix} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.nanopolish.sh)
 	fi
 
+	# Get the job id as :123_1:123_2, etc.
 	meth_taskids=$(get_arrayjob_ids "${meth_arrayjob_ret}" "${targetNum}")
 
 	echo ${meth_arrayjob_ret}
-	echo "Submitted all ${Tool} methylation calling array-job finished."
+	echo "Submitted all ${analysisPrefix} methylation calling array-job finished."
 fi
 ################################################################################
 ################################################################################
@@ -112,12 +117,27 @@ fi
 # Step 4: Combining results together
 ################################################################################
 if [ "$run_combine" = true ] ; then
-	echo Step4: combing results
+	echo "Step4: combing results"
 	depend_param=""
 	if [ "$run_methcall" = true ] ; then
 		depend_param="--dependency=afterok${meth_taskids}"
 	fi
-	sbatch --job-name=combine.${Tool}.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ${depend_param} --export=analysisPrefix=${analysisPrefix},methCallsDir=${methCallsDir},Tool=${Tool},dsname=${dsname},clusterDeepModModel=${clusterDeepModModel},refGenome=${refGenome} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/combine.results.sh
+	combine_ret=$(sbatch --job-name=cmbi.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ${depend_param} --export=analysisPrefix=${analysisPrefix},methCallsDir=${methCallsDir},Tool=${Tool},dsname=${dsname},clusterDeepModModel=${clusterDeepModModel},refGenome=${refGenome} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.combine.results.sh)
+	combine_taskid=$(echo ${combine_ret} |grep -Eo '[0-9]+$')
+	echo ${combine_ret}
 
-	echo "Submitted combine results task for ${Tool}."
+	echo "Submitted combine results task for ${analysisPrefix}."
+fi
+
+################################################################################
+# Step 5: Clean intermediate dirs
+################################################################################
+if [ "${run_clean}" = true ] ; then
+	echo "Step5: clean dirs"
+	depend_param=""
+	if [ "${run_combine}" = true ] ; then
+		depend_param="afterok:${combine_taskid}"
+	fi
+	sbatch --job-name=clen.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --dependency=${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},analysisPrefix=${analysisPrefix},basecallOutputDir=${basecallOutputDir},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.clean.intermediate.sh
+	echo "Submitted clean dirs task for ${analysisPrefix}."
 fi
