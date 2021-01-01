@@ -123,7 +123,7 @@ def importPredictions_NanoXGBoost(infileName, chr_col=0, start_col=1, meth_col=4
 
 
 # not deprecated yet, even will Deprecated due to importPredictions_Nanopolish_2, which is based on Nanopolish code
-def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_ratio_col=4, sequence_col=-2, strand_col=-1, num_sites_col=-3, baseFormat=0, logLikehoodCutt=2.5):
+def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, log_lik_ratio_col=5, sequence_col=-1, num_motifs_col=-2, baseFormat=0, logLikehoodCutt=2.0):
     """
     We assume the input is 0-based for the start col, such as chr10 122 122
 
@@ -164,7 +164,7 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=1, log_lik_rat
         if tmp[chr_col] != "chromosome":
             try:  # try to find if these columns are interpretable
                 start = int(tmp[start_col])
-                num_sites = int(tmp[num_sites_col])
+                num_sites = int(tmp[num_motifs_col])
                 llr = float(tmp[log_lik_ratio_col])
                 if abs(llr) < logLikehoodCutt:
                     continue
@@ -948,29 +948,22 @@ def importPredictions_Tombo3(infileName, chr_col=0, start_col=1, meth_col=4, bas
 
 def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_reads_col=-2, coverage_col=-4, baseFormat=0, sep='\t'):
     '''
-    We treate input as 0-based format for start col.
+    We treate input as 0-based format for start col. Due to we pre-processed original DeepMod results by filter out non-CG sites, the input of this funciton is sep=TAB instead!!!
 
     Return dict of key='chr1  123  123  +', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
 
     Note that the function requires genome-level stats.
 
-    ### Parameters of the function:
-    chr_col - name (as header) of the column with chromosome. If "header" variable == False, give integer number of the column.
-    start_col - name (as header) of the column with start of CpG. If "header" variable == False, give integer number of the column.
-    meth_reads_col - name (as header) of the column with number of methylated reads mapped.
-    coverage_col - name (as header) of the column with coverage of the site.
-    [[TO DO]] clusteredResult - True / False. Input file is in the "clustered" format (additional post-processing step). False (default option) - standard output with calls.
-    [[TO DO]] clustered_meth_freq_col - column with the methylation frequency after additional postprocessing step.
-    baseCount - 0 or 1, standing for 0-based or 1-based, respectively
-    
-    ### Example input format from DeepMod (standard), we also preprocess the DeepMod initial results by filetering non-CG sites, which is out of our interest.
+    DeepMod BED format ref: https://github.com/WGLab/DeepMod/blob/master/docs/Results_explanation.md#2-format-of-output
+
+    Example input format from DeepMod (standard), we also preprocess the DeepMod initial results by filetering non-CG sites, which is out of our interest.
 
     head /projects/li-lab/yang/results/2020-12-21/K562.deepmod_combined-with-seq-info-n100-t006-chr1.tsv
 
-    chr1    75694844    75694845    C    1    +        75694844    75694845    0,0,0    1100    1    TAAGTCGTTCA
-    chr1    75696163    75696164    C    1    +        75696163    75696164    0,0,0    1100    1    CACTCCGGGAC
-    chr1    75696217    75696218    C    1    -        75696217    75696218    0,0,0    1100    1    CATACGGGATA
-    chr1    75696583    75696584    C    1    +        75696583    75696584    0,0,0    1100    1    TATGTCGACTC
+    chr1    75694844    75694845    C    1    +        75694844    75694845    0,0,0    1  100    1    TAAGTCGTTCA
+    chr1    75696163    75696164    C    1    +        75696163    75696164    0,0,0    1  100    1    CACTCCGGGAC
+    chr1    75696217    75696218    C    1    -        75696217    75696218    0,0,0    1  100    1    CATACGGGATA
+    chr1    75696583    75696584    C    1    +        75696583    75696584    0,0,0    1  100    1    TATGTCGACTC
 
     Description (https://github.com/WGLab/DeepMod/blob/master/docs/Results_explanation.md):
     The output is in a BED format like below. The first six columns are Chr,
@@ -986,8 +979,6 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     
     ### Output format:
     result = {"chr\tstart\tend\n" : [list of methylation calls (as a probability of methylation call**)]}
-    output coordinates are 1-based genome coordinates.
-
     ============
     
     '''
@@ -1105,10 +1096,10 @@ def importPredictions_DeepMod3(infileName, chr_col=0, start_col=1, meth_percenta
     return cpgDict
 
 
-def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=4, clustered_meth_freq_col=-1, baseFormat=1):
+def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4, clustered_meth_freq_col=-1, baseFormat=0):
     '''
     Note: results of cluster is differ from other tools like:
-    [methFrequency, coverage]
+    [methFrequency, coverage] such as key -> values [50 (freq 0-100), 10 (cov)]
 
     Note that the function requires per read stats, not frequencies of methylation.
     !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!

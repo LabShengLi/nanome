@@ -15,8 +15,8 @@
 ################################################################################
 set -e
 set +x
-source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
-
+#source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
+source /home/liuya/.bash_profile
 set -x
 
 processors=8
@@ -49,7 +49,7 @@ set -x
 
 ## Call methylation from processed fast5 files:
 date
-python /projects/li-lab/yang/tools/DeepMod/bin/DeepMod.py detect --wrkBase ${processedFast5DIR} --Ref $refGenome --FileID batch_${job_index} --modfile $deepModModel --threads $processors --outFolder $methCallsDir
+python /projects/li-lab/yang/tools/DeepMod/bin/DeepMod.py detect --wrkBase ${processedFast5DIR} --Ref ${refGenome} --outFolder $methCallsDir --Base C --modfile $deepModModel --FileID batch_${job_index} --threads $processors
 
 echo "###   DeepMod methylation calling DONE"
 

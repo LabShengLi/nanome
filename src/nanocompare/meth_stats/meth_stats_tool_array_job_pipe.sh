@@ -24,6 +24,9 @@ inputfn=${3:-/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K
 
 output_dir=${4:-/projects/li-lab/yang/results/$(date +%F)}
 
+dsname=$(basename ${inputfn})
+dsname=$(echo "${dsname%%.*}")
+
 mkdir -p ${output_dir}
 mkdir -p ${output_dir}/log
 
@@ -32,7 +35,7 @@ echo cmd=${cmd}, N=${num_jobs}, output_dir=${output_dir}
 #################################################
 ### Task 1: calculate tombo sequence using job array
 #################################################
-job_array_ret=$(sbatch --job-name ${cmd}.batch%a --output=${output_dir}/log/%x.%j.out --error=${output_dir}/log/%x.%j.err --array=1-${num_jobs} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_array_job.sh ${cmd} ${inputfn} ${output_dir})
+job_array_ret=$(sbatch --job-name=${dsname}.${cmd} --output=${output_dir}/log/%x.batch%a.%j.out --error=${output_dir}/log/%x.batch%a.%j.err --array=1-${num_jobs} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_array_job.sh ${cmd} ${inputfn} ${output_dir})
 job_array_id=${job_array_ret##* }
 
 echo submit ${cmd} array job ok, jobid=${job_array_id}, num of jobs=$num_jobs

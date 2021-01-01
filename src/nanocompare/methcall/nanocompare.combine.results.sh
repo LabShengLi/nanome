@@ -54,13 +54,15 @@ if [ "${Tool}" = "DeepSignal" ] ; then
 fi
 
 if [ "${Tool}" = "DeepMod" ] ; then
-	## Step:  join results from different batches
+	## Step:  join results from different batches, based on ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md
+	## We need firstly use DeepMod script to merge different runs of modification detection
 	cd ${methCallsDir}
 
+	# Step: Detect modifications from FAST5 files, ref https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#1-how-to-detect-modifications-from-fast5-files
 	# Usage: python {} pred_folder-of-DeepMod Base-of-interest unique-fileid-in-sum-file [chr-list]
 	python /projects/li-lab/yang/tools/DeepMod/tools/sum_chr_mod.py ${methCallsDir}/ C ${dsname}.C
 
-	## Step: CpG index in a human genome: (must be done only once per genome)
+	## Step: Output C in CpG motifs in a genome, i.e. CpG index in a human genome: (must be done only once per genome)
 	## TODO: check why only once, generate common file for all dataset used? CHeck results firstly running. DeepMod N70
 	## Must firstly generate these files to a folder like:/projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C
 	## No need any modifications later, I failed to generate with correct log, so use WR results instead.
@@ -70,7 +72,7 @@ if [ "${Tool}" = "DeepMod" ] ; then
 	source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
 	conda activate nanoai
 	set -x
-	## Step: to consider cluster effect
+	## Step: Generated clustered results to consider cluster effect, ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#generated-clustered-results
 	## Need nanoai env, using tf 1.8.0, or will be some compilation error
 	## $1-sys.argv[1]+'.%s.C.bed', (save to sys.argv[1]+'_clusterCpG.%s.C.bed'),
 	## $2-gmotfolder ('%s/motif_%s_C.bed')   $3-not used

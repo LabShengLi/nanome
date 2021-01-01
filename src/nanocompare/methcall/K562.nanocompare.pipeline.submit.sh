@@ -19,27 +19,21 @@ dsname=K562
 targetNum=50
 inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K562-Nanopore_GT18-07372.fast5.tar
 
-# The output base dir
-outbasedir=/fastscratch/liuya/nanocompare/${dsname}-Runs
-mkdir -p ${outbasedir}
+
 
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
-#ToolList=(DeepMod)
-ToolList=(DeepSignal Tombo DeepMod Nanopolish)
+
+ToolList=(Nanopolish)
+#ToolList=(DeepSignal Tombo DeepMod Nanopolish)
 
 
 ### Which step is going to run, true or false, if 'true' means running this step
-#run_preprocessing=false
-#run_basecall=false
-#run_resquiggling=false
-#run_methcall=false
-#run_combine=true
 
-run_preprocessing=true
-run_basecall=true
+run_preprocessing=false
+run_basecall=false
 
-run_resquiggling=true
+run_resquiggling=false
 run_methcall=true
 run_combine=true
 run_clean=false
@@ -50,6 +44,10 @@ multipleInputs=false
 # which kind of intermediate file we want to clean
 clean_preprocessing=true
 clean_basecall=false
+
+# The output base dir
+outbasedir=/fastscratch/liuya/nanocompare/${dsname}-Runs
+mkdir -p ${outbasedir}
 
 ### Reference file path configuration, used by each base or meth calling
 

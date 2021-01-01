@@ -15,8 +15,9 @@
 ################################################################################
 set -e
 set +x
-source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
 
+#source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
+source /home/liuya/.bash_profile
 set -x
 
 processors=8
