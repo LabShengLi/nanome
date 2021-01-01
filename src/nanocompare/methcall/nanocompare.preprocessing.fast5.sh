@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=prep.fast5
-#SBATCH -q batch
+#SBATCH --partition=compute
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 1 # number of cores
-#SBATCH --mem 200g # memory pool for all cores
-#SBATCH -t 2-23:00:00 # time (D-HH:MM)
+#SBATCH --mem=200g # memory pool for all cores
+#SBATCH --time=03:00:00 # time (D-HH:MM)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
@@ -50,8 +50,6 @@ if [ "${multipleInputs}" = true ] ; then
 	done
 else
 	tar -xf ${inputDataDir} -C ${untaredInputDir}
-
-
 fi
 
 echo "### Untar input done. ###"

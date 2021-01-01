@@ -1,12 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=nano.pipeline.submit
-#SBATCH -q batch
-#SBATCH -N 1 # number of nodes
-#SBATCH -n 1 # number of cores
-#SBATCH --mem 250g # memory pool for all cores
-#SBATCH -t 2-23:00:00 # time (D-HH:MM)
-#SBATCH -o log/%x.%j.out # STDOUT
-#SBATCH -e log/%x.%j.err # STDERR
+#SBATCH --partition=compute
+#SBATCH --mem=50g # memory pool for all cores
+#SBATCH --time=03:00:00 # time (DD-HH:MM:SS)
+#SBATCH --output=log/%x.%j.out
+#SBATCH --error=log/%x.%j.err
 
 ###################################################################################
 ### Settings for K562 dataset experimentation                                   ###
@@ -21,10 +19,14 @@ dsname=K562
 targetNum=50
 inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K562-Nanopore_GT18-07372.fast5.tar
 
+# The output base dir
+outbasedir=/fastscratch/liuya/nanocompare/${dsname}-Runs
+mkdir -p ${outbasedir}
+
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
-ToolList=(DeepMod)
-#ToolList=(DeepSignal Tombo DeepMod Nanopolish)
+#ToolList=(DeepMod)
+ToolList=(DeepSignal Tombo DeepMod Nanopolish)
 
 
 ### Which step is going to run, true or false, if 'true' means running this step
@@ -34,22 +36,23 @@ ToolList=(DeepMod)
 #run_methcall=false
 #run_combine=true
 
-run_preprocessing=false
-run_basecall=false
+run_preprocessing=true
+run_basecall=true
 
-run_resquiggling=false
-run_methcall=false
-run_combine=false
-run_clean=true
+run_resquiggling=true
+run_methcall=true
+run_combine=true
+run_clean=false
 
 # true if inputDataDir is a folder contains *.tar or *.tar.gz
 multipleInputs=false
 
+# which kind of intermediate file we want to clean
 clean_preprocessing=true
-clean_basecall=true
+clean_basecall=false
 
 ### Reference file path configuration, used by each base or meth calling
-outbasedir=/fastscratch/liuya/nanocompare
+
 correctedGroup="RawGenomeCorrected_000"
 refGenome="/projects/li-lab/reference/hg38/hg38.fasta"
 chromSizesFile="/projects/li-lab/yang/workspace/nano-compare/data/genome-annotation/hg38.chrom.sizes"

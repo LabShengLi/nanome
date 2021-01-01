@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=tombo.methcall
-#SBATCH -q batch
+#SBATCH --partition=compute
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 8 # number of cores
-#SBATCH --mem 250g # memory pool for all cores
-#SBATCH -t 2-23:00:00 # time (D-HH:MM)
+#SBATCH --mem=250g # memory pool for all cores
+#SBATCH --time=19:00:00 # time (D-HH:MM)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 ##SBATCH --array=1-11
@@ -64,7 +64,7 @@ date
 
 echo "###   Tombo methylation calling DONE"
 
-## Postprocess per read methylation calls
+## Postprocess per read methylation calls for each run complete
 python /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/Tombo_extract_per_read_stats.py $chromSizesFile $methCallsDir/$analysisPrefix.batch_${job_index}.5mC.tombo.per_read_stats $methCallsDir/$analysisPrefix.batch_${job_index}.perReadsStats.bed
 
 wc -l $methCallsDir/$analysisPrefix.batch_${job_index}.perReadsStats.bed
