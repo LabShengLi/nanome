@@ -146,6 +146,9 @@ def filter_noncg_sites_ref_seq(df, tagname, ntask=1, ttask=1, num_seq=5, chr_col
 def filter_noncg_sites_ref_seq_mpi(df, tagname, ntask=1, ttask=1, num_dna_seq=5, chr_col=0, start_col=1, strand_col=5, toolname='tombo', print_first=False):
     """
     MPI version
+    invoke like: res = p.apply_async(testFunc, args=(2, 4), kwds={'calcY': False})
+                    or pool.apply_async(test, (t,), dict(arg2=5))
+
     Filter out rows that are non-CG patterns in Tombo results, reference sequence is based on BAM files
 
     :param tombo_fn:
@@ -218,7 +221,7 @@ def filter_noncg_sites_for_tombo_mpi():
     all_list = list(range(len(df)))
 
     df_list = []
-    with Pool(processes=multiprocessing.cpu_count()) as pool:
+    with Pool(processes=args.processors) as pool:
         for epoch in range(ntask):
             cpg_pattern_index = subset_of_list(all_list, ntask, epoch + 1)
             seldf = df.iloc[cpg_pattern_index, :]
@@ -230,15 +233,15 @@ def filter_noncg_sites_for_tombo_mpi():
         pool.close()
         pool.join()
 
-    logger.debug("Start to combine all results")
     # Combine df
+    logger.debug("Start to combine all results")
     df_list = [df1.get() for df1 in df_list]
     retdf = pd.concat(df_list)
     logger.debug(retdf)
 
     ## Note: original   input=K562.tombo.perReadsStats.combine.tsv
     ##                  output=K562.tombo.perReadsStatsOnlyCpG.combine.tsv
-    basefn = basefn.replace("perReadsStats", "perReadsStatsOnlyCpG")
+    basefn = basefn.replace("perReadsStats", "perReadsStatsOnlyCG")
     outfn = os.path.join(args.o, f'{basefn}')
     retdf.to_csv(outfn, sep='\t', index=False, header=False)
     logger.debug(f"Save to {outfn}")

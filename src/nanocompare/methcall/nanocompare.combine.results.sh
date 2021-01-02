@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=combine.tombo
+#SBATCH --job-name=combine.results
 #SBATCH --partition=compute
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 1 # number of cores
@@ -14,12 +14,17 @@
 # Output file name is "<dsname>.<tool>.*.combine.tsv"
 ################################################################################
 set -e
+
+set +x
+source /home/liuya/.bash_profile
+export PATH=/cm/shared/apps/slurm/18.08.8/bin:${PATH}
 set -x
 
 set -u
 echo "##################"
 echo "dsname: ${dsname}"
 echo "Tool: ${Tool}"
+echo "analysisPrefix: ${analysisPrefix}"
 echo "methCallsDir: ${methCallsDir}"
 echo "clusterDeepModModel: ${clusterDeepModModel}"
 echo "##################"
@@ -36,8 +41,8 @@ if [ "${Tool}" = "Tombo" ] ; then
 
 	echo "### Tombo combine results DONE. ###"
 
-	# we need do filter out non-CG patterns also
-	bash /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_array_job_pipe.sh tombo-add-seq 300 ${methCallsDir}/${dsname}.tombo.perReadsStats.combine.tsv ${methCallsDir}
+	# we need do filter out non-CG patterns also, now using MPI version
+	sbatch --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh tombo-add-seq -i ${methCallsDir}/${dsname}.tombo.perReadsStats.combine.tsv --mpi --processors 60 -o ${methCallsDir}
 
 	echo "### Tombo filter out NON-CG patterns post-process jobs submitted. ###"
 fi
@@ -103,7 +108,6 @@ if [ "${Tool}" = "DeepMod" ] ; then
 	echo "### DeepMod combine results DONE. ###"
 
 	bash /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_array_job_pipe.sh deepmod-add-seq 100 ${methCallsDir}/${dsname}.deepmod.C.combine.tsv ${methCallsDir}
-
 	echo "### DeepMod filter out NON-CG patterns post-process jobs submitted. ###"
 
 fi
