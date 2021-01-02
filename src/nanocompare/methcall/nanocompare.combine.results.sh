@@ -28,7 +28,7 @@ set +u
 if [ "${Tool}" = "Tombo" ] ; then
 	ls ${methCallsDir}/*perReadsStats.bed | wc -l
 
-	rm -rf ${methCallsDir}/${dsname}.tombo.perReadsStats.combine.tsv
+	> ${methCallsDir}/${dsname}.tombo.perReadsStats.combine.tsv
 
 	cat ${methCallsDir}/*perReadsStats.bed > ${methCallsDir}/${dsname}.tombo.perReadsStats.combine.tsv
 
@@ -45,7 +45,7 @@ fi
 if [ "${Tool}" = "DeepSignal" ] ; then
 	ls ${methCallsDir}/*.deepsignal.call_mods.tsv | wc -l
 
-	rm -rf  ${methCallsDir}/${dsname}.deepsignal.call_mods.combine.tsv
+	> ${methCallsDir}/${dsname}.deepsignal.call_mods.combine.tsv
 
 	cat ${methCallsDir}/*.deepsignal.call_mods.tsv > ${methCallsDir}/${dsname}.deepsignal.call_mods.combine.tsv
 
@@ -82,8 +82,7 @@ if [ "${Tool}" = "DeepMod" ] ; then
 	conda deactivate
 	set -x
 
-	rm -rf ${dsname}.deepmod.C.combine.tsv
-	touch ${dsname}.deepmod.C.combine.tsv
+	> ${dsname}.deepmod.C.combine.tsv
 
 	for f in $(ls -1 ${dsname}.C.chr*.C.bed)
 	do
@@ -92,8 +91,7 @@ if [ "${Tool}" = "DeepMod" ] ; then
 
 	wc -l ${dsname}.deepmod.C.combine.tsv
 
-	rm -rf ${dsname}.deepmod.C_clusterCpG.combine.tsv
-	touch ${dsname}.deepmod.C_clusterCpG.combine.tsv
+	> ${dsname}.deepmod.C_clusterCpG.combine.tsv
 
 	for f in $(ls -1 ${dsname}.C_clusterCpG.chr*.C.bed)
 	do
@@ -113,8 +111,6 @@ fi
 if [ "${Tool}" = "Nanopolish" ] ; then
 	### TODO: how to cut first line: sed '1d' test.txt > result.txt
 	ls ${methCallsDir}/*.nanopolish.methylation_calls.tsv | wc -l
-
-	rm -rf ${methCallsDir}/${dsname}.nanopolish.methylation_calls.combine.tsv
 
 	sed -n '1p' ${methCallsDir}/*.batch_0.nanopolish.methylation_calls.tsv > ${methCallsDir}/${dsname}.nanopolish.methylation_calls.combine.tsv
 

@@ -16,24 +16,22 @@
 
 ### Input parameters prepared for pipeline###
 dsname=K562
-targetNum=50
+targetNum=20
 inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K562-Nanopore_GT18-07372.fast5.tar
-
-
 
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
 
-ToolList=(Nanopolish)
+ToolList=(Tombo)
 #ToolList=(DeepSignal Tombo DeepMod Nanopolish)
 
 
 ### Which step is going to run, true or false, if 'true' means running this step
 
-run_preprocessing=false
-run_basecall=false
+run_preprocessing=true
+run_basecall=true
 
-run_resquiggling=false
+run_resquiggling=true
 run_methcall=true
 run_combine=true
 run_clean=false

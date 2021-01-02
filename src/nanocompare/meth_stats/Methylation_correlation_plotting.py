@@ -10,11 +10,12 @@ Sample usage:
 All usedful functions are located in nanocompare.meth_stats.meth_stats_common
 """
 import sys
+nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
+sys.path.append(nanocompare_prj)
 
 from sys import argv
 
-nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
-sys.path.append(nanocompare_prj)
+
 
 from nanocompare.meth_stats.meth_stats_common import *
 
@@ -214,4 +215,4 @@ if __name__ == '__main__':
 
     outfile.close()
     logger.info(f"save to {outfn}")
-    logger.info("Methylation correlation plotting program finished.")
+    logger.info("Methylation correlation plotting data generation program finished.")

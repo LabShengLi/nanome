@@ -8,12 +8,14 @@
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
-set -x
+#
+#cd /fastscratch/liuya/nanocompare/
+#
+#ls -d *-N70 *-N60 *-N51
+#
+#rm -rf *-N70 *-N60 *-N51
 
-source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/common-utils.sh
-
-cd /fastscratch/liuya/nanocompare/
-
-ls -d *-N70 *-N60 *-N51
-
-rm -rf *-N70 *-N60 *-N51
+find . -name "*.sh" -print0 | while read -d $'\0' file
+do
+    echo "### processing $file"
+done

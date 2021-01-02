@@ -16,7 +16,11 @@ modify tombo results in tsv as follows:
 # example run command: python Methylation_correlation_plotting_submit.py <config file>
 # python /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/Methylation_correlation_plotting_submit.py NanoComareCorrelation_deprecated.tsv
 # python /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/Methylation_correlation_plotting_submit.py NanoComareCorrelation_paper.tsv
+import sys
 
+nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
+sys.path.append(nanocompare_prj)
+from global_config import pic_base_dir
 
 import csv
 import os
@@ -35,11 +39,14 @@ if __name__ == '__main__':
         if row['status'] == "submit":
             # print(f"row={row}\n")
 
-            command = """set -x; sbatch --export=DeepSignal_calls="{}",Tombo_calls="{}",Nanopolish_calls="{}",DeepMod_calls="{}",DeepMod_cluster_calls="{}",bgTruth="{}",RunPrefix="{}",parser="{}" --job-name=meth-corr-{} {}/{}""" \
-                .format(row['DeepSignal_calls'], row['Tombo_calls'], row['Nanopolish_calls'],
-                        row['DeepMod_calls'], row['DeepMod_cluster_calls'], row['bgTruth'],
-                        row['RunPrefix'], row['parser'], row['RunPrefix'], baseDir, scriptFn)
+            outdir = os.path.join(pic_base_dir, row['RunPrefix'])
+            os.makedirs(outdir, exist_ok=True)
+            outlogdir = os.path.join(outdir, 'log')
+            os.makedirs(outlogdir, exist_ok=True)
 
+            command = f"""set -x; sbatch --output={outdir}/log/%x.%j.out --error={outdir}/log/%x.%j.err --export=DeepSignal_calls="{row['DeepSignal_calls']}",Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",DeepMod_calls="{row['DeepMod_calls']}",DeepMod_cluster_calls="{row['DeepMod_cluster_calls']}",bgTruth="{row['bgTruth']}",RunPrefix="{row['RunPrefix']}",parser="{row['parser']}" --job-name=meth-corr-{row['RunPrefix']} {baseDir}/{scriptFn}"""
+
+            print(command)
             # print(f"command=[{command}]\n")
             print(f"RunPrefix={row['RunPrefix']}")
 

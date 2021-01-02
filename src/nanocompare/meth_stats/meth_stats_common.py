@@ -157,11 +157,11 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
     output_first = True
     for row in infile:
         tmp = row.strip().split("\t")
-        if output_first:
-            logger.debug(list(enumerate(tmp)))
-            output_first = False
-
         if tmp[chr_col] != "chromosome":
+            if output_first:
+                logger.debug(list(enumerate(tmp)))
+                output_first = False
+
             try:  # try to find if these columns are interpretable
                 start = int(tmp[start_col])
                 num_sites = int(tmp[num_motifs_col])
