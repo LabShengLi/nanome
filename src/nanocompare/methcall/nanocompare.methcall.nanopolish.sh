@@ -19,10 +19,9 @@ set +x
 source /home/liuya/.bash_profile
 set -x
 
-processors=8
+#processors=8
 
 job_index=$((SLURM_ARRAY_TASK_ID-1))
-
 jobkBasecallOutputDir=${basecallOutputDir}/${job_index}
 
 ## Modify directory for processed files after basecalling:
@@ -41,6 +40,7 @@ echo "processedFast5DIR: ${processedFast5DIR}"
 echo "methCallsDir: ${methCallsDir}"
 echo "refGenome: ${refGenome}"
 echo "run_resquiggling: ${run_resquiggling}"
+echo "processors: ${processors}"
 echo "##################"
 set +u
 
@@ -59,6 +59,7 @@ fastqNoDupFile="${fastqFile}.noDups.fq"
 bamFileName="${analysisPrefix}.batch_${job_index}.sorted.bam"
 
 
+## Do alignment firstly
 if [ "${run_resquiggling}" = true ] ; then
 
 	rm -rf ${fastqFile}
@@ -80,12 +81,14 @@ if [ "${run_resquiggling}" = true ] ; then
 	minimap2 -t ${processors} -a -x map-ont ${refGenome} ${fastqNoDupFile} | samtools sort -T tmp -o ${jobkBasecallOutputDir}/${bamFileName}
 	echo "### minimap2 finished"
 
-	samtools index -@ threads ${jobkBasecallOutputDir}/$bamFileName
+	samtools index -@ threads ${jobkBasecallOutputDir}/${bamFileName}
 	echo "### samtools finished"
+
+	echo "### Alignment step DONE"
 fi
 
 # calling methylation:
-nanopolish call-methylation -t ${processors} -r ${fastqNoDupFile} -b ${jobkBasecallOutputDir}/${bamFileName} -g ${refGenome} > ${methCallsDir}/${analysisPrefix}.batch_${job_index}.nanopolish.methylation_calls.tsv
+time nanopolish call-methylation -t ${processors} -r ${fastqNoDupFile} -b ${jobkBasecallOutputDir}/${bamFileName} -g ${refGenome} > ${methCallsDir}/${analysisPrefix}.batch_${job_index}.nanopolish.methylation_calls.tsv
 
 echo "### Nanopolish methylation calling DONE"
 

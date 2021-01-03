@@ -10,12 +10,11 @@ Sample usage:
 All usedful functions are located in nanocompare.meth_stats.meth_stats_common
 """
 import sys
+
 nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
 sys.path.append(nanocompare_prj)
 
 from sys import argv
-
-
 
 from nanocompare.meth_stats.meth_stats_common import *
 
@@ -33,7 +32,7 @@ if __name__ == '__main__':
     # load into program format 0-base or 1-base
     baseFormat = 0
 
-    logger.info(f'bgtruth cov={bgtruthCutt}, tool cov={minToolCovCutt}')
+    logger.info(f'bgtruth cov={bgtruthCutt}, tool cov={minToolCovCutt}, baseFormat={baseFormat}')
 
     RunPrefix = argv[8]  # "K562_WGBS_rep_ENCFF721JMB"
     out_dir = os.path.join(pic_base_dir, RunPrefix)
@@ -93,19 +92,27 @@ if __name__ == '__main__':
         raise Exception("Methylation_correlation_plotting.py ERROR: Unknown bacground truth parser configuration. Aborting. FYI: currently supported are: encode, oxBS_sudo, bismark")
         sys.exit(-1)
 
-    name_calls = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'DeepMod_cluster']
-    all_calls = [DeepSignal_calls, Tombo_calls, Nanopolish_calls, DeepMod_calls, DeepMod_calls_clustered]
+    name_calls = ['DeepSignal', 'Nanopolish', 'DeepMod', 'Tombo', 'DeepMod_cluster']
+    all_calls = [DeepSignal_calls, Nanopolish_calls, DeepMod_calls, Tombo_calls, DeepMod_calls_clustered]
 
-    all_calls_before_cutoff = [DeepSignal_calls0, Tombo_calls0, Nanopolish_calls0, DeepMod_calls0, DeepMod_calls_clustered0]
+    all_calls_before_cutoff = [DeepSignal_calls0, Nanopolish_calls0, DeepMod_calls0, Tombo_calls0, DeepMod_calls_clustered0]
 
     logger.debug(f'Study and find high cov in DeepSignal and Nanopolish, but low in Tombo (before cutoff)')
 
     df = get_high_cov_call1_low_cov_call2_df(Nanopolish_calls0, Tombo_calls0)
-    logger.debug(df)
+    # logger.debug(df)
     outfn = os.path.join(out_dir, f'{RunPrefix}-high-cov-nanopolish-low-cov-tombo-baseCount{baseFormat}.bed')
     df.to_csv(outfn, sep='\t', index=False)
 
     outfn = os.path.join(out_dir, f'{RunPrefix}-high-cov-nanopolish-low-cov-tombo-baseCount{baseFormat}.pkl')
+    df.to_pickle(outfn)
+
+    df = get_high_cov_call1_low_cov_call2_df(DeepSignal_calls0, Tombo_calls0, call1_name='deepsignal')
+    # logger.debug(df)
+    outfn = os.path.join(out_dir, f'{RunPrefix}-high-cov-deepsignal-low-cov-tombo-baseCount{baseFormat}.bed')
+    df.to_csv(outfn, sep='\t', index=False)
+
+    outfn = os.path.join(out_dir, f'{RunPrefix}-high-cov-deepsignal-low-cov-tombo-baseCount{baseFormat}.pkl')
     df.to_pickle(outfn)
 
     logger.debug(f"Output bed files of each tool, and bgtruth")
@@ -187,10 +194,16 @@ if __name__ == '__main__':
 
     logger.debug(f"Start set intersection with all joined together (4+1 tools with bgtruth)")
     coveredCpGs = set(list(bgTruth.keys()))
-    for call1, name1 in zip(all_calls, name_calls):
-        if call1 is None:
+
+    name_calls_new_order = ['DeepSignal', 'Nanopolish', 'DeepMod', 'Tombo', 'DeepMod_cluster']
+
+    # for call1, name1 in zip(all_calls, name_calls):
+
+    call_dict = {name_calls[k]: all_calls[k] for k in range(len(all_calls))}
+    for name1 in name_calls_new_order:
+        if call_dict[name1] is None:
             continue
-        coveredCpGs = coveredCpGs.intersection(set(list(call1.keys())))
+        coveredCpGs = coveredCpGs.intersection(set(list(call_dict[name1].keys())))
         logger.info(f'Join {name1} get {len(coveredCpGs)} CpGs')
     logger.info(f"{len(coveredCpGs)} CpGs are covered by all tools and bgtruth")
 

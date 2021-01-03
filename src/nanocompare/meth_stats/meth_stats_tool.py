@@ -207,29 +207,29 @@ def filter_noncg_sites_for_tombo(tombo_fn='/projects/li-lab/yang/workspace/nano-
     filter_noncg_sites_ref_seq(df=df, tagname=basename, ntask=ntask, ttask=ttask, num_seq=num_seq)
 
 
-def filter_noncg_sites_for_tombo_mpi():
+def filter_noncg_sites_mpi(df, ntask=300, toolname='tombo'):
     """
     MPI version of filter out non-CG patterns
     :return:
     """
-    ntask = 300
-
     basefn = os.path.basename(args.i)
     basename = os.path.splitext(basefn)[0]
 
-    df = load_tombo_df(infn=args.i)
     all_list = list(range(len(df)))
 
+    # Store each sub-process return results
     df_list = []
     with Pool(processes=args.processors) as pool:
         for epoch in range(ntask):
             cpg_pattern_index = subset_of_list(all_list, ntask, epoch + 1)
             seldf = df.iloc[cpg_pattern_index, :]
-            # logger.info(seldf)
 
-            df_list.append(pool.apply_async(filter_noncg_sites_ref_seq_mpi, (seldf, basename, ntask, epoch + 1)))
-
-            # filter_noncg_sites_ref_seq_mpi(seldf, tagname=basename, ntask=ntask, ttask=epoch + 1)
+            if toolname == 'tombo':
+                df_list.append(pool.apply_async(filter_noncg_sites_ref_seq_mpi, (seldf, basename, ntask, epoch + 1)))
+            elif toolname == 'deepmod':
+                df_list.append(pool.apply_async(filter_noncg_sites_ref_seq_mpi, (seldf, basename, ntask, epoch + 1), dict(chr_col=0, start_col=1, strand_col=5, toolname='deepmod')))
+            else:
+                raise Exception(f"{toolname} is no valid.")
         pool.close()
         pool.join()
 
@@ -241,7 +241,14 @@ def filter_noncg_sites_for_tombo_mpi():
 
     ## Note: original   input=K562.tombo.perReadsStats.combine.tsv
     ##                  output=K562.tombo.perReadsStatsOnlyCpG.combine.tsv
-    basefn = basefn.replace("perReadsStats", "perReadsStatsOnlyCG")
+
+    if toolname == 'tombo':
+        basefn = basefn.replace("perReadsStats", "perReadsStatsOnlyCG").replace("combined", "combine")
+    elif toolname == 'deepmod':
+        basefn = basefn.replace(".C.", ".C_OnlyCG.").replace("combined", "combine")
+    else:
+        raise Exception(f"{toolname} is no valid.")
+
     outfn = os.path.join(args.o, f'{basefn}')
     retdf.to_csv(outfn, sep='\t', index=False, header=False)
     logger.debug(f"Save to {outfn}")
@@ -348,11 +355,22 @@ if __name__ == '__main__':
 
             logger.debug("There are %d CPUs on this machine by multiprocessing.cpu_count()" % multiprocessing.cpu_count())
 
-            filter_noncg_sites_for_tombo_mpi()
+            df = load_tombo_df(infn=args.i)
+
+            filter_noncg_sites_mpi(df)
         else:
             filter_noncg_sites_for_tombo(ntask=args.n, ttask=args.t)
     elif args.cmd == 'deepmod-add-seq':
-        filter_noncg_sites_for_deepmod(ntask=args.n, ttask=args.t)
+        if args.mpi:
+            logger.debug('in mpi mode')
+            import multiprocessing
+
+            logger.debug("There are %d CPUs on this machine by multiprocessing.cpu_count()" % multiprocessing.cpu_count())
+
+            df = load_deepmod_df(infn=args.i)
+            filter_noncg_sites_mpi(df, toolname='deepmod')
+        else:
+            filter_noncg_sites_for_deepmod(ntask=args.n, ttask=args.t)
     elif args.cmd == 'nanopolish-add-strand':
         add_strand_info_for_nanopolish()
     elif args.cmd == 'sanity-get-seq':

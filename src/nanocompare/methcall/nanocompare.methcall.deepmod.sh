@@ -19,7 +19,7 @@ set +x
 source /home/liuya/.bash_profile
 set -x
 
-processors=8
+#processors=8
 job_index=$((SLURM_ARRAY_TASK_ID-1))
 jobkBasecallOutputDir=${basecallOutputDir}/${job_index}
 
@@ -40,6 +40,7 @@ echo "refGenome: ${refGenome}"
 echo "run_resquiggling: ${run_resquiggling}"
 echo "deepModModel: ${deepModModel}"
 echo "isGPU: ${isGPU}"
+echo "processors: ${processors}"
 echo "##################"
 set +u
 
@@ -49,7 +50,10 @@ set -x
 
 ## Call methylation from processed fast5 files:
 date
-python /projects/li-lab/yang/tools/DeepMod/bin/DeepMod.py detect --wrkBase ${processedFast5DIR} --Ref ${refGenome} --outFolder $methCallsDir --Base C --modfile $deepModModel --FileID batch_${job_index} --threads $processors
+time python /projects/li-lab/yang/tools/DeepMod/bin/DeepMod.py detect \
+		--wrkBase ${processedFast5DIR} --Ref ${refGenome} --outFolder $methCallsDir \
+		--Base C --modfile $deepModModel --FileID batch_${job_index} \
+		--threads $processors
 
 echo "###   DeepMod methylation calling DONE"
 

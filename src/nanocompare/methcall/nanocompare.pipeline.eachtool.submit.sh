@@ -39,6 +39,7 @@ fi
 if [ "$run_basecall" = true ] ; then
 	echo "Step2: basecalling"
 
+	# If previous step need to depend on
 	depend_param=""
 	if [ "$run_preprocessing" = true ] ; then
 		depend_param="--dependency=afterok:${prep_taskid}"
@@ -48,7 +49,7 @@ if [ "$run_basecall" = true ] ; then
 	mkdir -p ${basecallOutputDir}
 	mkdir -p ${basecallOutputDir}/log
 
-	basecall_task_ret=$(sbatch --job-name=albacore.${analysisPrefix} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.basecall.albacore.sh)
+	basecall_task_ret=$(sbatch --job-name=albacore.${analysisPrefix} --ntasks=${processors} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.basecall.albacore.sh)
 
 	# Get the job id as :123_1:123_2, etc.
 	base_taskids=$(get_arrayjob_ids "${basecall_task_ret}" "${targetNum}")
@@ -68,12 +69,13 @@ fi
 if [ "$run_methcall" = true ] ; then
 	echo "Step3: methylation calling"
 
+	# If previous step need to depend on
 	depend_param=""
 	if [ "$run_basecall" = true ] ; then
 		depend_param="afterok${base_taskids}"
 	fi
 
-	exp_param="dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},correctedGroup=${correctedGroup},refGenome=${refGenome},chromSizesFile=${chromSizesFile},run_resquiggling=${run_resquiggling},isGPU=${isGPU},deepsignalModel=${deepsignalModel},deepModModel=${deepModModel}"
+	exp_param="dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},correctedGroup=${correctedGroup},refGenome=${refGenome},chromSizesFile=${chromSizesFile},run_resquiggling=${run_resquiggling},isGPU=${isGPU},deepsignalModel=${deepsignalModel},deepModModel=${deepModModel},processors=${processors}"
 
 	out_param="${methCallsDir}/log/%x.batch%a.%j.out"
 	err_param="${methCallsDir}/log/%x.batch%a.%j.err"
@@ -84,22 +86,22 @@ if [ "$run_methcall" = true ] ; then
 
 	if [ "${Tool}" = "Tombo" ] ; then
 		# Tombo methylation call pipeline
-		meth_arrayjob_ret=$(sbatch --job-name=tmb.mcal.${analysisPrefix} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.tombo.sh)
+		meth_arrayjob_ret=$(sbatch --job-name=tmb.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.tombo.sh)
 	fi
 
 	if [ "${Tool}" = "DeepSignal" ] ; then
 		# DeepSignal methylation call pipeline
-		meth_arrayjob_ret=$(sbatch --job-name=dpsig.mcal.${analysisPrefix} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.deepsignal.sh)
+		meth_arrayjob_ret=$(sbatch --job-name=dpsig.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.deepsignal.sh)
 	fi
 
 	if [ "${Tool}" = "DeepMod" ] ; then
 		# DeepSignal methylation call pipeline
-		meth_arrayjob_ret=$(sbatch --job-name=dpmod.mcal.${analysisPrefix} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.deepmod.sh)
+		meth_arrayjob_ret=$(sbatch --job-name=dpmod.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.deepmod.sh)
 	fi
 
 	if [ "${Tool}" = "Nanopolish" ] ; then
 		# Nanopolish methylation call pipeline
-		meth_arrayjob_ret=$(sbatch --job-name=napol.mcal.${analysisPrefix} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.nanopolish.sh)
+		meth_arrayjob_ret=$(sbatch --job-name=napol.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.nanopolish.sh)
 	fi
 
 	# Get the job id as :123_1:123_2, etc.
@@ -118,6 +120,8 @@ fi
 ################################################################################
 if [ "$run_combine" = true ] ; then
 	echo "Step4: combing results"
+
+	# If previous step need to depend on
 	depend_param=""
 	if [ "$run_methcall" = true ] ; then
 		depend_param="--dependency=afterok${meth_taskids}"
@@ -134,6 +138,8 @@ fi
 ################################################################################
 if [ "${run_clean}" = true ] ; then
 	echo "Step5: clean dirs"
+
+	# If previous step need to depend on
 	depend_param=""
 	if [ "${run_combine}" = true ] ; then
 		depend_param="afterok:${combine_taskid}"

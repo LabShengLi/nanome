@@ -17,4 +17,4 @@ mkdir -p log
 
 #python ${pythonFile} tombo-add-seq -i /fastscratch/liuya/nanocompare/K562-Runs/K562-Tombo-N50/K562-Tombo-N50-meth-call/K562.tombo.perReadsStats.combine.tsv --mpi --processors 50
 
-python ${pythonFile} $@
+time python ${pythonFile} $@

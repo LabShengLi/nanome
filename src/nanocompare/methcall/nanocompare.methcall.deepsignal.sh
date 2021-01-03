@@ -12,6 +12,7 @@
 ################################################################################
 # DeepSignal methylation call workflow
 # Need to populate the parameters into this script
+# Step 1: Tombo resquiglling; Step 2: Deepsignal call_mods
 ################################################################################
 set -e
 set +x
@@ -19,7 +20,7 @@ set +x
 source /home/liuya/.bash_profile
 set -x
 
-processors=8
+#processors=8
 
 job_index=$((SLURM_ARRAY_TASK_ID-1))
 
@@ -45,6 +46,7 @@ echo "correctedGroup: ${correctedGroup}"
 echo "chromSizesFile: ${chromSizesFile}"
 echo "deepsignalModel: ${deepsignalModel}"
 echo "isGPU: ${isGPU}"
+echo "processors: ${processors}"
 echo "##################"
 set +u
 
@@ -54,14 +56,17 @@ set -x
 
 if [ "${run_resquiggling}" = true ] ; then
 	## Re-squiggle the data:
-	tombo resquiggle $processedFast5DIR $refGenome --processes $processors --corrected-group $correctedGroup --basecall-group Basecall_1D_000 --overwrite
+	time tombo resquiggle $processedFast5DIR $refGenome --processes $processors --corrected-group $correctedGroup \
+			--basecall-group Basecall_1D_000 --overwrite #--quiet
 
 	echo "###   Re-squiggling DONE"
 fi
 
 ## Call methylation from processed fast5 files:
-date
-deepsignal call_mods --input_path $processedFast5DIR --model_path $deepsignalModel --result_file $methCallsDir/$analysisPrefix.batch_${job_index}.CpG.deepsignal.call_mods.tsv --reference_path $refGenome --corrected_group $correctedGroup --nproc $processors --is_gpu $isGPU
+#date
+time deepsignal call_mods --input_path $processedFast5DIR --model_path $deepsignalModel \
+		--result_file $methCallsDir/$analysisPrefix.batch_${job_index}.CpG.deepsignal.call_mods.tsv \
+		--reference_path $refGenome --corrected_group $correctedGroup --nproc $processors --is_gpu $isGPU
 
 echo "###   DeepSignal methylation calling DONE"
 

@@ -19,7 +19,7 @@ source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/con
 
 set -x
 
-processors=8
+#processors=8
 
 job_index=$((SLURM_ARRAY_TASK_ID-1))
 jobkSeptInputDir=${septInputDir}/${job_index}
@@ -35,6 +35,7 @@ echo "septInputDir: ${septInputDir}"
 echo "basecallOutputDir: ${basecallOutputDir}"
 echo "jobkSeptInputDir: ${jobkSeptInputDir}"
 echo "jobkBasecallOutputDir: ${jobkBasecallOutputDir}"
+echo "processors: ${processors}"
 echo "##################"
 set +u
 
@@ -45,7 +46,9 @@ conda activate nanoai
 set -x
 
 ## Run Basecalling with Albacore:
-read_fast5_basecaller.py -o fastq,fast5 -t $processors -s ${jobkBasecallOutputDir} -i ${jobkSeptInputDir} -c r94_450bps_linear.cfg -n 20000000000
+time read_fast5_basecaller.py -o fastq,fast5 -t ${processors} \
+		-s ${jobkBasecallOutputDir} -i ${jobkSeptInputDir} -c r94_450bps_linear.cfg \
+		-n 20000000000
 
 set +x
 conda deactivate

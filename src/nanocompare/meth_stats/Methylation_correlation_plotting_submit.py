@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
             command = f"""set -x; sbatch --output={outdir}/log/%x.%j.out --error={outdir}/log/%x.%j.err --export=DeepSignal_calls="{row['DeepSignal_calls']}",Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",DeepMod_calls="{row['DeepMod_calls']}",DeepMod_cluster_calls="{row['DeepMod_cluster_calls']}",bgTruth="{row['bgTruth']}",RunPrefix="{row['RunPrefix']}",parser="{row['parser']}" --job-name=meth-corr-{row['RunPrefix']} {baseDir}/{scriptFn}"""
 
-            print(command)
+            # print(command)
             # print(f"command=[{command}]\n")
             print(f"RunPrefix={row['RunPrefix']}")
 

@@ -33,16 +33,16 @@ set +u
 if [ "${Tool}" = "Tombo" ] ; then
 	ls ${methCallsDir}/*perReadsStats.bed | wc -l
 
-	> ${methCallsDir}/${dsname}.tombo.perReadsStats.combine.tsv
+	> ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv
 
-	cat ${methCallsDir}/*perReadsStats.bed > ${methCallsDir}/${dsname}.tombo.perReadsStats.combine.tsv
+	cat ${methCallsDir}/*perReadsStats.bed > ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv
 
-	wc -l ${methCallsDir}/${dsname}.tombo.perReadsStats.combine.tsv
+	wc -l ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv
 
 	echo "### Tombo combine results DONE. ###"
 
 	# we need do filter out non-CG patterns also, now using MPI version
-	sbatch --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh tombo-add-seq -i ${methCallsDir}/${dsname}.tombo.perReadsStats.combine.tsv --mpi --processors 60 -o ${methCallsDir}
+	sbatch --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh tombo-add-seq -i ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv --mpi --processors 60 -o ${methCallsDir}
 
 	echo "### Tombo filter out NON-CG patterns post-process jobs submitted. ###"
 fi
@@ -65,7 +65,7 @@ if [ "${Tool}" = "DeepMod" ] ; then
 
 	# Step: Detect modifications from FAST5 files, ref https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#1-how-to-detect-modifications-from-fast5-files
 	# Usage: python {} pred_folder-of-DeepMod Base-of-interest unique-fileid-in-sum-file [chr-list]
-	python /projects/li-lab/yang/tools/DeepMod/tools/sum_chr_mod.py ${methCallsDir}/ C ${dsname}.C
+	time python /projects/li-lab/yang/tools/DeepMod/tools/sum_chr_mod.py ${methCallsDir}/ C ${dsname}.C
 
 	## Step: Output C in CpG motifs in a genome, i.e. CpG index in a human genome: (must be done only once per genome)
 	## TODO: check why only once, generate common file for all dataset used? CHeck results firstly running. DeepMod N70
@@ -81,20 +81,20 @@ if [ "${Tool}" = "DeepMod" ] ; then
 	## Need nanoai env, using tf 1.8.0, or will be some compilation error
 	## $1-sys.argv[1]+'.%s.C.bed', (save to sys.argv[1]+'_clusterCpG.%s.C.bed'),
 	## $2-gmotfolder ('%s/motif_%s_C.bed')   $3-not used
-	python /projects/li-lab/yang/tools/DeepMod/tools/hm_cluster_predict.py ${methCallsDir}/${dsname}.C /projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C1 ${clusterDeepModModel}
+	time python /projects/li-lab/yang/tools/DeepMod/tools/hm_cluster_predict.py ${methCallsDir}/${dsname}.C /projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C1 ${clusterDeepModModel}
 
 	set +x
 	conda deactivate
 	set -x
 
-	> ${dsname}.deepmod.C.combine.tsv
+	> ${dsname}.deepmod.C.combined.tsv
 
 	for f in $(ls -1 ${dsname}.C.chr*.C.bed)
 	do
-	  cat $f >> ${dsname}.deepmod.C.combine.tsv
+	  cat $f >> ${dsname}.deepmod.C.combined.tsv
 	done
 
-	wc -l ${dsname}.deepmod.C.combine.tsv
+	wc -l ${dsname}.deepmod.C.combined.tsv
 
 	> ${dsname}.deepmod.C_clusterCpG.combine.tsv
 
@@ -107,7 +107,9 @@ if [ "${Tool}" = "DeepMod" ] ; then
 
 	echo "### DeepMod combine results DONE. ###"
 
-	bash /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_array_job_pipe.sh deepmod-add-seq 100 ${methCallsDir}/${dsname}.deepmod.C.combine.tsv ${methCallsDir}
+#	bash /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_array_job_pipe.sh deepmod-add-seq 100 ${methCallsDir}/${dsname}.deepmod.C.combined.tsv ${methCallsDir}
+	# we need do filter out non-CG patterns also, now using MPI version
+	sbatch --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh deepmod-add-seq -i ${methCallsDir}/${dsname}.deepmod.C.combined.tsv --mpi --processors 60 -o ${methCallsDir}
 	echo "### DeepMod filter out NON-CG patterns post-process jobs submitted. ###"
 
 fi

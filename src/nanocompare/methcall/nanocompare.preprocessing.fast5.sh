@@ -55,7 +55,7 @@ fi
 echo "### Untar input done. ###"
 
 # Seperate fast5 files into $targetNum
-python /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/FilesSeparatorNew.py ${untaredInputDir} ${targetNum} ${septInputDir}
+time python /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/FilesSeparatorNew.py ${untaredInputDir} ${targetNum} ${septInputDir}
 
 echo "### Seperation fast5 files done. ###"
 

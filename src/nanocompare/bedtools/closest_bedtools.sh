@@ -10,14 +10,20 @@
 
 # Caculate the nearest distance of each tool with bg-truth bed files by bedtools's closest functions
 
+set +x
+source /home/liuya/.bash_profile
+
+set -x
+
 set -x
 
 RunPrefix=${1:-K562_WGBS_Joined}
-baseFormat=0
+
+baseFormat=${2:-0}
 
 data_base_dir=/projects/li-lab/yang/results/$(date +%F)/${RunPrefix}
 
-bgtruth_fn=$(ls ${data_base_dir}/${RunPrefix}*-meth-cov-bgtruth*-baseCount${baseFormat}.bed)
+bgtruth_fn=$(ls ${data_base_dir}/${RunPrefix}-meth-cov-bgtruth*-baseCount${baseFormat}.bed)
 
 mkdir -p results
 mkdir -p results/${RunPrefix}
@@ -28,7 +34,7 @@ echo "Processing file:${bgtruth_fn}"
 bedtools sort -i ${bgtruth_fn} > ${outdir}/fb-sorted.bed
 
 i=1
-for fn in ${data_base_dir}/${RunPrefix}*-meth-cov-tool-*-baseCount${baseFormat}.bed;
+for fn in $(ls ${data_base_dir}/${RunPrefix}-meth-cov*-tool-*-baseCount${baseFormat}.bed);
 do
 	basefn=$(basename ${fn})
 	echo "Processing file:$basefn"

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=nano.pipeline.submit
+#SBATCH --job-name=nanoc.pipeline.submit
 #SBATCH --partition=compute
 #SBATCH --mem=50g # memory pool for all cores
 #SBATCH --time=03:00:00 # time (DD-HH:MM:SS)
@@ -16,23 +16,23 @@
 
 ### Input parameters prepared for pipeline###
 dsname=K562
-targetNum=50
+targetNum=1
 inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K562-Nanopore_GT18-07372.fast5.tar
 
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
 
 ToolList=(Tombo)
+
 #ToolList=(DeepSignal Tombo DeepMod Nanopolish)
 
 
 ### Which step is going to run, true or false, if 'true' means running this step
 
 run_preprocessing=false
-run_basecall=false
-
-run_resquiggling=false
-run_methcall=false
+run_basecall=true
+run_resquiggling=true
+run_methcall=true
 run_combine=true
 run_clean=false
 
@@ -58,6 +58,9 @@ deepModModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/rnn_con
 clusterDeepModModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25"
 
 isGPU="no"
+
+# Number of processes for basecall, alignment, and methlation nanopore tool
+processors=64
 
 ###################################################################################
 ###################################################################################

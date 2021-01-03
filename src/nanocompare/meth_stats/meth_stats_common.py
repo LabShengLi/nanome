@@ -703,6 +703,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     # logger.debug(f"importPredictions_Tombo infileName={infileName}")
     infile = open(infileName, "r")
     cpgDict = {}
+    row_count_all = 0
     row_count_after_cutoff = 0
 
     output_first = True
@@ -754,6 +755,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
             continue
 
         # TODO: check if the corrected meth-cutoff is right? before <cutoff is methylated, not true, i think.
+        row_count_all += 1
 
         if abs(methCall) < cutoff:
             continue
@@ -770,7 +772,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
 
     infile.close()
 
-    logger.info("###\timportPredictions_Tombo SUCCESS: {:,} methylation calls mapped to {:,} CpGs with cutoff={} from {} file".format(row_count_after_cutoff, len(cpgDict), cutoff, infileName))
+    logger.info(f"###\timportPredictions_Tombo SUCCESS: before cutoff={row_count_all:,}, after cutoff={row_count_after_cutoff:,} methylation calls mapped to {len(cpgDict):,} CpGs with cutoff={cutoff:.2f} from {infileName} file")
     return cpgDict
 
 
@@ -1401,6 +1403,8 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
 
     cpgDict = {}
 
+    row_cnt = 0
+
     if gzippedInput:
         infile = gzip.open(infileName, 'rb')
     else:
@@ -1435,6 +1439,8 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
                 logger.error(f" ### Error parse gbTruth row = {row}")
                 continue
 
+            row_cnt += 1
+
             if temp_meth_and_unmeth >= covCutt:
                 try:
                     key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
@@ -1452,7 +1458,7 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
                     continue
 
     infile.close()
-    logger.info("###\timportGroundTruth_coverage_output_from_Bismark: loaded information for {:,} CpGs".format(len(cpgDict)))
+    logger.info(f"###\timportGroundTruth_coverage_output_from_Bismark: loaded information for {len(cpgDict):,} CpGs with cutoff={covCutt}, before cutoff={row_cnt:,}")
     return cpgDict
 
 
@@ -3462,10 +3468,10 @@ def get_high_cov_call1_low_cov_call2_df(call1, call2, call1_name='nanopolish', c
         ret.update({call1_name: len(call1[key]), call2_name: len(call2[key])})
         dataset.append(ret)
     df = pd.DataFrame(dataset)
-    df = df[df['tombo'] < low_cutoff]
-    df['cov-diff'] = df['nanopolish'] - df['tombo']
+    df = df[df[call2_name] < low_cutoff]
+    df['cov-diff'] = df[call1_name] - df[call2_name]
     df = df.sort_values(by='cov-diff', ascending=False)
-    df = df[['chr', 'start', 'end', 'nanopolish', 'tombo', 'strand', 'cov-diff']]
+    df = df[['chr', 'start', 'end', call1_name, call2_name, 'strand', 'cov-diff']]
     return df
     pass
 
