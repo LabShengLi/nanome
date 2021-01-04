@@ -72,20 +72,12 @@ date
 time tombo detect_modifications alternative_model --fast5-basedirs $processedFast5DIR \
 		--statistics-file-basename $methCallsDir/$analysisPrefix.batch_${job_index} \
 		--per-read-statistics-basename $methCallsDir/$analysisPrefix.batch_${job_index} \
-		--alternate-bases 5mC --processes $processors --corrected-group $correctedGroup \
+		--alternate-bases CpG --processes $processors --corrected-group $correctedGroup \
 		--multiprocess-region-size 10000 #--quiet
 date
 
 echo "###   Tombo methylation calling DONE"
 
-## Postprocess per read methylation calls for each run complete
-time python /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/Tombo_extract_per_read_stats.py \
-		$chromSizesFile $methCallsDir/$analysisPrefix.batch_${job_index}.5mC.tombo.per_read_stats \
-		$methCallsDir/$analysisPrefix.batch_${job_index}.perReadsStats.bed
-
-wc -l $methCallsDir/$analysisPrefix.batch_${job_index}.perReadsStats.bed
-
-echo "###   Postprocessing of per read stats files DONE"
 
 set +x
 conda deactivate

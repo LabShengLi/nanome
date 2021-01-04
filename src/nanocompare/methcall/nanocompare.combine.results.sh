@@ -31,6 +31,21 @@ echo "##################"
 set +u
 
 if [ "${Tool}" = "Tombo" ] ; then
+
+	set +x
+	conda activate nanoai
+	set -x
+	for fn in $(ls $methCallsDir/$analysisPrefix.batch_*.*.tombo.per_read_stats); do
+		## Postprocess per read methylation calls for each run complete
+		time python /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/Tombo_extract_per_read_stats.py \
+				$chromSizesFile ${fn} ${fn}.bed
+		wc -l ${fn}.bed
+	done
+	set +x
+	conda deactivate nanoai
+	set -x
+	echo "###   Tombo extract per-read-stats bed files DONE"
+
 	ls ${methCallsDir}/*perReadsStats.bed | wc -l
 
 	> ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv
@@ -74,7 +89,7 @@ if [ "${Tool}" = "DeepMod" ] ; then
 	#	python /projects/li-lab/yang/tools/DeepMod/tools/generate_motif_pos.py ${refGenome} /projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C C CG 0
 
 	set +x
-	source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
+#	source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
 	conda activate nanoai
 	set -x
 	## Step: Generated clustered results to consider cluster effect, ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#generated-clustered-results
