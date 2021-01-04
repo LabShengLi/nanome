@@ -555,7 +555,9 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
 
     infile = open(infileName, "r")
     cpgDict = {}
-    count = 0
+    row_count = 0
+    meth_cnt = 0
+    unmeth_cnt = 0
 
     for row in infile:
         tmp = row.strip().split("\t")
@@ -576,11 +578,15 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
             cpgDict[key] = []
         #         cpgDict[key].append(float(tmp[meth_col])) ##### uncomment this line to get probabilities instead of final, binary calls
         cpgDict[key].append(int(tmp[meth_col]))
-        count += 1
+        row_count += 1
+        if int(tmp[meth_col]) == 1:
+            meth_cnt += 1
+        else:
+            unmeth_cnt += 1
 
     infile.close()
 
-    logger.info("###\timportPredictions_DeepSignal SUCCESS: {:,} methylation calls mapped to {:,} CpGs from {} file".format(count, len(cpgDict), infileName))
+    logger.info(f"###\timportPredictions_DeepSignal SUCCESS: {row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
     return cpgDict
 
 
@@ -705,6 +711,8 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     cpgDict = {}
     row_count_all = 0
     row_count_after_cutoff = 0
+    meth_cnt = 0
+    unmeth_cnt = 0
 
     output_first = True
 
@@ -757,13 +765,12 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
         # TODO: check if the corrected meth-cutoff is right? before <cutoff is methylated, not true, i think.
         row_count_all += 1
 
-        if abs(methCall) < cutoff:
-            continue
-
-        if methCall <= -cutoff:
-            meth_indicator = 0
-        else:
+        if abs(methCall) > cutoff:
             meth_indicator = 1
+            meth_cnt += 1
+        else:
+            meth_indicator = 0
+            unmeth_cnt += 1
 
         if key not in cpgDict:
             cpgDict[key] = []
@@ -772,7 +779,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
 
     infile.close()
 
-    logger.info(f"###\timportPredictions_Tombo SUCCESS: before cutoff={row_count_all:,}, after cutoff={row_count_after_cutoff:,} methylation calls mapped to {len(cpgDict):,} CpGs with cutoff={cutoff:.2f} from {infileName} file")
+    logger.info(f"###\timportPredictions_Tombo SUCCESS: after cutoff={row_count_after_cutoff:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with cutoff={cutoff:.2f}, before cutoff={row_count_all:,} from {infileName} file")
     return cpgDict
 
 
@@ -3468,7 +3475,12 @@ def get_high_cov_call1_low_cov_call2_df(call1, call2, call1_name='nanopolish', c
         ret.update({call1_name: len(call1[key]), call2_name: len(call2[key])})
         dataset.append(ret)
     df = pd.DataFrame(dataset)
+
+    logging.debug(f'Callings nocutoff {call1_name} and {call2_name} joined CpG sites={len(df)}')
     df = df[df[call2_name] < low_cutoff]
+    df = df[df[call1_name] >= low_cutoff]
+    logging.debug(f'After high {call1_name}-cov and low {call2_name}-cov: joined CpG sites={len(df)}')
+
     df['cov-diff'] = df[call1_name] - df[call2_name]
     df = df.sort_values(by='cov-diff', ascending=False)
     df = df[['chr', 'start', 'end', call1_name, call2_name, 'strand', 'cov-diff']]

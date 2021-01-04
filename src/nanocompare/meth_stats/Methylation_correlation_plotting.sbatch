@@ -2,7 +2,7 @@
 #SBATCH --job-name=meth-corr
 #SBATCH -q batch
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 10 # number of cores
+#SBATCH -n 2 # number of cores
 #SBATCH --mem 100g # memory pool for all cores
 #SBATCH -t 02:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT

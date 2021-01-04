@@ -69,7 +69,7 @@ if __name__ == '__main__':
         DeepMod_calls0 = importPredictions_DeepMod(argv[4], baseFormat=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepMod_runs/K562/K562.C.combined.bed")
         DeepMod_calls = coverageFiltering(DeepMod_calls0, minCov=minToolCovCutt)
 
-    logger.debug(f"Start load DeepMod_clusteredResultParsing")
+    logger.debug(f"Start load DeepMod_clustered")
     if argv[5] == 'NO':
         DeepMod_calls_clustered = None
     else:
@@ -107,8 +107,10 @@ if __name__ == '__main__':
     outfn = os.path.join(out_dir, f'{RunPrefix}-high-cov-nanopolish-low-cov-tombo-baseCount{baseFormat}.pkl')
     df.to_pickle(outfn)
 
+    logger.debug(f'Study DeepSignal cov>={minToolCovCutt} , but low in Tombo cov < {minToolCovCutt}')
+
     df = get_high_cov_call1_low_cov_call2_df(DeepSignal_calls0, Tombo_calls0, call1_name='deepsignal')
-    # logger.debug(df)
+    logger.debug(df)
     outfn = os.path.join(out_dir, f'{RunPrefix}-high-cov-deepsignal-low-cov-tombo-baseCount{baseFormat}.bed')
     df.to_csv(outfn, sep='\t', index=False)
 
