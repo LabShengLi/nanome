@@ -22,7 +22,7 @@ set -x
 
 #processors=8
 
-job_index=$((SLURM_ARRAY_TASK_ID-1))
+job_index=$((SLURM_ARRAY_TASK_ID))
 
 jobkBasecallOutputDir=${basecallOutputDir}/${job_index}
 echo jobkBasecallOutputDir=${jobkBasecallOutputDir}

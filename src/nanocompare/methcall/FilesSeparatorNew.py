@@ -1,5 +1,5 @@
 """
-This file will seperate all fast5 file into some subfolders
+This file will seperate all fast5 file into some subfolders 1--N
 """
 
 import os
@@ -47,7 +47,7 @@ def main():
             os.makedirs(fdir, exist_ok=True)
 
     for k, fn in tqdm(enumerate(fast5files)):
-        destdir = os.path.join(MainOutputDir, f'{k % TargetNum}')
+        destdir = os.path.join(MainOutputDir, f'{(k % TargetNum) + 1}')
         shutil.move(fn, destdir)
         #
         # if k % 1000 == 0:

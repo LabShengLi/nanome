@@ -9,39 +9,14 @@
 source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/utils.common.sh
 
 ################################################################################
-# Step 1: Pre-processing (Untar, seperate files)
-################################################################################
-if [ "$run_preprocessing" = true ] ; then
-	echo "Step1: pre-processing"
-
-	# Remove dataset running dir if pre-processing
-	rm -rf ${outbasedir}/${analysisPrefix}
-	mkdir -p ${outbasedir}/${analysisPrefix}
-
-	mkdir -p ${untaredInputDir}
-	mkdir -p ${septInputDir}
-	mkdir -p ${septInputDir}/log
-
-	prep_ret=$(sbatch --job-name=prep.fast5.${analysisPrefix} --output=${septInputDir}/log/%x.%j.out --error=${septInputDir}/log/%x.%j.err --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},inputDataDir=${inputDataDir},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},analysisPrefix=${analysisPrefix},multipleInputs=${multipleInputs} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.preprocessing.fast5.sh)
-	prep_taskid=$(echo ${prep_ret} |grep -Eo '[0-9]+$')
-	echo ${prep_ret}
-	echo "### Submitted preprocessing task for ${analysisPrefix}."
-fi
-
-################################################################################
-################################################################################
-################################################################################
-
-
-################################################################################
 # Step 2: Basecalling with Albacore
 ################################################################################
-if [ "$run_basecall" = true ] ; then
+if [ "${run_basecall}" = true ] ; then
 	echo "Step2: basecalling"
 
 	# If previous step need to depend on
 	depend_param=""
-	if [ "$run_preprocessing" = true ] ; then
+	if [ "${run_preprocessing}" = true ] ; then
 		depend_param="--dependency=afterok:${prep_taskid}"
 	fi
 
@@ -132,3 +107,9 @@ if [ "$run_combine" = true ] ; then
 
 	echo "Submitted combine and clean results task for ${analysisPrefix}."
 fi
+
+
+echo "### After finished all pipeline, use following to get results of each Nanopore tool"
+
+echo "find ${outbasedir} -name "*.combine.tsv" -exec ls -lh {} \;"
+find ${outbasedir} -name "*.combine.tsv" -exec ls -lh {} \;

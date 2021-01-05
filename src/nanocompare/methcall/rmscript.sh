@@ -7,15 +7,17 @@
 #SBATCH -t 23:00:00 # time (D-HH:MM)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
-
+set -x
 #
 #cd /fastscratch/liuya/nanocompare/
 #
 #ls -d *-N70 *-N60 *-N51
 #
 #rm -rf *-N70 *-N60 *-N51
+#
+#find . -name "*.sh" -print0 | while read -d $'\0' file
+#do
+#    echo "### processing $file"
+#done
 
-find . -name "*.sh" -print0 | while read -d $'\0' file
-do
-    echo "### processing $file"
-done
+srun find /fastscratch/liuya/nanocompare/K562-Runs -name *.combine.tsv -exec ls -lh {} \;

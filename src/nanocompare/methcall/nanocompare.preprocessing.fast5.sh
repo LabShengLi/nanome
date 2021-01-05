@@ -20,7 +20,6 @@ echo "##################"
 echo "dsname: ${dsname}"
 echo "Tool: ${Tool}"
 echo "targetNum: ${targetNum}"
-echo "analysisPrefix: ${analysisPrefix}"
 echo "inputDataDir: ${inputDataDir}"
 echo "untaredInputDir: ${untaredInputDir}"
 echo "septInputDir: ${septInputDir}"
@@ -54,7 +53,7 @@ fi
 
 echo "### Untar input done. ###"
 
-# Seperate fast5 files into $targetNum
+# Seperate fast5 files into N=$targetNum, 1-N folders
 time python /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/FilesSeparatorNew.py ${untaredInputDir} ${targetNum} ${septInputDir}
 
 echo "### Seperation fast5 files done. ###"

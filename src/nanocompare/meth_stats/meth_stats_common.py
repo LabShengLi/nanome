@@ -169,9 +169,9 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                 if abs(llr) < logLikehoodCutt:
                     continue
 
-                if llr >= logLikehoodCutt:
+                if llr > 0:
                     meth_indicator = 1
-                elif llr <= -logLikehoodCutt:
+                elif llr < 0:
                     meth_indicator = 0
 
                 strand_info = tmp[strand_col]

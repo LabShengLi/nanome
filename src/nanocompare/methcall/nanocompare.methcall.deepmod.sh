@@ -20,7 +20,7 @@ source /home/liuya/.bash_profile
 set -x
 
 #processors=8
-job_index=$((SLURM_ARRAY_TASK_ID-1))
+job_index=$((SLURM_ARRAY_TASK_ID))
 jobkBasecallOutputDir=${basecallOutputDir}/${job_index}
 
 ## Modify directory for processed files after basecalling:

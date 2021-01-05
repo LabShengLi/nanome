@@ -14,11 +14,11 @@
 ###################################################################################
 # set -x
 
-### Input parameters prepared for pipeline###
+### Input dataset parameters prepared for pipeline###
 dsname=K562
-targetNum=1
+targetNum=50
 
-# From tier2: /tier2/li-lab/Nanopore/NanoporeData/Leukemia_ONT/20180612_180601-18-li-004-GXB01102-001/  47.46GB
+# Nanopore raw signal fast5 files, K562 is from tier2: /tier2/li-lab/Nanopore/NanoporeData/Leukemia_ONT/20180612_180601-18-li-004-GXB01102-001/  47.46GB
 inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K562-Nanopore_GT18-07372.fast5.tar
 
 ### Running configurations
@@ -35,36 +35,39 @@ run_preprocessing=false
 run_basecall=false
 run_resquiggling=false
 run_methcall=false
-run_combine=true
-run_clean=true
+run_combine=false
 
-# true if inputDataDir is a folder contains *.tar or *.tar.gz
+
+### true if inputDataDir is a folder contains *.tar or *.tar.gz
 multipleInputs=false
 
-# which kind of intermediate file we want to clean
+### which kind of intermediate file we want to tar or clean, these options are used in final stage of combine step
+run_clean=false
 tar_basecall=false
 tar_methcall=true
 clean_preprocessing=false
 clean_basecall=false
 
-# The output base dir
+### The output base dir
 outbasedir=/fastscratch/liuya/nanocompare/${dsname}-Runs
 mkdir -p ${outbasedir}
 
 ### Reference file path configuration, used by each base or meth calling
-
 correctedGroup="RawGenomeCorrected_000"
 refGenome="/projects/li-lab/reference/hg38/hg38.fasta"
 chromSizesFile="/projects/li-lab/yang/workspace/nano-compare/data/genome-annotation/hg38.chrom.sizes"
-
 deepsignalModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/model.CpG.R9.4_1D.human_hx1.bn17.sn360/bn_17.sn_360.epoch_7.ckpt"
 deepModModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0"
 clusterDeepModModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25"
 
-isGPU="no"
+
 
 # Number of processes for basecall, alignment, and methlation nanopore tool
-processors=64
+processors=16
+#processors=64
+
+isGPU="no"
+
 
 ###################################################################################
 ###################################################################################
