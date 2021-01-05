@@ -126,24 +126,9 @@ if [ "$run_combine" = true ] ; then
 	if [ "$run_methcall" = true ] ; then
 		depend_param="--dependency=afterok${meth_taskids}"
 	fi
-	combine_ret=$(sbatch --job-name=cmbi.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ${depend_param} --export=analysisPrefix=${analysisPrefix},methCallsDir=${methCallsDir},Tool=${Tool},dsname=${dsname},clusterDeepModModel=${clusterDeepModModel},refGenome=${refGenome} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.combine.results.sh)
+	combine_ret=$(sbatch --job-name=cmbi.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},outbasedir=${outbasedir},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},clusterDeepModModel=${clusterDeepModModel},refGenome=${refGenome},chromSizesFile=${chromSizesFile},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall},tar_basecall=${tar_basecall},tar_methcall=${tar_methcall},run_clean=${run_clean} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.combine.results.sh)
 	combine_taskid=$(echo ${combine_ret} |grep -Eo '[0-9]+$')
 	echo ${combine_ret}
 
-	echo "Submitted combine results task for ${analysisPrefix}."
-fi
-
-################################################################################
-# Step 5: Clean intermediate dirs
-################################################################################
-if [ "${run_clean}" = true ] ; then
-	echo "Step5: clean dirs"
-
-	# If previous step need to depend on
-	depend_param=""
-	if [ "${run_combine}" = true ] ; then
-		depend_param="afterok:${combine_taskid}"
-	fi
-	sbatch --job-name=clen.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --dependency=${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},analysisPrefix=${analysisPrefix},basecallOutputDir=${basecallOutputDir},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.clean.intermediate.sh
-	echo "Submitted clean dirs task for ${analysisPrefix}."
+	echo "Submitted combine and clean results task for ${analysisPrefix}."
 fi

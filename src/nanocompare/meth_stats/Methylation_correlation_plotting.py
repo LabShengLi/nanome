@@ -197,7 +197,7 @@ if __name__ == '__main__':
     logger.debug(f"Start set intersection with all joined together (4+1 tools with bgtruth)")
     coveredCpGs = set(list(bgTruth.keys()))
 
-    name_calls_new_order = ['DeepSignal', 'Nanopolish', 'DeepMod', 'Tombo', 'DeepMod_cluster']
+    name_calls_new_order = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'DeepMod_cluster']
 
     # for call1, name1 in zip(all_calls, name_calls):
 

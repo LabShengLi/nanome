@@ -18,13 +18,27 @@ set -u
 echo "##################"
 echo "dsname: ${dsname}"
 echo "Tool: ${Tool}"
+echo "analysisPrefix: ${analysisPrefix}"
+echo "outbasedir: ${outbasedir}"
 echo "untaredInputDir: ${untaredInputDir}"
 echo "septInputDir: ${septInputDir}"
 echo "basecallOutputDir: ${basecallOutputDir}"
+echo "tar_basecall: ${tar_basecall}"
+echo "tar_methcall: ${tar_methcall}"
 echo "clean_preprocessing: ${clean_preprocessing}"
 echo "clean_basecall: ${clean_basecall}"
 echo "##################"
 set +u
+
+if [ "${tar_basecall}" = true ] ; then
+	tar -czf ${outbasedir}/${analysisPrefix}/${analysisPrefix}-basecall.tar.gz ${outbasedir}/${analysisPrefix}/${analysisPrefix}
+	echo "### tar basecall dir OK"
+fi
+
+if [ "${tar_methcall}" = true ] ; then
+	tar -czf ${outbasedir}/${analysisPrefix}/${analysisPrefix}-meth-call.tar.gz ${outbasedir}/${analysisPrefix}/${analysisPrefix}-meth-call
+	echo "### tar methcall dir OK"
+fi
 
 if [ "${clean_preprocessing}" = true ] ; then
 	rm -rf ${untaredInputDir} ${septInputDir}

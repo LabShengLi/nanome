@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+#set -x
 
 # Submit meth-corr tasks for each row of config file
 meth_corr_task_ret=$(bash /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/Methylation_correlation_plotting_submit.sh)

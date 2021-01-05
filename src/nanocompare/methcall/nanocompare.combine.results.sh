@@ -2,7 +2,7 @@
 #SBATCH --job-name=combine.results
 #SBATCH --partition=compute
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 1 # number of cores
+#SBATCH -n 2 # number of cores
 #SBATCH --mem=200g # memory pool for all cores
 #SBATCH --time=13:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
@@ -27,39 +27,48 @@ echo "Tool: ${Tool}"
 echo "analysisPrefix: ${analysisPrefix}"
 echo "methCallsDir: ${methCallsDir}"
 echo "clusterDeepModModel: ${clusterDeepModModel}"
+echo "chromSizesFile: ${chromSizesFile}"
+echo "run_clean: ${run_clean}"
 echo "##################"
 set +u
 
-if [ "${Tool}" = "Tombo" ] ; then
+filter_taskid=
 
+if [ "${Tool}" = "Tombo" ] ; then
 	set +x
 	conda activate nanoai
 	set -x
 	for fn in $(ls $methCallsDir/$analysisPrefix.batch_*.*.tombo.per_read_stats); do
 		## Postprocess per read methylation calls for each run complete
 		time python /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/Tombo_extract_per_read_stats.py \
-				$chromSizesFile ${fn} ${fn}.bed
+				${chromSizesFile} ${fn} ${fn}.bed
 		wc -l ${fn}.bed
 	done
 	set +x
-	conda deactivate nanoai
+	conda deactivate
 	set -x
 	echo "###   Tombo extract per-read-stats bed files DONE"
 
-	ls ${methCallsDir}/*perReadsStats.bed | wc -l
+	ls ${methCallsDir}/${analysisPrefix}.batch_*.*.tombo.per_read_stats.bed | wc -l
 
 	> ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv
 
-	cat ${methCallsDir}/*perReadsStats.bed > ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv
+	cat ${methCallsDir}/${analysisPrefix}.batch_*.*.tombo.per_read_stats.bed > ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv
 
 	wc -l ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv
 
-	echo "### Tombo combine results DONE. ###"
+	echo "### Tombo combining batches results finished. ###"
 
 	# we need do filter out non-CG patterns also, now using MPI version
-	sbatch --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh tombo-add-seq -i ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv --mpi --processors 60 -o ${methCallsDir}
+	filter_ret=$(sbatch --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh tombo-add-seq -i ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv --mpi --processors 60 -o ${methCallsDir})
+
+	filter_taskid=$(echo ${filter_ret} |grep -Eo '[0-9]+$')
+
+	# wait the filter task finished, then start clean, so block here
+#	srun --dependency=afterok:${filter_taskid} echo "Wait Filter-out NON-CG task finished."
 
 	echo "### Tombo filter out NON-CG patterns post-process jobs submitted. ###"
+#	echo "### DeepMod combine results DONE. ###"
 fi
 
 if [ "${Tool}" = "DeepSignal" ] ; then
@@ -120,13 +129,17 @@ if [ "${Tool}" = "DeepMod" ] ; then
 
 	wc -l ${dsname}.deepmod.C_clusterCpG.combine.tsv
 
-	echo "### DeepMod combine results DONE. ###"
+	echo "### DeepMod combine all batches results. ###"
 
 #	bash /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_array_job_pipe.sh deepmod-add-seq 100 ${methCallsDir}/${dsname}.deepmod.C.combined.tsv ${methCallsDir}
 	# we need do filter out non-CG patterns also, now using MPI version
-	sbatch --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh deepmod-add-seq -i ${methCallsDir}/${dsname}.deepmod.C.combined.tsv --mpi --processors 60 -o ${methCallsDir}
-	echo "### DeepMod filter out NON-CG patterns post-process jobs submitted. ###"
+	filter_ret=$(sbatch --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh deepmod-add-seq -i ${methCallsDir}/${dsname}.deepmod.C.combined.tsv --mpi --processors 60 -o ${methCallsDir})
 
+	filter_taskid=$(echo ${filter_ret} |grep -Eo '[0-9]+$')
+	# wait the filter task finished, then start clean, so block here
+#	srun --dependency=afterok:${filter_taskid} date
+	echo "### DeepMod filter out NON-CG patterns post-process jobs submitted. ###"
+#	echo "### DeepMod combine results DONE. ###"
 fi
 
 if [ "${Tool}" = "Nanopolish" ] ; then
@@ -142,4 +155,22 @@ if [ "${Tool}" = "Nanopolish" ] ; then
 
 	wc -l ${methCallsDir}/${dsname}.nanopolish.methylation_calls.combine.tsv
 	echo "### Nanopolish combine results DONE. ###"
+fi
+
+# After combine task finished, or just filer-out task running, we will start task of clean, it will depend on filter-out task also if needed
+
+
+################################################################################
+# Step 5: Clean intermediate dirs
+################################################################################
+if [ "${run_clean}" = true ] ; then
+	echo "Step5: clean dirs"
+
+	# If previous step need to depend on
+	depend_param=""
+	if [ -n "${filter_taskid}" ] ; then
+		depend_param="afterok:${filter_taskid}"
+	fi
+	sbatch --job-name=clen.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --dependency=${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},outbasedir=${outbasedir},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall},tar_basecall=${tar_basecall},tar_methcall=${tar_methcall},run_clean=${run_clean} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.clean.intermediate.sh
+	echo "Submitted clean dirs task for ${analysisPrefix}."
 fi

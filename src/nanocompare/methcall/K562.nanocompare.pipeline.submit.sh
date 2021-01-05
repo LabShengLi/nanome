@@ -34,15 +34,17 @@ ToolList=(Tombo)
 run_preprocessing=false
 run_basecall=false
 run_resquiggling=false
-run_methcall=true
+run_methcall=false
 run_combine=true
-run_clean=false
+run_clean=true
 
 # true if inputDataDir is a folder contains *.tar or *.tar.gz
 multipleInputs=false
 
 # which kind of intermediate file we want to clean
-clean_preprocessing=true
+tar_basecall=false
+tar_methcall=true
+clean_preprocessing=false
 clean_basecall=false
 
 # The output base dir
