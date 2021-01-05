@@ -27,7 +27,7 @@ inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K5
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
 # ToolList  -   a list of Nanopore tools prepared to run
-ToolList=(Tombo)
+ToolList=(DeepMod)
 
 #ToolList=(DeepSignal Tombo DeepMod Nanopolish)
 
@@ -38,7 +38,7 @@ run_preprocessing=false
 run_basecall=false
 run_resquiggling=false
 run_methcall=false
-run_combine=false
+run_combine=true
 run_clean=false
 
 ### true if inputDataDir is a folder contains *.tar or *.tar.gz

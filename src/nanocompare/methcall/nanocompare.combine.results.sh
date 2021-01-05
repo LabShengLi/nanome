@@ -2,7 +2,7 @@
 #SBATCH --job-name=combine.results
 #SBATCH --partition=compute
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 2 # number of cores
+#SBATCH -n 8 # number of cores
 #SBATCH --mem=200g # memory pool for all cores
 #SBATCH --time=13:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
@@ -89,7 +89,9 @@ if [ "${Tool}" = "DeepMod" ] ; then
 
 	# Step: Detect modifications from FAST5 files, ref https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#1-how-to-detect-modifications-from-fast5-files
 	# Usage: python {} pred_folder-of-DeepMod Base-of-interest unique-fileid-in-sum-file [chr-list]
-	time python /projects/li-lab/yang/tools/DeepMod/tools/sum_chr_mod.py ${methCallsDir}/ C ${dsname}.C
+#	time python /projects/li-lab/yang/tools/DeepMod/tools/sum_chr_mod.py ${methCallsDir}/ C ${dsname}.C
+	time python /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/deepmod_sum_chr_mod.py ${methCallsDir}/ C ${dsname}.deepmod
+
 
 	## Step: Output C in CpG motifs in a genome, i.e. CpG index in a human genome: (must be done only once per genome)
 	## TODO: check why only once, generate common file for all dataset used? CHeck results firstly running. DeepMod N70
@@ -105,7 +107,7 @@ if [ "${Tool}" = "DeepMod" ] ; then
 	## Need nanoai env, using tf 1.8.0, or will be some compilation error
 	## $1-sys.argv[1]+'.%s.C.bed', (save to sys.argv[1]+'_clusterCpG.%s.C.bed'),
 	## $2-gmotfolder ('%s/motif_%s_C.bed')   $3-not used
-	time python /projects/li-lab/yang/tools/DeepMod/tools/hm_cluster_predict.py ${methCallsDir}/${dsname}.C /projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C1 ${clusterDeepModModel}
+	time python /projects/li-lab/yang/tools/DeepMod/tools/hm_cluster_predict.py ${methCallsDir}/${dsname}.deepmod /projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C1 ${clusterDeepModModel}
 
 	set +x
 	conda deactivate
@@ -113,21 +115,21 @@ if [ "${Tool}" = "DeepMod" ] ; then
 
 	> ${dsname}.deepmod.C.combined.tsv
 
-	for f in $(ls -1 ${dsname}.C.chr*.C.bed)
+	for f in $(ls -1 ${dsname}.deepmod.chr*.C.bed)
 	do
 	  cat $f >> ${dsname}.deepmod.C.combined.tsv
 	done
 
 	wc -l ${dsname}.deepmod.C.combined.tsv
 
-	> ${dsname}.deepmod.C_clusterCpG.combine.tsv
+	> ${dsname}.deepmod.deepmod_clusterCpG.combine.tsv
 
-	for f in $(ls -1 ${dsname}.C_clusterCpG.chr*.C.bed)
+	for f in $(ls -1 ${dsname}.deepmod_clusterCpG.chr*.C.bed)
 	do
 	  cat $f >> ${dsname}.deepmod.C_clusterCpG.combine.tsv
 	done
 
-	wc -l ${dsname}.deepmod.C_clusterCpG.combine.tsv
+	wc -l ${dsname}.deepmod.deepmod_clusterCpG.combine.tsv
 
 	echo "### DeepMod combine all batches results. ###"
 
