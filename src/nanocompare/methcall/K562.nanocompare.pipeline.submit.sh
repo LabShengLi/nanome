@@ -15,15 +15,18 @@
 # set -x
 
 ### Input dataset parameters prepared for pipeline###
+# dsname    -   data set name
+# targetNum -   number of tasks splited to run
 dsname=K562
 targetNum=50
 
-# Nanopore raw signal fast5 files, K562 is from tier2: /tier2/li-lab/Nanopore/NanoporeData/Leukemia_ONT/20180612_180601-18-li-004-GXB01102-001/  47.46GB
+### Nanopore raw signal fast5 files, K562 is from tier2: /tier2/li-lab/Nanopore/NanoporeData/Leukemia_ONT/20180612_180601-18-li-004-GXB01102-001/  47.46GB
+# inputDataDir  -   input of Nanopore reads file/files, can be tar file or a directory contains files
 inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K562-Nanopore_GT18-07372.fast5.tar
 
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
-
+# ToolList  -   a list of Nanopore tools prepared to run
 ToolList=(Tombo)
 
 #ToolList=(DeepSignal Tombo DeepMod Nanopolish)
@@ -36,13 +39,12 @@ run_basecall=false
 run_resquiggling=false
 run_methcall=false
 run_combine=false
-
+run_clean=false
 
 ### true if inputDataDir is a folder contains *.tar or *.tar.gz
 multipleInputs=false
 
-### which kind of intermediate file we want to tar or clean, these options are used in final stage of combine step
-run_clean=false
+### which kind of intermediate file we want to backup or clean, these options are used in final stage of combine step
 tar_basecall=false
 tar_methcall=true
 clean_preprocessing=false
@@ -60,21 +62,18 @@ deepsignalModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/mode
 deepModModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0"
 clusterDeepModModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25"
 
-
-
-# Number of processes for basecall, alignment, and methlation nanopore tool
+### Number of processes for basecall, alignment, and methlation nanopore tool
 processors=16
 #processors=64
 
 isGPU="no"
-
-
 ###################################################################################
 ###################################################################################
 ###################################################################################
 
+
 ###################################################################################
-### Preserve followings to run pipeline                                         ###
+### Preserve followings to run Base Modified Prediction pipeline                ###
 ###################################################################################
 
 source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.pipeline.submit.sh

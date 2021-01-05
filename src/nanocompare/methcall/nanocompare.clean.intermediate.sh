@@ -40,11 +40,6 @@ if [ "${tar_methcall}" = true ] ; then
 	echo "### tar methcall dir OK"
 fi
 
-if [ "${clean_preprocessing}" = true ] ; then
-	rm -rf ${untaredInputDir} ${septInputDir}
-	echo "### clean preprocessing dir OK"
-fi
-
 if [ "${clean_basecall}" = true ] ; then
 	rm -rf ${basecallOutputDir}
 	echo "### clean basedcalling dir OK"

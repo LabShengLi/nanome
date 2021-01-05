@@ -31,7 +31,7 @@ fi
 ################################################################################
 ################################################################################
 ################################################################################
-
+combine_taskids=""
 for Tool in ${ToolList[@]}; do
 	### Building output folder configuration, such as
 	#	/fastscratch/liuya/nanocompare/K562-Runs/
@@ -54,3 +54,23 @@ done
 ###################################################################################
 ###################################################################################
 ###################################################################################
+
+
+# After all tools combine task finished, we can clean preprocessing files safely
+if [ "${run_clean}" = true ] ; then
+	echo "Step5: clean pre-processing results for ${dsname}-N${targetNum}"
+
+	# If previous step need to depend on
+	depend_param=""
+	if [ -n "${combine_taskids}" ] ; then
+		depend_param="afterok${filter_taskid}"
+	fi
+	sbatch --job-name=clen.${dsname}.N${targetNum} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --dependency=${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},outbasedir=${outbasedir},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall},tar_basecall=${tar_basecall},tar_methcall=${tar_methcall},run_clean=${run_clean} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.clean.preprocessing.sh
+	echo "Submitted clean preprocessing dirs task for ${dsname}-N${targetNum}."
+
+fi
+
+echo "### After finished pipeline for all tools, use following to get results of each Nanopore tool"
+
+echo "find ${outbasedir} -type f -name "*.combine.tsv" -exec ls -lh {} \;"
+#find ${outbasedir} -name "*.combine.tsv" -exec ls -lh {} \;

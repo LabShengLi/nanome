@@ -44,6 +44,10 @@ fi
 if [ "$run_methcall" = true ] ; then
 	echo "Step3: methylation calling"
 
+	rm -rf ${methCallsDir}
+	mkdir -p ${methCallsDir}
+	mkdir -p ${methCallsDir}/log
+
 	# If previous step need to depend on
 	depend_param=""
 	if [ "$run_basecall" = true ] ; then
@@ -54,10 +58,6 @@ if [ "$run_methcall" = true ] ; then
 
 	out_param="${methCallsDir}/log/%x.batch%a.%j.out"
 	err_param="${methCallsDir}/log/%x.batch%a.%j.err"
-
-	rm -rf ${methCallsDir}
-	mkdir -p ${methCallsDir}
-	mkdir -p ${methCallsDir}/log
 
 	if [ "${Tool}" = "Tombo" ] ; then
 		# Tombo methylation call pipeline
@@ -83,7 +83,7 @@ if [ "$run_methcall" = true ] ; then
 	meth_taskids=$(get_arrayjob_ids "${meth_arrayjob_ret}" "${targetNum}")
 
 	echo ${meth_arrayjob_ret}
-	echo "Submitted all ${analysisPrefix} methylation calling array-job finished."
+	echo "Submitted ${analysisPrefix} methylation calling array-job finished."
 fi
 ################################################################################
 ################################################################################
@@ -94,7 +94,7 @@ fi
 # Step 4: Combining results together
 ################################################################################
 if [ "$run_combine" = true ] ; then
-	echo "Step4: combing results"
+	echo "Step4: combing results for ${analysisPrefix}"
 
 	# If previous step need to depend on
 	depend_param=""
@@ -103,13 +103,10 @@ if [ "$run_combine" = true ] ; then
 	fi
 	combine_ret=$(sbatch --job-name=cmbi.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},outbasedir=${outbasedir},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},clusterDeepModModel=${clusterDeepModModel},refGenome=${refGenome},chromSizesFile=${chromSizesFile},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall},tar_basecall=${tar_basecall},tar_methcall=${tar_methcall},run_clean=${run_clean} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.combine.results.sh)
 	combine_taskid=$(echo ${combine_ret} |grep -Eo '[0-9]+$')
+
+	combine_taskids=${combine_taskids}:${combine_taskid}
 	echo ${combine_ret}
 
 	echo "Submitted combine and clean results task for ${analysisPrefix}."
 fi
 
-
-echo "### After finished all pipeline, use following to get results of each Nanopore tool"
-
-echo "find ${outbasedir} -name "*.combine.tsv" -exec ls -lh {} \;"
-find ${outbasedir} -name "*.combine.tsv" -exec ls -lh {} \;
