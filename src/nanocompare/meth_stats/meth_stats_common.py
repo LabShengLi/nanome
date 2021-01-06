@@ -185,9 +185,11 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
 
             if num_sites == 1:  # we have singleton, i.e. only one CpG within the area
                 if baseFormat == 0:
-                    key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, start + 1, strand_info)
+                    # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, start + 1, strand_info)
+                    key = (tmp[chr_col], start, strand_info)
                 elif baseFormat == 1:
-                    key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start + 1, start + 1, strand_info)
+                    # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start + 1, start + 1, strand_info)
+                    key = (tmp[chr_col], start + 1, strand_info)
                 else:
                     logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
                     sys.exit(-1)
@@ -207,9 +209,11 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                         raise Exception(f'The file [{infileName}] contains no strand-info, please check it')
 
                     if baseFormat == 0:
-                        key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], cpgStart, cpgStart + 1, strand_info)
+                        # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], cpgStart, cpgStart + 1, strand_info)
+                        key = (tmp[chr_col], cpgStart, strand_info)
                     elif baseFormat == 1:
-                        key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], cpgStart + 1, cpgStart + 1, strand_info)
+                        # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], cpgStart + 1, cpgStart + 1, strand_info)
+                        key = (tmp[chr_col], cpgStart + 1, strand_info)
                     else:
                         logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
                         sys.exit(-1)
@@ -573,7 +577,8 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
             logger.error("###\timportPredictions_DeepSignal InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
         #         key = (tmp[chr_col], start)
-        key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
+        # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
+        key = (tmp[chr_col], start, strand)
         if key not in cpgDict:
             cpgDict[key] = []
         #         cpgDict[key].append(float(tmp[meth_col])) ##### uncomment this line to get probabilities instead of final, binary calls
@@ -754,7 +759,8 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
             logger.error("###\timportPredictions_Tombo InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
         #         key = (tmp[chr_col], start)
-        key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
+        # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
+        key = (tmp[chr_col], start, strand)
 
         try:
             methCall = float(tmp[meth_col])
@@ -1016,6 +1022,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
             sys.exit(-1)
         #         key = (tmp[chr_col], start)
         key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
+        key = (tmp[chr_col], start, strand)
 
         methReads = int(tmp[meth_reads_col])
         coverage = int(tmp[coverage_col])
@@ -1172,7 +1179,8 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
             logger.error("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
 
-        key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
+        # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
+        key = (tmp[chr_col], start, strand)
 
         methFreq = int(tmp[clustered_meth_freq_col])
         coverage = int(tmp[coverage_col])
@@ -1450,7 +1458,8 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
 
             if temp_meth_and_unmeth >= covCutt:
                 try:
-                    key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
+                    # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
+                    key = (tmp[chr_col], start, strand)
                     if key not in cpgDict:
                         # TODO: add coverage to values also
                         if includeCov:
@@ -2511,7 +2520,7 @@ def plot_confusion_matrix(cm, classes,
     plt.tight_layout()
 
 
-def save_keys_to_bed(keys, outfn, nonstr='.'):
+def save_keys_to_bed(keys, outfn, callBaseFormat=0, outBaseFormat=0, nonstr='.'):
     """
     Save all keys in set of ('chr  123  123  .  .  +\n', etc.) to outfn.
     We use non-string like . in 3rd, 4th columns by BED file format.
@@ -2521,12 +2530,14 @@ def save_keys_to_bed(keys, outfn, nonstr='.'):
     """
     outfile = open(outfn, 'w')
     for key in keys:
-        retstr = key.split('\t')
-        outfile.write(f'{retstr[0]}\t{retstr[1]}\t{retstr[2]}\t{nonstr}\t{nonstr}\t{retstr[3]}')
+        if outBaseFormat == 0:
+            outfile.write(f'{key[0]}\t{key[1] - callBaseFormat + outBaseFormat}\t{key[1] - callBaseFormat + outBaseFormat + 1}\t{nonstr}\t{nonstr}\t{key[3]}')
+        else:
+            outfile.write(f'{key[0]}\t{key[1] - callBaseFormat + outBaseFormat}\t{key[1] - callBaseFormat + outBaseFormat}\t{nonstr}\t{nonstr}\t{key[3]}')
     outfile.close()
 
 
-def save_call_or_bgtruth_to_bed(call, outfn):
+def save_call_or_bgtruth_to_bed(call, outfn, callBaseFormat=0, outBaseFormat=0):
     """
     Save to BED6 file format
 
@@ -2540,19 +2551,26 @@ def save_call_or_bgtruth_to_bed(call, outfn):
     """
     outfile = open(outfn, 'w')
     for key in call:
-        outfile.write(key[:-3])  # chr \t start \t end
+        # outfile.write(key[:-3])  # chr \t start \t end
+        if outBaseFormat == 0:
+            outfile.write(f'{key[0]}\t{key[1] - callBaseFormat}\t{key[1] - callBaseFormat + 1}')
+        else:
+            outfile.write(f'{key[0]}\t{key[1] - callBaseFormat + outBaseFormat}\t{key[1] - callBaseFormat + outBaseFormat}')
+
         ret = call[key]
         if type(ret) is list:
+            if len(ret) != 2:
+                raise Exception(f'Error when get value of key={key}, value={ret}')
             for k in ret:
                 outfile.write(f'\t{k}')  # each other columns
-            outfile.write(f'\t{key[-2]}')  # strand info
+            outfile.write(f'\t{key[2]}')  # strand info
             outfile.write(f'\n')
         else:
-            outfile.write(f'\t{key}\n')
+            outfile.write(f'\t.\t.\t{key[2]}\n')
     outfile.close()
 
 
-def save_call_to_methykit_txt(call, outfn, is_cov=True):
+def save_call_to_methykit_txt(call, outfn, callBaseFormat=0, is_cov=True):
     """
     For methykit analysis format
 
@@ -2568,13 +2586,13 @@ def save_call_to_methykit_txt(call, outfn, is_cov=True):
     print_first = True
     for key in call:
         if print_first:
-            logger.debug(f'key={key[:-1]}, value={call[key]}')
+            logger.debug(f'key={key}, value={call[key]}')
             print_first = False
 
-        strlist = key[:-1].split('\t')
-        chr = strlist[0]
-        base = strlist[1]
-        strand = strlist[3]
+        # strlist = key[:-1].split('\t')
+        chr = key[0]
+        base = key[1]
+        strand = key[2]
         if strand == '+':
             strand = 'F'
         else:
@@ -2588,7 +2606,7 @@ def save_call_to_methykit_txt(call, outfn, is_cov=True):
                 freq = sum(call[key]) / float(len(call[key]))
                 cov = len(call[key])
             except:
-                logger.error(f'key={key[:-1]}, value={call[key]}')
+                logger.error(f'key={key}, value={call[key]}')
                 exit(-1)
             pass
         outstr = f'{chr}.{base}\t{chr}\t{base}\t{strand}\t{cov}\t{freq:.2f}\t{1 - freq:.2f}\n'
@@ -3368,7 +3386,8 @@ def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yan
         start = row['start']
         end = row['end']
         strand = row['strand']
-        key = f'{chr}\t{start}\t{end}\t{strand}\n'
+        # key = f'{chr}\t{start}\t{end}\t{strand}\n'
+        key = (chr, start, strand)
         if key not in cpgDict:
             if includeCov:
                 cpgDict[key] = [row['meth-freq'] / 100.0, row['cov']]
@@ -3448,18 +3467,19 @@ def scatter_analysis_cov(Tombo_calls1, Nanopolish_calls1, outdir, RunPrefix, too
         tool_list.append(len(Nanopolish_calls1[cpg]))
 
     scatterDf = pd.DataFrame(data={f'{tool1_name}-cov': tombo_list, f'{tool2_name}-cov': tool_list}, index=key_list)
-    outfn = os.path.join(outdir, f'{RunPrefix}-tombo-nanopolish-scatter.csv')
+    outfn = os.path.join(outdir, f'{RunPrefix}-{tool1_name}-{tool2_name}-scatter.csv')
     scatterDf.to_csv(outfn)
 
-    outfn = os.path.join(outdir, f'{RunPrefix}-tombo-nanopolish-scatter.pkl')
+    outfn = os.path.join(outdir, f'{RunPrefix}-{tool1_name}-{tool2_name}-scatter.pkl')
     scatterDf.to_pickle(outfn)
 
     scatter_plot_cov_compare_df(df=scatterDf, outdir=outdir)
 
 
-def get_high_cov_call1_low_cov_call2_df(call1, call2, call1_name='nanopolish', call2_name='tombo', low_cutoff=4):
+def get_high_cov_call1_low_cov_call2_df(call1, call2, call1_name='nanopolish', call2_name='tombo', low_cutoff=4, baseFormat=0):
     """
     Get the high cov of call1, but low cov of call2
+
     :param call1:
     :param call2:
     :param call1_name:
@@ -3470,8 +3490,8 @@ def get_high_cov_call1_low_cov_call2_df(call1, call2, call1_name='nanopolish', c
     interCpGs = set(call1.keys()).intersection(call2.keys())
     dataset = []
     for key in interCpGs:
-        kettext = key[:-1].split("\t")
-        ret = {'chr': kettext[0], 'start': kettext[1], 'end': kettext[2], 'strand': kettext[3]}
+        # kettext = key[:-1].split("\t")
+        ret = {'chr': key[0], 'start': key[1], 'strand': key[2]}
         ret.update({call1_name: len(call1[key]), call2_name: len(call2[key])})
         dataset.append(ret)
     df = pd.DataFrame(dataset)
@@ -3483,9 +3503,13 @@ def get_high_cov_call1_low_cov_call2_df(call1, call2, call1_name='nanopolish', c
 
     df['cov-diff'] = df[call1_name] - df[call2_name]
     df = df.sort_values(by='cov-diff', ascending=False)
+    if baseFormat == 0:
+        df['end'] = df['start'] + 1
+    else:
+        df['end'] = df['start']
+
     df = df[['chr', 'start', 'end', call1_name, call2_name, 'strand', 'cov-diff']]
     return df
-    pass
 
 
 if __name__ == '__main__':

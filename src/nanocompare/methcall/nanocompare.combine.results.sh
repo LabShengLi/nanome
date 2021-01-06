@@ -122,14 +122,14 @@ if [ "${Tool}" = "DeepMod" ] ; then
 
 	wc -l ${dsname}.deepmod.C.combined.tsv
 
-	> ${dsname}.deepmod.deepmod_clusterCpG.combine.tsv
+	> ${dsname}.deepmod.C_clusterCpG.combine.tsv
 
 	for f in $(ls -1 ${dsname}.deepmod_clusterCpG.chr*.C.bed)
 	do
 	  cat $f >> ${dsname}.deepmod.C_clusterCpG.combine.tsv
 	done
 
-	wc -l ${dsname}.deepmod.deepmod_clusterCpG.combine.tsv
+	wc -l ${dsname}.deepmod.C_clusterCpG.combine.tsv
 
 	echo "### DeepMod combine all batches results. ###"
 
