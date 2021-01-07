@@ -41,7 +41,7 @@ def main():
     print(f'total files: {len(fast5files)}, indir={path}, TargetNum={TargetNum}, outdir={MainOutputDir}')
 
     for k in range(TargetNum):
-        fdir = os.path.join(MainOutputDir, f'{k}')
+        fdir = os.path.join(MainOutputDir, f'{k + 1}')
         if not os.path.exists(fdir):
             os.umask(0)
             os.makedirs(fdir, exist_ok=True)

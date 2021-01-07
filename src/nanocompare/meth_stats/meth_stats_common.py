@@ -6,6 +6,7 @@ Such as import_DeepSignal, import_BGTruth, etc.
 
 import pickle
 import sys
+from collections import defaultdict
 
 import pysam
 
@@ -151,6 +152,7 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
     """
 
     cpgDict = {}
+    cpgDict = defaultdict(list)
     count = 0
     infile = open(infileName, 'r')
 
@@ -194,8 +196,8 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                     logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
                     sys.exit(-1)
 
-                if key not in cpgDict:
-                    cpgDict[key] = []
+                # if key not in cpgDict:
+                #     cpgDict[key] = []
                 cpgDict[key].append(meth_indicator)
                 count += 1
             else:  # we deal with non-singleton
@@ -218,8 +220,8 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                         logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
                         sys.exit(-1)
 
-                    if key not in cpgDict:
-                        cpgDict[key] = []
+                    # if key not in cpgDict:
+                    #     cpgDict[key] = []
                     cpgDict[key].append(meth_indicator)
                     count += 1
 
@@ -558,7 +560,8 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     '''
 
     infile = open(infileName, "r")
-    cpgDict = {}
+    # cpgDict = {}
+    cpgDict = defaultdict(list)
     row_count = 0
     meth_cnt = 0
     unmeth_cnt = 0
@@ -579,8 +582,8 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
         #         key = (tmp[chr_col], start)
         # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
         key = (tmp[chr_col], start, strand)
-        if key not in cpgDict:
-            cpgDict[key] = []
+        # if key not in cpgDict:
+        #     cpgDict[key] = []
         #         cpgDict[key].append(float(tmp[meth_col])) ##### uncomment this line to get probabilities instead of final, binary calls
         cpgDict[key].append(int(tmp[meth_col]))
         row_count += 1
@@ -713,7 +716,8 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
 
     # logger.debug(f"importPredictions_Tombo infileName={infileName}")
     infile = open(infileName, "r")
-    cpgDict = {}
+    # cpgDict = {}
+    cpgDict = defaultdict(list)
     row_count_all = 0
     row_count_after_cutoff = 0
     meth_cnt = 0
@@ -768,7 +772,6 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
             logger.error(f" ####Tombo parse error at row={row}")
             continue
 
-        # TODO: check if the corrected meth-cutoff is right? before <cutoff is methylated, not true, i think.
         row_count_all += 1
 
         if abs(methCall) > cutoff:
@@ -778,8 +781,8 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
             meth_indicator = 0
             unmeth_cnt += 1
 
-        if key not in cpgDict:
-            cpgDict[key] = []
+        # if key not in cpgDict:
+        #     cpgDict[key] = []
         cpgDict[key].append(meth_indicator)
         row_count_after_cutoff += 1
 
@@ -971,6 +974,8 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
 
     DeepMod BED format ref: https://github.com/WGLab/DeepMod/blob/master/docs/Results_explanation.md#2-format-of-output
 
+    The output is in a BED format like below. The first six columns are Chr, Start pos, End pos, Base, Capped coverage, and Strand, and the last three columns are Real coverage, Mehylation percentage and Methylation coverage.
+
     Example input format from DeepMod (standard), we also preprocess the DeepMod initial results by filetering non-CG sites, which is out of our interest.
 
     head /projects/li-lab/yang/results/2020-12-21/K562.deepmod_combined-with-seq-info-n100-t006-chr1.tsv
@@ -999,7 +1004,8 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     '''
 
     infile = open(infileName, "r")
-    cpgDict = {}
+    # cpgDict = {}
+    cpgDict = defaultdict(list)
     count = 0
 
     output_first = True
@@ -1021,7 +1027,6 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
             logger.debug("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
         #         key = (tmp[chr_col], start)
-        key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
         key = (tmp[chr_col], start, strand)
 
         methReads = int(tmp[meth_reads_col])
@@ -1156,7 +1161,8 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     '''
 
     infile = open(infileName, "r")
-    cpgDict = {}
+    # cpgDict = {}
+    cpgDict = defaultdict(list)
     count = 0
     output_first = True
 
@@ -2531,9 +2537,9 @@ def save_keys_to_bed(keys, outfn, callBaseFormat=0, outBaseFormat=0, nonstr='.')
     outfile = open(outfn, 'w')
     for key in keys:
         if outBaseFormat == 0:
-            outfile.write(f'{key[0]}\t{key[1] - callBaseFormat + outBaseFormat}\t{key[1] - callBaseFormat + outBaseFormat + 1}\t{nonstr}\t{nonstr}\t{key[3]}')
+            outfile.write(f'{key[0]}\t{key[1] - callBaseFormat + outBaseFormat}\t{key[1] - callBaseFormat + outBaseFormat + 1}\t{nonstr}\t{nonstr}\t{key[2]}')
         else:
-            outfile.write(f'{key[0]}\t{key[1] - callBaseFormat + outBaseFormat}\t{key[1] - callBaseFormat + outBaseFormat}\t{nonstr}\t{nonstr}\t{key[3]}')
+            outfile.write(f'{key[0]}\t{key[1] - callBaseFormat + outBaseFormat}\t{key[1] - callBaseFormat + outBaseFormat}\t{nonstr}\t{nonstr}\t{key[2]}')
     outfile.close()
 
 
@@ -3423,7 +3429,7 @@ def scatter_plot_x_y(xx, yy, tagname='', outdir=None):
     plt.figure(figsize=(4, 4))
 
     ax = sns.scatterplot(x=xx, y=yy)
-    ax.set_title(f"Scatter of {len(xx):,} points")
+    ax.set_title(f"Scatter of {len(xx):,} CpG sites")
 
     plt.tight_layout()
     outfn = os.path.join(outdir, f'scatter-plot-{tagname}.jpg')
