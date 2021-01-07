@@ -1043,6 +1043,53 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     return cpgDict
 
 
+def importPredictions_DeepMod_Read_Level(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=-1, baseFormat=0, sep='\t'):
+    infile = open(infileName, "r")
+    # cpgDict = {}
+    cpgDict = defaultdict(list)
+    count = 0
+    meth_cnt = 0
+    unmeth_cnt = 0
+
+    output_first = True
+
+    for row in infile:
+        tmp = row.strip().split(sep)
+        if output_first:
+            logger.debug(f'row = {list(enumerate(tmp))}')
+            output_first = False
+        if baseFormat == 1:
+            start = int(tmp[start_col]) + 1
+            end = start
+            strand = tmp[strand_col]
+        elif baseFormat == 0:
+            start = int(tmp[start_col])
+            end = start + 1
+            strand = tmp[strand_col]
+        else:
+            logger.debug("###\timportPredictions_DeepMod_Read_Level InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
+            sys.exit(-1)
+        #         key = (tmp[chr_col], start)
+        key = (tmp[chr_col], start, strand)
+
+        meth_indicator = int(tmp[meth_col])
+
+        if meth_indicator == 0:
+            unmeth_cnt += 1
+        else:
+            meth_cnt += 1
+
+        # methCallsList = [1] * methReads + [0] * (coverage - methReads)
+        cpgDict[key].append(meth_indicator)
+
+        count += 1
+
+    infile.close()
+
+    logger.info(f"###\timportPredictions_DeepMod SUCCESS: {count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
+    return cpgDict
+
+
 def importPredictions_DeepMod3(infileName, chr_col=0, start_col=1, meth_percentage_col=11, coverage_col=10, clusteredResult=False, clustered_meth_freq_col=13, baseCount=0):
     '''
 
@@ -3224,6 +3271,16 @@ def load_deepmod_df(infn):
     return df
 
 
+def load_deepmod_read_level_df(infn):
+    """
+    Load the DeepMod read level output results tsv into a dataframe
+    :param infn:
+    :return:
+    """
+    df = pd.read_csv(infn, sep='\t', header=None)
+    return df
+
+
 def load_sam_as_strand_info_df(infn='/projects/li-lab/yang/workspace/nano-compare/data/bam-files/K562.sam'):
     """
     Load strand info from SAM files, and make a df of read-name and strand-info as follows:
@@ -3331,7 +3388,7 @@ def get_dna_sequence_from_reference(chr, start, num_seq=5, ref_fasta=None):
     """
 
     if ref_fasta is None:
-        raise Exception('Please specifiy params: ref_fasta')
+        raise Exception('Please specify params: ref_fasta')
 
     long_seq = ref_fasta[chr].seq
     short_seq = str(long_seq)[start - num_seq:start + num_seq + 1]

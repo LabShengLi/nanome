@@ -3,7 +3,11 @@ Tool for pre-processing results
 
 """
 import argparse
+import glob
 import sys
+from collections import defaultdict
+
+import h5py
 
 nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
 sys.path.append(nanocompare_prj)
@@ -19,6 +23,7 @@ import os
 import numpy as np
 
 from Bio import SeqIO
+from ont_fast5_api.fast5_interface import get_fast5_file
 
 
 def add_strand_info_for_nanopolish(nanopolish_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.methylation_calls.tsv', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sam'):
@@ -175,7 +180,7 @@ def filter_noncg_sites_ref_seq_mpi(df, tagname, ntask=1, ttask=1, num_dna_seq=5,
         if toolname == 'tombo':
             if ret[5:7] == 'CG':
                 only_cpg_pattern_index.append(index)
-        elif toolname == 'deepmod':
+        elif toolname in ['deepmod', 'deepmod-read-level']:
             if strand_info == '+':
                 if ret[5:7] == 'CG':
                     only_cpg_pattern_index.append(index)
@@ -228,6 +233,8 @@ def filter_noncg_sites_mpi(df, ntask=300, toolname='tombo'):
                 df_list.append(pool.apply_async(filter_noncg_sites_ref_seq_mpi, (seldf, basename, ntask, epoch + 1)))
             elif toolname == 'deepmod':
                 df_list.append(pool.apply_async(filter_noncg_sites_ref_seq_mpi, (seldf, basename, ntask, epoch + 1), dict(chr_col=0, start_col=1, strand_col=5, toolname='deepmod')))
+            elif toolname == 'deepmod-read-level':
+                df_list.append(pool.apply_async(filter_noncg_sites_ref_seq_mpi, (seldf, basename, ntask, epoch + 1), dict(chr_col=0, start_col=1, strand_col=5, toolname='deepmod-read-level')))
             else:
                 raise Exception(f"{toolname} is no valid.")
         pool.close()
@@ -295,6 +302,165 @@ def subset_of_list(alist, n, t):
     return sublist
 
 
+def get_f5_readid_map(flist):
+    f5_readid_map = defaultdict(str)
+    for fn in flist:
+        basename = os.path.basename(fn)
+        with get_fast5_file(fn, mode="r") as f5:
+            # if len(f5.get_reads()) >= 2:
+            #     raise Exception(f'We can only deal with one read in fast5, but fn={fn}, contains {len(f5.get_reads())} multiple reads')
+            for read in f5.get_reads():
+                f5_readid_map[basename] = str(read.read_id)
+    return f5_readid_map
+
+
+def build_map_fast5_to_readid_mp(basedir='/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-basecall', ntask=300):
+    patfn = os.path.join(basedir, '**', '*.fast5')
+    fast5_flist = glob.glob(patfn, recursive=True)
+
+    logger.info(f'Total fast5 files: {len(fast5_flist)}')
+
+    ret_list = []
+    with Pool(processes=args.processors) as pool:
+        for epoch in range(ntask):
+            subflist = subset_of_list(fast5_flist, ntask, epoch + 1)
+            ret_list.append(pool.apply_async(get_f5_readid_map, (subflist,)))
+        pool.close()
+        pool.join()
+    logger.debug('Finish fast5 to read-id mapping')
+    f5_readid_map = defaultdict(str)
+    for ret in ret_list:
+        f5_readid_map.update(ret.get())
+
+    # for fn in fast5_flist[:]:
+    #     # logger.debug(fn)
+    #     basename = os.path.basename(fn)
+    #
+    #     with get_fast5_file(fn, mode="r") as f5:
+    #         for read in f5.get_reads():
+    #             # logger.debug(read.read_id)
+    #             f5_readid_map[basename] = str(read.read_id)
+    return f5_readid_map
+
+
+def process_pred_detail_f5file(fn, f5_readid_map):
+    """
+    For each deepmod prediction results file, we analyze a df result of read-level results
+    :param fn:
+    :param f5_readid_map:
+    :return:
+    """
+
+    f5_pred_key = '/pred/pred_0/predetail'
+    dflist = []
+    with h5py.File(fn, 'r') as mr:
+        # m_pred = mr[f5_pred_key].value
+        # logger.debug(m_pred)
+        for name in mr['/pred']:
+            # logger.debug(name)
+            pred_num_key = f'/pred/{name}'
+            f5file = os.path.basename(mr[pred_num_key].attrs['f5file'])
+            mapped_chr = mr[pred_num_key].attrs['mapped_chr']
+            mapped_strand = mr[pred_num_key].attrs['mapped_strand']
+
+            # logger.debug(f'{pred_num_key}: chr={mapped_chr}, strand={mapped_strand}, f5file={f5file}')
+
+            pred_detail_key = f'{pred_num_key}/predetail'
+            # m_pred = mr[pred_detail_key].value
+            m_pred = mr[pred_detail_key][()]
+            m_pred = np.array(m_pred, dtype=[('refbase', 'U1'), ('readbase', 'U1'), ('refbasei', np.uint64), ('readbasei', np.uint64), ('mod_pred', np.int)])
+
+            dataset = []
+            for mi in range(len(m_pred)):
+                if m_pred['refbase'][mi] not in ['C']:
+                    continue
+                if m_pred['refbase'][mi] in ['-', 'N', 'n']:
+                    continue
+                # if m_pred['readbase'][mi] == '-':
+                #     continue
+
+                # Filter non-CG patterns results
+                ret = get_dna_sequence_from_reference(mapped_chr, int(m_pred['refbasei'][mi]), ref_fasta=ref_fasta)
+
+                if mapped_strand == '+':
+                    if ret[5:7] != 'CG':
+                        continue
+                elif mapped_strand == '-':
+                    if ret[4:6] != 'CG':
+                        continue
+
+                if -0.1 < m_pred['mod_pred'][mi] - 1 < 0.1:
+                    meth_indicator = 1
+                else:
+                    meth_indicator = 0
+                # sp_options['4NA'][m_pred['refbase'][mi]][(cur_chr, cur_strand, int(m_pred['refbasei'][mi]) )][0] += 1
+                ret = {'start': int(m_pred['refbasei'][mi]), 'pred': meth_indicator, 'base': m_pred['refbase'][mi], 'sequence': ret}
+                dataset.append(ret)
+            df = pd.DataFrame(dataset)
+
+            if len(df) < 1:
+                continue
+            df['chr'] = str(mapped_chr)
+            df['end'] = df['start'] + 1
+            df['strand'] = str(mapped_strand)
+            df['read-id'] = f5_readid_map[f5file]
+            df = df[['chr', 'start', 'end', 'read-id', 'base', 'strand', 'sequence', 'pred']]
+            # logger.info(df)
+            dflist.append(df)
+
+    sumdf = pd.concat(dflist)
+
+    # logger.debug(f'Process pred detail file {fn} finished, total reads={len(sumdf)}.')
+    return sumdf
+
+
+def extract_deepmod_read_level_results_mp(basecallDir='/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-basecall', methcallDir='/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-methcall'):
+    f5_readid_map = build_map_fast5_to_readid_mp(basedir=basecallDir, ntask=300)
+    # logger.debug(f5_readid_map)
+
+    dirname = '/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-methcall/**/rnn.pred.detail.fast5.*'
+    dirname = os.path.join(methcallDir, '**', 'rnn.pred.detail.fast5.*')
+    fast5_flist = glob.glob(dirname, recursive=True)
+    logger.info(f'Total deepmod fast5 files:{len(fast5_flist)}')
+
+    dflist = []
+    with Pool(processes=args.processors) as pool:
+        for fn in fast5_flist[:]:
+            # df = process_pred_detail_f5file(fn, f5_readid_map)
+            dflist.append(pool.apply_async(process_pred_detail_f5file, (fn, f5_readid_map,)))
+            # logger.debug(df)
+            # logger.debug(df.iloc[1, :])
+            # logger.debug(fn)
+            # pass
+        pool.close()
+        pool.join()
+
+    dflist = [df.get() for df in dflist]
+    sumdf = pd.concat(dflist)
+    logger.debug('Finish get df from deepmod fast5 predetail files')
+
+    cpgDict = defaultdict(lambda: [0, 0])  # 0:cov, 1:meth-cov
+    for index, row in sumdf.iterrows():
+        chr = row['chr']
+        start = row['start']
+        strand = row['strand']
+        basekey = (chr, start, strand)
+        cpgDict[basekey][0] += 1
+        if row['pred'] == 1:
+            cpgDict[basekey][1] += 1
+    logger.debug(f'CpG sites={len(cpgDict)}')
+
+    dataset = []
+    for site in cpgDict:
+        ret = {'chr': site[0], 'start': site[1], 'end': site[1] + 1, 'base': 'C', 'cap-cov': cpgDict[site][0], 'strand': site[2], 'no-use1': '', 'start1': site[1], 'end1': site[1] + 1, 'no-use2': '0,0,0', 'cov': cpgDict[site][0], 'meth-freq': int(100 * cpgDict[site][1] / cpgDict[site][0]), 'meth-cov': cpgDict[site][1]}
+        dataset.append(ret)
+    beddf = pd.DataFrame(dataset)
+    beddf = beddf[['chr', 'start', 'end', 'base', 'cap-cov', 'strand', 'no-use1', 'start1', 'end1', 'no-use2', 'cov', 'meth-freq', 'meth-cov']]
+    logger.debug('Finish bed df, extract all DONE.')
+
+    return sumdf, beddf
+
+
 def parse_arguments():
     """
     usage: volume_calculation.py [-h] [-n N] [-t T] [--show]
@@ -330,7 +496,10 @@ def parse_arguments():
     parser.add_argument('-t', type=int, help="the current task id (1-N)", default=1)
     parser.add_argument('-i', type=str, help="input file", default=None)
     parser.add_argument('-o', type=str, help="output dir or file", default=pic_base_dir)
+    parser.add_argument('--o2', type=str, help="second output dir or file", default=None)
     parser.add_argument('--ibam', type=str, help="input bam/sam file", default=None)
+    parser.add_argument('--basecallDir', type=str, help="basecallDir dir name", default=None)
+    parser.add_argument('--methcallDir', type=str, help="methcallDir dir name", default=None)
     parser.add_argument('--processors', type=int, help="Number of processors", default=8)
     parser.add_argument('--mpi', action='store_true')
 
@@ -343,7 +512,7 @@ if __name__ == '__main__':
     logger.debug(args)
 
     ref_fasta = None
-    if args.cmd in ['tombo-add-seq', 'deepmod-add-seq', 'sanity-get-seq']:
+    if args.cmd in ['tombo-add-seq', 'deepmod-add-seq', 'deepmod-read-level', 'sanity-get-seq']:
         ref_fn = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
         ref_fasta = SeqIO.to_dict(SeqIO.parse(open(ref_fn), 'fasta'))
 
@@ -375,11 +544,24 @@ if __name__ == '__main__':
         add_strand_info_for_nanopolish()
     elif args.cmd == 'sanity-get-seq':
         sanity_check_get_dna_seq()
-    # samfile = pysam.AlignmentFile('/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', "rb")
-    # #
-    # chr = 'chr1'
-    # start = 45834
-    # strand_info = '+'
-    # #
-    # ret = get_dna_sequence_from_samfile(chr, start, start + 4, samfile)
-    # logger.info(f'chr={chr}, start={start}, strand={strand_info}, ret={ret}')
+    elif args.cmd == 'deepmod-read-level':
+        ### Running bash:
+        """
+         sbatch meth_stats_tool_mpi.sh deepmod-read-level --basecallDir /fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-basecall --methcallDir /fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-methcall -o /fastscratch/liuya/nanocompare/deepmod-read-level1.tsv --o2 /fastscratch/liuya/nanocompare/deepmod-read-level1-extract-output.bed
+        """
+
+        sumdf, beddf = extract_deepmod_read_level_results_mp(basecallDir=args.basecallDir, methcallDir=args.methcallDir)
+        logger.info(sumdf)
+        logger.info(sumdf.iloc[1, :])
+        logger.info(sumdf['chr'].unique())
+        # outfn = os.path.join('/fastscratch/liuya/nanocompare/', 'deepmod-read-level.tsv')
+
+        # Save read level results
+        outfn = args.o
+        sumdf.to_csv(outfn, sep='\t', index=False, header=False)
+        logger.info(f'save to {outfn}')
+
+        if args.o2:  # Save CpG base level results bed file for cluster module use
+            outfn = args.o2
+            beddf.to_csv(outfn, sep=' ', index=False, header=False)
+            logger.info(f'save to {outfn}')

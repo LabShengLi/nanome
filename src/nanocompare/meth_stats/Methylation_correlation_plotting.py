@@ -27,10 +27,12 @@ if __name__ == '__main__':
     minToolCovCutt = 4
 
     # bgtruth coverage cutoff 10
-    bgtruthCutt = 5
+    bgtruthCutt = 10
 
     # load into program format 0-base or 1-base
     baseFormat = 0
+
+    is_scatter_plot = False
 
     logger.info(f'bgtruth cov={bgtruthCutt}, tool cov={minToolCovCutt}, baseFormat={baseFormat}')
 
@@ -66,7 +68,7 @@ if __name__ == '__main__':
     if argv[4] == 'NO':
         DeepMod_calls = None
     else:
-        DeepMod_calls0 = importPredictions_DeepMod(argv[4], baseFormat=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepMod_runs/K562/K562.C.combined.bed")
+        DeepMod_calls0 = importPredictions_DeepMod_Read_Level(argv[4], baseFormat=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepMod_runs/K562/K562.C.combined.bed")
         DeepMod_calls = coverageFiltering(DeepMod_calls0, minCov=minToolCovCutt)
 
     logger.debug(f"Start load DeepMod_clustered")
@@ -136,8 +138,7 @@ if __name__ == '__main__':
         outfn = os.path.join(out_dir, f'{RunPrefix}-meth-nocovcutoff-tool-{name1}-baseCount{baseFormat}.myCpG.txt')
         save_call_to_methykit_txt(call2, outfn, callBaseFormat=baseFormat, is_cov=False)
 
-    plot = False
-    if plot:
+    if is_scatter_plot:
         logger.debug(f"Study scatter plot of coverage for Tombo with other tool with no cutoff")
 
         scatter_analysis_cov(Tombo_calls0, Nanopolish_calls0, outdir=out_dir, RunPrefix=RunPrefix, tool1_name='Tombo', tool2_name='Nanopolish')
@@ -154,7 +155,7 @@ if __name__ == '__main__':
             dataset.append({'bgtruth': len(bgtruthCpGs), 'tool': np.nan, f'tool-covcut{minToolCovCutt}': np.nan, 'joined': np.nan})
             continue
         overlapCpGs = bgtruthCpGs.intersection(set(list(call1.keys())))
-        ret = {'CpG sites in BG-Truth': len(bgtruthCpGs), 'Total CpG sites by Nanopore tool': len(set(list(call1_before_cutoff))), f'Total CpG sites by cov>={minToolCovCutt}': len(set(list(call1.keys()))), 'Joined CpG sites with BG-Truth': len(overlapCpGs)}
+        ret = {f'CpG sites in BG-Truth cov>={bgtruthCutt}': len(bgtruthCpGs), 'Total CpG sites by Nanopore tool': len(set(list(call1_before_cutoff))), f'Total CpG sites by cov>={minToolCovCutt}': len(set(list(call1.keys()))), 'Joined CpG sites with BG-Truth': len(overlapCpGs)}
 
         cnt_calls = 0
 
@@ -164,7 +165,7 @@ if __name__ == '__main__':
         else:
             for cpg in call1_before_cutoff:
                 cnt_calls += call1_before_cutoff[cpg][1]
-        ret.update({'Total reads by Nanopore tool': cnt_calls})
+        ret.update({'Total calls by Nanopore reads': cnt_calls})
         dataset.append(ret)
 
         logger.info(f'BG-Truth join with {name1} get {len(overlapCpGs):,} CpGs')
@@ -195,15 +196,15 @@ if __name__ == '__main__':
     for call1, name1 in zip(all_calls, name_calls):
         if call1 is None:
             continue
-        if name1 not in ['DeepSignal', 'Nanopolish']:
+        if name1 not in ['DeepSignal', 'Nanopolish', 'DeepMod', 'Tombo']:
             continue
         if overlapCpGs is None:
             overlapCpGs = set(list(call1.keys()))
         else:
             overlapCpGs = overlapCpGs.intersection(set(list(call1.keys())))
-    outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-deepsignal-nanopolish-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
-    save_keys_to_bed(overlapCpGs, outfn)
-    logger.info(f'Reporting deepsignal, nanopolish joined results = {len(overlapCpGs)}')
+    # outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-deepsignal-nanopolish-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
+    # save_keys_to_bed(overlapCpGs, outfn)
+    logger.info(f'Reporting deepsignal, nanopolish,deepmod,and tombo joined results = {len(overlapCpGs)}')
 
     logger.debug(f"Next, study set intersection of deepsignal, nanopolish but not in Tombo")
     newOverlapCpGs = overlapCpGs - Tombo_calls.keys()

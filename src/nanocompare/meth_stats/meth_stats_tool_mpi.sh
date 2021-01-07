@@ -17,4 +17,6 @@ mkdir -p log
 
 #python ${pythonFile} tombo-add-seq -i /fastscratch/liuya/nanocompare/K562-Runs/K562-Tombo-N50/K562-Tombo-N50-meth-call/K562.tombo.perReadsStats.combine.tsv --mpi --processors 50
 
+# sbatch meth_stats_tool_mpi.sh deepmod-read-level --processors 50 --basecallDir /fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-basecall --methcallDir /fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-methcall -o /fastscratch/liuya/nanocompare/deepmod-read-level1.tsv --o2 /fastscratch/liuya/nanocompare/deepmod-read-level1-extract-output.bed
+
 time python ${pythonFile} $@
