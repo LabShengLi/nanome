@@ -1248,7 +1248,7 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     return cpgDict
 
 
-def coverageFiltering(calls_dict, minCov=4, byLength=True):
+def coverageFiltering(calls_dict, minCov=4, byLength=True, toolname="Tool"):
     """
     Convert orignial call object from dict[cpg] = {cpg: [meth_freq_read1, ..., meth_freq_readn]} to dict[cpg] = {cpg:[meth_freq, coverage_number]}
 
@@ -1270,7 +1270,7 @@ def coverageFiltering(calls_dict, minCov=4, byLength=True):
             if calls_dict[cpg][1] >= minCov:
                 result[cpg] = [calls_dict[cpg][0] / 100.0, calls_dict[cpg][1]]
 
-    logger.info(f"###\tcoverageFiltering: completed filtering with minCov={minCov}, {len(result):,} CpG sites left")
+    logger.info(f"###\tcoverageFiltering: completed filtering with minCov={minCov}, {len(result):,} CpG sites left for {toolname}")
     return result
 
 

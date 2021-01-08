@@ -2,7 +2,7 @@
 #SBATCH --job-name=meth-corr
 #SBATCH -q batch
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 2 # number of cores
+#SBATCH -n 8 # number of cores
 #SBATCH --mem 100g # memory pool for all cores
 #SBATCH -t 02:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
@@ -28,7 +28,8 @@ prj_dir=/projects/li-lab/yang/workspace/nano-compare
 baseDir=${prj_dir}/src/nanocompare/meth_stats
 pythonFn=Methylation_correlation_plotting.py
 
-python ${baseDir}/${pythonFn} $DeepSignal_calls $Tombo_calls $Nanopolish_calls \
-			$DeepMod_calls $DeepMod_cluster_calls $bgTruth $parser $RunPrefix
+python ${baseDir}/${pythonFn} --calls DeepSignal:$DeepSignal_calls \
+	Tombo:$Tombo_calls Nanopolish:$Nanopolish_calls DeepMod:$DeepMod_calls \
+	--bgtruth $parser:$bgTruth --runid $RunPrefix
 
 

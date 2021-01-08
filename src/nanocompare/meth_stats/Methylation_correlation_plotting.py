@@ -9,12 +9,12 @@ Sample usage:
 
 All usedful functions are located in nanocompare.meth_stats.meth_stats_common
 """
+import argparse
 import sys
+from multiprocessing import Pool
 
 nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
 sys.path.append(nanocompare_prj)
-
-from sys import argv
 
 from nanocompare.meth_stats.meth_stats_common import *
 
@@ -146,8 +146,146 @@ def output_bed_of_tools_bgtruth():
         save_call_to_methykit_txt(call2, outfn, callBaseFormat=baseFormat, is_cov=False)
 
 
+def parse_arguments():
+    """
+    usage: volume_calculation.py [-h] [-n N] [-t T] [--show]
+                             [--input INPUT [INPUT ...]] [--output OUTPUT]
+                             [--dcm] [--single-scan] [--lu-score LU_SCORE]
+                             [--le-score LE_SCORE]
+                             cmd
+
+    Volume calculation for lung and lesion
+
+    positional arguments:
+      cmd                   name of command: compute, combine, or gen-pixel-info
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -n N                  the total number of tasks (1-27)
+      -t T                  the current task id (1-N)
+      --show                show prediction images if using this switch
+      --input INPUT [INPUT ...]
+                            the input dir that contains scanid of pic/dcm files
+      --output OUTPUT       the input pic dir
+      --dcm                 folders are scanid that containing DCM files if using
+                            this switch
+      --single-scan         folders are directly the scanid folder if using this
+                            switch
+      --lu-score LU_SCORE   the lung field detection score
+      --le-score LE_SCORE   the lesion field detection score
+    :return:
+    """
+    parser = argparse.ArgumentParser(description='Correlation data gen task')
+    # parser.add_argument('-n', type=int, help="the total number of tasks (1-27)", default=1)
+    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name>', required=True)
+    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>", required=True)
+    parser.add_argument('--runid', type=str, help="running prefix", required=True)
+    parser.add_argument('--processors', type=int, help="running processors", default=8)
+    # parser.add_argument('-o', type=str, help="running prefix", default=pic_base_dir)
+
+    # parser.add_argument('-n', type=int, help="the total number of tasks (1-27)", default=1)
+    # parser.add_argument('-t', type=int, help="the current task id (1-N)", default=1)
+    # parser.add_argument('-i', type=str, help="input file", default=None)
+    # parser.add_argument('-o', type=str, help="output dir or file", default=pic_base_dir)
+    # parser.add_argument('--o2', type=str, help="second output dir or file", default=None)
+    # parser.add_argument('--ibam', type=str, help="input bam/sam file", default=None)
+    # parser.add_argument('--basecallDir', type=str, help="basecallDir dir name", default=None)
+    # parser.add_argument('--methcallDir', type=str, help="methcallDir dir name", default=None)
+    # parser.add_argument('--processors', type=int, help="Number of processors", default=8)
+    # parser.add_argument('--mpi', action='store_true')
+
+    return parser.parse_args()
+
+
+def import_call(fn, callname):
+    """
+    Import fn as callname and return
+        call0   -   original results
+        call1   -   covrage cutoff results
+    :param fn:
+    :param callname:
+    :return:
+    """
+    if callname == 'DeepSignal':
+        logger.debug(f"Start load DeepSignal")
+        calls0 = importPredictions_DeepSignal(fn, baseFormat=baseFormat)
+
+    elif callname == 'Tombo':
+        logger.debug(f"Start load Tombo")
+        calls0 = importPredictions_Tombo(fn, baseFormat=baseFormat)
+    elif callname == 'Nanopolish':
+        logger.debug(f"Start load Nanopolish")
+        calls0 = importPredictions_Nanopolish(fn, baseFormat=baseFormat, logLikehoodCutt=2.0)
+    elif callname == 'DeepMod':
+        logger.debug(f"Start load DeepMod")
+        calls0 = importPredictions_DeepMod_Read_Level(fn, baseFormat=baseFormat)
+    else:
+        raise Exception(f'Not support {callname} for file {fn} now')
+
+    calls1 = coverageFiltering(calls0, minCov=minToolCovCutt, toolname=callname)
+    logger.debug(f'Import {name} finished!')
+    return [calls0, calls1]
+
+
+def import_bgtruth(fn, encode):
+    logger.debug(f"Start load bgTruth")
+
+    if encode == "encode":
+        bgTruth = importGroundTruth_BedMethyl_from_Encode(fn, covCutt=bgtruthCutt, baseCount=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/K562/ENCSR765JPC_WGBS_hg38/ENCFF721JMB.bed", chrFilter="chr20")
+    elif encode == "oxBS_sudo":
+        bgTruth = importGroundTruth_oxBS(fn, covCutt=bgtruthCutt, baseCount=baseFormat)
+    elif encode == "bed":  # like K562 bg-truth
+        bgTruth = importGroundTruth_coverage_output_from_Bismark(fn, covCutt=bgtruthCutt, baseFormat=baseFormat, includeCov=True)
+    elif encode == "bismark_bedgraph":
+        bgTruth = importGroundTruth_coverage_output_from_Bismark_BedGraph(fn, baseCount=baseFormat)
+    elif encode == "bismark":  # for genome-wide Bismark results, such as HL60, etc.
+        bgTruth = importGroundTruth_genome_wide_output_from_Bismark(fn, covCutt=bgtruthCutt, baseCount=baseFormat)
+    else:
+        raise Exception("Methylation_correlation_plotting.py ERROR: Unknown bacground truth parser configuration. Aborting. FYI: currently supported are: encode, oxBS_sudo, bismark")
+
+    logger.debug(f'Import BG-Truth finished!')
+    return bgTruth
+
+
+def summary_table():
+    logger.debug(f"Study set intersection of each tool with bgtruth")
+    dataset = []
+    bgtruthCpGs = set(list(bgTruth.keys()))
+    for name in callname_list:
+        overlapCpGs = bgtruthCpGs.intersection(set(list(callresult_dict[name][1].keys())))
+        ret = {f'CpG sites in BG-Truth cov>={bgtruthCutt}': len(bgtruthCpGs), 'Total CpG sites by Nanopore tool': len(callresult_dict[name][0]), f'Total CpG sites by cov>={minToolCovCutt}': len(callresult_dict[name][1]), 'Joined CpG sites with BG-Truth': len(overlapCpGs)}
+
+        cnt_calls = 0
+
+        if name != "DeepMod_cluster":
+            for cpg in callresult_dict[name][0]:
+                cnt_calls += len(callresult_dict[name][0][cpg])
+        else:
+            raise Exception("DeepMod_cluster need to be deal with")
+        ret.update({'Total calls by Nanopore reads': cnt_calls})
+        dataset.append(ret)
+
+        logger.info(f'BG-Truth join with {name} get {len(overlapCpGs):,} CpGs')
+        # outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-bgtruth-{name1}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
+        # save_keys_to_bed(overlapCpGs, outfn)
+
+    df = pd.DataFrame(dataset, index=callname_list)
+    df = df.iloc[:, [4, 0, 1, 2, 3]]
+    outfn = os.path.join(out_dir, f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.csv')
+    df.to_csv(outfn)
+    logger.info(f'save to {outfn}')
+
+
 if __name__ == '__main__':
     set_log_debug_level()
+
+    ### python Methylation_correlation_plotting.py  --calls a:3234 b:33433 --bgtruth c:3242424
+    args = parse_arguments()
+    logger.debug(args)
+
+    RunPrefix = args.runid  # "K562_WGBS_rep_ENCFF721JMB"
+    out_dir = os.path.join(pic_base_dir, RunPrefix)
+    os.makedirs(out_dir, exist_ok=True)
 
     # tool coverage cutoff 4
     minToolCovCutt = 4
@@ -158,13 +296,77 @@ if __name__ == '__main__':
     # load into program format 0-base or 1-base
     baseFormat = 0
 
+    callfn_dict = defaultdict()  # callname -> filename
+    callresult_dict = defaultdict()
+    callname_list = []
+
+    with Pool(processes=args.processors) as pool:
+        for callstr in args.calls:
+            callname, callfn = callstr.split(':')
+            callfn_dict[callname] = callfn
+            callname_list.append(callname)
+            # callresult_dict[callname] = import_call(callfn, callname)
+            callresult_dict[callname] = pool.apply_async(import_call, (callfn, callname,))
+
+        logger.info(args.bgtruth.split(':'))
+
+        encode = args.bgtruth.split(':')[0]
+        fn = args.bgtruth.split(':')[1]
+
+        logger.info(f'fn={fn}, encode={encode}')
+        # bgTruth = import_bgtruth(fn, encode)
+        bgTruth = pool.apply_async(import_bgtruth, (fn, encode,))
+        pool.close()
+        pool.join()
+    logger.info("Join processes of import")
+
+    for name in callname_list:
+        callresult_dict[callname] = callresult_dict[callname].get()
+    bgTruth = bgTruth.get()
+
+    # logger.info(callfn_dict)
+    # logger.info(callname_list)
+
+    logger.debug(f"Start set intersection with all tools joined together with bgtruth")
+
+    coveredCpGs = set(list(bgTruth.keys()))
+    for name in callname_list:
+        coveredCpGs = coveredCpGs.intersection(set(list(callresult_dict[name][1].keys())))
+        logger.info(f'Join {name} get {len(coveredCpGs)} CpGs')
+    logger.info(f"Reporting {len(coveredCpGs)} CpGs are covered by all tools and bgtruth")
+
+    logger.debug('Output data of coverage and meth-freq on joined CpG sites for correlation analysis')
+    outfn = os.path.join(out_dir, f"Meth_corr_plot_data-{RunPrefix}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.tsv")
+    logger.info(f"Start output results to {outfn}")
+
+    outfile = open(outfn, 'w')
+    outfile.write("chr\tstart\tend\tBSseq_freq\tBSseq_cov\tstrand")
+
+    for name in callname_list:
+        outfile.write(f"\t{name}_freq\t{name}_cov")
+    outfile.write("\n")
+
+    for cpg in coveredCpGs:
+        outfile.write(f"{cpg[0]}\t{cpg[1]}\t{cpg[1] + 1}\t{bgTruth[cpg][0]}\t{bgTruth[cpg][1]}\t{cpg[2]}")
+
+        for name in callname_list:
+            outfile.write(f"\t{callresult_dict[name][1][cpg][0]}\t{callresult_dict[name][1][cpg][1]}")
+        outfile.write("\n")
+    outfile.close()
+    logger.info(f"save to {outfn}")
+
+    summary_table()
+
+    logger.info("Methylation correlation plotting data generation program finished.")
+
+    sys.exit(0)
+
     is_scatter_plot = False
     output_bed = False
     study_high_low_cov = False
 
     logger.info(f'bgtruth cov={bgtruthCutt}, tool cov={minToolCovCutt}, baseFormat={baseFormat}')
 
-    RunPrefix = argv[8]  # "K562_WGBS_rep_ENCFF721JMB"
     out_dir = os.path.join(pic_base_dir, RunPrefix)
     os.makedirs(out_dir, exist_ok=True)
 
@@ -206,25 +408,9 @@ if __name__ == '__main__':
         DeepMod_calls_clustered0 = importPredictions_DeepMod_clustered(argv[5], baseFormat=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepMod_runs/K562/K562.C_clusterCpG.combined.bed")
         DeepMod_calls_clustered = coverageFiltering(DeepMod_calls_clustered0, minCov=minToolCovCutt, byLength=False)
 
-    logger.debug(f"Start load bgTruth")
-
-    if argv[7] == "encode":
-        bgTruth = importGroundTruth_BedMethyl_from_Encode(argv[6], covCutt=bgtruthCutt, baseCount=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/K562/ENCSR765JPC_WGBS_hg38/ENCFF721JMB.bed", chrFilter="chr20")
-    elif argv[7] == "oxBS_sudo":
-        bgTruth = importGroundTruth_oxBS(argv[6], covCutt=bgtruthCutt, baseCount=baseFormat)
-    elif argv[7] == "bed":  # like K562 bg-truth
-        bgTruth = importGroundTruth_coverage_output_from_Bismark(argv[6], covCutt=bgtruthCutt, baseFormat=baseFormat, includeCov=True)
-    elif argv[7] == "bismark_bedgraph":
-        bgTruth = importGroundTruth_coverage_output_from_Bismark_BedGraph(argv[6], baseCount=baseFormat)
-    elif argv[7] == "bismark":  # for genome-wide Bismark results, such as HL60, etc.
-        bgTruth = importGroundTruth_genome_wide_output_from_Bismark(argv[6], covCutt=bgtruthCutt, baseCount=baseFormat)
-    else:
-        raise Exception("Methylation_correlation_plotting.py ERROR: Unknown bacground truth parser configuration. Aborting. FYI: currently supported are: encode, oxBS_sudo, bismark")
-        sys.exit(-1)
-
     name_calls = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'DeepMod_cluster']
     all_calls = [DeepSignal_calls, Tombo_calls, Nanopolish_calls, DeepMod_calls, DeepMod_calls_clustered]
-    call_dict = {name_calls[k]: all_calls[k] for k in range(len(all_calls))}
+    callfn_dict = {name_calls[k]: all_calls[k] for k in range(len(all_calls))}
 
     all_calls_before_cutoff = [DeepSignal_calls0, Tombo_calls0, Nanopolish_calls0, DeepMod_calls0, DeepMod_calls_clustered0]
 
@@ -238,34 +424,3 @@ if __name__ == '__main__':
         scatter_plot_cov()
 
     study_intersection()
-
-    logger.debug(f"Start set intersection with all joined together (4 tools with bgtruth)")
-    coveredCpGs = set(list(bgTruth.keys()))
-
-    for name1 in name_calls[:-1]:
-        if call_dict[name1] is None:
-            continue
-        coveredCpGs = coveredCpGs.intersection(set(list(call_dict[name1].keys())))
-        logger.info(f'Join {name1} get {len(coveredCpGs)} CpGs')
-    logger.info(f"Reporting {len(coveredCpGs)} CpGs are covered by all tools and bgtruth")
-
-    logger.debug('Output data of coverage and meth-freq on joined CpG sites for correlation analysis')
-    outfn = os.path.join(out_dir, f"Meth_corr_plot_data-{RunPrefix}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.tsv")
-    logger.info(f"Start output results to {outfn}")
-
-    outfile = open(outfn, 'w')
-    outfile.write("chr\tstart\tend\tBSseq_freq\tBSseq_cov\tstrand\tDeepSignal_freq\tDeepSignal_cov\tTombo_freq\tTombo_cov\tNanopolish_freq\tNanopolish_cov\tDeepMod_freq\tDeepMod_cov\n")
-
-    for cpg in coveredCpGs:
-        # coords = cpg.strip().split("\t")
-        outfile.write(f"{cpg[0]}\t{cpg[1]}\t{cpg[1] + 1}\t{bgTruth[cpg][0]}\t{bgTruth[cpg][1]}\t{cpg[2]}")
-
-        for call1 in all_calls[:-1]:
-            if call1 is None:
-                outfile.write("\t.\t.")
-                continue
-            outfile.write(f"\t{call1[cpg][0]}\t{call1[cpg][1]}")
-        outfile.write("\n")
-    outfile.close()
-    logger.info(f"save to {outfn}")
-    logger.info("Methylation correlation plotting data generation program finished.")
