@@ -86,7 +86,7 @@ if [ "${Tool}" = "DeepMod" ] ; then
 
 	## Extract read-level DeepMod results
 
-	filter_ret=$(sbatch --nodes=1 --ntasks=50 --job-name=extr.rldepmd.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh deepmod-read-level --basecallDir ${basecallOutputDir} --methcallDir ${methCallsDir} -o ${methCallsDir}/${dsname}.deepmod.read_level_extract.combine.tsv)
+	filter_ret=$(sbatch --nodes=1 --ntasks=50 --job-name=extr.rldepmd.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh deepmod-read-level --processors 50 --basecallDir ${basecallOutputDir} --methcallDir ${methCallsDir} -o ${methCallsDir}/${dsname}.deepmod_read_level.read_level.combine.tsv --o2 ${methCallsDir}/${dsname}.deepmod_read_level.base_level.combined.C.bed)
 	filter_taskid=":$(echo ${filter_ret} |grep -Eo '[0-9]+$')"
 
 	## Step:  join results from different batches, based on ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md
@@ -113,7 +113,7 @@ if [ "${Tool}" = "DeepMod" ] ; then
 	## Need nanoai env, using tf 1.8.0, or will be some compilation error
 	## $1-sys.argv[1]+'.%s.C.bed', (save to sys.argv[1]+'_clusterCpG.%s.C.bed'),
 	## $2-gmotfolder ('%s/motif_%s_C.bed')   $3-not used
-	time python /projects/li-lab/yang/tools/DeepMod/tools/hm_cluster_predict.py ${methCallsDir}/${dsname}.deepmod /projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C1 ${clusterDeepModModel}
+	time python /projects/li-lab/yang/tools/DeepMod/tools/hm_cluster_predict.py ${methCallsDir}/${dsname}.deepmod /projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C ${clusterDeepModModel}
 
 	set +x
 	conda deactivate

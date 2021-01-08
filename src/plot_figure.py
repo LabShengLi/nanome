@@ -383,8 +383,10 @@ def corr_grid_plot(infns=load_corr_data_tsv_fns()):
     filenameSuffix = current_time_str()
 
     for infn in infns[:]:
+        logger.debug(infn)
         df = pd.read_csv(infn, sep='\t')
         df = df.rename(columns=dict_cor_tsv_to_abbr())
+        logger.debug(df)
 
         basefn = os.path.basename(infn)
         outfileName = "{}.png".format(basefn.replace(".tsv", ""))

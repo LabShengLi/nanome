@@ -38,8 +38,13 @@ perf_order = ['F1_5mC', 'F1_5C']
 
 # Correlation ploting input tsv's important fields
 cor_tsv_fields = ["DeepSignal_freq", "Tombo_freq", "Nanopolish_freq", "DeepMod_freq", "DeepMod_clust_freq", "BSseq_freq"]
+cor_tsv_fields = ["DeepSignal_freq", "Tombo_freq", "Nanopolish_freq", "DeepMod_freq",  "BSseq_freq"]
+
+
 
 cor_tsv_fields_abbr = ["DeepSignal", "Tombo", "Nanopolish", "DeepMod", "DeepMod_clust", "BSseq"]
+cor_tsv_fields_abbr = ["DeepSignal", "Tombo", "Nanopolish", "DeepMod", "BSseq"]
+
 
 gbtruth_filedict = {
         'NA19240': os.path.join('/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/joined_reps/RRBS/extractBismark', 'NA19240_joined_RRBS.Read_R1.Rep_1_trimmed_bismark_bt2.bismark.cov.gz'),
