@@ -329,7 +329,7 @@ def load_corr_data_tsv_fns():
 
     ret_list = ['/projects/li-lab/yang/results/2020-12-21/K562_WGBS_Joined/Meth_corr_plot_data-K562_WGBS_Joined-bsCov5-minCov4-time-2020-12-21-15-57.tsv']
 
-    ret_list = ['/projects/li-lab/yang/results/2021-01-07/K562_WGBS_Joined_NewRuns/Meth_corr_plot_data-K562_WGBS_Joined_NewRuns-bsCov10-minCov4-baseCount0.tsv']
+    ret_list = ['/projects/li-lab/yang/results/2021-01-08/K562_WGBS_Joined_NewRuns/Meth_corr_plot_data-K562_WGBS_Joined_NewRuns-bsCov10-minCov4-baseCount0.tsv']
 
     # return filesFull
 

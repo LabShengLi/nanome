@@ -227,7 +227,7 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
 
     infile.close()
 
-    logger.info("###\timportPredictions_Nanopolish SUCCESS: {:,} methylation calls mapped to {:,} CpGs from {} file".format(count, len(cpgDict), infileName))
+    logger.info(f"###\timportPredictions_Nanopolish SUCCESS: {count:,} methylation calls mapped to {len(cpgDict):,} CpGs from {infileName} file with LLR-cutoff {logLikehoodCutt:.2f}")
     return cpgDict
 
 
@@ -718,8 +718,8 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     infile = open(infileName, "r")
     # cpgDict = {}
     cpgDict = defaultdict(list)
-    row_count_all = 0
-    row_count_after_cutoff = 0
+    # row_count_all = 0
+    row_count = 0
     meth_cnt = 0
     unmeth_cnt = 0
 
@@ -772,8 +772,6 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
             logger.error(f" ####Tombo parse error at row={row}")
             continue
 
-        row_count_all += 1
-
         if abs(methCall) > cutoff:
             meth_indicator = 1
             meth_cnt += 1
@@ -784,11 +782,11 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
         # if key not in cpgDict:
         #     cpgDict[key] = []
         cpgDict[key].append(meth_indicator)
-        row_count_after_cutoff += 1
+        row_count += 1
 
     infile.close()
 
-    logger.info(f"###\timportPredictions_Tombo SUCCESS: after cutoff={row_count_after_cutoff:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with cutoff={cutoff:.2f}, before cutoff={row_count_all:,} from {infileName} file")
+    logger.info(f"###\timportPredictions_Tombo SUCCESS: {row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with meth-cutoff={cutoff:.2f} from {infileName} file")
     return cpgDict
 
 
@@ -1086,7 +1084,7 @@ def importPredictions_DeepMod_Read_Level(infileName, chr_col=0, start_col=1, str
 
     infile.close()
 
-    logger.info(f"###\timportPredictions_DeepMod SUCCESS: {count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
+    logger.info(f"###\timportPredictions_DeepMod_Read_Level SUCCESS: {count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
     return cpgDict
 
 
@@ -3573,6 +3571,57 @@ def get_high_cov_call1_low_cov_call2_df(call1, call2, call1_name='nanopolish', c
 
     df = df[['chr', 'start', 'end', call1_name, call2_name, 'strand', 'cov-diff']]
     return df
+
+
+def import_call(fn, callname, baseFormat=0):
+    """
+    Import fn as callname and return
+        call0   -   original results
+    :param fn:
+    :param callname:
+    :return:
+    """
+    logger.debug(f"Start load {callname}")
+    if callname == 'DeepSignal':
+        calls0 = importPredictions_DeepSignal(fn, baseFormat=baseFormat)
+    elif callname == 'Tombo':
+        calls0 = importPredictions_Tombo(fn, baseFormat=baseFormat)
+    elif callname == 'Nanopolish':
+        calls0 = importPredictions_Nanopolish(fn, baseFormat=baseFormat, logLikehoodCutt=2.0)
+    elif callname == 'DeepMod':
+        calls0 = importPredictions_DeepMod_Read_Level(fn, baseFormat=baseFormat)
+    else:
+        raise Exception(f'Not support {callname} for file {fn} now')
+
+    logger.debug(f'Import {callname} finished!\n')
+    return calls0
+
+
+def import_bgtruth(fn, encode, cov=10, baseFormat=0):
+    """
+    Import bgtruth from file fn using encode
+    :param fn:
+    :param encode:
+    :return:
+    """
+
+    logger.debug(f"Start load bgTruth using encode={encode}")
+
+    if encode == "encode":
+        bgTruth = importGroundTruth_BedMethyl_from_Encode(fn, covCutt=cov, baseCount=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/K562/ENCSR765JPC_WGBS_hg38/ENCFF721JMB.bed", chrFilter="chr20")
+    elif encode == "oxBS_sudo":
+        bgTruth = importGroundTruth_oxBS(fn, covCutt=cov, baseCount=baseFormat)
+    elif encode == "bed":  # like K562 bg-truth
+        bgTruth = importGroundTruth_coverage_output_from_Bismark(fn, covCutt=cov, baseFormat=baseFormat, includeCov=True)
+    elif encode == "bismark_bedgraph":
+        bgTruth = importGroundTruth_coverage_output_from_Bismark_BedGraph(fn, baseCount=baseFormat)
+    elif encode == "bismark":  # for genome-wide Bismark results, such as HL60, etc.
+        bgTruth = importGroundTruth_genome_wide_output_from_Bismark(fn, covCutt=cov, baseCount=baseFormat)
+    else:
+        raise Exception("Methylation_correlation_plotting.py ERROR: Unknown bacground truth parser configuration. Aborting. FYI: currently supported are: encode, oxBS_sudo, bismark")
+
+    logger.debug(f'Import BG-Truth finished!\n')
+    return bgTruth
 
 
 if __name__ == '__main__':

@@ -384,8 +384,20 @@ def corr_grid_plot(infns=load_corr_data_tsv_fns()):
 
     for infn in infns[:]:
         logger.debug(infn)
-        df = pd.read_csv(infn, sep='\t')
-        df = df.rename(columns=dict_cor_tsv_to_abbr())
+        df = pd.read_csv(infn, sep=',')
+
+        sel_col = []
+        rename_dict = {}
+        for col in df.columns:
+            if str(col).endswith('_freq'):
+                sel_col.append(str(col))
+                rename_dict.update({str(col): str(col).replace('_freq', '')})
+        logger.debug(sel_col)
+        df = df[sel_col]
+        logger.debug(df)
+        df = df.rename(columns=rename_dict)
+        num_col = len(df.columns)
+        df = df.iloc[:, list(range(1, num_col)) + [0]]
         logger.debug(df)
 
         basefn = os.path.basename(infn)
@@ -404,16 +416,16 @@ def corr_grid_plot(infns=load_corr_data_tsv_fns()):
 
         gridRes = 30
         position = 1
-        for y in range(1, len(cor_tsv_fields) + 1):
-            for x in range(1, len(cor_tsv_fields) + 1):
+        for y in range(1, num_col + 1):
+            for x in range(1, num_col + 1):
                 if x == y:
                     # Diagonal:
-                    plt.subplot(len(cor_tsv_fields), len(cor_tsv_fields), position)
+                    plt.subplot(num_col, num_col, position)
                     #             df[fields[x-1]].hist(bins=100)
                     params = {'legend.fontsize': 16, 'legend.handlelength': 0, 'legend.handletextpad': 0, 'legend.fancybox': True}
                     plt.rcParams.update(params)
-                    ax = sns.kdeplot(df[cor_tsv_fields_abbr[x - 1]], shade=True, color="black", legend=True)
-                    leg = ax.legend(labels=[cor_tsv_fields_abbr[x - 1]])
+                    ax = sns.kdeplot(df.iloc[:, x - 1], shade=True, color="black", legend=True)
+                    leg = ax.legend(labels=[str(df.columns[x - 1])])
                     for item in leg.legendHandles:
                         item.set_visible(False)
 
@@ -427,9 +439,9 @@ def corr_grid_plot(infns=load_corr_data_tsv_fns()):
 
                 elif x > y:
                     # upper triangle:
-                    ax2 = plt.subplot(len(cor_tsv_fields), len(cor_tsv_fields), position)
+                    ax2 = plt.subplot(num_col, num_col, position)
 
-                    corrValue = pearsonr(df[cor_tsv_fields_abbr[x - 1]], df[cor_tsv_fields_abbr[y - 1]])
+                    corrValue = pearsonr(df.iloc[:, x - 1], df.iloc[:, y - 1])
                     corrValueStr = "{0:2.2f}".format(corrValue[0])
 
                     ax2.text(0.5 * (left + right), 0.5 * (bottom + top), corrValueStr,
@@ -443,9 +455,9 @@ def corr_grid_plot(infns=load_corr_data_tsv_fns()):
 
                 elif x < y:
                     # lower triangle:
-                    ax3 = plt.subplot(len(cor_tsv_fields), len(cor_tsv_fields), position)
+                    ax3 = plt.subplot(num_col, num_col, position)
 
-                    plt.hexbin(df[cor_tsv_fields_abbr[x - 1]], df[cor_tsv_fields_abbr[y - 1]], gridsize=(gridRes, gridRes), cmap=agressiveHot)  # plt.cm.gray_r )
+                    plt.hexbin(df.iloc[:, x - 1], df.iloc[:, y - 1], gridsize=(gridRes, gridRes), cmap=agressiveHot)  # plt.cm.gray_r )
 
                     ax3.set_yticklabels([])
                     ax3.set_xticklabels([])
