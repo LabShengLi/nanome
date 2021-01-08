@@ -11,7 +11,6 @@ All usedful functions are located in nanocompare.meth_stats.meth_stats_common
 """
 import argparse
 import sys
-from multiprocessing import Pool
 
 nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
 sys.path.append(nanocompare_prj)
@@ -223,7 +222,7 @@ def import_call(fn, callname):
         raise Exception(f'Not support {callname} for file {fn} now')
 
     calls1 = coverageFiltering(calls0, minCov=minToolCovCutt, toolname=callname)
-    logger.debug(f'Import {name} finished!')
+    # logger.debug(f'Import {name} finished!')
     return [calls0, calls1]
 
 
@@ -300,29 +299,26 @@ if __name__ == '__main__':
     callresult_dict = defaultdict()
     callname_list = []
 
-    with Pool(processes=args.processors) as pool:
-        for callstr in args.calls:
-            callname, callfn = callstr.split(':')
-            callfn_dict[callname] = callfn
-            callname_list.append(callname)
-            # callresult_dict[callname] = import_call(callfn, callname)
-            callresult_dict[callname] = pool.apply_async(import_call, (callfn, callname,))
+    # with Pool(processes=args.processors) as pool:
+    for callstr in args.calls:
+        callname, callfn = callstr.split(':')
+        callfn_dict[callname] = callfn
+        callname_list.append(callname)
+        callresult_dict[callname] = import_call(callfn, callname)
+        # callresult_dict[callname] = pool.apply_async(import_call, (callfn, callname,))
 
-        logger.info(args.bgtruth.split(':'))
+    encode, fn = args.bgtruth.split(':')
 
-        encode = args.bgtruth.split(':')[0]
-        fn = args.bgtruth.split(':')[1]
+    logger.debug(f'fn={fn}, encode={encode}')
+    bgTruth = import_bgtruth(fn, encode)
+    # bgTruth = pool.apply_async(import_bgtruth, (fn, encode,))
+    # pool.close()
+    # pool.join()
+    # logger.info("Join processes of import")
 
-        logger.info(f'fn={fn}, encode={encode}')
-        # bgTruth = import_bgtruth(fn, encode)
-        bgTruth = pool.apply_async(import_bgtruth, (fn, encode,))
-        pool.close()
-        pool.join()
-    logger.info("Join processes of import")
-
-    for name in callname_list:
-        callresult_dict[callname] = callresult_dict[callname].get()
-    bgTruth = bgTruth.get()
+    # for name in callname_list:
+    #     callresult_dict[callname] = callresult_dict[callname].get()
+    # bgTruth = bgTruth.get()
 
     # logger.info(callfn_dict)
     # logger.info(callname_list)
@@ -337,7 +333,7 @@ if __name__ == '__main__':
 
     logger.debug('Output data of coverage and meth-freq on joined CpG sites for correlation analysis')
     outfn = os.path.join(out_dir, f"Meth_corr_plot_data-{RunPrefix}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.tsv")
-    logger.info(f"Start output results to {outfn}")
+    logger.debug(f"Start output results to {outfn}")
 
     outfile = open(outfn, 'w')
     outfile.write("chr\tstart\tend\tBSseq_freq\tBSseq_cov\tstrand")
@@ -353,7 +349,7 @@ if __name__ == '__main__':
             outfile.write(f"\t{callresult_dict[name][1][cpg][0]}\t{callresult_dict[name][1][cpg][1]}")
         outfile.write("\n")
     outfile.close()
-    logger.info(f"save to {outfn}")
+    logger.debug(f"save to {outfn}")
 
     summary_table()
 
