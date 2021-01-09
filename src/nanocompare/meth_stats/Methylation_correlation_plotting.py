@@ -225,13 +225,13 @@ if __name__ == '__main__':
         callname, callfn = callstr.split(':')
         callfn_dict[callname] = callfn
         callname_list.append(callname)
-        callresult_dict[callname] = [import_call(callfn, callname)]
+        callresult_dict[callname] = [import_call(callfn, callname, baseFormat=baseFormat)]
         # callresult_dict[callname] = pool.apply_async(import_call, (callfn, callname,))
 
     encode, fn = args.bgtruth.split(':')
 
     logger.debug(f'fn={fn}, encode={encode}')
-    bgTruth = import_bgtruth(fn, encode)
+    bgTruth = import_bgtruth(fn, encode, cov=bgtruthCutt, baseFormat=baseFormat)
     # bgTruth = pool.apply_async(import_bgtruth, (fn, encode,))
     # pool.close()
     # pool.join()
@@ -254,7 +254,7 @@ if __name__ == '__main__':
     logger.info(f"Reporting {len(coveredCpGs)} CpGs are covered by all tools and bgtruth")
 
     logger.info('Output data of coverage and meth-freq on joined CpG sites for correlation analysis')
-    outfn = os.path.join(out_dir, f"Meth_corr_plot_data-{RunPrefix}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.tsv")
+    outfn = os.path.join(out_dir, f"Meth_corr_plot_data-{RunPrefix}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.csv")
 
     outfile = open(outfn, 'w')
 

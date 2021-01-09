@@ -43,4 +43,7 @@ if __name__ == '__main__':
                         row['DeepMod_calls'], row['bgTruth'], row['RunPrefix'],
                         row['parser'], row['minCov'], row['Dataset'], baseDir, scriptFn)
             # print(f"command={command}")
-            print(row['RunPrefix'], subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read())
+            print(row['RunPrefix'], subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8"))
+
+
+

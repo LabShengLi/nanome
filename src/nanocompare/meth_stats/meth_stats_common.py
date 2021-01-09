@@ -9,6 +9,7 @@ import sys
 from collections import defaultdict
 
 import pysam
+from tqdm import tqdm
 
 nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
 sys.path.append(nanocompare_prj)
@@ -1661,31 +1662,43 @@ def importNarrowCpGsList():
 
 def dict2txt(inputDict):
     """
-    Convert all keys in dict to a string txt
+    Convert all keys in dict to a string txt, txt file is:
+    chr1  123  123  +
+
     :param inputDict:
     :return:
     """
     text = ""
     for key in inputDict:
         #         print(key)
-        text += key
+        # text += key
+        text += f'{key[0]}\t{key[1]}\t{key[1]}\t{key[2]}\n'
+
     return text
 
 
-def txt2dict(pybed):
+def txt2dict(pybed, strand_col=3):
     """
     convert bed txt to a dict with keys in bed file
+
+    From
+    chr123  123  123 +
+    To
+    ('chr123', 123, '+') -> 1
+    
     :param pybed:
     :return:
     """
     d = {}
     for t in pybed:
-        d[str(t)] = 1
+        ret = str(t)[:-1].split('\t')
+        key = (ret[0], int(ret[1]), ret[strand_col])
+        d[key] = 1
     return d
 
 
 # Deprecated
-def computePerReadStats(ontCalls, bsReference, title, bedFile=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBed=False, secondFilterBed_4Corr=False):
+def computePerReadStats_deprecated(ontCalls, bsReference, title, bedFile=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBed=False, secondFilterBed_4Corr=False):
     '''
     ontCalls - dictionary of CpG coordinates with their per read methylation call (1 or 0) // Format: {"chr\tstart\tend\n" : [list of methylation calls]}
     bsReference - dictionary of CpG coordinates with their methylation frequencies (range 0 - 1). This list is already prefiltered to meet minimal coverage (e.g. 4x) at this point. // Format: {"chr\tstart\tend\n" : methylation level (format: float (0-1))}
@@ -1950,7 +1963,18 @@ def computePerReadStats(ontCalls, bsReference, title, bedFile=False, ontCutt_per
     return accuracy, roc_auc, precision_5C, recall_5C, F1_5C, Csites, precision_5mC, recall_5mC, F1_5mC, mCsites, referenceCpGs, corrMix, len(ontFrequencies_4corr_mix), corrAll, len(ontFrequencies_4corr_all)  # , leftovers, leftovers1
 
 
-def computePerReadStats_v3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBed=False, secondFilterBed_4Corr=False, cutoff_meth=1.0):
+def load_single_sites_bed_as_set(infn):
+    infile = open(infn, 'r')
+    ret = set()
+    for row in infile:  # each row: chr123  123   123  .  .  +
+        rowsplit = row[:-1].split('\t')
+        key = (rowsplit[0], int(rowsplit[1]), rowsplit[5])
+        ret.add(key)
+    infile.close()
+    return ret
+
+
+def computePerReadStats(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBedFile=False, secondFilterBed_4CorrFile=False, cutoff_meth=1.0):
     """
     Compute ontCalls with bgTruth performance results by per-read count.
     bedFile                 -   coordinate used to eval
@@ -1989,17 +2013,17 @@ def computePerReadStats_v3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perR
     """
 
     switch = 0
-    ontCalls_narrow = []
+    ontCalls_narrow_set = None
     if bedFile != False:
+        logger.debug(bedFile)
         ontCalls_bed = BedTool(dict2txt(ontCalls), from_string=True)
         ontCalls_bed = ontCalls_bed.sort()
 
-        infn = bedFile
-        # narrowBed = BedTool(bedFile)
-        narrowBed = BedTool(infn)
+        narrowBed = BedTool(bedFile)
         narrowBed = narrowBed.sort()
         ontCalls_intersect = ontCalls_bed.intersect(narrowBed, u=True, wa=True)
-        ontCalls_narrow = txt2dict(ontCalls_intersect)
+        ontCalls_narrow_set = set(txt2dict(ontCalls_intersect).keys())
+        # logger.debug(list(ontCalls_narrow.keys())[0])
         suffix = bedFile
     else:
         switch = 1
@@ -2008,13 +2032,28 @@ def computePerReadStats_v3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perR
     ## Second optional filter, organized in the same fashion as the first one. Designed to accomodate for example list of CpGs covered by second program
     secondSwitch = 0
     ontCalls_narrow_second = {}
-    if secondFilterBed != False:
-        infile = open(secondFilterBed, 'r')
+    ontCalls_narrow_second_set = None
+    if secondFilterBedFile != False:
+        # logger.debug(secondFilterBedFile)
+
+        joined_set = load_single_sites_bed_as_set(secondFilterBedFile)
+        # logger.debug(f'joined_set={len(joined_set)}')
+
+        infile = open(secondFilterBedFile, 'r')
         secondFilterDict = {}
-        for row in infile:
-            secondFilterDict[row] = 0
+        for row in infile:  # each row: chr123  123   123  .  .  +
+            rowsplit = row[:-1].split('\t')
+            key = (rowsplit[0], int(rowsplit[1]), rowsplit[5])
+            secondFilterDict[key] = 0
         infile.close()
+        # logger.debug(f'ontCalls key={list(ontCalls.keys())[:2]}, secondFilterDict={list(secondFilterDict.keys())[:2]}')
+        # logger.debug(f'ontCalls={len(ontCalls)}, secondFilterDict={len(secondFilterDict)}, intersect={len(set(ontCalls.keys()).intersection(set(secondFilterDict.keys())))}')
         ontCalls_narrow_second = dict.fromkeys(set(ontCalls.keys()).intersection(set(secondFilterDict.keys())), 0)
+        ontCalls_narrow_second_set = set(ontCalls.keys()).intersection(joined_set)
+        # logger.debug(f'ontCalls_narrow_second={len(ontCalls_narrow_second)}, ontCalls_narrow_second_set={len(ontCalls_narrow_second_set)}')
+
+        # sys.exit(-1)
+
     else:
         secondSwitch = 1
         suffix = "GenomeWide"
@@ -2022,13 +2061,23 @@ def computePerReadStats_v3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perR
     # Second optional filter, shoudl be used in combination with second optional filter above
     secondSwitch_4corr = 0
     ontCalls_narrow_second_4corr = {}
-    if secondFilterBed_4Corr != False:
-        infile = open(secondFilterBed_4Corr, 'r')
+    ontCalls_narrow_second_4corr_set = None
+    if secondFilterBed_4CorrFile != False:
+        # logger.debug(secondFilterBed_4CorrFile)
+
+        narrow_second_4corr_set = load_single_sites_bed_as_set(secondFilterBed_4CorrFile)
+        infile = open(secondFilterBed_4CorrFile, 'r')
         secondFilterDict = {}
         for row in infile:
-            secondFilterDict[row] = 0
+            rowsplit = row[:-1].split('\t')
+            key = (rowsplit[0], int(rowsplit[1]), rowsplit[5])
+            secondFilterDict[key] = 0
         infile.close()
         ontCalls_narrow_second_4corr = dict.fromkeys(set(ontCalls.keys()).intersection(set(secondFilterDict.keys())), 0)
+        ontCalls_narrow_second_4corr_set = set(ontCalls.keys()).intersection(narrow_second_4corr_set)
+        # logger.debug(list(ontCalls_narrow_second_4corr.keys())[0])
+        # logger.debug(f'ontCalls_narrow_second_4corr={len(ontCalls_narrow_second_4corr)}, ontCalls_narrow_second_4corr_set={len(ontCalls_narrow_second_4corr_set)}')
+
     else:
         secondSwitch_4corr = 1
         suffix = "GenomeWide"
@@ -2038,19 +2087,19 @@ def computePerReadStats_v3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perR
         suffix = suffixTMP[-1]
 
     TP_5mC = FP_5mC = FN_5mC = TN_5mC = TP_5C = FP_5C = FN_5C = TN_5C = 0
-    y = []
-    scores = []
+    y_of_bgtruth = []
+    scores_of_call = []
 
     ontSites = 0  # count how many reads is methy or unmethy
 
-    mCsites = 0  # count how many read call is methy
-    Csites = 0  # count how many read call is unmethy
+    mCalls = 0  # count how many read call is methy
+    cCalls = 0  # count how many read call is unmethy
 
     referenceCpGs = 0
 
     # really CpGs for fully methylation and unmethylation,
-    mCsites1 = 0
-    Csites1 = 0
+    mCsites_BGTruth = 0
+    Csites_BGTruth = 0
 
     ## four tuples for correlation:
     ontFrequencies_4corr_mix = []  # mix(ed) are those, which in reference have methylation level >0 and <1
@@ -2061,70 +2110,69 @@ def computePerReadStats_v3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perR
     leftovers = {}
     leftovers1 = {}
 
-    for cpg_ont in ontCalls:
+    for cpg_ont in ontCalls:  # key = (chr, start, strand)
         ##### for per read stats:
-        if cpg_ont in bgTruth and len(ontCalls[cpg_ont]) >= ontCutt_perRead and (switch == 1 or cpg_ont in ontCalls_narrow) and (
-                secondSwitch == 1 or cpg_ont in ontCalls_narrow_second):  # we should not take onCuttoffs for per read stats - shouldn't we? actually, we need to have the option to use this parameter, because at some point we may want to narrow down the per read stats to cover only the sites which were also covered by correlation with BS-Seq. Using this cutoff here is the easiest way to do just that
+        if cpg_ont in bgTruth and len(ontCalls[cpg_ont]) >= ontCutt_perRead and (switch == 1 or cpg_ont in ontCalls_narrow_set) and (
+                secondSwitch == 1 or cpg_ont in ontCalls_narrow_second_set):  # we should not take onCuttoffs for per read stats - shouldn't we? actually, we need to have the option to use this parameter, because at some point we may want to narrow down the per read stats to cover only the sites which were also covered by correlation with BS-Seq. Using this
+            # cutoff here is the easiest way to do just that
             #         if cpg_ont in bsReference and (switch == 1 or cpg_ont in ontCalls_narrow):
-            if bgTruth[cpg_ont] >= (cutoff_meth - 1e-6) or bgTruth[cpg_ont] == 0:  # we only consider absolute states here
+            if bgTruth[cpg_ont][0] >= (cutoff_meth - 1e-6) or bgTruth[cpg_ont][0] <= 1e-5:  # we only consider absolute states here, 0, or 1 in bgtruth
                 referenceCpGs += 1
 
-                if bgTruth[cpg_ont] >= (cutoff_meth - 1e-6):
-                    mCsites1 += 1
-                if bgTruth[cpg_ont] == 0:
-                    Csites1 += 1
+                if bgTruth[cpg_ont][0] >= (cutoff_meth - 1e-6):
+                    mCsites_BGTruth += 1
+                elif bgTruth[cpg_ont][0] <= 1e-5:
+                    Csites_BGTruth += 1
 
-                for ontCall in ontCalls[cpg_ont]:
-                    if bgTruth[cpg_ont] >= (cutoff_meth - 1e-6):
-                        mCsites += 1
-                    if bgTruth[cpg_ont] == 0:
-                        Csites += 1
+                for ontCall in ontCalls[cpg_ont]:  # ontCall only 0 or 1
+                    if ontCall >= (cutoff_meth - 1e-6):
+                        mCalls += 1
+                    elif ontCall <= 1e-5:
+                        cCalls += 1
                     ontSites += 1
 
                     ### variables needed to compute precission, recall etc.:
-                    if ontCall == 1 and bgTruth[cpg_ont] >= (cutoff_meth - 1e-6):  # true positive
+                    if ontCall == 1 and bgTruth[cpg_ont][0] >= (cutoff_meth - 1e-6):  # true positive
                         TP_5mC += 1
-                    elif ontCall == 1 and bgTruth[cpg_ont] == 0:  # false positive
+                    elif ontCall == 1 and bgTruth[cpg_ont][0] <= 1e-5:  # false positive
                         FP_5mC += 1
-                    elif ontCall == 0 and bgTruth[cpg_ont] >= (cutoff_meth - 1e-6):  # false negative
+                    elif ontCall == 0 and bgTruth[cpg_ont][0] >= (cutoff_meth - 1e-6):  # false negative
                         FN_5mC += 1
-                    elif ontCall == 0 and bgTruth[cpg_ont] == 0:  # true negative
+                    elif ontCall == 0 and bgTruth[cpg_ont][0] <= 1e-5:  # true negative
                         TN_5mC += 1
 
-                    if ontCall == 0 and bgTruth[cpg_ont] == 0:  # true positive
+                    if ontCall == 0 and bgTruth[cpg_ont][0] <= 1e-5:  # true positive
                         TP_5C += 1
-                    elif ontCall == 0 and bgTruth[cpg_ont] >= (cutoff_meth - 1e-6):  # false positive
+                    elif ontCall == 0 and bgTruth[cpg_ont][0] >= (cutoff_meth - 1e-6):  # false positive
                         FP_5C += 1
-                    elif ontCall == 1 and bgTruth[cpg_ont] == 0:  # false negative
+                    elif ontCall == 1 and bgTruth[cpg_ont][0] <= 1e-5:  # false negative
                         FN_5C += 1
-                    elif ontCall == 1 and bgTruth[cpg_ont] >= (cutoff_meth - 1e-6):  # true negative
+                    elif ontCall == 1 and bgTruth[cpg_ont][0] >= (cutoff_meth - 1e-6):  # true negative
                         TN_5C += 1
 
                     ### AUC related:
-                    scores.append(ontCall)
+                    scores_of_call.append(ontCall)
 
-                    if bgTruth[cpg_ont] >= (cutoff_meth - 1e-6):
-                        y.append(1)
+                    if bgTruth[cpg_ont][0] >= (cutoff_meth - 1e-6):
+                        y_of_bgtruth.append(1)
                     else:
-                        y.append(0)
+                        y_of_bgtruth.append(0)
 
         ##### for correlation stats:
-        if cpg_ont in bgTruth and len(ontCalls[cpg_ont]) >= ontCutt_4corr and (switch == 1 or cpg_ont in ontCalls_narrow) and (secondSwitch_4corr == 1 or cpg_ont in ontCalls_narrow_second_4corr):
+        if cpg_ont in bgTruth and len(ontCalls[cpg_ont]) >= ontCutt_4corr and (switch == 1 or cpg_ont in ontCalls_narrow_set) and (secondSwitch_4corr == 1 or cpg_ont in ontCalls_narrow_second_4corr_set):
             ontMethFreq = np.mean(ontCalls[cpg_ont])
             ontFrequencies_4corr_all.append(ontMethFreq)
-            refFrequencies_4corr_all.append(bgTruth[cpg_ont])
-            if bgTruth[cpg_ont] > 0 and bgTruth[cpg_ont] < (cutoff_meth - 1e-6):
+            refFrequencies_4corr_all.append(bgTruth[cpg_ont][0])
+            if bgTruth[cpg_ont][0] > 0 and bgTruth[cpg_ont][0] < (cutoff_meth - 1e-6):
                 ontFrequencies_4corr_mix.append(ontMethFreq)
-                refFrequencies_4corr_mix.append(bgTruth[cpg_ont])
+                refFrequencies_4corr_mix.append(bgTruth[cpg_ont][0])
 
     ### compute all per read stats:
-
     #     Accuracy:
     try:
         accuracy = (TP_5mC + TN_5mC) / float(TP_5mC + FP_5mC + FN_5mC + TN_5mC)
     except ZeroDivisionError:
         accuracy = 0
-    #     print("Accuracy: {0:1.4f}".format(accuracy))
 
     #     Positive predictive value (PPV), Precision = (TP) / E(Predicted condition positive)
     try:
@@ -2132,101 +2180,52 @@ def computePerReadStats_v3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perR
         precision_5mC = TP_5mC / predicted_condition_positive_5mC
     except ZeroDivisionError:
         precision_5mC = 0
-    #     print("Precision_5mC: {0:1.4f}".format(precision_5mC))
+
     try:
         predicted_condition_positive_5C = float(TP_5C + FP_5C)
         precision_5C = TP_5C / predicted_condition_positive_5C
     except ZeroDivisionError:
         precision_5C = 0
 
-    #     print("Precision_5C: {0:1.4f}".format(precision_5C))
-
     #     True positive rate (TPR), Recall, Sensitivity, probability of detection = (TP) / (TP+FN)
     try:
         recall_5mC = TP_5mC / float(TP_5mC + FN_5mC)
     except ZeroDivisionError:
         recall_5mC = 0
-    #     print("Recall_5mC: {0:1.4f}".format(recall_5mC))
 
     try:
         recall_5C = TP_5C / float(TP_5C + FN_5C)
     except ZeroDivisionError:
         recall_5C = 0
-    #     print("Recall_5C: {0:1.4f}".format(recall_5C))
 
     #     F1 score:
     try:
         F1_5mC = 2 * ((precision_5mC * recall_5mC) / (precision_5mC + recall_5mC))
     except ZeroDivisionError:
         F1_5mC = 0
-    #     print("F1 score_5mC: {0:1.4f}".format(F1_5mC))
 
     try:
         F1_5C = 2 * ((precision_5C * recall_5C) / (precision_5C + recall_5C))
     except ZeroDivisionError:
         F1_5C = 0
-    #     print("F1 score_5C: {0:1.4f}".format(F1_5C))
-
-    #     print("ontSites:", ontSites)
 
     ## plot AUC curve:
     # fig = plt.figure(figsize=(5, 5), dpi=300)
 
     fprSwitch = 1
     try:
-        fpr, tpr, _ = roc_curve(y, scores)
+        fpr, tpr, _ = roc_curve(y_of_bgtruth, scores_of_call)
     except ValueError:
-        logger.error(f"###\tERROR for roc_curve: y:{y}, scores:{scores}, \nother settings: {title}, {bedFile}, {secondFilterBed}, {secondFilterBed_4Corr}")
+        logger.error(f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{scores_of_call}, \nother settings: {title}, {bedFile}, {secondFilterBedFile}, {secondFilterBed_4CorrFile}")
         fprSwitch = 0
         roc_auc = 0
 
     if fprSwitch == 1:
         roc_auc = auc(fpr, tpr)
-        #     print("AUC: {0:1.4f}".format(roc_auc))
-        #     print(title)
 
-        # lw = 2
-        #
-        # plt.plot(fpr, tpr, lw=lw, label='ROC curve (area = {0:.4f})'.format(roc_auc))
-        # plt.plot([0, 1], [0, 1], color='lightgrey', lw=lw, linestyle='--')
-        # plt.xlim([0.0, 1.0])
-        # plt.ylim([0.0, 1.05])
-        # plt.xlabel('False Positive Rate')
-        # plt.ylabel('True Positive Rate')
-        # plt.title(suffix)
-        # plt.legend(loc="lower right")
-
-        # fig.savefig("{}.{}.AUC.pdf".format(title, suffix), bbox_inches='tight', dpi=300)
-        # plt.close()
-
-        ## Plot confusion matrix:
-        # cnf_matrix = confusion_matrix(y, scores)
-        # np.set_printoptions(precision=2)
-        # plt.figure(figsize=(5, 5))
-        # plot_confusion_matrix(cnf_matrix, classes=[0, 1], normalize=True, title=suffix)
-        # # plt.savefig("{}.{}.ConfusionMatrix.pdf".format(title, suffix), bbox_inches='tight', dpi=300)
-        # plt.close()
-
-        ## plot Precission-recall:
-        average_precision = average_precision_score(y, scores)
-        #     print('Average precision-recall score: {0:0.2f}'.format(average_precision))
-        # plt.figure(figsize=(5, 5))
-        precision, recall, _ = precision_recall_curve(y, scores)
-        # In matplotlib < 1.5, plt.fill_between does not have a 'step' argument
-        # step_kwargs = ({'step': 'post'}
-        #                if 'step' in signature(plt.fill_between).parameters
-        #                else {})
-        # plt.step(recall, precision, color='b', alpha=0.2,
-        #          where='post')
-        # plt.fill_between(recall, precision, alpha=0.2, color='b', **step_kwargs)
-        #
-        # plt.xlabel('Recall')
-        # plt.ylabel('Precision')
-        # plt.ylim([0.0, 1.05])
-        # plt.xlim([0.0, 1.0])
-        # plt.title('2-class Precision-Recall curve: AP={0:0.2f}\n{1}'.format(average_precision, suffix))
-        # # plt.savefig("{}.{}.PrecissionRecall.pdf".format(title, suffix), bbox_inches='tight', dpi=300)
-        # plt.close()
+        ## Precission-recall:
+        average_precision = average_precision_score(y_of_bgtruth, scores_of_call)
+        precision, recall, _ = precision_recall_curve(y_of_bgtruth, scores_of_call)
 
     ########################
     # correlation based stats:
@@ -2240,7 +2239,7 @@ def computePerReadStats_v3(ontCalls, bgTruth, title, bedFile=False, ontCutt_perR
     except:
         corrAll, pvalAll = (0, 0)
 
-    return accuracy, roc_auc, precision_5C, recall_5C, F1_5C, Csites, precision_5mC, recall_5mC, F1_5mC, mCsites, referenceCpGs, corrMix, len(ontFrequencies_4corr_mix), corrAll, len(ontFrequencies_4corr_all), Csites1, mCsites1  # , leftovers, leftovers1
+    return accuracy, roc_auc, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, len(ontFrequencies_4corr_mix), corrAll, len(ontFrequencies_4corr_all), Csites_BGTruth, mCsites_BGTruth  # , leftovers, leftovers1
 
 
 # only care about AUC
@@ -2571,7 +2570,7 @@ def plot_confusion_matrix(cm, classes,
     plt.tight_layout()
 
 
-def save_keys_to_bed(keys, outfn, callBaseFormat=0, outBaseFormat=0, nonstr='.'):
+def save_keys_to_single_site_bed(keys, outfn, callBaseFormat=0, outBaseFormat=0, nonstr='.'):
     """
     Save all keys in set of ('chr  123  123  .  .  +\n', etc.) to outfn.
     We use non-string like . in 3rd, 4th columns by BED file format.
@@ -2582,9 +2581,9 @@ def save_keys_to_bed(keys, outfn, callBaseFormat=0, outBaseFormat=0, nonstr='.')
     outfile = open(outfn, 'w')
     for key in keys:
         if outBaseFormat == 0:
-            outfile.write(f'{key[0]}\t{key[1] - callBaseFormat + outBaseFormat}\t{key[1] - callBaseFormat + outBaseFormat + 1}\t{nonstr}\t{nonstr}\t{key[2]}')
+            outfile.write(f'{key[0]}\t{key[1] - callBaseFormat + outBaseFormat}\t{key[1] - callBaseFormat + outBaseFormat + 1}\t{nonstr}\t{nonstr}\t{key[2]}\n')
         else:
-            outfile.write(f'{key[0]}\t{key[1] - callBaseFormat + outBaseFormat}\t{key[1] - callBaseFormat + outBaseFormat}\t{nonstr}\t{nonstr}\t{key[2]}')
+            outfile.write(f'{key[0]}\t{key[1] - callBaseFormat + outBaseFormat}\t{key[1] - callBaseFormat + outBaseFormat}\t{nonstr}\t{nonstr}\t{key[2]}\n')
     outfile.close()
 
 
@@ -2676,7 +2675,9 @@ def combine2programsCalls(calls1, calls2, outfileName=None):
     if outfileName is not None:
         outfile = open(outfileName, 'w')
         for key in tmp:
-            outfile.write(key)
+            # outfile.write(key)
+            outfile.write('\t'.join([key[0], str(key[1]), str(key[1]), '.', '.', key[2]]))
+            outfile.write('\n')
         outfile.close()
     return tmp
     #     return dict.fromkeys(set(calls1.keys()).intersection(set(calls2.keys())), -1)
@@ -2684,7 +2685,7 @@ def combine2programsCalls(calls1, calls2, outfileName=None):
     #     return dict.fromkeys(set(calls1.keys()).intersection(set(calls2.keys())), -1)
 
 
-def combine2programsCalls_4Corr(calls1, calls2, cutt=4, outfileName=False):
+def combine2programsCalls_4Corr(calls1, calls2, cutt=4, outfileName=False, only_bgtruth=False, print_first=False):
     '''
     call1 and call2 should have the following format:
     {"chr\tstart\tend\n" : [list of methylation calls]}
@@ -2693,28 +2694,44 @@ def combine2programsCalls_4Corr(calls1, calls2, cutt=4, outfileName=False):
     
     '''
 
+    if only_bgtruth:  # value = [freq, cov]
+        filteredCalls1 = {}
+        for key in calls1:
+            if calls1[key][1] >= cutt:
+                filteredCalls1[key] = cutt
+        return filteredCalls1
+
+    # Next only allow value=[0 1 0 0 ...] or value=cov
     filteredCalls1 = {}
-    for call in calls1:
-        if isinstance(calls1[call], list):
-            if len(calls1[call]) >= cutt:
-                filteredCalls1[call] = cutt  # calls1[call]
-        elif isinstance(calls1[call], int) or isinstance(calls1[call], float):
-            if calls1[call] >= cutt:
-                filteredCalls1[call] = cutt  # calls1[call]
+
+    for key in calls1:
+        if print_first:
+            logger.debug(key)
+            print_first = False
+        if isinstance(calls1[key], list):
+            if len(calls1[key]) >= cutt:
+                filteredCalls1[key] = cutt  # calls1[call]
+        elif isinstance(calls1[key], int):
+            if calls1[key] >= cutt:
+                filteredCalls1[key] = cutt  # calls1[call]
     #         else:
     #             print("WARNING ### combine2programsCalls_4Corr ### calls1[call]: {}".format(type(calls1[call])))
 
     filteredCalls2 = {}
-    for call in calls2:
-        if isinstance(calls2[call], list):
-            if len(calls2[call]) >= cutt:
-                filteredCalls2[call] = cutt  # calls2[call]
-        elif isinstance(calls2[call], int) or isinstance(calls2[call], float):
-            if calls2[call] >= cutt:
-                filteredCalls2[call] = cutt  # calls2[call]
+
+    for key in calls2:
+        if print_first:
+            logger.debug(key)
+            print_first = False
+        if isinstance(calls2[key], list):
+            if len(calls2[key]) >= cutt:
+                filteredCalls2[key] = cutt  # calls2[call]
+        elif isinstance(calls2[key], int):
+            if calls2[key] >= cutt:
+                filteredCalls2[key] = cutt  # calls2[call]
     #         else:
     #             logger.error("WARNING ### combine2programsCalls_4Corr ### calls2[call]: {}".format(type(calls2[call])))
-    logger.debug(f'{len(filteredCalls1)}, {len(filteredCalls2)}')
+    # logger.debug(f'{len(filteredCalls1)}, {len(filteredCalls2)}')
     tmp = dict.fromkeys(set(filteredCalls1.keys()).intersection(set(filteredCalls2.keys())), cutt)
     if outfileName != False:
         outfile = open(outfileName, 'w')
@@ -2722,7 +2739,7 @@ def combine2programsCalls_4Corr(calls1, calls2, cutt=4, outfileName=False):
             outfile.write(key)
         outfile.close()
 
-    logger.debug("combine2programsCalls_4Corr DONE")
+    # logger.debug("combine2programsCalls_4Corr DONE")
     return tmp
     # else:
     #     print("combine2programsCalls_4Corr DONE")
@@ -2749,7 +2766,7 @@ def combine_ONT_and_BS(ontCalls, bsReference, analysisPrefix, narrowedCoordinate
             "corrAll"          : [],
             "Corr_allSupport"  : []}
     for coord in narrowedCoordinates:
-        accuracy, roc_auc, precision_5C, recall_5C, F1_5C, Csites, precision_5mC, recall_5mC, F1_5mC, mCsites, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport = computePerReadStats(ontCalls, bsReference, analysisPrefix, bedFile=coord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
+        accuracy, roc_auc, precision_5C, recall_5C, F1_5C, Csites, precision_5mC, recall_5mC, F1_5mC, mCsites, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport = computePerReadStats_deprecated(ontCalls, bsReference, analysisPrefix, bedFile=coord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
         #         accuracy, roc_auc, precision_5C, recall_5C, F1_5C, Csites, precision_5mC, recall_5mC, F1_5mC, mCsites, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, leftovers, leftovers1 = computePerReadStats(ontCalls, bsReference, analysisPrefix, bedFile = coord, secondFilterBed = secondFilterBed, secondFilterBed_4Corr = secondFilterBed_4Corr)
         d["prefix"].append(analysisPrefix)
         d["coord"].append(coord)
@@ -2813,9 +2830,10 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
             'Csites_called'    : [],
             'mCsites_called'   : [],
             }
-    for coord_fn in narrowedCoordinatesList:
-        accuracy, roc_auc, precision_5C, recall_5C, F1_5C, Csites, precision_5mC, recall_5mC, F1_5mC, mCsites, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, Csites1, mCsites1 = computePerReadStats_v3(ontCalls, bgTruth, analysisPrefix, bedFile=coord_fn, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr,
-                                                                                                                                                                                                                               cutoff_meth=cutoff_meth)
+    for coord_fn in tqdm(narrowedCoordinatesList):
+        accuracy, roc_auc, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = computePerReadStats(ontCalls, bgTruth, analysisPrefix, bedFile=coord_fn, secondFilterBedFile=secondFilterBed,
+                                                                                                                                                                                                                                        secondFilterBed_4CorrFile=secondFilterBed_4Corr,
+                                                                                                                                                                                                                                        cutoff_meth=cutoff_meth)
 
         coord = os.path.basename(f'{coord_fn}')
         # logger.debug(f'coord={coord1}')
@@ -2827,13 +2845,13 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
         d["precision_5C"].append(precision_5C)
         d["recall_5C"].append(recall_5C)
         d["F1_5C"].append(F1_5C)
-        d["Csites_called"].append(Csites)
-        d["Csites"].append(Csites1)
+        d["Csites_called"].append(cCalls)
+        d["Csites"].append(cSites_BGTruth)
         d["precision_5mC"].append(precision_5mC)
         d["recall_5mC"].append(recall_5mC)
         d["F1_5mC"].append(F1_5mC)
-        d["mCsites_called"].append(mCsites)
-        d["mCsites"].append(mCsites1)
+        d["mCsites_called"].append(mCalls)
+        d["mCsites"].append(mSites_BGTruth)
         d["referenceCpGs"].append(referenceCpGs)
         d["corrMix"].append(corrMix)
         d["Corr_mixedSupport"].append(Corr_mixedSupport)
@@ -2917,13 +2935,13 @@ def concat_dir_fn(outdir, fn):
     return outfn
 
 
-def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir):
+def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir, print_first=False):
     '''
     This function will take the input *.bed file from "NonSingletonsScanner" funtion, which corresponds with non-singletons.
     Next it will separate them into concordant non-singletons (i.e. fully methylated or fully unmethylated), and disconcordant (those with at least one CpG fully methylated and at least one fully unmethylated), or fully mixed (i.e. all CpGs in non-singletons have methylation level >0 and < 100)
     This kind of preprocessing will have to be done for each studied library separately.
     '''
-
+    logger.debug("nonSingletonsPostprocessing")
     refMeth = BedTool(dict2txt(referenceMeth), from_string=True)
     refMeth = refMeth.sort()
 
@@ -2931,21 +2949,33 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
     regions = BedTool(infn)
     regions = regions.sort()
 
-    regions_refMeth = regions.intersect(refMeth, wa=True, wb=True)
+    regions_refMeth = regions.intersect(refMeth, wa=True, wb=True)  # chr start end   chr start end strand
 
-    regions_refMeth_dict = {}  # {regionCoords : [methylation percentage list]}
+    regions_refMeth_dict = defaultdict(list)  # {}  # {regionCoords : [methylation percentage list]}
+
     for ovr in regions_refMeth:
-        regionKey = "{}\t{}\t{}\n".format(ovr[0], ovr[1], ovr[2])
-        methKey = "{}\t{}\t{}\t{}\n".format(ovr[3], ovr[4], ovr[5], ovr[6])
-        if regionKey not in regions_refMeth_dict:
-            regions_refMeth_dict[regionKey] = []
-        regions_refMeth_dict[regionKey].append(referenceMeth[methKey])
+        if print_first:
+            logger.debug(f'ovr={ovr}')
+            print_first = False
+        # regionKey = "{}\t{}\t{}\n".format(ovr[0], ovr[1], ovr[2])
+        regionKey = (ovr[0], int(ovr[1]), int(ovr[2]))  # chr  start  end
+        # methKey = "{}\t{}\t{}\t{}\n".format(ovr[3], ovr[4], ovr[5], ovr[6])
+        methKey = (ovr[3], int(ovr[4]), ovr[6])  # chr, start, strand
+        # if regionKey not in regions_refMeth_dict:
+        #     regions_refMeth_dict[regionKey] = []
+        regions_refMeth_dict[regionKey].append(referenceMeth[methKey][0])
 
     outfile_prefix = regionsBedFile.replace(".bed", '')
-    outfile_concordant = open("{}/{}.{}.concordant.bed".format(outdir, runPrefix, outfile_prefix), "w")
-    outfile_discordant = open("{}/{}.{}.discordant.bed".format(outdir, runPrefix, outfile_prefix), "w")
-    outfile_fullyMixed = open("{}/{}.{}.fullyMixed.bed".format(outdir, runPrefix, outfile_prefix), "w")
-    outfile_other = open("{}/{}.{}.other.bed".format(outdir, runPrefix, outfile_prefix), "w")
+
+    fn_concordant = f"{outdir}/{runPrefix}.{outfile_prefix}.concordant.bed"
+    fn_discordant = f"{outdir}/{runPrefix}.{outfile_prefix}.discordant.bed"
+    fn_fullyMixed = f"{outdir}/{runPrefix}.{outfile_prefix}.fullyMixed.bed"
+    fn_other = f"{outdir}/{runPrefix}.{outfile_prefix}.other.bed"
+
+    outfile_concordant = open(fn_concordant, "w")
+    outfile_discordant = open(fn_discordant, "w")
+    outfile_fullyMixed = open(fn_fullyMixed, "w")
+    outfile_other = open(fn_other, "w")
 
     for region in regions_refMeth_dict:
         fullMeth = 0
@@ -2959,22 +2989,26 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
             else:
                 mixMeth = 1
 
+        # region of chr start end
+        region_txt = '\t'.join([region[0], str(region[1]), str(region[2])]) + '\n'
+
         if (fullMeth + nullMeth) == 1 and mixMeth == 0:
             #             print("Concordant")
-            outfile_concordant.write(region)
-        elif (fullMeth + nullMeth) == 2:
+            outfile_concordant.write(region_txt)
+        elif (fullMeth + nullMeth) == 2 and mixMeth == 0:
             #             print("Discordant")
-            outfile_discordant.write(region)
+            outfile_discordant.write(region_txt)
         elif (fullMeth + nullMeth) == 0 and mixMeth == 1:
             #             print("mixed")
-            outfile_fullyMixed.write(region)
+            outfile_fullyMixed.write(region_txt)
         else:
             #             print("What do we have here? ", fullMeth, nullMeth, mixMeth)
-            outfile_other.write("{}\t{}_{}_{}\n".format(region.strip(), fullMeth, nullMeth, mixMeth))
+            outfile_other.write(f'{region_txt[:-1]}\t{fullMeth}\t{nullMeth}\t{mixMeth}\n')
     outfile_concordant.close()
     outfile_discordant.close()
     outfile_fullyMixed.close()
     outfile_other.close()
+    logger.info(f'save to {[fn_concordant, fn_discordant, fn_fullyMixed, fn_other]}')
 
 
 def nonSingletonsPostprocessing2(referenceMeth, regionsBedFile, dataset, outdir=None, cutoff_meth=1.0):
@@ -3100,7 +3134,7 @@ def nonSingletonsPostprocessing2(referenceMeth, regionsBedFile, dataset, outdir=
     return ret
 
 
-def singletonsPostprocessing(referenceMeth, singletonsBedFile, runPrefix, outdir):
+def singletonsPostprocessing(referenceMeth, singletonsBedFile, runPrefix, outdir, print_first=False):
     """
     BG-Truth using singleton as coordinate, output absolute, and mixed bed files.
 
@@ -3111,6 +3145,7 @@ def singletonsPostprocessing(referenceMeth, singletonsBedFile, runPrefix, outdir
     This kind of preprocessing will have to be done for each studied library separately.
     """
 
+    logger.debug("singletonsPostprocessing")
     refMeth = BedTool(dict2txt(referenceMeth), from_string=True)
     refMeth = refMeth.sort()
 
@@ -3121,18 +3156,39 @@ def singletonsPostprocessing(referenceMeth, singletonsBedFile, runPrefix, outdir
     refMeth_regions = refMeth.intersect(regionsSingletons, wa=True, u=True)
 
     outfile_prefix = singletonsBedFile.replace(".bed", '')
-    outfile_absolute = open("{}/{}.{}.absolute.bed".format(outdir, runPrefix, outfile_prefix), "w")
-    outfile_mixed = open("{}/{}.{}.mixed.bed".format(outdir, runPrefix, outfile_prefix), "w")
-    for ovr in refMeth_regions:
-        methKey = "{}\t{}\t{}\t{}\n".format(ovr[0], ovr[1], ovr[2], ovr[3])
 
-        if referenceMeth[methKey] == 1 or referenceMeth[methKey] == 0:  # TODO: due to strand info, we need to discuss how to add strand-info into the key
-            outfile_absolute.write(methKey)
+    absolute_fn = f"{outdir}/{runPrefix}.{outfile_prefix}.absolute.bed"
+    mixed_fn = f"{outdir}/{runPrefix}.{outfile_prefix}.mixed.bed"
+    outfile_absolute = open(absolute_fn, "w")
+    outfile_mixed = open(mixed_fn, "w")
+
+    absl_msite = 0
+    absl_csite = 0
+    for ovr in refMeth_regions:
+        if print_first:
+            logger.debug(f'ovr={ovr}')
+            print_first = False
+        # methKey = "{}\t{}\t{}\t{}\n".format(ovr[0], ovr[1], ovr[2], ovr[3])
+        methKey = (ovr[0], int(ovr[1]), ovr[3])
+        out_txt = '\t'.join([methKey[0], str(methKey[1]), str(methKey[1]), '.', '.', methKey[2]])
+
+        if referenceMeth[methKey][0] > (1 - 1e-5) or referenceMeth[methKey][0] < 1e-5:  # TODO: due to strand info, we need to discuss how to add strand-info into the key
+            outfile_absolute.write(f'{out_txt}\n')
+            if referenceMeth[methKey][0] > (1 - 1e-5):
+                absl_msite += 1
+            else:
+                absl_csite += 1
+
         else:
-            outfile_mixed.write(methKey)
+            outfile_mixed.write(f'{out_txt}\n')
 
     outfile_absolute.close()
     outfile_mixed.close()
+
+    logger.info(f'In Absolute, msite={absl_msite:,}, csite={absl_csite:,}')
+
+    logger.debug(f'save to {absolute_fn}')
+    logger.debug(f'save to {mixed_fn}')
 
 
 #     return regions_refMeth
@@ -3597,7 +3653,7 @@ def import_call(fn, callname, baseFormat=0):
     return calls0
 
 
-def import_bgtruth(fn, encode, cov=10, baseFormat=0):
+def import_bgtruth(fn, encode, cov=10, baseFormat=0, includeCov=True):
     """
     Import bgtruth from file fn using encode
     :param fn:
@@ -3612,7 +3668,7 @@ def import_bgtruth(fn, encode, cov=10, baseFormat=0):
     elif encode == "oxBS_sudo":
         bgTruth = importGroundTruth_oxBS(fn, covCutt=cov, baseCount=baseFormat)
     elif encode == "bed":  # like K562 bg-truth
-        bgTruth = importGroundTruth_coverage_output_from_Bismark(fn, covCutt=cov, baseFormat=baseFormat, includeCov=True)
+        bgTruth = importGroundTruth_coverage_output_from_Bismark(fn, covCutt=cov, baseFormat=baseFormat, includeCov=includeCov)
     elif encode == "bismark_bedgraph":
         bgTruth = importGroundTruth_coverage_output_from_Bismark_BedGraph(fn, baseCount=baseFormat)
     elif encode == "bismark":  # for genome-wide Bismark results, such as HL60, etc.

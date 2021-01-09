@@ -1,14 +1,15 @@
 #!/bin/bash
 #SBATCH --job-name=Univer.MethStat
-#SBATCH -q batch
+#SBATCH --partition=compute
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 2 # number of cores
-#SBATCH --mem 300g # memory pool for all cores
-#SBATCH -t 2-22:00:00 # time (D-HH:MM:SS)
+#SBATCH -n 4 # number of cores
+#SBATCH --mem 280g # memory pool for all cores
+#SBATCH --time=1-23:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
 set -x
+
 
 echo "DeepSignal_calls: $DeepSignal_calls"
 echo "Tombo_calls: $Tombo_calls"
@@ -27,7 +28,11 @@ pythonFn=Universal_meth_stats_evaluation.py
 
 prjBaseDir=/projects/li-lab/yang/workspace/nano-compare/src
 
-PYTHONPATH=${prjBaseDir} python ${baseDir}/${pythonFn} $DeepSignal_calls $Tombo_calls $Nanopolish_calls \
-			$DeepMod_calls $bgTruth $RunPrefix $parser $minCov $dsname
+#PYTHONPATH=${prjBaseDir} python ${baseDir}/${pythonFn} $DeepSignal_calls $Tombo_calls $Nanopolish_calls \
+#			$DeepMod_calls $bgTruth $RunPrefix $parser $minCov $dsname
 
 
+PYTHONPATH=${prjBaseDir} python ${baseDir}/${pythonFn} --calls DeepSignal:$DeepSignal_calls \
+	Tombo:$Tombo_calls Nanopolish:$Nanopolish_calls DeepMod:$DeepMod_calls \
+	--bgtruth $parser:$bgTruth --runid $RunPrefix --dsname $dsname \
+	--min-cov $minCov #--report-joined
