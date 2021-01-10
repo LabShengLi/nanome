@@ -53,8 +53,6 @@ set +x
 conda activate nanoai
 set -x
 
-## Export nanopolish path
-export PATH=/projects/li-lab/yang/tools/nanopolish:${PATH}
 date
 
 fastqFile=${jobkBasecallOutputDir}/workspace/pass/reads.fq
@@ -76,7 +74,7 @@ if [ "${run_resquiggling}" = true ] ; then
 
 	rm -rf ${bamFileName} ${fastqNoDupFile}
 
-	python /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanopore_nanopolish.NA19240_pipeline.step_02.preindexing_checkDups.py ${fastqFile} ${fastqNoDupFile}
+	python nanopore_nanopolish.NA19240_pipeline.step_02.preindexing_checkDups.py ${fastqFile} ${fastqNoDupFile}
 
 	# indexing fastq with nanopolish (one needs to have all fast5 reads for that first):
 	nanopolish index -d ${processedFast5DIR} ${fastqNoDupFile}

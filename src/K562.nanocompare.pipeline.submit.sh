@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=nanoc.pipeline.submit
+#SBATCH --job-name=nanoc.pipeline.submit.K562
 #SBATCH --partition=compute
 #SBATCH --mem=50g # memory pool for all cores
 #SBATCH --time=03:00:00 # time (DD-HH:MM:SS)

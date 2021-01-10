@@ -4,7 +4,9 @@
 HOME_BASH_FN=/home/liuya/.bash_profile
 
 source ${HOME_BASH_FN}
-export PATH=/cm/shared/apps/slurm/18.08.8/bin:${PATH}
+
+## Export slurm, nanopolish path
+export PATH=/cm/shared/apps/slurm/18.08.8/bin:/projects/li-lab/yang/tools/nanopolish:${PATH}
 
 get_arrayjob_ids(){
 	## Generate dependency pattern format from sbatch job submission return string
