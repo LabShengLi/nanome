@@ -154,7 +154,7 @@ if [ "${Tool}" = "Nanopolish" ] ; then
 	### TODO: how to cut first line: sed '1d' test.txt > result.txt
 	ls ${methCallsDir}/*.nanopolish.methylation_calls.tsv | wc -l
 
-	sed -n '1p' ${methCallsDir}/*.batch_0.nanopolish.methylation_calls.tsv > ${methCallsDir}/${dsname}.nanopolish.methylation_calls.combine.tsv
+	sed -n '1p' ${methCallsDir}/*.batch_1.nanopolish.methylation_calls.tsv > ${methCallsDir}/${dsname}.nanopolish.methylation_calls.combine.tsv
 
 	for fn in ${methCallsDir}/*.nanopolish.methylation_calls.tsv; do
 		echo "Append ${fn}"

@@ -128,13 +128,11 @@ def set_labels_fig_3a(grid, ds_list, location_list, meas_list=['F1_5mC', 'F1_5C'
     pass
 
 
-def scatter_facet_grid_multiple_ds_5mc_5c_performance(location_list=locations_singleton2, meas_list=['F1_5mC', 'F1_5C']):
+def scatter_facet_grid_multiple_ds_5mc_5c_performance(df, location_list=locations_singleton2, meas_list=['F1_5mC', 'F1_5C']):
     """
     Generate three datasets 5mc and 5C results in a FacetGrid
     :return:
     """
-
-    df = get_performance_from_newly_and_locations(location_list=location_list, meas_list=meas_list)
 
     # Set the style for plotting
     set_style(font_scale=1.5)
@@ -163,7 +161,7 @@ def scatter_facet_grid_multiple_ds_5mc_5c_performance(location_list=locations_si
     set_labels_fig_3a(grid, ds_list=ds_list, location_list=location_list, meas_list=meas_list)
 
     # Save plot and show if possible
-    outfn = os.path.join(pic_base_dir, f"scatter_facet_grid_multiple_ds_location_{location_list[0]}_f1_{meas_list[0]}_performance_time_{current_time_str()}.png")
+    outfn = os.path.join(pic_base_dir, f"scatter_facet_grid_multiple_ds_location_{location_list[0]}_{meas_list[0]}_performance.png")
     grid.savefig(outfn, format='png', bbox_inches='tight', dpi=600)
 
     plt.show()
@@ -727,23 +725,13 @@ def gen_figure_3a_4a():
             ['Accuracy', 'ROC_AUC'],
             ['Precision_5mC', 'Recall_5mC'],
             ['Precision_5C', 'Recall_5C']]
-    #
-    # measure_list = [['accuracy', 'roc_auc'],
-    #         ['precision_5mC', 'precision_5C'],
-    #         ['recall_5mC', 'recall_5C']]
 
-    for meas_list in measure_list:
-        # meas_list = ['precision_5mC', 'precision_5C']
-        scatter_facet_grid_multiple_ds_5mc_5c_performance(location_list=locations_singleton2, meas_list=meas_list)
-        scatter_facet_grid_multiple_ds_5mc_5c_performance(location_list=locations_category2, meas_list=meas_list)
+    for meas_list in measure_list:  # meas_list = ['precision_5mC', 'precision_5C']
+        df = get_performance_from_newly_and_locations(location_list=locations_singleton2, meas_list=meas_list)
+        scatter_facet_grid_multiple_ds_5mc_5c_performance(df, location_list=locations_singleton2, meas_list=meas_list)
 
-    # meas_list = ['precision_5mC', 'precision_5C']
-    # scatter_facet_grid_multiple_ds_5mc_5c_performance(ds_list=ds_list4, location_list=locations_category, meas_list=meas_list)
-    # scatter_facet_grid_multiple_ds_5mc_5c_performance(ds_list=ds_list4, location_list=locations_singleton, meas_list=meas_list)
-    #
-    # meas_list = ['recall_5mC', 'recall_5C']
-    # scatter_facet_grid_multiple_ds_5mc_5c_performance(ds_list=ds_list4, location_list=locations_category, meas_list=meas_list)
-    # scatter_facet_grid_multiple_ds_5mc_5c_performance(ds_list=ds_list4, location_list=locations_singleton, meas_list=meas_list)
+        df = get_performance_from_newly_and_locations(location_list=locations_category2, meas_list=meas_list)
+        scatter_facet_grid_multiple_ds_5mc_5c_performance(df, location_list=locations_category2, meas_list=meas_list)
 
 
 def gen_figure_3b_4b():

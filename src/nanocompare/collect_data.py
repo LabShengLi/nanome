@@ -12,6 +12,7 @@ etc.
 """
 import glob
 import os
+import sys
 
 import numpy as np
 import pandas as pd
@@ -593,6 +594,7 @@ def create_report_datadf(runPrefixList=['APL_Bsseq_cut10', 'HL60_AML_Bsseq_cut5'
         pattern = os.path.join(base_dir, runPrefix, "performance_results", "*.report.tsv")
         # print(pattern)
         files = glob.glob(pattern)
+        logger.debug(files)
         for infn in files:
             df = pd.read_csv(infn, index_col=0, sep="\t")
             dfs.append(df)
@@ -601,6 +603,9 @@ def create_report_datadf(runPrefixList=['APL_Bsseq_cut10', 'HL60_AML_Bsseq_cut5'
     retdf = rename_reportdf(combdf)
 
     retdf = retdf[ret_col]
+    # outfn = os.path.join(pic_base_dir, 'perf.csv')
+    # retdf.to_csv(outfn)
+
     return retdf
 
 

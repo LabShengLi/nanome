@@ -2015,7 +2015,7 @@ def computePerReadStats(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRead
     switch = 0
     ontCalls_narrow_set = None
     if bedFile != False:
-        logger.debug(bedFile)
+        # logger.debug(bedFile)
         ontCalls_bed = BedTool(dict2txt(ontCalls), from_string=True)
         ontCalls_bed = ontCalls_bed.sort()
 
@@ -2937,6 +2937,12 @@ def concat_dir_fn(outdir, fn):
 
 def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir, print_first=False):
     '''
+
+    Concordant: all CpG in the region are 0, or 1. And they will be same 0 or 1.   00000000000    111111
+    Discordant: all CpG in the region are 0, or 1. And they be both 0 and 1.   001000   110111
+    Mix:        All CpG are valued 0.2, not 0 or 1.
+    Other:      Not in case of before.
+
     This function will take the input *.bed file from "NonSingletonsScanner" funtion, which corresponds with non-singletons.
     Next it will separate them into concordant non-singletons (i.e. fully methylated or fully unmethylated), and disconcordant (those with at least one CpG fully methylated and at least one fully unmethylated), or fully mixed (i.e. all CpGs in non-singletons have methylation level >0 and < 100)
     This kind of preprocessing will have to be done for each studied library separately.
@@ -2977,15 +2983,21 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
     outfile_fullyMixed = open(fn_fullyMixed, "w")
     outfile_other = open(fn_other, "w")
 
+    meth_cnt = defaultdict(int)
+    unmeth_cnt = defaultdict(int)
     for region in regions_refMeth_dict:
+        cntMeth = 0
+        cntUnmeth = 0
         fullMeth = 0
         nullMeth = 0
         mixMeth = 0
         for meth in regions_refMeth_dict[region]:
-            if meth == 1:
+            if meth >= 1 - 1e-5:
                 fullMeth = 1
-            elif meth == 0:
+                cntMeth += 1
+            elif meth <= 1e-5:
                 nullMeth = 1
+                cntUnmeth += 1
             else:
                 mixMeth = 1
 
@@ -2995,9 +3007,13 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
         if (fullMeth + nullMeth) == 1 and mixMeth == 0:
             #             print("Concordant")
             outfile_concordant.write(region_txt)
+            meth_cnt['Concordant'] += cntMeth
+            unmeth_cnt['Concordant'] += cntUnmeth
         elif (fullMeth + nullMeth) == 2 and mixMeth == 0:
             #             print("Discordant")
             outfile_discordant.write(region_txt)
+            meth_cnt['Discordant'] += cntMeth
+            unmeth_cnt['Discordant'] += cntUnmeth
         elif (fullMeth + nullMeth) == 0 and mixMeth == 1:
             #             print("mixed")
             outfile_fullyMixed.write(region_txt)
@@ -3009,6 +3025,8 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
     outfile_fullyMixed.close()
     outfile_other.close()
     logger.info(f'save to {[fn_concordant, fn_discordant, fn_fullyMixed, fn_other]}')
+
+    logger.debug(f'meth_cnt={meth_cnt}, unmeth_cnt={unmeth_cnt}')
 
 
 def nonSingletonsPostprocessing2(referenceMeth, regionsBedFile, dataset, outdir=None, cutoff_meth=1.0):
@@ -3136,6 +3154,9 @@ def nonSingletonsPostprocessing2(referenceMeth, regionsBedFile, dataset, outdir=
 
 def singletonsPostprocessing(referenceMeth, singletonsBedFile, runPrefix, outdir, print_first=False):
     """
+
+    Absoulute: In singleton area, CpG value is 0 or 1.
+
     BG-Truth using singleton as coordinate, output absolute, and mixed bed files.
 
     referenceMeth is key->value key=chr1  123  123  +, value=meth-freq
@@ -3185,7 +3206,7 @@ def singletonsPostprocessing(referenceMeth, singletonsBedFile, runPrefix, outdir
     outfile_absolute.close()
     outfile_mixed.close()
 
-    logger.info(f'In Absolute, msite={absl_msite:,}, csite={absl_csite:,}')
+    logger.info(f'In absolute singletons, msite={absl_msite:,}, csite={absl_csite:,}')
 
     logger.debug(f'save to {absolute_fn}')
     logger.debug(f'save to {mixed_fn}')
