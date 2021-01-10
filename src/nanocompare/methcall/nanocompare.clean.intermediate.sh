@@ -9,7 +9,7 @@
 #SBATCH -e log/%x.%j.err # STDERR
 
 ################################################################################
-# Clean nanopore pipeline intermediate file dirs
+# Clean nanopore pipeline pre-processing file dirs
 ################################################################################
 set -e
 set -x
@@ -17,30 +17,55 @@ set -x
 set -u
 echo "##################"
 echo "dsname: ${dsname}"
-echo "Tool: ${Tool}"
-echo "analysisPrefix: ${analysisPrefix}"
+echo "ToolList: ${ToolList}"
 echo "outbasedir: ${outbasedir}"
 echo "untaredInputDir: ${untaredInputDir}"
 echo "septInputDir: ${septInputDir}"
-echo "basecallOutputDir: ${basecallOutputDir}"
+echo "septInputDir: ${basecallOutputDir}"
+echo "septInputDir: ${methCallsDir}"
+echo "clean_preprocessing: ${clean_preprocessing}"
 echo "tar_basecall: ${tar_basecall}"
 echo "tar_methcall: ${tar_methcall}"
-echo "clean_preprocessing: ${clean_preprocessing}"
 echo "clean_basecall: ${clean_basecall}"
+echo "clean_methcall: ${clean_methcall}"
 echo "##################"
+
 set +u
+set +e
 
-if [ "${tar_basecall}" = true ] ; then
-	tar -czf ${outbasedir}/${analysisPrefix}/${analysisPrefix}-basecall.tar.gz ${outbasedir}/${analysisPrefix}/${analysisPrefix}
-	echo "### tar basecall dir OK"
-fi
+ToolList="${ToolList%\"}"
+ToolList="${ToolList#\"}"
 
-if [ "${tar_methcall}" = true ] ; then
-	tar -czf ${outbasedir}/${analysisPrefix}/${analysisPrefix}-meth-call.tar.gz ${outbasedir}/${analysisPrefix}/${analysisPrefix}-meth-call
-	echo "### tar methcall dir OK"
-fi
+ToolList=( ${ToolList} )
+echo "${ToolList[@]}"
 
-if [ "${clean_basecall}" = true ] ; then
-	rm -rf ${basecallOutputDir}
-	echo "### clean basedcalling dir OK"
+for Tool in ${ToolList[@]}; do
+	echo "Tool=${Tool}"
+	analysisPrefix=${dsname}-${Tool}-N${targetNum}
+	if [ "${tar_basecall}" = true ] ; then
+		tar -czf ${outbasedir}/${analysisPrefix}/${analysisPrefix}-basecall.tar.gz ${outbasedir}/${analysisPrefix}/${analysisPrefix}-basecall
+		echo "### tar basecall dir OK"
+	fi
+
+	if [ "${tar_methcall}" = true ] ; then
+		tar -czf ${outbasedir}/${analysisPrefix}/${analysisPrefix}-meth-call.tar.gz ${outbasedir}/${analysisPrefix}/${analysisPrefix}-methcall
+		echo "### tar methcall dir OK"
+	fi
+
+	if [ "${clean_basecall}" = true ] ; then
+		rm -rf ${outbasedir}/${analysisPrefix}/${analysisPrefix}-basecall
+		echo "### clean basecalling dir OK"
+	fi
+
+	if [ "${clean_methcall}" = true ] ; then
+		rm -rf ${outbasedir}/${analysisPrefix}/${analysisPrefix}-methcall
+		echo "### clean methcalling dir OK"
+	fi
+
+done
+
+
+if [ "${clean_preprocessing}" = true ] ; then
+	rm -rf ${untaredInputDir} ${septInputDir}
+	echo "### clean preprocessing dir OK"
 fi

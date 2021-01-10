@@ -6,8 +6,12 @@
 # Change from base src/ dir to methcall dir
 #cd "$(dirname "$0")"/nanocompare/methcall
 
+set +x
+source utils.common.sh
+set -x
+
 set -e
-#set -x
+set -x
 
 mkdir -p ${outbasedir}
 
@@ -34,7 +38,7 @@ if [ "${run_preprocessing}" = true ] ; then
 fi
 
 ################################################################################
-################################################################################
+# Step 2: For each Tool
 ################################################################################
 combine_taskids=""
 for Tool in ${ToolList[@]}; do
@@ -60,6 +64,11 @@ done
 ###################################################################################
 ###################################################################################
 
+set -x
+
+################################################################################
+# Step 3: Clean after each tool finished
+################################################################################
 
 # After all tools combine task finished, we can clean preprocessing files safely
 if [ "${run_clean}" = true ] ; then
@@ -68,9 +77,16 @@ if [ "${run_clean}" = true ] ; then
 	# If previous step need to depend on
 	depend_param=""
 	if [ -n "${combine_taskids}" ] ; then
-		depend_param="afterok${filter_taskid}"
+		depend_param="afterok${combine_taskids}"
 	fi
-	sbatch --job-name=clen.${dsname}.N${targetNum} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --dependency=${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},outbasedir=${outbasedir},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall},tar_basecall=${tar_basecall},tar_methcall=${tar_methcall},run_clean=${run_clean} nanocompare.clean.preprocessing.sh
+
+	mkdir -p ${outbasedir}/log
+
+	# Use "" wrap space string like "DeepSignal Tombo", then can be passed to export vars
+	ToolListStr='"'${ToolList[@]}'"'
+
+	sbatch --job-name=clen.${dsname}.N${targetNum} --output=${outbasedir}/log/%x.%j.out --error=${outbasedir}/log/%x.%j.err --dependency=${depend_param} --export=dsname=${dsname},ToolList="${ToolListStr}",targetNum=${targetNum},analysisPrefix=${analysisPrefix},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},outbasedir=${outbasedir},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall},clean_methcall=${clean_methcall},tar_basecall=${tar_basecall},tar_methcall=${tar_methcall},run_clean=${run_clean} nanocompare.clean.intermediate.sh
+#	sbatch --job-name=clen.${dsname}.N${targetNum} --output=${outbasedir}/log/%x.%j.out --error=${outbasedir}/log/%x.%j.err --dependency=${depend_param} --export=ALL nanocompare.clean.preprocessing.sh
 	echo "Submitted clean preprocessing dirs task for ${dsname}-N${targetNum}."
 
 fi

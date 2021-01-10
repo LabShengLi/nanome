@@ -75,6 +75,7 @@ isGPU="no"
 ###################################################################################
 ### Preserve followings to run Base Modified Prediction pipeline                ###
 ###################################################################################
+# Please put this file at nano-compare/src dir, or it need modify following paths
 # change working path to script path
 cd "$(dirname "$0")"/nanocompare/methcall
 

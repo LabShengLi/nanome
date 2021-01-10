@@ -9,17 +9,6 @@
 #SBATCH -e log/%x.%j.err # STDERR
 set -x
 
-#SCRIPT_PATH=${0%/*}
-#if [ "$0" != "$SCRIPT_PATH" ] && [ "$SCRIPT_PATH" != "" ]; then
-#    cd $SCRIPT_PATH
-#fi
 
-# change working path to script path
-
-#cd "$(dirname "$0")"
-
-pwd
-
-ls
-
-source utils.common.sh
+echo ${abc}
+echo ${abc1}

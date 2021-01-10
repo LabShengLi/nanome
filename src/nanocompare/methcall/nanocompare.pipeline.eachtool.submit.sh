@@ -5,14 +5,11 @@
 ################################################################################
 #cd "$(dirname "$0")"
 
-# set -x
-set +x
-source utils.common.sh
-#set -x
+set -x
 set -e
 
 ################################################################################
-# Step 2: Basecalling with Albacore
+# Step 2.1: Basecalling with Albacore
 ################################################################################
 if [ "${run_basecall}" = true ] ; then
 	echo "Step2: basecalling"
@@ -42,7 +39,7 @@ fi
 
 
 ################################################################################
-# Step 3: Methylation call
+# Step 2.2: Methylation call
 ################################################################################
 if [ "$run_methcall" = true ] ; then
 	echo "Step3: methylation calling"
@@ -91,7 +88,7 @@ fi
 
 
 ################################################################################
-# Step 4: Combining results together
+# Step 2.3: Combining results together after all batches methylation call finished
 ################################################################################
 if [ "$run_combine" = true ] ; then
 	echo "Step4: combing results for ${analysisPrefix}"

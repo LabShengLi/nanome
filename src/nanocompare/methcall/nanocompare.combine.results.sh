@@ -36,8 +36,6 @@ echo "run_clean: ${run_clean}"
 echo "##################"
 set +u
 
-filter_taskid=
-
 if [ "${Tool}" = "Tombo" ] ; then
 	set +x
 	conda activate nanoai
@@ -64,9 +62,7 @@ if [ "${Tool}" = "Tombo" ] ; then
 	echo "### Tombo combining batches results finished. ###"
 
 	# we need do filter out non-CG patterns also, now using MPI version
-	filter_ret=$(sbatch --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh tombo-add-seq -i ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv --mpi --processors 60 -o ${methCallsDir})
-
-	filter_taskid=:$(echo ${filter_ret} |grep -Eo '[0-9]+$')
+	sbatch --wait --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh tombo-add-seq -i ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv --mpi --processors 60 -o ${methCallsDir}
 
 	# wait the filter task finished, then start clean, so block here
 #	srun --dependency=afterok:${filter_taskid} echo "Wait Filter-out NON-CG task finished."
@@ -88,8 +84,7 @@ elif [ "${Tool}" = "DeepMod" ] ; then
 
 	## Extract read-level DeepMod results
 
-	filter_ret=$(sbatch --nodes=1 --ntasks=50 --job-name=extr.rldepmd.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ../meth_stats/meth_stats_tool_mpi.sh deepmod-read-level --processors 50 --basecallDir ${basecallOutputDir} --methcallDir ${methCallsDir} -o ${methCallsDir}/${dsname}.deepmod_read_level.read_level.combine.tsv --o2 ${methCallsDir}/${dsname}.deepmod_read_level.base_level.combined.C.bed)
-	filter_taskid=":$(echo ${filter_ret} |grep -Eo '[0-9]+$')"
+	sbatch --nodes=1 --ntasks=50 --wait --job-name=extr.rldepmd.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ../meth_stats/meth_stats_tool_mpi.sh deepmod-read-level --processors 50 --basecallDir ${basecallOutputDir} --methcallDir ${methCallsDir} -o ${methCallsDir}/${dsname}.deepmod_read_level.read_level.combine.tsv --o2 ${methCallsDir}/${dsname}.deepmod_read_level.base_level.combined.C.bed
 
 	## Step:  join results from different batches, based on ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md
 	## We need firstly use DeepMod script to merge different runs of modification detection
@@ -143,7 +138,7 @@ elif [ "${Tool}" = "DeepMod" ] ; then
 
 #	bash /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_array_job_pipe.sh deepmod-add-seq 100 ${methCallsDir}/${dsname}.deepmod.C.combined.tsv ${methCallsDir}
 	# we need do filter out non-CG patterns also, now using MPI version
-	filter_ret=$(sbatch --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ../meth_stats/meth_stats_tool_mpi.sh deepmod-add-seq -i ${methCallsDir}/${dsname}.deepmod.C.combined.tsv --mpi --processors 60 -o ${methCallsDir})
+	sbatch --wait --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ../meth_stats/meth_stats_tool_mpi.sh deepmod-add-seq -i ${methCallsDir}/${dsname}.deepmod.C.combined.tsv --mpi --processors 60 -o ${methCallsDir}
 
 	filter_taskid=${filter_taskid}:$(echo ${filter_ret} |grep -Eo '[0-9]+$')
 	# wait the filter task finished, then start clean, so block here
@@ -175,14 +170,14 @@ fi
 ################################################################################
 # Step 5: Clean intermediate dirs
 ################################################################################
-if [ "${run_clean}" = true ] ; then
-	echo "Step5: clean dirs"
-
-	# If previous step need to depend on
-	depend_param=""
-	if [ -n "${filter_taskid}" ] ; then
-		depend_param="afterok${filter_taskid}"
-	fi
-	sbatch --job-name=clen.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --dependency=${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},outbasedir=${outbasedir},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall},tar_basecall=${tar_basecall},tar_methcall=${tar_methcall},run_clean=${run_clean} nanocompare.clean.intermediate.sh
-	echo "Submitted clean dirs task for ${analysisPrefix}."
-fi
+#if [ "${run_clean}" = true ] ; then
+#	echo "Step5: clean dirs"
+#
+#	# If previous step need to depend on
+#	depend_param=""
+#	if [ -n "${filter_taskid}" ] ; then
+#		depend_param="afterok${filter_taskid}"
+#	fi
+#	sbatch --job-name=clen.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --dependency=${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},outbasedir=${outbasedir},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall},tar_basecall=${tar_basecall},tar_methcall=${tar_methcall},run_clean=${run_clean} nanocompare.clean.intermediate.sh
+#	echo "Submitted clean dirs task for ${analysisPrefix}."
+#fi

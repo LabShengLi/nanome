@@ -27,9 +27,9 @@ inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K5
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
 # ToolList  -   a list of Nanopore tools prepared to run
-ToolList=(DeepMod)
+#ToolList=(DeepMod)
 
-#ToolList=(DeepSignal Tombo DeepMod Nanopolish)
+ToolList=(DeepSignal Tombo DeepMod Nanopolish)
 
 
 ### Which step is going to run, true or false, if 'true' means running this step
@@ -39,7 +39,7 @@ run_basecall=false
 run_resquiggling=false
 run_methcall=false
 run_combine=false
-run_clean=false
+run_clean=true
 
 ### true if inputDataDir is a folder contains *.tar or *.tar.gz
 multipleInputs=false
@@ -47,8 +47,8 @@ multipleInputs=false
 ### which kind of intermediate file we want to backup or clean, these options are used in final stage of combine step
 tar_basecall=false
 tar_methcall=true
-clean_preprocessing=false
-clean_basecall=false
+clean_basecall=true
+clean_preprocessing=true
 
 ### The output base dir
 outbasedir=/fastscratch/liuya/nanocompare/${dsname}-Runs
@@ -75,6 +75,7 @@ isGPU="no"
 ###################################################################################
 ### Preserve followings to run Base Modified Prediction pipeline                ###
 ###################################################################################
+# Please put this file at nano-compare/src dir, or it need modify following paths
 # change working path to script path
 cd "$(dirname "$0")"/nanocompare/methcall
 
