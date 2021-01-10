@@ -14,7 +14,7 @@
 # Need to populate the parameters into this script
 # Step 1: Tombo resquiglling; Step 2: Tombo detect_modifications; Step 3: Extract Tombo per_read_stats
 ################################################################################
-cd "$(dirname "$0")"
+#cd "$(dirname "$0")"
 
 set -e
 set +x

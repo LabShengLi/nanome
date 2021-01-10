@@ -898,6 +898,7 @@ if __name__ == '__main__':
     if args.cmd == 'fig5b':
         gen_figure_5b()
     elif args.cmd == 'fig3a':
+        ## python plot_figure.py fig3a
         gen_figure_3a_4a()
     elif args.cmd == 'fig3b':
         gen_figure_3b_4b()

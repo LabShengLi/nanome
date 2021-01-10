@@ -13,7 +13,7 @@
 # Need to populate the parameters into this script
 # Output file name is "<dsname>.<tool>.*.combine.tsv"
 ################################################################################
-cd "$(dirname "$0")"
+#cd "$(dirname "$0")"
 
 set -e
 

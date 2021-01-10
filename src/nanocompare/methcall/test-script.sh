@@ -15,7 +15,8 @@ set -x
 #fi
 
 # change working path to script path
-cd "$(dirname "$0")"
+
+#cd "$(dirname "$0")"
 
 pwd
 

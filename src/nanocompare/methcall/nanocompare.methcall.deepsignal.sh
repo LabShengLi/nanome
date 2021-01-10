@@ -14,7 +14,7 @@
 # Need to populate the parameters into this script
 # Step 1: Tombo resquiglling; Step 2: Deepsignal call_mods
 ################################################################################
-cd "$(dirname "$0")"
+#cd "$(dirname "$0")"
 
 set -e
 set +x

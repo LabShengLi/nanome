@@ -13,7 +13,7 @@
 # Basecalling workflow
 # Need to populate the parameters into this script
 ################################################################################
-cd "$(dirname "$0")"
+#cd "$(dirname "$0")"
 
 set +x
 #source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
