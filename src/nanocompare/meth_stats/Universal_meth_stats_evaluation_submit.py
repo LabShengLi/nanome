@@ -27,7 +27,7 @@ import os
 import subprocess
 from sys import argv
 
-from global_config import src_base_dir
+from global_config import src_base_dir, pic_base_dir
 
 if __name__ == '__main__':
     baseDir = os.path.join(src_base_dir, 'nanocompare', 'meth_stats')
@@ -37,13 +37,11 @@ if __name__ == '__main__':
     csvfile = csv.DictReader(infile, delimiter='\t')  # specify the delimiter here! I guess that by default it is space
     for row in csvfile:
         if row['status'] == "submit":
-            # print(f"read row={row}")
-            command = """set -x; sbatch --job-name=meth_perf_{} --export=DeepSignal_calls="{}",Tombo_calls="{}",Nanopolish_calls="{}",DeepMod_calls="{}",bgTruth="{}",RunPrefix="{}",parser="{}",minCov="{}",dsname="{}" {}/{}""" \
-                .format(row['RunPrefix'], row['DeepSignal_calls'], row['Tombo_calls'], row['Nanopolish_calls'],
-                        row['DeepMod_calls'], row['bgTruth'], row['RunPrefix'],
-                        row['parser'], row['minCov'], row['Dataset'], baseDir, scriptFn)
-            # print(f"command={command}")
+            outdir = os.path.join(pic_base_dir, row['RunPrefix'])
+            os.makedirs(outdir, exist_ok=True)
+            outlogdir = os.path.join(outdir, 'log')
+            os.makedirs(outlogdir, exist_ok=True)
+
+            command = f"""set -x; sbatch --job-name=meth_perf_{row['RunPrefix']} --output={outdir}/log/%x.%j.out --error={outdir}/log/%x.%j.err --export=DeepSignal_calls="{row['DeepSignal_calls']}",Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",DeepMod_calls="{row['DeepMod_calls']}",bgTruth="{row['bgTruth']}",RunPrefix="{row['RunPrefix']}",parser="{row['parser']}",minCov="{row['minCov']}",dsname="{row['Dataset']}" {baseDir}/{scriptFn}"""
+
             print(row['RunPrefix'], subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8"))
-
-
-

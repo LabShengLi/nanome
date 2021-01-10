@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=nanoc.pipeline.submit.HL60
+#SBATCH --job-name=nanoc.pipeline.submit
 #SBATCH --partition=compute
 #SBATCH --mem=50g # memory pool for all cores
 #SBATCH --time=03:00:00 # time (DD-HH:MM:SS)
@@ -7,7 +7,7 @@
 #SBATCH --error=log/%x.%j.err
 
 ###################################################################################
-### Settings for HL60 dataset experimentation                                   ###
+### Settings for K562 dataset experimentation                                   ###
 ### This is the only file we need to modify for different data                  ###
 ### Nanopore tools tested for DeepSignal, Nanopolish, DeepMod and Tombo         ###
 ### Nano-compare project by Yang Liu                                            ###
@@ -17,28 +17,28 @@
 ### Input dataset parameters prepared for pipeline###
 # dsname    -   data set name
 # targetNum -   number of tasks splited to run
-dsname=HL60
-targetNum=1
+dsname=K562
+targetNum=50
 
 ### Nanopore raw signal fast5 files, K562 is from tier2: /tier2/li-lab/Nanopore/NanoporeData/Leukemia_ONT/20180612_180601-18-li-004-GXB01102-001/  47.46GB
 # inputDataDir  -   input of Nanopore reads file/files, can be tar file or a directory contains files
-inputDataDir=/fastscratch/liuya/nanocompare/Nanopore-reads/HL60-Nanopore_GT18-07373.fast5.tar
+inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K562-Nanopore_GT18-07372.fast5.tar
 
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
 # ToolList  -   a list of Nanopore tools prepared to run
-ToolList=(Tombo)
+ToolList=(DeepMod)
 
 #ToolList=(DeepSignal Tombo DeepMod Nanopolish)
 
 
 ### Which step is going to run, true or false, if 'true' means running this step
 
-run_preprocessing=true
-run_basecall=true
-run_resquiggling=true
-run_methcall=true
-run_combine=true
+run_preprocessing=false
+run_basecall=false
+run_resquiggling=false
+run_methcall=false
+run_combine=false
 run_clean=false
 
 ### true if inputDataDir is a folder contains *.tar or *.tar.gz
@@ -63,8 +63,8 @@ deepModModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/rnn_con
 clusterDeepModModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25"
 
 ### Number of processes for basecall, alignment, and methlation nanopore tool
-#processors=16
-processors=64
+processors=16
+#processors=64
 
 isGPU="no"
 ###################################################################################
@@ -75,8 +75,10 @@ isGPU="no"
 ###################################################################################
 ### Preserve followings to run Base Modified Prediction pipeline                ###
 ###################################################################################
+# change working path to script path
+cd "$(dirname "$0")"/nanocompare/methcall
 
-source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.pipeline.submit.sh
+source nanocompare.pipeline.submit.sh
 
 ###################################################################################
 ###################################################################################

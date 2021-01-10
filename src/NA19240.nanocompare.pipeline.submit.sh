@@ -75,8 +75,10 @@ isGPU="no"
 ###################################################################################
 ### Preserve followings to run Base Modified Prediction pipeline                ###
 ###################################################################################
+# change working path to script path
+cd "$(dirname "$0")"/nanocompare/methcall
 
-source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.pipeline.submit.sh
+source nanocompare.pipeline.submit.sh
 
 ###################################################################################
 ###################################################################################

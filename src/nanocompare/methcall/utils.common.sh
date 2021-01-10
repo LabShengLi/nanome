@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Specify your home bash, this required by conda setup
+HOME_BASH_FN=/home/liuya/.bash_profile
+
+source ${HOME_BASH_FN}
+export PATH=/cm/shared/apps/slurm/18.08.8/bin:${PATH}
+
 get_arrayjob_ids(){
 	## Generate dependency pattern format from sbatch job submission return string
 	## Input is <ret-str> <num>

@@ -19,7 +19,7 @@ import pandas as pd
 from global_config import logger, pic_base_dir
 from nanocompare.legacy import performance_plots as pp
 # from nanocompare.load_data import load_all_perf_data
-from nanocompare.nanocompare_global_settings import nanocompare_basedir, locations_category2, locations_singleton2, ret_report_columns, runPrefixDict
+from nanocompare.nanocompare_global_settings import nanocompare_basedir, locations_category2, locations_singleton2, ret_report_columns, runPrefixDict, perf_col_raw_to_standard, cpg_name_map_raw_to_standard
 
 
 def collect_box_plot_all_data():
@@ -484,17 +484,13 @@ def load_data(path, extension="tsv"):
     return cobmined_data
 
 
-def rename_reportdf(df):
+def rename_from_raw_to_standard(df):
     """
     Rename and change raw values of report df to more meaning full for display
     :param df:
     :return:
     """
-
-    col_maps = {'Csites'   : 'Csites_called', 'mCsites': 'mCsites_called', 'Csites1': '5mCs', 'mCsites1': '5Cs',
-            'precision_5mC': 'Precision_5mC', 'precision_5C': 'Precision_5C', 'recall_5mC': 'Recall_5mC', 'recall_5C': 'Recall_5C',
-            'accuracy'     : 'Accuracy', 'roc_auc': 'ROC_AUC', 'referenceCpGs': 'TotalSites', 'corrMix': 'Corr_Mix', 'corrAll': 'Corr_All'}
-    df = df.rename(columns=col_maps)
+    df = df.rename(columns=perf_col_raw_to_standard)
 
     df = df.replace(to_replace="False", value="x.x.Genome-wide")
 
@@ -504,13 +500,8 @@ def rename_reportdf(df):
     df['coord'] = df['coord'].str.replace("promoterFeature.flank_", "promoterFeature")
 
     df["Location"] = df["coord"].str.split(".", n=3, expand=True)[2]
-    df['Location'] = df['Location'].replace({'cpgIslandExt'       : 'CpG Island',
-                                                    'discordant'  : 'Discordant',
-                                                    'concordant'  : 'Concordant',
-                                                    'cpgShoresExt': 'CpG Shores', 'cpgShelvesExt': 'CpG Shelves', 'exonFeature': 'Exons', 'intergenic': 'Intergenic', 'intronFeature': 'Introns', 'promoterFeature500': 'Promoters',
-                                                    'absolute'    : 'Absolute',
-                                                    })
 
+    df['Location'] = df['Location'].replace(cpg_name_map_raw_to_standard)
     return df
 
 
@@ -588,7 +579,7 @@ def create_report_datadf(runPrefixDict, ret_col=ret_report_columns):
             logger.debug(f'Collect {runPrefix}:{os.path.basename(infn)} = {len(df)}')
     combdf = pd.concat(dflist, ignore_index=True)
 
-    retdf = rename_reportdf(combdf)
+    retdf = rename_from_raw_to_standard(combdf)
 
     retdf = retdf[ret_col]
     # outfn = os.path.join(pic_base_dir, 'perf.csv')

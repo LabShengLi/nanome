@@ -66,15 +66,38 @@ runPrefixDict = {'K562_WGBS_joined_cut5': os.path.join(data_base_dir, 'perf-plot
         'HL60_AML_Bsseq_cut5'           : os.path.join(data_base_dir, 'perf-plot-data', 'HL60_AML_Bsseq_cut5'),
         'NA19240_RRBS_joined_cut5'      : os.path.join(data_base_dir, 'perf-plot-data', 'NA19240_RRBS_joined_cut5')}
 
-runPrefixDict = {'K562_WGBS_joined_cut5': os.path.join(data_base_dir, 'perf-plot-data', 'K562_WGBS_joined_cut5'),
-        'HL60_AML_Bsseq_cut5'           : os.path.join(data_base_dir, 'perf-plot-data', 'HL60_AML_Bsseq_cut5')}
+runPrefixDict = {
+        'K562_WGBS_joined_cut5': os.path.join(data_base_dir, 'perf-plot-data', 'K562_WGBS_joined_cut5'),
+        'HL60_AML_Bsseq_cut5'  : os.path.join('/projects/li-lab/yang/results/2021-01-10', 'HL60_Bsseq_Joined_cut5')}
+
+# Rename raw column name to print name
+perf_col_raw_to_standard = {'precision_5mC': 'Precision_5mC',
+        'precision_5C'                     : 'Precision_5C',
+        'recall_5mC'                       : 'Recall_5mC',
+        'recall_5C'                        : 'Recall_5C',
+        'accuracy'                         : 'Accuracy',
+        'roc_auc'                          : 'ROC_AUC',
+        'corrMix'                          : 'Corr_Mix',
+        'corrAll'                          : 'Corr_All'}
+
+# Rename raw name of cpg type to print name
+cpg_name_map_raw_to_standard = {
+        'cpgIslandExt'      : 'CpG Island',
+        'discordant'        : 'Discordant',
+        'concordant'        : 'Concordant',
+        'cpgShoresExt'      : 'CpG Shores',
+        'cpgShelvesExt'     : 'CpG Shelves',
+        'exonFeature'       : 'Exons',
+        'intergenic'        : 'Intergenic',
+        'intronFeature'     : 'Introns',
+        'promoterFeature500': 'Promoters',
+        'absolute'          : 'Absolute'}
 
 # which column of performance table is extracted
 ret_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'ROC_AUC',
         'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C',
         'Corr_Mix', 'Corr_All', 'Corr_mixedSupport', 'Corr_allSupport',
-        'mCsites_called', 'Csites_called', '5mCs', '5Cs', 'TotalSites', 'prefix', 'coord'
-        ]
+        'mCsites_called', 'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix', 'coord']
 
 
 def dict_cor_tsv_to_abbr():

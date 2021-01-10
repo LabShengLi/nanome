@@ -14,10 +14,14 @@
 # Need to populate the parameters into this script
 # Step 1: Tombo resquiglling; Step 2: Deepsignal call_mods
 ################################################################################
+cd "$(dirname "$0")"
+
 set -e
 set +x
 #source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
-source /home/liuya/.bash_profile
+#source /home/liuya/.bash_profile
+source utils.common.sh
+
 set -x
 
 #processors=8

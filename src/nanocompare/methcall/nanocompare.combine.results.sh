@@ -13,11 +13,15 @@
 # Need to populate the parameters into this script
 # Output file name is "<dsname>.<tool>.*.combine.tsv"
 ################################################################################
+cd "$(dirname "$0")"
+
 set -e
 
 set +x
-source /home/liuya/.bash_profile
-export PATH=/cm/shared/apps/slurm/18.08.8/bin:${PATH}
+#source /home/liuya/.bash_profile
+#export PATH=/cm/shared/apps/slurm/18.08.8/bin:${PATH}
+source utils.common.sh
+
 set -x
 
 set -u
@@ -40,7 +44,7 @@ if [ "${Tool}" = "Tombo" ] ; then
 	set -x
 	for fn in $(ls $methCallsDir/$analysisPrefix.batch_*.*.tombo.per_read_stats); do
 		## Postprocess per read methylation calls for each run complete
-		time python /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/Tombo_extract_per_read_stats.py \
+		time python Tombo_extract_per_read_stats.py \
 				${chromSizesFile} ${fn} ${fn}.bed
 		wc -l ${fn}.bed
 	done
@@ -84,7 +88,7 @@ elif [ "${Tool}" = "DeepMod" ] ; then
 
 	## Extract read-level DeepMod results
 
-	filter_ret=$(sbatch --nodes=1 --ntasks=50 --job-name=extr.rldepmd.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh deepmod-read-level --processors 50 --basecallDir ${basecallOutputDir} --methcallDir ${methCallsDir} -o ${methCallsDir}/${dsname}.deepmod_read_level.read_level.combine.tsv --o2 ${methCallsDir}/${dsname}.deepmod_read_level.base_level.combined.C.bed)
+	filter_ret=$(sbatch --nodes=1 --ntasks=50 --job-name=extr.rldepmd.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ../meth_stats/meth_stats_tool_mpi.sh deepmod-read-level --processors 50 --basecallDir ${basecallOutputDir} --methcallDir ${methCallsDir} -o ${methCallsDir}/${dsname}.deepmod_read_level.read_level.combine.tsv --o2 ${methCallsDir}/${dsname}.deepmod_read_level.base_level.combined.C.bed)
 	filter_taskid=":$(echo ${filter_ret} |grep -Eo '[0-9]+$')"
 
 	## Step:  join results from different batches, based on ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md
@@ -94,7 +98,7 @@ elif [ "${Tool}" = "DeepMod" ] ; then
 	# Step: Detect modifications from FAST5 files, ref https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#1-how-to-detect-modifications-from-fast5-files
 	# Usage: python {} pred_folder-of-DeepMod Base-of-interest unique-fileid-in-sum-file [chr-list]
 #	time python /projects/li-lab/yang/tools/DeepMod/tools/sum_chr_mod.py ${methCallsDir}/ C ${dsname}.C
-	time python /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/deepmod_sum_chr_mod.py ${methCallsDir}/ C ${dsname}.deepmod
+	time python deepmod_sum_chr_mod.py ${methCallsDir}/ C ${dsname}.deepmod
 
 
 	## Step: Output C in CpG motifs in a genome, i.e. CpG index in a human genome: (must be done only once per genome)
@@ -139,7 +143,7 @@ elif [ "${Tool}" = "DeepMod" ] ; then
 
 #	bash /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_array_job_pipe.sh deepmod-add-seq 100 ${methCallsDir}/${dsname}.deepmod.C.combined.tsv ${methCallsDir}
 	# we need do filter out non-CG patterns also, now using MPI version
-	filter_ret=$(sbatch --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh deepmod-add-seq -i ${methCallsDir}/${dsname}.deepmod.C.combined.tsv --mpi --processors 60 -o ${methCallsDir})
+	filter_ret=$(sbatch --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ../meth_stats/meth_stats_tool_mpi.sh deepmod-add-seq -i ${methCallsDir}/${dsname}.deepmod.C.combined.tsv --mpi --processors 60 -o ${methCallsDir})
 
 	filter_taskid=${filter_taskid}:$(echo ${filter_ret} |grep -Eo '[0-9]+$')
 	# wait the filter task finished, then start clean, so block here
@@ -179,6 +183,6 @@ if [ "${run_clean}" = true ] ; then
 	if [ -n "${filter_taskid}" ] ; then
 		depend_param="afterok${filter_taskid}"
 	fi
-	sbatch --job-name=clen.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --dependency=${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},outbasedir=${outbasedir},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall},tar_basecall=${tar_basecall},tar_methcall=${tar_methcall},run_clean=${run_clean} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.clean.intermediate.sh
+	sbatch --job-name=clen.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --dependency=${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},outbasedir=${outbasedir},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall},tar_basecall=${tar_basecall},tar_methcall=${tar_methcall},run_clean=${run_clean} nanocompare.clean.intermediate.sh
 	echo "Submitted clean dirs task for ${analysisPrefix}."
 fi

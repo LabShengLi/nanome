@@ -12,6 +12,7 @@
 # Pre-processing workflow
 # Need to populate the parameters into this script
 ################################################################################
+cd "$(dirname "$0")"
 
 set -x
 
@@ -59,7 +60,7 @@ fi
 echo "### Untar input done. ###"
 
 # Seperate fast5 files into N=$targetNum, 1-N folders
-time python /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/FilesSeparatorNew.py ${untaredInputDir} ${targetNum} ${septInputDir}
+time python FilesSeparatorNew.py ${untaredInputDir} ${targetNum} ${septInputDir}
 
 echo "### Seperation fast5 files done. ###"
 

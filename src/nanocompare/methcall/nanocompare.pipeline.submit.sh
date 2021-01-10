@@ -3,6 +3,11 @@
 ###################################################################################
 ### Run pipeline for multiple nanopore tool in ToolList                         ###
 ###################################################################################
+# Change from base src/ dir to methcall dir
+#cd "$(dirname "$0")"/nanocompare/methcall
+
+set -e
+#set -x
 
 mkdir -p ${outbasedir}
 
@@ -22,7 +27,7 @@ if [ "${run_preprocessing}" = true ] ; then
 	mkdir -p ${septInputDir}
 	mkdir -p ${septInputDir}/log
 
-	prep_ret=$(sbatch --job-name=prep.fast5.${dsname}.N${targetNum} --output=${septInputDir}/log/%x.%j.out --error=${septInputDir}/log/%x.%j.err --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},inputDataDir=${inputDataDir},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},multipleInputs=${multipleInputs} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.preprocessing.fast5.sh)
+	prep_ret=$(sbatch --job-name=prep.fast5.${dsname}.N${targetNum} --output=${septInputDir}/log/%x.%j.out --error=${septInputDir}/log/%x.%j.err --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},inputDataDir=${inputDataDir},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},multipleInputs=${multipleInputs} nanocompare.preprocessing.fast5.sh)
 	prep_taskid=$(echo ${prep_ret} |grep -Eo '[0-9]+$')
 	echo ${prep_ret}
 	echo "### Submitted preprocessing task for ${analysisPrefix}."
@@ -48,7 +53,7 @@ for Tool in ${ToolList[@]}; do
 	echo "########################################################################"
 	echo "Start pipeline submit for tool with analysisPrefix=${analysisPrefix}"
 	echo "Basedir=${outbasedir}/${analysisPrefix}"
-	source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.pipeline.eachtool.submit.sh
+	source nanocompare.pipeline.eachtool.submit.sh
 	echo ""
 done
 ###################################################################################
@@ -65,7 +70,7 @@ if [ "${run_clean}" = true ] ; then
 	if [ -n "${combine_taskids}" ] ; then
 		depend_param="afterok${filter_taskid}"
 	fi
-	sbatch --job-name=clen.${dsname}.N${targetNum} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --dependency=${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},outbasedir=${outbasedir},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall},tar_basecall=${tar_basecall},tar_methcall=${tar_methcall},run_clean=${run_clean} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.clean.preprocessing.sh
+	sbatch --job-name=clen.${dsname}.N${targetNum} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --dependency=${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},outbasedir=${outbasedir},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall},tar_basecall=${tar_basecall},tar_methcall=${tar_methcall},run_clean=${run_clean} nanocompare.clean.preprocessing.sh
 	echo "Submitted clean preprocessing dirs task for ${dsname}-N${targetNum}."
 
 fi

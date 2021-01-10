@@ -395,7 +395,7 @@ def corr_grid_plot(infn):
     df = df.rename(columns=rename_dict)
     num_col = len(df.columns)
     df = df.iloc[:, list(range(1, num_col)) + [0]]
-    # logger.debug(df)
+    logger.debug(f'Load data = {len(df)}')
 
     ## Plot correlation grid figure
     basefn = os.path.basename(infn)
@@ -887,8 +887,9 @@ if __name__ == '__main__':
     if args.cmd == 'fig5a':
         ## python plot_figure.py fig5a -i /projects/li-lab/yang/results/2021-01-10/HL60_RRBS_Joined/Meth_corr_plot_data-HL60_RRBS_Joined-bsCov5-minCov4-baseCount0.csv
         if len(args.i) == 0:
-            for fn in load_corr_data_tsv_fns():
-                gen_figure_5a(fn)
+            # for fn in load_corr_data_tsv_fns():
+            #     gen_figure_5a(fn)
+            pass
         else:
             for fn in args.i:
                 gen_figure_5a(fn)

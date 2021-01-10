@@ -13,12 +13,13 @@
 # Basecalling workflow
 # Need to populate the parameters into this script
 ################################################################################
+cd "$(dirname "$0")"
 
 set +x
 #source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
-source /home/liuya/.bash_profile
-export PATH=/cm/shared/apps/slurm/18.08.8/bin:${PATH}
-
+#source /home/liuya/.bash_profile
+#export PATH=/cm/shared/apps/slurm/18.08.8/bin:${PATH}
+source utils.common.sh
 set -x
 
 #processors=8
