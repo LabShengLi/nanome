@@ -34,11 +34,11 @@ ToolList=(DeepSignal Tombo DeepMod Nanopolish)
 
 ### Which step is going to run, true or false, if 'true' means running this step
 
-run_preprocessing=true
-run_basecall=false
-run_resquiggling=false
-run_methcall=false
-run_combine=false
+run_preprocessing=false
+run_basecall=true
+run_resquiggling=true
+run_methcall=true
+run_combine=true
 run_clean=false
 
 ### true if inputDataDir is a folder contains *.tar or *.tar.gz

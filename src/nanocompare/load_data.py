@@ -11,7 +11,7 @@ etc.
 import pandas as pd
 
 from global_config import *
-from nanocompare.collect_data import collect_newly_exp_data
+from nanocompare.collect_data import collect_wide_format_newly_exp
 from nanocompare.nanocompare_global_settings import locations_category, map_from_tool_to_abbr, locations_category2, locations_singleton2
 
 
@@ -196,7 +196,7 @@ def load_refined_perf_data_by_measurement2(meas_list=['F1_5C', 'F1_5mC']):
     :param meas_list:
     :return:
     """
-    alld = collect_newly_exp_data()
+    alld = collect_wide_format_newly_exp()
 
     sel_col = ['Dataset', 'Location', 'Tool'] + meas_list
     refine_alld = alld[sel_col]
@@ -263,35 +263,38 @@ def save_pivoted_sing_nonsing_count_df():
     df1.to_excel(fout)
 
 
-def load_refined_perf_data_from_newly(meas_list=['F1_5C', 'F1_5mC']):
+def load_long_format_perf_data_from_newly_exp_by_measure(meas_list=['F1_5C', 'F1_5mC']):
     """
-    load some performance index of all data, melt performance measurements for subsequent analysis and plotting
+    load some performance index of all data, melt performance measurements for subsequent analysis and plotting into long format
 
     Sample
 
     df = load_perf_data_refine_by_measurement(['F1_5C', 'F1_5mC', 'accuracy','roc_auc'])
     logger.info(f"df={df}")
 
+    Dataframe as long format:
+    'Dataset', 'Location', 'Tool', 'Measurement', 'Performance'
+
     :param meas_list:
     :return:
     """
-    alld = collect_newly_exp_data()
+    wide_df = collect_wide_format_newly_exp()  # wide format
 
     sel_col = ['Dataset', 'Location', 'Tool'] + meas_list
-    refine_alld = alld[sel_col]
+    wide_df = wide_df[sel_col]
 
-    refine_alld = pd.melt(refine_alld, id_vars=['Dataset', 'Location', 'Tool'], var_name='Measurement', value_name='Performance')
+    long_df = pd.melt(wide_df, id_vars=['Dataset', 'Location', 'Tool'], var_name='Measurement', value_name='Performance')
 
-    return refine_alld
+    return long_df
 
 
-def get_performance_from_newly_and_locations(location_list=locations_category2, meas_list=['F1_5C', 'F1_5mC']):
+def get_long_format_perf_within_measures_and_locations(location_list=locations_category2, meas_list=['F1_5C', 'F1_5mC']):
     """
     Get a list of datasets results with refined, (melt to Performance and Measurement)
     :param ds_list: a list of datasets
     :return:
     """
-    df = load_refined_perf_data_from_newly(meas_list=meas_list)
+    df = load_long_format_perf_data_from_newly_exp_by_measure(meas_list=meas_list)
 
     dfsel = df[df['Location'].isin(location_list)]
 
@@ -338,16 +341,5 @@ def load_corr_data_tsv_fns():
 
 if __name__ == '__main__':
 
-    df = load_refined_perf_data_from_newly()
-
-    df2 = get_performance_from_newly_and_locations(location_list=locations_singleton2)
-
     pass
 
-    # fl = load_cor_tsv_fns()
-
-    # df2 = load_refined_perf_data_by_measurement2()
-
-    # df = load_running_time_and_mem_usage()
-    # outfn = os.path.join(pic_base_dir, "nanocompare_avg_running_time_resource_usage.xlsx")
-    # df.to_excel(outfn)

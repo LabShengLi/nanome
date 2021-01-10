@@ -35,4 +35,4 @@ prjBaseDir=/projects/li-lab/yang/workspace/nano-compare/src
 PYTHONPATH=${prjBaseDir} python ${baseDir}/${pythonFn} --calls DeepSignal:$DeepSignal_calls \
 	Tombo:$Tombo_calls Nanopolish:$Nanopolish_calls DeepMod:$DeepMod_calls \
 	--bgtruth $parser:$bgTruth --runid $RunPrefix --dsname $dsname \
-	--min-cov $minCov #--report-joined
+	--min-cov $minCov --report-joined

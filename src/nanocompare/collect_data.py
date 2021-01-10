@@ -12,21 +12,14 @@ etc.
 """
 import glob
 import os
-import sys
 
 import numpy as np
 import pandas as pd
 
-from global_config import logger, pic_base_dir, current_time_str, data_base_dir
+from global_config import logger, pic_base_dir
 from nanocompare.legacy import performance_plots as pp
 # from nanocompare.load_data import load_all_perf_data
-from nanocompare.nanocompare_global_settings import nanocompare_basedir, locations_category2, locations_singleton2
-
-ret_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'ROC_AUC',
-        'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C',
-        'Corr_Mix', 'Corr_All', 'Corr_mixedSupport', 'Corr_allSupport',
-        'mCsites_called', 'Csites_called', '5mCs', '5Cs', 'TotalSites', 'prefix', 'coord'
-        ]
+from nanocompare.nanocompare_global_settings import nanocompare_basedir, locations_category2, locations_singleton2, ret_report_columns, runPrefixDict
 
 
 def collect_box_plot_all_data():
@@ -569,13 +562,7 @@ def load_singleton_nonsingleton_sites():
     df.to_excel(outfn, index=False)
 
 
-def save_newly_df():
-    df = collect_newly_exp_data()
-    outfn = os.path.join(pic_base_dir, f"combined_results_report_time_{current_time_str()}.xlsx")
-    df.to_excel(outfn)
-
-
-def create_report_datadf(runPrefixList=['APL_Bsseq_cut10', 'HL60_AML_Bsseq_cut5', 'K562_WGBS_joined_cut10', 'NA19240_RRBS_joined_cut10'], ret_col=ret_report_columns):
+def create_report_datadf(runPrefixDict, ret_col=ret_report_columns):
     """
     create report from list of runPrefix, return specified columns
 
@@ -588,17 +575,18 @@ def create_report_datadf(runPrefixList=['APL_Bsseq_cut10', 'HL60_AML_Bsseq_cut5'
 
     :return:
     """
-    dfs = []
-    base_dir = os.path.join(data_base_dir, 'perf-plot-data')
-    for runPrefix in runPrefixList:
-        pattern = os.path.join(base_dir, runPrefix, "performance_results", "*.report.tsv")
+    dflist = []
+    # base_dir = os.path.join(data_base_dir, 'perf-plot-data')
+    for runPrefix in runPrefixDict:
+        pattern = os.path.join(runPrefixDict[runPrefix], "performance?results", "*.report.tsv")
         # print(pattern)
         files = glob.glob(pattern)
-        logger.debug(files)
+        # logger.debug(files)
         for infn in files:
             df = pd.read_csv(infn, index_col=0, sep="\t")
-            dfs.append(df)
-    combdf = pd.concat(dfs, ignore_index=True)
+            dflist.append(df)
+            logger.debug(f'Collect {runPrefix}:{os.path.basename(infn)} = {len(df)}')
+    combdf = pd.concat(dflist, ignore_index=True)
 
     retdf = rename_reportdf(combdf)
 
@@ -609,31 +597,23 @@ def create_report_datadf(runPrefixList=['APL_Bsseq_cut10', 'HL60_AML_Bsseq_cut5'
     return retdf
 
 
-def collect_newly_exp_data():
+def collect_wide_format_newly_exp():
     """
     Collect the currently new performance of exp results for paper
     :return:
     """
-    # specify which runPrefix is the newly results you need
-    runPrefixList = ['K562_WGBS_joined_cut5', 'APL_Bsseq_cut5', 'HL60_AML_Bsseq_cut5', 'NA19240_RRBS_joined_cut5']
+    df = create_report_datadf(runPrefixDict, ret_col=ret_report_columns)
+    seldf = select_locations_from_reportdf(df)
 
-    # specify your cared columns
-    ret_col = ret_report_columns
-    # ret_col = ret_report_columns[0:-2]
+    logger.debug(f"collect_newly_exp_data, wide-format seldf={len(seldf)}")
 
-    df = create_report_datadf(runPrefixList=runPrefixList, ret_col=ret_col)
-    retdf = select_locations_from_reportdf(df)
-
-    logger.debug(f"retdf={retdf}")
-
-    return retdf
+    return seldf
 
 
 if __name__ == '__main__':
     # df = load_singleton_nonsingleton_sites()
-    df = collect_newly_exp_data()
+    df = collect_wide_format_newly_exp()
     logger.info(f'df={df}')
-    save_newly_df()
 
     # df = get_data_all()
     # save_alldata(df)

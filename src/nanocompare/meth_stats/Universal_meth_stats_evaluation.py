@@ -170,10 +170,10 @@ if __name__ == '__main__':
     logger.info(f"Data points for correlation: {len(joinedCPG4CorrSet):,}\n\n")
     logger.info("\n\n############\n\n")
 
-    if report_joined:
-        perf_dir = os.path.join(out_dir, 'performance-results-joined')
+    if report_joined:  # Joined together evaluation
+        perf_dir = os.path.join(out_dir, 'performance-results')
         os.makedirs(perf_dir, exist_ok=True)
-    else:
+    else:  # only based on bgtruth
         perf_dir = os.path.join(out_dir, 'performance-results-nojoined')
         os.makedirs(perf_dir, exist_ok=True)
 

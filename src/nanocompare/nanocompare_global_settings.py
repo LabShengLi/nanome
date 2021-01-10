@@ -38,13 +38,10 @@ perf_order = ['F1_5mC', 'F1_5C']
 
 # Correlation ploting input tsv's important fields
 cor_tsv_fields = ["DeepSignal_freq", "Tombo_freq", "Nanopolish_freq", "DeepMod_freq", "DeepMod_clust_freq", "BSseq_freq"]
-cor_tsv_fields = ["DeepSignal_freq", "Tombo_freq", "Nanopolish_freq", "DeepMod_freq",  "BSseq_freq"]
-
-
+cor_tsv_fields = ["DeepSignal_freq", "Tombo_freq", "Nanopolish_freq", "DeepMod_freq", "BSseq_freq"]
 
 cor_tsv_fields_abbr = ["DeepSignal", "Tombo", "Nanopolish", "DeepMod", "DeepMod_clust", "BSseq"]
 cor_tsv_fields_abbr = ["DeepSignal", "Tombo", "Nanopolish", "DeepMod", "BSseq"]
-
 
 gbtruth_filedict = {
         'NA19240': os.path.join('/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/joined_reps/RRBS/extractBismark', 'NA19240_joined_RRBS.Read_R1.Rep_1_trimmed_bismark_bt2.bismark.cov.gz'),
@@ -62,6 +59,22 @@ narrowCoord = [False, singletonsFile, nonsingletonsFile, "ONT.hg38.cpgIslandExt.
 narrowCoord = [False] + [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in narrowCoord[1:]]
 
 important_region_bed_fns = [narrowCoord[-2], narrowCoord[6], narrowCoord[9], narrowCoord[8], narrowCoord[3]]
+
+# specify which runPrefix -> dir is the newly results you need
+runPrefixDict = {'K562_WGBS_joined_cut5': os.path.join(data_base_dir, 'perf-plot-data', 'K562_WGBS_joined_cut5'),
+        'APL_Bsseq_cut5'                : os.path.join(data_base_dir, 'perf-plot-data', 'APL_Bsseq_cut5'),
+        'HL60_AML_Bsseq_cut5'           : os.path.join(data_base_dir, 'perf-plot-data', 'HL60_AML_Bsseq_cut5'),
+        'NA19240_RRBS_joined_cut5'      : os.path.join(data_base_dir, 'perf-plot-data', 'NA19240_RRBS_joined_cut5')}
+
+runPrefixDict = {'K562_WGBS_joined_cut5': os.path.join(data_base_dir, 'perf-plot-data', 'K562_WGBS_joined_cut5'),
+        'HL60_AML_Bsseq_cut5'           : os.path.join(data_base_dir, 'perf-plot-data', 'HL60_AML_Bsseq_cut5')}
+
+# which column of performance table is extracted
+ret_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'ROC_AUC',
+        'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C',
+        'Corr_Mix', 'Corr_All', 'Corr_mixedSupport', 'Corr_allSupport',
+        'mCsites_called', 'Csites_called', '5mCs', '5Cs', 'TotalSites', 'prefix', 'coord'
+        ]
 
 
 def dict_cor_tsv_to_abbr():

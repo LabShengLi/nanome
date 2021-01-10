@@ -187,7 +187,7 @@ def parse_arguments():
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
     parser.add_argument('--processors', type=int, help="running processors", default=8)
-    parser.add_argument('--bgtruthcov-cutoff', type=int, help="cutoff of coverage in bg-truth", default=10)
+    parser.add_argument('--bgtruthcov-cutoff', type=int, help="cutoff of coverage in bg-truth", default=5)
     parser.add_argument('--toolcov-cutoff', type=int, help="cutoff of coverage in nanopore calls", default=4)
     parser.add_argument('--baseFormat', type=int, help="cutoff of coverage in nanopore calls", default=0)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)

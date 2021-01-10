@@ -13,8 +13,8 @@ import pandas as pd
 import seaborn as sns
 from scipy.stats import pearsonr
 
-from nanocompare.collect_data import collect_newly_exp_data
-from nanocompare.load_data import load_running_time_and_mem_usage, get_one_dsname_perf_data, get_performance_from_datasets_and_locations, load_box_plot_all_data, load_corr_data_tsv_fns, load_all_perf_data_for_dataset, load_sing_nonsing_count_df, get_performance_from_newly_and_locations
+from nanocompare.collect_data import collect_wide_format_newly_exp
+from nanocompare.load_data import load_running_time_and_mem_usage, get_one_dsname_perf_data, get_performance_from_datasets_and_locations, load_box_plot_all_data, load_corr_data_tsv_fns, load_all_perf_data_for_dataset, load_sing_nonsing_count_df, get_long_format_perf_within_measures_and_locations
 from nanocompare.nanocompare_global_settings import tools, locations_category, locations_singleton, tools_abbr, agressiveHot, cor_tsv_fields, perf_order, dict_cor_tsv_to_abbr, cor_tsv_fields_abbr, locations_singleton2, locations_category2
 
 from global_config import *
@@ -261,7 +261,7 @@ def box_plots_two_locations(metrics=["F1_5mC", "F1_5C"]):
     :return:
     """
 
-    df = collect_newly_exp_data()
+    df = collect_wide_format_newly_exp()
 
     suffix = current_time_str()
 
@@ -373,99 +373,99 @@ def box_plots_two_locations(metrics=["F1_5mC", "F1_5C"]):
             plt.show()
 
 
-def corr_grid_plot(infns=load_corr_data_tsv_fns()):
+def corr_grid_plot(infn):
     """
     Plot the grid of corr COE, distribution and scatter plot based on input files
     :return:
     """
-    filenameSuffix = current_time_str()
 
-    for infn in infns[:]:
-        logger.debug(infn)
-        df = pd.read_csv(infn, sep=',')
+    ## Load data into df
+    logger.debug(infn)
+    df = pd.read_csv(infn, sep=',')
 
-        sel_col = []
-        rename_dict = {}
-        for col in df.columns:
-            if str(col).endswith('_freq'):
-                sel_col.append(str(col))
-                rename_dict.update({str(col): str(col).replace('_freq', '')})
-        logger.debug(sel_col)
-        df = df[sel_col]
-        logger.debug(df)
-        df = df.rename(columns=rename_dict)
-        num_col = len(df.columns)
-        df = df.iloc[:, list(range(1, num_col)) + [0]]
-        logger.debug(df)
+    sel_col = []
+    rename_dict = {}
+    for col in df.columns:
+        if str(col).endswith('_freq'):
+            sel_col.append(str(col))
+            rename_dict.update({str(col): str(col).replace('_freq', '')})
+    # logger.debug(sel_col)
+    df = df[sel_col]
+    # logger.debug(df)
+    df = df.rename(columns=rename_dict)
+    num_col = len(df.columns)
+    df = df.iloc[:, list(range(1, num_col)) + [0]]
+    # logger.debug(df)
 
-        basefn = os.path.basename(infn)
-        outfileName = "{}.png".format(basefn.replace(".tsv", ""))
-        outfn = os.path.join(pic_base_dir, outfileName)
+    ## Plot correlation grid figure
+    basefn = os.path.basename(infn)
+    outfileName = "{}.png".format(basefn.replace(".tsv", ""))
+    outfn = os.path.join(args.o, outfileName)
 
-        plt.clf()
+    plt.clf()
 
-        fig, ax = plt.subplots()
-        fig.set_size_inches(10, 10)
+    fig, ax = plt.subplots()
+    fig.set_size_inches(10, 10)
 
-        left, width = .25, .5
-        bottom, height = .25, .5
-        right = left + width
-        top = bottom + height
+    left, width = .25, .5
+    bottom, height = .25, .5
+    right = left + width
+    top = bottom + height
 
-        gridRes = 30
-        position = 1
-        for y in range(1, num_col + 1):
-            for x in range(1, num_col + 1):
-                if x == y:
-                    # Diagonal:
-                    plt.subplot(num_col, num_col, position)
-                    #             df[fields[x-1]].hist(bins=100)
-                    params = {'legend.fontsize': 16, 'legend.handlelength': 0, 'legend.handletextpad': 0, 'legend.fancybox': True}
-                    plt.rcParams.update(params)
-                    ax = sns.kdeplot(df.iloc[:, x - 1], shade=True, color="black", legend=True)
-                    leg = ax.legend(labels=[str(df.columns[x - 1])])
-                    for item in leg.legendHandles:
-                        item.set_visible(False)
+    gridRes = 30
+    position = 1
+    for y in range(1, num_col + 1):
+        for x in range(1, num_col + 1):
+            if x == y:
+                # Diagonal:
+                plt.subplot(num_col, num_col, position)
+                #             df[fields[x-1]].hist(bins=100)
+                params = {'legend.fontsize': 16, 'legend.handlelength': 0, 'legend.handletextpad': 0, 'legend.fancybox': True}
+                plt.rcParams.update(params)
+                ax = sns.kdeplot(df.iloc[:, x - 1], shade=True, color="black", legend=True)
+                leg = ax.legend(labels=[str(df.columns[x - 1])])
+                for item in leg.legendHandles:
+                    item.set_visible(False)
 
-                    # ax.annotate("abcd", xy=(0.2, 0.8), xycoords='axes fraction',
-                    #             fontsize=14)
+                # ax.annotate("abcd", xy=(0.2, 0.8), xycoords='axes fraction',
+                #             fontsize=14)
 
-                    ax.set_yticklabels([])
-                    ax.set_xticklabels([])
-                    ax.set_ylabel('')
-                    ax.set_xlabel('')
+                ax.set_yticklabels([])
+                ax.set_xticklabels([])
+                ax.set_ylabel('')
+                ax.set_xlabel('')
 
-                elif x > y:
-                    # upper triangle:
-                    ax2 = plt.subplot(num_col, num_col, position)
+            elif x > y:
+                # upper triangle:
+                ax2 = plt.subplot(num_col, num_col, position)
 
-                    corrValue = pearsonr(df.iloc[:, x - 1], df.iloc[:, y - 1])
-                    corrValueStr = "{0:2.2f}".format(corrValue[0])
+                corrValue = pearsonr(df.iloc[:, x - 1], df.iloc[:, y - 1])
+                corrValueStr = "{0:2.2f}".format(corrValue[0])
 
-                    ax2.text(0.5 * (left + right), 0.5 * (bottom + top), corrValueStr,
-                             horizontalalignment='center',
-                             verticalalignment='center',
-                             fontsize=25, color='black',
-                             transform=ax2.transAxes)
+                ax2.text(0.5 * (left + right), 0.5 * (bottom + top), corrValueStr,
+                         horizontalalignment='center',
+                         verticalalignment='center',
+                         fontsize=25, color='black',
+                         transform=ax2.transAxes)
 
-                    ax2.set_yticklabels([])
-                    ax2.set_xticklabels([])
+                ax2.set_yticklabels([])
+                ax2.set_xticklabels([])
 
-                elif x < y:
-                    # lower triangle:
-                    ax3 = plt.subplot(num_col, num_col, position)
+            elif x < y:
+                # lower triangle:
+                ax3 = plt.subplot(num_col, num_col, position)
 
-                    plt.hexbin(df.iloc[:, x - 1], df.iloc[:, y - 1], gridsize=(gridRes, gridRes), cmap=agressiveHot)  # plt.cm.gray_r )
+                plt.hexbin(df.iloc[:, x - 1], df.iloc[:, y - 1], gridsize=(gridRes, gridRes), cmap=agressiveHot)  # plt.cm.gray_r )
 
-                    ax3.set_yticklabels([])
-                    ax3.set_xticklabels([])
+                ax3.set_yticklabels([])
+                ax3.set_xticklabels([])
 
-                position += 1
+            position += 1
 
-        fig.savefig(outfn, dpi=600, bbox_inches='tight')
-        plt.show()
-        plt.close()
-        logger.info(f"save to {outfn}")
+    fig.savefig(outfn, dpi=400, bbox_inches='tight')
+    plt.show()
+    plt.close()
+    logger.info(f"save to {outfn}")
 
 
 def smooth_scatter_cor_plot():
@@ -727,10 +727,10 @@ def gen_figure_3a_4a():
             ['Precision_5C', 'Recall_5C']]
 
     for meas_list in measure_list:  # meas_list = ['precision_5mC', 'precision_5C']
-        df = get_performance_from_newly_and_locations(location_list=locations_singleton2, meas_list=meas_list)
+        df = get_long_format_perf_within_measures_and_locations(location_list=locations_singleton2, meas_list=meas_list)
         scatter_facet_grid_multiple_ds_5mc_5c_performance(df, location_list=locations_singleton2, meas_list=meas_list)
 
-        df = get_performance_from_newly_and_locations(location_list=locations_category2, meas_list=meas_list)
+        df = get_long_format_perf_within_measures_and_locations(location_list=locations_category2, meas_list=meas_list)
         scatter_facet_grid_multiple_ds_5mc_5c_performance(df, location_list=locations_category2, meas_list=meas_list)
 
 
@@ -749,13 +749,13 @@ def gen_figure_3b_4b():
     box_plots_two_locations(metrics=metrics)
 
 
-def gen_figure_5a():
+def gen_figure_5a(infn):
     """
     Generate figure 5-a in paper
     Correlation plots
     :return:
     """
-    corr_grid_plot()
+    corr_grid_plot(infn)
     pass
 
 
@@ -871,6 +871,8 @@ def plot_pie_chart(data, labels, dsname="NA19240"):
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Plot figures in Nano-compare paper.')
     parser.add_argument("cmd", help="name of command, lung or lesion")
+    parser.add_argument('-i', nargs='+', help='list of input files', default=[])
+    parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
 
     args = parser.parse_args()
     return args
@@ -883,7 +885,13 @@ if __name__ == '__main__':
     logger.debug(args)
 
     if args.cmd == 'fig5a':
-        gen_figure_5a()
+        ## python plot_figure.py fig5a -i /projects/li-lab/yang/results/2021-01-10/HL60_RRBS_Joined/Meth_corr_plot_data-HL60_RRBS_Joined-bsCov5-minCov4-baseCount0.csv
+        if len(args.i) == 0:
+            for fn in load_corr_data_tsv_fns():
+                gen_figure_5a(fn)
+        else:
+            for fn in args.i:
+                gen_figure_5a(fn)
     elif args.cmd == 'fig5c':
         gen_figure_5c()
     if args.cmd == 'fig5b':
