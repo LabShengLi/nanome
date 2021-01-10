@@ -69,9 +69,8 @@ if [ "${Tool}" = "Tombo" ] ; then
 
 	echo "### Tombo filter out NON-CG patterns post-process jobs submitted. ###"
 #	echo "### DeepMod combine results DONE. ###"
-fi
 
-if [ "${Tool}" = "DeepSignal" ] ; then
+elif [ "${Tool}" = "DeepSignal" ] ; then
 	ls ${methCallsDir}/*.deepsignal.call_mods.tsv | wc -l
 
 	> ${methCallsDir}/${dsname}.deepsignal.call_mods.combine.tsv
@@ -80,9 +79,8 @@ if [ "${Tool}" = "DeepSignal" ] ; then
 
 	wc -l ${methCallsDir}/${dsname}.deepsignal.call_mods.combine.tsv
 	echo "### DeepSignal combine results DONE. ###"
-fi
 
-if [ "${Tool}" = "DeepMod" ] ; then
+elif [ "${Tool}" = "DeepMod" ] ; then
 
 	## Extract read-level DeepMod results
 
@@ -148,9 +146,8 @@ if [ "${Tool}" = "DeepMod" ] ; then
 #	srun --dependency=afterok:${filter_taskid} date
 	echo "### DeepMod filter out NON-CG patterns post-process jobs submitted. ###"
 #	echo "### DeepMod combine results DONE. ###"
-fi
 
-if [ "${Tool}" = "Nanopolish" ] ; then
+elif [ "${Tool}" = "Nanopolish" ] ; then
 	### TODO: how to cut first line: sed '1d' test.txt > result.txt
 	ls ${methCallsDir}/*.nanopolish.methylation_calls.tsv | wc -l
 
@@ -163,6 +160,9 @@ if [ "${Tool}" = "Nanopolish" ] ; then
 
 	wc -l ${methCallsDir}/${dsname}.nanopolish.methylation_calls.combine.tsv
 	echo "### Nanopolish combine results DONE. ###"
+else
+	echo "Tool=${Tool} is not support now"
+	exit -1
 fi
 
 # After combine task finished, or just filer-out task running, we will start task of clean, it will depend on filter-out task also if needed

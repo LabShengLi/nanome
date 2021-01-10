@@ -67,6 +67,8 @@ if __name__ == '__main__':
     args = parse_arguments()
     logger.debug(args)
 
+    # Note: all bed files (Singleton and NonSingleton) are 1-based start, even for "chr1  123  124" (This will conform for + or - strand).
+    # So we must import as 1-based format for our tool or bgtruth, DO NOT USE baseFormat=0
     baseFormat = 1
 
     report_joined = args.report_joined

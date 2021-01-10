@@ -125,7 +125,7 @@ def importPredictions_NanoXGBoost(infileName, chr_col=0, start_col=1, meth_col=4
 
 
 # not deprecated yet, even will Deprecated due to importPredictions_Nanopolish_2, which is based on Nanopolish code
-def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, log_lik_ratio_col=5, sequence_col=-1, num_motifs_col=-2, baseFormat=0, logLikehoodCutt=2.0):
+def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, log_lik_ratio_col=5, sequence_col=-1, num_motifs_col=-2, baseFormat=0, logLikehoodCutt=2.0, output_first=False):
     """
     We assume the input is 0-based for the start col, such as chr10 122 122
 
@@ -151,13 +151,10 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
 
     It looks that we both do the same, or not?
     """
-
-    cpgDict = {}
     cpgDict = defaultdict(list)
     count = 0
     infile = open(infileName, 'r')
 
-    output_first = True
     for row in infile:
         tmp = row.strip().split("\t")
         if tmp[chr_col] != "chromosome":
@@ -178,10 +175,11 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                     meth_indicator = 0
 
                 strand_info = tmp[strand_col]
-                if strand_info == '-':
+                if strand_info == '-':  # - strand, point to positive sequence C, so need +1 to point to G
                     start = start + 1
-                elif strand_info != '+':
-                    raise Exception(f'The file [{infileName}] contains no strand-info, please check it')
+
+                if strand_info not in ['-', '+']:
+                    raise Exception(f'The file [{infileName}] can not recognized strand-info from row={row}, please check it')
             except:
                 logger.error(f'###\tError when parsing row=[{row}] in {infileName}')
                 continue
@@ -561,7 +559,6 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     '''
 
     infile = open(infileName, "r")
-    # cpgDict = {}
     cpgDict = defaultdict(list)
     row_count = 0
     meth_cnt = 0
@@ -580,6 +577,9 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
         else:
             logger.error("###\timportPredictions_DeepSignal InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
+
+        if strand not in ['-', '+']:
+            raise Exception(f'The file [{infileName}] can not recognized strand-info from row={row}, please check it')
         #         key = (tmp[chr_col], start)
         # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
         key = (tmp[chr_col], start, strand)
@@ -669,7 +669,7 @@ def importPredictions_DeepSignal3(infileName, chr_col=0, start_col=1, meth_col=7
     return cpgDict
 
 
-def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=4, baseFormat=0, cutoff=2.5):
+def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=4, baseFormat=0, cutoff=2.5, output_first=False):
     '''
     We treate input as 0-based format.
 
@@ -717,14 +717,10 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
 
     # logger.debug(f"importPredictions_Tombo infileName={infileName}")
     infile = open(infileName, "r")
-    # cpgDict = {}
     cpgDict = defaultdict(list)
-    # row_count_all = 0
     row_count = 0
     meth_cnt = 0
     unmeth_cnt = 0
-
-    output_first = True
 
     for row in infile:
         tmp = row.strip().split("\t")
@@ -765,6 +761,10 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
             sys.exit(-1)
         #         key = (tmp[chr_col], start)
         # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
+
+        if strand not in ['-', '+']:
+            raise Exception(f'The file [{infileName}] can not recognized strand-info from row={row}, please check it')
+
         key = (tmp[chr_col], start, strand)
 
         try:
@@ -963,7 +963,7 @@ def importPredictions_Tombo3(infileName, chr_col=0, start_col=1, meth_col=4, bas
     return cpgDict
 
 
-def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_reads_col=-2, coverage_col=-4, baseFormat=0, sep='\t'):
+def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_reads_col=-2, coverage_col=-4, baseFormat=0, sep='\t', output_first=False):
     '''
     We treate input as 0-based format for start col. Due to we pre-processed original DeepMod results by filter out non-CG sites, the input of this funciton is sep=TAB instead!!!
 
@@ -1007,8 +1007,6 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     cpgDict = defaultdict(list)
     count = 0
 
-    output_first = True
-
     for row in infile:
         tmp = row.strip().split(sep)
         if output_first:
@@ -1025,6 +1023,9 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
         else:
             logger.debug("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
+
+        if strand not in ['-', '+']:
+            raise Exception(f'The file [{infileName}] can not recognized strand-info from row={row}, please check it')
         #         key = (tmp[chr_col], start)
         key = (tmp[chr_col], start, strand)
 
@@ -1042,15 +1043,13 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     return cpgDict
 
 
-def importPredictions_DeepMod_Read_Level(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=-1, baseFormat=0, sep='\t'):
+def importPredictions_DeepMod_Read_Level(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=-1, baseFormat=0, sep='\t', output_first=False):
     infile = open(infileName, "r")
     # cpgDict = {}
     cpgDict = defaultdict(list)
     count = 0
     meth_cnt = 0
     unmeth_cnt = 0
-
-    output_first = True
 
     for row in infile:
         tmp = row.strip().split(sep)
@@ -1068,6 +1067,9 @@ def importPredictions_DeepMod_Read_Level(infileName, chr_col=0, start_col=1, str
         else:
             logger.debug("###\timportPredictions_DeepMod_Read_Level InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
+
+        if strand not in ['-', '+']:
+            raise Exception(f'The file [{infileName}] can not recognized strand-info from row={row}, please check it')
         #         key = (tmp[chr_col], start)
         key = (tmp[chr_col], start, strand)
 
@@ -3481,10 +3483,31 @@ def get_ref_fasta():
 def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yang/results/2020-12-21/hl60-results-1/extractBismark/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz', chr_col=0, start_col=1, strand_col=2, meth_col=3, unmeth_col=4, ccontect_col=5, covCutt=10, baseCount=0, includeCov=False):
     """
     We are sure the input file is start using 1-based format.
+    We use this format due to it contains strand info.
     Ensure that in + strand, position is pointed to CG's C
                 in - strand, position is pointed to CG's G, (for positive strand sequence)
             in our imported into programs.
-    We degin this due to other bismark output contains no strand-info.
+    We design this due to other bismark output contains no strand-info.
+
+    The genome-wide cytosine methylation output file is tab-delimited in the following format:
+    ==========================================================================================
+    <chromosome>  <position>  <strand>  <count methylated>  <count non-methylated>  <C-context>  <trinucleotide context>
+
+
+    Sample input file:
+
+    gunzip -cd HL60_RRBS_ENCFF000MDA.Read_R1.Rep_1_trimmed_bismark_bt2.CpG_report.txt.gz| head
+    chr4	10164	+	0	0	CG	CGC
+    chr4	10165	-	0	0	CG	CGT
+    chr4	10207	+	0	0	CG	CGG
+    chr4	10208	-	0	0	CG	CGA
+    chr4	10233	+	0	0	CG	CGT
+    chr4	10234	-	0	0	CG	CGG
+    chr4	10279	+	0	0	CG	CGT
+    chr4	10280	-	0	0	CG	CGT
+    chr4	10297	+	0	0	CG	CGC
+    chr4	10298	-	0	0	CG	CGC
+
     :param infn:
     :param chr_col:
     :param start_col:
@@ -3518,7 +3541,7 @@ def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yan
     df.columns = ['chr', 'start', 'end', 'meth-freq', 'cov', 'strand']
     logger.info(df)
 
-    cpgDict = {}
+    cpgDict = defaultdict(list)
     for index, row in df.iterrows():
         chr = row['chr']
         start = row['start']
@@ -3532,7 +3555,7 @@ def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yan
             else:
                 cpgDict[key] = row['meth-freq'] / 100.0
         else:
-            raise Exception(f'In genome-wide, we found duplicate sites: for key={key}, please check input file {infn}')
+            raise Exception(f'In genome-wide, we found duplicate sites: for key={key} in row={row}, please check input file {infn}')
 
     logger.info(f"###\timportGroundTruth_genome_wide_from_Bismark: loaded information for {len(cpgDict):,} CpGs from file {infn}")
 

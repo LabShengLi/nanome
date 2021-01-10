@@ -62,21 +62,18 @@ if [ "$run_methcall" = true ] ; then
 	if [ "${Tool}" = "Tombo" ] ; then
 		# Tombo methylation call pipeline
 		meth_arrayjob_ret=$(sbatch --job-name=tmb.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.tombo.sh)
-	fi
-
-	if [ "${Tool}" = "DeepSignal" ] ; then
+	elif [ "${Tool}" = "DeepSignal" ] ; then
 		# DeepSignal methylation call pipeline
 		meth_arrayjob_ret=$(sbatch --job-name=dpsig.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.deepsignal.sh)
-	fi
-
-	if [ "${Tool}" = "DeepMod" ] ; then
+	elif [ "${Tool}" = "DeepMod" ] ; then
 		# DeepSignal methylation call pipeline
 		meth_arrayjob_ret=$(sbatch --job-name=dpmod.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.deepmod.sh)
-	fi
-
-	if [ "${Tool}" = "Nanopolish" ] ; then
+	elif [ "${Tool}" = "Nanopolish" ] ; then
 		# Nanopolish methylation call pipeline
 		meth_arrayjob_ret=$(sbatch --job-name=napol.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/nanocompare.methcall.nanopolish.sh)
+	else
+		echo "Tool=${Tool} is not support now"
+		exit -1
 	fi
 
 	# Get the job id as :123_1:123_2, etc.
