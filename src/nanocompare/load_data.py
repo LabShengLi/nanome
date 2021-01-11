@@ -7,12 +7,13 @@ Load all important data for plotting purpose, includes:
 
 etc.
 """
+import os
 
 import pandas as pd
 
-from global_config import *
+from nanocompare.global_config import *
 from nanocompare.collect_data import collect_wide_format_newly_exp
-from nanocompare.nanocompare_global_settings import locations_category, map_from_tool_to_abbr, locations_category2, locations_singleton2
+from nanocompare.global_settings import locations_category, map_from_tool_to_abbr, locations_category2, locations_singleton2
 
 
 def load_running_time_and_mem_usage():
@@ -29,7 +30,7 @@ def load_all_perf_data():
     """
     Load the existing get all results, find all Dataset and tagname folder to get all tsv, before refine's data
 
-            2020-01-11 15:47:11,451 - [nanocompare_global_settings.py:92] - INFO:                                                prefix  ...                Dataset
+            2020-01-11 15:47:11,451 - [global_settings.py:92] - INFO:                                                prefix  ...                Dataset
         0   K562_WGBS_joined/K562_WGBS_joined.Nanopolish_c...  ...       K562_WGBS_joined
         1   K562_WGBS_joined/K562_WGBS_joined.Nanopolish_c...  ...       K562_WGBS_joined
         2   K562_WGBS_joined/K562_WGBS_joined.Nanopolish_c...  ...       K562_WGBS_joined

@@ -26,15 +26,13 @@ import argparse
 
 ####################
 
-import sys
+# nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
+# sys.path.append(nanocompare_prj)
 
-nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
-sys.path.append(nanocompare_prj)
-
-from nanocompare.nanocompare_global_settings import singletonsFile, narrowCoord, nonsingletonsFile
+from nanocompare.global_settings import singletonsFile, narrowCoord, nonsingletonsFile
 from nanocompare.meth_stats.meth_stats_common import *
 
-from global_config import *
+from nanocompare.global_config import *
 
 
 def parse_arguments():

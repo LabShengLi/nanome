@@ -10,7 +10,7 @@ import pandas as pd
 
 from nanocompare.meth_stats.Universal_meth_stats_evaluation import NonSingletonsScanner, importPredictions_Nanopolish_2_nofilter, dict2txt
 from nanocompare.meth_stats.report_generation import load_ontcall_by_tool
-from nanocompare.nanocompare_global_settings import important_region_bed_fns
+from nanocompare.global_settings import important_region_bed_fns
 
 
 def main():

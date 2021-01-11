@@ -10,7 +10,7 @@ import matplotlib.colors as mcolors
 
 import nanocompare.legacy.performance_plots as pp
 # from global_config import pkl_base_dir
-from global_config import data_base_dir
+from nanocompare.global_config import data_base_dir
 
 importlib.reload(pp)
 

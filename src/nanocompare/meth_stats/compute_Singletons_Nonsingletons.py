@@ -6,7 +6,7 @@ from lilab.tcga.global_tcga import logger, set_log_debug_level, pic_base_dir, pk
 from nanocompare.meth_stats.Universal_meth_stats_evaluation import importGroundTruth_coverage_output_from_Bismark, nonSingletonsPostprocessing, singletonsPostprocessing, singletonsPostprocessing2, nonSingletonsPostprocessing2, dict2txt
 import pandas as pd
 
-from nanocompare.nanocompare_global_settings import gbtruth_filedict, singletonsFile, nonsingletonsFile
+from nanocompare.global_settings import gbtruth_filedict, singletonsFile, nonsingletonsFile
 from nanocompare.plot_figures_deprecated import plot_pie_chart
 
 joined_bed_file = {

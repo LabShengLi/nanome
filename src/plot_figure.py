@@ -4,20 +4,18 @@ Plots all Nanocompare paper figures
 import argparse
 import sys
 
-nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
-sys.path.append(nanocompare_prj)
+# nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
+# sys.path.append(nanocompare_prj)
 
 import matplotlib.patches as mpatches
 import numpy as np
-import pandas as pd
 import seaborn as sns
 from scipy.stats import pearsonr
 
-from nanocompare.collect_data import collect_wide_format_newly_exp
-from nanocompare.load_data import load_running_time_and_mem_usage, get_one_dsname_perf_data, get_performance_from_datasets_and_locations, load_box_plot_all_data, load_corr_data_tsv_fns, load_all_perf_data_for_dataset, load_sing_nonsing_count_df, get_long_format_perf_within_measures_and_locations
-from nanocompare.nanocompare_global_settings import tools, locations_category, locations_singleton, tools_abbr, agressiveHot, cor_tsv_fields, perf_order, dict_cor_tsv_to_abbr, cor_tsv_fields_abbr, locations_singleton2, locations_category2
+from nanocompare.load_data import *
+from nanocompare.global_settings import *
 
-from global_config import *
+from nanocompare.global_config import *
 
 
 def single_ds_5mc_5c_performance(dsname="HL60_AML_Bsseq_cut5"):

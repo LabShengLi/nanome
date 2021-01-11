@@ -6,4 +6,5 @@ clean:
 	mv log/*.{err,out} log/bk
 
 clean_all:
+	mv log/*.{err,out} log/bk
 	rm -rf log/bk

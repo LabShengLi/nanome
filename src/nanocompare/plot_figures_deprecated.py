@@ -15,7 +15,7 @@ import seaborn as sns
 from scipy.stats import pearsonr
 
 from nanocompare.meth_stats.count_m_c_sites import load_count_ds_original
-from nanocompare.nanocompare_global_settings import tools, locations_category, locations_singleton, tools_abbr, map_from_tool_to_abbr, nanocompare_basedir, agressiveHot, cor_tsv_fields, perf_order, dict_cor_tsv_to_abbr, cor_tsv_fields_abbr
+from nanocompare.global_settings import tools, locations_category, locations_singleton, tools_abbr, map_from_tool_to_abbr, nanocompare_basedir, agressiveHot, cor_tsv_fields, perf_order, dict_cor_tsv_to_abbr, cor_tsv_fields_abbr
 from nanocompare.collect_data import collect_box_plot_all_data
 from nanocompare.load_data import load_running_time_and_mem_usage, get_one_dsname_perf_data, get_performance_from_datasets_and_locations, load_box_plot_all_data, load_corr_data_tsv_fns, load_all_perf_data, load_all_perf_data_for_dataset, load_all_perf_data_for_dataset_list, load_sing_nonsing_count_df
 import numpy as np

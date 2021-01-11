@@ -16,10 +16,10 @@ import os
 import numpy as np
 import pandas as pd
 
-from global_config import logger, pic_base_dir
+from nanocompare.global_config import logger, pic_base_dir
 from nanocompare.legacy import performance_plots as pp
 # from nanocompare.load_data import load_all_perf_data
-from nanocompare.nanocompare_global_settings import nanocompare_basedir, locations_category2, locations_singleton2, ret_report_columns, runPrefixDict, perf_col_raw_to_standard, cpg_name_map_raw_to_standard
+from nanocompare.global_settings import nanocompare_basedir, locations_category2, locations_singleton2, ret_report_columns, runPrefixDict, perf_col_raw_to_standard, cpg_name_map_raw_to_standard
 
 
 def collect_box_plot_all_data():

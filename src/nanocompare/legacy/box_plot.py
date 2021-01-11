@@ -1,7 +1,7 @@
 import importlib
 import nanocompare.legacy.performance_plots as pp
 import seaborn as sns
-from nanocompare.nanocompare_global_settings import nanocompare_basedir
+from nanocompare.global_settings import nanocompare_basedir
 from lilab.tcga.global_tcga import *
 from lilab.tcga.utils import current_time_str
 

@@ -9,14 +9,13 @@ Sample usage:
 All usedful functions are located in nanocompare.meth_stats.meth_stats_common
 """
 import argparse
-import sys
 
-nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
-sys.path.append(nanocompare_prj)
-
+from nanocompare.global_config import *
 from nanocompare.meth_stats.meth_stats_common import *
 
-from global_config import *
+
+# nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
+# sys.path.append(nanocompare_prj)
 
 
 def scatter_plot_cov():

@@ -7,7 +7,7 @@ from lilab.tcga.global_tcga import logger, pic_base_dir, pkl_base_dir
 from lilab.tcga.picture import plot_roc_curve
 from nanocompare.meth_stats.Universal_meth_stats_evaluation import importPredictions_DeepMod, importGroundTruth_coverage_output_from_Bismark, nonSingletonsPostprocessing, singletonsPostprocessing, combine2programsCalls, combine2programsCalls_4Corr, \
     importPredictions_Nanopolish_3, importPredictions_DeepSignal3, importPredictions_Tombo3, computePerReadStats_v2_for_roc_auc
-from nanocompare.nanocompare_global_settings import nanocompare_basedir
+from nanocompare.global_settings import nanocompare_basedir
 
 
 def main():

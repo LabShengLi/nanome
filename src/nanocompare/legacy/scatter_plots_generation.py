@@ -6,7 +6,7 @@ import seaborn as sns
 import glob
 from lilab.tcga.global_tcga import *
 from nanocompare.collect_data import collect_data_selected_locations
-from nanocompare.nanocompare_global_settings import nanocompare_basedir, locations_category
+from nanocompare.global_settings import nanocompare_basedir, locations_category
 from nanocompare.load_data import load_all_perf_data, load_refined_data
 
 

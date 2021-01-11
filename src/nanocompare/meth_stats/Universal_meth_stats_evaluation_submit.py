@@ -19,15 +19,15 @@ modify tombo results as
 
 import sys
 
-nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
-sys.path.append(nanocompare_prj)
+# nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
+# sys.path.append(nanocompare_prj)
 
 import csv
 import os
 import subprocess
 from sys import argv
 
-from global_config import src_base_dir, pic_base_dir
+from nanocompare.global_config import src_base_dir, pic_base_dir
 
 if __name__ == '__main__':
     baseDir = os.path.join(src_base_dir, 'nanocompare', 'meth_stats')

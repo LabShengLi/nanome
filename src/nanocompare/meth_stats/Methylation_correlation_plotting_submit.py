@@ -16,16 +16,15 @@ modify tombo results in tsv as follows:
 # example run command: python Methylation_correlation_plotting_submit.py <config file>
 # python /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/Methylation_correlation_plotting_submit.py NanoComareCorrelation_deprecated.tsv
 # python /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/Methylation_correlation_plotting_submit.py NanoComareCorrelation_paper.tsv
-import sys
-
-nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
-sys.path.append(nanocompare_prj)
-from global_config import pic_base_dir
 
 import csv
 import os
 import subprocess
 from sys import argv
+
+# nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
+# sys.path.append(nanocompare_prj)
+from nanocompare.global_config import pic_base_dir
 
 if __name__ == '__main__':
     nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
