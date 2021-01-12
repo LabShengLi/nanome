@@ -45,6 +45,8 @@ run_clean=false
 multipleInputs=false
 
 ### which kind of intermediate file we want to backup or clean, these options are used in final stage of combine step
+basecall_name=Albacore
+
 tar_basecall=false
 tar_methcall=true
 clean_preprocessing=false

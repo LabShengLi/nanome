@@ -77,7 +77,7 @@ if [ "${run_resquiggling}" = true ] ; then
 	python nanopore_nanopolish.NA19240_pipeline.step_02.preindexing_checkDups.py ${fastqFile} ${fastqNoDupFile}
 
 	# indexing fastq with nanopolish (one needs to have all fast5 reads for that first):
-	nanopolish index -d ${processedFast5DIR} ${fastqNoDupFile}
+	${NanopolishDir}/nanopolish index -d ${processedFast5DIR} ${fastqNoDupFile}
 
 	# Reads align to the reference genome:
 	minimap2 -t ${processors} -a -x map-ont ${refGenome} ${fastqNoDupFile} | samtools sort -T tmp -o ${jobkBasecallOutputDir}/${bamFileName}
@@ -90,7 +90,7 @@ if [ "${run_resquiggling}" = true ] ; then
 fi
 
 # calling methylation:
-time nanopolish call-methylation -t ${processors} -r ${fastqNoDupFile} -b ${jobkBasecallOutputDir}/${bamFileName} -g ${refGenome} > ${methCallsDir}/${analysisPrefix}.batch_${job_index}.nanopolish.methylation_calls.tsv
+time ${NanopolishDir}/nanopolish call-methylation -t ${processors} -r ${fastqNoDupFile} -b ${jobkBasecallOutputDir}/${bamFileName} -g ${refGenome} > ${methCallsDir}/${analysisPrefix}.batch_${job_index}.nanopolish.methylation_calls.tsv
 
 echo "### Nanopolish methylation calling DONE"
 

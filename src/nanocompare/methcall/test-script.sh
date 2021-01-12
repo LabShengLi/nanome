@@ -9,6 +9,7 @@
 #SBATCH -e log/%x.%j.err # STDERR
 set -x
 
+pwd
 
 echo ${abc}
 echo ${abc1}

@@ -12,7 +12,11 @@
 ### Nanopore tools tested for DeepSignal, Nanopolish, DeepMod and Tombo         ###
 ### Nano-compare project by Yang Liu                                            ###
 ###################################################################################
-# set -x
+
+# NanoCompareDir should be env var set to project dir
+source ${NanoCompareDir}/src/nanocompare/methcall/utils.common.sh
+
+set -x
 
 ### Input dataset parameters prepared for pipeline###
 # dsname    -   data set name
@@ -34,6 +38,8 @@ ToolList=(DeepSignal Tombo DeepMod Nanopolish)
 
 ### Which step is going to run, true or false, if 'true' means running this step
 
+basecall_name=Albacore
+
 run_preprocessing=false
 run_basecall=false
 run_resquiggling=false
@@ -54,14 +60,6 @@ clean_preprocessing=true
 outbasedir=/fastscratch/liuya/nanocompare/${dsname}-Runs
 mkdir -p ${outbasedir}
 
-### Reference file path configuration, used by each base or meth calling
-correctedGroup="RawGenomeCorrected_000"
-refGenome="/projects/li-lab/reference/hg38/hg38.fasta"
-chromSizesFile="/projects/li-lab/yang/workspace/nano-compare/data/genome-annotation/hg38.chrom.sizes"
-deepsignalModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/model.CpG.R9.4_1D.human_hx1.bn17.sn360/bn_17.sn_360.epoch_7.ckpt"
-deepModModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0"
-clusterDeepModModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25"
-
 ### Number of processes for basecall, alignment, and methlation nanopore tool
 processors=16
 #processors=64
@@ -77,7 +75,7 @@ isGPU="no"
 ###################################################################################
 # Please put this file at nano-compare/src dir, or it need modify following paths
 # change working path to script path
-cd "$(dirname "$0")"/nanocompare/methcall
+cd ${NanoCompareDir}/src/nanocompare/methcall
 
 source nanocompare.pipeline.submit.sh
 

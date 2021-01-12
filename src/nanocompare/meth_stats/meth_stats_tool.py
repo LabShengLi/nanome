@@ -17,8 +17,7 @@ from multiprocessing import Pool
 
 from tqdm import tqdm
 import pandas as pd
-from global_config import *
-
+from nanocompare.global_config import *
 import os
 import numpy as np
 
@@ -66,10 +65,20 @@ def add_strand_info_for_nanopolish(nanopolish_fn='/projects/li-lab/yang/results/
     return df
 
 
-def sanity_check_get_dna_seq(chr='chr1', start_list=[11027, 11068, 11129, 10563, 10484, 10660]):
-    for start in start_list:
-        ret = get_dna_sequence_from_reference(chr, start, ref_fasta=ref_fasta)
-        logger.info(f'chr={chr}, start={start}, ret={ret}')
+def sanity_check_get_dna_seq(chrstr):
+    """
+    Check 0-based start, input as 'chr1:123'
+    :param chrstr:
+    :return:
+    """
+
+    chr, start = chrstr.strip().split(':')
+    start = int(start)
+
+    show_arrow = ''.join(['~'] * 5 + ['↑'] + ['~'] * 5)
+
+    ret = get_dna_sequence_from_reference(chr, start, ref_fasta=ref_fasta)
+    logger.info(f'chr={chr}, start={start}\nSEQ={ret}\nPOS={show_arrow}')
 
 
 def filter_noncg_sites_ref_seq(df, tagname, ntask=1, ttask=1, num_seq=5, chr_col=0, start_col=1, strand_col=5, toolname='tombo'):
@@ -502,6 +511,7 @@ def parse_arguments():
     parser.add_argument('--methcallDir', type=str, help="methcallDir dir name", default=None)
     parser.add_argument('--processors', type=int, help="Number of processors", default=8)
     parser.add_argument('--mpi', action='store_true')
+    parser.add_argument('--chrs', nargs='+', help='all chrs need to check', default=None)
 
     return parser.parse_args()
 
@@ -512,7 +522,7 @@ if __name__ == '__main__':
     logger.debug(args)
 
     ref_fasta = None
-    if args.cmd in ['tombo-add-seq', 'deepmod-add-seq', 'deepmod-read-level', 'sanity-get-seq']:
+    if args.cmd in ['tombo-add-seq', 'deepmod-add-seq', 'deepmod-read-level', 'sanity-check-seq']:
         ref_fn = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
         ref_fasta = SeqIO.to_dict(SeqIO.parse(open(ref_fn), 'fasta'))
 
@@ -542,8 +552,11 @@ if __name__ == '__main__':
             filter_noncg_sites_for_deepmod(ntask=args.n, ttask=args.t)
     elif args.cmd == 'nanopolish-add-strand':
         add_strand_info_for_nanopolish()
-    elif args.cmd == 'sanity-get-seq':
-        sanity_check_get_dna_seq()
+    elif args.cmd == 'sanity-check-seq':
+        ## bash meth_stats_tool.sh sanity-check-seq --chrs chr4:10164 chr4:10298
+        for chrstr in args.chrs:
+            # logger.info(chrstr)
+            sanity_check_get_dna_seq(chrstr)
     elif args.cmd == 'deepmod-read-level':
         ### Running bash:
         """
