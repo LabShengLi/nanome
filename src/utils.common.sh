@@ -5,8 +5,10 @@ HOME_BASH_FN=/home/liuya/.bash_profile
 
 source ${HOME_BASH_FN}
 
-## Export slurm, nanopolish path
-export PATH=/cm/shared/apps/slurm/18.08.8/bin:/projects/li-lab/yang/tools/nanopolish:${PATH}
+set -x
+
+## Export slurm path
+export PATH=/cm/shared/apps/slurm/18.08.8/bin:${PATH}
 
 # Export DepMod and Nanopolish dir
 export NanopolishDir=/projects/li-lab/yang/tools/latest-version/nanopolish
@@ -24,7 +26,7 @@ deepsignalModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/mode
 #deepModModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0"
 deepModModel="${DeepModDir}/train_deepmod/rnn_conmodC_P100wd21_f7ne1u0_4train_mod/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0"
 
-clusterDeepModModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25"
+clusterDeepModModel="${DeepModDir}/train_deepmod/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25"
 
 
 get_arrayjob_ids(){

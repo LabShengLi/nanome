@@ -36,6 +36,7 @@ echo "targetNum: ${targetNum}"
 echo "analysisPrefix: ${analysisPrefix}"
 echo "septInputDir: ${septInputDir}"
 echo "basecallOutputDir: ${basecallOutputDir}"
+echo "basecall_name: ${basecall_name}"
 echo "jobkSeptInputDir: ${jobkSeptInputDir}"
 echo "jobkBasecallOutputDir: ${jobkBasecallOutputDir}"
 echo "processors: ${processors}"
@@ -48,10 +49,16 @@ set +x
 conda activate nanoai
 set -x
 
-## Run Basecalling with Albacore:
-time read_fast5_basecaller.py -o fastq,fast5 -t ${processors} \
-		-s ${jobkBasecallOutputDir} -i ${jobkSeptInputDir} -c r94_450bps_linear.cfg \
-		-n 20000000000
+if [ "${basecall_name}" = "Albacore" ] ; then
+	## Run Basecalling with Albacore:
+	time read_fast5_basecaller.py -o fastq,fast5 -t ${processors} \
+			-s ${jobkBasecallOutputDir} -i ${jobkSeptInputDir} -c r94_450bps_linear.cfg \
+			-n 20000000000
+
+elif [ "${basecall_name}" = "Guppy" ] ; then
+	## Run Basecalling with Guppy:
+	echo "Not implemented yet"
+fi
 
 set +x
 conda deactivate

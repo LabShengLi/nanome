@@ -54,7 +54,12 @@ set -x
 
 ## Call methylation from processed fast5 files:
 date
-time python /projects/li-lab/yang/tools/DeepMod/bin/DeepMod.py detect \
+#time python /projects/li-lab/yang/tools/DeepMod/bin/DeepMod.py detect \
+#		--wrkBase ${processedFast5DIR} --Ref ${refGenome} --outFolder $methCallsDir \
+#		--Base C --modfile $deepModModel --FileID batch_${job_index} \
+#		--threads $processors
+
+time python ${DeepModDir}/bin/DeepMod.py detect \
 		--wrkBase ${processedFast5DIR} --Ref ${refGenome} --outFolder $methCallsDir \
 		--Base C --modfile $deepModModel --FileID batch_${job_index} \
 		--threads $processors

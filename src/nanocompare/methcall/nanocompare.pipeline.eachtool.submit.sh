@@ -24,7 +24,7 @@ if [ "${run_basecall}" = true ] ; then
 	mkdir -p ${basecallOutputDir}
 	mkdir -p ${basecallOutputDir}/log
 
-	basecall_task_ret=$(sbatch --job-name=albacore.${analysisPrefix} --ntasks=${processors} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors} nanocompare.basecall.albacore.sh)
+	basecall_task_ret=$(sbatch --job-name=albacore.${analysisPrefix} --ntasks=${processors} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name} nanocompare.basecall.albacore.sh)
 
 	# Get the job id as :123_1:123_2, etc.
 	base_taskids=$(get_arrayjob_ids "${basecall_task_ret}" "${targetNum}")

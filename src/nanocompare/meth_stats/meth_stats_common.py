@@ -16,7 +16,7 @@ sys.path.append(nanocompare_prj)
 
 from nanocompare.global_settings import nanocompare_basedir
 
-from global_config import *
+from nanocompare.global_config import *
 
 import re
 import pandas as pd
