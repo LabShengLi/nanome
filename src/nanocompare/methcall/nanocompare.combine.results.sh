@@ -13,15 +13,12 @@
 # Need to populate the parameters into this script
 # Output file name is "<dsname>.<tool>.*.combine.tsv"
 ################################################################################
-#cd "$(dirname "$0")"
+# Working dir must be at this file dir
 
 set -e
 
 set +x
-#source /home/liuya/.bash_profile
-#export PATH=/cm/shared/apps/slurm/18.08.8/bin:${PATH}
-source utils.common.sh
-
+source ../../utils.common.sh
 set -x
 
 set -u
@@ -83,7 +80,6 @@ elif [ "${Tool}" = "DeepSignal" ] ; then
 elif [ "${Tool}" = "DeepMod" ] ; then
 
 	## Extract read-level DeepMod results
-
 	sbatch --nodes=1 --ntasks=50 --wait --job-name=extr.rldepmd.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ../meth_stats/meth_stats_tool_mpi.sh deepmod-read-level --processors 50 --basecallDir ${basecallOutputDir} --methcallDir ${methCallsDir} -o ${methCallsDir}/${dsname}.deepmod_read_level.read_level.combine.tsv --o2 ${methCallsDir}/${dsname}.deepmod_read_level.base_level.combined.C.bed
 
 	## Step:  join results from different batches, based on ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md
@@ -137,14 +133,13 @@ elif [ "${Tool}" = "DeepMod" ] ; then
 	echo "### DeepMod combine all batches results. ###"
 
 #	bash /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_array_job_pipe.sh deepmod-add-seq 100 ${methCallsDir}/${dsname}.deepmod.C.combined.tsv ${methCallsDir}
+
 	# we need do filter out non-CG patterns also, now using MPI version
+	# wait the filter task finished, then start clean, so block here
 	sbatch --wait --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ../meth_stats/meth_stats_tool_mpi.sh deepmod-add-seq -i ${methCallsDir}/${dsname}.deepmod.C.combined.tsv --mpi --processors 60 -o ${methCallsDir}
 
 	filter_taskid=${filter_taskid}:$(echo ${filter_ret} |grep -Eo '[0-9]+$')
-	# wait the filter task finished, then start clean, so block here
-#	srun --dependency=afterok:${filter_taskid} date
-	echo "### DeepMod filter out NON-CG patterns post-process jobs submitted. ###"
-#	echo "### DeepMod combine results DONE. ###"
+	echo "### DeepMod combine results DONE. ###"
 
 elif [ "${Tool}" = "Nanopolish" ] ; then
 	### TODO: how to cut first line: sed '1d' test.txt > result.txt
@@ -159,6 +154,12 @@ elif [ "${Tool}" = "Nanopolish" ] ; then
 
 	wc -l ${methCallsDir}/${dsname}.nanopolish.methylation_calls.combine.tsv
 	echo "### Nanopolish combine results DONE. ###"
+elif [ "${Tool}" = "Guppy" ] ; then
+
+	echo "### Guppy combine results DONE. ###"
+elif [ "${Tool}" = "Megalondon" ] ; then
+
+	echo "### Megalondon combine results DONE. ###"
 else
 	echo "Tool=${Tool} is not support now"
 	exit -1

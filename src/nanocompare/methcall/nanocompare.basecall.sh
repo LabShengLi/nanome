@@ -1,10 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=basecall
-#SBATCH --partition=compute
-#SBATCH -N 1 # number of nodes
-#SBATCH -n 8 # number of cores
-#SBATCH --mem=250g # memory pool for all cores
-#SBATCH --time=2-23:00:00 # time (D-HH:MM)
+##SBATCH --partition=compute
+##SBATCH -N 1 # number of nodes
+##SBATCH -n 16 # number of cores
+#SBATCH -p gpu
+#SBATCH --gres=gpu:3             # number of gpus per node
+#SBATCH -q inference
+#SBATCH --mem=125g # memory pool for all cores
+#SBATCH --time=06:00:00 # time (D-HH:MM)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 ##SBATCH --array=1-11
@@ -13,16 +16,12 @@
 # Basecalling workflow
 # Need to populate the parameters into this script
 ################################################################################
-#cd "$(dirname "$0")"
+# Working dir now must be at file location now
 
 set +x
-#source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
-#source /home/liuya/.bash_profile
-#export PATH=/cm/shared/apps/slurm/18.08.8/bin:${PATH}
-source utils.common.sh
+source ../../utils.common.sh
 set -x
 
-#processors=8
 
 job_index=$((SLURM_ARRAY_TASK_ID))
 jobkSeptInputDir=${septInputDir}/${job_index}
@@ -57,7 +56,10 @@ if [ "${basecall_name}" = "Albacore" ] ; then
 
 elif [ "${basecall_name}" = "Guppy" ] ; then
 	## Run Basecalling with Guppy:
-	echo "Not implemented yet"
+	time ${GuppyDir}/bin/guppy_basecaller --input_path ${jobkSeptInputDir} \
+	    --save_path ${jobkBasecallOutputDir} --config dna_r9.4.1_450bps_hac.cfg \
+	    --gpu_runners_per_device ${processors} --num_callers 3 --fast5_out --verbose_logs --device auto
+#	echo "Not implemented yet"
 fi
 
 set +x

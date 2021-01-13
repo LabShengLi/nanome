@@ -7,13 +7,12 @@ Load all important data for plotting purpose, includes:
 
 etc.
 """
-import os
 
 import pandas as pd
 
-from nanocompare.global_config import *
 from nanocompare.collect_data import collect_wide_format_newly_exp
-from nanocompare.global_settings import locations_category, map_from_tool_to_abbr, locations_category2, locations_singleton2
+from nanocompare.global_config import *
+from nanocompare.global_settings import locations_category, map_from_tool_to_abbr, locations_category2
 
 
 def load_running_time_and_mem_usage():
@@ -21,7 +20,11 @@ def load_running_time_and_mem_usage():
     Load running time and mem usage DF
     :return:
     """
-    infn = os.path.join(pkl_base_dir, 'nanocompare', 'nanocompare_running_time.pkl')
+
+    pkldir = '/projects/li-lab/yang/results/results-1st-year/pkl'
+    # infn = os.path.join(pkl_base_dir, 'nanocompare', 'nanocompare_running_time.pkl')
+    infn = os.path.join(pkldir, 'nanocompare', 'nanocompare_running_time.pkl')
+
     return pd.read_pickle(infn)
     pass
 
@@ -343,4 +346,3 @@ def load_corr_data_tsv_fns():
 if __name__ == '__main__':
 
     pass
-

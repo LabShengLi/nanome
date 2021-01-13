@@ -1,6 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=nanoc.pipeline.submit.K562
-#SBATCH --partition=compute
+#SBATCH --job-name=nanopipline.submit.K562
+##SBATCH --partition=compute
+#SBATCH -p gpu
+#SBATCH -q inference
+#SBATCH --gres=gpu:1
 #SBATCH --mem=50g # memory pool for all cores
 #SBATCH --time=03:00:00 # time (DD-HH:MM:SS)
 #SBATCH --output=log/%x.%j.out
@@ -31,21 +34,22 @@ inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K5
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
 # ToolList  -   a list of Nanopore tools prepared to run
-#ToolList=(DeepMod)
+ToolList=(DeepSignal)
 
-ToolList=(DeepSignal Tombo DeepMod Nanopolish)
-
+#ToolList=(DeepSignal Tombo DeepMod Nanopolish)
+#ToolList=(DeepSignal Tombo DeepMod Nanopolish Guppy Megalondon)
 
 ### Which step is going to run, true or false, if 'true' means running this step
 
-basecall_name=Albacore
+#basecall_name=Albacore
+basecall_name=Guppy
 
 run_preprocessing=false
-run_basecall=false
+run_basecall=true
 run_resquiggling=false
 run_methcall=false
 run_combine=false
-run_clean=true
+run_clean=false
 
 ### true if inputDataDir is a folder contains *.tar or *.tar.gz
 multipleInputs=false

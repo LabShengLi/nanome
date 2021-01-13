@@ -17,9 +17,9 @@ import numpy as np
 import pandas as pd
 
 from nanocompare.global_config import logger, pic_base_dir
-from nanocompare.legacy import performance_plots as pp
 # from nanocompare.load_data import load_all_perf_data
 from nanocompare.global_settings import nanocompare_basedir, locations_category2, locations_singleton2, ret_report_columns, runPrefixDict, perf_col_raw_to_standard, cpg_name_map_raw_to_standard
+from nanocompare.legacy import performance_plots as pp
 
 
 def collect_box_plot_all_data():
@@ -137,34 +137,35 @@ def get_data_all():
     return alldata
 
 
-def add_dataset_report_to_all(indir='/projects/liuya/results/pkl/nanocompare/NA19240_RRBS_joined', only_test=True):
-    """
-    add a new results to original datasets, used for NA19240 new coming results
-    :param indir:
-    :param only_test: True if not save, False will save results to pkl
-    :return:
-    """
-    listOfSelected = ["GW", "cpgIslandExt", "promoters_500bp", "exonFeature", "intergenic"]
-    listOfSelected = listOfSelected + ["singletons", "nonsingletons", "discordant", "concordant"]
-
-    dstagname = os.path.basename(indir)
-
-    dsreport = collect_data_selected_locations(indir, sel_locations=listOfSelected)
-    dsreport['Dataset'] = dstagname
-    logger.info(f"dsreport={dsreport}")
-
-    if not only_test:
-        outfn = os.path.join(pic_base_dir, f"{dstagname}_report.xlsx")
-        dsreport.to_excel(outfn)
-
-    dsall = load_all_perf_data()
-    # logger.debug(f"dsall={dsall}")
-
-    d2 = pd.concat([dsall, dsreport], ignore_index=True)
-    logger.info(f"d2={d2}")
-
-    if not only_test:
-        save_alldata(d2)
+#
+# def add_dataset_report_to_all(indir='/projects/liuya/results/pkl/nanocompare/NA19240_RRBS_joined', only_test=True):
+#     """
+#     add a new results to original datasets, used for NA19240 new coming results
+#     :param indir:
+#     :param only_test: True if not save, False will save results to pkl
+#     :return:
+#     """
+#     listOfSelected = ["GW", "cpgIslandExt", "promoters_500bp", "exonFeature", "intergenic"]
+#     listOfSelected = listOfSelected + ["singletons", "nonsingletons", "discordant", "concordant"]
+#
+#     dstagname = os.path.basename(indir)
+#
+#     dsreport = collect_data_selected_locations(indir, sel_locations=listOfSelected)
+#     dsreport['Dataset'] = dstagname
+#     logger.info(f"dsreport={dsreport}")
+#
+#     if not only_test:
+#         outfn = os.path.join(pic_base_dir, f"{dstagname}_report.xlsx")
+#         dsreport.to_excel(outfn)
+#
+#     dsall = load_all_perf_data()
+#     # logger.debug(f"dsall={dsall}")
+#
+#     d2 = pd.concat([dsall, dsreport], ignore_index=True)
+#     logger.info(f"d2={d2}")
+#
+#     if not only_test:
+#         save_alldata(d2)
 
 
 def save_alldata(dfall=None):

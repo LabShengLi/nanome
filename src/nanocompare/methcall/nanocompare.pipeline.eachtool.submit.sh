@@ -3,43 +3,13 @@
 # Pipeline for each nanopore methylation tool running on a dataset
 # Need to populate the parameters into this script
 ################################################################################
-#cd "$(dirname "$0")"
+# This script will be sourced by nanocompare.pipeline.submit.sh, so working dir is same with it
 
 set -x
 set -e
 
 ################################################################################
-# Step 2.1: Basecalling with Albacore
-################################################################################
-if [ "${run_basecall}" = true ] ; then
-	echo "Step2: basecalling"
-
-	# If previous step need to depend on
-	depend_param=""
-	if [ "${run_preprocessing}" = true ] ; then
-		depend_param="--dependency=afterok:${prep_taskid}"
-	fi
-
-	rm -rf ${basecallOutputDir}
-	mkdir -p ${basecallOutputDir}
-	mkdir -p ${basecallOutputDir}/log
-
-	basecall_task_ret=$(sbatch --job-name=albacore.${analysisPrefix} --ntasks=${processors} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name} nanocompare.basecall.albacore.sh)
-
-	# Get the job id as :123_1:123_2, etc.
-	base_taskids=$(get_arrayjob_ids "${basecall_task_ret}" "${targetNum}")
-
-	# set -x
-	echo ${basecall_task_ret}
-	echo "### Submitted all basecalling for ${analysisPrefix} by Albacore array-job finished."
-fi
-################################################################################
-################################################################################
-################################################################################
-
-
-################################################################################
-# Step 2.2: Methylation call
+# Step 3.1: Methylation call
 ################################################################################
 if [ "$run_methcall" = true ] ; then
 	echo "Step3: methylation calling"
@@ -61,16 +31,20 @@ if [ "$run_methcall" = true ] ; then
 
 	if [ "${Tool}" = "Tombo" ] ; then
 		# Tombo methylation call pipeline
-		meth_arrayjob_ret=$(sbatch --job-name=tmb.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} nanocompare.methcall.tombo.sh)
+		meth_arrayjob_ret=$(sbatch --job-name=tmb.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.tombo.sh)
 	elif [ "${Tool}" = "DeepSignal" ] ; then
 		# DeepSignal methylation call pipeline
-		meth_arrayjob_ret=$(sbatch --job-name=dpsig.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} nanocompare.methcall.deepsignal.sh)
+		meth_arrayjob_ret=$(sbatch --job-name=dpsig.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.deepsignal.sh)
 	elif [ "${Tool}" = "DeepMod" ] ; then
 		# DeepSignal methylation call pipeline
-		meth_arrayjob_ret=$(sbatch --job-name=dpmod.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} nanocompare.methcall.deepmod.sh)
+		meth_arrayjob_ret=$(sbatch --job-name=dpmod.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.deepmod.sh)
 	elif [ "${Tool}" = "Nanopolish" ] ; then
 		# Nanopolish methylation call pipeline
-		meth_arrayjob_ret=$(sbatch --job-name=napol.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=${exp_param} --dependency=${depend_param} nanocompare.methcall.nanopolish.sh)
+		meth_arrayjob_ret=$(sbatch --job-name=napol.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.nanopolish.sh)
+	elif [ "${Tool}" = "Guppy" ] ; then
+		echo "will add Guppy"
+	elif [ "${Tool}" = "Megalodon" ] ; then
+		echo "will add Megalodon"
 	else
 		echo "Tool=${Tool} is not support now"
 		exit -1
@@ -88,7 +62,7 @@ fi
 
 
 ################################################################################
-# Step 2.3: Combining results together after all batches methylation call finished
+# Step 3.2: Combining results together after all batches methylation call finished
 ################################################################################
 if [ "$run_combine" = true ] ; then
 	echo "Step4: combing results for ${analysisPrefix}"
@@ -98,7 +72,7 @@ if [ "$run_combine" = true ] ; then
 	if [ "$run_methcall" = true ] ; then
 		depend_param="--dependency=afterok${meth_taskids}"
 	fi
-	combine_ret=$(sbatch --job-name=cmbi.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},outbasedir=${outbasedir},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},clusterDeepModModel=${clusterDeepModModel},refGenome=${refGenome},chromSizesFile=${chromSizesFile},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall},tar_basecall=${tar_basecall},tar_methcall=${tar_methcall},run_clean=${run_clean} nanocompare.combine.results.sh)
+	combine_ret=$(sbatch --job-name=cmbi.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ${depend_param} --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},outbasedir=${outbasedir},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},clusterDeepModModel=${clusterDeepModModel},refGenome=${refGenome},chromSizesFile=${chromSizesFile},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall},tar_basecall=${tar_basecall},tar_methcall=${tar_methcall},run_clean=${run_clean} nanocompare.combine.results.sh)
 	combine_taskid=$(echo ${combine_ret} |grep -Eo '[0-9]+$')
 
 	combine_taskids=${combine_taskids}:${combine_taskid}

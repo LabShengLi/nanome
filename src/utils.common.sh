@@ -13,6 +13,8 @@ export PATH=/cm/shared/apps/slurm/18.08.8/bin:${PATH}
 # Export DepMod and Nanopolish dir
 export NanopolishDir=/projects/li-lab/yang/tools/latest-version/nanopolish
 export DeepModDir=/projects/li-lab/yang/tools/latest-version/DeepMod
+export GuppyDir=/projects/li-lab/software/ont-guppy-gpu_4.2.2
+
 
 # Specify global vars for nano-compare project
 ### Reference file path configuration, used by each base or meth calling
@@ -38,7 +40,6 @@ get_arrayjob_ids(){
 	## num=10
 	## task_ids=$(get_arrayjob_ids "${ret}" "${num}")
 	## Later can be used by "--dependency=afterok${task_ids}"
-
 	usage="get_arrayjob_ids '<ret-str>' '<num>'"
 	local ret=${1:?"undefined '<ret-str>': $usage"}
 	local num=${2:?"undefined '<num>': $usage"}
