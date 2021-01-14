@@ -28,7 +28,7 @@ baseDir=${prj_dir}/src/nanocompare/meth_stats
 pythonFn=Methylation_correlation_plotting.py
 
 python ${baseDir}/${pythonFn} --calls DeepSignal:$DeepSignal_calls \
-	Tombo:$Tombo_calls Nanopolish:$Nanopolish_calls DeepMod:$DeepMod_calls
+	Tombo:$Tombo_calls Nanopolish:$Nanopolish_calls DeepMod:$DeepMod_calls \
 	Megalodon:${Megalodon_calls} --bgtruth $parser:$bgTruth --runid $RunPrefix
 
 

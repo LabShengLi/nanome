@@ -2,20 +2,18 @@
 Plots all Nanocompare paper figures
 """
 import argparse
-import sys
-
-# nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
-# sys.path.append(nanocompare_prj)
 
 import matplotlib.patches as mpatches
 import numpy as np
 import seaborn as sns
 from scipy.stats import pearsonr
 
-from nanocompare.load_data import *
 from nanocompare.global_settings import *
+from nanocompare.load_data import *
 
-from nanocompare.global_config import *
+
+# nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
+# sys.path.append(nanocompare_prj)
 
 
 def single_ds_5mc_5c_performance(dsname="HL60_AML_Bsseq_cut5"):
@@ -883,14 +881,8 @@ if __name__ == '__main__':
     logger.debug(args)
 
     if args.cmd == 'fig5a':
-        ## python plot_figure.py fig5a -i /projects/li-lab/yang/results/2021-01-10/HL60_RRBS_Joined/Meth_corr_plot_data-HL60_RRBS_Joined-bsCov5-minCov4-baseCount0.csv
-        if len(args.i) == 0:
-            # for fn in load_corr_data_tsv_fns():
-            #     gen_figure_5a(fn)
-            pass
-        else:
-            for fn in args.i:
-                gen_figure_5a(fn)
+        for fn in args.i:
+            gen_figure_5a(fn)
     elif args.cmd == 'fig5c':
         gen_figure_5c()
     if args.cmd == 'fig5b':

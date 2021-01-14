@@ -1301,18 +1301,18 @@ def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, s
             try:
                 start = int(tmp[start_col]) + 1
                 strand = tmp[strand_col]
-            except:
-                logger.error(f" ####Megalodon parse error at row={row}")
+            except Exception as e:
+                logger.error(f" ####Megalodon parse error at row={row}, exception={e}")
                 continue
         elif baseFormat == 0:
             try:
                 start = int(tmp[start_col])
                 strand = tmp[strand_col]
-            except:
-                logger.error(f" ####Megalodon parse error at row={row}")
+            except Exception as e:
+                logger.error(f" ####Megalodon parse error at row={row}, exception={e}")
                 continue
         else:
-            logger.error("###\timportPredictions_Megalodon_Read_Level InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
+            logger.error(f"###\timportPredictions_Megalodon_Read_Level InputValueError: baseFormat value set to '{baseFormat}'. It should be equal to 0 or 1")
             sys.exit(-1)
 
         if strand not in ['-', '+']:
@@ -1321,9 +1321,9 @@ def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, s
         key = (tmp[chr_col], start, strand)
 
         try:
-            methCall = float(np.e ** (tmp[mod_log_prob_col]))  # Calculate mod_prob
-        except:
-            logger.error(f" ####Megalodon parse error at row={row}")
+            methCall = float(np.e ** float(tmp[mod_log_prob_col]))  # Calculate mod_prob
+        except Exception as e:
+            logger.error(f" ####Megalodon parse error at row={row}, exception={e}")
             continue
 
         if methCall > cutoff:  ##Keep methylated reads
