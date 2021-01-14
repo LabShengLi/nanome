@@ -4,12 +4,12 @@
 ##SBATCH -N 1 # number of nodes
 ##SBATCH -n 16 # number of cores
 #SBATCH -p gpu
-#SBATCH --gres=gpu:3             # number of gpus per node
+#SBATCH --gres=gpu:3
 #SBATCH -q inference
-#SBATCH --mem=125g # memory pool for all cores
-#SBATCH --time=06:00:00 # time (D-HH:MM)
-#SBATCH -o log/%x.%j.out # STDOUT
-#SBATCH -e log/%x.%j.err # STDERR
+#SBATCH --mem=100g
+#SBATCH --time=01:00:00
+#SBATCH -o log/%x.%j.out
+#SBATCH -e log/%x.%j.err
 ##SBATCH --array=1-11
 
 ################################################################################
@@ -30,12 +30,10 @@ jobkBasecallOutputDir=${basecallOutputDir}/${job_index}
 set -u
 echo "##################"
 echo "dsname: ${dsname}"
-echo "Tool: ${Tool}"
 echo "targetNum: ${targetNum}"
-echo "analysisPrefix: ${analysisPrefix}"
+echo "basecall_name: ${basecall_name}"
 echo "septInputDir: ${septInputDir}"
 echo "basecallOutputDir: ${basecallOutputDir}"
-echo "basecall_name: ${basecall_name}"
 echo "jobkSeptInputDir: ${jobkSeptInputDir}"
 echo "jobkBasecallOutputDir: ${jobkBasecallOutputDir}"
 echo "processors: ${processors}"

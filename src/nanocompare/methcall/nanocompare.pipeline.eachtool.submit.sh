@@ -6,7 +6,8 @@
 # This script will be sourced by nanocompare.pipeline.submit.sh, so working dir is same with it
 
 set -x
-set -e
+#set -e
+#set -u
 
 ################################################################################
 # Step 3.1: Methylation call
@@ -24,7 +25,7 @@ if [ "$run_methcall" = true ] ; then
 		depend_param="afterok${base_taskids}"
 	fi
 
-	exp_param="dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},correctedGroup=${correctedGroup},refGenome=${refGenome},chromSizesFile=${chromSizesFile},run_resquiggling=${run_resquiggling},isGPU=${isGPU},deepsignalModel=${deepsignalModel},deepModModel=${deepModModel},processors=${processors}"
+	exp_param="dsname=${dsname},Tool=${Tool},targetNum=${targetNum},outbasedir=${outbasedir},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},correctedGroup=${correctedGroup},refGenome=${refGenome},chromSizesFile=${chromSizesFile},run_resquiggling=${run_resquiggling},isGPU=${isGPU},deepsignalModel=${deepsignalModel},deepModModel=${deepModModel},processors=${processors}"
 
 	out_param="${methCallsDir}/log/%x.batch%a.%j.out"
 	err_param="${methCallsDir}/log/%x.batch%a.%j.err"

@@ -14,12 +14,12 @@
 ### This is the only file we need to modify for different data                  ###
 ### Nanopore tools tested for DeepSignal, Nanopolish, DeepMod and Tombo         ###
 ### Nano-compare project by Yang Liu                                            ###
+### Run on sumner: sbatch --partition=compute -q batch --gres=   K562.nanocompare.pipeline.submit.sh
+### Run on winter: sbatch K562.nanocompare.pipeline.submit.sh
 ###################################################################################
 
 # NanoCompareDir should be env var set to project dir
 source ${NanoCompareDir}/src/utils.common.sh
-
-set -x
 
 ### Input dataset parameters prepared for pipeline###
 # dsname    -   data set name
@@ -34,7 +34,7 @@ inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K5
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
 # ToolList  -   a list of Nanopore tools prepared to run
-ToolList=(DeepSignal)
+ToolList=(Tombo)
 
 #ToolList=(DeepSignal Tombo DeepMod Nanopolish)
 #ToolList=(DeepSignal Tombo DeepMod Nanopolish Guppy Megalondon)
@@ -45,8 +45,8 @@ ToolList=(DeepSignal)
 basecall_name=Guppy
 
 run_preprocessing=false
-run_basecall=true
-run_resquiggling=false
+run_basecall=false
+run_resquiggling=true
 run_methcall=false
 run_combine=false
 run_clean=false

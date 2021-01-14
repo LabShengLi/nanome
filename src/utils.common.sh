@@ -3,9 +3,12 @@
 # Specify your home bash, this required by conda setup
 HOME_BASH_FN=/home/liuya/.bash_profile
 
+
+set +u
+set +e
 source ${HOME_BASH_FN}
 
-set -x
+#set -x
 
 ## Export slurm path
 export PATH=/cm/shared/apps/slurm/18.08.8/bin:${PATH}
@@ -46,6 +49,8 @@ get_arrayjob_ids(){
 
 	local arrayjob_id=${ret##* }
 	local taskids=
+
+	set +x
 	for ((i=1;i<=${num};i++));
 	do
 		taskids=${taskids}:${arrayjob_id}_$i

@@ -9,14 +9,39 @@ set +x
 source ../../utils.common.sh
 set -x
 
-set -e
-set -x
+## Currently we use command arg to do four kind of actions
+cmd=${1:-noaction} # Preprocess, Basecall, Resquiggle, Methcall
+
+run_preprocessing=false
+run_basecall=false
+run_resquiggling=false
+run_methcall=false
+run_combine=false
+run_clean=false
+
+if [ "Preprocess" = "${cmd}" ] ; then ## bash APL.nanocompare.pipeline.submit.sh Preprocess
+	run_preprocessing=true
+elif [ "Basecall" = "${cmd}" ] ; then
+	run_basecall=true
+elif [ "Resquiggle" = "${cmd}" ] ; then ## bash APL.nanocompare.pipeline.submit.sh Resquiggle
+	run_resquiggling=true
+elif [ "Methcall" = "${cmd}" ] ; then
+	run_basecall=true
+	run_combine=true
+else
+	echo "No action needed."
+	exit -1
+fi
 
 mkdir -p ${outbasedir}
 
 # Do preprocessing only once for all tools
 untaredInputDir=${outbasedir}/${dsname}-N${targetNum}-untar
 septInputDir=${outbasedir}/${dsname}-N${targetNum}-sept
+basecallOutputDir=${outbasedir}/${dsname}-N${targetNum}-basecall
+
+## Modify directory for processed files after basecalling:
+resquiggleDir=${outbasedir}/${dsname}-N${targetNum}-resquiggle
 
 ################################################################################
 # Step 1: Pre-processing (Untar, seperate files)
@@ -24,27 +49,17 @@ septInputDir=${outbasedir}/${dsname}-N${targetNum}-sept
 if [ "${run_preprocessing}" = true ] ; then
 	echo "Step1: pre-processing"
 
-	# Remove previous pre-processing dataset dir if we redo it
-	rm -rf ${untaredInputDir} ${septInputDir}
-	mkdir -p ${untaredInputDir}
-	mkdir -p ${septInputDir}
-	mkdir -p ${septInputDir}/log
-
 	prep_ret=$(sbatch --job-name=prep.fast5.${dsname}.N${targetNum} --output=${septInputDir}/log/%x.%j.out --error=${septInputDir}/log/%x.%j.err --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},inputDataDir=${inputDataDir},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},multipleInputs=${multipleInputs} nanocompare.preprocessing.sh)
 	prep_taskid=$(echo ${prep_ret} |grep -Eo '[0-9]+$')
 	echo ${prep_ret}
-	echo "### Submitted preprocessing task for ${analysisPrefix}."
+	echo "### Submitted preprocessing task for ${dsname}.N${targetNum}."
 fi
-
-
 
 ################################################################################
 # Step 2: Basecalling
 ################################################################################
 if [ "${run_basecall}" = true ] ; then
 	echo "Step2: basecalling"
-	basecallOutputDir=${outbasedir}/${dsname}-N${targetNum}-basecall
-
 	# If previous step need to depend on
 	depend_param=""
 	if [ "${run_preprocessing}" = true ] ; then
@@ -57,11 +72,11 @@ if [ "${run_basecall}" = true ] ; then
 
 	if [ "${basecall_name}" = "Albacore" ] ; then
 		# Albacore basecall
-		basecall_task_ret=$(sbatch --job-name=bascal.${basecall_name} --ntasks=${processors} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${depend_param} --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name} nanocompare.basecall.sh)
+		basecall_task_ret=$(sbatch --job-name=bascal.${basecall_name}.${dsname}.N${targetNum} --ntasks=${processors} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${depend_param} --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name} nanocompare.basecall.sh)
 
 	elif [ "${basecall_name}" = "Guppy" ] ; then
 		# Use GPU of Winter server to do Guppy basecall
-		basecall_task_ret=$(sbatch --job-name=bascal.${basecall_name}.${analysisPrefix} --ntasks=${processors} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${depend_param} --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name} nanocompare.basecall.sh)
+		basecall_task_ret=$(sbatch --job-name=bascal.${basecall_name}.${dsname}.N${targetNum} --ntasks=${processors} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${depend_param} --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name} nanocompare.basecall.sh)
 	fi
 
 	# Get the job id as :123_1:123_2, etc.
@@ -75,9 +90,38 @@ fi
 ################################################################################
 ################################################################################
 
+################################################################################
+# Step 3: Resquiggling
+################################################################################
+if [ "${run_resquiggling}" = true ] ; then
+	echo "Step3: resquiggling"
+
+	rm -rf ${resquiggleDir}
+	mkdir -p ${resquiggleDir}/log
+
+	# If previous step need to depend on
+	depend_param=""
+	if [ "${run_basecall}" = true ] ; then
+		depend_param="--dependency=afterok:${base_taskids}"
+	fi
+
+	resquiggling_task_ret=$(sbatch --job-name=rsquigl.${dsname}.N${targetNum} --ntasks=${processors} --array=1-${targetNum} --output=${resquiggleDir}/log/%x.batch%a.%j.out --error=${resquiggleDir}/log/%x.batch%a.%j.err ${depend_param} --export=ALL,dsname=${dsname},targetNum=${targetNum},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name},resquiggleDir=${resquiggleDir} nanocompare.resquiggle.sh)
+
+	# Get the job id as :123_1:123_2, etc.
+	resquiggling_taskids=$(get_arrayjob_ids "${resquiggling_task_ret}" "${targetNum}")
+
+	# set -x
+	echo ${resquiggling_task_ret}
+	echo "### Submitted all resquiggling for ${dsname}.N${targetNum} array-job finished."
+
+fi
 
 ################################################################################
-# Step 3: For each Tool, resquiggling and methylation call
+################################################################################
+################################################################################
+
+################################################################################
+# Step 4: For each Tool, do methylation call
 ################################################################################
 combine_taskids=""
 for Tool in ${ToolList[@]}; do
@@ -106,7 +150,7 @@ done
 set -x
 
 ################################################################################
-# Step 3: Clean after each tool finished
+# Step 5: Clean after each tool finished
 ################################################################################
 
 # After all tools combine task finished, we can clean preprocessing files safely

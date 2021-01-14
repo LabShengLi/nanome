@@ -1,10 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=prep.fast5
 #SBATCH --partition=compute
+##SBATCH -p gpu
+##SBATCH -q inference
+##SBATCH --gres=gpu:1
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 1 # number of cores
-#SBATCH --mem=200g # memory pool for all cores
-#SBATCH --time=1-23:00:00 # time (D-HH:MM)
+#SBATCH -n 8 # number of cores
+#SBATCH --mem=250g # memory pool for all cores
+##SBATCH --time=06:00:00 # time (D-HH:MM)
+#SBATCH --time=1-06:00:00 # time (D-HH:MM)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
@@ -27,6 +31,12 @@ echo "septInputDir: ${septInputDir}"
 echo "multipleInputs: ${multipleInputs}"
 echo "##################"
 set +u
+
+
+# Remove previous pre-processing dataset dir if we redo it
+rm -rf ${untaredInputDir} ${septInputDir}
+mkdir -p ${untaredInputDir}
+mkdir -p ${septInputDir}/log
 
 # How may seperate file folders used to seperate all fast5 files to # of groups
 # ${targetNum}=N, 1-N: will create 0 -- (N-1) folder names
