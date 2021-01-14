@@ -65,34 +65,34 @@ def importPredictions_NanoXGBoost(infileName, chr_col=0, start_col=1, meth_col=4
     '''
     Note that the function requires per read stats, not frequencies of methylation.
     !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
-    
+
     ### Parameters of the function:
     chr_col - name (as header) of the column with chromosome. If "header" variable == False, give integer number of the column.
     start_col - name (as header) of the column with start of CpG. If "header" variable == False, give integer number of the column.
     meth_col - name (as header) of the column with methylation call (integer expected). If "header" variable == False, give integer number of the column.
     baseCount - 0 or 1, standing for 0-based or 1-based, respectively
     #header - True or False.
-    
+
     ### Example input format from my NanoXGBoost model:
     chr20   15932019        15932019        /home/rosikw/fastscratch/APL_newSept/0/GXB01186_20180508_FAH83098_GA10000_sequencing_run_180508_18_li_001_GXB01186_001_12562_read_35498_ch_259_strand.fast5     1
     chr20   15932898        15932898        /home/rosikw/fastscratch/APL_newSept/0/GXB01186_20180508_FAH83098_GA10000_sequencing_run_180508_18_li_001_GXB01186_001_12562_read_35498_ch_259_strand.fast5     0
     chr20   15932997        15932997        /home/rosikw/fastscratch/APL_newSept/0/GXB01186_20180508_FAH83098_GA10000_sequencing_run_180508_18_li_001_GXB01186_001_12562_read_35498_ch_259_strand.fast5     1
     chr20   15933019        15933019        /home/rosikw/fastscratch/APL_newSept/0/GXB01186_20180508_FAH83098_GA10000_sequencing_run_180508_18_li_001_GXB01186_001_12562_read_35498_ch_259_strand.fast5     1
     Note: here there are no headers (probably this will change in the future)
-    
+
     ### Example input format from Nanopolish:
     chromosome      start   end     read_name       log_lik_ratio   log_lik_methylated      log_lik_unmethylated    num_calling_strands     num_cpgs        sequence
     chr20   106142  106142  0b42b84b-c2a7-481b-be33-c555eb2e1fcf    2.32    -93.28  -95.61  1       1       CTCAACGTTTG
     chr20   106226  106226  0b42b84b-c2a7-481b-be33-c555eb2e1fcf    1.46    -193.91 -195.37 1       1       TGGCACGTGGA
     chr20   104859  104859  107a0850-7500-443c-911f-4857424c889c    4.36    -163.26 -167.62 1       1       ATTCCCGAGAG
     Note: Nanopolish output have header, yet the function needs to be universal enough to handle both cases (including whatever awaits in case of NanoMod, DeepSignal etc.)
-    
+
     ### Output format:
     result = {"chr\tstart\tend\n" : [list of methylation calls]}
-    output coordinates are 1-based genome coordinates. 
-    
+    output coordinates are 1-based genome coordinates.
+
     ============
-    
+
     Future changes:
     This function cannot be for everything. Output from nanopolish is too different from mine (e.g. singletons and non-singletons), so it will need an independent parser. Maybe the same will go for other programs?
     Nevertheless, all functions will have the same output, which is the most important part.
@@ -524,7 +524,7 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     meth_col - name (as header) of the column with methylation call (integer expected). If "header" variable == False, give integer number of the column. *7 is probability, 8 is binary call.
     baseCount - 0 or 1, standing for 0-based or 1-based, respectively
     #header - True or False.
-    
+
     ### Example input format from DeepSignal:
     head /projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.deepsignal_MethCalls.tsv
     chr9	124877811	+	124877811	fd575bfa-96d2-41f6-852e-b3cd3b67a8e4	t	0.7913327	0.2086673	0	CCTGGTCACGTCTCCTG
@@ -535,7 +535,7 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     chr22	22922588	+	22922588	38af944b-5bbf-402f-8fc9-90ba4f3392f0	t	0.46641168	0.5335883	1	ATCCACCCCGCAGGTCA
     chr10	71503608	-	62293813	6579588c-6785-4cd0-ada8-c6408302aaa1	t	0.69284683	0.3071532	0	GCCCATCACGCAGCACA
     chr10	71503427	-	62293994	6579588c-6785-4cd0-ada8-c6408302aaa1	t	0.8272412	0.17275886	0	AGCCACAACGGGAAGAG
-    
+
     ### Input file format description:
     - chrom: the chromosome name
     - pos: 0-based position of the targeted base in the chromosome
@@ -551,11 +551,11 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     ### Output format:
     result = {"chr\tstart\tend\n" : [list of methylation calls (as a probability of methylation call**)]}
     output coordinates are 1-based genome coordinates.
-    
-    ** by default if this probability will be higher than 0.5, DeppSignal will tell that this is methylated site, lower, unmethylated 
-    
+
+    ** by default if this probability will be higher than 0.5, DeppSignal will tell that this is methylated site, lower, unmethylated
+
     ============
-    
+
     '''
 
     infile = open(infileName, "r")
@@ -685,7 +685,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     meth_col - name (as header) of the column with methylation call (integer expected). If "header" variable == False, give integer number of the column.
     baseCount - 0 or 1, standing for 0-based or 1-based, respectively
     cutoff - sumilarly as in case of Nanopolish, here we have cutoff for the value from the statistical test. From this conversations (https://github.com/nanoporetech/tombo/issues/151), I know this value is by default 2.5.
-    
+
     ### Example input format from Tombo (v1.5), we need to pre-process the Tombo results by filtering out non-CG patterns firstly
 
     more /projects/li-lab/yang/results/2020-12-21/K562.tombo_perReadsStats-with-seq-info-n350-t001-chr1.tsv
@@ -708,11 +708,11 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     ### Output format:
     result = {"chr\tstart\tend\n" : [list of methylation calls (as a probability of methylation call**)]}
     output coordinates are 1-based genome coordinates.
-    
-    ** by default if this probability will be higher than 0.5, DeppSignal will tell that this is methylated site, lower, unmethylated 
-    
+
+    ** by default if this probability will be higher than 0.5, DeppSignal will tell that this is methylated site, lower, unmethylated
+
     ============
-    
+
     '''
 
     # logger.debug(f"importPredictions_Tombo infileName={infileName}")
@@ -993,13 +993,13 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     chr2 241991445 241991446 C 3 -  241991445 241991446 0,0,0 3 100 3 69
     chr2 241991475 241991476 C 3 -  241991475 241991476 0,0,0 3 33 1 75
     chr2 241991481 241991482 C 2 -  241991481 241991482 0,0,0 2 50 1 76
-    
+
     Note: it is space-separated in original result file, not tab-separated file
-    
+
     ### Output format:
     result = {"chr\tstart\tend\n" : [list of methylation calls (as a probability of methylation call**)]}
     ============
-    
+
     '''
 
     infile = open(infileName, "r")
@@ -1249,6 +1249,112 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     return cpgDict
 
 
+
+def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, strand_col=3, mod_log_prob_col=4, can_log_prob_col=5, baseFormat=0, cutoff=0.8, sep='\t', output_first=False):
+    '''
+    We assume the input is 0-based for the start col, such as 'chr10\t122'
+    Return dict of key='chr1\t123\t124\t+', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
+
+    Note that the function requires per-read file, not per-site methlyation level.
+
+    ### Parameters of the function:
+    chr_col - name (as header) of the column with chromosome. If "header" variable == False, give integer number of the column.
+    start_col - name (as header) of the column with start of CpG. If "header" variable == False, give integer number of the column.
+    mod_log_prob_col - name (as header) of the column with natural log probability that the base is modified (float expected).
+    can_log_prob_col - name (as header) of the column with natural log probability that the base is unmodified (float expected).
+    baseCount - 0 or 1, standing for 0-based or 1-based, respectively.
+
+    ### Example default input format from Megalondon (pre-processed to containing strand-info):
+    head /fastscratch/c-panz/K562/megalodon/per_read_modified_base_calls.merged.sorted.bed
+    chr1	10468	a0b5e934-3784-4163-b46c-f575ac1015bf	+	-1.6103846163370363	-0.2229070153110119	    m
+    chr1	10470	a0b5e934-3784-4163-b46c-f575ac1015bf	+	-2.035311286540776	-0.13999775139928522	m
+    chr1	10483	a0b5e934-3784-4163-b46c-f575ac1015bf	+	-1.5477196338381982	-0.2391872270542014 	m
+
+    ### Output format:
+    result = {"chr\tstart\tend\n" : [list of methylation calls (as a probability of methylation call**)]}
+    output coordinates are 1-based genome coordinates.
+
+    ** By default setting in Megalodon, for a modified base, mod_prob > 0.8; for a canonical base, can_prob > 0.8 (In other words, mod_prob < 0.2)
+    For any position where no probability is greater than 0.8 neither canonical not modified bases get a count.
+    (https://github.com/nanoporetech/megalodon/issues/47#issuecomment-673742805)
+
+    ============
+    '''
+    infile = open(infileName, "r")
+    cpgDict = defaultdict(list)
+    row_count = 0
+    meth_cnt = 0
+    unmeth_cnt = 0
+
+    for row in infile:
+        tmp = row.strip().split("\t")
+
+        if output_first:
+            logger.debug(f'row = {list(enumerate(tmp))}')
+            output_first = False
+
+        if baseFormat == 1:
+            try:
+                start = int(tmp[start_col]) + 1
+                end = start
+                strand = tmp[strand_col]
+                if strand == '-':
+                    start = start + 1
+                    end = start
+                elif strand != '+':
+                    raise Exception(f'strand = {strand} is not accept.')
+            except:
+                logger.error(f" ####Megalodon parse error at row={row}")
+                continue
+        elif baseFormat == 0:
+            try:
+                start = int(tmp[start_col])
+                end = start + 1
+                strand = tmp[strand_col]
+
+                if strand == '-':
+                    start = start + 1
+                    end = start + 1
+                elif strand != '+':
+                    raise Exception(f'strand = {strand} is not accept.')
+            except:
+                logger.error(f" ####Megalodon parse error at row={row}")
+                continue
+        else:
+            logger.error("###\timportPredictions_Megalodon_Read_Level InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
+            sys.exit(-1)
+        #         key = (tmp[chr_col], start)
+        # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
+
+        if strand not in ['-', '+']:
+            raise Exception(f'The file [{infileName}] can not recognized strand-info from row={row}, please check it')
+
+        key = (tmp[chr_col], start, strand)
+
+        try:
+            methCall = float(e**(tmp[meth_col]))     #Calculate mod_prob
+        except:
+            logger.error(f" ####Megalodon parse error at row={row}")
+            continue
+
+        if methCall > cutoff: ##Keep methylated reads
+            meth_indicator = 1
+            meth_cnt += 1
+        elif methCall < 1 - cutoff:  ##Count unmethylated reads
+            meth_indicator = 0
+            unmeth_cnt += 1
+
+        # if key not in cpgDict:
+        #     cpgDict[key] = []
+        cpgDict[key].append(meth_indicator)
+        row_count += 1
+
+    infile.close()
+
+    logger.info(f"###\timportPredictions_Tombo SUCCESS: {row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with meth-cutoff={cutoff:.2f} from {infileName} file")
+    return cpgDict
+
+
 def coverageFiltering(calls_dict, minCov=4, byLength=True, toolname="Tool"):
     """
     Convert orignial call object from dict[cpg] = {cpg: [meth_freq_read1, ..., meth_freq_readn]} to dict[cpg] = {cpg:[meth_freq, coverage_number]}
@@ -1278,7 +1384,7 @@ def coverageFiltering(calls_dict, minCov=4, byLength=True, toolname="Tool"):
 def importGroundTruth_oxBS(infileName, chr_col='#chromosome', start_col='start', meth_col="pmC", covCutt=4, baseCount=1, chrFilter=False):
     '''
     Note that this function was optimized to parse the data from my oxBS results. More specifically, the (sudo)format which I have created to be able to have the information from both BS and corresponding oxBS-seq.
-    
+
     ### Description of the columns in this format:
     1. chromosome
     2. start
@@ -1292,17 +1398,17 @@ def importGroundTruth_oxBS(infileName, chr_col='#chromosome', start_col='start',
     10. artifact = 0
     11. artifact = 0
     12. artifact = 0
-    
+
     e.g.:
     #chromosome	start	end	pmC	phmC	pC	err	qA	qB	qC	qD	N
     chr1	10662	10663	1.0	0.0	0.0	0	4	0	4	0	1.0
     chr1	10665	10666	1.0	0.0	0.0	0	6	0	4	0	1.5
     chr1	10667	10668	1.0	0.0	0.0	0	6	0	4	0	1.5
-    
+
     ### Output files:
     cpgDict = {"chr\tstart\tend\n" : methylation level (format: float (0-1))} # have all cpgs with specified cutoff (not only 100% 5mC or 100% 5C)
-    output coordinates are 1-based genome coordinates. 
-    
+    output coordinates are 1-based genome coordinates.
+
     '''
 
     cpgDict = {}
@@ -1334,9 +1440,9 @@ def importGroundTruth_oxBS(infileName, chr_col='#chromosome', start_col='start',
 
 def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, meth_col=10, cov_col=9, covCutt=10, baseCount=1, chrFilter=False):
     '''
-    
+
     ### Description of the columns in this format (https://www.encodeproject.org/data-standards/wgbs/):
-    
+
     1. Reference chromosome or scaffold
     2. Start position in chromosome (0-based position)
     3. End position in chromosome (1-based position)
@@ -1350,7 +1456,7 @@ def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, 
     11. Percentage of reads that show methylation at this position in the genome
 
     I think that this output is 0-based.
-    
+
     e.g.:
     chr17   115761  115762  .       0       -       115761  115762  0,255,0 0       0
     chr17   116083  116084  .       3       +       116083  116084  0,255,0 3       0
@@ -1361,20 +1467,20 @@ def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, 
     chr17   116446  116447  .       1       -       116446  116447  0,255,0 1       0
     chr17   116703  116704  .       17      +       116703  116704  0,255,0 17      0
     chr17   116704  116705  .       4       -       116704  116705  0,255,0 4       0
-    
+
     Note, that the first row above have coverage=0, so they list all CpGs (this is from WGBS data).
     This is not the case for RRBS, where they only list covered sites:
-    
+
     e.g.:
     chr1    9943211 9943212 K562_Rep3_RRBS  168     -       10003269        10003270        0,255,0 168     0
     chr1    9943228 9943229 K562_Rep3_RRBS  168     -       10003286        10003287        0,255,0 168     1
     chr1    9943239 9943240 K562_Rep3_RRBS  1       +       10003297        10003298        0,255,0 1       0
     chr1    9943240 9943241 K562_Rep3_RRBS  168     -       10003298        10003299        0,255,0 168     4
-    
+
     ### Output files:
     cpgDict = {"chr\tstart\tend\n" : methylation level (format: float (0-1))} # have all cpgs with specified cutoff (not only 100% 5mC or 100% 5C)
-    output coordinates are 1-based genome coordinates. 
-    
+    output coordinates are 1-based genome coordinates.
+
     '''
 
     cpgDict = {}
@@ -1414,12 +1520,12 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
 
     includeCov  is True if return key->[meth-freq, meth-cov]
                 is False if return key-> meth-freq
-    
+
     ### Description of the columns in this format:
-    
+
     1. Reference chromosome or scaffold
     2. Start position in chromosome (1-based)  error here
-    3. End position in chromosome 
+    3. End position in chromosome
     4. methylation percentage (0-100)
     5. methylated reads number
     6. unmethylated reads number
@@ -1427,16 +1533,16 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
     I think that this output is by default 1-based. This is based on (https://www.bioinformatics.babraham.ac.uk/projects/bismark/):
         bismark2bedGraph: This module does now produce these two output files:
         (1) A bedGraph file, which now contains a header line: 'track type=bedGraph'. The genomic start coords are 0-based, the end coords are 1-based.
-        (2) A coverage file ending in .cov. This file replaces the former 'bedGraph --counts' file and is required to proceed with the subsequent step to generate a genome-wide cytosine report (the module doing this has been renamed to coverage2cytosine to reflect this file name change) 
+        (2) A coverage file ending in .cov. This file replaces the former 'bedGraph --counts' file and is required to proceed with the subsequent step to generate a genome-wide cytosine report (the module doing this has been renamed to coverage2cytosine to reflect this file name change)
     comparison of bedGraph and coverage files suggests that in the latter we deal with 1-based. Also, to get 0-based one have to activate appropriate flag in Bismark, which is not done in MINE, pipeline. I emphasize "mine" as files from somebody else might use different setting, so be careful!
-    
+
     e.g. structure of the coverage file:
     chr8    205945  205945  100     2       0
     chr8    206310  206310  100     10      0
     chr8    206317  206317  100     10      0
     chr8    206319  206319  90      9       1
     chr8    206322  206322  80      8       2
-    
+
     ### Output files:
     cpgDict = {"chr\tstart\tend\n" : methylation level (format: float (0-1))} # have all cpgs with specified cutoff (not only 100% 5mC or 100% 5C)
     output coordinates are 1-based genome coordinates.
@@ -1467,7 +1573,7 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
     chr4	11150	11150	100	8	0
     chr4	11155	11155	100	8	0
     chr4	11161	11161	100	8	0
-    
+
     '''
 
     cpgDict = {}
@@ -1637,14 +1743,14 @@ def importGroundTruth_BS():
     '''
     !!! This function will be needed for NanoCompare project !!!
     !!!!!!! its not a final version of the function, but with only some small changes it will be
-    
+
     note that this function was written to parse "bedMethyl" format from Encode. (description here: https://www.encodeproject.org/documents/964e2676-d0be-4b5d-aeec-f4f02310b221/@@download/attachment/WGBS%20pipeline%20overview.pdf)
     additionally, the output file was preprocessed, such that only sites with coverage >= 10 reads and either 100% or 0% methylated, are included.
     these will be taken to compute true positive, true negative etc.
-    
+
     #####
     example usage here: http://helix122:9912/edit/li-lab/NanoporeData/WR_ONT_analyses/ai/APL_nanopolishStats/automatedSingleReadPrecission_3.py
-    
+
     '''
 
     #     infile = open(infileName, 'r')
@@ -1687,7 +1793,7 @@ def txt2dict(pybed, strand_col=3):
     chr123  123  123 +
     To
     ('chr123', 123, '+') -> 1
-    
+
     :param pybed:
     :return:
     """
@@ -1707,10 +1813,10 @@ def computePerReadStats_deprecated(ontCalls, bsReference, title, bedFile=False, 
     title - prefix of the analysis, output plots etc. - should be as short as possible, but unique in context of other analyses
     bedFile - BED file which will be used to narrow down the list of CpGs for example to those inside CGIs or promoters etc.. By default "False" - which means no restrictions are done (i.e. genome wide)
     secondFilterBed - these should be CpGs covered in some reference list. Format: BED
-    
-    
+
+
     ============================================
-    
+
     Basically i want to fill in the table below:
                Positive	Negative	Total
      Presence	a	        b	        a+b
@@ -1719,7 +1825,7 @@ def computePerReadStats_deprecated(ontCalls, bsReference, title, bedFile=False, 
 
     Nice summary also at wiki: https://en.wikipedia.org/wiki/F1_score
     , where "Positive" and "Negative" corresponds with ONT based observations, while "Presence" and "Absence" is based on BS-Seq
-    
+
     '''
 
     switch = 0
@@ -2670,7 +2776,7 @@ def combine2programsCalls(calls1, calls2, outfileName=None):
     '''
     call1 and call2 should have the following format:
     {"chr\tstart\tend\n" : [list of methylation calls]}
-    
+
     result: dictionary of shared sites in the same format as input
     '''
     tmp = dict.fromkeys(set(calls1.keys()).intersection(set(calls2.keys())), -1)
@@ -2691,9 +2797,9 @@ def combine2programsCalls_4Corr(calls1, calls2, cutt=4, outfileName=False, only_
     '''
     call1 and call2 should have the following format:
     {"chr\tstart\tend\n" : [list of methylation calls]}
-    
+
     result: dictionary of shared sites in the same format as input with coverage of calls1 over calls 2 - use this with caution
-    
+
     '''
 
     if only_bgtruth:  # value = [freq, cov]
@@ -3690,6 +3796,8 @@ def import_call(fn, callname, baseFormat=0):
         calls0 = importPredictions_Nanopolish(fn, baseFormat=baseFormat, logLikehoodCutt=2.0)
     elif callname == 'DeepMod':
         calls0 = importPredictions_DeepMod_Read_Level(fn, baseFormat=baseFormat)
+    elif callname == 'Megalodon':
+        calls0 = importPredictions_Megalodon_Read_Level(fn, baseFormat=baseFormat)
     else:
         raise Exception(f'Not support {callname} for file {fn} now')
 
