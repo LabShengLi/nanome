@@ -1249,9 +1249,13 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     return cpgDict
 
 
-
 def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, strand_col=3, mod_log_prob_col=4, can_log_prob_col=5, baseFormat=0, cutoff=0.8, sep='\t', output_first=False):
     '''
+
+    0-based start for Magelodon：
+        1. baseFormat=0， start=Megalondon start；
+        2.  baseFormat=1， start=Megalondon start +1
+
     We assume the input is 0-based for the start col, such as 'chr10\t122'
     Return dict of key='chr1\t123\t124\t+', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
 
@@ -1287,7 +1291,7 @@ def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, s
     unmeth_cnt = 0
 
     for row in infile:
-        tmp = row.strip().split("\t")
+        tmp = row.strip().split(sep)
 
         if output_first:
             logger.debug(f'row = {list(enumerate(tmp))}')
@@ -1296,35 +1300,20 @@ def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, s
         if baseFormat == 1:
             try:
                 start = int(tmp[start_col]) + 1
-                end = start
                 strand = tmp[strand_col]
-                if strand == '-':
-                    start = start + 1
-                    end = start
-                elif strand != '+':
-                    raise Exception(f'strand = {strand} is not accept.')
             except:
                 logger.error(f" ####Megalodon parse error at row={row}")
                 continue
         elif baseFormat == 0:
             try:
                 start = int(tmp[start_col])
-                end = start + 1
                 strand = tmp[strand_col]
-
-                if strand == '-':
-                    start = start + 1
-                    end = start + 1
-                elif strand != '+':
-                    raise Exception(f'strand = {strand} is not accept.')
             except:
                 logger.error(f" ####Megalodon parse error at row={row}")
                 continue
         else:
             logger.error("###\timportPredictions_Megalodon_Read_Level InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
-        #         key = (tmp[chr_col], start)
-        # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
 
         if strand not in ['-', '+']:
             raise Exception(f'The file [{infileName}] can not recognized strand-info from row={row}, please check it')
@@ -1332,26 +1321,26 @@ def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, s
         key = (tmp[chr_col], start, strand)
 
         try:
-            methCall = float(e**(tmp[meth_col]))     #Calculate mod_prob
+            methCall = float(np.e ** (tmp[mod_log_prob_col]))  # Calculate mod_prob
         except:
             logger.error(f" ####Megalodon parse error at row={row}")
             continue
 
-        if methCall > cutoff: ##Keep methylated reads
+        if methCall > cutoff:  ##Keep methylated reads
             meth_indicator = 1
             meth_cnt += 1
         elif methCall < 1 - cutoff:  ##Count unmethylated reads
             meth_indicator = 0
             unmeth_cnt += 1
+        else:  ## Neglect other cases 0.2<= prob <=0.8
+            continue
 
-        # if key not in cpgDict:
-        #     cpgDict[key] = []
         cpgDict[key].append(meth_indicator)
         row_count += 1
 
     infile.close()
 
-    logger.info(f"###\timportPredictions_Tombo SUCCESS: {row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with meth-cutoff={cutoff:.2f} from {infileName} file")
+    logger.info(f"###\timportPredictions_Megalodon SUCCESS: {row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with meth-cutoff={cutoff:.2f} from {infileName} file")
     return cpgDict
 
 

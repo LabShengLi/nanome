@@ -16,12 +16,11 @@ echo "Tombo_calls: $Tombo_calls"
 echo "Nanopolish_calls: $Nanopolish_calls"
 echo "DeepMod_calls: $DeepMod_calls"
 echo "DeepMod_cluster_calls: $DeepMod_cluster_calls"
+echo "Megalodon_calls": ${Megalodon_calls}
 echo "bgTruth: $bgTruth"
 echo "parser: $parser"
 echo "RunPrefix: $RunPrefix"
 
-
-# mkdir $(dirname $RunPrefix)
 set -x
 
 prj_dir=/projects/li-lab/yang/workspace/nano-compare
@@ -29,7 +28,7 @@ baseDir=${prj_dir}/src/nanocompare/meth_stats
 pythonFn=Methylation_correlation_plotting.py
 
 python ${baseDir}/${pythonFn} --calls DeepSignal:$DeepSignal_calls \
-	Tombo:$Tombo_calls Nanopolish:$Nanopolish_calls DeepMod:$DeepMod_calls \
-	--bgtruth $parser:$bgTruth --runid $RunPrefix
+	Tombo:$Tombo_calls Nanopolish:$Nanopolish_calls DeepMod:$DeepMod_calls
+	Megalodon:${Megalodon_calls} --bgtruth $parser:$bgTruth --runid $RunPrefix
 
 
