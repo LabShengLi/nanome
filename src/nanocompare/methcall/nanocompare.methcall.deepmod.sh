@@ -17,18 +17,15 @@
 
 set -e
 set +x
-#source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
-#source /home/liuya/.bash_profile
 source ../../utils.common.sh
 
 set -x
 
-#processors=8
 job_index=$((SLURM_ARRAY_TASK_ID))
 jobkBasecallOutputDir=${basecallOutputDir}/${job_index}
 
 ## Modify directory for processed files after basecalling:
-processedFast5DIR=${jobkBasecallOutputDir}/workspace/pass/0
+processedFast5DIR=${jobkBasecallOutputDir}/workspace
 
 set -u
 echo "##################"
@@ -53,16 +50,11 @@ conda activate nanoai
 set -x
 
 ## Call methylation from processed fast5 files:
-date
-#time python /projects/li-lab/yang/tools/DeepMod/bin/DeepMod.py detect \
-#		--wrkBase ${processedFast5DIR} --Ref ${refGenome} --outFolder $methCallsDir \
-#		--Base C --modfile $deepModModel --FileID batch_${job_index} \
-#		--threads $processors
-
+## For guppy results, add --move for correct Events data location in fast5 files. ref:https://github.com/WGLab/DeepMod/issues/29#issuecomment-594121403
 time python ${DeepModDir}/bin/DeepMod.py detect \
-		--wrkBase ${processedFast5DIR} --Ref ${refGenome} --outFolder $methCallsDir \
-		--Base C --modfile $deepModModel --FileID batch_${job_index} \
-		--threads $processors
+		--wrkBase ${processedFast5DIR} --Ref ${refGenome} --outFolder ${methCallsDir} \
+		--Base C --modfile ${deepModModel} --FileID batch_${job_index} \
+		--threads ${processors} --move
 
 echo "###   DeepMod methylation calling DONE"
 

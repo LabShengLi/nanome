@@ -6,8 +6,8 @@
 
 # Working dir now must be ${NanoCmpDir}/src/nanocompare/methcall
 set +x
-source ../../utils.common.sh
-set -x
+#source ../../utils.common.sh
+#set -x
 
 ## Currently we use command arg to do four kind of actions
 cmd=${1:-noaction} # Preprocess, Basecall, Resquiggle, Methcall
@@ -26,7 +26,7 @@ elif [ "Basecall" = "${cmd}" ] ; then
 elif [ "Resquiggle" = "${cmd}" ] ; then ## bash APL.nanocompare.pipeline.submit.sh Resquiggle
 	run_resquiggling=true
 elif [ "Methcall" = "${cmd}" ] ; then
-	run_basecall=true
+	run_methcall=true
 	run_combine=true
 else
 	echo "No action needed."
@@ -66,8 +66,7 @@ if [ "${run_basecall}" = true ] ; then
 		depend_param="--dependency=afterok:${prep_taskid}"
 	fi
 
-	rm -rf ${basecallOutputDir}
-	mkdir -p ${basecallOutputDir}
+	rm -rf ${basecallOutputDir}/log
 	mkdir -p ${basecallOutputDir}/log
 
 	if [ "${basecall_name}" = "Albacore" ] ; then
@@ -84,7 +83,7 @@ if [ "${run_basecall}" = true ] ; then
 
 	# set -x
 	echo ${basecall_task_ret}
-	echo "### Submitted all basecalling for ${analysisPrefix} by basecall_name=${basecall_name} array-job finished."
+	echo "### Submitted all basecalling for by basecall_name=${basecall_name} array-job finished."
 fi
 ################################################################################
 ################################################################################
@@ -123,31 +122,35 @@ fi
 ################################################################################
 # Step 4: For each Tool, do methylation call
 ################################################################################
-combine_taskids=""
-for Tool in ${ToolList[@]}; do
-	### Building output folder configuration, such as
-	#	/fastscratch/liuya/nanocompare/K562-Runs/
-	#       K562-N50-untar
-	#       K562-N50-sept
-	#	├── K562-Tombo-N50
-	#	    ├── K562-Tombo-N50-basecall
-	#	    ├── K562-Tombo-N50-methcall
-
-	analysisPrefix=${dsname}-${Tool}-N${targetNum}
-
-	methCallsDir=${outbasedir}/${analysisPrefix}/${analysisPrefix}-methcall
-	### Start script for submiting jobs
-	echo "########################################################################"
-	echo "Start pipeline submit for tool with analysisPrefix=${analysisPrefix}"
-	echo "Basedir=${outbasedir}/${analysisPrefix}"
-	source nanocompare.pipeline.eachtool.submit.sh
-	echo ""
-done
+if [ "${run_methcall}" = true ] || [ "${run_combine}" = true ] ; then
+	combine_taskids=""
+	for Tool in ${ToolList[@]}; do
+		### Building output folder configuration, such as
+#		tree /fastscratch/liuya/nanocompare/HL60-Runs/ -L 1
+#		/fastscratch/liuya/nanocompare/HL60-Runs/
+#		├── HL60-DeepMod-N50
+#		├── HL60-DeepSignal-N50
+#		├── HL60-N50-basecall
+#		├── HL60-N50-resquiggle
+#		├── HL60-N50-sept
+#		├── HL60-N50-untar
+#		├── HL60-Nanopolish-N50
+#		└── HL60-Tombo-N50
+		analysisPrefix=${dsname}-${Tool}-N${targetNum}
+		methCallsDir=${outbasedir}/${analysisPrefix}/${analysisPrefix}-methcall
+		### Start script for submiting jobs
+		echo "########################################################################"
+		echo "Start pipeline submit for tool with analysisPrefix=${analysisPrefix}"
+		echo "Basedir=${outbasedir}/${analysisPrefix}"
+		source nanocompare.pipeline.eachtool.submit.sh
+		echo ""
+	done
+fi
 ###################################################################################
 ###################################################################################
 ###################################################################################
 
-set -x
+#set -x
 
 ################################################################################
 # Step 5: Clean after each tool finished

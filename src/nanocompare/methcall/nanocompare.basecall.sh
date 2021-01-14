@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=basecall
 ##SBATCH --partition=compute
-##SBATCH -N 1 # number of nodes
-##SBATCH -n 16 # number of cores
+#SBATCH -N 1 # number of nodes
+#SBATCH -n 16 # number of cores
 #SBATCH -p gpu
-#SBATCH --gres=gpu:3
+#SBATCH --gres=gpu:1
 #SBATCH -q inference
 #SBATCH --mem=100g
 #SBATCH --time=01:00:00
@@ -40,6 +40,7 @@ echo "processors: ${processors}"
 echo "##################"
 set +u
 
+rm -rf ${jobkBasecallOutputDir}
 mkdir -p ${jobkBasecallOutputDir}
 
 set +x

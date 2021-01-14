@@ -31,9 +31,9 @@ inputDataDir=/fastscratch/liuya/nanocompare/Nanopore-reads/HL60-Nanopore_GT18-07
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
 # ToolList  -   a list of Nanopore tools prepared to run
-ToolList=(Tombo)
+#ToolList=(Tombo)
 
-#ToolList=(DeepSignal Tombo DeepMod Nanopolish)
+ToolList=(Guppy)
 
 
 ### Which step is going to run, true or false, if 'true' means running this step

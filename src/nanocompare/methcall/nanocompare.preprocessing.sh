@@ -5,10 +5,10 @@
 ##SBATCH -q inference
 ##SBATCH --gres=gpu:1
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 8 # number of cores
+#SBATCH -n 16 # number of cores
 #SBATCH --mem=250g # memory pool for all cores
 ##SBATCH --time=06:00:00 # time (D-HH:MM)
-#SBATCH --time=1-06:00:00 # time (D-HH:MM)
+#SBATCH --time=1-06:00:00 # time (D-HH:MM) # for NA19240 large input
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
@@ -44,21 +44,19 @@ mkdir -p ${septInputDir}/log
 if [ "${multipleInputs}" = true ] ; then
 	echo "Multiple fast5.tar need to be untared"
 
-#	filelist=$(find ${inputDataDir} -name "*.fast5.tar")
-
 	filelist=$(find ${inputDataDir} -type f \( -iname \*.fast5.tar -o -iname \*.fast5.tar.gz -o -iname \*.fast5 \))
 
-	echo "Input file list:${filelist}"
-
 	for fast5tarfn in ${filelist}; do
+		echo "fn=${fast5tarfn}"
 		if [ "${fast5tarfn##*.}" = "tar" ]; then
-			tar -xf ${fast5tarfn} -C ${untaredInputDir}
+			tar -xf ${fast5tarfn} -C ${untaredInputDir} & # bg running
         elif [ "${fast5tarfn##*.}" = "gz" ]; then
-			tar -xzf ${fast5tarfn} -C ${untaredInputDir}
+			tar -xzf ${fast5tarfn} -C ${untaredInputDir} & # bg running
         elif [ "${fast5tarfn##*.}" = "fast5" ]; then
-			cp ${fast5tarfn} ${untaredInputDir}
+			cp ${fast5tarfn} ${untaredInputDir} & # bg running
         fi
 	done
+	wait # wait until all background task finished
 else
 	if [ "${inputDataDir##*.}" = "tar" ]; then
 		tar -xf ${inputDataDir} -C ${untaredInputDir}

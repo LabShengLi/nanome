@@ -79,7 +79,7 @@ elif [ "${Tool}" = "DeepSignal" ] ; then
 
 elif [ "${Tool}" = "DeepMod" ] ; then
 
-	## Extract read-level DeepMod results
+	## Extract read-level DeepMod results, save to -o <read-level results> -o2 <base-level results>
 	sbatch --nodes=1 --ntasks=50 --wait --job-name=extr.rldepmd.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ../meth_stats/meth_stats_tool_mpi.sh deepmod-read-level --processors 50 --basecallDir ${basecallOutputDir} --methcallDir ${methCallsDir} -o ${methCallsDir}/${dsname}.deepmod_read_level.read_level.combine.tsv --o2 ${methCallsDir}/${dsname}.deepmod_read_level.base_level.combined.C.bed
 
 	## Step:  join results from different batches, based on ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md
@@ -165,20 +165,3 @@ else
 	exit -1
 fi
 
-# After combine task finished, or just filer-out task running, we will start task of clean, it will depend on filter-out task also if needed
-
-
-################################################################################
-# Step 5: Clean intermediate dirs
-################################################################################
-#if [ "${run_clean}" = true ] ; then
-#	echo "Step5: clean dirs"
-#
-#	# If previous step need to depend on
-#	depend_param=""
-#	if [ -n "${filter_taskid}" ] ; then
-#		depend_param="afterok${filter_taskid}"
-#	fi
-#	sbatch --job-name=clen.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err --dependency=${depend_param} --export=dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},outbasedir=${outbasedir},clean_preprocessing=${clean_preprocessing},clean_basecall=${clean_basecall},tar_basecall=${tar_basecall},tar_methcall=${tar_methcall},run_clean=${run_clean} nanocompare.clean.intermediate.sh
-#	echo "Submitted clean dirs task for ${analysisPrefix}."
-#fi

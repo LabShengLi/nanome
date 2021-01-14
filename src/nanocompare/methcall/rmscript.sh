@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=rm
 ##SBATCH -q batch
-##SBATCH --partition=compute
-#SBATCH -p gpu
-#SBATCH -q inference
-#SBATCH --gres=gpu:1
+#SBATCH --partition=compute
+##SBATCH -p gpu
+##SBATCH -q inference
+##SBATCH --gres=gpu:1
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 1 # number of cores
 #SBATCH --mem 50g # memory pool for all cores
@@ -14,24 +14,33 @@
 
 # Run script on Sumner: sbatch --partition=compute -q batch --gres=  rmscript.sh
 
-#set -x
+set -x
 
-#cd /projects/li-lab/ctimage/yang/results-ctimage-early-phase
+cd  /projects/li-lab/yang/results/results-1st-year
+rm -rf 07-02 &
+
+cd /projects/li-lab/ctimage/yang/workspace/covid19-ctimage
+rm -rf data results &
+
+cd /projects/li-lab/yang/prev-workspace
+
+rm -rf long_read nanocompa nanocompa_eval nanopolish_test testremote tmp &
+
+wait
+
+echo "RM done"
+
+
+
+
 #
-##rm -rf 08-* 09-* 10-* 11-*
-##rm -rf 07-2*
-##rm -rf 07-15 07-16 07-18 07-19
+#source /home/liuya/.bash_profile
 #
 #
-#rm -rf 07-22  09-22  10-28
-
-source /home/liuya/.bash_profile
-
-
-conda activate nanoai
-
-conda env list
-
-conda deactivate
-
-conda env list
+#conda activate nanoai
+#
+#conda env list
+#
+#conda deactivate
+#
+#conda env list

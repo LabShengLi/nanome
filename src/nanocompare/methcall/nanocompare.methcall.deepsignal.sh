@@ -14,25 +14,22 @@
 # Need to populate the parameters into this script
 # Step 1: Tombo resquiglling; Step 2: Deepsignal call_mods
 ################################################################################
-#cd "$(dirname "$0")"
 
 set -e
 set +x
-#source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
-#source /home/liuya/.bash_profile
 source ../../utils.common.sh
 
 set -x
 
-#processors=8
-
 job_index=$((SLURM_ARRAY_TASK_ID))
 
 jobkBasecallOutputDir=${basecallOutputDir}/${job_index}
-echo jobkBasecallOutputDir=${jobkBasecallOutputDir}
 
 ## Modify directory for processed files after basecalling:
-processedFast5DIR=${jobkBasecallOutputDir}/workspace/pass/0
+#processedFast5DIR=${jobkBasecallOutputDir}/workspace/pass/0
+## Resquiggle results, firstly copy from basecall, then do resquiggling
+jobkResquiggleOutputDir=${resquiggleDir}/${job_index}
+processedFast5DIR=${jobkResquiggleOutputDir}/workspace
 
 set -u
 echo "##################"
@@ -58,19 +55,11 @@ set +x
 conda activate nanoai
 set -x
 
-if [ "${run_resquiggling}" = true ] ; then
-	## Re-squiggle the data:
-	time tombo resquiggle $processedFast5DIR $refGenome --processes $processors --corrected-group $correctedGroup \
-			--basecall-group Basecall_1D_000 --overwrite #--quiet
-
-	echo "###   Re-squiggling DONE"
-fi
-
 ## Call methylation from processed fast5 files:
 #date
-time deepsignal call_mods --input_path $processedFast5DIR --model_path $deepsignalModel \
-		--result_file $methCallsDir/$analysisPrefix.batch_${job_index}.CpG.deepsignal.call_mods.tsv \
-		--reference_path $refGenome --corrected_group $correctedGroup --nproc $processors --is_gpu $isGPU
+time deepsignal call_mods --input_path ${processedFast5DIR} --model_path ${deepsignalModel} \
+		--result_file ${methCallsDir}/${analysisPrefix}.batch_${job_index}.CpG.deepsignal.call_mods.tsv \
+		--reference_path ${refGenome} --corrected_group ${correctedGroup} --nproc ${processors} --is_gpu ${isGPU}
 
 echo "###   DeepSignal methylation calling DONE"
 
