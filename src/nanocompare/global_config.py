@@ -75,6 +75,15 @@ def ensure_dir(dir_name):
 ensure_dir(pic_base_dir)
 ensure_dir(log_base_dir)
 
+formatter_log_results = logging.Formatter('%(asctime)s - [%(filename)s:%(lineno)d] - %(levelname)s: %(message)s')  # datefmt='%Y-%m-%d %H:%M:%S'
+
+
+def add_logging_file(fn):
+    file_handler = logging.FileHandler(fn)
+    file_handler.setFormatter(formatter_log_results)
+    logger.addHandler(file_handler)
+    file_handler.setLevel(logging.DEBUG)
+
 
 # Must be after log_base_dir var defined
 def init_logging():
@@ -83,8 +92,6 @@ def init_logging():
     Sample: /Users/liuya/results/log/log-11-30.txt
     :return:
     """
-    formatter_log_results = logging.Formatter('%(asctime)s - [%(filename)s:%(lineno)d] - %(levelname)s: %(message)s')  # datefmt='%Y-%m-%d %H:%M:%S'
-
     # 使用StreamHandler输出到屏幕
     console_handler = logging.StreamHandler()
     console_handler.setLevel(init_log_level_prj)

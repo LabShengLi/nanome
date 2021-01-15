@@ -33,7 +33,7 @@ inputDataDir=/fastscratch/liuya/nanocompare/Nanopore-reads/HL60-Nanopore_GT18-07
 # ToolList  -   a list of Nanopore tools prepared to run
 #ToolList=(Tombo)
 
-ToolList=(Guppy)
+ToolList=(DeepMod)
 
 
 ### Which step is going to run, true or false, if 'true' means running this step

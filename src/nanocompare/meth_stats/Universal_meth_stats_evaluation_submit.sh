@@ -1,4 +1,15 @@
 #!/bin/bash
 
+prjBaseDir=/projects/li-lab/yang/workspace/nano-compare
 
-Universal_meth_stats_evaluation_submit.py NanoComarePerformance_paper.tsv
+pythonFile=${prjBaseDir}/src/nanocompare/meth_stats/Universal_meth_stats_evaluation_submit.py
+
+
+# input file
+inputTsvFile=${prjBaseDir}/src/nanocompare/meth_stats/NanoComarePerformance_paper.tsv
+
+
+#Universal_meth_stats_evaluation_submit.py NanoComarePerformance_paper.tsv
+
+
+PYTHONPATH=${prjBaseDir}/src python ${pythonFile} ${inputTsvFile}

@@ -10,12 +10,7 @@ All usedful functions are located in nanocompare.meth_stats.meth_stats_common
 """
 import argparse
 
-from nanocompare.global_config import *
 from nanocompare.meth_stats.meth_stats_common import *
-
-
-# nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
-# sys.path.append(nanocompare_prj)
 
 
 def scatter_plot_cov():
@@ -199,21 +194,25 @@ if __name__ == '__main__':
     args = parse_arguments()
     logger.debug(args)
 
-    RunPrefix = args.runid  # "K562_WGBS_rep_ENCFF721JMB"
+    RunPrefix = args.runid  # "K562_WGBS_Joined"
     # tool coverage cutoff 4
     minToolCovCutt = args.toolcov_cutoff
 
-    # bgtruth coverage cutoff 10
+    # bgtruth coverage cutoff 5
     bgtruthCutt = args.bgtruthcov_cutoff
 
     # load into program format 0-base or 1-base
     baseFormat = args.baseFormat
 
+    # output csv seperator: , or tab
     sep = args.sep
 
     out_dir = os.path.join(args.o, RunPrefix)
     os.makedirs(out_dir, exist_ok=True)
     logger.info(f'Output to dir:{out_dir}')
+
+    # Add logging files also to result output dir
+    add_logging_file(os.path.join(out_dir, 'run-results.log'))
 
     callfn_dict = defaultdict()  # callname -> filename
     callresult_dict = defaultdict()
@@ -253,18 +252,14 @@ if __name__ == '__main__':
     logger.info(f"Reporting {len(coveredCpGs)} CpGs are covered by all tools and bgtruth")
 
     logger.info('Output data of coverage and meth-freq on joined CpG sites for correlation analysis')
-    outfn = os.path.join(out_dir, f"Meth_corr_plot_data-{RunPrefix}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.csv")
+    outfn = os.path.join(out_dir, f"Meth_corr_plot_data-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv")
 
     outfile = open(outfn, 'w')
-
-    # outfile.write("chr\tstart\tend\tBSseq_freq\tBSseq_cov\tstrand")
 
     header_list = ['chr', 'start', 'end', 'BGTruth_freq', 'BGTruth_cov', 'strand']
 
     for name in callname_list:
         header_list.extend([f'{name}_freq', f'{name}_cov'])
-        # outfile.write(f'{sep}'.join(f'{sep}{name}_freq', f'{name}_cov'))
-        # outfile.write(f"\t{name}_freq\t{name}_cov")
     outfile.write(sep.join(header_list))
     outfile.write("\n")
 
@@ -284,7 +279,7 @@ if __name__ == '__main__':
 
     summary_cpgs_joined_results_table()
 
-    logger.info("Methylation correlation plotting data generation program finished.")
+    logger.info("### Methylation correlation plotting data generation program finished. DONE")
 
     sys.exit(0)
 

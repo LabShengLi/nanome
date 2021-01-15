@@ -1,10 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=Univer.MethStat
-#SBATCH --partition=compute
+##SBATCH --partition=compute
+#SBATCH -p gpu
+#SBATCH --gres=gpu:1             # number of gpus per node
+#SBATCH -q inference
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 4 # number of cores
-#SBATCH --mem 280g # memory pool for all cores
-#SBATCH --time=1-23:00:00 # time (D-HH:MM:SS)
+#SBATCH --mem 180g # memory pool for all cores
+#SBATCH --time=06:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 

@@ -4,37 +4,28 @@ Common functions used by Methylation_correlation_plotting.py and Universal_meth_
 Such as import_DeepSignal, import_BGTruth, etc.
 """
 
+import csv
+import gzip
+import itertools
 import pickle
-import sys
+import re
 from collections import defaultdict
+from inspect import signature
 
+import numpy as np
+import pandas as pd
 import pysam
+from Bio import SeqIO
+from pybedtools import BedTool
+from scipy.stats import pearsonr
+from sklearn.metrics import roc_curve, precision_recall_curve, auc, confusion_matrix, average_precision_score
 from tqdm import tqdm
-
-nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
-sys.path.append(nanocompare_prj)
-
-from nanocompare.global_settings import nanocompare_basedir
 
 from nanocompare.global_config import *
 
-import re
-import pandas as pd
-import csv
-from sklearn.metrics import roc_curve, precision_recall_curve, auc, confusion_matrix, average_precision_score
-from inspect import signature
 
-import matplotlib.pyplot as plt
-import os
-import itertools
-import numpy as np
-from scipy.stats import pearsonr
-
-from pybedtools import BedTool
-
-from Bio import SeqIO
-
-import gzip
+# nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
+# sys.path.append(nanocompare_prj)
 
 
 def report2dict(cr):
@@ -761,14 +752,23 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
             logger.error(f" ####Tombo parse error at row={row}, exception={e}")
             continue
 
-
         # TODO: check how to treate tombo prediction value
-        if abs(methCall) > cutoff:
+
+        if methCall < -1.5:
             meth_indicator = 1
             meth_cnt += 1
-        else:
+        elif methCall > 2.5:
             meth_indicator = 0
             unmeth_cnt += 1
+        else:
+            continue
+
+        # if abs(methCall) > cutoff:
+        #     meth_indicator = 1
+        #     meth_cnt += 1
+        # else:
+        #     meth_indicator = 0
+        #     unmeth_cnt += 1
 
         cpgDict[key].append(meth_indicator)
         row_count += 1
@@ -3790,10 +3790,8 @@ def import_bgtruth(fn, encode, cov=10, baseFormat=0, includeCov=True):
     :return:
     """
 
-    # logger.debug(f"Start load bgTruth using encode={encode}")
-
     if encode == "encode":
-        bgTruth = importGroundTruth_BedMethyl_from_Encode(fn, covCutt=cov, baseCount=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/K562/ENCSR765JPC_WGBS_hg38/ENCFF721JMB.bed", chrFilter="chr20")
+        bgTruth = importGroundTruth_BedMethyl_from_Encode(fn, covCutt=cov, baseCount=baseFormat)
     elif encode == "oxBS_sudo":
         bgTruth = importGroundTruth_oxBS(fn, covCutt=cov, baseCount=baseFormat)
     elif encode == "bed":  # like K562 bg-truth

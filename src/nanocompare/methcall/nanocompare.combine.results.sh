@@ -3,8 +3,8 @@
 #SBATCH --partition=compute
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 8 # number of cores
-#SBATCH --mem=200g # memory pool for all cores
-#SBATCH --time=13:00:00 # time (D-HH:MM:SS)
+#SBATCH --mem=150g # memory pool for all cores
+#SBATCH --time=06:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
@@ -59,7 +59,7 @@ if [ "${Tool}" = "Tombo" ] ; then
 	echo "### Tombo combining batches results finished. ###"
 
 	# we need do filter out non-CG patterns also, now using MPI version
-	sbatch --wait --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh tombo-add-seq -i ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv --mpi --processors 60 -o ${methCallsDir}
+	sbatch --nodes=1 --ntasks=32 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh tombo-add-seq -i ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv --mpi --processors 32 -o ${methCallsDir}
 
 	# wait the filter task finished, then start clean, so block here
 #	srun --dependency=afterok:${filter_taskid} echo "Wait Filter-out NON-CG task finished."
@@ -80,11 +80,10 @@ elif [ "${Tool}" = "DeepSignal" ] ; then
 elif [ "${Tool}" = "DeepMod" ] ; then
 
 	## Extract read-level DeepMod results, save to -o <read-level results> -o2 <base-level results>
-	sbatch --nodes=1 --ntasks=50 --wait --job-name=extr.rldepmd.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ../meth_stats/meth_stats_tool_mpi.sh deepmod-read-level --processors 50 --basecallDir ${basecallOutputDir} --methcallDir ${methCallsDir} -o ${methCallsDir}/${dsname}.deepmod_read_level.read_level.combine.tsv --o2 ${methCallsDir}/${dsname}.deepmod_read_level.base_level.combined.C.bed
+	sbatch --nodes=1 --ntasks=50 --job-name=extr.rldepmd.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ../meth_stats/meth_stats_tool_mpi.sh deepmod-read-level --processors 50 --basecallDir ${basecallOutputDir} --methcallDir ${methCallsDir} -o ${methCallsDir}/${dsname}.deepmod_read_level.read_level.combine.tsv --o2 ${methCallsDir}/${dsname}.deepmod_read_level.base_level.combined.C.bed
 
 	## Step:  join results from different batches, based on ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md
 	## We need firstly use DeepMod script to merge different runs of modification detection
-	cd ${methCallsDir}
 
 	# Step: Detect modifications from FAST5 files, ref https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#1-how-to-detect-modifications-from-fast5-files
 	# Usage: python {} pred_folder-of-DeepMod Base-of-interest unique-fileid-in-sum-file [chr-list]
@@ -99,18 +98,19 @@ elif [ "${Tool}" = "DeepMod" ] ; then
 	#	python /projects/li-lab/yang/tools/DeepMod/tools/generate_motif_pos.py ${refGenome} /projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C C CG 0
 
 	set +x
-#	source /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/methcall/conda_setup.sh
 	conda activate nanoai
 	set -x
 	## Step: Generated clustered results to consider cluster effect, ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#generated-clustered-results
 	## Need nanoai env, using tf 1.8.0, or will be some compilation error
 	## $1-sys.argv[1]+'.%s.C.bed', (save to sys.argv[1]+'_clusterCpG.%s.C.bed'),
 	## $2-gmotfolder ('%s/motif_%s_C.bed')   $3-not used
-	time python /projects/li-lab/yang/tools/DeepMod/tools/hm_cluster_predict.py ${methCallsDir}/${dsname}.deepmod /projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C ${clusterDeepModModel}
+	time python ${DeepModDir}/DeepMod_tools/hm_cluster_predict.py ${methCallsDir}/${dsname}.deepmod /projects/li-lab/yang/workspace/nano-compare/data/genome_motif/C ${clusterDeepModModel}
 
 	set +x
 	conda deactivate
 	set -x
+
+	cd ${methCallsDir}
 
 	> ${dsname}.deepmod.C.combined.tsv
 
@@ -121,22 +121,20 @@ elif [ "${Tool}" = "DeepMod" ] ; then
 
 	wc -l ${dsname}.deepmod.C.combined.tsv
 
-	> ${dsname}.deepmod.C_clusterCpG.combine.tsv
+	> ${dsname}.deepmod.C_clusterCpG.combined.tsv
 
 	for f in $(ls -1 ${dsname}.deepmod_clusterCpG.chr*.C.bed)
 	do
-	  cat $f >> ${dsname}.deepmod.C_clusterCpG.combine.tsv
+	  cat $f >> ${dsname}.deepmod.C_clusterCpG.combined.tsv
 	done
 
-	wc -l ${dsname}.deepmod.C_clusterCpG.combine.tsv
+	wc -l ${dsname}.deepmod.C_clusterCpG.combined.tsv
 
 	echo "### DeepMod combine all batches results. ###"
 
-#	bash /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_array_job_pipe.sh deepmod-add-seq 100 ${methCallsDir}/${dsname}.deepmod.C.combined.tsv ${methCallsDir}
-
 	# we need do filter out non-CG patterns also, now using MPI version
 	# wait the filter task finished, then start clean, so block here
-	sbatch --wait --nodes=1 --ntasks=60 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ../meth_stats/meth_stats_tool_mpi.sh deepmod-add-seq -i ${methCallsDir}/${dsname}.deepmod.C.combined.tsv --mpi --processors 60 -o ${methCallsDir}
+	sbatch --nodes=1 --ntasks=32 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ${NanoCompareDir}/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh deepmod-add-seq -i ${methCallsDir}/${dsname}.deepmod.C.combined.tsv --mpi --processors 32 -o ${methCallsDir}
 
 	filter_taskid=${filter_taskid}:$(echo ${filter_ret} |grep -Eo '[0-9]+$')
 	echo "### DeepMod combine results DONE. ###"

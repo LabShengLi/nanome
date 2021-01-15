@@ -17,39 +17,7 @@ import numpy as np
 import pandas as pd
 
 from nanocompare.global_config import logger, pic_base_dir
-# from nanocompare.load_data import load_all_perf_data
-from nanocompare.global_settings import nanocompare_basedir, locations_category2, locations_singleton2, ret_report_columns, runPrefixDict, perf_col_raw_to_standard, cpg_name_map_raw_to_standard
-from nanocompare.legacy import performance_plots as pp
-
-
-def collect_box_plot_all_data():
-    """
-    Collect all box plot data from original exp report tsv files from folder 'reports_dump'
-    :return:
-    """
-    folder = "reports_dump"
-    df = pp.load_data(f"{nanocompare_basedir}/reports/{folder}")
-    logger.info(f"df={df}")
-    return df
-
-
-def save_box_plot_all_data(df=None):
-    """
-    Save box plot all data into files pkl and xlsx
-    :param df:
-    :return:
-    """
-    if df is None:
-        df = collect_box_plot_all_data()
-
-    outfn = os.path.join(pic_base_dir, 'box_plots_all_data.joinedReports.pkl')
-    df.to_pickle(outfn)
-    logger.info(f"save to {outfn}")
-
-    outfn = os.path.join(pic_base_dir, 'box_plots_all_data.joinedReports.xlsx')
-    df.to_excel(outfn)
-    logger.info(f"save to {outfn}")
-    return df
+from nanocompare.global_settings import locations_category2, locations_singleton2, ret_report_columns, runPrefixDict, perf_col_raw_to_standard, cpg_name_map_raw_to_standard
 
 
 def collect_data_selected_locations(path, extension="tsv", prefix="APL_BSseq_cut10/APL_Bsseq_cut10.", sel_locations=["GW", "singletons", "nonsingletons", "cpgIslandExt", "promoters_500bp"]):
@@ -112,82 +80,6 @@ def collect_data_selected_locations(path, extension="tsv", prefix="APL_BSseq_cut
     # logger.debug(cobmined_data.info())
     logger.debug(cobmined_data)
     return cobmined_data
-
-
-def get_data_all():
-    """
-    Get all performance row data to DF
-    :return:
-    """
-    listOfSelected = ["GW", "cpgIslandExt", "promoters_500bp", "exonFeature", "intergenic", "intronFeature"]
-    listOfSelected = listOfSelected + ["singletons", "nonsingletons", "discordant", "concordant"]
-
-    # ["K562_WGBS_joined", "APL_BSseq_cut10", "APL_Bsseq", "K562_RRBS_joined", "HL60_RRBS_joined", "APL_oxBSseq_cut5"]
-
-    dsname_list = ["K562_WGBS_joined", "K562_RRBS_joined", "APL_BSseq_cut10", "APL_Bsseq", "APL_oxBSseq_cut5", "HL60_RRBS_joined", 'HL60_AML_Bsseq_cut5', 'HL60_AML_oxBsseq_cut5']
-
-    dsname_list = ["K562_WGBS_joined", "APL_BSseq_cut10", 'HL60_AML_Bsseq_cut5', 'NA19240_RRBS_joined']
-
-    pdlist = []
-    for prefix in dsname_list:
-        data = collect_data_selected_locations(f"{nanocompare_basedir}/reports/{prefix}", sel_locations=listOfSelected)
-        data['Dataset'] = prefix
-        pdlist.append(data)
-    alldata = pd.concat(pdlist)
-    return alldata
-
-
-#
-# def add_dataset_report_to_all(indir='/projects/liuya/results/pkl/nanocompare/NA19240_RRBS_joined', only_test=True):
-#     """
-#     add a new results to original datasets, used for NA19240 new coming results
-#     :param indir:
-#     :param only_test: True if not save, False will save results to pkl
-#     :return:
-#     """
-#     listOfSelected = ["GW", "cpgIslandExt", "promoters_500bp", "exonFeature", "intergenic"]
-#     listOfSelected = listOfSelected + ["singletons", "nonsingletons", "discordant", "concordant"]
-#
-#     dstagname = os.path.basename(indir)
-#
-#     dsreport = collect_data_selected_locations(indir, sel_locations=listOfSelected)
-#     dsreport['Dataset'] = dstagname
-#     logger.info(f"dsreport={dsreport}")
-#
-#     if not only_test:
-#         outfn = os.path.join(pic_base_dir, f"{dstagname}_report.xlsx")
-#         dsreport.to_excel(outfn)
-#
-#     dsall = load_all_perf_data()
-#     # logger.debug(f"dsall={dsall}")
-#
-#     d2 = pd.concat([dsall, dsreport], ignore_index=True)
-#     logger.info(f"d2={d2}")
-#
-#     if not only_test:
-#         save_alldata(d2)
-
-
-def save_alldata(dfall=None):
-    """
-    Save all performance row data to DF
-    :param dfall:
-    :return:
-    """
-    if dfall is None:
-        dfall = get_data_all()
-
-    logger.info(f"dfall={dfall}")
-
-    outfn = os.path.join(pic_base_dir, "Nanocompare_performance_alldata.xlsx")
-    dfall.to_excel(outfn)
-    logger.info(f"save to {outfn}")
-
-    outfn = os.path.join(pic_base_dir, "Nanocompare_performance_alldata.pkl")
-    dfall.to_pickle(outfn)
-    logger.info(f"save to {outfn}")
-
-    return dfall
 
 
 def statsFileParser(infileName):
