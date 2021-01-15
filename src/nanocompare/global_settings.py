@@ -14,9 +14,6 @@ from nanocompare.global_config import data_base_dir
 
 importlib.reload(pp)
 
-# Project base dir for Nanocompare
-nanocompare_basedir = "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare"
-
 # Tool lists and abbreviations
 tools = ['DeepSignal_calls', 'Tombo_calls', 'DeepMod_calls', 'Nanopolish_calls']
 tools_abbr = ['DeepSignal', 'Tombo', 'DeepMod', 'Nanopolish']

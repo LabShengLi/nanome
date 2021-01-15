@@ -23,12 +23,12 @@ echo "RunPrefix: $RunPrefix"
 
 set -x
 
-prj_dir=/projects/li-lab/yang/workspace/nano-compare
-baseDir=${prj_dir}/src/nanocompare/meth_stats
-pythonFn=Methylation_correlation_plotting.py
+prjBaseDir=/projects/li-lab/yang/workspace/nano-compare
 
-python ${baseDir}/${pythonFn} --calls DeepSignal:$DeepSignal_calls \
+pythonFn=${prjBaseDir}/src/nanocompare/meth_stats/Methylation_correlation_plotting.py
+
+PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:$DeepSignal_calls \
 	Tombo:$Tombo_calls Nanopolish:$Nanopolish_calls DeepMod:$DeepMod_calls \
-	Megalodon:${Megalodon_calls} --bgtruth $parser:$bgTruth --runid $RunPrefix
+	Megalodon:${Megalodon_calls} --bgtruth $parser:$bgTruth --runid MethCorr-$RunPrefix
 
 

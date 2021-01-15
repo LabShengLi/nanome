@@ -9,30 +9,22 @@
 #SBATCH -e log/%x.%j.err # STDERR
 
 set -x
-
-
 echo "DeepSignal_calls: $DeepSignal_calls"
 echo "Tombo_calls: $Tombo_calls"
 echo "Nanopolish_calls: $Nanopolish_calls"
 echo "DeepMod_calls: $DeepMod_calls"
+echo "Megalodon_calls: ${Megalodon_calls}"
 echo "bgTruth: $bgTruth"
 echo "RunPrefix: $RunPrefix"
 echo "parser: $parser"
 echo "minCov: $minCov"
 echo "dsname:" $dsname
 
-#mkdir -p $(dirname $RunPrefix)
+prjBaseDir=/projects/li-lab/yang/workspace/nano-compare
 
-baseDir=/projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats
-pythonFn=Universal_meth_stats_evaluation.py
+pythonFn=${prjBaseDir}/src/nanocompare/meth_stats/Universal_meth_stats_evaluation.py
 
-prjBaseDir=/projects/li-lab/yang/workspace/nano-compare/src
-
-#PYTHONPATH=${prjBaseDir} python ${baseDir}/${pythonFn} $DeepSignal_calls $Tombo_calls $Nanopolish_calls \
-#			$DeepMod_calls $bgTruth $RunPrefix $parser $minCov $dsname
-
-
-PYTHONPATH=${prjBaseDir} python ${baseDir}/${pythonFn} --calls DeepSignal:$DeepSignal_calls \
+PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:$DeepSignal_calls \
 	Tombo:$Tombo_calls Nanopolish:$Nanopolish_calls DeepMod:$DeepMod_calls \
-	--bgtruth $parser:$bgTruth --runid $RunPrefix --dsname $dsname \
-	--min-cov $minCov --report-joined
+	Megalodon:${Megalodon_calls} --bgtruth $parser:$bgTruth --runid MethPerf-$RunPrefix \
+	--dsname $dsname --min-cov $minCov --report-joined

@@ -25,12 +25,9 @@ correctedGroup="RawGenomeCorrected_000"
 refGenome="/projects/li-lab/reference/hg38/hg38.fasta"
 chromSizesFile="${NanoCompareDir}/data/genome-annotation/hg38.chrom.sizes"
 
-#deepsignalModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/model.CpG.R9.4_1D.human_hx1.bn17.sn360/bn_17.sn_360.epoch_7.ckpt"
 deepsignalModel="${NanoCompareDir}/data/dl-model/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+/bn_17.sn_360.epoch_9.ckpt"
 
-#deepModModel="/projects/li-lab/yang/workspace/nano-compare/data/dl-model/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0"
 deepModModel="${DeepModDir}/train_deepmod/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0"
-
 clusterDeepModModel="${DeepModDir}/train_deepmod/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25"
 
 

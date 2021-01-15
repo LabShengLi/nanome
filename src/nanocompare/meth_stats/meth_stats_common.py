@@ -670,7 +670,7 @@ def importPredictions_DeepSignal3(infileName, chr_col=0, start_col=1, meth_col=7
 
 
 def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=4, baseFormat=0, cutoff=2.5, output_first=False):
-    '''
+    """
     We treate input as 0-based format.
 
     Return dict of key='chr1\t123\t123\t+', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
@@ -713,9 +713,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
 
     ============
 
-    '''
-
-    # logger.debug(f"importPredictions_Tombo infileName={infileName}")
+    """
     infile = open(infileName, "r")
     cpgDict = defaultdict(list)
     row_count = 0
@@ -732,35 +730,25 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
         if baseFormat == 1:
             try:
                 start = int(tmp[start_col]) + 1
-                end = start
                 strand = tmp[strand_col]
                 if strand == '-':
                     start = start + 1
-                    end = start
-                elif strand != '+':
-                    raise Exception(f'strand = {strand} is not accept.')
             except:
                 logger.error(f" ####Tombo parse error at row={row}")
                 continue
         elif baseFormat == 0:
             try:
                 start = int(tmp[start_col])
-                end = start + 1
                 strand = tmp[strand_col]
 
                 if strand == '-':
                     start = start + 1
-                    end = start + 1
-                elif strand != '+':
-                    raise Exception(f'strand = {strand} is not accept.')
-            except:
-                logger.error(f" ####Tombo parse error at row={row}")
+            except Exception as e:
+                logger.error(f" ####Tombo parse error at row={row}, exception={e}")
                 continue
         else:
-            logger.error("###\timportPredictions_Tombo InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
+            logger.error(f"###\timportPredictions_Tombo InputValueError: baseCount value set to '{baseFormat}'. It should be equal to 0 or 1")
             sys.exit(-1)
-        #         key = (tmp[chr_col], start)
-        # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
 
         if strand not in ['-', '+']:
             raise Exception(f'The file [{infileName}] can not recognized strand-info from row={row}, please check it')
@@ -769,10 +757,12 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
 
         try:
             methCall = float(tmp[meth_col])
-        except:
-            logger.error(f" ####Tombo parse error at row={row}")
+        except Exception as e:
+            logger.error(f" ####Tombo parse error at row={row}, exception={e}")
             continue
 
+
+        # TODO: check how to treate tombo prediction value
         if abs(methCall) > cutoff:
             meth_indicator = 1
             meth_cnt += 1
@@ -780,8 +770,6 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
             meth_indicator = 0
             unmeth_cnt += 1
 
-        # if key not in cpgDict:
-        #     cpgDict[key] = []
         cpgDict[key].append(meth_indicator)
         row_count += 1
 

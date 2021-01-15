@@ -34,10 +34,10 @@ inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K5
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
 # ToolList  -   a list of Nanopore tools prepared to run
-#ToolList=(Tombo)
+ToolList=(Guppy)
 
 #ToolList=(DeepSignal Tombo DeepMod Nanopolish)
-ToolList=(DeepSignal Tombo DeepMod Nanopolish Guppy Megalondon)
+#ToolList=(DeepSignal Tombo DeepMod Nanopolish Guppy Megalondon)
 
 ### Which step is going to run, true or false, if 'true' means running this step
 

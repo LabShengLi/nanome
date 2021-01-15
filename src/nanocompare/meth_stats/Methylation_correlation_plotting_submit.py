@@ -7,12 +7,6 @@ python Methylation_correlation_plotting_submit.py /projects/liuya/workspace/tcga
 
 Methylation_correlation_plotting_submit.py NanoComareCorrelation_paper.tsv
 """
-
-"""
-modify tombo results in tsv as follows:
-
-/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_Tombo_runs/NA19240_perChr/bk/NA19240_allChr.bed.CpGs.bed
-"""
 # example run command: python Methylation_correlation_plotting_submit.py <config file>
 # python /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/Methylation_correlation_plotting_submit.py NanoComareCorrelation_deprecated.tsv
 # python /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/Methylation_correlation_plotting_submit.py NanoComareCorrelation_paper.tsv
@@ -22,31 +16,21 @@ import os
 import subprocess
 from sys import argv
 
-# nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
-# sys.path.append(nanocompare_prj)
-from nanocompare.global_config import pic_base_dir
+from nanocompare.global_config import src_base_dir
+
+pyFile = os.path.join(src_base_dir, "nanocompare/meth_stats", "Methylation_correlation_plotting.sbatch")
 
 if __name__ == '__main__':
-    nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
-
-    baseDir = os.path.join(nanocompare_prj, "nanocompare/meth_stats")
-    scriptFn = "Methylation_correlation_plotting.sbatch"
 
     infile = open(argv[1], 'r')
     csvfile = csv.DictReader(infile, delimiter='\t')
     for row in csvfile:
         if row['status'] == "submit":
-            # print(f"row={row}\n")
-
-            outdir = os.path.join(pic_base_dir, row['RunPrefix'])
-            os.makedirs(outdir, exist_ok=True)
-            outlogdir = os.path.join(outdir, 'log')
+            outlogdir = os.path.join('.', 'log')
             os.makedirs(outlogdir, exist_ok=True)
 
-            command = f"""set -x; sbatch --output={outdir}/log/%x.%j.out --error={outdir}/log/%x.%j.err --export=DeepSignal_calls="{row['DeepSignal_calls']}",Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",DeepMod_calls="{row['DeepMod_calls']}",Megalodon_calls="{row['Megalodon_calls']}",bgTruth="{row['bgTruth']}",RunPrefix="{row['RunPrefix']}",parser="{row['parser']}" --job-name=meth-corr-{row['RunPrefix']} {baseDir}/{scriptFn}"""
+            command = f"""set -x; sbatch --output=log/%x.%j.out --error=log/%x.%j.err --export=DeepSignal_calls="{row['DeepSignal_calls']}",Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",DeepMod_calls="{row['DeepMod_calls']}",Megalodon_calls="{row['Megalodon_calls']}",bgTruth="{row['bgTruth']}",RunPrefix="{row['RunPrefix']}",parser="{row['parser']}" --job-name=meth-corr-{row['RunPrefix']} {pyFile}"""
 
-            # print(command)
-            # print(f"command=[{command}]\n")
             print(f"RunPrefix={row['RunPrefix']}")
 
             # output sbatch submit a job's results to STDOUT

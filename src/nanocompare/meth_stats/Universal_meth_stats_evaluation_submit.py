@@ -17,31 +17,25 @@ modify tombo results as
 # python /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/UniversalMethStatsEvaluation.standalone_03.submit.py /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/NanoComarePerformance_03.joined_files.tsv
 # python /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/UniversalMethStatsEvaluation.standalone_03.submit.py /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/NanoComarePerformance_03.joined_files.03.tsv
 
-import sys
-
-# nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
-# sys.path.append(nanocompare_prj)
-
 import csv
 import os
 import subprocess
 from sys import argv
 
-from nanocompare.global_config import src_base_dir, pic_base_dir
+from nanocompare.global_config import src_base_dir
+
+pyFile = os.path.join(src_base_dir, 'nanocompare', 'meth_stats', "Universal_meth_stats_evaluation.sbatch")
 
 if __name__ == '__main__':
-    baseDir = os.path.join(src_base_dir, 'nanocompare', 'meth_stats')
-    scriptFn = "Universal_meth_stats_evaluation.sbatch"
 
     infile = open(argv[1], 'r')
-    csvfile = csv.DictReader(infile, delimiter='\t')  # specify the delimiter here! I guess that by default it is space
+    csvfile = csv.DictReader(infile, delimiter='\t')
     for row in csvfile:
         if row['status'] == "submit":
-            outdir = os.path.join(pic_base_dir, row['RunPrefix'])
-            os.makedirs(outdir, exist_ok=True)
-            outlogdir = os.path.join(outdir, 'log')
-            os.makedirs(outlogdir, exist_ok=True)
+            logdir = os.path.join('.', 'log')
+            os.makedirs(logdir, exist_ok=True)
 
-            command = f"""set -x; sbatch --job-name=meth_perf_{row['RunPrefix']} --output={outdir}/log/%x.%j.out --error={outdir}/log/%x.%j.err --export=DeepSignal_calls="{row['DeepSignal_calls']}",Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",DeepMod_calls="{row['DeepMod_calls']}",bgTruth="{row['bgTruth']}",RunPrefix="{row['RunPrefix']}",parser="{row['parser']}",minCov="{row['minCov']}",dsname="{row['Dataset']}" {baseDir}/{scriptFn}"""
+            command = f"""set -x; sbatch --job-name=meth_perf_{row['RunPrefix']} --output=log/%x.%j.out --error=log/%x.%j.err --export=DeepSignal_calls="{row['DeepSignal_calls']}",Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",DeepMod_calls="{row['DeepMod_calls']}",bgTruth="{row['bgTruth']}",
+RunPrefix="{row['RunPrefix']}",parser="{row['parser']}",minCov="{row['minCov']}",dsname="{row['Dataset']}" {pyFile}"""
 
             print(row['RunPrefix'], subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8"))

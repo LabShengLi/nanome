@@ -1,10 +1,10 @@
 #!/bin/bash
 
-prj_dir=/projects/li-lab/yang/workspace/nano-compare
+prjBaseDir=/projects/li-lab/yang/workspace/nano-compare
 
-pythonFile=${prj_dir}/src/nanocompare/meth_stats/Methylation_correlation_plotting_submit.py
-inputTsvFile=/projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/NanoComareCorrelation_paper.tsv
+pythonFile=${prjBaseDir}/src/nanocompare/meth_stats/Methylation_correlation_plotting_submit.py
 
-mkdir -p log
+# input file
+inputTsvFile=${prjBaseDir}/src/nanocompare/meth_stats/NanoComareCorrelation_paper.tsv
 
-python ${pythonFile} ${inputTsvFile}
+PYTHONPATH=${prjBaseDir}/src python ${pythonFile} ${inputTsvFile}

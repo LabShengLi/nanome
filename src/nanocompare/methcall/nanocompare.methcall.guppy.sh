@@ -6,8 +6,8 @@
 #SBATCH -q inference
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 8 # number of cores
-#SBATCH --mem-per-cpu=50G # memory pool for all cores
-#SBATCH --time=02:00:00 # time
+#SBATCH --mem-per-cpu=100G # memory pool for all cores
+#SBATCH --time=06:00:00 # time
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 ##SBATCH --array=1-11
