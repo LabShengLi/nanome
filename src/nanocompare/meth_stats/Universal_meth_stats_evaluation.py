@@ -120,8 +120,12 @@ if __name__ == '__main__':
 
     post_process = True
     if post_process:
-        singletonsPostprocessing(bgTruth, singletonsFile, RunPrefix, outdir=out_dir)
-        nonSingletonsPostprocessing(bgTruth, nonsingletonsFile, RunPrefix, outdir=out_dir)
+        ret = singletonsPostprocessing(bgTruth, singletonsFile, RunPrefix, outdir=out_dir)
+        ret.update(nonSingletonsPostprocessing(bgTruth, nonsingletonsFile, RunPrefix, outdir=out_dir))
+        df = pd.DataFrame([ret], index=f'{RunPrefix}')
+        outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.csv')
+        df.to_csv(outfn)
+        logger.info(f'save to {outfn}')
 
     logger.info("\n\n############\n\n")
 

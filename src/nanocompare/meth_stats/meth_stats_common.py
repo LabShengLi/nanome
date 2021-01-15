@@ -22,10 +22,9 @@ from sklearn.metrics import roc_curve, precision_recall_curve, auc, confusion_ma
 from tqdm import tqdm
 
 from nanocompare.global_config import *
-
-
 # nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
 # sys.path.append(nanocompare_prj)
+from nanocompare.global_settings import targetedChrs
 
 
 def report2dict(cr):
@@ -115,8 +114,7 @@ def importPredictions_NanoXGBoost(infileName, chr_col=0, start_col=1, meth_col=4
     return cpgDict
 
 
-# not deprecated yet, even will Deprecated due to importPredictions_Nanopolish_2, which is based on Nanopolish code
-def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, log_lik_ratio_col=5, sequence_col=-1, num_motifs_col=-2, baseFormat=0, logLikehoodCutt=2.0, output_first=False):
+def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, log_lik_ratio_col=5, sequence_col=-1, num_motifs_col=-2, baseFormat=0, llr_cutoff=2.0, output_first=False):
     """
     We assume the input is 0-based for the start col, such as chr10 122 122
 
@@ -144,6 +142,8 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
     """
     cpgDict = defaultdict(list)
     count = 0
+    meth_cnt = 0
+    unmeth_cnt = 0
     infile = open(infileName, 'r')
 
     for row in infile:
@@ -153,11 +153,14 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                 logger.debug(list(enumerate(tmp)))
                 output_first = False
 
+            if tmp[chr_col] not in targetedChrs:
+                continue
+
             try:  # try to find if these columns are interpretable
                 start = int(tmp[start_col])
                 num_sites = int(tmp[num_motifs_col])
                 llr = float(tmp[log_lik_ratio_col])
-                if abs(llr) < logLikehoodCutt:
+                if abs(llr) < llr_cutoff:
                     continue
 
                 if llr > 0:
@@ -177,19 +180,19 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
 
             if num_sites == 1:  # we have singleton, i.e. only one CpG within the area
                 if baseFormat == 0:
-                    # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, start + 1, strand_info)
                     key = (tmp[chr_col], start, strand_info)
                 elif baseFormat == 1:
-                    # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start + 1, start + 1, strand_info)
                     key = (tmp[chr_col], start + 1, strand_info)
                 else:
                     logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
                     sys.exit(-1)
 
-                # if key not in cpgDict:
-                #     cpgDict[key] = []
                 cpgDict[key].append(meth_indicator)
                 count += 1
+                if meth_indicator == 1:
+                    meth_cnt += 1
+                else:
+                    unmeth_cnt += 1
             else:  # we deal with non-singleton
                 firstCpgLoc = int(tmp[start_col]) - 5
                 sequence = tmp[sequence_col]
@@ -201,23 +204,22 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                         raise Exception(f'The file [{infileName}] contains no strand-info, please check it')
 
                     if baseFormat == 0:
-                        # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], cpgStart, cpgStart + 1, strand_info)
                         key = (tmp[chr_col], cpgStart, strand_info)
                     elif baseFormat == 1:
-                        # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], cpgStart + 1, cpgStart + 1, strand_info)
                         key = (tmp[chr_col], cpgStart + 1, strand_info)
                     else:
                         logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
                         sys.exit(-1)
 
-                    # if key not in cpgDict:
-                    #     cpgDict[key] = []
                     cpgDict[key].append(meth_indicator)
                     count += 1
+                    if meth_indicator == 1:
+                        meth_cnt += 1
+                    else:
+                        unmeth_cnt += 1
 
     infile.close()
-
-    logger.info(f"###\timportPredictions_Nanopolish SUCCESS: {count:,} methylation calls mapped to {len(cpgDict):,} CpGs from {infileName} file with LLR-cutoff {logLikehoodCutt:.2f}")
+    logger.info(f"###\timportPredictions_Nanopolish SUCCESS: {count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file with LLR-cutoff={llr_cutoff:.2f}")
     return cpgDict
 
 
@@ -557,6 +559,10 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
 
     for row in infile:
         tmp = row.strip().split("\t")
+
+        if tmp[chr_col] not in targetedChrs:
+            continue
+
         if baseFormat == 1:
             start = int(tmp[start_col]) + 1
             end = start
@@ -660,7 +666,7 @@ def importPredictions_DeepSignal3(infileName, chr_col=0, start_col=1, meth_col=7
     return cpgDict
 
 
-def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=4, baseFormat=0, cutoff=2.5, output_first=False):
+def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=4, baseFormat=0, cutoff=[-1.5, 2.5], output_first=False):
     """
     We treate input as 0-based format.
 
@@ -714,6 +720,9 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     for row in infile:
         tmp = row.strip().split("\t")
 
+        if tmp[chr_col] not in targetedChrs:
+            continue
+
         if output_first:
             logger.debug(f'row = {list(enumerate(tmp))}')
             output_first = False
@@ -754,10 +763,10 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
 
         # TODO: check how to treate tombo prediction value
 
-        if methCall < -1.5:
+        if methCall < cutoff[0]:
             meth_indicator = 1
             meth_cnt += 1
-        elif methCall > 2.5:
+        elif methCall > cutoff[1]:
             meth_indicator = 0
             unmeth_cnt += 1
         else:
@@ -775,7 +784,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
 
     infile.close()
 
-    logger.info(f"###\timportPredictions_Tombo SUCCESS: {row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with meth-cutoff={cutoff:.2f} from {infileName} file")
+    logger.info(f"###\timportPredictions_Tombo SUCCESS: {row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with meth-cutoff={cutoff} from {infileName} file")
     return cpgDict
 
 
@@ -997,6 +1006,10 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
 
     for row in infile:
         tmp = row.strip().split(sep)
+
+        if tmp[chr_col] not in targetedChrs:
+            continue
+
         if output_first:
             logger.debug(f'row = {list(enumerate(tmp))}')
             output_first = False
@@ -1041,6 +1054,10 @@ def importPredictions_DeepMod_Read_Level(infileName, chr_col=0, start_col=1, str
 
     for row in infile:
         tmp = row.strip().split(sep)
+
+        if tmp[chr_col] not in targetedChrs:
+            continue
+
         if output_first:
             logger.debug(f'row = {list(enumerate(tmp))}')
             output_first = False
@@ -1153,6 +1170,7 @@ def importPredictions_DeepMod3(infileName, chr_col=0, start_col=1, meth_percenta
     return cpgDict
 
 
+# Need to modify and check before use
 def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4, clustered_meth_freq_col=-1, baseFormat=0):
     '''
     Note: results of cluster is differ from other tools like:
@@ -1280,6 +1298,9 @@ def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, s
 
     for row in infile:
         tmp = row.strip().split(sep)
+
+        if tmp[chr_col] not in targetedChrs:
+            continue
 
         if output_first:
             logger.debug(f'row = {list(enumerate(tmp))}')
@@ -1564,6 +1585,10 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
 
     for row in infile:
         tmp = row.decode('ascii').strip().split("\t")
+
+        if tmp[chr_col] not in targetedChrs:
+            continue
+
         if baseFormat == 1:
             try:
                 start = int(tmp[start_col]) + 1
@@ -3068,14 +3093,14 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
     outfile_fullyMixed = open(fn_fullyMixed, "w")
     outfile_other = open(fn_other, "w")
 
-    meth_cnt = defaultdict(int)
-    unmeth_cnt = defaultdict(int)
+    meth_cnt_dict = defaultdict(int)
+    unmeth_cnt_dict = defaultdict(int)
     for region in regions_refMeth_dict:
-        cntMeth = 0
-        cntUnmeth = 0
-        fullMeth = 0
-        nullMeth = 0
-        mixMeth = 0
+        cntMeth = 0  # count how many methylated sites
+        cntUnmeth = 0  # count how many unmeth
+        fullMeth = 0  # indicate there is a fully meth case site in the region
+        nullMeth = 0  # indicate there is a fully unmeth case site in the region
+        mixMeth = 0  # indicate there is mixed ( 0.2 0.3) case site in the region
         for meth in regions_refMeth_dict[region]:
             if meth >= 1 - 1e-5:
                 fullMeth = 1
@@ -3092,13 +3117,13 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
         if (fullMeth + nullMeth) == 1 and mixMeth == 0:
             #             print("Concordant")
             outfile_concordant.write(region_txt)
-            meth_cnt['Concordant'] += cntMeth
-            unmeth_cnt['Concordant'] += cntUnmeth
+            meth_cnt_dict['Concordant'] += cntMeth
+            unmeth_cnt_dict['Concordant'] += cntUnmeth
         elif (fullMeth + nullMeth) == 2 and mixMeth == 0:
             #             print("Discordant")
             outfile_discordant.write(region_txt)
-            meth_cnt['Discordant'] += cntMeth
-            unmeth_cnt['Discordant'] += cntUnmeth
+            meth_cnt_dict['Discordant'] += cntMeth
+            unmeth_cnt_dict['Discordant'] += cntUnmeth
         elif (fullMeth + nullMeth) == 0 and mixMeth == 1:
             #             print("mixed")
             outfile_fullyMixed.write(region_txt)
@@ -3111,7 +3136,10 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
     outfile_other.close()
     logger.info(f'save to {[fn_concordant, fn_discordant, fn_fullyMixed, fn_other]}')
 
-    logger.debug(f'meth_cnt={meth_cnt}, unmeth_cnt={unmeth_cnt}')
+    logger.debug(f'meth_cnt={meth_cnt_dict}, unmeth_cnt={unmeth_cnt_dict}')
+
+    ret = {'Concordant.5mC': meth_cnt_dict['Concordant'], 'Concordant.5C': unmeth_cnt_dict['Concordant'], 'Discordant.5mC': meth_cnt_dict['Discordant'], 'Discordant.5C': unmeth_cnt_dict['Discordant'], }
+    return ret
 
 
 def nonSingletonsPostprocessing2(referenceMeth, regionsBedFile, dataset, outdir=None, cutoff_meth=1.0):
@@ -3295,6 +3323,9 @@ def singletonsPostprocessing(referenceMeth, singletonsBedFile, runPrefix, outdir
 
     logger.debug(f'save to {absolute_fn}')
     logger.debug(f'save to {mixed_fn}')
+
+    ret = {'Singleton.5mc': absl_msite, 'Singleton.5C': absl_csite}
+    return ret
 
 
 #     return regions_refMeth
@@ -3756,6 +3787,19 @@ def get_high_cov_call1_low_cov_call2_df(call1, call2, call1_name='nanopolish', c
     return df
 
 
+def filter_non_human_chrs(cpgDict):
+    """
+    Filter out non-human chrs, only keep chr1-22 chrX chrY
+    :param cpgDict:
+    :return:
+    """
+    retDict = defaultdict(list)
+    for key in cpgDict:
+        if key[0] in targetedChrs:
+            retDict[key] = cpgDict[key]
+    return retDict
+
+
 def import_call(fn, callname, baseFormat=0):
     """
     Import fn as callname and return
@@ -3770,7 +3814,7 @@ def import_call(fn, callname, baseFormat=0):
     elif callname == 'Tombo':
         calls0 = importPredictions_Tombo(fn, baseFormat=baseFormat)
     elif callname == 'Nanopolish':
-        calls0 = importPredictions_Nanopolish(fn, baseFormat=baseFormat, logLikehoodCutt=2.0)
+        calls0 = importPredictions_Nanopolish(fn, baseFormat=baseFormat, llr_cutoff=2.0)
     elif callname == 'DeepMod':
         calls0 = importPredictions_DeepMod_Read_Level(fn, baseFormat=baseFormat)
     elif callname == 'Megalodon':

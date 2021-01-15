@@ -13,6 +13,8 @@ from nanocompare.global_config import data_base_dir, results_base_dir
 
 importlib.reload(pp)
 
+targetedChrs = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
+
 # Meth stats performance results table column name and order
 perf_table_column_list = ["prefix", "coord", "accuracy", "roc_auc", "F1_5C", "F1_5mC", "precision_5C", "recall_5C", "precision_5mC", "recall_5mC", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport", "Csites_called", "mCsites_called", "referenceCpGs", "Csites", "mCsites"]
 
@@ -90,9 +92,9 @@ runPrefixDict = {'K562_WGBS_joined_cut5': os.path.join(data_base_dir, 'perf-plot
         'HL60_AML_Bsseq_cut5'           : os.path.join(data_base_dir, 'perf-plot-data', 'HL60_AML_Bsseq_cut5'),
         'NA19240_RRBS_joined_cut5'      : os.path.join(data_base_dir, 'perf-plot-data', 'NA19240_RRBS_joined_cut5')}
 
+# 'K562_WGBS_joined_cut5': os.path.join(results_base_dir, 'MethPerf-K562_WGBS_joined_cut5'),
 runPrefixDict = {
-        'K562_WGBS_joined_cut5': os.path.join(results_base_dir, 'MethPerf-K562_WGBS_joined_cut5'),
-        'HL60_AML_Bsseq_cut5'  : os.path.join(results_base_dir, 'MethPerf-HL60_Bsseq_Joined_cut5')}
+        'HL60_AML_Bsseq_cut5': os.path.join(results_base_dir, 'MethPerf-HL60_Bsseq_Joined_cut5')}
 
 
 # def dict_cor_tsv_to_abbr():

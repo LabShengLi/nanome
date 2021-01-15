@@ -12,7 +12,7 @@ import pandas as pd
 
 from nanocompare.collect_data import collect_wide_format_newly_exp
 from nanocompare.global_config import *
-from nanocompare.global_settings import map_from_tool_to_abbr, locations_category
+from nanocompare.global_settings import locations_category
 
 
 def load_running_time_and_mem_usage():
@@ -287,6 +287,8 @@ def get_long_format_perf_within_measures_and_locations(location_list=locations_c
     dfsel = df[df['Location'].isin(location_list)]
 
     # dfsel['Tool'] = dfsel['Tool'].apply(map_from_tool_to_abbr)
+
+    logger.debug(dfsel)
 
     return dfsel
 

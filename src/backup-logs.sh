@@ -15,6 +15,6 @@ set -x
 cd /fastscratch/liuya/nanocompare
 
 tar czvf HL60-Runs.log.tar.gz HL60-Runs/*/log HL60-Runs/*/*/log
-
 tar czvf K562-Runs.log.tar.gz K562-Runs/*/log K562-Runs/*/*/log
 
+mv *.log.tar.gz /projects/li-lab/Nanopore_compare/result/

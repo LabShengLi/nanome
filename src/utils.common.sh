@@ -30,7 +30,7 @@ deepsignalModel="${NanoCompareDir}/data/dl-model/model.CpG.R9.4_1D.human_hx1.bn1
 deepModModel="${DeepModDir}/train_deepmod/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0"
 clusterDeepModModel="${DeepModDir}/train_deepmod/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25"
 
-
+# will deprecated, due to we can use --dependency=afterok:1234[1-50] now.
 get_arrayjob_ids(){
 	## Generate dependency pattern format from sbatch job submission return string
 	## Input is <ret-str> <num>

@@ -261,6 +261,7 @@ def filter_noncg_sites_mpi(df, ntask=300, toolname='tombo'):
     if toolname == 'tombo':
         basefn = basefn.replace("perReadsStats", "perReadsStatsOnlyCG").replace("combined", "combine")
     elif toolname == 'deepmod':
+        ## Example: HL60.deepmod.C.combined.tsv
         basefn = basefn.replace(".C.", ".C_OnlyCG.").replace("combined", "combine")
     else:
         raise Exception(f"{toolname} is no valid.")
@@ -578,3 +579,5 @@ if __name__ == '__main__':
             outfn = args.o2
             beddf.to_csv(outfn, sep=' ', index=False, header=False)
             logger.info(f'save to {outfn}')
+
+    logger.info("DONE")

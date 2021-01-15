@@ -80,7 +80,6 @@ def set_labels_fig_3a(grid, ds_list, location_list, meas_list=['F1_5mC', 'F1_5C'
     :return:
     """
 
-    nrow = len(perf_order)
     ncol = len(ds_list)
     [plt.setp(ax.texts, text="") for ax in grid.axes.flat]
     # grid.set_titles(row_template='{row_name}', col_template='{col_name}')
@@ -105,11 +104,6 @@ def set_labels_fig_3a(grid, ds_list, location_list, meas_list=['F1_5mC', 'F1_5C'
         ax.set_xticklabels([])
 
     grid.fig.tight_layout()
-
-    legend_format = {'Sex (hue)': ['Male', 'Female'],
-            'Group Size (size)' : ['0', '2', '4', '6'],
-            'Smoker (shape)'    : ['Yes', 'No']
-            }
 
     legend_data = grid._legend_data
 
@@ -146,11 +140,13 @@ def scatter_facet_grid_multiple_ds_5mc_5c_performance(df, location_list=location
 
     perf_order = meas_list
 
+    tools_showing_order = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon']
+
     grid = sns.FacetGrid(df, row='Measurement', col='Dataset', row_order=perf_order, margin_titles=True)
 
     # grid.map_dataframe(sns.catplot, x="Location", y="Performance", hue='Tool', hue_order=tools_abbr)
 
-    grid.map_dataframe(sns.scatterplot, x="Location", y="Performance", hue='Tool', style="Location", markers=filled_markers, hue_order=tools_abbr, s=marker_size, x_jitter=3, y_jitter=5)
+    grid.map_dataframe(sns.scatterplot, x="Location", y="Performance", hue='Tool', style="Location", markers=filled_markers, hue_order=tools_showing_order, s=marker_size, x_jitter=3, y_jitter=5)
 
     ds_list = df['Dataset'].unique()
     # Set plot labels
@@ -158,7 +154,10 @@ def scatter_facet_grid_multiple_ds_5mc_5c_performance(df, location_list=location
 
     # Save plot and show if possible
     outfn = os.path.join(pic_base_dir, f"scatter_facet_grid_multiple_ds_location_{location_list[0]}_{meas_list[0]}_performance.png")
-    grid.savefig(outfn, format='png', bbox_inches='tight', dpi=600)
+
+    # grid.savefig(outfn, format='png', bbox_inches='tight', dpi=600)
+
+    plt.savefig(outfn, format='png', bbox_inches='tight', dpi=600)
 
     plt.show()
     plt.close()
@@ -699,15 +698,12 @@ def gen_figure_3a_4a():
     Scatter plot on FacetGrid
     :return:
     """
-
-    # ds_list4 = ['K562_WGBS_joined', 'APL_BSseq_cut10', 'HL60_AML_Bsseq_cut5', 'NA19240_RRBS_joined']
-
     measure_list = [['F1_5mC', 'F1_5C']]
 
-    measure_list = [['F1_5mC', 'F1_5C'],
-            ['Accuracy', 'ROC_AUC'],
-            ['Precision_5mC', 'Recall_5mC'],
-            ['Precision_5C', 'Recall_5C']]
+    # measure_list = [['F1_5mC', 'F1_5C'],
+    #         ['Accuracy', 'ROC_AUC'],
+    #         ['Precision_5mC', 'Recall_5mC'],
+    #         ['Precision_5C', 'Recall_5C']]
 
     for meas_list in measure_list:  # meas_list = ['precision_5mC', 'precision_5C']
         df = get_long_format_perf_within_measures_and_locations(location_list=locations_singleton, meas_list=meas_list)
