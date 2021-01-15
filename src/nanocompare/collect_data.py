@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 from nanocompare.global_config import logger, pic_base_dir
-from nanocompare.global_settings import locations_category2, locations_singleton2, ret_report_columns, runPrefixDict, perf_col_raw_to_standard, cpg_name_map_raw_to_standard
+from nanocompare.global_settings import locations_category, locations_singleton, ret_perf_report_columns, runPrefixDict, perf_col_raw_to_standard, cpg_name_map_raw_to_standard
 
 
 def collect_data_selected_locations(path, extension="tsv", prefix="APL_BSseq_cut10/APL_Bsseq_cut10.", sel_locations=["GW", "singletons", "nonsingletons", "cpgIslandExt", "promoters_500bp"]):
@@ -398,7 +398,7 @@ def rename_from_raw_to_standard(df):
     return df
 
 
-def select_locations_from_reportdf(df, locations=locations_category2 + locations_singleton2):
+def select_locations_from_reportdf(df, locations=locations_category + locations_singleton):
     """
     Select only interested locations
     :param df:
@@ -446,7 +446,7 @@ def load_singleton_nonsingleton_sites():
     df.to_excel(outfn, index=False)
 
 
-def create_report_datadf(runPrefixDict, ret_col=ret_report_columns):
+def create_report_datadf(runPrefixDict, ret_col=ret_perf_report_columns):
     """
     create report from list of runPrefix, return specified columns
 
@@ -486,7 +486,7 @@ def collect_wide_format_newly_exp():
     Collect the currently new performance of exp results for paper
     :return:
     """
-    df = create_report_datadf(runPrefixDict, ret_col=ret_report_columns)
+    df = create_report_datadf(runPrefixDict, ret_col=ret_perf_report_columns)
     seldf = select_locations_from_reportdf(df)
 
     logger.debug(f"collect_newly_exp_data, wide-format seldf={len(seldf)}")

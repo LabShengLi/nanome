@@ -124,7 +124,7 @@ def set_labels_fig_3a(grid, ds_list, location_list, meas_list=['F1_5mC', 'F1_5C'
     pass
 
 
-def scatter_facet_grid_multiple_ds_5mc_5c_performance(df, location_list=locations_singleton2, meas_list=['F1_5mC', 'F1_5C']):
+def scatter_facet_grid_multiple_ds_5mc_5c_performance(df, location_list=locations_singleton, meas_list=['F1_5mC', 'F1_5C']):
     """
     Generate three datasets 5mc and 5C results in a FacetGrid
     :return:
@@ -266,7 +266,7 @@ def box_plots_two_locations(metrics=["F1_5mC", "F1_5C"]):
 
     pal_plot = [mpatches.Patch(color=current_palette[i], label=tools_abbr[i]) for i in range(4)]
 
-    regions_list = [locations_singleton2, locations_category2]
+    regions_list = [locations_singleton, locations_category]
 
     # For each metric in metrics, box plot region type 0 and 1
     for metric in metrics:  # for each metric
@@ -693,19 +693,6 @@ def plot_runnnig_time_and_mem_usage():
     plt.close()
 
 
-def get_df_from_gen_figure_3a():
-    ds_list4 = ['K562_WGBS_joined', 'APL_BSseq_cut10', 'HL60_AML_Bsseq_cut5', 'NA19240_RRBS_joined']
-
-    df = get_performance_from_datasets_and_locations(ds_list=ds_list4, location_list=locations_category + locations_singleton)
-
-    outfn = os.path.join(pic_base_dir, "datasets_4_figure_a_data.xlsx")
-    df.to_excel(outfn)
-
-    return df
-
-    pass
-
-
 def gen_figure_3a_4a():
     """
     Generate Figure 3-a and 4-a in paper
@@ -723,11 +710,11 @@ def gen_figure_3a_4a():
             ['Precision_5C', 'Recall_5C']]
 
     for meas_list in measure_list:  # meas_list = ['precision_5mC', 'precision_5C']
-        df = get_long_format_perf_within_measures_and_locations(location_list=locations_singleton2, meas_list=meas_list)
-        scatter_facet_grid_multiple_ds_5mc_5c_performance(df, location_list=locations_singleton2, meas_list=meas_list)
+        df = get_long_format_perf_within_measures_and_locations(location_list=locations_singleton, meas_list=meas_list)
+        scatter_facet_grid_multiple_ds_5mc_5c_performance(df, location_list=locations_singleton, meas_list=meas_list)
 
-        df = get_long_format_perf_within_measures_and_locations(location_list=locations_category2, meas_list=meas_list)
-        scatter_facet_grid_multiple_ds_5mc_5c_performance(df, location_list=locations_category2, meas_list=meas_list)
+        df = get_long_format_perf_within_measures_and_locations(location_list=locations_category, meas_list=meas_list)
+        scatter_facet_grid_multiple_ds_5mc_5c_performance(df, location_list=locations_category, meas_list=meas_list)
 
 
 def gen_figure_3b_4b():

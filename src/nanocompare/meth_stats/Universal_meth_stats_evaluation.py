@@ -29,7 +29,7 @@ import argparse
 # nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
 # sys.path.append(nanocompare_prj)
 
-from nanocompare.global_settings import singletonsFile, narrowCoord, nonsingletonsFile
+from nanocompare.global_settings import singletonsFile, narrowCoord, nonsingletonsFile, perf_table_column_list
 from nanocompare.meth_stats.meth_stats_common import *
 
 from nanocompare.global_config import *
@@ -63,6 +63,16 @@ if __name__ == '__main__':
     set_log_debug_level()
 
     args = parse_arguments()
+
+    RunPrefix = args.runid
+
+    out_dir = os.path.join(args.o, args.runid)
+    os.makedirs(out_dir, exist_ok=True)
+    logger.info(f'Output to dir:{out_dir}')
+
+    # Add logging files also to result output dir
+    add_logging_file(os.path.join(out_dir, 'run-results.log'))
+
     logger.debug(args)
 
     # Note: all bed files (Singleton and NonSingleton) are 1-based start, even for "chr1  123  124" (This will conform for + or - strand).
@@ -75,12 +85,7 @@ if __name__ == '__main__':
 
     dsname = args.dsname
 
-    RunPrefix = args.runid
-
-    out_dir = os.path.join(args.o, RunPrefix)
-    os.makedirs(out_dir, exist_ok=True)
-    logger.info(f'Output to dir:{out_dir}')
-
+    callfn_dict = defaultdict()  # callname -> filename
     callresult_dict = defaultdict()  # name->call
     callname_list = []  # [DeepSignal, DeepMod, etc.]
 
@@ -88,30 +93,18 @@ if __name__ == '__main__':
     for callstr in args.calls:
         callname, callfn = callstr.split(':')
         callname_list.append(callname)
+        callfn_dict[callname] = callfn
         callresult_dict[callname] = import_call(callfn, callname, baseFormat=baseFormat)
         # callresult_dict[callname] = pool.apply_async(import_call, (callfn, callname,))
 
+    logger.debug(callfn_dict)
     encode, fn = args.bgtruth.split(':')
+    logger.debug(f'BGTruth fn={fn}, encode={encode}')
+
     bgTruth = import_bgtruth(fn, encode, cov=minCov, baseFormat=baseFormat, includeCov=True)
 
-    # logger.info(f"Start DeepSignal")
-    # DeepSignal_calls = importPredictions_DeepSignal(argv[1], baseFormat=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_DeepSignal_runs/K562/K562_DeepSignal.MethCalls.Joined.chr20.tsv")
-    #
-    # logger.info(f"Start Tombo")
-    # Tombo_calls = importPredictions_Tombo(argv[2], baseFormat=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_Tombo_runs/K562/K562_Tombo.perReadsStats.chr20.bed")
-    #
-    # logger.info(f"Start Nanopolish")
-    # Nanopolish_calls = importPredictions_Nanopolish(argv[3], baseFormat=baseFormat, logLikehoodCutt=2.0)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/Leukemia_ONT/K562.nanopolish/K562.methylation_calls.chr_chr20.tsv", IncludeNonSingletons = True)
-    #
-    # logger.info(f"Start DeepMod Read Level")
-    # DeepMod_calls = importPredictions_DeepMod_Read_Level(argv[4], baseFormat=baseFormat)  # "/projects/li-lab/NanoporeData/WR_ONT_analyses/Leukemia_ONT/K562.nanopolish/K562.methylation_calls.chr_chr20.tsv", IncludeNonSingletons = True)
-
-    # logger.info(f"Start bgTruth")
-
-    # import bg-truth as key-> value  value=0.3, only frequency value from 0.0 to 1.0
-    # bgTruth = import_bgtruth(argv[5], argv[7], cov=minCov, baseFormat=baseFormat, includeCov=False)
-
     relateCoord = list(narrowCoord)  # copy the basic coordinate
+
     ## add missing region files:
     singletonsFilePrefix = singletonsFile.replace(".bed", '')
     # relateCoord.append("{}/{}.{}.mixed.bed".format(out_dir, RunPrefix, singletonsFilePrefix))
@@ -144,28 +137,16 @@ if __name__ == '__main__':
     # logger.info(f'joinedCPG = {len(joinedCPG)}')
     save_keys_to_single_site_bed(joinedCPG, outfn=fn_secondFilterBed, callBaseFormat=baseFormat, outBaseFormat=1)
 
-    # DeepSignal_Tombo = combine2programsCalls(DeepSignal_calls, Tombo_calls)
-    # DeepSignal_Tombo_Nanopolish = combine2programsCalls(DeepSignal_Tombo, Nanopolish_calls)
-    # DeepSignal_Tombo_Nanopolish_DeepMod = combine2programsCalls(DeepSignal_Tombo_Nanopolish, DeepMod_calls)
-    # DeepSignal_Tombo_Nanopolish_DeepMod_Bacground = combine2programsCalls(DeepSignal_Tombo_Nanopolish_DeepMod, bgTruth, outfileName=f"{out_dir}/{RunPrefix}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.bed")
-
-    logger.info(f"Data points for joined all tools with bg-truth stats: {len(joinedCPG):,}\n\n")
+    logger.info(f"Data points for joined all tools(cov>={minCov}) with bg-truth stats: {len(joinedCPG):,}\n\n")
 
     joinedCPG4Corr = combine2programsCalls_4Corr(bgTruth, None, only_bgtruth=True)
-    # logger.debug(f'joinedCPG4Corr={len(joinedCPG4Corr)}, keys={list(joinedCPG4Corr.keys())[:2]}')
     for toolname in callresult_dict:
         joinedCPG4Corr = combine2programsCalls_4Corr(joinedCPG4Corr, callresult_dict[toolname])
-        # logger.debug(f'after {toolname}, joinedCPG4Corr={len(joinedCPG4Corr)}')
 
     joinedCPG4CorrSet = set(joinedCPG4Corr.keys())
     save_keys_to_single_site_bed(joinedCPG4CorrSet, outfn=fn_secondFilterBed_4Corr, callBaseFormat=baseFormat, outBaseFormat=1)
 
-    # DeepSignal_Tombo_corr = combine2programsCalls_4Corr(DeepSignal_calls, Tombo_calls)
-    # DeepSignal_Tombo_Nanopolish_corr = combine2programsCalls_4Corr(DeepSignal_Tombo_corr, Nanopolish_calls)
-    # DeepSignal_Tombo_Nanopolish_DeepMod_corr = combine2programsCalls_4Corr(DeepSignal_Tombo_Nanopolish_corr, DeepMod_calls)
-    # DeepSignal_Tombo_Nanopolish_DeepMod_Bacground_corr = combine2programsCalls(DeepSignal_Tombo_Nanopolish_DeepMod_corr, bgTruth, outfileName=f"{out_dir}/{RunPrefix}.DeepSignal_Tombo_Nanopolish_DeepMod_Bacground.4Corr.bed")
-
-    logger.info(f"Data points for correlation: {len(joinedCPG4CorrSet):,}\n\n")
+    logger.info(f"Data points for correlation tools(cov>={minCov}) with bg-truth(cov>=4): {len(joinedCPG4CorrSet):,}\n\n")
     logger.info("\n\n############\n\n")
 
     if report_joined:  # Joined together evaluation
@@ -185,7 +166,7 @@ if __name__ == '__main__':
             df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=fn_secondFilterBed, secondFilterBed_4Corr=fn_secondFilterBed_4Corr)
         else:  # step: no joined results
             df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=False, secondFilterBed_4Corr=fn_secondFilterBed_4Corr)
-        df = df[["prefix", "coord", "accuracy", "roc_auc", "F1_5C", "F1_5mC", "precision_5C", "recall_5C", "precision_5mC", "recall_5mC", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport", "Csites_called", "mCsites_called", "referenceCpGs", "Csites", "mCsites"]]
+        df = df[perf_table_column_list]
 
         df['Tool'] = tool
         df['Dataset'] = dsname
@@ -193,3 +174,4 @@ if __name__ == '__main__':
         outfn = os.path.join(perf_dir, f"{RunPrefix}.{tool}.report.tsv")
         df.to_csv(outfn, sep='\t')
         logger.info(f"save to {outfn}")
+    logger.info("Meth stats performance data generation DONE.")

@@ -28,15 +28,14 @@ import matplotlib.pyplot as plt
 init_log_level_prj = logging.INFO
 
 if sys.platform == 'linux':  # Linux helix dir config
-    # logger.debug("Running on Linux")
-    print("Running on Linux")
+    # print("Running on Linux")
     results_dir = "/projects/li-lab/yang/results"  # temp output base
     project_base_dir = "/projects/li-lab/yang/workspace/nano-compare"  # project base
     data_base_dir = os.path.join(project_base_dir, 'data')  # all used data base
-    src_base_dir = os.path.join(project_base_dir, 'src')  # source code base
+    prjsrc_base_dir = os.path.join(project_base_dir, 'src')  # source code base
     pkl_base_dir = '/projects/liuya/results/pkl'  # will deprecated later
 
-    # sspairr_path = "/projects/liuya/workspace/R/smooth_scatter/ss_pair.R"
+    results_base_dir = '/projects/li-lab/Nanopore_compare/result'
 
     import platform
 
@@ -45,7 +44,6 @@ if sys.platform == 'linux':  # Linux helix dir config
         os.environ['R_HOME'] = "/home/liuya/anaconda3/envs/nmf/lib/R"
 
 elif sys.platform == 'darwin':  # Mac dir config
-    # logger.debug("Running on MacOS")
     print("Running on MacOS")
     dataset_base_dir = "/Users/liuya/dataset"
     results_dir = "/Users/liuya/results"
@@ -59,7 +57,7 @@ today_str = datetime.date.today().strftime("%Y-%m-%d")
 log_base_dir = os.path.join(results_dir, "log")
 pic_base_dir = os.path.join(results_dir, today_str)
 
-logger = logging.getLogger()  # 不加名称设置root logger
+logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 
@@ -140,7 +138,6 @@ def set_log_error_level():
 
 
 def current_time_str():
-    time_str = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
+    # time_str = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
     time_str = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
-
     return time_str

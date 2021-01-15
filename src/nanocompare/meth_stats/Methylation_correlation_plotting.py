@@ -192,7 +192,6 @@ if __name__ == '__main__':
     set_log_debug_level()
 
     args = parse_arguments()
-    logger.debug(args)
 
     RunPrefix = args.runid  # "K562_WGBS_Joined"
     # tool coverage cutoff 4
@@ -214,6 +213,8 @@ if __name__ == '__main__':
     # Add logging files also to result output dir
     add_logging_file(os.path.join(out_dir, 'run-results.log'))
 
+    logger.debug(args)
+
     callfn_dict = defaultdict()  # callname -> filename
     callresult_dict = defaultdict()
     callname_list = []
@@ -226,9 +227,10 @@ if __name__ == '__main__':
         callresult_dict[callname] = [import_call(callfn, callname, baseFormat=baseFormat)]
         # callresult_dict[callname] = pool.apply_async(import_call, (callfn, callname,))
 
+    logger.debug(callfn_dict)
     encode, fn = args.bgtruth.split(':')
 
-    logger.debug(f'fn={fn}, encode={encode}')
+    logger.debug(f'BGTruth fn={fn}, encode={encode}')
     bgTruth = import_bgtruth(fn, encode, cov=bgtruthCutt, baseFormat=baseFormat)
     # bgTruth = pool.apply_async(import_bgtruth, (fn, encode,))
     # pool.close()

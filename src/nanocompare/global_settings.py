@@ -9,63 +9,18 @@ import os
 import matplotlib.colors as mcolors
 
 import nanocompare.legacy.performance_plots as pp
-# from global_config import pkl_base_dir
-from nanocompare.global_config import data_base_dir
+from nanocompare.global_config import data_base_dir, results_base_dir
 
 importlib.reload(pp)
 
-# Tool lists and abbreviations
-tools = ['DeepSignal_calls', 'Tombo_calls', 'DeepMod_calls', 'Nanopolish_calls']
-tools_abbr = ['DeepSignal', 'Tombo', 'DeepMod', 'Nanopolish']
+# Meth stats performance results table column name and order
+perf_table_column_list = ["prefix", "coord", "accuracy", "roc_auc", "F1_5C", "F1_5mC", "precision_5C", "recall_5C", "precision_5mC", "recall_5mC", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport", "Csites_called", "mCsites_called", "referenceCpGs", "Csites", "mCsites"]
 
-# map_tools_to_abbr = {tools[0]: tools_abbr[0], tools[1]: tools_abbr[1], tools[2]: tools_abbr[2], tools[3]: tools_abbr[3]}
-
-# tool -> abbr
-dict_tools_to_abbr = {tools[i]: tools_abbr[i] for i in range(len(tools))}
-
-# Locations of two types
-locations_category = ["GW", "cpgIslandExt", "promoters_500bp", "exonFeature", "intergenic", "intronFeature"]
-locations_singleton = ["singletons", "nonsingletons", "discordant", "concordant"]
-
-locations_category2 = ["Genome-wide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns"]
-locations_singleton2 = ["Singletons", "Non-singletons", "Discordant", "Concordant"]
-
-# Plot performance order
-perf_order = ['F1_5mC', 'F1_5C']
-
-# Correlation ploting input tsv's important fields
-cor_tsv_fields = ["DeepSignal_freq", "Tombo_freq", "Nanopolish_freq", "DeepMod_freq", "DeepMod_clust_freq", "BSseq_freq"]
-cor_tsv_fields = ["DeepSignal_freq", "Tombo_freq", "Nanopolish_freq", "DeepMod_freq", "BSseq_freq"]
-
-cor_tsv_fields_abbr = ["DeepSignal", "Tombo", "Nanopolish", "DeepMod", "DeepMod_clust", "BSseq"]
-cor_tsv_fields_abbr = ["DeepSignal", "Tombo", "Nanopolish", "DeepMod", "BSseq"]
-
-gbtruth_filedict = {
-        'NA19240': os.path.join('/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/joined_reps/RRBS/extractBismark', 'NA19240_joined_RRBS.Read_R1.Rep_1_trimmed_bismark_bt2.bismark.cov.gz'),
-        'K562'   : os.path.join('/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/joined_reps/RRBS/extractBismark', 'K562_joined_RRBS.Read_R1.Rep_4_trimmed_bismark_bt2.bismark.cov.gz'),
-        'HL60'   : os.path.join('/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/joined_reps/RRBS/extractBismark', 'HL60_joined_RRBS.Read_R1.Rep_3_trimmed_bismark_bt2.bismark.cov.gz'),  # /projects/li-lab/wangj/AML-oxbs/AML-bs_R1_val_1_bismark_bt2_pe.deduplicated.bismark.cov.gz
-        'APL'    : '/projects/li-lab/wangj/AML-oxbs/APL-bs_R1_val_1_bismark_bt2_pe.deduplicated.bismark.cov.gz'
-        }
-
-singletonsFile = "hg38_singletons.bed"
-nonsingletonsFile = "hg38_nonsingletons.bed"
-
-narrowCoord = [False, singletonsFile, nonsingletonsFile, "ONT.hg38.cpgIslandExt.bed", "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed", "ONT.hg38.exonFeature.bed", "ONT.hg38.geneFeature.bed", "ONT.hg38.intergenic.bed", "ONT.hg38.intronFeature.bed", "ONT.hg38.promoterFeature.flank_100.bed", "ONT.hg38.promoterFeature.flank_1000.bed",
-        "ONT.hg38.promoterFeature.flank_200.bed", "ONT.hg38.promoterFeature.flank_2000.bed", "ONT.hg38.promoterFeature.flank_500.bed", "ONT.hg38.promoterFeature.flank_750.bed"]
-
-narrowCoord = [False] + [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in narrowCoord[1:]]
-
-important_region_bed_fns = [narrowCoord[-2], narrowCoord[6], narrowCoord[9], narrowCoord[8], narrowCoord[3]]
-
-# specify which runPrefix -> dir is the newly results you need
-runPrefixDict = {'K562_WGBS_joined_cut5': os.path.join(data_base_dir, 'perf-plot-data', 'K562_WGBS_joined_cut5'),
-        'APL_Bsseq_cut5'                : os.path.join(data_base_dir, 'perf-plot-data', 'APL_Bsseq_cut5'),
-        'HL60_AML_Bsseq_cut5'           : os.path.join(data_base_dir, 'perf-plot-data', 'HL60_AML_Bsseq_cut5'),
-        'NA19240_RRBS_joined_cut5'      : os.path.join(data_base_dir, 'perf-plot-data', 'NA19240_RRBS_joined_cut5')}
-
-runPrefixDict = {
-        'K562_WGBS_joined_cut5': os.path.join(data_base_dir, 'perf-plot-data', 'K562_WGBS_joined_cut5'),
-        'HL60_AML_Bsseq_cut5'  : os.path.join('/projects/li-lab/yang/results/2021-01-10', 'HL60_Bsseq_Joined_cut5')}
+# which column of performance table is extracted and returned
+ret_perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'ROC_AUC',
+        'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C',
+        'Corr_Mix', 'Corr_All', 'Corr_mixedSupport', 'Corr_allSupport',
+        'mCsites_called', 'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix', 'coord']
 
 # Rename raw column name to print name
 perf_col_raw_to_standard = {'precision_5mC': 'Precision_5mC',
@@ -90,16 +45,59 @@ cpg_name_map_raw_to_standard = {
         'promoterFeature500': 'Promoters',
         'absolute'          : 'Absolute'}
 
-# which column of performance table is extracted
-ret_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'ROC_AUC',
-        'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C',
-        'Corr_Mix', 'Corr_All', 'Corr_mixedSupport', 'Corr_allSupport',
-        'mCsites_called', 'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix', 'coord']
+# Deprecated, now use auto detect
+# tools = ['DeepSignal_calls', 'Tombo_calls', 'DeepMod_calls', 'Nanopolish_calls']
+# tools_abbr = ['DeepSignal', 'Tombo', 'DeepMod', 'Nanopolish']
+
+# Locations of two types, deprecated due to old name
+locations_category = ["Genome-wide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns"]
+locations_singleton = ["Singletons", "Non-singletons", "Discordant", "Concordant"]
+
+# Plot performance order
+# perf_order = ['F1_5mC', 'F1_5C']
+
+# Correlation ploting input tsv's important fields
+# Deprecated, now support auto detection col and plot
+# cor_tsv_fields = ["DeepSignal_freq", "Tombo_freq", "Nanopolish_freq", "DeepMod_freq", "DeepMod_clust_freq", "BSseq_freq"]
+# cor_tsv_fields = ["DeepSignal_freq", "Tombo_freq", "Nanopolish_freq", "DeepMod_freq", "BSseq_freq"]
+
+# Deprecated, now support auto detection col and plot
+# cor_tsv_fields_abbr = ["DeepSignal", "Tombo", "Nanopolish", "DeepMod", "DeepMod_clust", "BSseq"]
+# cor_tsv_fields_abbr = ["DeepSignal", "Tombo", "Nanopolish", "DeepMod", "BSseq"]
+
+# Deprecated
+# gbtruth_filedict = {
+#         'NA19240': os.path.join('/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/joined_reps/RRBS/extractBismark', 'NA19240_joined_RRBS.Read_R1.Rep_1_trimmed_bismark_bt2.bismark.cov.gz'),
+#         'K562'   : os.path.join('/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/joined_reps/RRBS/extractBismark', 'K562_joined_RRBS.Read_R1.Rep_4_trimmed_bismark_bt2.bismark.cov.gz'),
+#         'HL60'   : os.path.join('/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/joined_reps/RRBS/extractBismark', 'HL60_joined_RRBS.Read_R1.Rep_3_trimmed_bismark_bt2.bismark.cov.gz'),  # /projects/li-lab/wangj/AML-oxbs/AML-bs_R1_val_1_bismark_bt2_pe.deduplicated.bismark.cov.gz
+#         'APL'    : '/projects/li-lab/wangj/AML-oxbs/APL-bs_R1_val_1_bismark_bt2_pe.deduplicated.bismark.cov.gz'
+#         }
+
+singletonsFile = "hg38_singletons.bed"
+nonsingletonsFile = "hg38_nonsingletons.bed"
+
+narrowCoordList = [singletonsFile, nonsingletonsFile, "ONT.hg38.cpgIslandExt.bed", "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed", "ONT.hg38.exonFeature.bed", "ONT.hg38.geneFeature.bed", "ONT.hg38.intergenic.bed", "ONT.hg38.intronFeature.bed", "ONT.hg38.promoterFeature.flank_100.bed", "ONT.hg38.promoterFeature.flank_1000.bed",
+        "ONT.hg38.promoterFeature.flank_200.bed", "ONT.hg38.promoterFeature.flank_2000.bed", "ONT.hg38.promoterFeature.flank_500.bed", "ONT.hg38.promoterFeature.flank_750.bed"]
+
+narrowCoord = [False] + [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in narrowCoordList]
+
+# Not used
+important_region_bed_fns = [narrowCoord[-2], narrowCoord[6], narrowCoord[9], narrowCoord[8], narrowCoord[3]]
+
+# specify which runPrefix -> dir is the newly results you need
+runPrefixDict = {'K562_WGBS_joined_cut5': os.path.join(data_base_dir, 'perf-plot-data', 'K562_WGBS_joined_cut5'),
+        'APL_Bsseq_cut5'                : os.path.join(data_base_dir, 'perf-plot-data', 'APL_Bsseq_cut5'),
+        'HL60_AML_Bsseq_cut5'           : os.path.join(data_base_dir, 'perf-plot-data', 'HL60_AML_Bsseq_cut5'),
+        'NA19240_RRBS_joined_cut5'      : os.path.join(data_base_dir, 'perf-plot-data', 'NA19240_RRBS_joined_cut5')}
+
+runPrefixDict = {
+        'K562_WGBS_joined_cut5': os.path.join(results_base_dir, 'MethPerf-K562_WGBS_joined_cut5'),
+        'HL60_AML_Bsseq_cut5'  : os.path.join(results_base_dir, 'MethPerf-HL60_Bsseq_Joined_cut5')}
 
 
-def dict_cor_tsv_to_abbr():
-    dict_cor = {cor_tsv_fields[i]: cor_tsv_fields_abbr[i] for i in range(len(cor_tsv_fields))}
-    return dict_cor
+# def dict_cor_tsv_to_abbr():
+#     dict_cor = {cor_tsv_fields[i]: cor_tsv_fields_abbr[i] for i in range(len(cor_tsv_fields))}
+#     return dict_cor
 
 
 def ConvertRGB2sth(r, g, b):
@@ -133,14 +131,13 @@ def make_colormap(seq):
 # Color used of correlation plots
 agressiveHot = make_colormap([ConvertRGB2sth(255, 255, 255), ConvertRGB2sth(255, 237, 8), 0.05, ConvertRGB2sth(255, 181, 0), ConvertRGB2sth(218, 33, 0), 0.3, ConvertRGB2sth(218, 33, 0), ConvertRGB2sth(0, 0, 0)])
 
-
-def map_from_tool_to_abbr(tool):
-    """
-    From 'DeepSignal_calls' to 'DeepSignal'
-    :param tool:
-    :return:
-    """
-    return dict_tools_to_abbr[tool]
+# def map_from_tool_to_abbr(tool):
+#     """
+#     From 'DeepSignal_calls' to 'DeepSignal'
+#     :param tool:
+#     :return:
+#     """
+#     return dict_tools_to_abbr[tool]
 
 
 if __name__ == '__main__':

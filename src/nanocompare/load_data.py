@@ -12,7 +12,7 @@ import pandas as pd
 
 from nanocompare.collect_data import collect_wide_format_newly_exp
 from nanocompare.global_config import *
-from nanocompare.global_settings import locations_category, map_from_tool_to_abbr, locations_category2
+from nanocompare.global_settings import map_from_tool_to_abbr, locations_category
 
 
 def load_running_time_and_mem_usage():
@@ -210,22 +210,6 @@ def load_refined_perf_data_by_measurement2(meas_list=['F1_5C', 'F1_5mC']):
     return refine_alld
 
 
-def get_performance_from_datasets_and_locations(ds_list=['K562_WGBS_joined', 'APL_BSseq_cut10', 'HL60_AML_Bsseq_cut5'], location_list=locations_category, meas_list=['F1_5C', 'F1_5mC']):
-    """
-    Get a list of datasets results with refined, (melt to Performance and Measurement)
-    :param ds_list: a list of datasets
-    :return:
-    """
-    df = load_refined_perf_data_by_measurement(meas_list=meas_list)
-
-    dfsel = df[df['Dataset'].isin(ds_list)]
-    dfsel = dfsel[dfsel['Location'].isin(location_list)]
-
-    dfsel['Tool'] = dfsel['Tool'].apply(map_from_tool_to_abbr)
-
-    return dfsel
-
-
 def load_box_plot_all_data():
     """
     data from report dump folder
@@ -292,7 +276,7 @@ def load_long_format_perf_data_from_newly_exp_by_measure(meas_list=['F1_5C', 'F1
     return long_df
 
 
-def get_long_format_perf_within_measures_and_locations(location_list=locations_category2, meas_list=['F1_5C', 'F1_5mC']):
+def get_long_format_perf_within_measures_and_locations(location_list=locations_category, meas_list=['F1_5C', 'F1_5mC']):
     """
     Get a list of datasets results with refined, (melt to Performance and Measurement)
     :param ds_list: a list of datasets
