@@ -5,8 +5,8 @@
 #SBATCH --gres=gpu:1             # number of gpus per node
 #SBATCH -q inference
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 4 # number of cores
-#SBATCH --mem 180g # memory pool for all cores
+#SBATCH -n 2 # number of cores
+#SBATCH --mem 120g # memory pool for all cores
 #SBATCH --time=06:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
@@ -30,4 +30,4 @@ pythonFn=${prjBaseDir}/src/nanocompare/meth_stats/Universal_meth_stats_evaluatio
 PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:$DeepSignal_calls \
 	Tombo:$Tombo_calls Nanopolish:$Nanopolish_calls DeepMod:$DeepMod_calls \
 	Megalodon:${Megalodon_calls} --bgtruth $parser:$bgTruth --runid MethPerf-$RunPrefix \
-	--dsname $dsname --min-cov $minCov --report-joined
+	--dsname $dsname --min-bgtruth-cov $minCov --report-joined

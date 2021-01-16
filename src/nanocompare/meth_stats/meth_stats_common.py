@@ -18,7 +18,7 @@ import pysam
 from Bio import SeqIO
 from pybedtools import BedTool
 from scipy.stats import pearsonr
-from sklearn.metrics import roc_curve, precision_recall_curve, auc, confusion_matrix, average_precision_score
+from sklearn.metrics import roc_curve, precision_recall_curve, auc, confusion_matrix, average_precision_score, f1_score, precision_score, recall_score
 from tqdm import tqdm
 
 from nanocompare.global_config import *
@@ -2291,6 +2291,16 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
         recall_5C = 0
 
     #     F1 score:
+
+    f1_micro = f1_score(y_of_bgtruth, ypred_of_ont_tool, average='micro')
+    f1_macro = f1_score(y_of_bgtruth, ypred_of_ont_tool, average='macro')
+
+    precision_micro = precision_score(y_of_bgtruth, ypred_of_ont_tool, average='micro')
+    precision_macro = precision_score(y_of_bgtruth, ypred_of_ont_tool, average='macro')
+
+    recall_micro = recall_score(y_of_bgtruth, ypred_of_ont_tool, average='micro')
+    recall_macro = recall_score(y_of_bgtruth, ypred_of_ont_tool, average='macro')
+
     try:
         F1_5mC = 2 * ((precision_5mC * recall_5mC) / (precision_5mC + recall_5mC))
     except ZeroDivisionError:
@@ -2342,7 +2352,8 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
     except:
         corrAll, pvalAll = (0, 0)
 
-    return accuracy, roc_auc, average_precision, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, len(ontFrequencies_4corr_mix), corrAll, len(ontFrequencies_4corr_all), Csites_BGTruth, mCsites_BGTruth  # , leftovers, leftovers1
+    return accuracy, roc_auc, average_precision, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, len(ontFrequencies_4corr_mix), corrAll, len(ontFrequencies_4corr_all), Csites_BGTruth, mCsites_BGTruth  # , leftovers,
+    # leftovers1
 
 
 # only care about AUC
@@ -2897,12 +2908,8 @@ def combine_ONT_and_BS(ontCalls, bsReference, analysisPrefix, narrowedCoordinate
 def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, ontCutt=4, secondFilterBed=None, secondFilterBed_4Corr=None, cutoff_meth=1.0, outdir=None, tagname=None):
     """
     New performance evaluation by Yang
-    Revised the mCSites1 and CSites1 to really CpG sites count.
-
     referenceCpGs is number of all CpGs that is fully-methylated (>=cutoff_meth) or unmethylated in BG-Truth
-    mCSites1, CSites1 are CpGs
-    mCSites, CSites are calls counted
-
+    
     :param ontCalls:
     :param bgTruth:
     :param analysisPrefix:
@@ -2915,27 +2922,33 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     """
     d = {"prefix"              : [],
             "coord"            : [],
-            "accuracy"         : [],
-            "ap"               : [],
-            "roc_auc"          : [],
-            "precision_5C"     : [],
-            "recall_5C"        : [],
+            "Accuracy"         : [],
+            "ROC-AUC"          : [],
+            "Average-Precision": [],
+            "Macro-F1"         : [],
+            "Micro-F1"         : [],
+            "Macro-Precision"  : [],
+            "Micro-Precision"  : [],
+            "Macro-Recall"     : [],
+            "Micro-Recall"     : [],
+            "Precision_5C"     : [],
+            "Recall_5C"        : [],
             "F1_5C"            : [],
             "Csites"           : [],
-            "precision_5mC"    : [],
-            "recall_5mC"       : [],
+            "Precision_5mC"    : [],
+            "Recall_5mC"       : [],
             "F1_5mC"           : [],
             "mCsites"          : [],
             "referenceCpGs"    : [],
-            "corrMix"          : [],
+            "CorrMix"          : [],
             "Corr_mixedSupport": [],
-            "corrAll"          : [],
+            "CorrAll"          : [],
             "Corr_allSupport"  : [],
             'Csites_called'    : [],
             'mCsites_called'   : [],
             }
     for coord_fn in tqdm(narrowedCoordinatesList):
-        accuracy, roc_auc, ap, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = \
+        accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = \
             computePerReadStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFile=secondFilterBed,
                                 secondFilterBed_4CorrFile=secondFilterBed_4Corr,
                                 cutoff_meth=cutoff_meth, outdir=outdir, tagname=tagname)
@@ -2944,23 +2957,29 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
 
         d["prefix"].append(analysisPrefix)
         d["coord"].append(coord)
-        d["accuracy"].append(accuracy)
-        d["ap"].append(ap)
-        d["roc_auc"].append(roc_auc)
-        d["precision_5C"].append(precision_5C)
-        d["recall_5C"].append(recall_5C)
+        d["Accuracy"].append(accuracy)
+        d["Average-Precision"].append(ap)
+        d["Macro-F1"].append(f1_macro)
+        d["Micro-F1"].append(f1_micro)
+        d["Macro-Precision"].append(precision_macro)
+        d["Micro-Precision"].append(precision_micro)
+        d["Macro-Recall"].append(recall_macro)
+        d["Micro-Recall"].append(recall_micro)
+        d["ROC-AUC"].append(roc_auc)
+        d["Precision_5C"].append(precision_5C)
+        d["Recall_5C"].append(recall_5C)
         d["F1_5C"].append(F1_5C)
         d["Csites_called"].append(cCalls)
         d["Csites"].append(cSites_BGTruth)
-        d["precision_5mC"].append(precision_5mC)
-        d["recall_5mC"].append(recall_5mC)
+        d["Precision_5mC"].append(precision_5mC)
+        d["Recall_5mC"].append(recall_5mC)
         d["F1_5mC"].append(F1_5mC)
         d["mCsites_called"].append(mCalls)
         d["mCsites"].append(mSites_BGTruth)
         d["referenceCpGs"].append(referenceCpGs)
-        d["corrMix"].append(corrMix)
+        d["CorrMix"].append(corrMix)
         d["Corr_mixedSupport"].append(Corr_mixedSupport)
-        d["corrAll"].append(corrAll)
+        d["CorrAll"].append(corrAll)
         d["Corr_allSupport"].append(Corr_allSupport)
     df = pd.DataFrame.from_dict(d)
     return df

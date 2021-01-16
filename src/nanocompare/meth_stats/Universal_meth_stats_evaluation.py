@@ -12,8 +12,8 @@ Evaluation based on methylation calls of four tools, compute the performance res
 
 import argparse
 
-from nanocompare.global_settings import rename_to_standard_colname_cordname, perf_report_columns
-from nanocompare.global_settings import singletonsFile, narrowCoord, nonsingletonsFile, perf_ret_raw_colname_list
+from nanocompare.global_settings import rename_coordinate_name, perf_report_columns
+from nanocompare.global_settings import singletonsFile, narrowCoord, nonsingletonsFile
 from nanocompare.meth_stats.meth_stats_common import *
 
 
@@ -23,7 +23,9 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(description='Performance evaluation task')
 
-    parser.add_argument('--min-cov', type=int, help="min coverage cutoff", default=5)
+    parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff", default=5)
+    parser.add_argument('--min-tool-cov', type=int, help="min tool coverage cutoff", default=3)
+
     parser.add_argument('--dsname', type=str, help="dataset name", default='DS')
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--report-joined', action='store_true', help="True if report on only joined sets")
@@ -37,6 +39,11 @@ if __name__ == '__main__':
     set_log_debug_level()
 
     args = parse_arguments()
+
+    dsname = args.dsname
+    bgtruth_cov_cutoff = args.min_bgtruth_cov
+    tool_cov_cutoff = args.min_tool_cov
+    report_joined = args.report_joined
 
     RunPrefix = args.runid.replace('MethPerf-', '')
 
@@ -52,12 +59,6 @@ if __name__ == '__main__':
     # Note: all bed files (Singleton and NonSingleton) are 1-based start, even for "chr1  123  124" (This will conform for + or - strand).
     # So we must import as 1-based format for our tool or bgtruth, DO NOT USE baseFormat=0
     baseFormat = 1
-
-    report_joined = args.report_joined
-
-    minCov = args.min_cov
-
-    dsname = args.dsname
 
     callfn_dict = defaultdict()  # callname -> filename
     callresult_dict = defaultdict()  # name->call
@@ -75,7 +76,7 @@ if __name__ == '__main__':
     encode, fn = args.bgtruth.split(':')
     logger.debug(f'BGTruth fn={fn}, encode={encode}')
 
-    bgTruth = import_bgtruth(fn, encode, cov=minCov, baseFormat=baseFormat, includeCov=True)
+    bgTruth = import_bgtruth(fn, encode, cov=bgtruth_cov_cutoff, baseFormat=baseFormat, includeCov=True)
 
     relateCoord = list(narrowCoord)  # copy the basic coordinate
 
@@ -112,19 +113,18 @@ if __name__ == '__main__':
     joinedCPG = set(bgTruth.keys())
     for toolname in callresult_dict:
         joinedCPG = joinedCPG.intersection(set(callresult_dict[toolname].keys()))
-    # logger.info(f'joinedCPG = {len(joinedCPG)}')
     save_keys_to_single_site_bed(joinedCPG, outfn=fn_secondFilterBed, callBaseFormat=baseFormat, outBaseFormat=1)
 
-    logger.info(f"Data points for joined all tools with bg-truth (cov>={minCov}) stats: {len(joinedCPG):,}\n\n")
+    logger.info(f"Data points for joined all tools with bg-truth (cov>={bgtruth_cov_cutoff}) stats: {len(joinedCPG):,}\n\n")
 
-    joinedCPG4Corr = combine2programsCalls_4Corr(bgTruth, None, only_bgtruth=True)
+    joinedCPG4Corr = combine2programsCalls_4Corr(bgTruth, None, cutt=tool_cov_cutoff, only_bgtruth=True)
     for toolname in callresult_dict:
-        joinedCPG4Corr = combine2programsCalls_4Corr(joinedCPG4Corr, callresult_dict[toolname])
+        joinedCPG4Corr = combine2programsCalls_4Corr(joinedCPG4Corr, callresult_dict[toolname], cutt=tool_cov_cutoff)
 
     joinedCPG4CorrSet = set(joinedCPG4Corr.keys())
     save_keys_to_single_site_bed(joinedCPG4CorrSet, outfn=fn_secondFilterBed_4Corr, callBaseFormat=baseFormat, outBaseFormat=1)
 
-    logger.info(f"Data points for correlation tools(cov>=3) with bg-truth(cov>={minCov}): {len(joinedCPG4CorrSet):,}\n\n")
+    logger.info(f"Data points for correlation tools(cov>={tool_cov_cutoff}) with bg-truth(cov>={bgtruth_cov_cutoff}): {len(joinedCPG4CorrSet):,}\n\n")
     logger.info("\n\n############\n\n")
 
     if report_joined:  # Joined together evaluation
@@ -145,16 +145,14 @@ if __name__ == '__main__':
         else:  # step: no joined results
             df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=None, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix)
 
-        df = df[perf_ret_raw_colname_list]
-        df = rename_to_standard_colname_cordname(df)
-        # df = df.rename(columns=raw_to_standard_perf_col_name)
-
         df['Tool'] = tool
         df['Dataset'] = dsname
+        df = rename_coordinate_name(df)
 
+        # Select columns to save
         df = df[perf_report_columns]
 
-        outfn = os.path.join(perf_dir, f"{RunPrefix}.{tool}.report.csv")
+        outfn = os.path.join(perf_dir, f"{RunPrefix}.{tool}.performance.report.csv")
         df.to_csv(outfn)
         logger.info(f"save to {outfn}")
     logger.info("Meth stats performance data generation DONE.")

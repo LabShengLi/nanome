@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 from nanocompare.global_config import logger, pic_base_dir
-from nanocompare.global_settings import locations_category, locations_singleton, perf_report_columns, runPrefixDict
+from nanocompare.global_settings import locations_category, locations_singleton, runPrefixDict
 
 
 def collect_data_selected_locations(path, extension="tsv", prefix="APL_BSseq_cut10/APL_Bsseq_cut10.", sel_locations=["GW", "singletons", "nonsingletons", "cpgIslandExt", "promoters_500bp"]):
@@ -377,14 +377,14 @@ def load_data(path, extension="tsv"):
     return cobmined_data
 
 
-def select_locations_from_reportdf(df, locations=locations_category + locations_singleton):
+def select_locations_from_reportdf(df, sel_locations=locations_category + locations_singleton):
     """
     Select only interested locations
     :param df:
-    :param locations:
+    :param sel_locations:
     :return:
     """
-    return df[df['Location'].isin(locations)]
+    return df[df['Location'].isin(sel_locations)]
 
 
 def get_num_lines(fn):
@@ -425,7 +425,7 @@ def load_singleton_nonsingleton_sites():
     df.to_excel(outfn, index=False)
 
 
-def create_report_datadf(runPrefixDict, ret_col=perf_report_columns):
+def create_report_datadf(runPrefixDict):
     """
     create report from list of runPrefix, return specified columns
     :return:
@@ -445,20 +445,20 @@ def create_report_datadf(runPrefixDict, ret_col=perf_report_columns):
     combdf = pd.concat(dflist, ignore_index=True)
 
     # retdf = rename_to_standard_colname_cordname(combdf)
-    retdf = combdf[ret_col]
+    # retdf = combdf[ret_col]
     # outfn = os.path.join(pic_base_dir, 'perf.csv')
     # retdf.to_csv(outfn)
 
-    return retdf
+    return combdf
 
 
-def collect_wide_format_newly_exp(locations=locations_category + locations_singleton):
+def collect_wide_format_newly_exp(sel_locations=locations_category + locations_singleton):
     """
     Collect the currently new performance of exp results for paper
     :return:
     """
-    df = create_report_datadf(runPrefixDict, ret_col=perf_report_columns)
-    seldf = select_locations_from_reportdf(df, locations=locations)
+    df = create_report_datadf(runPrefixDict)
+    seldf = select_locations_from_reportdf(df, sel_locations=sel_locations)
 
     logger.debug(f"collect_newly_exp_data, wide-format seldf={len(seldf)}")
 

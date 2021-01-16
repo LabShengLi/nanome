@@ -7,7 +7,7 @@
 ##SBATCH --gres=gpu:1
 ##SBATCH -q inference
 #SBATCH --mem=150g
-#SBATCH --time=16:00:00
+#SBATCH --time=1-16:00:00
 #SBATCH -o log/%x.%j.out
 #SBATCH -e log/%x.%j.err
 ##SBATCH --array=1-11

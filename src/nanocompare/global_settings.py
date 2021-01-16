@@ -15,11 +15,8 @@ importlib.reload(pp)
 
 targetedChrs = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
 
-# Meth stats performance results table column name and order
-perf_ret_raw_colname_list = ["prefix", "coord", "accuracy", "ap", "roc_auc", "F1_5C", "F1_5mC", "precision_5C", "recall_5C", "precision_5mC", "recall_5mC", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport", "Csites_called", "mCsites_called", "referenceCpGs", "Csites", "mCsites"]
-
 # which column of performance table is extracted and returned
-perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'AP', 'ROC_AUC',
+perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'Average-Precision', 'ROC-AUC', "Macro-F1", "Micro-F1", "Macro-Precision", "Micro-Precision", "Macro-Recall", "Micro-Recall",
         'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C',
         'Corr_Mix', 'Corr_All', 'Corr_mixedSupport', 'Corr_allSupport',
         'mCsites_called', 'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix', 'coord']
@@ -31,15 +28,15 @@ perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'AP', 'ROC_AUC
 #         'mCsites_called', 'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix', 'coord']
 
 # Rename raw column name to print name
-raw_to_standard_perf_colname = {'precision_5mC': 'Precision_5mC',
-        'precision_5C'                         : 'Precision_5C',
-        'recall_5mC'                           : 'Recall_5mC',
-        'recall_5C'                            : 'Recall_5C',
-        'ap'                                   : 'AP',
-        'accuracy'                             : 'Accuracy',
-        'roc_auc'                              : 'ROC_AUC',
-        'corrMix'                              : 'Corr_Mix',
-        'corrAll'                              : 'Corr_All'}
+# raw_to_standard_perf_colname = {'precision_5mC': 'Precision_5mC',
+#         'precision_5C'                         : 'Precision_5C',
+#         'recall_5mC'                           : 'Recall_5mC',
+#         'recall_5C'                            : 'Recall_5C',
+#         'ap'                                   : 'AP',
+#         'accuracy'                             : 'Accuracy',
+#         'roc_auc'                              : 'ROC_AUC',
+#         'corrMix'                              : 'Corr_Mix',
+#         'corrAll'                              : 'Corr_All'}
 
 # Rename raw name of cpg type to print name
 cpg_name_map_raw_to_standard = {
@@ -111,14 +108,14 @@ def get_tool_name(toolname):
     return toolname
 
 
-def rename_to_standard_colname_cordname(df):
+def rename_coordinate_name(df):
     """
     Rename and change raw values of report df to more meaning full for display
     :param df:
     :return:
     """
     # Rename column names
-    df = df.rename(columns=raw_to_standard_perf_colname)
+    # df = df.rename(columns=raw_to_standard_perf_colname)
 
     # Replace coordinate name, and define unified Location column
     # df = df.replace(to_replace="False", value="x.x.Genome-wide")
