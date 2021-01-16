@@ -2905,11 +2905,11 @@ def combine_ONT_and_BS(ontCalls, bsReference, analysisPrefix, narrowedCoordinate
     return df
 
 
-def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, ontCutt=4, secondFilterBed=None, secondFilterBed_4Corr=None, cutoff_meth=1.0, outdir=None, tagname=None):
+def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, ontCutt=4, secondFilterBed=None, secondFilterBed_4Corr=None, cutoff_meth=1.0, outdir=None, tagname=None, test=False):
     """
     New performance evaluation by Yang
     referenceCpGs is number of all CpGs that is fully-methylated (>=cutoff_meth) or unmethylated in BG-Truth
-    
+
     :param ontCalls:
     :param bgTruth:
     :param analysisPrefix:
@@ -2920,33 +2920,8 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     :param cutoff_meth:
     :return:
     """
-    d = {"prefix"              : [],
-            "coord"            : [],
-            "Accuracy"         : [],
-            "ROC-AUC"          : [],
-            "Average-Precision": [],
-            "Macro-F1"         : [],
-            "Micro-F1"         : [],
-            "Macro-Precision"  : [],
-            "Micro-Precision"  : [],
-            "Macro-Recall"     : [],
-            "Micro-Recall"     : [],
-            "Precision_5C"     : [],
-            "Recall_5C"        : [],
-            "F1_5C"            : [],
-            "Csites"           : [],
-            "Precision_5mC"    : [],
-            "Recall_5mC"       : [],
-            "F1_5mC"           : [],
-            "mCsites"          : [],
-            "referenceCpGs"    : [],
-            "CorrMix"          : [],
-            "Corr_mixedSupport": [],
-            "CorrAll"          : [],
-            "Corr_allSupport"  : [],
-            'Csites_called'    : [],
-            'mCsites_called'   : [],
-            }
+    d = defaultdict(list)
+
     for coord_fn in tqdm(narrowedCoordinatesList):
         accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = \
             computePerReadStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFile=secondFilterBed,
@@ -2977,10 +2952,12 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
         d["mCsites_called"].append(mCalls)
         d["mCsites"].append(mSites_BGTruth)
         d["referenceCpGs"].append(referenceCpGs)
-        d["CorrMix"].append(corrMix)
+        d["Corr_Mix"].append(corrMix)
         d["Corr_mixedSupport"].append(Corr_mixedSupport)
-        d["CorrAll"].append(corrAll)
+        d["Corr_All"].append(corrAll)
         d["Corr_allSupport"].append(Corr_allSupport)
+        if test:
+            break
     df = pd.DataFrame.from_dict(d)
     return df
 

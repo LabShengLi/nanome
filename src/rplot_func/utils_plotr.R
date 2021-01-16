@@ -15,7 +15,7 @@ load.performance.data <- function(infn) {
   return(df)
 }
 
-fig.34a.bar.plot.performance <- function(df, perf.measure = 'Accuracy', locations = locations.Singletons) {
+fig.34a.bar.plot.performance <- function(df, perf.measure = 'Accuracy', locations = locations.Singletons, figsize = c(5.8, 4)) {
   #Select data in locations
   sel_data = df[df$Location %in% locations,]
 
@@ -25,7 +25,7 @@ fig.34a.bar.plot.performance <- function(df, perf.measure = 'Accuracy', location
   p1 <- ggplot(sel_data, aes_string(x = 'Tool', y = perf.measure, fill = 'Tool')) +
     geom_bar(stat = 'identity') +
     facet_grid(Dataset ~ Location) +
-    theme(axis.text.x = element_text(angle = 90))
-  ggsave(p1, filename = outfn, width = 6.5, height = 5)
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  ggsave(p1, filename = outfn, width = figsize[1], height = figsize[2])
   printf("save to %s\n", outfn)
 }

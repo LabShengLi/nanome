@@ -22,13 +22,12 @@ def parse_arguments():
     :return:
     """
     parser = argparse.ArgumentParser(description='Performance evaluation task')
-
     parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff", default=5)
     parser.add_argument('--min-tool-cov', type=int, help="min tool coverage cutoff", default=3)
-
     parser.add_argument('--dsname', type=str, help="dataset name", default='DS')
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--report-joined', action='store_true', help="True if report on only joined sets")
+    parser.add_argument('--test', action='store_true', help="True if only test for short time running")
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name>', required=True)
     parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>", required=True)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
@@ -93,8 +92,7 @@ if __name__ == '__main__':
 
     logger.debug(list(enumerate(relateCoord)))  # all coordinate generated
 
-    post_process = True
-    if post_process:
+    if not args.test:
         ret = singletonsPostprocessing(bgTruth, singletonsFile, RunPrefix, outdir=out_dir)
         ret.update(nonSingletonsPostprocessing(bgTruth, nonsingletonsFile, RunPrefix, outdir=out_dir))
         df = pd.DataFrame([ret], index=[f'{dsname}'])
@@ -105,7 +103,7 @@ if __name__ == '__main__':
     logger.info("\n\n############\n\n")
 
     # this file is the all tool joined together sites
-    fn_secondFilterBed = f"{out_dir}/{RunPrefix}.Tools_BGTruth_Joined.bed"
+    bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}.Tools_BGTruth_Joined.bed"
 
     # this file is used for all coverage > 4 for correlation analysis
     fn_secondFilterBed_4Corr = f"{out_dir}/{RunPrefix}.Tools_BGTruth_Joined.4Corr.bed"
@@ -113,7 +111,7 @@ if __name__ == '__main__':
     joinedCPG = set(bgTruth.keys())
     for toolname in callresult_dict:
         joinedCPG = joinedCPG.intersection(set(callresult_dict[toolname].keys()))
-    save_keys_to_single_site_bed(joinedCPG, outfn=fn_secondFilterBed, callBaseFormat=baseFormat, outBaseFormat=1)
+    save_keys_to_single_site_bed(joinedCPG, outfn=bedfn_tool_join_bgtruth, callBaseFormat=baseFormat, outBaseFormat=1)
 
     logger.info(f"Data points for joined all tools with bg-truth (cov>={bgtruth_cov_cutoff}) stats: {len(joinedCPG):,}\n\n")
 
@@ -141,18 +139,23 @@ if __name__ == '__main__':
         # Note: relateCoord - all singleton (absolute and mixed) and non-singleton generated bed. ranges
         #       secondFilterBed - joined sites of four tools and bg-truth. points
         if report_joined:  # step: with joined results of all tools
-            df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=fn_secondFilterBed, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix)
+            df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=bedfn_tool_join_bgtruth, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, test=args.test)
         else:  # step: no joined results
-            df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=None, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix)
+            df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=None, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, test=args.test)
 
         df['Tool'] = tool
         df['Dataset'] = dsname
         df = rename_coordinate_name(df)
 
+        # logger.debug(df)
+        # logger.debug(df.columns)
+
         # Select columns to save
-        df = df[perf_report_columns]
+        df = df.loc[perf_report_columns]
 
         outfn = os.path.join(perf_dir, f"{RunPrefix}.{tool}.performance.report.csv")
         df.to_csv(outfn)
         logger.info(f"save to {outfn}")
+        if args.test:
+            break
     logger.info("Meth stats performance data generation DONE.")

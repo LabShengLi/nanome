@@ -8,7 +8,7 @@ import numpy as np
 import seaborn as sns
 from scipy.stats import pearsonr
 
-from nanocompare.collect_data import save_wide_format_newly_exp
+from nanocompare.collect_data import collect_singleton_vs_nonsingleton_df
 from nanocompare.global_settings import *
 from nanocompare.load_data import *
 
@@ -849,7 +849,6 @@ def parse_arguments():
     parser.add_argument("cmd", help="name of command, lung or lesion")
     parser.add_argument('-i', nargs='+', help='list of input files', default=[])
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
-
     args = parser.parse_args()
     return args
 
@@ -876,8 +875,12 @@ if __name__ == '__main__':
         gen_figure_3a_4a()
         gen_figure_3b_4b()
         gen_figure_5a()
-    elif args.cmd == 'exp-perf-data':
-        save_wide_format_newly_exp()
+    elif args.cmd == 'export-data':
+        # save_wide_format_newly_exp(args.o)
+        df = collect_singleton_vs_nonsingleton_df(runPrefixDict)
+        logger.debug(df)
+        outfn = os.path.join(args.o, 'dataset.singleton.vs.non-singleton.csv')
+        df.to_csv(outfn)
 
     # pie_plot_all()
     # gen_figure_2bc()

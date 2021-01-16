@@ -425,6 +425,20 @@ def load_singleton_nonsingleton_sites():
     df.to_excel(outfn, index=False)
 
 
+def collect_singleton_vs_nonsingleton_df(runPrefixDict):
+    dflist = []
+    for runPrefix in runPrefixDict:
+        pattern = os.path.join(runPrefixDict[runPrefix], "*.summary.singleton.nonsingleton.csv")
+        flist = glob.glob(pattern)
+        if len(flist) != 1:
+            raise Exception(f"Too much/No summary of singleton vs non-singleton for {runPrefix} in folder {runPrefixDict[runPrefix]} with pattern={pattern}, len={len(flist)}")
+        df = pd.read_csv(flist[0], index_col=0)
+        dflist.append(df)
+    retdf = pd.concat(dflist)
+    retdf.index.name = 'Dataset'
+    return retdf
+
+
 def create_report_datadf(runPrefixDict):
     """
     create report from list of runPrefix, return specified columns
@@ -432,10 +446,8 @@ def create_report_datadf(runPrefixDict):
     """
     dflist = []
     for runPrefix in runPrefixDict:
-        pattern = os.path.join(runPrefixDict[runPrefix], "performance?results", "*.report.csv")
-        # print(pattern)
+        pattern = os.path.join(runPrefixDict[runPrefix], "performance?results", "*.performance.report.csv")
         files = glob.glob(pattern)
-        # logger.debug(files)
         for infn in files:
             df = pd.read_csv(infn, index_col=0, sep=",")
             dflist.append(df)
@@ -443,12 +455,6 @@ def create_report_datadf(runPrefixDict):
     if len(dflist) == 0:
         raise Exception(f"Can not find report at {runPrefix} in folder {runPrefixDict[runPrefix]} with pattern={pattern}")
     combdf = pd.concat(dflist, ignore_index=True)
-
-    # retdf = rename_to_standard_colname_cordname(combdf)
-    # retdf = combdf[ret_col]
-    # outfn = os.path.join(pic_base_dir, 'perf.csv')
-    # retdf.to_csv(outfn)
-
     return combdf
 
 
@@ -465,13 +471,13 @@ def collect_wide_format_newly_exp(sel_locations=locations_category + locations_s
     return seldf
 
 
-def save_wide_format_newly_exp():
+def save_wide_format_newly_exp(outdir):
     """
     Save all performance report results into a csv
     :return:
     """
     df = collect_wide_format_newly_exp()
-    outfn = os.path.join(pic_base_dir, 'performance-results.csv')
+    outfn = os.path.join(outdir, 'performance-results.csv')
     df.to_csv(outfn)
     logger.info(f'save to {outfn}')
 
