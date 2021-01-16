@@ -428,27 +428,20 @@ def load_singleton_nonsingleton_sites():
 def create_report_datadf(runPrefixDict, ret_col=perf_report_columns):
     """
     create report from list of runPrefix, return specified columns
-
-    data are from: pkl/nanocompare/<runPrefix>
-
-    APL_Bsseq_cut10/
-    HL60_AML_Bsseq_cut5/
-    K562_WGBS_joined_cut10/
-    NA19240_RRBS_joined_cut5/
-
     :return:
     """
     dflist = []
-    # base_dir = os.path.join(data_base_dir, 'perf-plot-data')
     for runPrefix in runPrefixDict:
-        pattern = os.path.join(runPrefixDict[runPrefix], "performance?results", "*.report.tsv")
+        pattern = os.path.join(runPrefixDict[runPrefix], "performance?results", "*.report.csv")
         # print(pattern)
         files = glob.glob(pattern)
         # logger.debug(files)
         for infn in files:
-            df = pd.read_csv(infn, index_col=0, sep="\t")
+            df = pd.read_csv(infn, index_col=0, sep=",")
             dflist.append(df)
             logger.debug(f'Collect {runPrefix}:{os.path.basename(infn)} = {len(df)}')
+    if len(dflist) == 0:
+        raise Exception(f"Can not find report at {runPrefix} in folder {runPrefixDict[runPrefix]} with pattern={pattern}")
     combdf = pd.concat(dflist, ignore_index=True)
 
     # retdf = rename_to_standard_colname_cordname(combdf)
@@ -473,8 +466,12 @@ def collect_wide_format_newly_exp(locations=locations_category + locations_singl
 
 
 def save_wide_format_newly_exp():
+    """
+    Save all performance report results into a csv
+    :return:
+    """
     df = collect_wide_format_newly_exp()
-    outfn = os.path.join(pic_base_dir, 'performance-results.cvs')
+    outfn = os.path.join(pic_base_dir, 'performance-results.csv')
     df.to_csv(outfn)
     logger.info(f'save to {outfn}')
 

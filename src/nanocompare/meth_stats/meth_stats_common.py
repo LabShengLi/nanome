@@ -2085,7 +2085,6 @@ def load_single_sites_bed_as_set(infn):
     return ret
 
 
-# TODO: Use None instead of False for args
 def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt_perRead=1, ontCutt_4corr=3, secondFilterBedFile=None, secondFilterBed_4CorrFile=None, cutoff_meth=1.0, outdir=None, tagname=None):
     """
     Compute ontCalls with bgTruth performance results by per-read count.
@@ -2135,11 +2134,8 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
         narrowBed = narrowBed.sort()
         ontCalls_intersect = ontCalls_bed.intersect(narrowBed, u=True, wa=True)
         ontCalls_narrow_set = set(txt2dict(ontCalls_intersect).keys())
-        # logger.debug(list(ontCalls_narrow.keys())[0])
-        suffix = coordBedFileName
     else:
         switch = 1
-        suffix = "GenomeWide"
 
     ## Second optional filter, organized in the same fashion as the first one. Designed to accomodate for example list of CpGs covered by second program
     secondSwitch = 0
@@ -2156,7 +2152,6 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
         ontCalls_narrow_second_set = set(ontCalls.keys()).intersection(joined_set)
     else:
         secondSwitch = 1
-        suffix = "GenomeWide"
 
     # Second optional filter, shoudl be used in combination with second optional filter above
     secondSwitch_4corr = 0
@@ -2173,7 +2168,6 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
         ontCalls_narrow_second_4corr_set = set(ontCalls.keys()).intersection(narrow_second_4corr_set)
     else:
         secondSwitch_4corr = 1
-        suffix = "GenomeWide"
 
     # Initial evaluation vars
     TP_5mC = FP_5mC = FN_5mC = TN_5mC = TP_5C = FP_5C = FN_5C = TN_5C = 0

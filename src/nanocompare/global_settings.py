@@ -70,15 +70,14 @@ narrowCoord = [None] + [os.path.join(data_base_dir, 'genome-annotation', cofn) f
 important_region_bed_fns = [narrowCoord[-2], narrowCoord[6], narrowCoord[9], narrowCoord[8], narrowCoord[3]]
 
 # specify which runPrefix -> dir is the newly results you need
-runPrefixDict = {'K562_WGBS_joined_cut5': os.path.join(data_base_dir, 'perf-plot-data', 'K562_WGBS_joined_cut5'),
-        'APL_Bsseq_cut5'                : os.path.join(data_base_dir, 'perf-plot-data', 'APL_Bsseq_cut5'),
-        'HL60_AML_Bsseq_cut5'           : os.path.join(data_base_dir, 'perf-plot-data', 'HL60_AML_Bsseq_cut5'),
-        'NA19240_RRBS_joined_cut5'      : os.path.join(data_base_dir, 'perf-plot-data', 'NA19240_RRBS_joined_cut5')}
+# runPrefixDict = {'K562_WGBS_joined_cut5': os.path.join(data_base_dir, 'perf-plot-data', 'K562_WGBS_joined_cut5'),
+#         'APL_Bsseq_cut5'                : os.path.join(data_base_dir, 'perf-plot-data', 'APL_Bsseq_cut5'),
+#         'HL60_AML_Bsseq_cut5'           : os.path.join(data_base_dir, 'perf-plot-data', 'HL60_AML_Bsseq_cut5'),
+#         'NA19240_RRBS_joined_cut5'      : os.path.join(data_base_dir, 'perf-plot-data', 'NA19240_RRBS_joined_cut5')}
 
-#
 runPrefixDict = {
-        'K562_WGBS_joined_cut5': os.path.join(results_base_dir, 'MethPerf-K562_WGBS_joined_cut5'),
-        'HL60_AML_Bsseq_cut5'  : os.path.join(results_base_dir, 'MethPerf-HL60_Bsseq_Joined_cut5')}
+        'K562_WGBS': os.path.join(results_base_dir, 'MethPerf-K562_WGBS'),
+        'HL60_RRBS': os.path.join(results_base_dir, 'MethPerf-HL60_RRBS')}
 
 
 def ConvertRGB2sth(r, g, b):

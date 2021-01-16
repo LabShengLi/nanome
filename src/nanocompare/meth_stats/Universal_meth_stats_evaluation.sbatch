@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=Univer.MethStat
-#SBATCH --partition=compute
-##SBATCH -p gpu
-##SBATCH --gres=gpu:1             # number of gpus per node
-##SBATCH -q inference
+##SBATCH --partition=compute
+#SBATCH -p gpu
+#SBATCH --gres=gpu:1             # number of gpus per node
+#SBATCH -q inference
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 4 # number of cores
 #SBATCH --mem 180g # memory pool for all cores
