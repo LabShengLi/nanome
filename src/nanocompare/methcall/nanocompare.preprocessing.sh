@@ -9,7 +9,7 @@
 #SBATCH --mem=250g # memory pool for all cores
 ##SBATCH --time=06:00:00 # time (D-HH:MM)
 #SBATCH --time=1-06:00:00 # time (D-HH:MM) # for NA19240 large input
-#SBATCH -o log/%x.%j.out # STDOUT
+#SBATCH -o log/%x.%j.figures # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
 ################################################################################

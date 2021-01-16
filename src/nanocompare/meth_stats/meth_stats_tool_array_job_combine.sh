@@ -5,7 +5,7 @@
 #SBATCH -n 1 # number of cores
 #SBATCH --mem 200g # memory pool for all cores
 #SBATCH -t 03:00:00 # time (D-HH:MM:SS)
-#SBATCH -o log/%x.%j.out # STDOUT
+#SBATCH -o log/%x.%j.figures # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
 set -x

@@ -45,7 +45,7 @@ def main():
     tmp = []
     # partialLen = ceil(len(fast5files)/TargetNum)
     step = len(fast5files) // TargetNum
-    print("FileSeperator: Each of {} folders will contain {} out of {} files.".format(TargetNum, step, len(fast5files)))
+    print("FileSeperator: Each of {} folders will contain {} figures of {} files.".format(TargetNum, step, len(fast5files)))
     for k in range(TargetNum - 1):
         tmp = fast5files[k * step:(k + 1) * step]
         # Generate N-1 subgroup copy bash scripts
@@ -80,7 +80,7 @@ def main():
 #SBATCH -n 8 # number of cores
 #SBATCH --mem 300g # memory pool for all cores
 #SBATCH -t 5-14:00 # time (D-HH:MM)
-#SBATCH -o log/%x.%j.out # STDOUT
+#SBATCH -o log/%x.%j.figures # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 #SBATCH --array=1-{}
 

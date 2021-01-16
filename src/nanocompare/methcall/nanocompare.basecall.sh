@@ -8,7 +8,7 @@
 #SBATCH -q inference
 #SBATCH --mem=100g
 #SBATCH --time=01:00:00
-#SBATCH -o log/%x.%j.out
+#SBATCH -o log/%x.%j.figures
 #SBATCH -e log/%x.%j.err
 ##SBATCH --array=1-11
 

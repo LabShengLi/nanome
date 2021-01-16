@@ -83,7 +83,7 @@ def sanity_check_get_dna_seq(chrstr):
 
 def filter_noncg_sites_ref_seq(df, tagname, ntask=1, ttask=1, num_seq=5, chr_col=0, start_col=1, strand_col=5, toolname='tombo'):
     """
-    Filter out rows that are non-CG patterns in Tombo results, reference sequence is based on BAM files
+    Filter figures rows that are non-CG patterns in Tombo results, reference sequence is based on BAM files
 
     from SAM to BAM (with index) script is as follows:
 
@@ -163,7 +163,7 @@ def filter_noncg_sites_ref_seq_mpi(df, tagname, ntask=1, ttask=1, num_dna_seq=5,
     invoke like: res = p.apply_async(testFunc, args=(2, 4), kwds={'calcY': False})
                     or pool.apply_async(test, (t,), dict(arg2=5))
 
-    Filter out rows that are non-CG patterns in Tombo results, reference sequence is based on BAM files
+    Filter figures rows that are non-CG patterns in Tombo results, reference sequence is based on BAM files
 
     :param tombo_fn:
     :param sam_fn:
@@ -223,7 +223,7 @@ def filter_noncg_sites_for_tombo(tombo_fn='/projects/li-lab/yang/workspace/nano-
 
 def filter_noncg_sites_mpi(df, ntask=300, toolname='tombo'):
     """
-    MPI version of filter out non-CG patterns
+    MPI version of filter figures non-CG patterns
     :return:
     """
     basefn = os.path.basename(args.i)

@@ -26,7 +26,7 @@ if [ "${run_methcall}" = true ] ; then
 
 	exp_param="dsname=${dsname},Tool=${Tool},targetNum=${targetNum},outbasedir=${outbasedir},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},methCallsDir=${methCallsDir},correctedGroup=${correctedGroup},refGenome=${refGenome},chromSizesFile=${chromSizesFile},run_resquiggling=${run_resquiggling},isGPU=${isGPU},deepsignalModel=${deepsignalModel},deepModModel=${deepModModel},processors=${processors},resquiggleDir=${resquiggleDir}"
 
-	out_param="${methCallsDir}/log/%x.batch%a.%j.out"
+	out_param="${methCallsDir}/log/%x.batch%a.%j.figures"
 	err_param="${methCallsDir}/log/%x.batch%a.%j.err"
 
 	if [ "${Tool}" = "Tombo" ] ; then

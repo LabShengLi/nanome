@@ -8,7 +8,7 @@
 #SBATCH -n 2 # number of cores
 #SBATCH --mem=70g # memory pool for all cores
 #SBATCH --time=00:50:00 # time
-#SBATCH -o log/%x.%j.out # STDOUT
+#SBATCH -o log/%x.%j.figures # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
 
