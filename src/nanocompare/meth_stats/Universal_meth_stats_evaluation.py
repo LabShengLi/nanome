@@ -151,7 +151,7 @@ if __name__ == '__main__':
         # logger.debug(df.columns)
 
         # Select columns to save
-        df = df.loc[perf_report_columns]
+        df = df[perf_report_columns]
 
         outfn = os.path.join(perf_dir, f"{RunPrefix}.{tool}.performance.report.csv")
         df.to_csv(outfn)

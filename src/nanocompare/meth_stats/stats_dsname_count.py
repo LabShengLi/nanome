@@ -1,7 +1,7 @@
 import os
 
 from lilab.tcga.global_tcga import pic_base_dir, logger, set_log_debug_level
-from nanocompare.meth_stats.report_generation import load_ontcall_by_tool
+from nanocompare.meth_stats.report_generation_deprecated import load_ontcall_by_tool
 from nanocompare.global_settings import tools_abbr
 import pandas as pd
 from pathlib import Path

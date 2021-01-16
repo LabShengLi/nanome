@@ -9,7 +9,7 @@ from nanocompare.load_data import load_all_perf_data_for_dataset_list
 import pandas as pd
 
 from nanocompare.meth_stats.Universal_meth_stats_evaluation import NonSingletonsScanner, importPredictions_Nanopolish_2_nofilter, dict2txt
-from nanocompare.meth_stats.report_generation import load_ontcall_by_tool
+from nanocompare.meth_stats.report_generation_deprecated import load_ontcall_by_tool
 from nanocompare.global_settings import important_region_bed_fns
 
 
