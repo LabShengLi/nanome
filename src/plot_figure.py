@@ -8,12 +8,9 @@ import numpy as np
 import seaborn as sns
 from scipy.stats import pearsonr
 
+from nanocompare.collect_data import save_wide_format_newly_exp
 from nanocompare.global_settings import *
 from nanocompare.load_data import *
-
-
-# nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
-# sys.path.append(nanocompare_prj)
 
 
 def single_ds_5mc_5c_performance(dsname="HL60_AML_Bsseq_cut5"):
@@ -368,7 +365,7 @@ def box_plots_two_locations(metrics=["F1_5mC", "F1_5C"]):
             plt.show()
 
 
-def corr_grid_plot(infn):
+def corr_grid_plot_for_fig5a(infn):
     """
     Plot the grid of corr COE, distribution and scatter plot based on input files
     :return:
@@ -384,9 +381,7 @@ def corr_grid_plot(infn):
         if str(col).endswith('_freq'):
             sel_col.append(col)
 
-            new_col_name = str(col).replace('_freq', '')
-            if new_col_name.find('.') != -1:
-                new_col_name = new_col_name[:new_col_name.find('.')]
+            new_col_name = get_tool_name(str(col).replace('_freq', ''))
             rename_dict.update({str(col): new_col_name})
     df = df[sel_col]
     df = df.rename(columns=rename_dict)
@@ -736,7 +731,7 @@ def gen_figure_5a(infn):
     Correlation plots
     :return:
     """
-    corr_grid_plot(infn)
+    corr_grid_plot_for_fig5a(infn)
     pass
 
 
@@ -881,6 +876,8 @@ if __name__ == '__main__':
         gen_figure_3a_4a()
         gen_figure_3b_4b()
         gen_figure_5a()
+    elif args.cmd == 'exp-perf-data':
+        save_wide_format_newly_exp()
 
     # pie_plot_all()
     # gen_figure_2bc()

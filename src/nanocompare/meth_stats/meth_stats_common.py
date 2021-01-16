@@ -2085,7 +2085,8 @@ def load_single_sites_bed_as_set(infn):
     return ret
 
 
-def computePerReadStats(ontCalls, bgTruth, title, bedFileName_Coord=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBedFile=False, secondFilterBed_4CorrFile=False, cutoff_meth=1.0, outdir=None, tagname=None):
+# TODO: Use None instead of False for args
+def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBedFile=False, secondFilterBed_4CorrFile=False, cutoff_meth=1.0, outdir=None, tagname=None):
     """
     Compute ontCalls with bgTruth performance results by per-read count.
     bedFile                 -   coordinate used to eval
@@ -2125,17 +2126,17 @@ def computePerReadStats(ontCalls, bgTruth, title, bedFileName_Coord=False, ontCu
 
     switch = 0
     ontCalls_narrow_set = None
-    if bedFileName_Coord != False:
+    if coordBedFileName != False:
         # logger.debug(bedFile)
         ontCalls_bed = BedTool(dict2txt(ontCalls), from_string=True)
         ontCalls_bed = ontCalls_bed.sort()
 
-        narrowBed = BedTool(bedFileName_Coord)
+        narrowBed = BedTool(coordBedFileName)
         narrowBed = narrowBed.sort()
         ontCalls_intersect = ontCalls_bed.intersect(narrowBed, u=True, wa=True)
         ontCalls_narrow_set = set(txt2dict(ontCalls_intersect).keys())
         # logger.debug(list(ontCalls_narrow.keys())[0])
-        suffix = bedFileName_Coord
+        suffix = coordBedFileName
     else:
         switch = 1
         suffix = "GenomeWide"
@@ -2327,7 +2328,7 @@ def computePerReadStats(ontCalls, bgTruth, title, bedFileName_Coord=False, ontCu
     try:
         fpr, tpr, _ = roc_curve(y_of_bgtruth, ypred_of_ont_tool)
     except ValueError:
-        logger.error(f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{ypred_of_ont_tool}, \nother settings: {title}, {bedFileName_Coord}, {secondFilterBedFile}, {secondFilterBed_4CorrFile}")
+        logger.error(f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{ypred_of_ont_tool}, \nother settings: {title}, {coordBedFileName}, {secondFilterBedFile}, {secondFilterBed_4CorrFile}")
         fprSwitch = 0
         roc_auc = 0
 
@@ -2341,7 +2342,11 @@ def computePerReadStats(ontCalls, bgTruth, title, bedFileName_Coord=False, ontCu
     ########################
     # save y and y-pred for later plot:
     curve_data = {'yTrue': y_of_bgtruth, 'yPred': ypred_of_ont_tool}
-    outfn = os.path.join(outdir, f'{tagname}.{os.path.basename(bedFileName_Coord)}.curve_data.pkl')
+
+    basefn = 'GenomeWide' if not coordBedFileName else os.path.basename(coordBedFileName)
+
+    os.makedirs(os.path.join(outdir, 'curve_data'), exist_ok=True)
+    outfn = os.path.join(outdir, 'curve_data', f'{tagname}.{basefn}.curve_data.pkl')
     with open(outfn, 'wb') as handle:
         pickle.dump(curve_data, handle)
 
@@ -2803,7 +2808,7 @@ def combine2programsCalls(calls1, calls2, outfileName=None):
     #     return dict.fromkeys(set(calls1.keys()).intersection(set(calls2.keys())), -1)
 
 
-def combine2programsCalls_4Corr(calls1, calls2, cutt=4, outfileName=False, only_bgtruth=False, print_first=False):
+def combine2programsCalls_4Corr(calls1, calls2, cutt=3, outfileName=False, only_bgtruth=False, print_first=False):
     '''
     call1 and call2 should have the following format:
     {"chr\tstart\tend\n" : [list of methylation calls]}
@@ -2931,6 +2936,7 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     d = {"prefix"              : [],
             "coord"            : [],
             "accuracy"         : [],
+            "ap"               : [],
             "roc_auc"          : [],
             "precision_5C"     : [],
             "recall_5C"        : [],
@@ -2950,7 +2956,7 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
             }
     for coord_fn in tqdm(narrowedCoordinatesList):
         accuracy, roc_auc, ap, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = \
-            computePerReadStats(ontCalls, bgTruth, analysisPrefix, bedFileName_Coord=coord_fn, secondFilterBedFile=secondFilterBed,
+            computePerReadStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFile=secondFilterBed,
                                 secondFilterBed_4CorrFile=secondFilterBed_4Corr,
                                 cutoff_meth=cutoff_meth, outdir=outdir, tagname=tagname)
 
@@ -3335,7 +3341,7 @@ def singletonsPostprocessing(referenceMeth, singletonsBedFile, runPrefix, outdir
     return ret
 
 
-#     return regions_refMeth
+# TODO: Deprecated, but can check before results if it is correct
 def singletonsPostprocessing2(referenceMeth, singletonsBedFile, dataset, outdir=None, cutoff_meth=1.0):
     '''
     This function will take the input *.bed file from "NonSingletonsScanner" funtion, which corresponds with singletons.

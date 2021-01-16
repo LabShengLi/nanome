@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 from nanocompare.global_config import logger, pic_base_dir
-from nanocompare.global_settings import locations_category, locations_singleton, ret_perf_report_columns, runPrefixDict, perf_col_raw_to_standard, cpg_name_map_raw_to_standard
+from nanocompare.global_settings import locations_category, locations_singleton, perf_report_columns, runPrefixDict
 
 
 def collect_data_selected_locations(path, extension="tsv", prefix="APL_BSseq_cut10/APL_Bsseq_cut10.", sel_locations=["GW", "singletons", "nonsingletons", "cpgIslandExt", "promoters_500bp"]):
@@ -377,27 +377,6 @@ def load_data(path, extension="tsv"):
     return cobmined_data
 
 
-def rename_from_raw_to_standard(df):
-    """
-    Rename and change raw values of report df to more meaning full for display
-    :param df:
-    :return:
-    """
-    df = df.rename(columns=perf_col_raw_to_standard)
-
-    df = df.replace(to_replace="False", value="x.x.Genome-wide")
-
-    df = df.replace(to_replace="hg38_singletons.bed", value="x.x.Singletons")
-    df = df.replace(to_replace="hg38_nonsingletons.bed", value="x.x.Non-singletons")
-
-    df['coord'] = df['coord'].str.replace("promoterFeature.flank_", "promoterFeature")
-
-    df["Location"] = df["coord"].str.split(".", n=3, expand=True)[2]
-
-    df['Location'] = df['Location'].replace(cpg_name_map_raw_to_standard)
-    return df
-
-
 def select_locations_from_reportdf(df, locations=locations_category + locations_singleton):
     """
     Select only interested locations
@@ -446,7 +425,7 @@ def load_singleton_nonsingleton_sites():
     df.to_excel(outfn, index=False)
 
 
-def create_report_datadf(runPrefixDict, ret_col=ret_perf_report_columns):
+def create_report_datadf(runPrefixDict, ret_col=perf_report_columns):
     """
     create report from list of runPrefix, return specified columns
 
@@ -472,26 +451,32 @@ def create_report_datadf(runPrefixDict, ret_col=ret_perf_report_columns):
             logger.debug(f'Collect {runPrefix}:{os.path.basename(infn)} = {len(df)}')
     combdf = pd.concat(dflist, ignore_index=True)
 
-    retdf = rename_from_raw_to_standard(combdf)
-
-    retdf = retdf[ret_col]
+    # retdf = rename_to_standard_colname_cordname(combdf)
+    retdf = combdf[ret_col]
     # outfn = os.path.join(pic_base_dir, 'perf.csv')
     # retdf.to_csv(outfn)
 
     return retdf
 
 
-def collect_wide_format_newly_exp():
+def collect_wide_format_newly_exp(locations=locations_category + locations_singleton):
     """
     Collect the currently new performance of exp results for paper
     :return:
     """
-    df = create_report_datadf(runPrefixDict, ret_col=ret_perf_report_columns)
-    seldf = select_locations_from_reportdf(df)
+    df = create_report_datadf(runPrefixDict, ret_col=perf_report_columns)
+    seldf = select_locations_from_reportdf(df, locations=locations)
 
     logger.debug(f"collect_newly_exp_data, wide-format seldf={len(seldf)}")
 
     return seldf
+
+
+def save_wide_format_newly_exp():
+    df = collect_wide_format_newly_exp()
+    outfn = os.path.join(pic_base_dir, 'performance-results.cvs')
+    df.to_csv(outfn)
+    logger.info(f'save to {outfn}')
 
 
 if __name__ == '__main__':

@@ -16,23 +16,30 @@ importlib.reload(pp)
 targetedChrs = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
 
 # Meth stats performance results table column name and order
-perf_table_column_list = ["prefix", "coord", "accuracy", "roc_auc", "F1_5C", "F1_5mC", "precision_5C", "recall_5C", "precision_5mC", "recall_5mC", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport", "Csites_called", "mCsites_called", "referenceCpGs", "Csites", "mCsites"]
+perf_ret_raw_colname_list = ["prefix", "coord", "accuracy", "ap", "roc_auc", "F1_5C", "F1_5mC", "precision_5C", "recall_5C", "precision_5mC", "recall_5mC", "corrMix", "Corr_mixedSupport", "corrAll", "Corr_allSupport", "Csites_called", "mCsites_called", "referenceCpGs", "Csites", "mCsites"]
 
 # which column of performance table is extracted and returned
-ret_perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'ROC_AUC',
+perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'AP', 'ROC_AUC',
         'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C',
         'Corr_Mix', 'Corr_All', 'Corr_mixedSupport', 'Corr_allSupport',
         'mCsites_called', 'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix', 'coord']
 
+# TODO: test now, will add AP later
+# ret_perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'ROC_AUC',
+#         'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C',
+#         'Corr_Mix', 'Corr_All', 'Corr_mixedSupport', 'Corr_allSupport',
+#         'mCsites_called', 'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix', 'coord']
+
 # Rename raw column name to print name
-perf_col_raw_to_standard = {'precision_5mC': 'Precision_5mC',
-        'precision_5C'                     : 'Precision_5C',
-        'recall_5mC'                       : 'Recall_5mC',
-        'recall_5C'                        : 'Recall_5C',
-        'accuracy'                         : 'Accuracy',
-        'roc_auc'                          : 'ROC_AUC',
-        'corrMix'                          : 'Corr_Mix',
-        'corrAll'                          : 'Corr_All'}
+raw_to_standard_perf_colname = {'precision_5mC': 'Precision_5mC',
+        'precision_5C'                         : 'Precision_5C',
+        'recall_5mC'                           : 'Recall_5mC',
+        'recall_5C'                            : 'Recall_5C',
+        'ap'                                   : 'AP',
+        'accuracy'                             : 'Accuracy',
+        'roc_auc'                              : 'ROC_AUC',
+        'corrMix'                              : 'Corr_Mix',
+        'corrAll'                              : 'Corr_All'}
 
 # Rename raw name of cpg type to print name
 cpg_name_map_raw_to_standard = {
@@ -47,33 +54,8 @@ cpg_name_map_raw_to_standard = {
         'promoterFeature500': 'Promoters',
         'absolute'          : 'Absolute'}
 
-# Deprecated, now use auto detect
-# tools = ['DeepSignal_calls', 'Tombo_calls', 'DeepMod_calls', 'Nanopolish_calls']
-# tools_abbr = ['DeepSignal', 'Tombo', 'DeepMod', 'Nanopolish']
-
-# Locations of two types, deprecated due to old name
 locations_category = ["Genome-wide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns"]
 locations_singleton = ["Singletons", "Non-singletons", "Discordant", "Concordant"]
-
-# Plot performance order
-# perf_order = ['F1_5mC', 'F1_5C']
-
-# Correlation ploting input tsv's important fields
-# Deprecated, now support auto detection col and plot
-# cor_tsv_fields = ["DeepSignal_freq", "Tombo_freq", "Nanopolish_freq", "DeepMod_freq", "DeepMod_clust_freq", "BSseq_freq"]
-# cor_tsv_fields = ["DeepSignal_freq", "Tombo_freq", "Nanopolish_freq", "DeepMod_freq", "BSseq_freq"]
-
-# Deprecated, now support auto detection col and plot
-# cor_tsv_fields_abbr = ["DeepSignal", "Tombo", "Nanopolish", "DeepMod", "DeepMod_clust", "BSseq"]
-# cor_tsv_fields_abbr = ["DeepSignal", "Tombo", "Nanopolish", "DeepMod", "BSseq"]
-
-# Deprecated
-# gbtruth_filedict = {
-#         'NA19240': os.path.join('/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/joined_reps/RRBS/extractBismark', 'NA19240_joined_RRBS.Read_R1.Rep_1_trimmed_bismark_bt2.bismark.cov.gz'),
-#         'K562'   : os.path.join('/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/joined_reps/RRBS/extractBismark', 'K562_joined_RRBS.Read_R1.Rep_4_trimmed_bismark_bt2.bismark.cov.gz'),
-#         'HL60'   : os.path.join('/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/joined_reps/RRBS/extractBismark', 'HL60_joined_RRBS.Read_R1.Rep_3_trimmed_bismark_bt2.bismark.cov.gz'),  # /projects/li-lab/wangj/AML-oxbs/AML-bs_R1_val_1_bismark_bt2_pe.deduplicated.bismark.cov.gz
-#         'APL'    : '/projects/li-lab/wangj/AML-oxbs/APL-bs_R1_val_1_bismark_bt2_pe.deduplicated.bismark.cov.gz'
-#         }
 
 singletonsFile = "hg38_singletons.bed"
 nonsingletonsFile = "hg38_nonsingletons.bed"
@@ -92,14 +74,10 @@ runPrefixDict = {'K562_WGBS_joined_cut5': os.path.join(data_base_dir, 'perf-plot
         'HL60_AML_Bsseq_cut5'           : os.path.join(data_base_dir, 'perf-plot-data', 'HL60_AML_Bsseq_cut5'),
         'NA19240_RRBS_joined_cut5'      : os.path.join(data_base_dir, 'perf-plot-data', 'NA19240_RRBS_joined_cut5')}
 
-# 'K562_WGBS_joined_cut5': os.path.join(results_base_dir, 'MethPerf-K562_WGBS_joined_cut5'),
+#
 runPrefixDict = {
-        'HL60_AML_Bsseq_cut5': os.path.join(results_base_dir, 'MethPerf-HL60_Bsseq_Joined_cut5')}
-
-
-# def dict_cor_tsv_to_abbr():
-#     dict_cor = {cor_tsv_fields[i]: cor_tsv_fields_abbr[i] for i in range(len(cor_tsv_fields))}
-#     return dict_cor
+        'K562_WGBS_joined_cut5': os.path.join(results_base_dir, 'MethPerf-K562_WGBS_joined_cut5'),
+        'HL60_AML_Bsseq_cut5'  : os.path.join(results_base_dir, 'MethPerf-HL60_Bsseq_Joined_cut5')}
 
 
 def ConvertRGB2sth(r, g, b):
@@ -127,20 +105,33 @@ def make_colormap(seq):
     return mcolors.LinearSegmentedColormap('CustomMap', cdict)
 
 
-# greenApple = make_colormap([ConvertRGB2sth(255, 255, 255), ConvertRGB2sth(173, 255, 50), 0.05, ConvertRGB2sth(173, 255, 50), ConvertRGB2sth(78, 121, 32), 0.3, ConvertRGB2sth(78, 121, 32), ConvertRGB2sth(0, 0, 0)])
-# G2O = make_colormap([ConvertRGB2sth(0, 158, 115), ConvertRGB2sth(0, 0, 0), 0.5, ConvertRGB2sth(0, 0, 0), ConvertRGB2sth(230, 159, 0)])
+def get_tool_name(toolname):
+    if toolname.find('.') != -1:  # cut of DeepMod.C or DeepMod.Cluster
+        return toolname[:toolname.find('.')]
+    return toolname
+
+
+def rename_to_standard_colname_cordname(df):
+    """
+    Rename and change raw values of report df to more meaning full for display
+    :param df:
+    :return:
+    """
+    # Rename column names
+    df = df.rename(columns=raw_to_standard_perf_colname)
+
+    # Replace coordinate name, and define unified Location column
+    df = df.replace(to_replace="False", value="x.x.Genome-wide")
+    df = df.replace(to_replace="hg38_singletons.bed", value="x.x.Singletons")
+    df = df.replace(to_replace="hg38_nonsingletons.bed", value="x.x.Non-singletons")
+    df['coord'] = df['coord'].str.replace("promoterFeature.flank_", "promoterFeature")
+    df["Location"] = df["coord"].str.split(".", n=3, expand=True)[2]
+    df['Location'] = df['Location'].replace(cpg_name_map_raw_to_standard)
+    return df
+
 
 # Color used of correlation plots
 agressiveHot = make_colormap([ConvertRGB2sth(255, 255, 255), ConvertRGB2sth(255, 237, 8), 0.05, ConvertRGB2sth(255, 181, 0), ConvertRGB2sth(218, 33, 0), 0.3, ConvertRGB2sth(218, 33, 0), ConvertRGB2sth(0, 0, 0)])
-
-# def map_from_tool_to_abbr(tool):
-#     """
-#     From 'DeepSignal_calls' to 'DeepSignal'
-#     :param tool:
-#     :return:
-#     """
-#     return dict_tools_to_abbr[tool]
-
 
 if __name__ == '__main__':
 

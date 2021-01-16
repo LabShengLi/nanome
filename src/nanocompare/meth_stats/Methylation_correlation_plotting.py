@@ -182,7 +182,7 @@ def parse_arguments():
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
     parser.add_argument('--processors', type=int, help="running processors", default=8)
     parser.add_argument('--bgtruthcov-cutoff', type=int, help="cutoff of coverage in bg-truth", default=5)
-    parser.add_argument('--toolcov-cutoff', type=int, help="cutoff of coverage in nanopore calls", default=4)
+    parser.add_argument('--toolcov-cutoff', type=int, help="cutoff of coverage in nanopore calls", default=3)
     parser.add_argument('--baseFormat', type=int, help="cutoff of coverage in nanopore calls", default=0)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
     return parser.parse_args()
@@ -193,8 +193,9 @@ if __name__ == '__main__':
 
     args = parse_arguments()
 
-    RunPrefix = args.runid  # "K562_WGBS_Joined"
-    # tool coverage cutoff 4
+    RunPrefix = args.runid.replace('MethCorr-', '')
+
+    # tool coverage cutoff 3
     minToolCovCutt = args.toolcov_cutoff
 
     # bgtruth coverage cutoff 5
@@ -206,7 +207,7 @@ if __name__ == '__main__':
     # output csv seperator: , or tab
     sep = args.sep
 
-    out_dir = os.path.join(args.o, RunPrefix)
+    out_dir = os.path.join(args.o, args.runid)
     os.makedirs(out_dir, exist_ok=True)
     logger.info(f'Output to dir:{out_dir}')
 
