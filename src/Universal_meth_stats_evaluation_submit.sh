@@ -6,7 +6,8 @@ pythonFile=${prjBaseDir}/src/nanocompare/meth_stats/Universal_meth_stats_evaluat
 
 
 # input file
-inputTsvFile=${prjBaseDir}/src/nanocompare/meth_stats/NanoComarePerformance_paper.tsv
+#inputTsvFile=${prjBaseDir}/src/NanoComarePerformance_paper.tsv
+inputTsvFile=NanoComarePerformance_paper.tsv
 
 
 #Universal_meth_stats_evaluation_submit.py NanoComarePerformance_paper.tsv

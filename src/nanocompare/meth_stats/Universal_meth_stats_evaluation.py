@@ -122,7 +122,7 @@ if __name__ == '__main__':
     if post_process:
         ret = singletonsPostprocessing(bgTruth, singletonsFile, RunPrefix, outdir=out_dir)
         ret.update(nonSingletonsPostprocessing(bgTruth, nonsingletonsFile, RunPrefix, outdir=out_dir))
-        df = pd.DataFrame([ret], index=f'{RunPrefix}')
+        df = pd.DataFrame([ret], index=[f'{RunPrefix}'])
         outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.csv')
         df.to_csv(outfn)
         logger.info(f'save to {outfn}')
@@ -167,9 +167,9 @@ if __name__ == '__main__':
         # Note: relateCoord - all singleton (absolute and mixed) and non-singleton generated bed. ranges
         #       secondFilterBed - joined sites of four tools and bg-truth. points
         if report_joined:  # step: with joined results of all tools
-            df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=fn_secondFilterBed, secondFilterBed_4Corr=fn_secondFilterBed_4Corr)
+            df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=fn_secondFilterBed, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix)
         else:  # step: no joined results
-            df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=False, secondFilterBed_4Corr=fn_secondFilterBed_4Corr)
+            df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=False, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix)
         df = df[perf_table_column_list]
 
         df['Tool'] = tool

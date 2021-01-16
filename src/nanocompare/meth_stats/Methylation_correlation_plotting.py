@@ -216,6 +216,8 @@ if __name__ == '__main__':
     logger.debug(args)
 
     callfn_dict = defaultdict()  # callname -> filename
+
+    # callname -> [call0, call1], call0 is no-filter results, call1 is filter by cutoff, and convert to [meth-freq, meth-cov] results.
     callresult_dict = defaultdict()
     callname_list = []
 
@@ -272,8 +274,6 @@ if __name__ == '__main__':
 
         for name in callname_list:
             row_list.extend([f'{callresult_dict[name][1][cpg][0]:.3f}', f'{callresult_dict[name][1][cpg][1]}'])
-        # outfile.write(f'{sep}'.join(f'{sep}{callresult_dict[name][1][cpg][0]}', f'{callresult_dict[name][1][cpg][1]}'))
-        # outfile.write(f"\t{callresult_dict[name][1][cpg][0]}\t{callresult_dict[name][1][cpg][1]}")
         outfile.write(sep.join(row_list))
         outfile.write("\n")
     outfile.close()

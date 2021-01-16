@@ -46,8 +46,8 @@ else:
     chrkeys.append("chrY")
     chrkeys.append("chrM")
 
-    chrkeys = get_all_chrs(pred_folder, baseofint)
-    print(list(enumerate(chrkeys)))
+    # chrkeys = get_all_chrs(pred_folder, baseofint)
+    # print(list(enumerate(chrkeys)))
 
 chrkeys = set(chrkeys)
 

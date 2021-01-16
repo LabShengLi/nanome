@@ -32,6 +32,7 @@ pythonFn=${prjBaseDir}/src/nanocompare/meth_stats/Methylation_correlation_plotti
 
 PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:$DeepSignal_calls \
 	Tombo:$Tombo_calls Nanopolish:$Nanopolish_calls DeepMod:$DeepMod_calls \
-	Megalodon:${Megalodon_calls} --bgtruth $parser:$bgTruth --runid MethCorr-$RunPrefix
+	Megalodon:${Megalodon_calls} --bgtruth $parser:$bgTruth --runid MethCorr-$RunPrefix \
+	--toolcov-cutoff 3 # cutoff=3 is reasonable now
 
 

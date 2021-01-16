@@ -22,8 +22,6 @@ from sklearn.metrics import roc_curve, precision_recall_curve, auc, confusion_ma
 from tqdm import tqdm
 
 from nanocompare.global_config import *
-# nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
-# sys.path.append(nanocompare_prj)
 from nanocompare.global_settings import targetedChrs
 
 
@@ -960,7 +958,7 @@ def importPredictions_Tombo3(infileName, chr_col=0, start_col=1, meth_col=4, bas
     return cpgDict
 
 
-def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_reads_col=-2, coverage_col=-4, baseFormat=0, sep='\t', output_first=False):
+def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_reads_col=-2, coverage_col=-4, baseFormat=0, sep=' ', output_first=False):
     '''
     We treate input as 0-based format for start col. Due to we pre-processed original DeepMod results by filter out non-CG sites, the input of this funciton is sep=TAB instead!!!
 
@@ -1000,9 +998,10 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     '''
 
     infile = open(infileName, "r")
-    # cpgDict = {}
     cpgDict = defaultdict(list)
-    count = 0
+    count_calls = 0
+    meth_cnt = 0
+    unmeth_cnt = 0
 
     for row in infile:
         tmp = row.strip().split(sep)
@@ -1013,13 +1012,12 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
         if output_first:
             logger.debug(f'row = {list(enumerate(tmp))}')
             output_first = False
+
         if baseFormat == 1:
             start = int(tmp[start_col]) + 1
-            end = start
             strand = tmp[strand_col]
         elif baseFormat == 0:
             start = int(tmp[start_col])
-            end = start + 1
             strand = tmp[strand_col]
         else:
             logger.debug("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
@@ -1027,7 +1025,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
 
         if strand not in ['-', '+']:
             raise Exception(f'The file [{infileName}] can not recognized strand-info from row={row}, please check it')
-        #         key = (tmp[chr_col], start)
+
         key = (tmp[chr_col], start, strand)
 
         methReads = int(tmp[meth_reads_col])
@@ -1036,11 +1034,13 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
         methCallsList = [1] * methReads + [0] * (coverage - methReads)
         cpgDict[key] = methCallsList
 
-        count += len(methCallsList)
+        count_calls += len(methCallsList)
+        meth_cnt += methReads
+        unmeth_cnt += coverage - methReads
 
     infile.close()
 
-    logger.info("###\timportPredictions_DeepMod SUCCESS: {:,} methylation calls mapped to {:,} CpGs from {} file".format(count, len(cpgDict), infileName))
+    logger.info(f"###\timportPredictions_DeepMod SUCCESS: {count_calls:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
     return cpgDict
 
 
@@ -1170,8 +1170,7 @@ def importPredictions_DeepMod3(infileName, chr_col=0, start_col=1, meth_percenta
     return cpgDict
 
 
-# Need to modify and check before use
-def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4, clustered_meth_freq_col=-1, baseFormat=0):
+def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4, clustered_meth_freq_col=-1, baseFormat=0, sep=' '):
     '''
     Note: results of cluster is differ from other tools like:
     [methFrequency, coverage] such as key -> values [50 (freq 0-100), 10 (cov)]
@@ -1215,13 +1214,15 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     '''
 
     infile = open(infileName, "r")
-    # cpgDict = {}
-    cpgDict = defaultdict(list)
+    cpgDict = defaultdict({})
     count = 0
     output_first = True
 
     for row in infile:
-        tmp = row.strip().split(" ")
+        tmp = row.strip().split(sep)
+
+        if tmp[chr_col] not in targetedChrs:
+            continue
 
         if output_first:
             logger.debug(f'row = {list(enumerate(tmp))}')
@@ -1229,29 +1230,29 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
 
         if baseFormat == 1:
             start = int(tmp[start_col]) + 1
-            end = start
             strand = tmp[strand_col]
         elif baseFormat == 0:
             start = int(tmp[start_col])
-            end = start + 1
             strand = tmp[strand_col]
         else:
             logger.error("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
+        if strand not in ['+', '-']:
+            raise Exception(f'Strand info={strand} is not correctly recognized, row={row}, in file {infileName}')
 
-        # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
         key = (tmp[chr_col], start, strand)
 
         methFreq = int(tmp[clustered_meth_freq_col])
         coverage = int(tmp[coverage_col])
 
-        cpgDict[key] = [methFreq, coverage]
+        cpgDict[key] = {'freq': methFreq / 100.0, 'cov': coverage}
 
         count += 1
 
     infile.close()
 
-    logger.info("###\tDeepMod_clusteredResultParsing SUCCESS: {:,} methylation calls imported for {:,} CpGs from {} file".format(count, len(cpgDict), infileName))
+    logger.info(f"###\tDeepMod_clusteredResult Parsing SUCCESS: imported for {len(cpgDict):,} CpGs from {infileName} file")
+
     return cpgDict
 
 
@@ -1366,14 +1367,14 @@ def coverageFiltering(calls_dict, minCov=4, byLength=True, toolname="Tool"):
     :param byLength: if False, will deal with DeepMod_cluster results
     :return:
     """
-    result = {}
+    result = defaultdict()
     for cpg in calls_dict:
-        if byLength:
+        if type(calls_dict[cpg]) == list:  # value is [0 0 1 1 0 ...]
             if len(calls_dict[cpg]) >= minCov:
                 result[cpg] = [sum(calls_dict[cpg]) / float(len(calls_dict[cpg])), len(calls_dict[cpg])]
-        else:  # Used by DeepMod_cluster results
-            if calls_dict[cpg][1] >= minCov:
-                result[cpg] = [calls_dict[cpg][0] / 100.0, calls_dict[cpg][1]]
+        else:  # Used by DeepMod_cluster results, value is {'freq':0.72, 'cov':18}
+            if calls_dict[cpg]['cov'] >= minCov:
+                result[cpg] = [calls_dict[cpg]['freq'], calls_dict[cpg]['cov']]
 
     logger.info(f"###\tcoverageFiltering: completed filtering with minCov={minCov}, {len(result):,} CpG sites left for {toolname}")
     return result
@@ -2084,7 +2085,7 @@ def load_single_sites_bed_as_set(infn):
     return ret
 
 
-def computePerReadStats(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBedFile=False, secondFilterBed_4CorrFile=False, cutoff_meth=1.0):
+def computePerReadStats(ontCalls, bgTruth, title, bedFileName_Coord=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBedFile=False, secondFilterBed_4CorrFile=False, cutoff_meth=1.0, outdir=None, tagname=None):
     """
     Compute ontCalls with bgTruth performance results by per-read count.
     bedFile                 -   coordinate used to eval
@@ -2124,17 +2125,17 @@ def computePerReadStats(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRead
 
     switch = 0
     ontCalls_narrow_set = None
-    if bedFile != False:
+    if bedFileName_Coord != False:
         # logger.debug(bedFile)
         ontCalls_bed = BedTool(dict2txt(ontCalls), from_string=True)
         ontCalls_bed = ontCalls_bed.sort()
 
-        narrowBed = BedTool(bedFile)
+        narrowBed = BedTool(bedFileName_Coord)
         narrowBed = narrowBed.sort()
         ontCalls_intersect = ontCalls_bed.intersect(narrowBed, u=True, wa=True)
         ontCalls_narrow_set = set(txt2dict(ontCalls_intersect).keys())
         # logger.debug(list(ontCalls_narrow.keys())[0])
-        suffix = bedFile
+        suffix = bedFileName_Coord
     else:
         switch = 1
         suffix = "GenomeWide"
@@ -2198,7 +2199,7 @@ def computePerReadStats(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRead
 
     TP_5mC = FP_5mC = FN_5mC = TN_5mC = TP_5C = FP_5C = FN_5C = TN_5C = 0
     y_of_bgtruth = []
-    scores_of_call = []
+    ypred_of_ont_tool = []
 
     ontSites = 0  # count how many reads is methy or unmethy
 
@@ -2261,7 +2262,7 @@ def computePerReadStats(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRead
                         TN_5C += 1
 
                     ### AUC related:
-                    scores_of_call.append(ontCall)
+                    ypred_of_ont_tool.append(ontCall)
 
                     if bgTruth[cpg_ont][0] >= (cutoff_meth - 1e-6):
                         y_of_bgtruth.append(1)
@@ -2324,9 +2325,9 @@ def computePerReadStats(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRead
 
     fprSwitch = 1
     try:
-        fpr, tpr, _ = roc_curve(y_of_bgtruth, scores_of_call)
+        fpr, tpr, _ = roc_curve(y_of_bgtruth, ypred_of_ont_tool)
     except ValueError:
-        logger.error(f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{scores_of_call}, \nother settings: {title}, {bedFile}, {secondFilterBedFile}, {secondFilterBed_4CorrFile}")
+        logger.error(f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{ypred_of_ont_tool}, \nother settings: {title}, {bedFileName_Coord}, {secondFilterBedFile}, {secondFilterBed_4CorrFile}")
         fprSwitch = 0
         roc_auc = 0
 
@@ -2334,8 +2335,15 @@ def computePerReadStats(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRead
         roc_auc = auc(fpr, tpr)
 
         ## Precission-recall:
-        average_precision = average_precision_score(y_of_bgtruth, scores_of_call)
-        precision, recall, _ = precision_recall_curve(y_of_bgtruth, scores_of_call)
+        average_precision = average_precision_score(y_of_bgtruth, ypred_of_ont_tool)
+        precision, recall, _ = precision_recall_curve(y_of_bgtruth, ypred_of_ont_tool)
+
+    ########################
+    # save y and y-pred for later plot:
+    curve_data = {'yTrue': y_of_bgtruth, 'yPred': ypred_of_ont_tool}
+    outfn = os.path.join(outdir, f'{tagname}.{os.path.basename(bedFileName_Coord)}.curve_data.pkl')
+    with open(outfn, 'wb') as handle:
+        pickle.dump(curve_data, handle)
 
     ########################
     # correlation based stats:
@@ -2349,7 +2357,7 @@ def computePerReadStats(ontCalls, bgTruth, title, bedFile=False, ontCutt_perRead
     except:
         corrAll, pvalAll = (0, 0)
 
-    return accuracy, roc_auc, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, len(ontFrequencies_4corr_mix), corrAll, len(ontFrequencies_4corr_all), Csites_BGTruth, mCsites_BGTruth  # , leftovers, leftovers1
+    return accuracy, roc_auc, average_precision, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, len(ontFrequencies_4corr_mix), corrAll, len(ontFrequencies_4corr_all), Csites_BGTruth, mCsites_BGTruth  # , leftovers, leftovers1
 
 
 # only care about AUC
@@ -2901,7 +2909,7 @@ def combine_ONT_and_BS(ontCalls, bsReference, analysisPrefix, narrowedCoordinate
     return df
 
 
-def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=False, ontCutt=4, secondFilterBed=False, secondFilterBed_4Corr=False, cutoff_meth=1.0):
+def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=False, ontCutt=4, secondFilterBed=False, secondFilterBed_4Corr=False, cutoff_meth=1.0, outdir=None, tagname=None):
     """
     New performance evaluation by Yang
     Revised the mCSites1 and CSites1 to really CpG sites count.
@@ -2941,16 +2949,17 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
             'mCsites_called'   : [],
             }
     for coord_fn in tqdm(narrowedCoordinatesList):
-        accuracy, roc_auc, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = computePerReadStats(ontCalls, bgTruth, analysisPrefix, bedFile=coord_fn, secondFilterBedFile=secondFilterBed,
-                                                                                                                                                                                                                                        secondFilterBed_4CorrFile=secondFilterBed_4Corr,
-                                                                                                                                                                                                                                        cutoff_meth=cutoff_meth)
+        accuracy, roc_auc, ap, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = \
+            computePerReadStats(ontCalls, bgTruth, analysisPrefix, bedFileName_Coord=coord_fn, secondFilterBedFile=secondFilterBed,
+                                secondFilterBed_4CorrFile=secondFilterBed_4Corr,
+                                cutoff_meth=cutoff_meth, outdir=outdir, tagname=tagname)
 
         coord = os.path.basename(f'{coord_fn}')
-        # logger.debug(f'coord={coord1}')
 
         d["prefix"].append(analysisPrefix)
         d["coord"].append(coord)
         d["accuracy"].append(accuracy)
+        d["ap"].append(ap)
         d["roc_auc"].append(roc_auc)
         d["precision_5C"].append(precision_5C)
         d["recall_5C"].append(recall_5C)
@@ -2967,8 +2976,6 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
         d["Corr_mixedSupport"].append(Corr_mixedSupport)
         d["corrAll"].append(corrAll)
         d["Corr_allSupport"].append(Corr_allSupport)
-
-    #     df = pd.DataFrame.from_dict(d, orient='index')
     df = pd.DataFrame.from_dict(d)
     return df
 
@@ -3819,6 +3826,10 @@ def import_call(fn, callname, baseFormat=0):
         calls0 = importPredictions_DeepMod_Read_Level(fn, baseFormat=baseFormat)
     elif callname == 'Megalodon':
         calls0 = importPredictions_Megalodon_Read_Level(fn, baseFormat=baseFormat)
+    elif callname == 'DeepMod.Cluster':  # import DeepMod itself tool reports by cluster, key->value={'freq':68, 'cov':10}
+        calls0 = importPredictions_DeepMod_clustered(fn, baseFormat=baseFormat)
+    elif callname == 'DeepMod.C':  # import DeepMod itself tool reports by cluster, key->value={'freq':68, 'cov':10}
+        calls0 = importPredictions_DeepMod(fn, baseFormat=baseFormat)
     else:
         raise Exception(f'Not support {callname} for file {fn} now')
 
