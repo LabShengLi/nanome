@@ -63,9 +63,10 @@ nonsingletonsFile = "hg38_nonsingletons.bed"
 narrowCoordList = [singletonsFile, nonsingletonsFile, "ONT.hg38.cpgIslandExt.bed", "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed", "ONT.hg38.exonFeature.bed", "ONT.hg38.geneFeature.bed", "ONT.hg38.intergenic.bed", "ONT.hg38.intronFeature.bed", "ONT.hg38.promoterFeature.flank_100.bed", "ONT.hg38.promoterFeature.flank_1000.bed",
         "ONT.hg38.promoterFeature.flank_200.bed", "ONT.hg38.promoterFeature.flank_2000.bed", "ONT.hg38.promoterFeature.flank_500.bed", "ONT.hg38.promoterFeature.flank_750.bed"]
 
-narrowCoord = [False] + [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in narrowCoordList]
+# None means no coordinate used, i.e. Genome-wide
+narrowCoord = [None] + [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in narrowCoordList]
 
-# Not used
+# Not used now
 important_region_bed_fns = [narrowCoord[-2], narrowCoord[6], narrowCoord[9], narrowCoord[8], narrowCoord[3]]
 
 # specify which runPrefix -> dir is the newly results you need
@@ -121,7 +122,7 @@ def rename_to_standard_colname_cordname(df):
     df = df.rename(columns=raw_to_standard_perf_colname)
 
     # Replace coordinate name, and define unified Location column
-    df = df.replace(to_replace="False", value="x.x.Genome-wide")
+    # df = df.replace(to_replace="False", value="x.x.Genome-wide")
     df = df.replace(to_replace="hg38_singletons.bed", value="x.x.Singletons")
     df = df.replace(to_replace="hg38_nonsingletons.bed", value="x.x.Non-singletons")
     df['coord'] = df['coord'].str.replace("promoterFeature.flank_", "promoterFeature")

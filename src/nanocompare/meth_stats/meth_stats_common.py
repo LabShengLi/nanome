@@ -2086,7 +2086,7 @@ def load_single_sites_bed_as_set(infn):
 
 
 # TODO: Use None instead of False for args
-def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBedFile=False, secondFilterBed_4CorrFile=False, cutoff_meth=1.0, outdir=None, tagname=None):
+def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt_perRead=1, ontCutt_4corr=3, secondFilterBedFile=None, secondFilterBed_4CorrFile=None, cutoff_meth=1.0, outdir=None, tagname=None):
     """
     Compute ontCalls with bgTruth performance results by per-read count.
     bedFile                 -   coordinate used to eval
@@ -2126,7 +2126,7 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=False, ontCut
 
     switch = 0
     ontCalls_narrow_set = None
-    if coordBedFileName != False:
+    if coordBedFileName:
         # logger.debug(bedFile)
         ontCalls_bed = BedTool(dict2txt(ontCalls), from_string=True)
         ontCalls_bed = ontCalls_bed.sort()
@@ -2143,14 +2143,9 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=False, ontCut
 
     ## Second optional filter, organized in the same fashion as the first one. Designed to accomodate for example list of CpGs covered by second program
     secondSwitch = 0
-    ontCalls_narrow_second = {}
     ontCalls_narrow_second_set = None
-    if secondFilterBedFile != False:
-        # logger.debug(secondFilterBedFile)
-
+    if secondFilterBedFile:
         joined_set = load_single_sites_bed_as_set(secondFilterBedFile)
-        # logger.debug(f'joined_set={len(joined_set)}')
-
         infile = open(secondFilterBedFile, 'r')
         secondFilterDict = {}
         for row in infile:  # each row: chr123  123   123  .  .  +
@@ -2158,25 +2153,15 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=False, ontCut
             key = (rowsplit[0], int(rowsplit[1]), rowsplit[5])
             secondFilterDict[key] = 0
         infile.close()
-        # logger.debug(f'ontCalls key={list(ontCalls.keys())[:2]}, secondFilterDict={list(secondFilterDict.keys())[:2]}')
-        # logger.debug(f'ontCalls={len(ontCalls)}, secondFilterDict={len(secondFilterDict)}, intersect={len(set(ontCalls.keys()).intersection(set(secondFilterDict.keys())))}')
-        ontCalls_narrow_second = dict.fromkeys(set(ontCalls.keys()).intersection(set(secondFilterDict.keys())), 0)
         ontCalls_narrow_second_set = set(ontCalls.keys()).intersection(joined_set)
-        # logger.debug(f'ontCalls_narrow_second={len(ontCalls_narrow_second)}, ontCalls_narrow_second_set={len(ontCalls_narrow_second_set)}')
-
-        # sys.exit(-1)
-
     else:
         secondSwitch = 1
         suffix = "GenomeWide"
 
     # Second optional filter, shoudl be used in combination with second optional filter above
     secondSwitch_4corr = 0
-    ontCalls_narrow_second_4corr = {}
     ontCalls_narrow_second_4corr_set = None
     if secondFilterBed_4CorrFile != False:
-        # logger.debug(secondFilterBed_4CorrFile)
-
         narrow_second_4corr_set = load_single_sites_bed_as_set(secondFilterBed_4CorrFile)
         infile = open(secondFilterBed_4CorrFile, 'r')
         secondFilterDict = {}
@@ -2185,25 +2170,17 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=False, ontCut
             key = (rowsplit[0], int(rowsplit[1]), rowsplit[5])
             secondFilterDict[key] = 0
         infile.close()
-        ontCalls_narrow_second_4corr = dict.fromkeys(set(ontCalls.keys()).intersection(set(secondFilterDict.keys())), 0)
         ontCalls_narrow_second_4corr_set = set(ontCalls.keys()).intersection(narrow_second_4corr_set)
-        # logger.debug(list(ontCalls_narrow_second_4corr.keys())[0])
-        # logger.debug(f'ontCalls_narrow_second_4corr={len(ontCalls_narrow_second_4corr)}, ontCalls_narrow_second_4corr_set={len(ontCalls_narrow_second_4corr_set)}')
-
     else:
         secondSwitch_4corr = 1
         suffix = "GenomeWide"
 
-    suffixTMP = suffix.split("/")
-    if len(suffixTMP) > 1:
-        suffix = suffixTMP[-1]
-
+    # Initial evaluation vars
     TP_5mC = FP_5mC = FN_5mC = TN_5mC = TP_5C = FP_5C = FN_5C = TN_5C = 0
     y_of_bgtruth = []
     ypred_of_ont_tool = []
 
     ontSites = 0  # count how many reads is methy or unmethy
-
     mCalls = 0  # count how many read call is methy
     cCalls = 0  # count how many read call is unmethy
 
@@ -2219,65 +2196,74 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=False, ontCut
 
     ontFrequencies_4corr_all = []  # all are all:) i.e. all CpGs with methyaltion level in refence in range 0-1
     refFrequencies_4corr_all = []
-    leftovers = {}
-    leftovers1 = {}
 
-    for cpg_ont in ontCalls:  # key = (chr, start, strand)
+    # We find the narrowed CpG set to evaluate, try to reduce running time
+    targetedSet = set(ontCalls.keys())
+    if ontCalls_narrow_set:
+        targetedSet = targetedSet.intersection(ontCalls_narrow_set)
+
+    if ontCalls_narrow_second_set:
+        targetedSet = targetedSet.intersection(ontCalls_narrow_second_set)
+
+    if ontCalls_narrow_second_4corr_set:
+        targetedSet = targetedSet.union(ontCalls_narrow_second_4corr_set)
+
+    for cpgKey in targetedSet:  # key = (chr, start, strand)
         ##### for per read stats:
-        if cpg_ont in bgTruth and len(ontCalls[cpg_ont]) >= ontCutt_perRead and (switch == 1 or cpg_ont in ontCalls_narrow_set) and (
-                secondSwitch == 1 or cpg_ont in ontCalls_narrow_second_set):  # we should not take onCuttoffs for per read stats - shouldn't we? actually, we need to have the option to use this parameter, because at some point we may want to narrow down the per read stats to cover only the sites which were also covered by correlation with BS-Seq. Using this
+        if cpgKey in bgTruth and len(ontCalls[cpgKey]) >= ontCutt_perRead and (switch == 1 or cpgKey in ontCalls_narrow_set) and (
+                secondSwitch == 1 or cpgKey in ontCalls_narrow_second_set):  # we should not take onCuttoffs for per read stats - shouldn't we? actually, we need to have the option to use this parameter, because at some point we may want to narrow down the per read stats to cover only the sites which were also covered by correlation with BS-Seq. Using this
             # cutoff here is the easiest way to do just that
             #         if cpg_ont in bsReference and (switch == 1 or cpg_ont in ontCalls_narrow):
-            if bgTruth[cpg_ont][0] >= (cutoff_meth - 1e-6) or bgTruth[cpg_ont][0] <= 1e-5:  # we only consider absolute states here, 0, or 1 in bgtruth
+            if bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6) or bgTruth[cpgKey][0] <= 1e-5:  # we only consider absolute states here, 0, or 1 in bgtruth
                 referenceCpGs += 1
 
-                if bgTruth[cpg_ont][0] >= (cutoff_meth - 1e-6):
+                if bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):
                     mCsites_BGTruth += 1
-                elif bgTruth[cpg_ont][0] <= 1e-5:
+                elif bgTruth[cpgKey][0] <= 1e-5:
                     Csites_BGTruth += 1
 
-                for ontCall in ontCalls[cpg_ont]:  # ontCall only 0 or 1
-                    if ontCall >= (cutoff_meth - 1e-6):
+                for perCall in ontCalls[cpgKey]:  # perCall only 0 or 1
+                    if perCall >= (cutoff_meth - 1e-6):
                         mCalls += 1
-                    elif ontCall <= 1e-5:
+                    elif perCall <= 1e-5:
                         cCalls += 1
                     ontSites += 1
 
                     ### variables needed to compute precission, recall etc.:
-                    if ontCall == 1 and bgTruth[cpg_ont][0] >= (cutoff_meth - 1e-6):  # true positive
+                    if perCall == 1 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # true positive
                         TP_5mC += 1
-                    elif ontCall == 1 and bgTruth[cpg_ont][0] <= 1e-5:  # false positive
+                    elif perCall == 1 and bgTruth[cpgKey][0] <= 1e-5:  # false positive
                         FP_5mC += 1
-                    elif ontCall == 0 and bgTruth[cpg_ont][0] >= (cutoff_meth - 1e-6):  # false negative
+                    elif perCall == 0 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # false negative
                         FN_5mC += 1
-                    elif ontCall == 0 and bgTruth[cpg_ont][0] <= 1e-5:  # true negative
+                    elif perCall == 0 and bgTruth[cpgKey][0] <= 1e-5:  # true negative
                         TN_5mC += 1
 
-                    if ontCall == 0 and bgTruth[cpg_ont][0] <= 1e-5:  # true positive
+                    if perCall == 0 and bgTruth[cpgKey][0] <= 1e-5:  # true positive
                         TP_5C += 1
-                    elif ontCall == 0 and bgTruth[cpg_ont][0] >= (cutoff_meth - 1e-6):  # false positive
+                    elif perCall == 0 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # false positive
                         FP_5C += 1
-                    elif ontCall == 1 and bgTruth[cpg_ont][0] <= 1e-5:  # false negative
+                    elif perCall == 1 and bgTruth[cpgKey][0] <= 1e-5:  # false negative
                         FN_5C += 1
-                    elif ontCall == 1 and bgTruth[cpg_ont][0] >= (cutoff_meth - 1e-6):  # true negative
+                    elif perCall == 1 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # true negative
                         TN_5C += 1
 
                     ### AUC related:
-                    ypred_of_ont_tool.append(ontCall)
+                    ypred_of_ont_tool.append(perCall)
 
-                    if bgTruth[cpg_ont][0] >= (cutoff_meth - 1e-6):
+                    if bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):
                         y_of_bgtruth.append(1)
                     else:
                         y_of_bgtruth.append(0)
 
-        ##### for correlation stats:
-        if cpg_ont in bgTruth and len(ontCalls[cpg_ont]) >= ontCutt_4corr and (switch == 1 or cpg_ont in ontCalls_narrow_set) and (secondSwitch_4corr == 1 or cpg_ont in ontCalls_narrow_second_4corr_set):
-            ontMethFreq = np.mean(ontCalls[cpg_ont])
+        ##### for correlation stats: # TODO Currently not used
+        if cpgKey in bgTruth and len(ontCalls[cpgKey]) >= ontCutt_4corr and (switch == 1 or cpgKey in ontCalls_narrow_set) and (secondSwitch_4corr == 1 or cpgKey in ontCalls_narrow_second_4corr_set):
+            ontMethFreq = np.mean(ontCalls[cpgKey])
             ontFrequencies_4corr_all.append(ontMethFreq)
-            refFrequencies_4corr_all.append(bgTruth[cpg_ont][0])
-            if bgTruth[cpg_ont][0] > 0 and bgTruth[cpg_ont][0] < (cutoff_meth - 1e-6):
+            refFrequencies_4corr_all.append(bgTruth[cpgKey][0])
+            if bgTruth[cpgKey][0] > 0 and bgTruth[cpgKey][0] < (cutoff_meth - 1e-6):
                 ontFrequencies_4corr_mix.append(ontMethFreq)
-                refFrequencies_4corr_mix.append(bgTruth[cpg_ont][0])
+                refFrequencies_4corr_mix.append(bgTruth[cpgKey][0])
 
     ### compute all per read stats:
     #     Accuracy:
@@ -2343,7 +2329,7 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=False, ontCut
     # save y and y-pred for later plot:
     curve_data = {'yTrue': y_of_bgtruth, 'yPred': ypred_of_ont_tool}
 
-    basefn = 'GenomeWide' if not coordBedFileName else os.path.basename(coordBedFileName)
+    basefn = 'x.x.GenomeWide' if not coordBedFileName else os.path.basename(coordBedFileName)
 
     os.makedirs(os.path.join(outdir, 'curve_data'), exist_ok=True)
     outfn = os.path.join(outdir, 'curve_data', f'{tagname}.{basefn}.curve_data.pkl')
@@ -2914,7 +2900,7 @@ def combine_ONT_and_BS(ontCalls, bsReference, analysisPrefix, narrowedCoordinate
     return df
 
 
-def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=False, ontCutt=4, secondFilterBed=False, secondFilterBed_4Corr=False, cutoff_meth=1.0, outdir=None, tagname=None):
+def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, ontCutt=4, secondFilterBed=None, secondFilterBed_4Corr=None, cutoff_meth=1.0, outdir=None, tagname=None):
     """
     New performance evaluation by Yang
     Revised the mCSites1 and CSites1 to really CpG sites count.
@@ -2960,7 +2946,7 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
                                 secondFilterBed_4CorrFile=secondFilterBed_4Corr,
                                 cutoff_meth=cutoff_meth, outdir=outdir, tagname=tagname)
 
-        coord = os.path.basename(f'{coord_fn}')
+        coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genome-wide"}')
 
         d["prefix"].append(analysisPrefix)
         d["coord"].append(coord)
