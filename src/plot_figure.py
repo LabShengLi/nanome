@@ -382,11 +382,13 @@ def corr_grid_plot(infn):
     rename_dict = {}
     for col in df.columns:
         if str(col).endswith('_freq'):
-            sel_col.append(str(col))
-            rename_dict.update({str(col): str(col).replace('_freq', '')})
-    # logger.debug(sel_col)
+            sel_col.append(col)
+
+            new_col_name = str(col).replace('_freq', '')
+            if new_col_name.find('.') != -1:
+                new_col_name = new_col_name[:new_col_name.find('.')]
+            rename_dict.update({str(col): new_col_name})
     df = df[sel_col]
-    # logger.debug(df)
     df = df.rename(columns=rename_dict)
     num_col = len(df.columns)
     df = df.iloc[:, list(range(1, num_col)) + [0]]

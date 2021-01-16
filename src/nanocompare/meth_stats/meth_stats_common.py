@@ -1214,7 +1214,7 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     '''
 
     infile = open(infileName, "r")
-    cpgDict = defaultdict({})
+    cpgDict = defaultdict(dict)
     count = 0
     output_first = True
 
