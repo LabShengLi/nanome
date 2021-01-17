@@ -527,35 +527,10 @@ def extract_deepmod_read_level_results_mp(basecallDir='/fastscratch/liuya/nanoco
 
 def parse_arguments():
     """
-    usage: volume_calculation.py [-h] [-n N] [-t T] [--show]
-                             [--input INPUT [INPUT ...]] [--output OUTPUT]
-                             [--dcm] [--single-scan] [--lu-score LU_SCORE]
-                             [--le-score LE_SCORE]
-                             cmd
-
-    Volume calculation for lung and lesion
-
-    positional arguments:
-      cmd                   name of command: compute, combine, or gen-pixel-info
-
-    optional arguments:
-      -h, --help            show this help message and exit
-      -n N                  the total number of tasks (1-27)
-      -t T                  the current task id (1-N)
-      --show                show prediction images if using this switch
-      --input INPUT [INPUT ...]
-                            the input dir that contains scanid of pic/dcm files
-      --output OUTPUT       the input pic dir
-      --dcm                 folders are scanid that containing DCM files if using
-                            this switch
-      --single-scan         folders are directly the scanid folder if using this
-                            switch
-      --lu-score LU_SCORE   the lung field detection score
-      --le-score LE_SCORE   the lesion field detection score
     :return:
     """
     parser = argparse.ArgumentParser(description='Multi-task')
-    parser.add_argument("cmd", help="name of command: compute, combine, or gen-pixel-info")
+    parser.add_argument("cmd", help="name of command: compute, combine, or gen-pixel-info", required=True)
     parser.add_argument('-n', type=int, help="the total number of tasks (1-27)", default=1)
     parser.add_argument('-t', type=int, help="the current task id (1-N)", default=1)
     parser.add_argument('-i', type=str, help="input file", default=None)
@@ -566,7 +541,7 @@ def parse_arguments():
     parser.add_argument('--methcallDir', type=str, help="methcallDir dir name", default=None)
     parser.add_argument('--processors', type=int, help="Number of processors", default=8)
     parser.add_argument('--mpi', action='store_true')
-    parser.add_argument('--chrs', nargs='+', help='all chrs need to check', default=None)
+    parser.add_argument('--chrs', nargs='+', help='all chrs need to check', default=[])
 
     return parser.parse_args()
 

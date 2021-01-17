@@ -11,7 +11,7 @@ infn = 'performance-results.csv'
 # Load data and sort string orders
 df <- load.performance.data(infn)
 
-measure.pair.list = list(c('Accuracy', 'ROC_AUC'), c('F1_5mC', 'F1_5C'))
+measure.pair.list = list(c('Accuracy', 'Micro.F1'), c('Micro.Precision', 'Micro.Recall'), c('F1_5mC', 'F1_5C'))
 
 for (measure.pair in measure.pair.list) {
   fig.34a.scatter.plot.performance(df, measure.pair, locations = locations.Singletons)
@@ -20,7 +20,7 @@ for (measure.pair in measure.pair.list) {
 
 
 # Plot using functions
-perf.measure.list = c('Accuracy', 'AP', 'ROC_AUC', 'F1_5mC', 'Precision_5mC', 'Recall_5mC')
+perf.measure.list = c('Accuracy','ROC.AUC', 'Micro.F1', 'Macro.F1','Average.Precision', 'Recall_5mC')
 
 for (perf.measure in perf.measure.list) {
   fig.34a.bar.plot.performance(df, perf.measure, locations = locations.Singletons)
