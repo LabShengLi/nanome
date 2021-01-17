@@ -1,5 +1,5 @@
 """
-Plots all Nanocompare paper figures
+Plots all Nanocompare paper out
 """
 import os
 import sys

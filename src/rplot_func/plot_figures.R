@@ -1,4 +1,7 @@
-wdir = "/Users/liuya/PycharmProjects/nano-compare/src/rplot_func"
+library(here)
+here()
+
+wdir = here()  #"/Users/liuya/PycharmProjects/nano-compare/src/rplot_func"
 setwd(wdir)
 
 source('utils_plotr.R')

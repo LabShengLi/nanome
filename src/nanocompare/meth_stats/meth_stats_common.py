@@ -681,7 +681,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     baseCount - 0 or 1, standing for 0-based or 1-based, respectively
     cutoff - sumilarly as in case of Nanopolish, here we have cutoff for the value from the statistical test. From this conversations (https://github.com/nanoporetech/tombo/issues/151), I know this value is by default 2.5.
 
-    ### Example input format from Tombo (v1.5), we need to pre-process the Tombo results by filtering figures non-CG patterns firstly
+    ### Example input format from Tombo (v1.5), we need to pre-process the Tombo results by filtering out non-CG patterns firstly
 
     more /projects/li-lab/yang/results/2020-12-21/K562.tombo_perReadsStats-with-seq-info-n350-t001-chr1.tsv
 
@@ -960,7 +960,7 @@ def importPredictions_Tombo3(infileName, chr_col=0, start_col=1, meth_col=4, bas
 
 def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_reads_col=-2, coverage_col=-4, baseFormat=0, sep=' ', output_first=False):
     '''
-    We treate input as 0-based format for start col. Due to we pre-processed original DeepMod results by filter figures non-CG sites, the input of this funciton is sep=TAB instead!!!
+    We treate input as 0-based format for start col. Due to we pre-processed original DeepMod results by filter out non-CG sites, the input of this funciton is sep=TAB instead!!!
 
     Return dict of key='chr1  123  123  +', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
 
@@ -970,7 +970,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
 
     The output is in a BED format like below. The first six columns are Chr, Start pos, End pos, Base, Capped coverage, and Strand, and the last three columns are Real coverage, Mehylation percentage and Methylation coverage.
 
-    Example input format from DeepMod (standard), we also preprocess the DeepMod initial results by filetering non-CG sites, which is figures of our interest.
+    Example input format from DeepMod (standard), we also preprocess the DeepMod initial results by filetering non-CG sites, which is out of our interest.
 
     head /projects/li-lab/yang/results/2020-12-21/K562.deepmod_combined-with-seq-info-n100-t006-chr1.tsv
 
@@ -2089,7 +2089,7 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
     """
     Compute ontCalls with bgTruth performance results by per-read count.
     bedFile                 -   coordinate used to eval
-    secondFilterBed         -   joined sets of four tools with bg-truth, or False with figures joined sets
+    secondFilterBed         -   joined sets of four tools with bg-truth, or False with out joined sets
     secondFilterBed_4Corr   -   for report corr purpose, currently not fixed bugs.
 
     Note: in our experiments, bed files of singleton, non-singleton and related files are all start 1-based format.
@@ -3778,7 +3778,7 @@ def get_high_cov_call1_low_cov_call2_df(call1, call2, call1_name='nanopolish', c
 
 def filter_non_human_chrs(cpgDict):
     """
-    Filter figures non-human chrs, only keep chr1-22 chrX chrY
+    Filter out non-human chrs, only keep chr1-22 chrX chrY
     :param cpgDict:
     :return:
     """

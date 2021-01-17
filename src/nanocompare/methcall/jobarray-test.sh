@@ -5,7 +5,7 @@
 #SBATCH --mem=512MB                     # Memory
 #SBATCH --array=1-2                     # Array jobs
 #SBATCH --time=00:01:00     	# Walltime (HH:MM:SS)
-#SBATCH --output=log/%x.batch%a.%j.figures
+#SBATCH --output=log/%x.batch%a.%j.out
 #SBATCH --error=log/%x.batch%a.%j.err
 
 

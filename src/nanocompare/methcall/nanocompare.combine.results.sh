@@ -5,7 +5,7 @@
 #SBATCH -n 4 # number of cores
 #SBATCH --mem=150g # memory pool for all cores
 #SBATCH --time=10:00:00 # time (D-HH:MM:SS)
-#SBATCH -o log/%x.%j.figures # STDOUT
+#SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
 ################################################################################
@@ -58,13 +58,13 @@ if [ "${Tool}" = "Tombo" ] ; then
 
 	echo "### Tombo combining batches results finished. ###"
 
-	# we need do filter figures non-CG patterns also, now using MPI version
+	# we need do filter out non-CG patterns also, now using MPI version
 	sbatch --nodes=1 --ntasks=32 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh tombo-add-seq -i ${methCallsDir}/${dsname}.tombo.perReadsStats.combined.tsv --mpi --processors 32 -o ${methCallsDir}
 
 	# wait the filter task finished, then start clean, so block here
-#	srun --dependency=afterok:${filter_taskid} echo "Wait Filter-figures NON-CG task finished."
+#	srun --dependency=afterok:${filter_taskid} echo "Wait Filter-out NON-CG task finished."
 
-	echo "### Tombo filter figures NON-CG patterns post-process jobs submitted. ###"
+	echo "### Tombo filter out NON-CG patterns post-process jobs submitted. ###"
 
 elif [ "${Tool}" = "DeepSignal" ] ; then
 	ls ${methCallsDir}/*.deepsignal.call_mods.tsv | wc -l
@@ -136,7 +136,7 @@ elif [ "${Tool}" = "DeepMod" ] ; then
 
 	echo "### DeepMod combine all batches results. ###"
 
-	# we need do filter figures non-CG patterns also, now using MPI version
+	# we need do filter out non-CG patterns also, now using MPI version
 	sbatch --nodes=1 --ntasks=32 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ${NanoCompareDir}/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh deepmod-add-seq -i ${methCallsDir}/${dsname}.deepmod.C.combine.tsv --mpi --processors 32 -o ${methCallsDir}
 
 	filter_taskid=${filter_taskid}:$(echo ${filter_ret} |grep -Eo '[0-9]+$')

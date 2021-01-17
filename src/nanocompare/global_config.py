@@ -116,7 +116,7 @@ file_handler, console_handler = init_logging()
 
 def set_log_debug_level():
     """
-    Set debug logger level to file and std figures
+    Set debug logger level to file and std out
     :return:
     """
     file_handler.setLevel(logging.DEBUG)
@@ -125,7 +125,7 @@ def set_log_debug_level():
 
 def set_log_info_level():
     """
-    Set info logger level to file and std figures
+    Set info logger level to file and std out
     :return:
     """
     file_handler.setLevel(logging.INFO)

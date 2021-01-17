@@ -1,5 +1,5 @@
 """
-Plots all Nanocompare paper figures
+Plots all Nanocompare paper out
 """
 import argparse
 
@@ -845,7 +845,7 @@ def plot_pie_chart(data, labels, dsname="NA19240"):
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Plot figures in Nano-compare paper.')
+    parser = argparse.ArgumentParser(description='Plot out in Nano-compare paper.')
     parser.add_argument("cmd", help="name of command, lung or lesion")
     parser.add_argument('-i', nargs='+', help='list of input files', default=[])
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)

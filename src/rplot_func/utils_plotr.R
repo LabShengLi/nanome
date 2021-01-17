@@ -21,7 +21,7 @@ fig.34a.bar.plot.performance <- function(df, perf.measure = 'Accuracy', location
   sel_data = df[df$Location %in% locations,]
 
   #Plot and save
-  outfn = sprintf("out/fig.34a.bar.%s.%s.png", locations[1], perf.measure)
+  outfn = sprintf("figures/fig.34a.bar.%s.%s.png", locations[1], perf.measure)
   p1 <- ggplot(sel_data, aes_string(x = 'Tool', y = perf.measure, fill = 'Tool')) +
     geom_bar(stat = 'identity') +
     facet_grid(Dataset ~ Location) +
@@ -41,7 +41,7 @@ fig.34a.scatter.plot.performance <- function(df, measure.pair, locations, figsiz
     ylim(0, 1) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
-  outfn = sprintf("out/fig.34a.scatter.%s.%s.png", locations[1], measure.pair[1])
+  outfn = sprintf("figures/fig.34a.scatter.%s.%s.png", locations[1], measure.pair[1])
   ggsave(p1, filename = outfn)
   printf("save to %s\n", outfn)
 
