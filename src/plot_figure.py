@@ -8,7 +8,7 @@ import numpy as np
 import seaborn as sns
 from scipy.stats import pearsonr
 
-from nanocompare.collect_data import collect_singleton_vs_nonsingleton_df
+from nanocompare.collect_data import collect_singleton_vs_nonsingleton_df, save_wide_format_newly_exp
 from nanocompare.global_settings import *
 from nanocompare.load_data import *
 
@@ -876,7 +876,7 @@ if __name__ == '__main__':
         gen_figure_3b_4b()
         gen_figure_5a()
     elif args.cmd == 'export-data':
-        # save_wide_format_newly_exp(args.o)
+        save_wide_format_newly_exp(args.o)
         df = collect_singleton_vs_nonsingleton_df(runPrefixDict)
         logger.debug(df)
         outfn = os.path.join(args.o, 'dataset.singleton.vs.non-singleton.csv')

@@ -1513,6 +1513,7 @@ def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, 
     return cpgDict
 
 
+# Deal with K562 bed with strand info
 def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_col=1, meth_col=3, meth_reads_col=4, unmeth_reads_col=5, strand_col=6, covCutt=10, baseFormat=0, chrFilter=False, gzippedInput=True, includeCov=False):
     '''
     We modified this function due to the histogram shows it is 0-based format, NOT 1-based format.
@@ -3583,7 +3584,8 @@ def get_ref_fasta():
     return ref_fasta
 
 
-def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yang/results/2020-12-21/hl60-results-1/extractBismark/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz', chr_col=0, start_col=1, strand_col=2, meth_col=3, unmeth_col=4, ccontect_col=5, covCutt=10, baseCount=0, includeCov=True):
+# Deal with bismark_bt2.CpG_report.txt.gz
+def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yang/results/2020-12-21/hl60-results-1/extractBismark/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz', chr_col=0, start_col=1, strand_col=2, meth_col=3, unmeth_col=4, ccontect_col=5, covCutt=10, baseFormat=0, includeCov=True):
     """
     We are sure the input file is start using 1-based format.
     We use this format due to it contains strand info.
@@ -3619,22 +3621,21 @@ def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yan
     :param unmeth_col:
     :param ccontect_col:
     :param covCutt:
-    :param baseCount:
+    :param baseFormat:
     :param includeCov:
     :return:
     """
     df = pd.read_csv(infn, sep='\t', compression='gzip', header=None)
-    # logger.info(df)
 
     df['cov'] = df.iloc[:, meth_col] + df.iloc[:, unmeth_col]
     df = df[df['cov'] >= covCutt]
 
     df = df[df.iloc[:, ccontect_col] == 'CG']
 
-    if baseCount == 0:
+    if baseFormat == 0:
         df.iloc[:, start_col] = df.iloc[:, start_col] - 1
         df['end'] = df.iloc[:, start_col] + 1
-    elif baseCount == 1:
+    elif baseFormat == 1:
         df['end'] = df.iloc[:, start_col]
 
     df['meth-freq'] = (df.iloc[:, meth_col] / df['cov'] * 100).astype(np.int32)
@@ -3642,15 +3643,16 @@ def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yan
     df = df.iloc[:, [chr_col, start_col, df.columns.get_loc("end"), df.columns.get_loc("meth-freq"), df.columns.get_loc("cov"), strand_col]]
 
     df.columns = ['chr', 'start', 'end', 'meth-freq', 'cov', 'strand']
-    # logger.info(df)
 
     cpgDict = defaultdict(list)
     for index, row in df.iterrows():
         chr = row['chr']
         start = int(row['start'])
-        end = int(row['end'])
         strand = row['strand']
-        # key = f'{chr}\t{start}\t{end}\t{strand}\n'
+
+        if strand not in ['+', '-']:
+            raise Exception(f'strand={strand}  for row={row} is not acceptable, please check use correct function to parse bgtruth file {infn}')
+
         key = (chr, int(start), strand)
         if key not in cpgDict:
             if includeCov:
@@ -3836,7 +3838,7 @@ def import_bgtruth(fn, encode, cov=10, baseFormat=0, includeCov=True):
     elif encode == "bismark_bedgraph":
         bgTruth = importGroundTruth_coverage_output_from_Bismark_BedGraph(fn, baseCount=baseFormat)
     elif encode == "bismark":  # for genome-wide Bismark results, such as HL60, etc.
-        bgTruth = importGroundTruth_genome_wide_output_from_Bismark(fn, covCutt=cov, baseCount=baseFormat, includeCov=includeCov)
+        bgTruth = importGroundTruth_genome_wide_output_from_Bismark(fn, covCutt=cov, baseFormat=baseFormat, includeCov=includeCov)
     else:
         raise Exception("Methylation_correlation_plotting.py ERROR: Unknown bacground truth parser configuration. Aborting. FYI: currently supported are: encode, oxBS_sudo, bismark")
 

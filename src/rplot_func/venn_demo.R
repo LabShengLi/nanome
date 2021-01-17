@@ -47,7 +47,7 @@ venn.plot <- draw.quintuple.venn(
 
 # Writing to file
 #tiff(filename = "Quintuple_Venn_diagram.tiff", compression = "lzw");
-ggsave(venn.plot, filename = "Quintuple_Venn_diagram.png")
+ggsave(venn.plot, filename = "Quintuple_Venn_diagram.tiff")
 #grid.draw(venn.plot);
 #dev.off();
 # }
