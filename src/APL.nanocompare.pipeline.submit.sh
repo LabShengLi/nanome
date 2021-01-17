@@ -6,7 +6,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=50g # memory pool for all cores
 #SBATCH --time=03:00:00 # time (DD-HH:MM:SS)
-#SBATCH --output=log/%x.%j.figures
+#SBATCH --output=log/%x.%j.out
 #SBATCH --error=log/%x.%j.err
 
 ###################################################################################
@@ -34,9 +34,9 @@ inputDataDir=/fastscratch/liuya/nanocompare/Nanopore-reads/APL/APL-1750_GT18-064
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
 # ToolList  -   a list of Nanopore tools prepared to run
-#ToolList=(Guppy)
+ToolList=(DeepMod)
 
-ToolList=(DeepSignal Tombo DeepMod Nanopolish)
+#ToolList=(DeepSignal Tombo DeepMod Nanopolish)
 
 
 ### Which step is going to run, true or false, if 'true' means running this step

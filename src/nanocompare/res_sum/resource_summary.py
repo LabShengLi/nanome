@@ -21,7 +21,7 @@ if __name__ == '__main__':
             logdir = os.path.join(basedir, f'{dsdict["dsname"]}-Runs', f'{dsdict["dsname"]}-{tool}-N{dsdict["ntarget"]}', f'{dsdict["dsname"]}-{tool}-N{dsdict["ntarget"]}-methcall', 'log')
             logging.debug(logdir)
 
-            pat_fns = os.path.join(logdir, '*.mcal.*.batch*.*.figures')
+            pat_fns = os.path.join(logdir, '*.mcal.*.batch*.*.out')
             fnlist = glob.glob(pat_fns)
             logging.debug(len(fnlist))
 

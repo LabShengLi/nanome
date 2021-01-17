@@ -6,7 +6,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=50g # memory pool for all cores
 #SBATCH --time=03:00:00 # time (DD-HH:MM:SS)
-#SBATCH --output=log/%x.%j.figures
+#SBATCH --output=log/%x.%j.out
 #SBATCH --error=log/%x.%j.err
 
 ###################################################################################
