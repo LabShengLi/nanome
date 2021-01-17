@@ -5,7 +5,7 @@ from sklearn.metrics import roc_curve, auc
 
 from lilab.tcga.global_tcga import logger, pic_base_dir, pkl_base_dir
 from lilab.tcga.picture import plot_roc_curve
-from nanocompare.meth_stats.Universal_meth_stats_evaluation import importPredictions_DeepMod, importGroundTruth_coverage_output_from_Bismark, nonSingletonsPostprocessing, singletonsPostprocessing, combine2programsCalls, combine2programsCalls_4Corr, \
+from nanocompare.meth_stats.Universal_meth_stats_evaluation import importPredictions_DeepMod, importGroundTruth_bed_file_format, nonSingletonsPostprocessing, singletonsPostprocessing, combine2programsCalls, combine2programsCalls_4Corr, \
     importPredictions_Nanopolish_3, importPredictions_DeepSignal3, importPredictions_Tombo3, computePerReadStats_v2_for_roc_auc
 from nanocompare.global_settings import nanocompare_basedir
 
@@ -59,7 +59,7 @@ def main():
 
     minCov = 5
     logger.info(f"Start bgTruth")
-    bgTruth = importGroundTruth_coverage_output_from_Bismark(BgtruthInfn, covCutt=minCov)
+    bgTruth = importGroundTruth_bed_file_format(BgtruthInfn, covCutt=minCov)
 
     outfn = os.path.join(pic_base_dir, f"bgTruth_{RunPrefix}.pkl")
     with open(outfn, 'wb') as handle:

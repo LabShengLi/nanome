@@ -4,7 +4,7 @@ import pickle
 import sys
 
 from lilab.tcga.global_tcga import set_log_debug_level, logger, results_base_dir, pkl_base_dir, ensure_dir, pic_base_dir
-from nanocompare.meth_stats.Universal_meth_stats_evaluation import importPredictions_DeepMod, importPredictions_DeepSignal, importPredictions_Tombo, importPredictions_Nanopolish_v2, importGroundTruth_BedMethyl_from_Encode, importGroundTruth_oxBS, importGroundTruth_coverage_output_from_Bismark, nonSingletonsPostprocessing2, singletonsPostprocessing2, \
+from nanocompare.meth_stats.Universal_meth_stats_evaluation import importPredictions_DeepMod, importPredictions_DeepSignal, importPredictions_Tombo, importPredictions_Nanopolish_v2, importGroundTruth_BedMethyl_from_Encode, importGroundTruth_oxBS, importGroundTruth_bed_file_format, nonSingletonsPostprocessing2, singletonsPostprocessing2, \
     combine2programsCalls, combine2programsCalls_4Corr, report_per_read_performance, save_ontcalls_to_pkl, load_ontcalls_pkl, importGroundTruth_coverage_output_from_Bismark_BedGraph
 from nanocompare.global_settings import tools_abbr, narrowCoord, singletonsFile, nonsingletonsFile
 import study.venn as venn
@@ -108,7 +108,7 @@ def save_bgtruth_and_singleton_bed(tsvFilename):
             elif encoder == "oxBS_sudo":
                 bgTruth = importGroundTruth_oxBS(bgtruth_fn, covCutt=minCov)
             elif encoder == "bismark":
-                bgTruth = importGroundTruth_coverage_output_from_Bismark(bgtruth_fn, covCutt=minCov)
+                bgTruth = importGroundTruth_bed_file_format(bgtruth_fn, covCutt=minCov)
             elif encoder == "bedgraph":
                 bgTruth = importGroundTruth_coverage_output_from_Bismark_BedGraph(bgtruth_fn, covCutt=minCov)
                 raise Exception(f"Not used encoder={encoder} before, please check code first.")

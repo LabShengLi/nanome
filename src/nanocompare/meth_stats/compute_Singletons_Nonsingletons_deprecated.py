@@ -3,7 +3,7 @@ import os
 from pybedtools import BedTool
 
 from lilab.tcga.global_tcga import logger, set_log_debug_level, pic_base_dir, pkl_base_dir, ensure_dir
-from nanocompare.meth_stats.Universal_meth_stats_evaluation import importGroundTruth_coverage_output_from_Bismark, nonSingletonsPostprocessing, singletonsPostprocessing, singletonsPostprocessing2, nonSingletonsPostprocessing2, dict2txt
+from nanocompare.meth_stats.Universal_meth_stats_evaluation import importGroundTruth_bed_file_format, nonSingletonsPostprocessing, singletonsPostprocessing, singletonsPostprocessing2, nonSingletonsPostprocessing2, dict2txt
 import pandas as pd
 
 from nanocompare.global_settings import gbtruth_filedict, singletonsFile, nonsingletonsFile
@@ -36,7 +36,7 @@ def gen_bed_files(minCov=10):
 
         RunPrefix = dsname
 
-        bgTruth = importGroundTruth_coverage_output_from_Bismark(infn, covCutt=minCov)
+        bgTruth = importGroundTruth_bed_file_format(infn, covCutt=minCov)
 
         outdir = os.path.join(pic_base_dir, f'bed_sing_nonsing.{dsname}.minCov.{minCov}')
         ensure_dir(outdir)
@@ -81,7 +81,7 @@ def joined_files_analyze(minCov=10):
         minCov = minCov_dict[dsname]
         logger.info(f"dsname={dsname}, minCov={minCov}, infn={gbtruthfn}")
 
-        bgTruth = importGroundTruth_coverage_output_from_Bismark(gbtruthfn, covCutt=minCov)
+        bgTruth = importGroundTruth_bed_file_format(gbtruthfn, covCutt=minCov)
         # bgTruthBed = BedTool(dict2txt(bgTruth), from_string=True)
         # bgTruthBed = bgTruthBed.sort()
 

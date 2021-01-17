@@ -22,7 +22,7 @@ from sklearn.metrics import roc_curve, precision_recall_curve, auc, confusion_ma
 from tqdm import tqdm
 
 from nanocompare.global_config import *
-from nanocompare.global_settings import targetedChrs
+from nanocompare.global_settings import humanChrs
 
 
 def report2dict(cr):
@@ -151,7 +151,7 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                 logger.debug(list(enumerate(tmp)))
                 output_first = False
 
-            if tmp[chr_col] not in targetedChrs:
+            if tmp[chr_col] not in humanChrs:
                 continue
 
             try:  # try to find if these columns are interpretable
@@ -558,7 +558,7 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     for row in infile:
         tmp = row.strip().split("\t")
 
-        if tmp[chr_col] not in targetedChrs:
+        if tmp[chr_col] not in humanChrs:
             continue
 
         if baseFormat == 1:
@@ -718,7 +718,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     for row in infile:
         tmp = row.strip().split("\t")
 
-        if tmp[chr_col] not in targetedChrs:
+        if tmp[chr_col] not in humanChrs:
             continue
 
         if output_first:
@@ -1006,7 +1006,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     for row in infile:
         tmp = row.strip().split(sep)
 
-        if tmp[chr_col] not in targetedChrs:
+        if tmp[chr_col] not in humanChrs:
             continue
 
         if output_first:
@@ -1055,7 +1055,7 @@ def importPredictions_DeepMod_Read_Level(infileName, chr_col=0, start_col=1, str
     for row in infile:
         tmp = row.strip().split(sep)
 
-        if tmp[chr_col] not in targetedChrs:
+        if tmp[chr_col] not in humanChrs:
             continue
 
         if output_first:
@@ -1221,7 +1221,7 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     for row in infile:
         tmp = row.strip().split(sep)
 
-        if tmp[chr_col] not in targetedChrs:
+        if tmp[chr_col] not in humanChrs:
             continue
 
         if output_first:
@@ -1300,7 +1300,7 @@ def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, s
     for row in infile:
         tmp = row.strip().split(sep)
 
-        if tmp[chr_col] not in targetedChrs:
+        if tmp[chr_col] not in humanChrs:
             continue
 
         if output_first:
@@ -1514,7 +1514,7 @@ def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, 
 
 
 # Deal with K562 bed with strand info
-def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_col=1, meth_col=3, meth_reads_col=4, unmeth_reads_col=5, strand_col=6, covCutt=10, baseFormat=0, chrFilter=False, gzippedInput=True, includeCov=False):
+def importGroundTruth_bed_file_format(infileName, chr_col=0, start_col=1, meth_col=3, meth_reads_col=4, unmeth_reads_col=5, strand_col=6, covCutt=10, baseFormat=0, chrFilter=False, gzippedInput=True, includeCov=False):
     '''
     We modified this function due to the histogram shows it is 0-based format, NOT 1-based format.
 
@@ -1588,7 +1588,7 @@ def importGroundTruth_coverage_output_from_Bismark(infileName, chr_col=0, start_
     for row in infile:
         tmp = row.decode('ascii').strip().split("\t")
 
-        if tmp[chr_col] not in targetedChrs:
+        if tmp[chr_col] not in humanChrs:
             continue
 
         if baseFormat == 1:
@@ -3585,7 +3585,7 @@ def get_ref_fasta():
 
 
 # Deal with bismark_bt2.CpG_report.txt.gz
-def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yang/results/2020-12-21/hl60-results-1/extractBismark/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz', chr_col=0, start_col=1, strand_col=2, meth_col=3, unmeth_col=4, ccontect_col=5, covCutt=10, baseFormat=0, includeCov=True):
+def importGroundTruth_genome_wide_Bismark_Report(infn='/projects/li-lab/yang/results/2020-12-21/hl60-results-1/extractBismark/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz', chr_col=0, start_col=1, strand_col=2, meth_col=3, unmeth_col=4, ccontect_col=5, covCutt=10, baseFormat=0, includeCov=True):
     """
     We are sure the input file is start using 1-based format.
     We use this format due to it contains strand info.
@@ -3632,6 +3632,7 @@ def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yan
 
     df = df[df.iloc[:, ccontect_col] == 'CG']
 
+    # Based on import format 0, we need minus 1, due to input format is 1-based start
     if baseFormat == 0:
         df.iloc[:, start_col] = df.iloc[:, start_col] - 1
         df['end'] = df.iloc[:, start_col] + 1
@@ -3647,6 +3648,10 @@ def importGroundTruth_genome_wide_output_from_Bismark(infn='/projects/li-lab/yan
     cpgDict = defaultdict(list)
     for index, row in df.iterrows():
         chr = row['chr']
+
+        if chr not in humanChrs:
+            continue
+
         start = int(row['start'])
         strand = row['strand']
 
@@ -3786,70 +3791,105 @@ def filter_non_human_chrs(cpgDict):
     """
     retDict = defaultdict(list)
     for key in cpgDict:
-        if key[0] in targetedChrs:
+        if key[0] in humanChrs:
             retDict[key] = cpgDict[key]
     return retDict
 
 
-def import_call(fn, callname, baseFormat=0):
+def import_call(infn, callname, baseFormat=0):
     """
-    Import fn as callname and return
+    Import fn based on callname and return key=(chr, start, strand) -> value=[0 0 1 1 1 1 ]
         call0   -   original results
-    :param fn:
+    :param infn:
     :param callname:
     :return:
     """
     logger.debug(f"Start load {callname}")
     if callname == 'DeepSignal':
-        calls0 = importPredictions_DeepSignal(fn, baseFormat=baseFormat)
+        calls0 = importPredictions_DeepSignal(infn, baseFormat=baseFormat)
     elif callname == 'Tombo':
-        calls0 = importPredictions_Tombo(fn, baseFormat=baseFormat)
+        calls0 = importPredictions_Tombo(infn, baseFormat=baseFormat)
     elif callname == 'Nanopolish':
-        calls0 = importPredictions_Nanopolish(fn, baseFormat=baseFormat, llr_cutoff=2.0)
+        calls0 = importPredictions_Nanopolish(infn, baseFormat=baseFormat, llr_cutoff=2.0)
     elif callname == 'DeepMod':
-        calls0 = importPredictions_DeepMod_Read_Level(fn, baseFormat=baseFormat)
+        calls0 = importPredictions_DeepMod_Read_Level(infn, baseFormat=baseFormat)
     elif callname == 'Megalodon':
-        calls0 = importPredictions_Megalodon_Read_Level(fn, baseFormat=baseFormat)
+        calls0 = importPredictions_Megalodon_Read_Level(infn, baseFormat=baseFormat)
     elif callname == 'DeepMod.Cluster':  # import DeepMod itself tool reports by cluster, key->value={'freq':68, 'cov':10}
-        calls0 = importPredictions_DeepMod_clustered(fn, baseFormat=baseFormat)
+        calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat)
     elif callname == 'DeepMod.C':  # import DeepMod itself tool reports by cluster, key->value={'freq':68, 'cov':10}
-        calls0 = importPredictions_DeepMod(fn, baseFormat=baseFormat)
+        calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat)
     else:
-        raise Exception(f'Not support {callname} for file {fn} now')
+        raise Exception(f'Not support {callname} for file {infn} now')
 
     logger.debug(f'Import {callname} finished!\n')
     return calls0
 
 
-def import_bgtruth(fn, encode, cov=10, baseFormat=0, includeCov=True):
+def import_bgtruth(infn, encode, cov=10, baseFormat=0, includeCov=True):
     """
-    Import bgtruth from file fn using encode
-    :param fn:
+    Import bgtruth from file fn using encode, when use new dataset, MUST check input file start baseFormat and import functions are consistent!!!
+    :param infn:
     :param encode:
+    :param includeCov:  return [freq, cov] as value of each key=(chr, (int)start, strand)
     :return:
     """
-
-    if encode == "encode":
-        bgTruth = importGroundTruth_BedMethyl_from_Encode(fn, covCutt=cov, baseCount=baseFormat)
-    elif encode == "oxBS_sudo":
-        bgTruth = importGroundTruth_oxBS(fn, covCutt=cov, baseCount=baseFormat)
-    elif encode == "bed":  # like K562 bg-truth
-        bgTruth = importGroundTruth_coverage_output_from_Bismark(fn, covCutt=cov, baseFormat=baseFormat, includeCov=includeCov)
-    elif encode == "bismark_bedgraph":
-        bgTruth = importGroundTruth_coverage_output_from_Bismark_BedGraph(fn, baseCount=baseFormat)
-    elif encode == "bismark":  # for genome-wide Bismark results, such as HL60, etc.
-        bgTruth = importGroundTruth_genome_wide_output_from_Bismark(fn, covCutt=cov, baseFormat=baseFormat, includeCov=includeCov)
+    if encode == "encode":  # not used now, function need to check if use
+        bgTruth = importGroundTruth_BedMethyl_from_Encode(infn, covCutt=cov, baseCount=baseFormat)
+    elif encode == "oxBS_sudo":  # not used now, function need to check if use
+        bgTruth = importGroundTruth_oxBS(infn, covCutt=cov, baseCount=baseFormat)
+    elif encode == "bed":  # like K562 bg-truth, 0-based start input
+        bgTruth = importGroundTruth_bed_file_format(infn, covCutt=cov, baseFormat=baseFormat, includeCov=includeCov)
+    elif encode == "bismark_bedgraph":  # not used now, function need to check if use
+        bgTruth = importGroundTruth_coverage_output_from_Bismark_BedGraph(infn, baseCount=baseFormat)
+    elif encode == "bismark":  # for genome-wide Bismark Report ouput format results, such as HL60, etc. 1-based start input
+        bgTruth = importGroundTruth_genome_wide_Bismark_Report(infn, covCutt=cov, baseFormat=baseFormat, includeCov=includeCov)
     else:
-        raise Exception("Methylation_correlation_plotting.py ERROR: Unknown bacground truth parser configuration. Aborting. FYI: currently supported are: encode, oxBS_sudo, bismark")
+        raise Exception(f"encode={encode} is not supported yet, for inputfile={infn}")
 
     logger.debug(f'Import BG-Truth finished!\n')
     return bgTruth
 
 
+def compare_cpg_key(item1, item2):
+    """
+    First compare chr, then start number
+    usage:
+    k1 = ('chr1', 123, '+')
+    k2 = ('chr1', 124, '+')
+    k3 = ('chr3', 1, '-')
+    k4 = ('chr1', 124, '-')
+    k5 = ('chr3', 1, '-')
+    l = [k3, k1, k2, k4, k5]
+    import functools
+    l_sorted = sorted(l, key=functools.cmp_to_key(compare_cpg_key))
+    logger.info(l_sorted)
+
+    output:
+    [('chr1', 123, '+'), ('chr1', 124, '+'), ('chr1', 124, '-'), ('chr3', 1, '-'), ('chr3', 1, '-')]
+
+    :param item1:
+    :param item2:
+    :return:
+    """
+    chr1 = int(item1[0].replace('chr', '').replace('X', '23').replace('Y', '24'))
+    chr2 = int(item2[0].replace('chr', '').replace('X', '23').replace('Y', '24'))
+
+    # return chr1 < chr2 or (chr1 == chr2 and item1[1] < item2[1])
+
+    if chr1 != chr2:
+        return chr1 - chr2
+    elif item1[1] != item2[1]:
+        return item1[1] - item2[1]
+    elif item1[2][0] != item2[2][0]:
+        return ord(item1[2][0]) - ord(item2[2][0])
+    return 0
+
+
 if __name__ == '__main__':
     set_log_debug_level()
 
-    scatter_plot_cov_compare_df(infn='/projects/li-lab/yang/results/2020-12-28/K562_WGBS_Joined/K562_WGBS_Joinedtombo-nanopolish-scatter.pkl')
+    # scatter_plot_cov_compare_df(infn='/projects/li-lab/yang/results/2020-12-28/K562_WGBS_Joined/K562_WGBS_Joinedtombo-nanopolish-scatter.pkl')
 
     # importGroundTruth_genome_wide_output_from_Bismark(covCutt=4)
     # sanity_check_sequence(tlist=[206309, 206316, 206318, 206494])

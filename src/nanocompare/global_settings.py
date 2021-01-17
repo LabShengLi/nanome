@@ -13,7 +13,7 @@ from nanocompare.global_config import data_base_dir, results_base_dir
 
 importlib.reload(pp)
 
-targetedChrs = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
+humanChrs = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
 
 # which column of performance table is extracted and returned
 perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'Average-Precision', 'ROC-AUC', "Macro-F1", "Micro-F1", "Macro-Precision", "Micro-Precision", "Macro-Recall", "Micro-Recall", 'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C', 'Corr_Mix', 'Corr_All', 'Corr_mixedSupport', 'Corr_allSupport', 'mCsites_called',

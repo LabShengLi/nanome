@@ -221,6 +221,60 @@ def filter_noncg_sites_for_tombo(tombo_fn='/projects/li-lab/yang/workspace/nano-
     filter_noncg_sites_ref_seq(df=df, tagname=basename, ntask=ntask, ttask=ttask, num_seq=num_seq)
 
 
+def convert_bismark_add_strand_and_seq(seldf, basename, ntask, epoch):
+    dataset = defaultdict(list)
+
+    for index, row in seldf.iterrows():
+        chr = row['chr']
+        start = int(row['start'])  # Keep raw 1-based format of bismark results
+        ret = get_dna_sequence_from_reference(chr, start - 1, ref_fasta=ref_fasta)
+        if ret[5] == 'C':  # strand is +
+            strand = '+'
+        elif ret[5] == 'G':
+            strand = '-'
+        else:
+            raise Exception(f'We can not identify this bg-truth file with non-CG results, such as row={row}')
+        dataset['chr'].append(chr)
+        dataset['start'].append(start)
+        dataset['strand'].append(strand)
+        dataset['mcount'].append(row['mcount'])
+        dataset['ccount'].append(row['ccount'])
+        dataset['seq'].append(ret)
+    retdf = pd.DataFrame.from_dict(dataset)
+    # logger.debug(retdf)
+    logger.debug(f'Finish subtask={ntask}:{epoch}')
+    return retdf
+
+
+def convert_bismark_add_strand_mpi(df, ntask=100):
+    basefn = os.path.basename(args.i)
+    basename = os.path.splitext(basefn)[0]
+
+    all_list = list(range(len(df)))
+
+    # Store each sub-process return results
+    df_list = []
+    with Pool(processes=args.processors) as pool:
+        for epoch in range(ntask):
+            sub_list = subset_of_list(all_list, ntask, epoch + 1)
+            seldf = df.iloc[sub_list, :]
+            # retdf = convert_bismark_add_strand_and_seq(seldf, basename, ntask, epoch + 1)
+            df_list.append(pool.apply_async(convert_bismark_add_strand_and_seq, (seldf, basename, ntask, epoch + 1)))
+            # df_list.append(retdf)
+            # break
+        pool.close()
+        pool.join()
+    # Combine df
+    logger.debug("Start to combine all results")
+    df_list = [df1.get() for df1 in df_list]
+    retdf = pd.concat(df_list)
+    logger.debug(retdf)
+
+    outfn = os.path.join(args.o, f'{basename}.convert.add.strand.tsv.gz')
+    retdf.to_csv(outfn, sep='\t', header=False, index=False, compression='gzip')
+    logger.info(f'save to {outfn}')
+
+
 def filter_noncg_sites_mpi(df, ntask=300, toolname='tombo'):
     """
     MPI version of filter out non-CG patterns
@@ -523,7 +577,7 @@ if __name__ == '__main__':
     logger.debug(args)
 
     ref_fasta = None
-    if args.cmd in ['tombo-add-seq', 'deepmod-add-seq', 'deepmod-read-level', 'sanity-check-seq']:
+    if args.cmd in ['tombo-add-seq', 'deepmod-add-seq', 'deepmod-read-level', 'sanity-check-seq', 'bismark-convert']:  # These command will use reference genome
         ref_fn = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
         ref_fasta = SeqIO.to_dict(SeqIO.parse(open(ref_fn), 'fasta'))
 
@@ -579,5 +633,22 @@ if __name__ == '__main__':
             outfn = args.o2
             beddf.to_csv(outfn, sep=' ', index=False, header=False)
             logger.info(f'save to {outfn}')
+    elif args.cmd == 'bismark-convert':  # Convert non-strand info bismark to strand
+        ## bash meth_stats_tool.sh bismark-convert --mpi --processors 20 -i /projects/li-lab/Nanopore_compare/data/APL/APL-oxbs_R1_val_1_bismark_bt2_pe.deduplicated.bismark.cov.gz
+        if args.mpi:
+            logger.debug('in mpi mode')
+            import multiprocessing
 
-    logger.info("DONE")
+            logger.debug("There are %d CPUs on this machine by multiprocessing.cpu_count()" % multiprocessing.cpu_count())
+
+            df = pd.read_csv(args.i, sep='\t', compression='gzip', header=None)
+            if len(df.columns) != 6:
+                raise Exception(f"Can no recognize input file format for infn={args.i}, df={df}")
+            df.columns = ['chr', 'start', 'end', 'freq100', 'mcount', 'ccount']
+            logger.debug(df)
+            convert_bismark_add_strand_mpi(df)
+            # filter_noncg_sites_mpi(df)
+        else:
+            raise Exception(f"cmd={args.cmd} need mpi version")
+
+    logger.info("meth_stats_tool DONE")
