@@ -222,6 +222,7 @@ def filter_noncg_sites_for_tombo(tombo_fn='/projects/li-lab/yang/workspace/nano-
 
 
 def convert_bismark_add_strand_and_seq(seldf, basename, ntask, epoch):
+    logger.debug(f'Start subtask={ntask}:{epoch}')
     dataset = defaultdict(list)
 
     for index, row in seldf.iterrows():
@@ -239,14 +240,14 @@ def convert_bismark_add_strand_and_seq(seldf, basename, ntask, epoch):
         dataset['strand'].append(strand)
         dataset['mcount'].append(row['mcount'])
         dataset['ccount'].append(row['ccount'])
-        dataset['seq'].append(ret)
+        dataset['seq'].append(ret[4:7])
     retdf = pd.DataFrame.from_dict(dataset)
     # logger.debug(retdf)
     logger.debug(f'Finish subtask={ntask}:{epoch}')
     return retdf
 
 
-def convert_bismark_add_strand_mpi(df, ntask=100):
+def convert_bismark_add_strand_mpi(df, ntask=20):
     basefn = os.path.basename(args.i)
     basename = os.path.splitext(basefn)[0]
 
@@ -530,7 +531,7 @@ def parse_arguments():
     :return:
     """
     parser = argparse.ArgumentParser(description='Multi-task')
-    parser.add_argument("cmd", help="name of command: compute, combine, or gen-pixel-info", required=True)
+    parser.add_argument("cmd", help="name of command: compute, combine, or gen-pixel-info")
     parser.add_argument('-n', type=int, help="the total number of tasks (1-27)", default=1)
     parser.add_argument('-t', type=int, help="the current task id (1-N)", default=1)
     parser.add_argument('-i', type=str, help="input file", default=None)

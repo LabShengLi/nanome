@@ -1,13 +1,15 @@
 #!/bin/bash
 #SBATCH --job-name=meth-tool
 #SBATCH -q batch
+##SBATCH -p gpu
+##SBATCH --gres=gpu:1             # number of gpus per node
+##SBATCH -q inference
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 4 # number of cores
-#SBATCH --mem 250 # memory pool for all cores
-#SBATCH -t 20:00:00 # time (D-HH:MM:SS)
+#SBATCH -n 10 # number of cores
+#SBATCH --mem 150 # memory pool for all cores
+#SBATCH -t 06:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
-
 
 set -x
 

@@ -16,12 +16,12 @@ load.performance.data <- function(infn) {
   return(df)
 }
 
-fig.34a.bar.plot.performance <- function(df, perf.measure = 'Accuracy', locations = locations.Singletons, figsize = c(5.8, 4), scale = 0.65) {
+fig.34a.bar.plot.performance <- function(df, perf.measure = 'Accuracy', locations = locations.Singletons, bdir, figsize = c(5.8, 4), scale = 0.65) {
   #Select data in locations
   sel_data = df[df$Location %in% locations,]
 
   #Plot and save
-  outfn = sprintf("figures/fig.34a.bar.%s.%s.png", locations[1], perf.measure)
+  outfn = sprintf("%s/fig.34a.bar.%s.%s.png", bdir, locations[1], perf.measure)
   p1 <- ggplot(sel_data, aes_string(x = 'Tool', y = perf.measure, fill = 'Tool')) +
     geom_bar(stat = 'identity') +
     facet_grid(Dataset ~ Location) +
@@ -32,7 +32,7 @@ fig.34a.bar.plot.performance <- function(df, perf.measure = 'Accuracy', location
   printf("save to %s\n", outfn)
 }
 
-fig.34a.scatter.plot.performance <- function(df, measure.pair, locations, scale = 0.75) {
+fig.34a.scatter.plot.performance <- function(df, measure.pair, locations, bdir, scale = 0.75) {
   # Select data, transfer wide to long format
   sel_data = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', measure.pair)]
   longdf <- melt(setDT(sel_data), id.vars = c("Dataset", "Tool", "Location"), variable.name = "perf_name")
@@ -49,7 +49,7 @@ fig.34a.scatter.plot.performance <- function(df, measure.pair, locations, scale 
     theme(axis.title.y = element_blank()) +
     theme(strip.background.y = element_blank(), strip.placement = "outside")
 
-  outfn = sprintf("figures/fig.34a.scatter.%s.%s.png", locations[1], measure.pair[1])
+  outfn = sprintf("%s/fig.34a.scatter.%s.%s.png", bdir, locations[1], measure.pair[1])
   ggsave(p1, filename = outfn, scale = scale)
   printf("save to %s\n", outfn)
 
