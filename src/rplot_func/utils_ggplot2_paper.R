@@ -49,7 +49,7 @@ fig.34a.scatter.plot.performance <- function(df, measure.pair, locations, bdir, 
     theme(axis.title.y = element_blank()) +
     theme(strip.background.y = element_blank(), strip.placement = "outside")
 
-  outfn = sprintf("%s/fig.34a.scatter.%s.%s.png", bdir, locations[1], measure.pair[1])
+  outfn = sprintf("%s/fig.34a.scatter.%s.%s.pdf", bdir, locations[1], measure.pair[1])
   ggsave(p1, filename = outfn, scale = scale)
   printf("save to %s\n", outfn)
 
