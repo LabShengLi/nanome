@@ -21,7 +21,7 @@ fig.34a.bar.plot.performance <- function(df, perf.measure = 'Accuracy', location
   sel_data = df[df$Location %in% locations,]
 
   #Plot and save
-  outfn = sprintf("%s/fig.34a.bar.%s.%s.png", bdir, locations[1], perf.measure)
+  outfn = sprintf("%s/fig.34a.bar.%s.%s.pdf", bdir, locations[1], perf.measure)
   p1 <- ggplot(sel_data, aes_string(x = 'Tool', y = perf.measure, fill = 'Tool')) +
     geom_bar(stat = 'identity') +
     facet_grid(Dataset ~ Location) +
