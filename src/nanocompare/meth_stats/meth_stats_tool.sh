@@ -5,9 +5,9 @@
 ##SBATCH --gres=gpu:1             # number of gpus per node
 ##SBATCH -q inference
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 10 # number of cores
-#SBATCH --mem 150 # memory pool for all cores
-#SBATCH -t 06:00:00 # time (D-HH:MM:SS)
+#SBATCH -n 6 # number of cores
+#SBATCH --mem 280 # memory pool for all cores
+#SBATCH -t 16:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 

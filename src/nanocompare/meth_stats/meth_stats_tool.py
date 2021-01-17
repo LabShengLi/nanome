@@ -243,32 +243,38 @@ def convert_bismark_add_strand_and_seq(seldf, basename, ntask, epoch):
         dataset['seq'].append(ret[4:7])
     retdf = pd.DataFrame.from_dict(dataset)
     # logger.debug(retdf)
+
+    # do not return too large object, just save to a temp folder
+    outfn = os.path.join(args.o, f'{basename}.bismark.out.batch_k{epoch}.n{ntask}.pkl')
+    retdf.to_pickle(outfn)
     logger.debug(f'Finish subtask={ntask}:{epoch}')
-    return retdf
+    return outfn
 
 
-def convert_bismark_add_strand_mpi(df, ntask=20):
+def convert_bismark_add_strand_mpi(df, ntask=100):
     basefn = os.path.basename(args.i)
     basename = os.path.splitext(basefn)[0]
 
     all_list = list(range(len(df)))
 
     # Store each sub-process return results
-    df_list = []
+    df_fn_list = []
     with Pool(processes=args.processors) as pool:
         for epoch in range(ntask):
             sub_list = subset_of_list(all_list, ntask, epoch + 1)
             seldf = df.iloc[sub_list, :]
             # retdf = convert_bismark_add_strand_and_seq(seldf, basename, ntask, epoch + 1)
-            df_list.append(pool.apply_async(convert_bismark_add_strand_and_seq, (seldf, basename, ntask, epoch + 1)))
+            df_fn_list.append(pool.apply_async(convert_bismark_add_strand_and_seq, (seldf, basename, ntask, epoch + 1)))
             # df_list.append(retdf)
             # break
         pool.close()
         pool.join()
     # Combine df
     logger.debug("Start to combine all results")
-    df_list = [df1.get() for df1 in df_list]
-    retdf = pd.concat(df_list)
+    df_fn_list = [fn.get() for fn in df_fn_list]
+
+    dflist = [pd.read_pickle(fn) for fn in df_fn_list]
+    retdf = pd.concat(dflist)
     logger.debug(retdf)
 
     outfn = os.path.join(args.o, f'{basename}.convert.add.strand.tsv.gz')

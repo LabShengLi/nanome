@@ -2,8 +2,8 @@ library(ggplot2)
 library(data.table)
 
 Tool.Order = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon')
-locations.Singletons = c("Singletons", "Non-singletons", "Discordant", "Concordant")
-locations.Genome = c("Genome-wide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns")
+locations.Singletons = c("Singleton", "Nonsingleton", "Discordant", "Concordant")
+locations.Genome = c("Genomewide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns")
 Coord.Order = c(locations.Singletons, locations.Genome)
 
 printf <- function(...) cat(sprintf(...))
@@ -11,8 +11,15 @@ printf <- function(...) cat(sprintf(...))
 load.performance.data <- function(infn) {
   # Load data and sort string orders
   df <- read.csv(file = infn)
+
+  df$Location <- as.character(df$Location)
+  df[df$Location == 'Genome-wide', 'Location'] <- 'Genomewide'
+  df[df$Location == 'Non-singletons', 'Location'] <- 'Nonsingleton'
+  df[df$Location == 'Singletons', 'Location'] <- 'Singleton'
+
   df$Tool <- factor(df$Tool, levels = Tool.Order)
   df$Location <- factor(df$Location, levels = Coord.Order)
+
   return(df)
 }
 
