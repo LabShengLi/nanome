@@ -15,6 +15,22 @@ outdir = here('figures')
 infn = here('result', 'performance-results.csv')
 df <- load.performance.data(infn)
 
+
+#### Test
+
+
+sel_data = df[df$Location %in% locations.Singletons, c('Dataset', 'Tool', 'Location', 'Accuracy')]
+
+ggplot(sel_data, aes_string(x = 'Tool', y = 'Accuracy', fill = 'Tool')) +
+    geom_bar(stat = 'identity') +
+    facet_grid( ~ Dataset+Location) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+    theme(strip.text.x = element_text(size = 7))
+
+outfn = sprintf("%s/test.pdf", outdir)
+ggsave(filename = outfn, width=9, height=4, limitsize =FALSE)
+
+
 # Scatter plot
 measure.pair.list = list(c('Accuracy', 'Micro.F1'), c('Micro.Precision', 'Micro.Recall'), c('F1_5mC', 'F1_5C'))
 for (measure.pair in measure.pair.list) {

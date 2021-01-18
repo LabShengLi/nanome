@@ -10,7 +10,7 @@ etc.
 
 import pandas as pd
 
-from nanocompare.collect_data import collect_wide_format_newly_exp
+from nanocompare.collect_data import load_wide_format_performance_results
 from nanocompare.global_config import *
 from nanocompare.global_settings import locations_category
 
@@ -200,7 +200,7 @@ def load_refined_perf_data_by_measurement2(meas_list=['F1_5C', 'F1_5mC']):
     :param meas_list:
     :return:
     """
-    alld = collect_wide_format_newly_exp()
+    alld = load_wide_format_performance_results()
 
     sel_col = ['Dataset', 'Location', 'Tool'] + meas_list
     refine_alld = alld[sel_col]
@@ -266,7 +266,7 @@ def load_long_format_perf_data_from_newly_exp_by_measure(meas_list=['F1_5C', 'F1
     :param meas_list:
     :return:
     """
-    wide_df = collect_wide_format_newly_exp()  # wide format
+    wide_df = load_wide_format_performance_results()  # wide format
 
     sel_col = ['Dataset', 'Location', 'Tool'] + meas_list
     wide_df = wide_df[sel_col]

@@ -4,6 +4,7 @@ Tool for pre-processing results
 """
 import argparse
 import glob
+import subprocess
 import sys
 from collections import defaultdict
 
@@ -221,11 +222,20 @@ def filter_noncg_sites_for_tombo(tombo_fn='/projects/li-lab/yang/workspace/nano-
     filter_noncg_sites_ref_seq(df=df, tagname=basename, ntask=ntask, ttask=ttask, num_seq=num_seq)
 
 
-def convert_bismark_add_strand_and_seq(seldf, basename, ntask, epoch):
-    logger.debug(f'Start subtask={ntask}:{epoch}')
-    dataset = defaultdict(list)
+def convert_bismark_add_strand_and_seq(indf, outf, report_num=None):
+    """
+    Check start pointer, if point to CG's C, it is positive strand, or else, it is reverse strand
+    Note: input file is 1-based start, we also output to a 1-based format that is compatable to our Bismark import functions.
+    :param indf:
+    :param outf:
+    :param report_num:
+    :return:
+    """
+    logger.debug(f'Start add strand and seq to bismark cov file, total len={len(indf)}')
+    for index, row in tqdm(indf.iterrows()):
 
-    for index, row in seldf.iterrows():
+        if report_num and index % report_num == 0:
+            logger.debug(f'processed index={index}')
         chr = row['chr']
         start = int(row['start'])  # Keep raw 1-based format of bismark results
         ret = get_dna_sequence_from_reference(chr, start - 1, ref_fasta=ref_fasta)
@@ -235,51 +245,29 @@ def convert_bismark_add_strand_and_seq(seldf, basename, ntask, epoch):
             strand = '-'
         else:
             raise Exception(f'We can not identify this bg-truth file with non-CG results, such as row={row}')
-        dataset['chr'].append(chr)
-        dataset['start'].append(start)
-        dataset['strand'].append(strand)
-        dataset['mcount'].append(row['mcount'])
-        dataset['ccount'].append(row['ccount'])
-        dataset['seq'].append(ret[4:7])
-    retdf = pd.DataFrame.from_dict(dataset)
-    # logger.debug(retdf)
 
-    # do not return too large object, just save to a temp folder
-    outfn = os.path.join(args.o, f'{basename}.bismark.out.batch_k{epoch}.n{ntask}.pkl')
-    retdf.to_pickle(outfn)
-    logger.debug(f'Finish subtask={ntask}:{epoch}')
-    return outfn
+        outstr = '\t'.join([chr, str(start), strand, str(row['mcount']), str(row['ccount']), ret[4:7]])
+        outf.write(f'{outstr}\n')
+
+    logger.debug(f'Finish add strand info task')
 
 
-def convert_bismark_add_strand_mpi(df, ntask=100):
+def convert_bismark_cov_to_gw_format(df):
+    """
+    Save adding strand info and dna seq format, which is in same format of Bismark Genome-wide output files
+    :param df:
+    :return:
+    """
     basefn = os.path.basename(args.i)
     basename = os.path.splitext(basefn)[0]
 
-    all_list = list(range(len(df)))
-
-    # Store each sub-process return results
-    df_fn_list = []
-    with Pool(processes=args.processors) as pool:
-        for epoch in range(ntask):
-            sub_list = subset_of_list(all_list, ntask, epoch + 1)
-            seldf = df.iloc[sub_list, :]
-            # retdf = convert_bismark_add_strand_and_seq(seldf, basename, ntask, epoch + 1)
-            df_fn_list.append(pool.apply_async(convert_bismark_add_strand_and_seq, (seldf, basename, ntask, epoch + 1)))
-            # df_list.append(retdf)
-            # break
-        pool.close()
-        pool.join()
-    # Combine df
-    logger.debug("Start to combine all results")
-    df_fn_list = [fn.get() for fn in df_fn_list]
-
-    dflist = [pd.read_pickle(fn) for fn in df_fn_list]
-    retdf = pd.concat(dflist)
-    logger.debug(retdf)
-
-    outfn = os.path.join(args.o, f'{basename}.convert.add.strand.tsv.gz')
-    retdf.to_csv(outfn, sep='\t', header=False, index=False, compression='gzip')
+    outfn = os.path.join(args.o, f'{basename}.convert.add.strand.tsv')
+    with open(outfn, 'w') as outf:
+        convert_bismark_add_strand_and_seq(df, outf)
     logger.info(f'save to {outfn}')
+
+    command = f"set -x; gzip {outfn}; echo 'Success gziped to file {outfn}.gz'"
+    logger.info(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8"))
 
 
 def filter_noncg_sites_mpi(df, ntask=300, toolname='tombo'):
@@ -616,21 +604,14 @@ if __name__ == '__main__':
             beddf.to_csv(outfn, sep=' ', index=False, header=False)
             logger.info(f'save to {outfn}')
     elif args.cmd == 'bismark-convert':  # Convert non-strand info bismark to strand
-        ## bash meth_stats_tool.sh bismark-convert --mpi --processors 20 -i /projects/li-lab/Nanopore_compare/data/APL/APL-oxbs_R1_val_1_bismark_bt2_pe.deduplicated.bismark.cov.gz
-        if args.mpi:
-            logger.debug('in mpi mode')
-            import multiprocessing
+        ## bash meth_stats_tool.sh bismark-convert -i /projects/li-lab/Nanopore_compare/data/APL/APL-oxbs_R1_val_1_bismark_bt2_pe.deduplicated.bismark.cov.gz
+        df = pd.read_csv(args.i, sep='\t', compression='gzip', header=None)
+        if len(df.columns) != 6:
+            raise Exception(f"Can no recognize input file format for infn={args.i}, df={df}")
+        df.columns = ['chr', 'start', 'end', 'freq100', 'mcount', 'ccount']
+        logger.debug(df)
 
-            logger.debug("There are %d CPUs on this machine by multiprocessing.cpu_count()" % multiprocessing.cpu_count())
-
-            df = pd.read_csv(args.i, sep='\t', compression='gzip', header=None)
-            if len(df.columns) != 6:
-                raise Exception(f"Can no recognize input file format for infn={args.i}, df={df}")
-            df.columns = ['chr', 'start', 'end', 'freq100', 'mcount', 'ccount']
-            logger.debug(df)
-            convert_bismark_add_strand_mpi(df)
-            # filter_noncg_sites_mpi(df)
-        else:
-            raise Exception(f"cmd={args.cmd} need mpi version")
-
+        convert_bismark_cov_to_gw_format(df)
+    else:
+        raise Exception(f"Not support command={args.cmd}")
     logger.info("meth_stats_tool DONE")

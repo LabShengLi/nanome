@@ -29,8 +29,10 @@ if __name__ == '__main__':
             outlogdir = os.path.join('.', 'log')
             os.makedirs(outlogdir, exist_ok=True)
 
-            command = f"""set -x; sbatch --output=log/%x.%j.out --error=log/%x.%j.err --export=DeepSignal_calls="{row['DeepSignal_calls']}",Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",DeepMod_calls="{row['DeepMod_calls']}",Megalodon_calls="{row['Megalodon_calls']}",bgTruth="{row['bgTruth']}",RunPrefix="{row['RunPrefix']}",parser="{row['parser']}" --job-name=meth-corr-{row['RunPrefix']} {pyFile}"""
+            command = f"""
+set -x; sbatch --output=log/%x.%j.out --error=log/%x.%j.err --export=ALL,DeepSignal_calls="{row['DeepSignal_calls']}",Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",DeepMod_calls="{row['DeepMod_calls']}",Megalodon_calls="{row['Megalodon_calls']}",bgTruth="{row['bgTruth']}",RunPrefix="{row['RunPrefix']}",parser="{row['parser']}" --job-name=meth-corr-{row['RunPrefix']} {pyFile}"""
 
+            # print(command)
             print(f"RunPrefix={row['RunPrefix']}")
 
             # output sbatch submit a job's results to STDOUT

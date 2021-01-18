@@ -1,13 +1,13 @@
 #!/bin/bash
-#SBATCH --job-name=Univer.MethStat
-##SBATCH --partition=compute
-#SBATCH -p gpu
-#SBATCH --gres=gpu:1             # number of gpus per node
-#SBATCH -q inference
+#SBATCH --job-name=meth.perf
+#SBATCH --partition=compute
+##SBATCH -p gpu
+##SBATCH --gres=gpu:1             # number of gpus per node
+##SBATCH -q inference
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 2 # number of cores
-#SBATCH --mem 120g # memory pool for all cores
-#SBATCH --time=06:00:00 # time (D-HH:MM:SS)
+#SBATCH --mem 220g # memory pool for all cores
+#SBATCH --time=1-06:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
@@ -22,6 +22,8 @@ echo "RunPrefix: $RunPrefix"
 echo "parser: $parser"
 echo "minCov: $minCov"
 echo "dsname:" $dsname
+
+echo ${NanoCompareDir}
 
 prjBaseDir=/projects/li-lab/yang/workspace/nano-compare
 

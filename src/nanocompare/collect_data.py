@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 from nanocompare.global_config import logger, pic_base_dir
-from nanocompare.global_settings import locations_category, locations_singleton, runPrefixDict
+from nanocompare.global_settings import locations_category, locations_singleton
 
 
 def collect_data_selected_locations(path, extension="tsv", prefix="APL_BSseq_cut10/APL_Bsseq_cut10.", sel_locations=["GW", "singletons", "nonsingletons", "cpgIslandExt", "promoters_500bp"]):
@@ -439,31 +439,33 @@ def collect_singleton_vs_nonsingleton_df(runPrefixDict):
     return retdf
 
 
-def create_report_datadf(runPrefixDict):
+def collect_performance_report_as_df(runPrefixDict):
     """
     create report from list of runPrefix, return specified columns
     :return:
     """
     dflist = []
     for runPrefix in runPrefixDict:
+        logger.debug(f'runPrefix={runPrefix}')
         pattern = os.path.join(runPrefixDict[runPrefix], "performance?results", "*.performance.report.csv")
         files = glob.glob(pattern)
         for infn in files:
             df = pd.read_csv(infn, index_col=0, sep=",")
             dflist.append(df)
-            logger.debug(f'Collect {runPrefix}:{os.path.basename(infn)} = {len(df)}')
+            logger.debug(f'Collect data from {runPrefix}:{os.path.basename(infn)} = {len(df)}')
     if len(dflist) == 0:
         raise Exception(f"Can not find report at {runPrefix} in folder {runPrefixDict[runPrefix]} with pattern={pattern}")
     combdf = pd.concat(dflist, ignore_index=True)
+    logger.info(f'We collected total {len(dflist)} files with {len(combdf)} records')
     return combdf
 
 
-def collect_wide_format_newly_exp(sel_locations=locations_category + locations_singleton):
+def load_wide_format_performance_results(runPrefixDict, sel_locations=locations_category + locations_singleton):
     """
     Collect the currently new performance of exp results for paper
     :return:
     """
-    df = create_report_datadf(runPrefixDict)
+    df = collect_performance_report_as_df(runPrefixDict)
     seldf = select_locations_from_reportdf(df, sel_locations=sel_locations)
 
     logger.debug(f"collect_newly_exp_data, wide-format seldf={len(seldf)}")
@@ -471,12 +473,12 @@ def collect_wide_format_newly_exp(sel_locations=locations_category + locations_s
     return seldf
 
 
-def save_wide_format_newly_exp(outdir):
+def save_wide_format_performance_results(runPrefixDict, outdir):
     """
     Save all performance report results into a csv
     :return:
     """
-    df = collect_wide_format_newly_exp()
+    df = load_wide_format_performance_results(runPrefixDict)
     outfn = os.path.join(outdir, 'performance-results.csv')
     df.to_csv(outfn)
     logger.info(f'save to {outfn}')
@@ -484,7 +486,7 @@ def save_wide_format_newly_exp(outdir):
 
 if __name__ == '__main__':
     # df = load_singleton_nonsingleton_sites()
-    df = collect_wide_format_newly_exp()
+    df = load_wide_format_performance_results()
     logger.info(f'df={df}')
 
     # df = get_data_all()

@@ -9,6 +9,7 @@ Sample usage:
 All usedful functions are located in nanocompare.meth_stats.meth_stats_common
 """
 import argparse
+import subprocess
 
 from nanocompare.meth_stats.meth_stats_common import *
 
@@ -279,6 +280,18 @@ if __name__ == '__main__':
         outfile.write("\n")
     outfile.close()
     logger.info(f"save to {outfn}\n")
+
+    # Report correlation matrix here
+    df = pd.read_csv(outfn, sep=sep)
+    df = df.filter(regex='_freq$', axis=1)
+    cordf = df.corr()
+    logger.info(f'Correlation matrix is:\n{cordf}')
+    corr_outfn = os.path.join(out_dir, f'Meth_corr_plot_data-{RunPrefix}-correlation-matrix.xlsx')
+    cordf.to_excel(corr_outfn)
+
+    # plot fig5a of correlation plot
+    command = f"set -x; PYTHONPATH=$NanoCompareDir/src python $NanoCompareDir/src/plot_figure.py fig5a -i {outfn} -o {out_dir}"
+    logger.info(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8"))
 
     summary_cpgs_joined_results_table()
 

@@ -786,6 +786,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     return cpgDict
 
 
+# Deprecated
 def importPredictions_Tombo_nofilter(infileName, chr_col=0, start_col=1, meth_col=4, baseCount=0, cutoff=2.5):
     '''
     Note that the function requires per read stats, not frequencies of methylation.
@@ -871,6 +872,7 @@ def importPredictions_Tombo_nofilter(infileName, chr_col=0, start_col=1, meth_co
     return cpgDict
 
 
+# Deprecated
 def importPredictions_Tombo3(infileName, chr_col=0, start_col=1, meth_col=4, baseCount=0, cutoff=2.5):
     '''
 
@@ -958,7 +960,7 @@ def importPredictions_Tombo3(infileName, chr_col=0, start_col=1, meth_col=4, bas
     return cpgDict
 
 
-def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_reads_col=-2, coverage_col=-4, baseFormat=0, sep=' ', output_first=False):
+def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_reads_col=-1, coverage_col=-3, baseFormat=0, sep=' ', output_first=False):
     '''
     We treate input as 0-based format for start col. Due to we pre-processed original DeepMod results by filter out non-CG sites, the input of this funciton is sep=TAB instead!!!
 
@@ -1096,6 +1098,7 @@ def importPredictions_DeepMod_Read_Level(infileName, chr_col=0, start_col=1, str
     return cpgDict
 
 
+# Deprecated
 def importPredictions_DeepMod3(infileName, chr_col=0, start_col=1, meth_percentage_col=11, coverage_col=10, clusteredResult=False, clustered_meth_freq_col=13, baseCount=0):
     '''
 
@@ -1170,7 +1173,7 @@ def importPredictions_DeepMod3(infileName, chr_col=0, start_col=1, meth_percenta
     return cpgDict
 
 
-def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4, clustered_meth_freq_col=-1, baseFormat=0, sep=' '):
+def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4, clustered_meth_freq_col=-1, baseFormat=0, sep=' ', output_first=False):
     '''
     Note: results of cluster is differ from other tools like:
     [methFrequency, coverage] such as key -> values [50 (freq 0-100), 10 (cov)]
@@ -1216,7 +1219,6 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     infile = open(infileName, "r")
     cpgDict = defaultdict(dict)
     count = 0
-    output_first = True
 
     for row in infile:
         tmp = row.strip().split(sep)
@@ -2957,6 +2959,11 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
         d["Corr_mixedSupport"].append(Corr_mixedSupport)
         d["Corr_All"].append(corrAll)
         d["Corr_allSupport"].append(Corr_allSupport)
+
+        tmpdf = pd.DataFrame.from_dict(d)
+        tmpfn = os.path.join(outdir, 'performance.report.tmp.csv')
+        tmpdf.to_csv(tmpfn)
+
         if test:
             break
     df = pd.DataFrame.from_dict(d)
@@ -3630,7 +3637,7 @@ def importGroundTruth_genome_wide_Bismark_Report(infn='/projects/li-lab/yang/res
     df['cov'] = df.iloc[:, meth_col] + df.iloc[:, unmeth_col]
     df = df[df['cov'] >= covCutt]
 
-    df = df[df.iloc[:, ccontect_col] == 'CG']
+    # df = df[df.iloc[:, ccontect_col] == 'CG']
 
     # Based on import format 0, we need minus 1, due to input format is 1-based start
     if baseFormat == 0:
