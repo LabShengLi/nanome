@@ -468,7 +468,7 @@ def load_wide_format_performance_results(runPrefixDict, sel_locations=locations_
     df = collect_performance_report_as_df(runPrefixDict)
     seldf = select_locations_from_reportdf(df, sel_locations=sel_locations)
 
-    logger.debug(f"collect_newly_exp_data, wide-format seldf={len(seldf)}")
+    logger.debug(f"collect_newly_exp_data, wide-format seldf={len(seldf)} using locations={sel_locations}")
 
     return seldf
 

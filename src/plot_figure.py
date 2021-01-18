@@ -863,6 +863,8 @@ if __name__ == '__main__':
     logger.debug(args)
 
     if args.cmd == 'fig5a':
+        ## find ${resultDir} -name 'Meth_corr_plot_data*.csv' \
+        ##      -type f -exec python plot_figure.py fig5a -i {} \;
         for fn in args.i:
             gen_figure_5a(fn)
     elif args.cmd == 'fig5c':
@@ -928,42 +930,4 @@ if __name__ == '__main__':
                 ret = pickle.load(infn)
                 logger.debug(ret.keys())
 
-    logger.info('Plot figure DONE')
-    # pie_plot_all()
-    # gen_figure_2bc()
-
-    # df = load_all_perf_data_for_dataset_list()
-    # gen_figure_2ac()
-    #
-
-    # df1 = load_box_plot_all_data()
-    # logger.debug(f"df1 = {df1}")
-    #
-    # outfn=os.path.join(pic_base_dir, "df1.xlsx")
-    # df1.to_excel(outfn)
-    #
-    #
-    # df2 = load_all_perf_data_for_dataset_list()
-    # logger.debug(f"df2 = {df2}")
-    #
-    # outfn=os.path.join(pic_base_dir, "df2.xlsx")
-    # df2.to_excel(outfn)
-
-    # gen_figure_2bd()
-
-    # gen_figure_2a()
-    # gen_figure_2bc()
-    # gen_figure_3a()
-    # gen_figure_3b()
-    # smooth_scatter_cor_plot()
-
-    # box_plots_all_locations()
-    # box_plots_all_locations()
-
-    # df = get_df_from_gen_figure_3a()
-
-    # cor_box_plot()
-    #
-    # alldf = load_all_perf_data()
-    #
-    # df1 = load_all_perf_data_for_dataset('APL_BSseq_cut10')
+    logger.info('DONE')

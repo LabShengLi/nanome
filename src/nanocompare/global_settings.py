@@ -97,8 +97,8 @@ important_region_bed_fns = [narrowCoord[-2], narrowCoord[6], narrowCoord[9], nar
 
 runPrefixDict = {
         'K562_WGBS': os.path.join(results_base_dir, 'MethPerf-K562_WGBS'),
-        'HL60_RRBS': os.path.join(results_base_dir, 'MethPerf-HL60_RRBS')  # ,
-        # 'APL_RRBS' : os.path.join(results_base_dir, 'MethPerf-APL_RRBS')
+        'HL60_RRBS': os.path.join(results_base_dir, 'MethPerf-HL60_RRBS'),
+        'APL_RRBS' : os.path.join(results_base_dir, 'MethPerf-APL_RRBS')
         }
 
 

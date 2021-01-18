@@ -28,7 +28,7 @@ fig.34a.bar.plot.performance <- function(df, perf.measure = 'Accuracy', location
   sel_data = df[df$Location %in% locations,]
 
   #Plot and save
-  outfn = sprintf("%s/fig.34a.bar.%s.%s.pdf", bdir, locations[1], perf.measure)
+  outfn = sprintf("%s/fig.34a.bar.%s.%s.jpg", bdir, locations[1], perf.measure)
   p1 <- ggplot(sel_data, aes_string(x = 'Tool', y = perf.measure, fill = 'Tool')) +
     geom_bar(stat = 'identity') +
     facet_grid(Dataset ~ Location) +
@@ -51,12 +51,12 @@ fig.34a.scatter.plot.performance <- function(df, measure.pair, locations, bdir, 
     scale_shape_manual(values = c(0, 1, 2, 3, 4, 5)) +
     ylim(0, 1) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-    theme(legend.title = element_text(size = 12), legend.text = element_text(size = 10)) +
+    theme(legend.title = element_text(size = 10), legend.text = element_text(size = 10)) +
     guides(colour = guide_legend(order = 1), shape = guide_legend(order = 2)) +
     theme(axis.title.y = element_blank()) +
     theme(strip.background.y = element_blank(), strip.placement = "outside")
 
-  outfn = sprintf("%s/fig.34a.scatter.%s.%s.pdf", bdir, locations[1], measure.pair[1])
+  outfn = sprintf("%s/fig.34a.scatter.%s.%s.jpg", bdir, locations[1], measure.pair[1])
   ggsave(p1, filename = outfn, scale = scale)
   printf("save to %s\n", outfn)
 

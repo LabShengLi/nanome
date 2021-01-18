@@ -22,20 +22,20 @@ df <- load.performance.data(infn)
 sel_data = df[df$Location %in% locations.Singletons, c('Dataset', 'Tool', 'Location', 'Accuracy')]
 
 ggplot(sel_data, aes_string(x = 'Tool', y = 'Accuracy', fill = 'Tool')) +
-    geom_bar(stat = 'identity') +
-    facet_grid( ~ Dataset+Location) +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-    theme(strip.text.x = element_text(size = 7))
+  geom_bar(stat = 'identity') +
+  facet_grid(~Dataset + Location) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  theme(strip.text.x = element_text(size = 7))
 
-outfn = sprintf("%s/test.pdf", outdir)
-ggsave(filename = outfn, width=9, height=4, limitsize =FALSE)
+outfn = sprintf("%s/test1.jpg", outdir)
+ggsave(filename = outfn, width = 10, height = 4, dpi = 600)
 
-
+source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
 # Scatter plot
 measure.pair.list = list(c('Accuracy', 'Micro.F1'), c('Micro.Precision', 'Micro.Recall'), c('F1_5mC', 'F1_5C'))
 for (measure.pair in measure.pair.list) {
-  fig.34a.scatter.plot.performance(df, measure.pair, locations = locations.Singletons, bdir = outdir, scale = 0.65)
-  fig.34a.scatter.plot.performance(df, measure.pair, locations = locations.Genome, bdir = outdir, scale = 0.75)
+  fig.34a.scatter.plot.performance(df, measure.pair, locations = locations.Singletons, bdir = outdir, scale = 0.7)
+  fig.34a.scatter.plot.performance(df, measure.pair, locations = locations.Genome, bdir = outdir, scale = 0.8)
   #break
 }
 

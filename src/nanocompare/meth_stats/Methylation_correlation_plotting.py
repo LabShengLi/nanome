@@ -291,7 +291,7 @@ if __name__ == '__main__':
 
     # plot fig5a of correlation plot
     command = f"set -x; PYTHONPATH=$NanoCompareDir/src python $NanoCompareDir/src/plot_figure.py fig5a -i {outfn} -o {out_dir}"
-    logger.info(subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8"))
+    subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
 
     summary_cpgs_joined_results_table()
 
