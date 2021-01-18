@@ -1,5 +1,6 @@
 library(VennDiagram)
 library(ggplot2)
+library(here)
 
 # NOT RUN {
 # Reference five-set diagram
@@ -45,9 +46,14 @@ venn.plot <- draw.quintuple.venn(
   ind = TRUE
 );
 
+
+bdir = here('figures')
+
+outfn = sprintf("%s/ven-demo.jpg", bdir)
+
 # Writing to file
 #tiff(filename = "Quintuple_Venn_diagram.tiff", compression = "lzw");
-ggsave(venn.plot, filename = "Quintuple_Venn_diagram.tiff")
+ggsave(filename = outfn)
 #grid.draw(venn.plot);
 #dev.off();
 # }

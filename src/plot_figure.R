@@ -15,23 +15,32 @@ outdir = here('figures')
 infn = here('result', 'performance-results.csv')
 df <- load.performance.data(infn)
 
-
-## Line plot
+## Bar plot
 source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
-perf.measure.list = c('Accuracy', 'ROC.AUC', 'Micro.F1', 'Macro.F1', 'Average.Precision', 'Recall_5mC')
-dsname = 'K562'
 
-for (perf.measure in perf.measure.list) {
-  fig.34a.line.plot.performance(df, dsname, perf.measure, bdir = outdir, locations = locations.Singletons)
-  fig.34a.line.plot.performance(df, dsname, perf.measure, bdir = outdir, locations = locations.Genome)
+for (measure.pair in measure.pair.list) {
+  for (dsname in Dataset.Order) {
+    fig.34a.bar.dataset.location.performance(df, dsname, measure.pair, outdir)
+  }
   #break
 }
 
 
+## Line plot
+source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
+
+for (perf.measure in measure.list) {
+  fig.34a.line.plot.performance(df, perf.measure, bdir = outdir, locations = locations.Singletons)
+  fig.34a.line.plot.performance(df, perf.measure, bdir = outdir, locations = locations.Genome)
+  #break
+}
+
+
+quit()
+
 #### 1d bar plot wide figure
 source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
-perf.measure.list = c('Accuracy', 'ROC.AUC', 'Micro.F1', 'Macro.F1', 'Average.Precision', 'Recall_5mC')
-for (perf.measure in perf.measure.list) {
+for (perf.measure in measure.list) {
   fig.34a.bar.plot1d.performance(df, perf.measure, bdir = outdir, locations = locations.Singletons)
   fig.34a.bar.plot1d.performance(df, perf.measure, bdir = outdir, locations = locations.Genome)
   break

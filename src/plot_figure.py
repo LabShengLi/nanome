@@ -394,7 +394,7 @@ def corr_grid_plot_for_fig5a(infn):
 
     ## Plot correlation grid figure
     basefn = os.path.basename(infn)
-    outfileName = "{}.png".format(basefn.replace(".tsv", ""))
+    outfileName = "{}.jpg".format(basefn.replace(".tsv", ""))
     outfn = os.path.join(args.o, outfileName)
 
     plt.clf()
@@ -457,7 +457,7 @@ def corr_grid_plot_for_fig5a(infn):
 
             position += 1
 
-    fig.savefig(outfn, dpi=400, bbox_inches='tight')
+    fig.savefig(outfn, dpi=600, bbox_inches='tight')
     plt.show()
     plt.close()
     logger.info(f"save to {outfn}")
