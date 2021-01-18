@@ -15,6 +15,8 @@ importlib.reload(pp)
 
 humanChrs = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
 
+ToolNameList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon']
+
 # which column of performance table is extracted and returned
 perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'Average-Precision', 'ROC-AUC', "Macro-F1", "Micro-F1", "Macro-Precision", "Micro-Precision", "Macro-Recall", "Micro-Recall", 'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C', 'Corr_Mix', 'Corr_All', 'Corr_mixedSupport', 'Corr_allSupport', 'mCsites_called',
         'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix', 'coord']
@@ -55,11 +57,13 @@ locations_singleton = ["Singletons", "Non-singletons", "Discordant", "Concordant
 singletonsFile = "hg38_singletons.bed"
 nonsingletonsFile = "hg38_nonsingletons.bed"
 
-narrowCoordList = [singletonsFile, nonsingletonsFile, "ONT.hg38.cpgIslandExt.bed", "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed", "ONT.hg38.exonFeature.bed", "ONT.hg38.geneFeature.bed", "ONT.hg38.intergenic.bed", "ONT.hg38.intronFeature.bed", "ONT.hg38.promoterFeature.flank_100.bed", "ONT.hg38.promoterFeature.flank_1000.bed",
+narrowCoordList = ['x.x.GenomeWide', singletonsFile, nonsingletonsFile, "ONT.hg38.cpgIslandExt.bed", "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed", "ONT.hg38.exonFeature.bed", "ONT.hg38.geneFeature.bed", "ONT.hg38.intergenic.bed", "ONT.hg38.intronFeature.bed", "ONT.hg38.promoterFeature.flank_100.bed", "ONT.hg38.promoterFeature.flank_1000.bed",
         "ONT.hg38.promoterFeature.flank_200.bed", "ONT.hg38.promoterFeature.flank_2000.bed", "ONT.hg38.promoterFeature.flank_500.bed", "ONT.hg38.promoterFeature.flank_750.bed"]
 
 # None means no coordinate used, i.e. Genome-wide
-narrowCoord = [None] + [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in narrowCoordList]
+narrowCoord = [None] + [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in narrowCoordList[1:]]
+
+narrowCoordList_curve_data = narrowCoordList + ['hg38_singletons.absolute.bed', 'hg38_nonsingletons.concordant.bed', 'hg38_nonsingletons.discordant.bed']
 
 # Not used now
 important_region_bed_fns = [narrowCoord[-2], narrowCoord[6], narrowCoord[9], narrowCoord[8], narrowCoord[3]]

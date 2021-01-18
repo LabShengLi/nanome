@@ -156,6 +156,11 @@ if __name__ == '__main__':
         outfn = os.path.join(perf_dir, f"{RunPrefix}.{tool}.performance.report.csv")
         df.to_csv(outfn)
         logger.info(f"save to {outfn}")
+
+        # This file will always report intermediate results
+        tmpfn = os.path.join(perf_dir, 'performance.report.tmp.csv')
+        os.remove(tmpfn)
+
         if args.test:
             break
     logger.info("Meth stats performance data generation DONE.")

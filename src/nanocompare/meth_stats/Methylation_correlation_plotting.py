@@ -280,6 +280,14 @@ if __name__ == '__main__':
     outfile.close()
     logger.info(f"save to {outfn}\n")
 
+    # Report correlation matrix here
+    df = pd.read_csv(outfn, sep=sep)
+    df = df.filter(regex='_freq$', axis=1)
+    cordf = df.corr()
+    logger.info(f'Correlation matrix is:\n{cordf}')
+    outfn = os.path.join(out_dir, f'Meth_corr_plot_data-{RunPrefix}-correlation-matrix.xlsx')
+    cordf.to_excel(outfn)
+
     summary_cpgs_joined_results_table()
 
     logger.info("### Methylation correlation plotting data generation program finished. DONE")

@@ -2,6 +2,9 @@
 Plots all Nanocompare paper out
 """
 import argparse
+import glob
+import pickle
+from collections import defaultdict
 
 import matplotlib.patches as mpatches
 import numpy as np
@@ -864,7 +867,7 @@ if __name__ == '__main__':
             gen_figure_5a(fn)
     elif args.cmd == 'fig5c':
         gen_figure_5c()
-    if args.cmd == 'fig5b':
+    elif args.cmd == 'fig5b':
         gen_figure_5b()
     elif args.cmd == 'fig3a':
         ## python plot_figure.py fig3a
@@ -881,7 +884,49 @@ if __name__ == '__main__':
         logger.debug(df)
         outfn = os.path.join(args.o, 'dataset.singleton.vs.non-singleton.csv')
         df.to_csv(outfn)
+    elif args.cmd == 'export-curve-data':
+        ## python plot_figure.py export-curve-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS
+        outdir = os.path.join(args.o, 'curve-data-for-datasets')
+        os.makedirs(outdir, exist_ok=True)
+        for bdir in args.i:
+            runPrefix = os.path.basename(bdir)
+            for cord_pattern in narrowCoordList_curve_data:
+                curve_data = defaultdict(list)
+                for toolname in ToolNameList:
+                    pattern_str = os.path.join(bdir, 'performance?results', 'curve_data', f'*.{toolname}.*{cord_pattern}.curve_data.pkl')
+                    fnlist = glob.glob(pattern_str)
+                    if len(fnlist) != 1:
+                        raise Exception(f'Can not locate curve_data for Tool={toolname}, at Coord={cord_pattern}, with pattern={pattern_str}, find results={fnlist}. Please check if MethPerf results folder={bdir} specified is correct.')
+                    with open(fnlist[0], 'rb') as f:
+                        ret = pickle.load(f)
+                        # logger.debug(ret)
+                        curve_data[f'{toolname}_true'] = ret['yTrue']
+                        curve_data[f'{toolname}_pred'] = ret['yPred']
+                outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.{cord_pattern}.pkl')
+                with open(outfn, 'wb') as f:
+                    pickle.dump(curve_data, f)
+                logger.info(f'save to {outfn}')
 
+                outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.{cord_pattern}.dat')
+                with open(outfn, "w") as f:
+                    for toolname in ToolNameList:
+                        f.write(f"{toolname}_true:")
+                        outstr = ','.join([str(value) for value in curve_data[f'{toolname}_true']])
+                        f.write(outstr)
+                        f.write("\n")
+
+                        f.write(f"{toolname}_pred:")
+                        outstr = ','.join([str(value) for value in curve_data[f'{toolname}_pred']])
+                        f.writelines(outstr)
+                        f.write("\n")
+                logger.info(f'save to {outfn}')
+    elif args.cmd == 'plot-curve-data':
+        for fn in args.i:
+            with open(fn, 'rb') as infn:
+                ret = pickle.load(infn)
+                logger.debug(ret.keys())
+
+    logger.info('Plot figure DONE')
     # pie_plot_all()
     # gen_figure_2bc()
 
