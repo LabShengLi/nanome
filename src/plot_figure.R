@@ -16,19 +16,27 @@ infn = here('result', 'performance-results.csv')
 df <- load.performance.data(infn)
 
 
-#### Test
+## Line plot
+source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
+perf.measure.list = c('Accuracy', 'ROC.AUC', 'Micro.F1', 'Macro.F1', 'Average.Precision', 'Recall_5mC')
+dsname = 'K562'
+
+for (perf.measure in perf.measure.list) {
+  fig.34a.line.plot.performance(df, dsname, perf.measure, bdir = outdir, locations = locations.Singletons)
+  fig.34a.line.plot.performance(df, dsname, perf.measure, bdir = outdir, locations = locations.Genome)
+  #break
+}
 
 
-sel_data = df[df$Location %in% locations.Singletons, c('Dataset', 'Tool', 'Location', 'Accuracy')]
+#### 1d bar plot wide figure
+source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
+perf.measure.list = c('Accuracy', 'ROC.AUC', 'Micro.F1', 'Macro.F1', 'Average.Precision', 'Recall_5mC')
+for (perf.measure in perf.measure.list) {
+  fig.34a.bar.plot1d.performance(df, perf.measure, bdir = outdir, locations = locations.Singletons)
+  fig.34a.bar.plot1d.performance(df, perf.measure, bdir = outdir, locations = locations.Genome)
+  break
+}
 
-ggplot(sel_data, aes_string(x = 'Tool', y = 'Accuracy', fill = 'Tool')) +
-  geom_bar(stat = 'identity') +
-  facet_grid(~Dataset + Location) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-  theme(strip.text.x = element_text(size = 7))
-
-outfn = sprintf("%s/test1.jpg", outdir)
-ggsave(filename = outfn, width = 10, height = 4, dpi = 600)
 
 source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
 # Scatter plot
@@ -36,7 +44,7 @@ measure.pair.list = list(c('Accuracy', 'Micro.F1'), c('Micro.Precision', 'Micro.
 for (measure.pair in measure.pair.list) {
   fig.34a.scatter.plot.performance(df, measure.pair, locations = locations.Singletons, bdir = outdir, scale = 0.7)
   fig.34a.scatter.plot.performance(df, measure.pair, locations = locations.Genome, bdir = outdir, scale = 0.8)
-  #break
+  break
 }
 
 # Bar plot
@@ -45,7 +53,7 @@ perf.measure.list = c('Accuracy', 'ROC.AUC', 'Micro.F1', 'Macro.F1', 'Average.Pr
 for (perf.measure in perf.measure.list) {
   fig.34a.bar.plot.performance(df, perf.measure, bdir = outdir, locations = locations.Singletons, scale = 0.6)
   fig.34a.bar.plot.performance(df, perf.measure, bdir = outdir, locations = locations.Genome, scale = 0.75)
-  #break
+  break
 }
 
 outfn = here('result', 'figure3a.work.RData')
