@@ -8,3 +8,5 @@
 out
 gen
 src/nanocompare/.DS_Store
+/figures/
+/result/
