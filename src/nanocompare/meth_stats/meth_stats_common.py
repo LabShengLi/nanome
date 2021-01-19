@@ -75,7 +75,7 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
     It looks that we both do the same, or not?
     """
     cpgDict = defaultdict(list)
-    count = 0
+    call_cnt = 0
     meth_cnt = 0
     unmeth_cnt = 0
     infile = open(infileName, 'r')
@@ -128,7 +128,7 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                 else:
                     cpgDict[key].append(meth_indicator)
 
-                count += 1
+                call_cnt += 1
                 if meth_indicator == 1:
                     meth_cnt += 1
                 else:
@@ -151,15 +151,18 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                         logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
                         sys.exit(-1)
 
-                    cpgDict[key].append(meth_indicator)
-                    count += 1
+                    if include_score:
+                        cpgDict[key].append((meth_indicator, meth_score))
+                    else:
+                        cpgDict[key].append(meth_indicator)
+                    call_cnt += 1
                     if meth_indicator == 1:
                         meth_cnt += 1
                     else:
                         unmeth_cnt += 1
 
     infile.close()
-    logger.info(f"###\timportPredictions_Nanopolish SUCCESS: {count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file with LLR-cutoff={llr_cutoff:.2f}")
+    logger.info(f"###\timportPredictions_Nanopolish SUCCESS: {call_cnt:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file with LLR-cutoff={llr_cutoff:.2f}")
     return cpgDict
 
 
@@ -253,7 +256,7 @@ def importPredictions_Nanopolish_v2(infileName, baseCount=0, logLikehoodCutt=2.5
     return cpgDict
 
 
-def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=2, meth_freq_col=7, meth_col=8, baseFormat=0, include_score=False):
+def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=2, meth_prob_col=7, meth_col=8, baseFormat=0, include_score=False):
     '''
     We treat input as 0-based format for start col.
 
@@ -328,7 +331,7 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
         key = (tmp[chr_col], start, strand)
 
         if include_score:
-            cpgDict[key].append((int(tmp[meth_col]), float(tmp[meth_freq_col])))
+            cpgDict[key].append((int(tmp[meth_col]), float(tmp[meth_prob_col])))
         else:
             cpgDict[key].append(int(tmp[meth_col]))
 
@@ -545,7 +548,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
         meth_freq = methReads / coverage
 
         if include_score:
-            methCallsList = [(1, meth_freq)] * methReads + [(0, 1 - meth_freq)] * (coverage - methReads)
+            methCallsList = [(1, 1.0)] * methReads + [(0, 0.0)] * (coverage - methReads)
         else:
             methCallsList = [1] * methReads + [0] * (coverage - methReads)
         cpgDict[key] = methCallsList
@@ -694,7 +697,7 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
         if as_freq_cov_format:
             cpgDict[key] = {'freq': meth_freq, 'cov': coverage}
         elif include_score:
-            cpgDict[key] = [(1, meth_freq)] * meth_cov + [(0, 1 - meth_freq)] * (coverage - meth_cov)
+            cpgDict[key] = [(1, 1.0)] * meth_cov + [(0, 0.0)] * (coverage - meth_cov)
         else:
             cpgDict[key] = [1] * meth_cov + [0] * (coverage - meth_cov)
 
@@ -1095,6 +1098,94 @@ def importGroundTruth_bed_file_format(infileName, chr_col=0, start_col=1, meth_c
 
     infile.close()
     logger.info(f"###\timportGroundTruth_coverage_output_from_Bismark: loaded information for {len(cpgDict):,} CpGs with cutoff={covCutt}, before cutoff={row_cnt:,}")
+    return cpgDict
+
+
+# Deal with bismark_bt2.CpG_report.txt.gz
+def importGroundTruth_genome_wide_Bismark_Report(infn='/projects/li-lab/yang/results/2020-12-21/hl60-results-1/extractBismark/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz', chr_col=0, start_col=1, strand_col=2, meth_col=3, unmeth_col=4, ccontect_col=5, covCutt=10, baseFormat=0, includeCov=True):
+    """
+    We are sure the input file is start using 1-based format.
+    We use this format due to it contains strand info.
+    Ensure that in + strand, position is pointed to CG's C
+                in - strand, position is pointed to CG's G, (for positive strand sequence)
+            in our imported into programs.
+    We design this due to other bismark output contains no strand-info.
+
+    The genome-wide cytosine methylation output file is tab-delimited in the following format:
+    ==========================================================================================
+    <chromosome>  <position>  <strand>  <count methylated>  <count non-methylated>  <C-context>  <trinucleotide context>
+
+
+    Sample input file:
+
+    gunzip -cd HL60_RRBS_ENCFF000MDA.Read_R1.Rep_1_trimmed_bismark_bt2.CpG_report.txt.gz| head
+    chr4	10164	+	0	0	CG	CGC
+    chr4	10165	-	0	0	CG	CGT
+    chr4	10207	+	0	0	CG	CGG
+    chr4	10208	-	0	0	CG	CGA
+    chr4	10233	+	0	0	CG	CGT
+    chr4	10234	-	0	0	CG	CGG
+    chr4	10279	+	0	0	CG	CGT
+    chr4	10280	-	0	0	CG	CGT
+    chr4	10297	+	0	0	CG	CGC
+    chr4	10298	-	0	0	CG	CGC
+
+    :param infn:
+    :param chr_col:
+    :param start_col:
+    :param strand_col:
+    :param meth_col:
+    :param unmeth_col:
+    :param ccontect_col:
+    :param covCutt:
+    :param baseFormat:
+    :param includeCov:
+    :return:
+    """
+    df = pd.read_csv(infn, sep='\t', compression='gzip', header=None)
+
+    df['cov'] = df.iloc[:, meth_col] + df.iloc[:, unmeth_col]
+    df = df[df['cov'] >= covCutt]
+
+    # df = df[df.iloc[:, ccontect_col] == 'CG']
+
+    # Based on import format 0, we need minus 1, due to input format is 1-based start
+    if baseFormat == 0:
+        df.iloc[:, start_col] = df.iloc[:, start_col] - 1
+        df['end'] = df.iloc[:, start_col] + 1
+    elif baseFormat == 1:
+        df['end'] = df.iloc[:, start_col]
+
+    df['meth-freq'] = (df.iloc[:, meth_col] / df['cov'] * 100).astype(np.int32)
+
+    df = df.iloc[:, [chr_col, start_col, df.columns.get_loc("end"), df.columns.get_loc("meth-freq"), df.columns.get_loc("cov"), strand_col]]
+
+    df.columns = ['chr', 'start', 'end', 'meth-freq', 'cov', 'strand']
+
+    cpgDict = defaultdict(list)
+    for index, row in df.iterrows():
+        chr = row['chr']
+
+        if chr not in humanChrs:
+            continue
+
+        start = int(row['start'])
+        strand = row['strand']
+
+        if strand not in ['+', '-']:
+            raise Exception(f'strand={strand}  for row={row} is not acceptable, please check use correct function to parse bgtruth file {infn}')
+
+        key = (chr, int(start), strand)
+        if key not in cpgDict:
+            if includeCov:
+                cpgDict[key] = [row['meth-freq'] / 100.0, row['cov']]
+            else:
+                cpgDict[key] = row['meth-freq'] / 100.0
+        else:
+            raise Exception(f'In genome-wide, we found duplicate sites: for key={key} in row={row}, please check input file {infn}')
+
+    logger.info(f"###\timportGroundTruth_genome_wide_from_Bismark: loaded information for {len(cpgDict):,} CpGs from file {infn}")
+
     return cpgDict
 
 
@@ -1651,14 +1742,14 @@ def combine2programsCalls(calls1, calls2, outfileName=None):
     #     return dict.fromkeys(set(calls1.keys()).intersection(set(calls2.keys())), -1)
 
 
-def combine2programsCalls_4Corr(calls1, calls2, cutt=3, outfileName=False, only_bgtruth=False, print_first=False):
-    '''
+def combine2programsCalls_4Corr(calls1, calls2=None, cutt=3, outfileName=None, only_bgtruth=False, print_first=False):
+    """
     call1 and call2 should have the following format:
     {"chr\tstart\tend\n" : [list of methylation calls]}
 
     result: dictionary of shared sites in the same format as input with coverage of calls1 over calls 2 - use this with caution
 
-    '''
+    """
 
     if only_bgtruth:  # value = [freq, cov]
         filteredCalls1 = {}
@@ -1667,9 +1758,8 @@ def combine2programsCalls_4Corr(calls1, calls2, cutt=3, outfileName=False, only_
                 filteredCalls1[key] = cutt
         return filteredCalls1
 
-    # Next only allow value=[0 1 0 0 ...] or value=cov
+    # Next only allow value=[0 1 0 0 ...], value=[(0,0.2), (1,0.9) , ...] or value=cov
     filteredCalls1 = {}
-
     for key in calls1:
         if print_first:
             logger.debug(key)
@@ -1677,15 +1767,13 @@ def combine2programsCalls_4Corr(calls1, calls2, cutt=3, outfileName=False, only_
         if isinstance(calls1[key], list):
             if len(calls1[key]) >= cutt:
                 filteredCalls1[key] = cutt  # calls1[call]
-        elif isinstance(calls1[key], int):
-            raise Exception(f'Currently no support this case, due to key={key}, value={calls1[key]}')
+        elif isinstance(calls1[key], int):  # This will be used for first joined results vars
             if calls1[key] >= cutt:
                 filteredCalls1[key] = cutt  # calls1[call]
-    #         else:
-    #             print("WARNING ### combine2programsCalls_4Corr ### calls1[call]: {}".format(type(calls1[call])))
+        else:
+            raise Exception(f"can not recognize type of value for key={key}, value type={type(calls1[key])}")
 
     filteredCalls2 = {}
-
     for key in calls2:
         if print_first:
             logger.debug(key)
@@ -1693,15 +1781,13 @@ def combine2programsCalls_4Corr(calls1, calls2, cutt=3, outfileName=False, only_
         if isinstance(calls2[key], list):
             if len(calls2[key]) >= cutt:
                 filteredCalls2[key] = cutt  # calls2[call]
-        elif isinstance(calls2[key], int):  ##TODO: check to remove this case,no use guess
-            raise Exception(f'Currently no support this case, due to key={key}, value={calls1[key]}')
+        elif isinstance(calls2[key], int):  # This will be used for first joined results vars
             if calls2[key] >= cutt:
                 filteredCalls2[key] = cutt  # calls2[call]
-    #         else:
-    #             logger.error("WARNING ### combine2programsCalls_4Corr ### calls2[call]: {}".format(type(calls2[call])))
-    # logger.debug(f'{len(filteredCalls1)}, {len(filteredCalls2)}')
+        else:
+            raise Exception(f"can not recognize type of value for key={key}, value type={type(calls1[key])}")
     tmp = dict.fromkeys(set(filteredCalls1.keys()).intersection(set(filteredCalls2.keys())), cutt)
-    if outfileName != False:
+    if outfileName:
         outfile = open(outfileName, 'w')
         for key in tmp:
             outfile.write(key)
@@ -2398,94 +2484,6 @@ def get_ref_fasta():
     ref_fn = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
     ref_fasta = SeqIO.to_dict(SeqIO.parse(open(ref_fn), 'fasta'))
     return ref_fasta
-
-
-# Deal with bismark_bt2.CpG_report.txt.gz
-def importGroundTruth_genome_wide_Bismark_Report(infn='/projects/li-lab/yang/results/2020-12-21/hl60-results-1/extractBismark/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz', chr_col=0, start_col=1, strand_col=2, meth_col=3, unmeth_col=4, ccontect_col=5, covCutt=10, baseFormat=0, includeCov=True):
-    """
-    We are sure the input file is start using 1-based format.
-    We use this format due to it contains strand info.
-    Ensure that in + strand, position is pointed to CG's C
-                in - strand, position is pointed to CG's G, (for positive strand sequence)
-            in our imported into programs.
-    We design this due to other bismark output contains no strand-info.
-
-    The genome-wide cytosine methylation output file is tab-delimited in the following format:
-    ==========================================================================================
-    <chromosome>  <position>  <strand>  <count methylated>  <count non-methylated>  <C-context>  <trinucleotide context>
-
-
-    Sample input file:
-
-    gunzip -cd HL60_RRBS_ENCFF000MDA.Read_R1.Rep_1_trimmed_bismark_bt2.CpG_report.txt.gz| head
-    chr4	10164	+	0	0	CG	CGC
-    chr4	10165	-	0	0	CG	CGT
-    chr4	10207	+	0	0	CG	CGG
-    chr4	10208	-	0	0	CG	CGA
-    chr4	10233	+	0	0	CG	CGT
-    chr4	10234	-	0	0	CG	CGG
-    chr4	10279	+	0	0	CG	CGT
-    chr4	10280	-	0	0	CG	CGT
-    chr4	10297	+	0	0	CG	CGC
-    chr4	10298	-	0	0	CG	CGC
-
-    :param infn:
-    :param chr_col:
-    :param start_col:
-    :param strand_col:
-    :param meth_col:
-    :param unmeth_col:
-    :param ccontect_col:
-    :param covCutt:
-    :param baseFormat:
-    :param includeCov:
-    :return:
-    """
-    df = pd.read_csv(infn, sep='\t', compression='gzip', header=None)
-
-    df['cov'] = df.iloc[:, meth_col] + df.iloc[:, unmeth_col]
-    df = df[df['cov'] >= covCutt]
-
-    # df = df[df.iloc[:, ccontect_col] == 'CG']
-
-    # Based on import format 0, we need minus 1, due to input format is 1-based start
-    if baseFormat == 0:
-        df.iloc[:, start_col] = df.iloc[:, start_col] - 1
-        df['end'] = df.iloc[:, start_col] + 1
-    elif baseFormat == 1:
-        df['end'] = df.iloc[:, start_col]
-
-    df['meth-freq'] = (df.iloc[:, meth_col] / df['cov'] * 100).astype(np.int32)
-
-    df = df.iloc[:, [chr_col, start_col, df.columns.get_loc("end"), df.columns.get_loc("meth-freq"), df.columns.get_loc("cov"), strand_col]]
-
-    df.columns = ['chr', 'start', 'end', 'meth-freq', 'cov', 'strand']
-
-    cpgDict = defaultdict(list)
-    for index, row in df.iterrows():
-        chr = row['chr']
-
-        if chr not in humanChrs:
-            continue
-
-        start = int(row['start'])
-        strand = row['strand']
-
-        if strand not in ['+', '-']:
-            raise Exception(f'strand={strand}  for row={row} is not acceptable, please check use correct function to parse bgtruth file {infn}')
-
-        key = (chr, int(start), strand)
-        if key not in cpgDict:
-            if includeCov:
-                cpgDict[key] = [row['meth-freq'] / 100.0, row['cov']]
-            else:
-                cpgDict[key] = row['meth-freq'] / 100.0
-        else:
-            raise Exception(f'In genome-wide, we found duplicate sites: for key={key} in row={row}, please check input file {infn}')
-
-    logger.info(f"###\timportGroundTruth_genome_wide_from_Bismark: loaded information for {len(cpgDict):,} CpGs from file {infn}")
-
-    return cpgDict
 
 
 def sanity_check_sequence(tlist):

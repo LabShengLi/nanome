@@ -117,7 +117,7 @@ if __name__ == '__main__':
 
     logger.info(f"Data points for joined all tools with bg-truth (cov>={bgtruth_cov_cutoff}) stats: {len(joinedCPG):,}\n\n")
 
-    joinedCPG4Corr = combine2programsCalls_4Corr(bgTruth, None, cutt=tool_cov_cutoff, only_bgtruth=True)
+    joinedCPG4Corr = combine2programsCalls_4Corr(bgTruth, cutt=tool_cov_cutoff, only_bgtruth=True)
     for toolname in callresult_dict:
         joinedCPG4Corr = combine2programsCalls_4Corr(joinedCPG4Corr, callresult_dict[toolname], cutt=tool_cov_cutoff)
 
