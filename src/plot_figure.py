@@ -12,6 +12,7 @@ import seaborn as sns
 # from ggplot import ggplot, aes, geom_line, geom_abline
 from scipy.stats import pearsonr
 from sklearn import metrics
+from sklearn.metrics import precision_recall_curve
 
 from nanocompare.collect_data import collect_singleton_vs_nonsingleton_df, save_wide_format_performance_results
 from nanocompare.global_settings import *
@@ -859,18 +860,58 @@ def parse_arguments():
     return args
 
 
-def plot_performance_curves(ret):
-    toolname = 'DeepSignal'
-    ytrue = ret[f'{toolname}_true']
-    ypred = ret[f'{toolname}_pred']
+def plot_performance_curves(ret, outdir, tagname="tagname"):
+    figure_size = (4, 4)
 
-    logger.debug(f'ytrue={len(ytrue)}, ypred={len(ypred)}')
-    fpr, tpr, threshold = metrics.roc_curve(ytrue, ypred)
+    title_font_size = 16
+    label_font_size = 14
 
-    df = pd.DataFrame(dict(fpr=fpr, tpr=tpr))
-    logger.debug(df)
-    # ggplot(df, aes(x='fpr', y='tpr')) + geom_line() + geom_abline(linetype='dashed')
-    # ggplot(df, aes(x='fpr', ymin=0, ymax='tpr')) + geom_line(aes(y='tpr')) + geom_area(alpha=0.2) + ggtitle("ROC Curve w/ AUC = %s" % str(roc_auc))
+    plt.clf()
+    plt.figure(figsize=figure_size)
+    for toolname, toolcolor in zip(ToolNameList, ToolsColorList):
+        ytrue = ret[f'{toolname}_true']
+        ypred = ret[f'{toolname}_pred']
+        yscore = ret[f'{toolname}_score']
+
+        # logger.debug(f'ytrue={len(ytrue)}, ypred={len(ypred)}, yscore={len(yscore)}')
+        fpr, tpr, threshold = metrics.roc_curve(ytrue, yscore)
+        roc_auc = metrics.auc(fpr, tpr)
+        plt.plot(fpr, tpr, toolcolor, label=f'{toolname}={roc_auc:.2f}')
+    plt.legend(loc='lower right')
+    plt.plot([0, 1], [0, 1], 'r--')
+    plt.xlim([0, 1])
+    plt.ylim([0, 1])
+    plt.ylabel('True Positive Rate', fontsize=label_font_size)
+    plt.xlabel('False Positive Rate', fontsize=label_font_size)
+    plt.title('ROC Curves', fontsize=title_font_size)
+    outfn = os.path.join(outdir, f'{tagname}.roc.curves.jpg')
+    plt.savefig(outfn, format='png', bbox_inches='tight', dpi=600)
+
+    plt.show()
+    plt.close()
+
+    ## PR curves
+    plt.clf()
+    plt.figure(figsize=figure_size)
+    for toolname, toolcolor in zip(ToolNameList, ToolsColorList):
+        ytrue = ret[f'{toolname}_true']
+        yscore = ret[f'{toolname}_score']
+
+        precision, recall, _ = precision_recall_curve(ytrue, yscore)
+        average_precision = metrics.average_precision_score(ytrue, yscore)
+        plt.plot(recall, precision, toolcolor, label=f'{toolname}={average_precision:.2f}')
+    plt.legend(loc='lower left')
+    plt.xlim([0, 1])
+    plt.xlabel('Recall', fontsize=label_font_size)
+    plt.ylabel('Precision', fontsize=label_font_size)
+    plt.ylim([0.0, 1.05])
+    plt.title('Precision-Recall curve', fontsize=title_font_size)
+
+    outfn = os.path.join(outdir, f'{tagname}.pr.curves.jpg')
+    plt.savefig(outfn, format='png', bbox_inches='tight', dpi=600)
+
+    plt.show()
+    plt.close()
 
     pass
 
@@ -958,12 +999,17 @@ if __name__ == '__main__':
                 # logger.info(f'save to {outfn}')
             logger.info(f'For runPrefix={runPrefix} at dir={bdir}, total files={cnt}')
     elif args.cmd == 'plot-curve-data':
+        ## find /projects/li-lab/Nanopore_compare/result/plot-curve-data -name '*.pkl' -exec python plot_figure.py plot-curve-data -i {} \;
+        outdir = os.path.join(args.o, 'curves-figures')
+        os.makedirs(outdir, exist_ok=True)
         for fn in args.i:
+            logger.debug(f'Plot data from fn={fn}')
             with open(fn, 'rb') as infn:
+                basename = os.path.basename(fn)
+                bn = os.path.splitext(basename)[0]
                 ret = pickle.load(infn)
-                logger.debug(ret.keys())
-                plot_performance_curves(ret)
-
+                # logger.debug(ret.keys())
+                plot_performance_curves(ret, outdir, tagname=bn)
     else:
         raise Exception(f'Command={args.cmd} is not support')
 
