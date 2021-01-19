@@ -30,6 +30,6 @@ prjBaseDir=/projects/li-lab/yang/workspace/nano-compare
 pythonFn=${prjBaseDir}/src/nanocompare/meth_stats/Universal_meth_stats_evaluation.py
 
 PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:$DeepSignal_calls \
-	Tombo:$Tombo_calls Nanopolish:$Nanopolish_calls DeepMod:$DeepMod_calls \
+	Tombo:$Tombo_calls Nanopolish:$Nanopolish_calls $DeepMod_calls \
 	Megalodon:${Megalodon_calls} --bgtruth $parser:$bgTruth --runid MethPerf-$RunPrefix \
 	--dsname $dsname --min-bgtruth-cov $minCov --report-joined #--test

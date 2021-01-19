@@ -9,7 +9,9 @@ from collections import defaultdict
 import matplotlib.patches as mpatches
 import numpy as np
 import seaborn as sns
+# from ggplot import ggplot, aes, geom_line, geom_abline
 from scipy.stats import pearsonr
+from sklearn import metrics
 
 from nanocompare.collect_data import collect_singleton_vs_nonsingleton_df, save_wide_format_performance_results
 from nanocompare.global_settings import *
@@ -400,6 +402,7 @@ def corr_grid_plot_for_fig5a(infn):
     plt.clf()
 
     fig, ax = plt.subplots()
+
     fig.set_size_inches(10, 10)
 
     left, width = .25, .5
@@ -856,6 +859,22 @@ def parse_arguments():
     return args
 
 
+def plot_performance_curves(ret):
+    toolname = 'DeepSignal'
+    ytrue = ret[f'{toolname}_true']
+    ypred = ret[f'{toolname}_pred']
+
+    logger.debug(f'ytrue={len(ytrue)}, ypred={len(ypred)}')
+    fpr, tpr, threshold = metrics.roc_curve(ytrue, ypred)
+
+    df = pd.DataFrame(dict(fpr=fpr, tpr=tpr))
+    logger.debug(df)
+    # ggplot(df, aes(x='fpr', y='tpr')) + geom_line() + geom_abline(linetype='dashed')
+    # ggplot(df, aes(x='fpr', ymin=0, ymax='tpr')) + geom_line(aes(y='tpr')) + geom_area(alpha=0.2) + ggtitle("ROC Curve w/ AUC = %s" % str(roc_auc))
+
+    pass
+
+
 if __name__ == '__main__':
     set_log_debug_level()
 
@@ -929,5 +948,9 @@ if __name__ == '__main__':
             with open(fn, 'rb') as infn:
                 ret = pickle.load(infn)
                 logger.debug(ret.keys())
+                plot_performance_curves(ret)
+
+    else:
+        raise Exception(f'Command={args.cmd} is not support')
 
     logger.info('DONE')

@@ -49,70 +49,7 @@ def report2dict(cr):
     return D_class_data
 
 
-def importPredictions_NanoXGBoost(infileName, chr_col=0, start_col=1, meth_col=4, baseFormat=1):
-    '''
-    Note that the function requires per read stats, not frequencies of methylation.
-    !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
-
-    ### Parameters of the function:
-    chr_col - name (as header) of the column with chromosome. If "header" variable == False, give integer number of the column.
-    start_col - name (as header) of the column with start of CpG. If "header" variable == False, give integer number of the column.
-    meth_col - name (as header) of the column with methylation call (integer expected). If "header" variable == False, give integer number of the column.
-    baseCount - 0 or 1, standing for 0-based or 1-based, respectively
-    #header - True or False.
-
-    ### Example input format from my NanoXGBoost model:
-    chr20   15932019        15932019        /home/rosikw/fastscratch/APL_newSept/0/GXB01186_20180508_FAH83098_GA10000_sequencing_run_180508_18_li_001_GXB01186_001_12562_read_35498_ch_259_strand.fast5     1
-    chr20   15932898        15932898        /home/rosikw/fastscratch/APL_newSept/0/GXB01186_20180508_FAH83098_GA10000_sequencing_run_180508_18_li_001_GXB01186_001_12562_read_35498_ch_259_strand.fast5     0
-    chr20   15932997        15932997        /home/rosikw/fastscratch/APL_newSept/0/GXB01186_20180508_FAH83098_GA10000_sequencing_run_180508_18_li_001_GXB01186_001_12562_read_35498_ch_259_strand.fast5     1
-    chr20   15933019        15933019        /home/rosikw/fastscratch/APL_newSept/0/GXB01186_20180508_FAH83098_GA10000_sequencing_run_180508_18_li_001_GXB01186_001_12562_read_35498_ch_259_strand.fast5     1
-    Note: here there are no headers (probably this will change in the future)
-
-    ### Example input format from Nanopolish:
-    chromosome      start   end     read_name       log_lik_ratio   log_lik_methylated      log_lik_unmethylated    num_calling_strands     num_cpgs        sequence
-    chr20   106142  106142  0b42b84b-c2a7-481b-be33-c555eb2e1fcf    2.32    -93.28  -95.61  1       1       CTCAACGTTTG
-    chr20   106226  106226  0b42b84b-c2a7-481b-be33-c555eb2e1fcf    1.46    -193.91 -195.37 1       1       TGGCACGTGGA
-    chr20   104859  104859  107a0850-7500-443c-911f-4857424c889c    4.36    -163.26 -167.62 1       1       ATTCCCGAGAG
-    Note: Nanopolish output have header, yet the function needs to be universal enough to handle both cases (including whatever awaits in case of NanoMod, DeepSignal etc.)
-
-    ### Output format:
-    result = {"chr\tstart\tend\n" : [list of methylation calls]}
-    output coordinates are 1-based genome coordinates.
-
-    ============
-
-    Future changes:
-    This function cannot be for everything. Output from nanopolish is too different from mine (e.g. singletons and non-singletons), so it will need an independent parser. Maybe the same will go for other programs?
-    Nevertheless, all functions will have the same output, which is the most important part.
-    '''
-
-    infile = open(infileName, "r")
-    cpgDict = {}
-    count = 0
-
-    for row in infile:
-        tmp = row.strip().split("\t")
-        if baseFormat == 1:
-            start = int(tmp[start_col])
-        elif baseFormat == 0:
-            start = int(tmp[start_col]) + 1
-        else:
-            logger.error("###\timportPredictions_NanoXGBoost InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
-            sys.exit(-1)
-        #         key = (tmp[chr_col], start)
-        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
-        if key not in cpgDict:
-            cpgDict[key] = []
-        cpgDict[key].append(int(tmp[meth_col]))
-        count += 1
-
-    infile.close()
-
-    logger.debug("###\timportPredictions_NanoXGBoost SUCCESS: {} methylation calls mapped to {} CpGs from {} file".format(count, len(cpgDict), infileName))
-    return cpgDict
-
-
-def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, log_lik_ratio_col=5, sequence_col=-1, num_motifs_col=-2, baseFormat=0, llr_cutoff=2.0, output_first=False):
+def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, log_lik_ratio_col=5, sequence_col=-1, num_motifs_col=-2, baseFormat=0, llr_cutoff=2.0, output_first=False, include_score=False):
     """
     We assume the input is 0-based for the start col, such as chr10 122 122
 
@@ -161,8 +98,10 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                 if abs(llr) < llr_cutoff:
                     continue
 
+                meth_score = llr
                 if llr > 0:
                     meth_indicator = 1
+
                 elif llr < 0:
                     meth_indicator = 0
 
@@ -185,7 +124,11 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                     logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
                     sys.exit(-1)
 
-                cpgDict[key].append(meth_indicator)
+                if include_score:
+                    cpgDict[key].append((meth_indicator, meth_score))
+                else:
+                    cpgDict[key].append(meth_indicator)
+
                 count += 1
                 if meth_indicator == 1:
                     meth_cnt += 1
@@ -311,197 +254,7 @@ def importPredictions_Nanopolish_v2(infileName, baseCount=0, logLikehoodCutt=2.5
     return cpgDict
 
 
-def importPredictions_Nanopolish_2_nofilter(infileName, baseCount=0, logLikehoodCutt=2.5, IncludeNonSingletons=True):
-    '''
-    Not filter any CpG sites
-    Nanopolish Parser function based on parsing script from Nanopolish:
-    https://github.com/jts/nanopolish/blob/master/scripts/calculate_methylation_frequency.py
-    Code was downloaded from their Github and modified for the purpose of this project on April 30th 2019.
-
-    Generally it gives exactly the same results as my own, but i think its better to use their code, so that nobody would be able to say that we did something differently
-
-
-    !!! This function will be needed for NanoCompare project !!!
-
-    ### Example input format from Nanopolish:
-    chromosome      start   end     read_name       log_lik_ratio   log_lik_methylated      log_lik_unmethylated    num_calling_strands     num_cpgs        sequence
-    chr20   106142  106142  0b42b84b-c2a7-481b-be33-c555eb2e1fcf    2.32    -93.28  -95.61  1       1       CTCAACGTTTG
-    chr20   106226  106226  0b42b84b-c2a7-481b-be33-c555eb2e1fcf    1.46    -193.91 -195.37 1       1       TGGCACGTGGA
-    chr20   104859  104859  107a0850-7500-443c-911f-4857424c889c    4.36    -163.26 -167.62 1       1       ATTCCCGAGAG
-
-    ### Output format:
-    result = {"chr\tstart\tend\n" : [list of methylation calls]}
-    output coordinates are 1-based genome coordinates.
-
-
-
-    '''
-    count = 0
-    cpgDict = {}
-
-    infile = open(infileName, 'r')
-    csv_reader = csv.DictReader(infile, delimiter='\t')
-
-    for record in csv_reader:
-        # print(record)
-        # num_sites = int(record['num_cpgs'])
-        # llr = float(record['log_lik_ratio'])
-
-        try:
-            num_sites = int(record['num_cpgs'])
-            llr = float(record['log_lik_ratio'])
-        except:  # skip not parsed results
-            logger.error(f"Can not parse record: record={record}")
-            continue
-
-        # Skip ambiguous call
-        if abs(llr) < logLikehoodCutt:
-            is_methylated = -1
-        else:
-            is_methylated = int(llr > 0)
-        # sequence = record['sequence']
-
-        # if this is a multi-cpg group and split_groups is set, break up these sites
-        if IncludeNonSingletons and num_sites > 1:
-            c = str(record['chromosome'])
-            s = int(record['start'])
-            e = int(record['end'])
-
-            # find the position of the first CG dinucleotide
-            sequence = record['sequence']
-            cg_pos = sequence.find("CG")
-            first_cg_pos = cg_pos
-            while cg_pos != -1:
-                #                 key = (c, s + cg_pos - first_cg_pos, s + cg_pos - first_cg_pos)
-                if baseCount == 0:
-                    key = "{}\t{}\t{}\n".format(c, s + cg_pos - first_cg_pos + 1, s + cg_pos - first_cg_pos + 1)
-                elif baseCount == 1:
-                    key = "{}\t{}\t{}\n".format(c, s + cg_pos - first_cg_pos, s + cg_pos - first_cg_pos)
-                else:
-                    logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-                    sys.exit(-1)
-
-                if key not in cpgDict:
-                    cpgDict[key] = []
-                cpgDict[key].append(is_methylated)
-                count += 1
-
-                cg_pos = sequence.find("CG", cg_pos + 1)
-        else:
-            if baseCount == 0:
-                key = "{}\t{}\t{}\n".format(str(record['chromosome']), int(record['start']) + 1, int(record['end']) + 1)
-            elif baseCount == 1:
-                key = "{}\t{}\t{}\n".format(str(record['chromosome']), int(record['start']), int(record['end']))
-            else:
-                logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-                sys.exit(-1)
-
-            if key not in cpgDict:
-                cpgDict[key] = []
-            cpgDict[key].append(is_methylated)
-            count += 1
-
-    logger.info("###\timportPredictions_Nanopolish nofilter SUCCESS: {} methylation calls mapped to {} CpGs from {} file".format(count, len(cpgDict), infileName))
-    return cpgDict
-
-
-def importPredictions_Nanopolish_3(infileName, baseCount=0, logLikehoodCutt=2.5, IncludeNonSingletons=True):
-    '''
-    Score import for AUC
-
-    Nanopolish Parser function based on parsing script from Nanopolish:
-    https://github.com/jts/nanopolish/blob/master/scripts/calculate_methylation_frequency.py
-    Code was downloaded from their Github and modified for the purpose of this project on April 30th 2019.
-
-    Generally it gives exactly the same results as my own, but i think its better to use their code, so that nobody would be able to say that we did something differently
-
-
-    !!! This function will be needed for NanoCompare project !!!
-
-    ### Example input format from Nanopolish:
-    chromosome      start   end     read_name       log_lik_ratio   log_lik_methylated      log_lik_unmethylated    num_calling_strands     num_cpgs        sequence
-    chr20   106142  106142  0b42b84b-c2a7-481b-be33-c555eb2e1fcf    2.32    -93.28  -95.61  1       1       CTCAACGTTTG
-    chr20   106226  106226  0b42b84b-c2a7-481b-be33-c555eb2e1fcf    1.46    -193.91 -195.37 1       1       TGGCACGTGGA
-    chr20   104859  104859  107a0850-7500-443c-911f-4857424c889c    4.36    -163.26 -167.62 1       1       ATTCCCGAGAG
-
-    ### Output format:
-    result = {"chr\tstart\tend\n" : [list of methylation calls]}
-    output coordinates are 1-based genome coordinates.
-
-
-
-    '''
-    count = 0
-    cpgDict = {}
-
-    infile = open(infileName, 'r')
-    csv_reader = csv.DictReader(infile, delimiter='\t')
-
-    for record in csv_reader:
-        # print(record)
-        # num_sites = int(record['num_cpgs'])
-        # llr = float(record['log_lik_ratio'])
-
-        try:
-            num_sites = int(record['num_cpgs'])
-            llr = float(record['log_lik_ratio'])
-        except:  # skip not parsed results
-            logger.error(f"Can not parse record: record={record}")
-            continue
-
-        # Skip ambiguous call
-        if abs(llr) < logLikehoodCutt:
-            continue
-        # sequence = record['sequence']
-
-        # is_methylated = int(llr > 0)
-        is_methylated = llr
-
-        # if this is a multi-cpg group and split_groups is set, break up these sites
-        if IncludeNonSingletons and num_sites > 1:
-            c = str(record['chromosome'])
-            s = int(record['start'])
-            e = int(record['end'])
-
-            # find the position of the first CG dinucleotide
-            sequence = record['sequence']
-            cg_pos = sequence.find("CG")
-            first_cg_pos = cg_pos
-            while cg_pos != -1:
-                #                 key = (c, s + cg_pos - first_cg_pos, s + cg_pos - first_cg_pos)
-                if baseCount == 0:
-                    key = "{}\t{}\t{}\n".format(c, s + cg_pos - first_cg_pos + 1, s + cg_pos - first_cg_pos + 1)
-                elif baseCount == 1:
-                    key = "{}\t{}\t{}\n".format(c, s + cg_pos - first_cg_pos, s + cg_pos - first_cg_pos)
-                else:
-                    logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-                    sys.exit(-1)
-
-                if key not in cpgDict:
-                    cpgDict[key] = []
-                cpgDict[key].append(is_methylated)
-                count += 1
-
-                cg_pos = sequence.find("CG", cg_pos + 1)
-        else:
-            if baseCount == 0:
-                key = "{}\t{}\t{}\n".format(str(record['chromosome']), int(record['start']) + 1, int(record['end']) + 1)
-            elif baseCount == 1:
-                key = "{}\t{}\t{}\n".format(str(record['chromosome']), int(record['start']), int(record['end']))
-            else:
-                logger.error("###\timportPredictions_Nanopolish InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-                sys.exit(-1)
-
-            if key not in cpgDict:
-                cpgDict[key] = []
-            cpgDict[key].append(is_methylated)
-            count += 1
-
-    logger.info("###\timportPredictions_Nanopolish SUCCESS: {} methylation calls mapped to {} CpGs from {} file".format(count, len(cpgDict), infileName))
-    return cpgDict
-
-
-def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=2, meth_col=8, baseFormat=0):
+def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=2, meth_freq_col=7, meth_col=8, baseFormat=0, include_score=False):
     '''
     We treat input as 0-based format for start col.
 
@@ -563,11 +316,9 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
 
         if baseFormat == 1:
             start = int(tmp[start_col]) + 1
-            end = start
             strand = tmp[strand_col]
         elif baseFormat == 0:
             start = int(tmp[start_col])
-            end = start + 1
             strand = tmp[strand_col]
         else:
             logger.error("###\timportPredictions_DeepSignal InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
@@ -575,13 +326,13 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
 
         if strand not in ['-', '+']:
             raise Exception(f'The file [{infileName}] can not recognized strand-info from row={row}, please check it')
-        #         key = (tmp[chr_col], start)
-        # key = "{}\t{}\t{}\t{}\n".format(tmp[chr_col], start, end, strand)
         key = (tmp[chr_col], start, strand)
-        # if key not in cpgDict:
-        #     cpgDict[key] = []
-        #         cpgDict[key].append(float(tmp[meth_col])) ##### uncomment this line to get probabilities instead of final, binary calls
-        cpgDict[key].append(int(tmp[meth_col]))
+
+        if include_score:
+            cpgDict[key].append((int(tmp[meth_col]), float(tmp[meth_freq_col])))
+        else:
+            cpgDict[key].append(int(tmp[meth_col]))
+
         row_count += 1
         if int(tmp[meth_col]) == 1:
             meth_cnt += 1
@@ -591,80 +342,11 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     infile.close()
 
     logger.info(f"###\timportPredictions_DeepSignal SUCCESS: {row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
+
     return cpgDict
 
 
-def importPredictions_DeepSignal3(infileName, chr_col=0, start_col=1, meth_col=7, baseCount=0):
-    '''
-
-    Score import for AUC
-
-    Note that the function requires per read stats, not frequencies of methylation.
-    !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
-
-    ### Parameters of the function:
-    chr_col - name (as header) of the column with chromosome. If "header" variable == False, give integer number of the column.
-    start_col - name (as header) of the column with start of CpG. If "header" variable == False, give integer number of the column.
-    meth_col - name (as header) of the column with methylation call (integer expected). If "header" variable == False, give integer number of the column. *7 is probability, 8 is binary call.
-    baseCount - 0 or 1, standing for 0-based or 1-based, respectively
-    #header - True or False.
-
-    ### Example input format from DeepSignal:
-    chr11   127715633       -       7370988 791c33e4-5b63-4cce-989c-186aff79db9b    t       0.16227172      0.83772826      1       AGGAAAATCGCTTGAAC
-    chr11   127715585       -       7371036 791c33e4-5b63-4cce-989c-186aff79db9b    t       0.69724774      0.3027523       0       TGCCACTGCGCTCTAGC
-    chr11   127715554       -       7371067 791c33e4-5b63-4cce-989c-186aff79db9b    t       0.786389        0.21361093      0       CAGAACTCCGTCTCAAA
-    chr11   127715423       -       7371198 791c33e4-5b63-4cce-989c-186aff79db9b    t       0.5939311       0.40606892      0       TTTTGTAGCGTTGTACA
-
-    ### Input file format description:
-    - chrom: the chromosome name
-    - pos: 0-based position of the targeted base in the chromosome
-    - strand: +/-, the aligned strand of the read to the reference
-    - pos_in_strand: 0-based position of the targeted base in the aligned strand of the chromosome
-    - readname: the read name
-    - read_strand: t/c, template or complement
-    - prob_0: [0, 1], the probability of the targeted base predicted as 0 (unmethylated)
-    - prob_1: [0, 1], the probability of the targeted base predicted as 1 (methylated)
-    - called_label: 0/1, unmethylated/methylated
-    - k_mer: the kmer around the targeted base
-
-    ### Output format:
-    result = {"chr\tstart\tend\n" : [list of methylation calls (as a probability of methylation call**)]}
-    output coordinates are 1-based genome coordinates.
-
-    ** by default if this probability will be higher than 0.5, DeppSignal will tell that this is methylated site, lower, unmethylated
-
-    ============
-
-    '''
-
-    infile = open(infileName, "r")
-    cpgDict = {}
-    count = 0
-
-    for row in infile:
-        tmp = row.strip().split("\t")
-        if baseCount == 1:
-            start = int(tmp[start_col])
-        elif baseCount == 0:
-            start = int(tmp[start_col]) + 1
-        else:
-            logger.error("###\timportPredictions_DeepSignal InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            sys.exit(-1)
-        #         key = (tmp[chr_col], start)
-        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
-        if key not in cpgDict:
-            cpgDict[key] = []
-        #         cpgDict[key].append(float(tmp[meth_col])) ##### uncomment this line to get probabilities instead of final, binary calls
-        cpgDict[key].append(float(tmp[meth_col]))
-        count += 1
-
-    infile.close()
-
-    logger.info("###\timportPredictions_DeepSignal SUCCESS: {} methylation calls mapped to {} CpGs from {} file".format(count, len(cpgDict), infileName))
-    return cpgDict
-
-
-def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=4, baseFormat=0, cutoff=[-1.5, 2.5], output_first=False):
+def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=4, baseFormat=0, cutoff=[-1.5, 2.5], output_first=False, include_score=False):
     """
     We treate input as 0-based format.
 
@@ -760,7 +442,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
             continue
 
         # TODO: check how to treate tombo prediction value
-
+        meth_score = -methCall
         if methCall < cutoff[0]:
             meth_indicator = 1
             meth_cnt += 1
@@ -776,8 +458,10 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
         # else:
         #     meth_indicator = 0
         #     unmeth_cnt += 1
-
-        cpgDict[key].append(meth_indicator)
+        if include_score:
+            cpgDict[key].append((meth_indicator, meth_score))
+        else:
+            cpgDict[key].append(meth_indicator)
         row_count += 1
 
     infile.close()
@@ -786,181 +470,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     return cpgDict
 
 
-# Deprecated
-def importPredictions_Tombo_nofilter(infileName, chr_col=0, start_col=1, meth_col=4, baseCount=0, cutoff=2.5):
-    '''
-    Note that the function requires per read stats, not frequencies of methylation.
-    !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
-
-    ### Parameters of the function:
-    chr_col - name (as header) of the column with chromosome. If "header" variable == False, give integer number of the column.
-    start_col - name (as header) of the column with start of CpG. If "header" variable == False, give integer number of the column.
-    meth_col - name (as header) of the column with methylation call (integer expected). If "header" variable == False, give integer number of the column.
-    baseCount - 0 or 1, standing for 0-based or 1-based, respectively
-    cutoff - sumilarly as in case of Nanopolish, here we have cutoff for the value from the statistical test. From this conversations (https://github.com/nanoporetech/tombo/issues/151), I know this value is by default 2.5.
-
-    ### Example input format from Tombo (v1.5):
-    chr1    66047   66047   ed4a12ec-e03a-4a0a-9d08-acf3c0ee11d4    6.057825558813564       +
-    chr1    66053   66053   ed4a12ec-e03a-4a0a-9d08-acf3c0ee11d4    -0.3359579051241508     +
-    chr1    66054   66054   ed4a12ec-e03a-4a0a-9d08-acf3c0ee11d4    0.1202407639936725      +
-    chr1    66055   66055   ed4a12ec-e03a-4a0a-9d08-acf3c0ee11d4    2.1077369345267907      +
-    chr1    66076   66076   ed4a12ec-e03a-4a0a-9d08-acf3c0ee11d4    0.8979673996582611      +
-
-    ### Output format:
-    result = {"chr\tstart\tend\n" : [list of methylation calls (as a probability of methylation call**)]}
-    output coordinates are 1-based genome coordinates.
-
-    ** by default if this probability will be higher than 0.5, DeppSignal will tell that this is methylated site, lower, unmethylated
-
-    ============
-
-    '''
-
-    logger.debug(f"importPredictions_Tombo_nofilter infileName={infileName}")
-    infile = open(infileName, "r")
-    cpgDict = {}
-    count = 0
-
-    for row in infile:
-        tmp = row.strip().split("\t")
-        if baseCount == 1:
-            try:
-                start = int(tmp[start_col])
-            except:
-                logger.error(f" ####Tombo parse error at row={row}")
-                continue
-        elif baseCount == 0:
-            try:
-                start = int(tmp[start_col]) + 1
-            except:
-                logger.error(f" ####Tombo parse error at row={row}")
-                continue
-        else:
-            logger.error("###\timportPredictions_Tombo InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            sys.exit(-1)
-        #         key = (tmp[chr_col], start)
-        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
-
-        try:
-            methCall = float(tmp[meth_col])
-        except:
-            logger.error(f" ####Tombo parse error at row={row}")
-            continue
-
-        switch = 0
-        #         if methCall > cutoff:
-        if methCall < -cutoff:
-            methCall = 1
-            switch = 1
-        #         elif methCall < -cutoff:
-        elif methCall > cutoff:
-            methCall = 0
-            switch = 1
-        else:
-            methCall = -1
-            switch = 1
-
-        if switch == 1:
-            if key not in cpgDict:
-                cpgDict[key] = []
-            cpgDict[key].append(methCall)
-        count += 1
-
-    infile.close()
-
-    logger.info("###\timportPredictions_Tombo SUCCESS: {} methylation calls mapped to {} CpGs from {} file".format(count, len(cpgDict), infileName))
-    return cpgDict
-
-
-# Deprecated
-def importPredictions_Tombo3(infileName, chr_col=0, start_col=1, meth_col=4, baseCount=0, cutoff=2.5):
-    '''
-
-    Score import for AUC
-
-    Note that the function requires per read stats, not frequencies of methylation.
-    !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
-
-    ### Parameters of the function:
-    chr_col - name (as header) of the column with chromosome. If "header" variable == False, give integer number of the column.
-    start_col - name (as header) of the column with start of CpG. If "header" variable == False, give integer number of the column.
-    meth_col - name (as header) of the column with methylation call (integer expected). If "header" variable == False, give integer number of the column.
-    baseCount - 0 or 1, standing for 0-based or 1-based, respectively
-    cutoff - sumilarly as in case of Nanopolish, here we have cutoff for the value from the statistical test. From this conversations (https://github.com/nanoporetech/tombo/issues/151), I know this value is by default 2.5.
-
-    ### Example input format from Tombo (v1.5):
-    chr1    66047   66047   ed4a12ec-e03a-4a0a-9d08-acf3c0ee11d4    6.057825558813564       +
-    chr1    66053   66053   ed4a12ec-e03a-4a0a-9d08-acf3c0ee11d4    -0.3359579051241508     +
-    chr1    66054   66054   ed4a12ec-e03a-4a0a-9d08-acf3c0ee11d4    0.1202407639936725      +
-    chr1    66055   66055   ed4a12ec-e03a-4a0a-9d08-acf3c0ee11d4    2.1077369345267907      +
-    chr1    66076   66076   ed4a12ec-e03a-4a0a-9d08-acf3c0ee11d4    0.8979673996582611      +
-
-    ### Output format:
-    result = {"chr\tstart\tend\n" : [list of methylation calls (as a probability of methylation call**)]}
-    output coordinates are 1-based genome coordinates.
-
-    ** by default if this probability will be higher than 0.5, DeppSignal will tell that this is methylated site, lower, unmethylated
-
-    ============
-
-    '''
-
-    logger.debug(f"importPredictions_Tombo infileName={infileName}")
-    infile = open(infileName, "r")
-    cpgDict = {}
-    count = 0
-
-    for row in infile:
-        tmp = row.strip().split("\t")
-        if baseCount == 1:
-            try:
-                start = int(tmp[start_col])
-            except:
-                logger.error(f" ####Tombo parse error at row={row}")
-                continue
-        elif baseCount == 0:
-            try:
-                start = int(tmp[start_col]) + 1
-            except:
-                logger.error(f" ####Tombo parse error at row={row}")
-                continue
-        else:
-            logger.error("###\timportPredictions_Tombo InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            sys.exit(-1)
-        #         key = (tmp[chr_col], start)
-        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
-
-        try:
-            methCall = float(tmp[meth_col])
-        except:
-            logger.error(f" ####Tombo parse error at row={row}")
-            continue
-
-        switch = 0
-
-        # TODO check if this is inversed
-        #         if methCall > cutoff:
-        if methCall < -cutoff:
-            methCall = -1 * methCall
-            switch = 1
-        #         elif methCall < -cutoff:
-        elif methCall > cutoff:
-            methCall = -1 * methCall
-            switch = 1
-
-        if switch == 1:
-            if key not in cpgDict:
-                cpgDict[key] = []
-            cpgDict[key].append(methCall)
-        count += 1
-
-    infile.close()
-
-    logger.info("###\timportPredictions_Tombo SUCCESS: {} methylation calls mapped to {} CpGs from {} file".format(count, len(cpgDict), infileName))
-    return cpgDict
-
-
-def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_reads_col=-1, coverage_col=-3, baseFormat=0, sep=' ', output_first=False):
+def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, meth_cov_col=-1, coverage_col=-3, baseFormat=0, sep=' ', output_first=False, include_score=False):
     '''
     We treate input as 0-based format for start col. Due to we pre-processed original DeepMod results by filter out non-CG sites, the input of this funciton is sep=TAB instead!!!
 
@@ -1030,10 +540,15 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
 
         key = (tmp[chr_col], start, strand)
 
-        methReads = int(tmp[meth_reads_col])
+        methReads = int(tmp[meth_cov_col])
         coverage = int(tmp[coverage_col])
 
-        methCallsList = [1] * methReads + [0] * (coverage - methReads)
+        meth_freq = methReads / coverage
+
+        if include_score:
+            methCallsList = [(1, meth_freq)] * methReads + [(0, 1 - meth_freq)] * (coverage - methReads)
+        else:
+            methCallsList = [1] * methReads + [0] * (coverage - methReads)
         cpgDict[key] = methCallsList
 
         count_calls += len(methCallsList)
@@ -1046,7 +561,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     return cpgDict
 
 
-def importPredictions_DeepMod_Read_Level(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=-1, baseFormat=0, sep='\t', output_first=False):
+def importPredictions_DeepMod_Read_Level(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=-1, baseFormat=0, sep='\t', output_first=False, include_score=False):
     infile = open(infileName, "r")
     # cpgDict = {}
     cpgDict = defaultdict(list)
@@ -1087,8 +602,10 @@ def importPredictions_DeepMod_Read_Level(infileName, chr_col=0, start_col=1, str
         else:
             meth_cnt += 1
 
-        # methCallsList = [1] * methReads + [0] * (coverage - methReads)
-        cpgDict[key].append(meth_indicator)
+        if include_score:
+            cpgDict[key].append((meth_indicator, 1.0))
+        else:
+            cpgDict[key].append(meth_indicator)
 
         count += 1
 
@@ -1098,82 +615,7 @@ def importPredictions_DeepMod_Read_Level(infileName, chr_col=0, start_col=1, str
     return cpgDict
 
 
-# Deprecated
-def importPredictions_DeepMod3(infileName, chr_col=0, start_col=1, meth_percentage_col=11, coverage_col=10, clusteredResult=False, clustered_meth_freq_col=13, baseCount=0):
-    '''
-
-    each CpGs sites a methylation percentage
-    Note that the function requires per read stats, not frequencies of methylation.
-    !!! Also, this note is now optimized for my NanoXGBoost output - nothing else. !!!
-
-    ### Parameters of the function:
-    chr_col - name (as header) of the column with chromosome. If "header" variable == False, give integer number of the column.
-    start_col - name (as header) of the column with start of CpG. If "header" variable == False, give integer number of the column.
-    meth_reads_col - name (as header) of the column with number of methylated reads mapped.
-    coverage_col - name (as header) of the column with coverage of the site.
-    [[TO DO]] clusteredResult - True / False. Input file is in the "clustered" format (additional post-processing step). False (default option) - standard output with calls.
-    [[TO DO]] clustered_meth_freq_col - column with the methylation frequency after additional postprocessing step.
-    baseCount - 0 or 1, standing for 0-based or 1-based, respectively
-
-    ### Example input format from DeepMod (standard):
-    chr2 110795922 110795923 C 4 -  110795922 110795923 0,0,0 4 75 3
-    chr2 110795929 110795930 C 3 -  110795929 110795930 0,0,0 3 66 2
-    chr2 110796453 110796454 C 4 -  110796453 110796454 0,0,0 4 25 1
-
-    Description (https://github.com/WGLab/DeepMod/blob/master/docs/Results_explanation.md):
-    The output is in a BED format like below. The first six columns are Chr,
-    Start pos, End pos, Base, Capped coverage, and Strand, and the last three
-    columns are Real coverage, Mehylation percentage and Methylation coverage.
-
-
-    ### Example input format from DeepMod (clustered - following Step 4 from "Example 3: Detect 5mC on Na12878" section; https://github.com/WGLab/DeepMod/blob/master/docs/Reproducibility.md):
-    chr2 241991445 241991446 C 3 -  241991445 241991446 0,0,0 3 100 3 69
-    chr2 241991475 241991476 C 3 -  241991475 241991476 0,0,0 3 33 1 75
-    chr2 241991481 241991482 C 2 -  241991481 241991482 0,0,0 2 50 1 76
-
-    Note: it is space-separated, not tab-separated file
-
-    ### Output format:
-    result = {"chr\tstart\tend\n" : [list of methylation calls (as a probability of methylation call**)]}
-    output coordinates are 1-based genome coordinates.
-
-    ============
-
-    '''
-
-    infile = open(infileName, "r")
-    cpgDict = {}
-    count = 0
-
-    for row in infile:
-        tmp = row.strip().split(" ")
-        if baseCount == 1:
-            start = int(tmp[start_col])
-        elif baseCount == 0:
-            start = int(tmp[start_col]) + 1
-        else:
-            logger.error("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            sys.exit(-1)
-        #         key = (tmp[chr_col], start)
-        key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
-
-        methval = int(tmp[meth_percentage_col])
-        coverage = int(tmp[coverage_col])
-
-        # methCallsList = [1] * methCalls + [0] * (coverage - methCalls)
-        if key not in cpgDict:
-            cpgDict[key] = methval / 100.0
-        else:
-            raise Exception(f"Duplicate CpG sites in DeepMod, key={key}")
-        count += 1
-
-    infile.close()
-
-    logger.info("###\timportPredictions_DeepMod SUCCESS: {} methylation calls mapped to {} CpGs from {} file".format(count, len(cpgDict), infileName))
-    return cpgDict
-
-
-def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4, clustered_meth_freq_col=-1, baseFormat=0, sep=' ', output_first=False):
+def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4, meth_cov_col=-2, clustered_meth_freq_col=-1, baseFormat=0, sep=' ', output_first=False, as_freq_cov_format=True, include_score=False):
     '''
     Note: results of cluster is differ from other tools like:
     [methFrequency, coverage] such as key -> values [50 (freq 0-100), 10 (cov)]
@@ -1218,7 +660,9 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
 
     infile = open(infileName, "r")
     cpgDict = defaultdict(dict)
-    count = 0
+    count_calls = 0
+    meth_cnt = 0
+    unmeth_cnt = 0
 
     for row in infile:
         tmp = row.strip().split(sep)
@@ -1244,21 +688,29 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
 
         key = (tmp[chr_col], start, strand)
 
-        methFreq = int(tmp[clustered_meth_freq_col])
+        meth_freq = int(tmp[clustered_meth_freq_col]) / 100.0
         coverage = int(tmp[coverage_col])
+        meth_cov = int(tmp[meth_cov_col])
 
-        cpgDict[key] = {'freq': methFreq / 100.0, 'cov': coverage}
+        if as_freq_cov_format:
+            cpgDict[key] = {'freq': meth_freq, 'cov': coverage}
+        elif include_score:
+            cpgDict[key] = [(1, meth_freq)] * meth_cov + [(0, 1 - meth_freq)] * (coverage - meth_cov)
+        else:
+            cpgDict[key] = [1] * meth_cov + [0] * (coverage - meth_cov)
 
-        count += 1
+        count_calls += coverage
+        meth_cnt += meth_cov
+        unmeth_cnt += coverage - meth_cov
 
     infile.close()
 
-    logger.info(f"###\tDeepMod_clusteredResult Parsing SUCCESS: imported for {len(cpgDict):,} CpGs from {infileName} file")
+    logger.info(f"###\timportDeepMod_clustered Parsing SUCCESS: {count_calls:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
 
     return cpgDict
 
 
-def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, strand_col=3, mod_log_prob_col=4, can_log_prob_col=5, baseFormat=0, cutoff=0.8, sep='\t', output_first=False):
+def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, strand_col=3, mod_log_prob_col=4, can_log_prob_col=5, baseFormat=0, cutoff=0.8, sep='\t', output_first=False, include_score=False):
     '''
 
     0-based start for Magelodon：
@@ -1295,7 +747,7 @@ def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, s
     '''
     infile = open(infileName, "r")
     cpgDict = defaultdict(list)
-    row_count = 0
+    call_cnt = 0
     meth_cnt = 0
     unmeth_cnt = 0
 
@@ -1333,26 +785,29 @@ def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, s
         key = (tmp[chr_col], start, strand)
 
         try:
-            methCall = float(np.e ** float(tmp[mod_log_prob_col]))  # Calculate mod_prob
+            meth_score = float(np.e ** float(tmp[mod_log_prob_col]))  # Calculate mod_prob
         except Exception as e:
             logger.error(f" ####Megalodon parse error at row={row}, exception={e}")
             continue
 
-        if methCall > cutoff:  ##Keep methylated reads
+        if meth_score > cutoff:  ##Keep methylated reads
             meth_indicator = 1
             meth_cnt += 1
-        elif methCall < 1 - cutoff:  ##Count unmethylated reads
+        elif meth_score < 1 - cutoff:  ##Count unmethylated reads
             meth_indicator = 0
             unmeth_cnt += 1
         else:  ## Neglect other cases 0.2<= prob <=0.8
             continue
 
-        cpgDict[key].append(meth_indicator)
-        row_count += 1
+        if include_score:
+            cpgDict[key].append((meth_indicator, meth_score))
+        else:
+            cpgDict[key].append(meth_indicator)
+        call_cnt += 1
 
     infile.close()
 
-    logger.info(f"###\timportPredictions_Megalodon SUCCESS: {row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with meth-cutoff={cutoff:.2f} from {infileName} file")
+    logger.info(f"###\timportPredictions_Megalodon SUCCESS: {call_cnt:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with meth-cutoff={cutoff:.2f} from {infileName} file")
     return cpgDict
 
 
@@ -2176,6 +1631,7 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
     TP_5mC = FP_5mC = FN_5mC = TN_5mC = TP_5C = FP_5C = FN_5C = TN_5C = 0
     y_of_bgtruth = []
     ypred_of_ont_tool = []
+    yscore_of_ont_tool = []
 
     ontSites = 0  # count how many reads is methy or unmethy
     mCalls = 0  # count how many read call is methy
@@ -2219,46 +1675,47 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
                 elif bgTruth[cpgKey][0] <= 1e-5:
                     Csites_BGTruth += 1
 
-                for perCall in ontCalls[cpgKey]:  # perCall only 0 or 1
-                    if perCall >= (cutoff_meth - 1e-6):
+                for perCall in ontCalls[cpgKey]:  # perCall is a tupple of (pred_class, pred_score)
+                    if perCall[0] >= (cutoff_meth - 1e-6):
                         mCalls += 1
-                    elif perCall <= 1e-5:
+                    elif perCall[0] <= 1e-5:
                         cCalls += 1
                     ontSites += 1
 
                     ### variables needed to compute precission, recall etc.:
-                    if perCall == 1 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # true positive
+                    if perCall[0] == 1 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # true positive
                         TP_5mC += 1
-                    elif perCall == 1 and bgTruth[cpgKey][0] <= 1e-5:  # false positive
+                    elif perCall[0] == 1 and bgTruth[cpgKey][0] <= 1e-5:  # false positive
                         FP_5mC += 1
-                    elif perCall == 0 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # false negative
+                    elif perCall[0] == 0 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # false negative
                         FN_5mC += 1
-                    elif perCall == 0 and bgTruth[cpgKey][0] <= 1e-5:  # true negative
+                    elif perCall[0] == 0 and bgTruth[cpgKey][0] <= 1e-5:  # true negative
                         TN_5mC += 1
 
-                    if perCall == 0 and bgTruth[cpgKey][0] <= 1e-5:  # true positive
+                    if perCall[0] == 0 and bgTruth[cpgKey][0] <= 1e-5:  # true positive
                         TP_5C += 1
-                    elif perCall == 0 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # false positive
+                    elif perCall[0] == 0 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # false positive
                         FP_5C += 1
-                    elif perCall == 1 and bgTruth[cpgKey][0] <= 1e-5:  # false negative
+                    elif perCall[0] == 1 and bgTruth[cpgKey][0] <= 1e-5:  # false negative
                         FN_5C += 1
-                    elif perCall == 1 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # true negative
+                    elif perCall[0] == 1 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # true negative
                         TN_5C += 1
 
                     ### AUC related:
-                    ypred_of_ont_tool.append(perCall)
+                    ypred_of_ont_tool.append(perCall[0])
+                    yscore_of_ont_tool.append(perCall[1])
 
                     if bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):
                         y_of_bgtruth.append(1)
                     else:
                         y_of_bgtruth.append(0)
 
-        ##### for correlation stats: # TODO Currently not used
+        ##### for correlation stats: all is all CpG sites for COE, mix is the only mixed CpG sites COE # TODO Currently not used
         if cpgKey in bgTruth and len(ontCalls[cpgKey]) >= ontCutt_4corr and (switch == 1 or cpgKey in ontCalls_narrow_set) and (secondSwitch_4corr == 1 or cpgKey in ontCalls_narrow_second_4corr_set):
-            ontMethFreq = np.mean(ontCalls[cpgKey])
+            ontMethFreq = np.mean([pair[0] for pair in ontCalls[cpgKey]])
             ontFrequencies_4corr_all.append(ontMethFreq)
             refFrequencies_4corr_all.append(bgTruth[cpgKey][0])
-            if bgTruth[cpgKey][0] > 0 and bgTruth[cpgKey][0] < (cutoff_meth - 1e-6):
+            if bgTruth[cpgKey][0] > 0 and bgTruth[cpgKey][0] < (cutoff_meth - 1e-6):  # Mixed case based on BG-Truth results (0.0, 1.0)
                 ontFrequencies_4corr_mix.append(ontMethFreq)
                 refFrequencies_4corr_mix.append(bgTruth[cpgKey][0])
 
@@ -2319,22 +1776,20 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
 
     fprSwitch = 1
     try:
-        fpr, tpr, _ = roc_curve(y_of_bgtruth, ypred_of_ont_tool)
+        fpr, tpr, _ = roc_curve(y_of_bgtruth, yscore_of_ont_tool)
+        average_precision = average_precision_score(y_of_bgtruth, yscore_of_ont_tool)
     except ValueError:
         logger.error(f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{ypred_of_ont_tool}, \nother settings: {title}, {coordBedFileName}, {secondFilterBedFile}, {secondFilterBed_4CorrFile}")
         fprSwitch = 0
-        roc_auc = 0
+        roc_auc = 0.0
+        average_precision = 0.0
 
     if fprSwitch == 1:
         roc_auc = auc(fpr, tpr)
 
-        ## Precission-recall:
-        average_precision = average_precision_score(y_of_bgtruth, ypred_of_ont_tool)
-        precision, recall, _ = precision_recall_curve(y_of_bgtruth, ypred_of_ont_tool)
-
     ########################
-    # save y and y-pred for later plot:
-    curve_data = {'yTrue': y_of_bgtruth, 'yPred': ypred_of_ont_tool}
+    # save y and y-pred and y-score for later plot:
+    curve_data = {'yTrue': y_of_bgtruth, 'yPred': ypred_of_ont_tool, 'yScore': yscore_of_ont_tool}
 
     basefn = 'x.x.GenomeWide' if not coordBedFileName else os.path.basename(coordBedFileName)
 
@@ -2829,6 +2284,7 @@ def combine2programsCalls_4Corr(calls1, calls2, cutt=3, outfileName=False, only_
             if len(calls1[key]) >= cutt:
                 filteredCalls1[key] = cutt  # calls1[call]
         elif isinstance(calls1[key], int):
+            raise Exception(f'Currently no support this case, due to key={key}, value={calls1[key]}')
             if calls1[key] >= cutt:
                 filteredCalls1[key] = cutt  # calls1[call]
     #         else:
@@ -2843,7 +2299,8 @@ def combine2programsCalls_4Corr(calls1, calls2, cutt=3, outfileName=False, only_
         if isinstance(calls2[key], list):
             if len(calls2[key]) >= cutt:
                 filteredCalls2[key] = cutt  # calls2[call]
-        elif isinstance(calls2[key], int):
+        elif isinstance(calls2[key], int):  ##TODO: check to remove this case,no use guess
+            raise Exception(f'Currently no support this case, due to key={key}, value={calls1[key]}')
             if calls2[key] >= cutt:
                 filteredCalls2[key] = cutt  # calls2[call]
     #         else:
@@ -3803,9 +3260,11 @@ def filter_non_human_chrs(cpgDict):
     return retDict
 
 
-def import_call(infn, callname, baseFormat=0):
+def import_call(infn, callname, baseFormat=0, include_score=False, deepmod_cluster_freq_cov_format=True):
     """
     Import fn based on callname and return key=(chr, start, strand) -> value=[0 0 1 1 1 1 ]
+
+    If include_score=True, then value= (0, score)
         call0   -   original results
     :param infn:
     :param callname:
@@ -3813,19 +3272,19 @@ def import_call(infn, callname, baseFormat=0):
     """
     logger.debug(f"Start load {callname}")
     if callname == 'DeepSignal':
-        calls0 = importPredictions_DeepSignal(infn, baseFormat=baseFormat)
+        calls0 = importPredictions_DeepSignal(infn, baseFormat=baseFormat, include_score=include_score)
     elif callname == 'Tombo':
-        calls0 = importPredictions_Tombo(infn, baseFormat=baseFormat)
+        calls0 = importPredictions_Tombo(infn, baseFormat=baseFormat, include_score=include_score)
     elif callname == 'Nanopolish':
-        calls0 = importPredictions_Nanopolish(infn, baseFormat=baseFormat, llr_cutoff=2.0)
+        calls0 = importPredictions_Nanopolish(infn, baseFormat=baseFormat, llr_cutoff=2.0, include_score=include_score)
     elif callname == 'DeepMod':
-        calls0 = importPredictions_DeepMod_Read_Level(infn, baseFormat=baseFormat)
+        calls0 = importPredictions_DeepMod_Read_Level(infn, baseFormat=baseFormat, include_score=include_score)
     elif callname == 'Megalodon':
-        calls0 = importPredictions_Megalodon_Read_Level(infn, baseFormat=baseFormat)
+        calls0 = importPredictions_Megalodon_Read_Level(infn, baseFormat=baseFormat, include_score=include_score)
     elif callname == 'DeepMod.Cluster':  # import DeepMod itself tool reports by cluster, key->value={'freq':68, 'cov':10}
-        calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat)
-    elif callname == 'DeepMod.C':  # import DeepMod itself tool reports by cluster, key->value={'freq':68, 'cov':10}
-        calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat)
+        calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat, as_freq_cov_format=deepmod_cluster_freq_cov_format, include_score=include_score)
+    elif callname == 'DeepMod.C':  # import DeepMod itself tool
+        calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, include_score=include_score)
     else:
         raise Exception(f'Not support {callname} for file {infn} now')
 

@@ -12,7 +12,7 @@ Evaluation based on methylation calls of four tools, compute the performance res
 
 import argparse
 
-from nanocompare.global_settings import rename_coordinate_name, perf_report_columns
+from nanocompare.global_settings import rename_coordinate_name, perf_report_columns, get_tool_name
 from nanocompare.global_settings import singletonsFile, narrowCoord, nonsingletonsFile
 from nanocompare.meth_stats.meth_stats_common import *
 
@@ -63,13 +63,15 @@ if __name__ == '__main__':
     callresult_dict = defaultdict()  # name->call
     callname_list = []  # [DeepSignal, DeepMod, etc.]
 
-    # with Pool(processes=args.processors) as pool:
     for callstr in args.calls:
-        callname, callfn = callstr.split(':')
-        callname_list.append(callname)
-        callfn_dict[callname] = callfn
-        callresult_dict[callname] = import_call(callfn, callname, baseFormat=baseFormat)
-        # callresult_dict[callname] = pool.apply_async(import_call, (callfn, callname,))
+        call_encode, callfn = callstr.split(':')
+
+        call_name = get_tool_name(call_encode)
+        callname_list.append(call_name)
+        callfn_dict[call_name] = callfn
+
+        ## MUST import read-level results, and include score for plot ROC curve and PR curve
+        callresult_dict[call_name] = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False)
 
     logger.debug(callfn_dict)
     encode, fn = args.bgtruth.split(':')
