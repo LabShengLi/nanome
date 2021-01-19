@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
     logger.debug(list(enumerate(relateCoord)))  # all coordinate generated
 
-    if not args.test:
+    if not args.test:  # Generate singleton and non-singleton bed files based on BG-Truth results
         ret = singletonsPostprocessing(bgTruth, singletonsFile, RunPrefix, outdir=out_dir)
         ret.update(nonSingletonsPostprocessing(bgTruth, nonsingletonsFile, RunPrefix, outdir=out_dir))
         df = pd.DataFrame([ret], index=[f'{dsname}'])

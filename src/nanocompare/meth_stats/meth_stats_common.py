@@ -10,7 +10,6 @@ import itertools
 import pickle
 import re
 from collections import defaultdict
-from inspect import signature
 
 import numpy as np
 import pandas as pd
@@ -18,7 +17,7 @@ import pysam
 from Bio import SeqIO
 from pybedtools import BedTool
 from scipy.stats import pearsonr
-from sklearn.metrics import roc_curve, precision_recall_curve, auc, confusion_matrix, average_precision_score, f1_score, precision_score, recall_score
+from sklearn.metrics import roc_curve, auc, average_precision_score, f1_score, precision_score, recall_score
 from tqdm import tqdm
 
 from nanocompare.global_config import *
@@ -1099,6 +1098,7 @@ def importGroundTruth_bed_file_format(infileName, chr_col=0, start_col=1, meth_c
     return cpgDict
 
 
+# Not used now, if use need proof check
 def importGroundTruth_coverage_output_from_Bismark_BedGraph(infileName, chr_col=0, start_col=1, meth_col=3, baseCount=1, gzippedInput=True):
     '''
 
@@ -1181,54 +1181,6 @@ def importGroundTruth_coverage_output_from_Bismark_BedGraph(infileName, chr_col=
     return cpgDict
 
 
-def plot_AUC_curve(scores, y, ax, title="", outfile=None):
-    try:
-        fpr, tpr, _ = roc_curve(y, scores)
-        roc_auc = auc(fpr, tpr)
-        lw = 2
-
-        plt.plot(fpr, tpr,
-                 lw=lw, label='{0} - ROC curve (area = {1:.4f})'.format(title, roc_auc))
-        plt.plot([0, 1], [0, 1], color='lightgrey', lw=lw, linestyle='--')
-        plt.xlim([0.0, 1.0])
-        plt.ylim([0.0, 1.05])
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.title(title)
-        plt.legend(loc="lower right")
-    except ValueError:
-        logger.error(f"###\tERROR for plot_AUC_curve: y: {y}, scores: {scores}")
-
-
-def importGroundTruth_BS():
-    '''
-    !!! This function will be needed for NanoCompare project !!!
-    !!!!!!! its not a final version of the function, but with only some small changes it will be
-
-    note that this function was written to parse "bedMethyl" format from Encode. (description here: https://www.encodeproject.org/documents/964e2676-d0be-4b5d-aeec-f4f02310b221/@@download/attachment/WGBS%20pipeline%20overview.pdf)
-    additionally, the output file was preprocessed, such that only sites with coverage >= 10 reads and either 100% or 0% methylated, are included.
-    these will be taken to compute true positive, true negative etc.
-
-    #####
-    example usage here: http://helix122:9912/edit/li-lab/NanoporeData/WR_ONT_analyses/ai/APL_nanopolishStats/automatedSingleReadPrecission_3.py
-
-    '''
-
-    #     infile = open(infileName, 'r')
-
-    #     bsseqDict = {} # {"chr:start:end" : 100 or 0} - 100 in case if methylated, 0 if unmethylated
-    #     for row in infile:
-    #         tmp = row.strip().split("\t")
-    #         bsseqDict["{}:{}:{}".format(tmp[0], tmp[1], tmp[2])] = int(tmp[-1])
-    #     infile.close()
-    #     return bsseqDict
-    pass
-
-
-def importNarrowCpGsList():
-    pass
-
-
 def dict2txt(inputDict):
     """
     Convert all keys in dict to a string txt, txt file is:
@@ -1266,272 +1218,6 @@ def txt2dict(pybed, strand_col=3):
     return d
 
 
-# Deprecated
-def computePerReadStats_deprecated(ontCalls, bsReference, title, bedFile=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBed=False, secondFilterBed_4Corr=False):
-    '''
-    ontCalls - dictionary of CpG coordinates with their per read methylation call (1 or 0) // Format: {"chr\tstart\tend\n" : [list of methylation calls]}
-    bsReference - dictionary of CpG coordinates with their methylation frequencies (range 0 - 1). This list is already prefiltered to meet minimal coverage (e.g. 4x) at this point. // Format: {"chr\tstart\tend\n" : methylation level (format: float (0-1))}
-    title - prefix of the analysis, output plots etc. - should be as short as possible, but unique in context of other analyses
-    bedFile - BED file which will be used to narrow down the list of CpGs for example to those inside CGIs or promoters etc.. By default "False" - which means no restrictions are done (i.e. genome wide)
-    secondFilterBed - these should be CpGs covered in some reference list. Format: BED
-
-
-    ============================================
-
-    Basically i want to fill in the table below:
-               Positive	Negative	Total
-     Presence	a	        b	        a+b
-     Absence	c	        d	        c+d
-     Total	    a+c	        b+d	        a+b+c+d
-
-    Nice summary also at wiki: https://en.wikipedia.org/wiki/F1_score
-    , where "Positive" and "Negative" corresponds with ONT based observations, while "Presence" and "Absence" is based on BS-Seq
-
-    '''
-
-    switch = 0
-    ontCalls_narrow = []
-
-    coord_base_dir = os.path.join(data_base_dir, 'genome-annotation')
-
-    if bedFile != False:
-        ontCalls_bed = BedTool(dict2txt(ontCalls), from_string=True)
-        ontCalls_bed = ontCalls_bed.sort()
-
-        infn = os.path.join(coord_base_dir, bedFile)
-        # narrowBed = BedTool(bedFile)
-        narrowBed = BedTool(infn)
-        narrowBed = narrowBed.sort()
-        ontCalls_intersect = ontCalls_bed.intersect(narrowBed, u=True, wa=True)
-        ontCalls_narrow = txt2dict(ontCalls_intersect)
-        suffix = bedFile
-    else:
-        switch = 1
-        suffix = "GenomeWide"
-
-    ## Second optional filter, organized in the same fashion as the first one. Designed to accomodate for example list of CpGs covered by second program
-    secondSwitch = 0
-    ontCalls_narrow_second = {}
-    if secondFilterBed != False:
-        infile = open(secondFilterBed, 'r')
-        secondFilterDict = {}
-        for row in infile:
-            secondFilterDict[row] = 0
-        infile.close()
-        ontCalls_narrow_second = dict.fromkeys(set(ontCalls.keys()).intersection(set(secondFilterDict.keys())), 0)
-    else:
-        secondSwitch = 1
-        suffix = "GenomeWide"
-
-    # Second optional filter, shoudl be used in combination with second optional filter above
-    secondSwitch_4corr = 0
-    ontCalls_narrow_second_4corr = {}
-    if secondFilterBed_4Corr != False:
-        infile = open(secondFilterBed_4Corr, 'r')
-        secondFilterDict = {}
-        for row in infile:
-            secondFilterDict[row] = 0
-        infile.close()
-        ontCalls_narrow_second_4corr = dict.fromkeys(set(ontCalls.keys()).intersection(set(secondFilterDict.keys())), 0)
-    else:
-        secondSwitch_4corr = 1
-        suffix = "GenomeWide"
-
-    suffixTMP = suffix.split("/")
-    if len(suffixTMP) > 1:
-        suffix = suffixTMP[-1]
-
-    TP_5mC = FP_5mC = FN_5mC = TN_5mC = TP_5C = FP_5C = FN_5C = TN_5C = 0
-    y = []
-    scores = []
-
-    ontSites = 0
-    mCsites = 0
-    Csites = 0
-    referenceCpGs = 0
-
-    ## four tuples for correlation:
-    ontFrequencies_4corr_mix = []  # mix(ed) are those, which in reference have methylation level >0 and <1
-    refFrequencies_4corr_mix = []
-
-    ontFrequencies_4corr_all = []  # all are all:) i.e. all CpGs with methyaltion level in refence in range 0-1
-    refFrequencies_4corr_all = []
-    leftovers = {}
-    leftovers1 = {}
-
-    for cpg_ont in ontCalls:
-        ##### for per read stats:
-        if cpg_ont in bsReference and len(ontCalls[cpg_ont]) >= ontCutt_perRead and (switch == 1 or cpg_ont in ontCalls_narrow) and (
-                secondSwitch == 1 or cpg_ont in ontCalls_narrow_second):  # we should not take onCuttoffs for per read stats - shouldn't we? actually, we need to have the option to use this parameter, because at some point we may want to narrow down the per read stats to cover only the sites which were also covered by correlation with BS-Seq. Using this cutoff here is the easiest way to do just that
-            #         if cpg_ont in bsReference and (switch == 1 or cpg_ont in ontCalls_narrow):
-            if bsReference[cpg_ont] == 1 or bsReference[cpg_ont] == 0:  # we only consider absolute states here
-                referenceCpGs += 1
-
-                for ontCall in ontCalls[cpg_ont]:  # TODO  mCsites and Csites will be count more due to more reads
-                    if bsReference[cpg_ont] == 1:
-                        mCsites += 1
-                    if bsReference[cpg_ont] == 0:
-                        Csites += 1
-                    ontSites += 1
-
-                    ### variables needed to compute precission, recall etc.:
-                    if ontCall == 1 and bsReference[cpg_ont] == 1:  # true positive
-                        TP_5mC += 1
-                    elif ontCall == 1 and bsReference[cpg_ont] == 0:  # false positive
-                        FP_5mC += 1
-                    elif ontCall == 0 and bsReference[cpg_ont] == 1:  # false negative
-                        FN_5mC += 1
-                    elif ontCall == 0 and bsReference[cpg_ont] == 0:  # true negative
-                        TN_5mC += 1
-
-                    if ontCall == 0 and bsReference[cpg_ont] == 0:  # true positive
-                        TP_5C += 1
-                    elif ontCall == 0 and bsReference[cpg_ont] == 1:  # false positive
-                        FP_5C += 1
-                    elif ontCall == 1 and bsReference[cpg_ont] == 0:  # false negative
-                        FN_5C += 1
-                    elif ontCall == 1 and bsReference[cpg_ont] == 1:  # true negative
-                        TN_5C += 1
-
-                    ### AUC related:
-                    scores.append(ontCall)
-                    y.append(bsReference[cpg_ont])
-
-        ##### for correlation stats:
-        if cpg_ont in bsReference and len(ontCalls[cpg_ont]) >= ontCutt_4corr and (switch == 1 or cpg_ont in ontCalls_narrow) and (secondSwitch_4corr == 1 or cpg_ont in ontCalls_narrow_second_4corr):
-            ontMethFreq = np.mean(ontCalls[cpg_ont])
-            ontFrequencies_4corr_all.append(ontMethFreq)
-            refFrequencies_4corr_all.append(bsReference[cpg_ont])
-            if bsReference[cpg_ont] > 0 and bsReference[cpg_ont] < 1:
-                ontFrequencies_4corr_mix.append(ontMethFreq)
-                refFrequencies_4corr_mix.append(bsReference[cpg_ont])
-
-    ### compute all per read stats:
-
-    #     Accuracy:
-    try:
-        accuracy = (TP_5mC + TN_5mC) / float(TP_5mC + FP_5mC + FN_5mC + TN_5mC)
-    except ZeroDivisionError:
-        accuracy = 0
-    #     print("Accuracy: {0:1.4f}".format(accuracy))
-
-    #     Positive predictive value (PPV), Precision = (TP) / E(Predicted condition positive)
-    try:
-        predicted_condition_positive_5mC = float(TP_5mC + FP_5mC)
-        precision_5mC = TP_5mC / predicted_condition_positive_5mC
-    except ZeroDivisionError:
-        precision_5mC = 0
-    #     print("Precision_5mC: {0:1.4f}".format(precision_5mC))
-    try:
-        predicted_condition_positive_5C = float(TP_5C + FP_5C)
-        precision_5C = TP_5C / predicted_condition_positive_5C
-    except ZeroDivisionError:
-        precision_5C = 0
-
-    #     print("Precision_5C: {0:1.4f}".format(precision_5C))
-
-    #     True positive rate (TPR), Recall, Sensitivity, probability of detection = (TP) / (TP+FN)
-    try:
-        recall_5mC = TP_5mC / float(TP_5mC + FN_5mC)
-    except ZeroDivisionError:
-        recall_5mC = 0
-    #     print("Recall_5mC: {0:1.4f}".format(recall_5mC))
-
-    try:
-        recall_5C = TP_5C / float(TP_5C + FN_5C)
-    except ZeroDivisionError:
-        recall_5C = 0
-    #     print("Recall_5C: {0:1.4f}".format(recall_5C))
-
-    #     F1 score:
-    try:
-        F1_5mC = 2 * ((precision_5mC * recall_5mC) / (precision_5mC + recall_5mC))
-    except ZeroDivisionError:
-        F1_5mC = 0
-    #     print("F1 score_5mC: {0:1.4f}".format(F1_5mC))
-
-    try:
-        F1_5C = 2 * ((precision_5C * recall_5C) / (precision_5C + recall_5C))
-    except ZeroDivisionError:
-        F1_5C = 0
-    #     print("F1 score_5C: {0:1.4f}".format(F1_5C))
-
-    #     print("ontSites:", ontSites)
-
-    ## plot AUC curve:
-    fig = plt.figure(figsize=(5, 5), dpi=300)
-
-    fprSwitch = 1
-    try:
-        fpr, tpr, _ = roc_curve(y, scores)
-    except ValueError:
-        logger.error(f"###\tERROR for roc_curve: y:{y}, scores: {scores}, \nother settings: {title}, {bedFile}, {secondFilterBed}, {secondFilterBed_4Corr}")
-        fprSwitch = 0
-        roc_auc = 0
-
-    if fprSwitch == 1:
-        roc_auc = auc(fpr, tpr)
-        #     print("AUC: {0:1.4f}".format(roc_auc))
-        #     print(title)
-
-        lw = 2
-
-        plt.plot(fpr, tpr, lw=lw, label='ROC curve (area = {0:.4f})'.format(roc_auc))
-        plt.plot([0, 1], [0, 1], color='lightgrey', lw=lw, linestyle='--')
-        plt.xlim([0.0, 1.0])
-        plt.ylim([0.0, 1.05])
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.title(suffix)
-        plt.legend(loc="lower right")
-
-        fig.savefig("{}.{}.AUC.pdf".format(title, suffix), bbox_inches='tight', dpi=300)
-        plt.close()
-
-        ## Plot confusion matrix:
-        cnf_matrix = confusion_matrix(y, scores)
-        np.set_printoptions(precision=2)
-        plt.figure(figsize=(5, 5))
-        plot_confusion_matrix(cnf_matrix, classes=[0, 1], normalize=True, title=suffix)
-        plt.savefig("{}.{}.ConfusionMatrix.pdf".format(title, suffix), bbox_inches='tight', dpi=300)
-        plt.close()
-
-        ## plot Precission-recall:
-        average_precision = average_precision_score(y, scores)
-        #     print('Average precision-recall score: {0:0.2f}'.format(average_precision))
-        plt.figure(figsize=(5, 5))
-        precision, recall, _ = precision_recall_curve(y, scores)
-        # In matplotlib < 1.5, plt.fill_between does not have a 'step' argument
-        step_kwargs = ({'step': 'post'}
-                       if 'step' in signature(plt.fill_between).parameters
-                       else {})
-        plt.step(recall, precision, color='b', alpha=0.2,
-                 where='post')
-        plt.fill_between(recall, precision, alpha=0.2, color='b', **step_kwargs)
-
-        plt.xlabel('Recall')
-        plt.ylabel('Precision')
-        plt.ylim([0.0, 1.05])
-        plt.xlim([0.0, 1.0])
-        plt.title('2-class Precision-Recall curve: AP={0:0.2f}\n{1}'.format(average_precision, suffix))
-        plt.savefig("{}.{}.PrecissionRecall.pdf".format(title, suffix), bbox_inches='tight', dpi=300)
-        plt.close()
-
-    ########################
-    # correlation based stats:
-    try:
-        corrMix, pvalMix = pearsonr(ontFrequencies_4corr_mix, refFrequencies_4corr_mix)
-    except:
-        corrMix, pvalMix = (0, 0)
-
-    try:
-        corrAll, pvalAll = pearsonr(ontFrequencies_4corr_all, refFrequencies_4corr_all)
-    except:
-        corrAll, pvalAll = (0, 0)
-
-    return accuracy, roc_auc, precision_5C, recall_5C, F1_5C, Csites, precision_5mC, recall_5mC, F1_5mC, mCsites, referenceCpGs, corrMix, len(ontFrequencies_4corr_mix), corrAll, len(ontFrequencies_4corr_all)  # , leftovers, leftovers1
-
-
 def load_single_sites_bed_as_set(infn):
     infile = open(infn, 'r')
     ret = set()
@@ -1543,7 +1229,7 @@ def load_single_sites_bed_as_set(infn):
     return ret
 
 
-def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt_perRead=1, ontCutt_4corr=3, secondFilterBedFile=None, secondFilterBed_4CorrFile=None, cutoff_meth=1.0, outdir=None, tagname=None):
+def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt_perRead=1, ontCutt_4corr=3, secondFilterBedFile=None, secondFilterBed_4CorrFile=None, cutoff_meth=1.0, outdir=None, tagname=None, is_save=True):
     """
     Compute ontCalls with bgTruth performance results by per-read count.
     bedFile                 -   coordinate used to eval
@@ -1788,15 +1474,16 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
         roc_auc = auc(fpr, tpr)
 
     ########################
-    # save y and y-pred and y-score for later plot:
-    curve_data = {'yTrue': y_of_bgtruth, 'yPred': ypred_of_ont_tool, 'yScore': yscore_of_ont_tool}
-
     basefn = 'x.x.GenomeWide' if not coordBedFileName else os.path.basename(coordBedFileName)
 
-    os.makedirs(os.path.join(outdir, 'curve_data'), exist_ok=True)
-    outfn = os.path.join(outdir, 'curve_data', f'{tagname}.{basefn}.curve_data.pkl')
-    with open(outfn, 'wb') as handle:
-        pickle.dump(curve_data, handle)
+    if is_save:
+        # save y and y-pred and y-score for later plot:
+        curve_data = {'yTrue': y_of_bgtruth, 'yPred': ypred_of_ont_tool, 'yScore': yscore_of_ont_tool}
+
+        os.makedirs(os.path.join(outdir, 'curve_data'), exist_ok=True)
+        outfn = os.path.join(outdir, 'curve_data', f'{tagname}.{basefn}.curve_data.pkl')
+        with open(outfn, 'wb') as handle:
+            pickle.dump(curve_data, handle)
 
     ########################
     # correlation based stats:
@@ -1813,299 +1500,6 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
     return accuracy, roc_auc, average_precision, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, len(ontFrequencies_4corr_mix), corrAll, len(ontFrequencies_4corr_all), Csites_BGTruth, mCsites_BGTruth  # , leftovers,
     # leftovers1
 
-
-# only care about AUC
-def computePerReadStats_v2_for_roc_auc(ontCalls, bsReference, title, bedFile=False, ontCutt_perRead=1, ontCutt_4corr=4, secondFilterBed=False, secondFilterBed_4Corr=False):
-    '''
-
-    Only care about AUC data
-
-    ontCalls - dictionary of CpG coordinates with their per read methylation call (1 or 0) // Format: {"chr\tstart\tend\n" : [list of methylation calls]}
-    bsReference - dictionary of CpG coordinates with their methylation frequencies (range 0 - 1). This list is already prefiltered to meet minimal coverage (e.g. 4x) at this point. // Format: {"chr\tstart\tend\n" : methylation level (format: float (0-1))}
-    title - prefix of the analysis, output plots etc. - should be as short as possible, but unique in context of other analyses
-    bedFile - BED file which will be used to narrow down the list of CpGs for example to those inside CGIs or promoters etc.. By default "False" - which means no restrictions are done (i.e. genome wide)
-    secondFilterBed - these should be CpGs covered in some reference list. Format: BED
-
-
-    ============================================
-
-    Basically i want to fill in the table below:
-               Positive	Negative	Total
-     Presence	a	        b	        a+b
-     Absence	c	        d	        c+d
-     Total	    a+c	        b+d	        a+b+c+d
-
-    Nice summary also at wiki: https://en.wikipedia.org/wiki/F1_score
-    , where "Positive" and "Negative" corresponds with ONT based observations, while "Presence" and "Absence" is based on BS-Seq
-
-    '''
-
-    switch = 0
-    ontCalls_narrow = []
-    logger.debug("in computePerReadStats2")
-    if bedFile != False:
-        ontCalls_bed = BedTool(dict2txt(ontCalls), from_string=True)
-        ontCalls_bed = ontCalls_bed.sort()
-        logger.debug("ontCalls_bed.sort()")
-
-        infn = os.path.join(nanocompare_basedir, "reports", bedFile)
-        # narrowBed = BedTool(bedFile)
-        narrowBed = BedTool(infn)
-        narrowBed = narrowBed.sort()
-        logger.debug("narrowBed.sort()")
-
-        ontCalls_intersect = ontCalls_bed.intersect(narrowBed, u=True, wa=True)
-        ontCalls_narrow = txt2dict(ontCalls_intersect)
-        suffix = bedFile
-    else:
-        switch = 1
-        suffix = "GenomeWide"
-
-    ## Second optional filter, organized in the same fashion as the first one. Designed to accomodate for example list of CpGs covered by second program
-    secondSwitch = 0
-    ontCalls_narrow_second = {}
-    if secondFilterBed != False:
-        infile = open(secondFilterBed, 'r')
-        secondFilterDict = {}
-        for row in infile:
-            secondFilterDict[row] = 0
-        infile.close()
-        ontCalls_narrow_second = dict.fromkeys(set(ontCalls.keys()).intersection(set(secondFilterDict.keys())), 0)
-    else:
-        secondSwitch = 1
-        suffix = "GenomeWide"
-
-    # Second optional filter, shoudl be used in combination with second optional filter above
-    secondSwitch_4corr = 0
-    ontCalls_narrow_second_4corr = {}
-    if secondFilterBed_4Corr != False:
-        infile = open(secondFilterBed_4Corr, 'r')
-        secondFilterDict = {}
-        for row in infile:
-            secondFilterDict[row] = 0
-        infile.close()
-        ontCalls_narrow_second_4corr = dict.fromkeys(set(ontCalls.keys()).intersection(set(secondFilterDict.keys())), 0)
-    else:
-        secondSwitch_4corr = 1
-        suffix = "GenomeWide"
-
-    suffixTMP = suffix.split("/")
-    if len(suffixTMP) > 1:
-        suffix = suffixTMP[-1]
-
-    TP_5mC = FP_5mC = FN_5mC = TN_5mC = TP_5C = FP_5C = FN_5C = TN_5C = 0
-    y = []
-    scores = []
-
-    ontSites = 0
-    mCsites = 0
-    Csites = 0
-    referenceCpGs = 0
-
-    for cpg_ont in ontCalls:
-        ##### for per read stats:
-        if cpg_ont in bsReference and len(ontCalls[cpg_ont]) >= ontCutt_perRead and (switch == 1 or cpg_ont in ontCalls_narrow) and (
-                secondSwitch == 1 or cpg_ont in ontCalls_narrow_second):  # we should not take onCuttoffs for per read stats - shouldn't we? actually, we need to have the option to use this parameter, because at some point we may want to narrow down the per read stats to cover only the sites which were also covered by correlation with BS-Seq. Using this cutoff here is the easiest way to do just that
-            #         if cpg_ont in bsReference and (switch == 1 or cpg_ont in ontCalls_narrow):
-            if bsReference[cpg_ont] == 1 or bsReference[cpg_ont] == 0:  # we only consider absolute states here
-                referenceCpGs += 1
-
-                for ontCall in ontCalls[cpg_ont]:
-                    if bsReference[cpg_ont] == 1:
-                        mCsites += 1
-                    if bsReference[cpg_ont] == 0:
-                        Csites += 1
-                    ontSites += 1
-
-                    ### variables needed to compute precission, recall etc.:
-                    if ontCall == 1 and bsReference[cpg_ont] == 1:  # true positive
-                        TP_5mC += 1
-                    elif ontCall == 1 and bsReference[cpg_ont] == 0:  # false positive
-                        FP_5mC += 1
-                    elif ontCall == 0 and bsReference[cpg_ont] == 1:  # false negative
-                        FN_5mC += 1
-                    elif ontCall == 0 and bsReference[cpg_ont] == 0:  # true negative
-                        TN_5mC += 1
-
-                    if ontCall == 0 and bsReference[cpg_ont] == 0:  # true positive
-                        TP_5C += 1
-                    elif ontCall == 0 and bsReference[cpg_ont] == 1:  # false positive
-                        FP_5C += 1
-                    elif ontCall == 1 and bsReference[cpg_ont] == 0:  # false negative
-                        FN_5C += 1
-                    elif ontCall == 1 and bsReference[cpg_ont] == 1:  # true negative
-                        TN_5C += 1
-
-                    ### AUC related:
-                    scores.append(ontCall)
-                    y.append(bsReference[cpg_ont])
-
-    return scores, y
-    ### compute all per read stats:
-
-    #     Accuracy:
-    try:
-        accuracy = (TP_5mC + TN_5mC) / float(TP_5mC + FP_5mC + FN_5mC + TN_5mC)
-    except ZeroDivisionError:
-        accuracy = 0
-    #     print("Accuracy: {0:1.4f}".format(accuracy))
-
-    #     Positive predictive value (PPV), Precision = (TP) / E(Predicted condition positive)
-    try:
-        predicted_condition_positive_5mC = float(TP_5mC + FP_5mC)
-        precision_5mC = TP_5mC / predicted_condition_positive_5mC
-    except ZeroDivisionError:
-        precision_5mC = 0
-    #     print("Precision_5mC: {0:1.4f}".format(precision_5mC))
-    try:
-        predicted_condition_positive_5C = float(TP_5C + FP_5C)
-        precision_5C = TP_5C / predicted_condition_positive_5C
-    except ZeroDivisionError:
-        precision_5C = 0
-
-    #     print("Precision_5C: {0:1.4f}".format(precision_5C))
-
-    #     True positive rate (TPR), Recall, Sensitivity, probability of detection = (TP) / (TP+FN)
-    try:
-        recall_5mC = TP_5mC / float(TP_5mC + FN_5mC)
-    except ZeroDivisionError:
-        recall_5mC = 0
-    #     print("Recall_5mC: {0:1.4f}".format(recall_5mC))
-
-    try:
-        recall_5C = TP_5C / float(TP_5C + FN_5C)
-    except ZeroDivisionError:
-        recall_5C = 0
-    #     print("Recall_5C: {0:1.4f}".format(recall_5C))
-
-    #     F1 score:
-    try:
-        F1_5mC = 2 * ((precision_5mC * recall_5mC) / (precision_5mC + recall_5mC))
-    except ZeroDivisionError:
-        F1_5mC = 0
-    #     print("F1 score_5mC: {0:1.4f}".format(F1_5mC))
-
-    try:
-        F1_5C = 2 * ((precision_5C * recall_5C) / (precision_5C + recall_5C))
-    except ZeroDivisionError:
-        F1_5C = 0
-    #     print("F1 score_5C: {0:1.4f}".format(F1_5C))
-
-    #     print("ontSites:", ontSites)
-
-    ## plot AUC curve:
-    fig = plt.figure(figsize=(5, 5), dpi=300)
-
-    fprSwitch = 1
-    try:
-        fpr, tpr, _ = roc_curve(y, scores)
-    except ValueError:
-        logger.error(f"###\tERROR for roc_curve: y: {y}, scores: {scores}, \nother settings: {title}, {bedFile}, {secondFilterBed}, {secondFilterBed_4Corr}")
-        fprSwitch = 0
-        roc_auc = 0
-
-    if fprSwitch == 1:
-        roc_auc = auc(fpr, tpr)
-        #     print("AUC: {0:1.4f}".format(roc_auc))
-        #     print(title)
-
-        lw = 2
-
-        plt.plot(fpr, tpr, lw=lw, label='ROC curve (area = {0:.4f})'.format(roc_auc))
-        plt.plot([0, 1], [0, 1], color='lightgrey', lw=lw, linestyle='--')
-        plt.xlim([0.0, 1.0])
-        plt.ylim([0.0, 1.05])
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.title(suffix)
-        plt.legend(loc="lower right")
-
-        fig.savefig("{}.{}.AUC.pdf".format(title, suffix), bbox_inches='tight', dpi=300)
-        plt.close()
-
-        ## Plot confusion matrix:
-        cnf_matrix = confusion_matrix(y, scores)
-        np.set_printoptions(precision=2)
-        plt.figure(figsize=(5, 5))
-        plot_confusion_matrix(cnf_matrix, classes=[0, 1], normalize=True, title=suffix)
-        plt.savefig("{}.{}.ConfusionMatrix.pdf".format(title, suffix), bbox_inches='tight', dpi=300)
-        plt.close()
-
-        ## plot Precission-recall:
-        average_precision = average_precision_score(y, scores)
-        #     print('Average precision-recall score: {0:0.2f}'.format(average_precision))
-        plt.figure(figsize=(5, 5))
-        precision, recall, _ = precision_recall_curve(y, scores)
-        # In matplotlib < 1.5, plt.fill_between does not have a 'step' argument
-        step_kwargs = ({'step': 'post'}
-                       if 'step' in signature(plt.fill_between).parameters
-                       else {})
-        plt.step(recall, precision, color='b', alpha=0.2,
-                 where='post')
-        plt.fill_between(recall, precision, alpha=0.2, color='b', **step_kwargs)
-
-        plt.xlabel('Recall')
-        plt.ylabel('Precision')
-        plt.ylim([0.0, 1.05])
-        plt.xlim([0.0, 1.0])
-        plt.title('2-class Precision-Recall curve: AP={0:0.2f}\n{1}'.format(average_precision, suffix))
-        plt.savefig("{}.{}.PrecissionRecall.pdf".format(title, suffix), bbox_inches='tight', dpi=300)
-        plt.close()
-
-    ########################
-    # correlation based stats:
-    try:
-        corrMix, pvalMix = pearsonr(ontFrequencies_4corr_mix, refFrequencies_4corr_mix)
-    except:
-        corrMix, pvalMix = (0, 0)
-
-    try:
-        corrAll, pvalAll = pearsonr(ontFrequencies_4corr_all, refFrequencies_4corr_all)
-    except:
-        corrAll, pvalAll = (0, 0)
-
-    return accuracy, roc_auc, precision_5C, recall_5C, F1_5C, Csites, precision_5mC, recall_5mC, F1_5mC, mCsites, referenceCpGs, corrMix, len(ontFrequencies_4corr_mix), corrAll, len(ontFrequencies_4corr_all)  # , leftovers, leftovers1
-
-
-# def correlateResults_fromOrg(MyMethFreqInfile, RefMethFreqInfile, OutfilePrefix, MixedOnly = True, MyMethCutt = 4):
-#     '''
-#     Assumed format of the input files:
-#     MyMethFreqInfile:
-#     chromosome  start   end coverage    methylatedSites unmethylatedSites   methPercentage
-#     chr1	27625914	27625915	1	1	0	1.0
-#     chr1	143222602	143222603	21	20	1	0.9523809523809523
-
-#     RefMethFreqInfile:
-#     #chromosome     start   end     pmC     phmC    pC      err     qA      qB      qC      qD      N
-#     chr16   14116   14116   0.25    0       0.75    0       1       3       0       0       0
-#     chr16   14155   14155   0.75    0       0.25    0       3       1       0       0       0
-#     chr16   16505   16505   1       0       0       0       4       0       0       0       0
-
-#     '''
-
-#     MyMethFreqDF = pd.read_csv(MyMethFreqInfile, sep="\t")
-#     RefMethFreqDF = pd.read_csv(RefMethFreqInfile, sep="\t")
-
-#     if MixedOnly == True:
-#         RefMethFreqDF = RefMethFreqDF[(RefMethFreqDF.pmC > 0) & (RefMethFreqDF.pC > 0) & (RefMethFreqDF.pmC < 1) & (RefMethFreqDF.pC < 1)]
-
-#     MyMethFreq = []
-#     MyMethFreqDict = {}
-
-#     RefMethFreq = []
-
-#     for index, row in MyMethFreqDF.iterrows():
-#         if int(row["coverage"]) >= MyMethCutt:
-#             MyMethFreqDict[(row["chromosome"], row["start"], row["end"])] = float(row["methPercentage"])
-
-#     for index, row in RefMethFreqDF.iterrows():
-#         key = (row["#chromosome"], row["start"], row["end"])
-#         if key in MyMethFreqDict:
-#             MyMethFreq.append(MyMethFreqDict[key])
-#             RefMethFreq.append(float(row["pmC"]))
-
-#     corr, pval = stats.pearsonr(MyMethFreq, RefMethFreq)
-#     return corr, pval, len(RefMethFreq)
 
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
@@ -2320,51 +1714,6 @@ def combine2programsCalls_4Corr(calls1, calls2, cutt=3, outfileName=False, only_
     #     return dict.fromkeys(set(filteredCalls1.keys()).intersection(set(filteredCalls2.keys())), cutt)
 
 
-# Deprecated
-def combine_ONT_and_BS(ontCalls, bsReference, analysisPrefix, narrowedCoordinates=False, ontCutt=4, secondFilterBed=False, secondFilterBed_4Corr=False):
-    d = {"prefix"              : [],
-            "coord"            : [],
-            "accuracy"         : [],
-            "roc_auc"          : [],
-            "precision_5C"     : [],
-            "recall_5C"        : [],
-            "F1_5C"            : [],
-            "Csites"           : [],
-            "precision_5mC"    : [],
-            "recall_5mC"       : [],
-            "F1_5mC"           : [],
-            "mCsites"          : [],
-            "referenceCpGs"    : [],
-            "corrMix"          : [],
-            "Corr_mixedSupport": [],
-            "corrAll"          : [],
-            "Corr_allSupport"  : []}
-    for coord in narrowedCoordinates:
-        accuracy, roc_auc, precision_5C, recall_5C, F1_5C, Csites, precision_5mC, recall_5mC, F1_5mC, mCsites, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport = computePerReadStats_deprecated(ontCalls, bsReference, analysisPrefix, bedFile=coord, secondFilterBed=secondFilterBed, secondFilterBed_4Corr=secondFilterBed_4Corr)
-        #         accuracy, roc_auc, precision_5C, recall_5C, F1_5C, Csites, precision_5mC, recall_5mC, F1_5mC, mCsites, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, leftovers, leftovers1 = computePerReadStats(ontCalls, bsReference, analysisPrefix, bedFile = coord, secondFilterBed = secondFilterBed, secondFilterBed_4Corr = secondFilterBed_4Corr)
-        d["prefix"].append(analysisPrefix)
-        d["coord"].append(coord)
-        d["accuracy"].append(accuracy)
-        d["roc_auc"].append(roc_auc)
-        d["precision_5C"].append(precision_5C)
-        d["recall_5C"].append(recall_5C)
-        d["F1_5C"].append(F1_5C)
-        d["Csites"].append(Csites)
-        d["precision_5mC"].append(precision_5mC)
-        d["recall_5mC"].append(recall_5mC)
-        d["F1_5mC"].append(F1_5mC)
-        d["mCsites"].append(mCsites)
-        d["referenceCpGs"].append(referenceCpGs)
-        d["corrMix"].append(corrMix)
-        d["Corr_mixedSupport"].append(Corr_mixedSupport)
-        d["corrAll"].append(corrAll)
-        d["Corr_allSupport"].append(Corr_allSupport)
-
-    #     df = pd.DataFrame.from_dict(d, orient='index')
-    df = pd.DataFrame.from_dict(d)
-    return df
-
-
 def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, ontCutt=4, secondFilterBed=None, secondFilterBed_4Corr=None, cutoff_meth=1.0, outdir=None, tagname=None, test=False):
     """
     New performance evaluation by Yang
@@ -2457,31 +1806,31 @@ def NonSingletonsScanner(referenceGenomeFile, outfileName_s, outfileName_ns):
             #             print(chromosome, idx, idx.start(), idx.end())
             if singleton == -1:
                 s = idx.start() + 1  # here 8: mock1 <_sre.SRE_Match object; span=(8, 10), match='CG'> 8 10
-                e = idx.end()  # here 10: mock1 <_sre.SRE_Match object; span=(8, 10), match='CG'> 8 10
+                end_index = idx.end()  # here 10: mock1 <_sre.SRE_Match object; span=(8, 10), match='CG'> 8 10
                 singleton = 1
             else:
-                if (idx.start() - e) < 5:
+                if (idx.start() - end_index) < 5:
                     # we just found a non-singleton. I.e. accordingly to the Nanopolish approach, CGs closer than 5bp, are considered as non-singletons
-                    e = idx.end()
+                    end_index = idx.end()
                     singleton = 0
                 else:
                     # current CG is not part of non-singleton. It might mean that its not part of a big non-singleton or singleton upstream from it. We test which of these options below
                     if singleton == 1:
                         #                         print(chromosome, s, e, "SINGLETON")
-                        outfile_s.write("{}\t{}\t{}\n".format(chromosome, s, e))
+                        outfile_s.write("{}\t{}\t{}\n".format(chromosome, s, end_index))
                     else:
                         #                         print(chromosome, s, e, "NON-SINGLETON")
-                        outfile_ns.write("{}\t{}\t{}\n".format(chromosome, s, e))
+                        outfile_ns.write("{}\t{}\t{}\n".format(chromosome, s, end_index))
                     s = idx.start() + 1
-                    e = idx.end()
+                    end_index = idx.end()
                     singleton = 1
 
         if singleton == 1:  # this code repetition takes care of the last instance in the long list of CG indexes
             #             print(chromosome, s, e, "SINGLETON")
-            outfile_s.write("{}\t{}\t{}\n".format(chromosome, s, e))
+            outfile_s.write("{}\t{}\t{}\n".format(chromosome, s, end_index))
         else:
             #             print(chromosome, s, e, "NON-SINGLETON")
-            outfile_ns.write("{}\t{}\t{}\n".format(chromosome, s, e))
+            outfile_ns.write("{}\t{}\t{}\n".format(chromosome, s, end_index))
 
         logger.debug("###\tNonSingletonsScanner: chromosome {} processed".format(chromosome))
 
@@ -2596,6 +1945,7 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
     return ret
 
 
+# TODO: deprecated, only care about the correctness of data generated by it
 def nonSingletonsPostprocessing2(referenceMeth, regionsBedFile, dataset, outdir=None, cutoff_meth=1.0):
     '''
 
@@ -2606,10 +1956,12 @@ def nonSingletonsPostprocessing2(referenceMeth, regionsBedFile, dataset, outdir=
     This kind of preprocessing will have to be done for each studied library separately.
     '''
 
+    raise Exception('No need this function')
+
     refMeth = BedTool(dict2txt(referenceMeth), from_string=True)
     refMeth = refMeth.sort()
 
-    infn = os.path.join(nanocompare_basedir, "reports", regionsBedFile)
+    infn = os.path.join("reports", regionsBedFile)
     # regions = BedTool(regionsBedFile)
     regions = BedTool(infn)
 
@@ -2789,11 +2141,11 @@ def singletonsPostprocessing2(referenceMeth, singletonsBedFile, dataset, outdir=
     Next it will separate them into absolute (i.e. fully methylated or fully unmethylated), and mixed (i.e. all CpGs in non-singletons have methylation level >0 and < 100)
     This kind of preprocessing will have to be done for each studied library separately.
     '''
-
+    raise Exception('No need this function')
     refMeth = BedTool(dict2txt(referenceMeth), from_string=True)
     refMeth = refMeth.sort()
 
-    infn = os.path.join(nanocompare_basedir, "reports", singletonsBedFile)
+    infn = os.path.join("reports", singletonsBedFile)
 
     # regions = BedTool(singletonsBedFile)
     regions = BedTool(infn)
@@ -3303,10 +2655,12 @@ def import_bgtruth(infn, encode, cov=10, baseFormat=0, includeCov=True):
     if encode == "encode":  # not used now, function need to check if use
         bgTruth = importGroundTruth_BedMethyl_from_Encode(infn, covCutt=cov, baseCount=baseFormat)
     elif encode == "oxBS_sudo":  # not used now, function need to check if use
+        raise Exception(f'Please check this function is ok, encode={encode}')
         bgTruth = importGroundTruth_oxBS(infn, covCutt=cov, baseCount=baseFormat)
     elif encode == "bed":  # like K562 bg-truth, 0-based start input
         bgTruth = importGroundTruth_bed_file_format(infn, covCutt=cov, baseFormat=baseFormat, includeCov=includeCov)
     elif encode == "bismark_bedgraph":  # not used now, function need to check if use
+        raise Exception(f'Please check this function is ok, encode={encode}')
         bgTruth = importGroundTruth_coverage_output_from_Bismark_BedGraph(infn, baseCount=baseFormat)
     elif encode == "bismark":  # for genome-wide Bismark Report ouput format results, such as HL60, etc. 1-based start input
         bgTruth = importGroundTruth_genome_wide_Bismark_Report(infn, covCutt=cov, baseFormat=baseFormat, includeCov=includeCov)

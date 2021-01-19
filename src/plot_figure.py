@@ -923,14 +923,15 @@ if __name__ == '__main__':
                     with open(fnlist[0], 'rb') as f:
                         ret = pickle.load(f)
                         # logger.debug(ret)
-                        curve_data[f'{toolname}_true'] = ret['yTrue']
-                        curve_data[f'{toolname}_pred'] = ret['yPred']
-                outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.{coordDictToStandardName[coordinate_bed_name]}.pkl')
+                        curve_data[f'{toolname}_true'] = ret['yTrue']  # Ground truth label
+                        curve_data[f'{toolname}_pred'] = ret['yPred']  # Prediction label
+                        curve_data[f'{toolname}_score'] = ret['yScore']  # Prediction score, used for roc curve plotting
+                outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{coordDictToStandardName[coordinate_bed_name]}.pkl')
                 with open(outfn, 'wb') as f:
                     pickle.dump(curve_data, f)
                 logger.info(f'save to {outfn}')
 
-                outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.{coordDictToStandardName[coordinate_bed_name]}.dat')
+                outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{coordDictToStandardName[coordinate_bed_name]}.dat')
                 with open(outfn, "w") as f:
                     for toolname in ToolNameList:
                         f.write(f"{toolname}_true:")
@@ -940,7 +941,12 @@ if __name__ == '__main__':
 
                         f.write(f"{toolname}_pred:")
                         outstr = ','.join([str(value) for value in curve_data[f'{toolname}_pred']])
-                        f.writelines(outstr)
+                        f.write(outstr)
+                        f.write("\n")
+
+                        f.write(f"{toolname}_score:")
+                        outstr = ','.join([f'{value:.4f}' for value in curve_data[f'{toolname}_score']])
+                        f.write(outstr)
                         f.write("\n")
                 logger.info(f'save to {outfn}')
     elif args.cmd == 'plot-curve-data':

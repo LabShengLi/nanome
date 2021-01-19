@@ -1,15 +1,16 @@
 #!/bin/bash
 #SBATCH --job-name=meth.perf
 #SBATCH --partition=compute
-##SBATCH -p gpu
-##SBATCH --gres=gpu:1             # number of gpus per node
-##SBATCH -q inference
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 2 # number of cores
 #SBATCH --mem 220g # memory pool for all cores
 #SBATCH --time=1-06:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
+
+##SBATCH -p gpu
+##SBATCH --gres=gpu:1             # number of gpus per node
+##SBATCH -q inference
 
 set -x
 echo "DeepSignal_calls: $DeepSignal_calls"
