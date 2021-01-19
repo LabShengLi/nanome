@@ -15,7 +15,7 @@ outdir = here('figures')
 infn = here('result', 'performance-results.csv')
 df <- load.performance.data(infn)
 
-## Bar plot
+## Figure 3, 4 a:Bar plot
 source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
 
 for (measure.pair in measure.pair.list) {
@@ -25,8 +25,7 @@ for (measure.pair in measure.pair.list) {
   #break
 }
 
-
-## Line plot
+## Figure 3, 4 a:Line plot
 source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
 
 for (perf.measure in measure.list) {

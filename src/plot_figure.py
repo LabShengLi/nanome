@@ -911,8 +911,14 @@ if __name__ == '__main__':
         ## python plot_figure.py export-curve-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS
         outdir = os.path.join(args.o, 'plot-curve-data')
         os.makedirs(outdir, exist_ok=True)
+
+        if len(args.i) == 0:
+            args.i = list(runPrefixDict.values())
+            logger.info(f'No input, we use default args.i={args.i}')
+
         for bdir in args.i:
             runPrefix = os.path.basename(bdir)
+            cnt = 0
             for coordinate_bed_name in coordDictToStandardName.keys():
                 curve_data = defaultdict(list)
                 for toolname in ToolNameList:
@@ -920,6 +926,7 @@ if __name__ == '__main__':
                     fnlist = glob.glob(pattern_str)
                     if len(fnlist) != 1:
                         raise Exception(f'Can not locate curve_data for Tool={toolname}, at Coord={coordinate_bed_name}, with pattern={pattern_str}, find results={fnlist}. Please check if MethPerf results folder={bdir} specified is correct.')
+                    cnt += 1
                     with open(fnlist[0], 'rb') as f:
                         ret = pickle.load(f)
                         # logger.debug(ret)
@@ -929,7 +936,7 @@ if __name__ == '__main__':
                 outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{coordDictToStandardName[coordinate_bed_name]}.pkl')
                 with open(outfn, 'wb') as f:
                     pickle.dump(curve_data, f)
-                logger.info(f'save to {outfn}')
+                # logger.info(f'save to {outfn}')
 
                 outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{coordDictToStandardName[coordinate_bed_name]}.dat')
                 with open(outfn, "w") as f:
@@ -948,7 +955,8 @@ if __name__ == '__main__':
                         outstr = ','.join([f'{value:.4f}' for value in curve_data[f'{toolname}_score']])
                         f.write(outstr)
                         f.write("\n")
-                logger.info(f'save to {outfn}')
+                # logger.info(f'save to {outfn}')
+            logger.info(f'For runPrefix={runPrefix} at dir={bdir}, total files={cnt}')
     elif args.cmd == 'plot-curve-data':
         for fn in args.i:
             with open(fn, 'rb') as infn:
