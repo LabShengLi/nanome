@@ -2,8 +2,26 @@ library(VennDiagram)
 library(ggplot2)
 library(here)
 
-# NOT RUN {
-# Reference five-set diagram
+
+source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
+
+outdir = here('figures')
+
+# Venn diagram plot
+for (fn in venn_flist) {
+  infn = here('result', fn)
+  dt <- read.table(infn)
+
+  base_infn = basename(infn)
+  outfn = sprintf("%s/%s.jpg", outdir, base_infn)
+
+  fig.34c.venn.plot(dt$V1, outfn)
+}
+
+
+graphics.off()
+
+
 venn.plot <- draw.quintuple.venn(
   area1 = 301,
   area2 = 321,
@@ -36,9 +54,11 @@ venn.plot <- draw.quintuple.venn(
   n1345 = 58,
   n2345 = 57,
   n12345 = 31,
-  category = c("DeepSignal", "Tombo", "Nanopolish", "DeepMod", "Megalodon"),
-  fill = c("dodgerblue", "goldenrod1", "darkorange1", "seagreen3", "orchid3"),
-  cat.col = c("dodgerblue", "goldenrod1", "darkorange1", "seagreen3", "orchid3"),
+  category = Tool.Order,
+  fill = ToolColorPal[1:5],
+  cat.col = ToolColorPal[1:5],
+  cat.pos = c(0, 2, 8, 5, 11),
+  cat.dist = c(0.22, 0.22, -0.2, -0.2, 0.22),
   cat.cex = 2,
   margin = 0.05,
   cex = c(1.5, 1.5, 1.5, 1.5, 1.5, 1, 0.8, 1, 0.8, 1, 0.8, 1, 0.8, 1, 0.8,
@@ -47,13 +67,12 @@ venn.plot <- draw.quintuple.venn(
 );
 
 
-bdir = here('figures')
+outfn = sprintf("%s/ven-demo.pdf", bdir)
 
-outfn = sprintf("%s/ven-demo.jpg", bdir)
-
-# Writing to file
-#tiff(filename = "Quintuple_Venn_diagram.tiff", compression = "lzw");
-ggsave(filename = outfn)
+#tiff(filename = outfn, compression = "lzw");
 #grid.draw(venn.plot);
 #dev.off();
-# }
+
+ggsave(venn.plot, file = outfn, dpi = 600)
+
+printf('save to %s', outfn)

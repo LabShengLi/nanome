@@ -11,6 +11,7 @@ All usedful functions are located in nanocompare.meth_stats.meth_stats_common
 import argparse
 import subprocess
 
+from nanocompare.global_settings import get_tool_name
 from nanocompare.meth_stats.meth_stats_common import *
 
 
@@ -179,6 +180,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='Correlation data gen task')
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name>', required=True)
     parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>", required=True)
+    parser.add_argument('--dsname', type=str, help="running dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
     parser.add_argument('--processors', type=int, help="running processors", default=8)
@@ -223,31 +225,31 @@ if __name__ == '__main__':
     callresult_dict = defaultdict()
     callname_list = []
 
-    # with Pool(processes=args.processors) as pool:
     for callstr in args.calls:
-        callname, callfn = callstr.split(':')
+        callencode, callfn = callstr.split(':')
+        callname = get_tool_name(callencode)
         callfn_dict[callname] = callfn
         callname_list.append(callname)
-        callresult_dict[callname] = [import_call(callfn, callname, baseFormat=baseFormat)]
-        # callresult_dict[callname] = pool.apply_async(import_call, (callfn, callname,))
+        callresult_dict[callname] = [import_call(callfn, callencode, baseFormat=baseFormat)]
 
     logger.debug(callfn_dict)
     encode, fn = args.bgtruth.split(':')
 
     logger.debug(f'BGTruth fn={fn}, encode={encode}')
     bgTruth = import_bgtruth(fn, encode, cov=bgtruthCutt, baseFormat=baseFormat)
-    # bgTruth = pool.apply_async(import_bgtruth, (fn, encode,))
-    # pool.close()
-    # pool.join()
-    # logger.info("Join processes of import")
 
+    # Filter cov of nanopore tools
     for callname in callname_list:
-        # callresult_dict[callname] = [callresult_dict[callname].get()]
         callresult_dict[callname].append(coverageFiltering(callresult_dict[callname][0], minCov=minToolCovCutt, toolname=callname))
-    # bgTruth = bgTruth.get()
 
     logger.debug(callfn_dict)
     logger.debug(callname_list)
+
+    logger.info(f"Start gen venn data for each tool (cov>={minToolCovCutt}) with bgtruth (cov>={bgtruthCutt})")
+    cpg_set_dict = defaultdict()
+    for callname in callname_list:
+        cpg_set_dict[callname] = set(callresult_dict[callname][1].keys()).intersection(set(bgTruth.keys()))
+    gen_venn_data(cpg_set_dict, outdir=out_dir, tagname=f'{args.dsname}')
 
     logger.info(f"Start set intersection with all tools joined together with bgtruth")
 

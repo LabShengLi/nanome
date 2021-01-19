@@ -16,9 +16,9 @@ import os
 import subprocess
 from sys import argv
 
-from nanocompare.global_config import prjsrc_base_dir
+from nanocompare.global_config import src_base_dir
 
-pyFile = os.path.join(prjsrc_base_dir, "nanocompare/meth_stats", "Methylation_correlation_plotting.sbatch")
+scriptFileName = os.path.join(src_base_dir, "nanocompare/meth_stats", "Methylation_correlation_plotting.sbatch")
 
 if __name__ == '__main__':
 
@@ -30,7 +30,17 @@ if __name__ == '__main__':
             os.makedirs(outlogdir, exist_ok=True)
 
             command = f"""
-set -x; sbatch --output=log/%x.%j.out --error=log/%x.%j.err --export=ALL,DeepSignal_calls="{row['DeepSignal_calls']}",Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",DeepMod_calls="{row['DeepMod_calls']}",Megalodon_calls="{row['Megalodon_calls']}",bgTruth="{row['bgTruth']}",RunPrefix="{row['RunPrefix']}",parser="{row['parser']}" --job-name=meth-corr-{row['RunPrefix']} {pyFile}"""
+set -x; 
+
+sbatch --output=log/%x.%j.out --error=log/%x.%j.err \
+--export=ALL,Dataset="{row['Dataset']}",DeepSignal_calls="{row['DeepSignal_calls']}",\
+Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",\
+DeepMod_calls="{row['DeepMod_calls']}",Megalodon_calls="{row['Megalodon_calls']}",\
+bgTruth="{row['bgTruth']}",RunPrefix="{row['RunPrefix']}",parser="{row['parser']}" \
+--job-name=meth-corr-{row['RunPrefix']} {scriptFileName}
+
+echo DONE
+"""
 
             # print(command)
             print(f"RunPrefix={row['RunPrefix']}")

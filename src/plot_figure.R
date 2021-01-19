@@ -8,7 +8,6 @@ getwd()
 #setwd(wdir)
 
 source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
-
 outdir = here('figures')
 
 # Load data and sort string orders
@@ -32,6 +31,19 @@ for (perf.measure in measure.list) {
   fig.34a.line.plot.performance(df, perf.measure, bdir = outdir, locations = locations.Singletons)
   fig.34a.line.plot.performance(df, perf.measure, bdir = outdir, locations = locations.Genome)
   #break
+}
+
+
+# Venn diagram plot
+source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
+for (fn in venn_flist) {
+  infn = here('result', fn)
+  dt <- read.table(infn)
+
+  base_infn = basename(infn)
+  outfn = sprintf("%s/%s.jpg", outdir, base_infn)
+
+  fig.34c.venn.plot(dt$V1, outfn)
 }
 
 

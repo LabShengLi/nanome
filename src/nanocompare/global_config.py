@@ -32,7 +32,7 @@ if sys.platform == 'linux':  # Linux helix dir config
     results_dir = "/projects/li-lab/yang/results"  # temp output base
     project_base_dir = "/projects/li-lab/yang/workspace/nano-compare"  # project base
     data_base_dir = os.path.join(project_base_dir, 'data')  # all used data base
-    prjsrc_base_dir = os.path.join(project_base_dir, 'src')  # source code base
+    src_base_dir = os.path.join(project_base_dir, 'src')  # source code base
     pkl_base_dir = '/projects/liuya/results/pkl'  # will deprecated later
 
     results_base_dir = '/projects/li-lab/Nanopore_compare/result'

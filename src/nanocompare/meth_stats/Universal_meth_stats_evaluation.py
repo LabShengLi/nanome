@@ -79,6 +79,8 @@ if __name__ == '__main__':
 
     bgTruth = import_bgtruth(fn, encode, cov=bgtruth_cov_cutoff, baseFormat=baseFormat, includeCov=True)
 
+
+
     relateCoord = list(narrowCoord)  # copy the basic coordinate
 
     ## add missing region files:

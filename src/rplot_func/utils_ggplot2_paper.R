@@ -19,6 +19,9 @@ cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2"
 ToolColorPal <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442")
 ToolShapeList <- c(0, 1, 2, 3, 4, 5)
 
+venn_flist = c('venn.data.HL60.dat', 'venn.data.K562.dat', 'venn.data.APL.dat')
+
+
 printf <- function(...) cat(sprintf(...))
 
 load.performance.data <- function(infn) {
@@ -132,4 +135,57 @@ fig.34a.bar.dataset.location.performance <- function(df, dsname, perf.pair, bdir
   outfn = sprintf("%s/fig.34a.bar.dataset.%s.%s.jpg", bdir, dsname, perf.pair[1])
   ggsave(filename = outfn, width = 10, height = 4, scale = scale, dpi = 600)
   printf("save to %s\n", outfn)
+}
+
+
+fig.34c.venn.plot <- function(ret, outfn) {
+
+  graphics.off()
+
+  venn.plot <- draw.quintuple.venn(
+    area1 = ret[1],
+    area2 = ret[2],
+    area3 = ret[3],
+    area4 = ret[4],
+    area5 = ret[5],
+    n12 = ret[6],
+    n13 = ret[7],
+    n14 = ret[8],
+    n15 = ret[9],
+    n23 = ret[10],
+    n24 = ret[11],
+    n25 = ret[12],
+    n34 = ret[13],
+    n35 = ret[14],
+    n45 = ret[15],
+    n123 = ret[16],
+    n124 = ret[17],
+    n125 = ret[18],
+    n134 = ret[19],
+    n135 = ret[20],
+    n145 = ret[21],
+    n234 = ret[22],
+    n235 = ret[23],
+    n245 = ret[24],
+    n345 = ret[25],
+    n1234 = ret[26],
+    n1235 = ret[27],
+    n1245 = ret[28],
+    n1345 = ret[29],
+    n2345 = ret[30],
+    n12345 = ret[31],
+    category = Tool.Order,
+    fill = ToolColorPal[1:5],
+    cat.col = ToolColorPal[1:5],
+    cat.pos = c(0, 2, 8, 3, 11),
+    cat.dist = c(0.20, 0.22, -0.17, -0.18, 0.22),
+    cat.cex = 2,
+    margin = 0.05,
+    cex = c(1.5, 1.5, 1.5, 1.5, 1.5, 1, 0.8, 1, 0.8, 1, 0.8, 1, 0.8, 1, 0.8,
+            1, 0.55, 1, 0.55, 1, 0.55, 1, 0.55, 1, 0.55, 1, 1, 1, 1, 1, 1.5),
+    ind = TRUE
+  );
+
+  ggsave(venn.plot, file = outfn, dpi = 600)
+  printf('save to %s', outfn)
 }
