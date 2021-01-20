@@ -1,4 +1,5 @@
 library(ggplot2)
+library(VennDiagram)
 library(data.table)
 
 locations.Singletons = c("Singleton", "Nonsingleton", "Discordant", "Concordant")
@@ -24,6 +25,7 @@ venn_flist = c('venn.data.HL60.dat', 'venn.data.K562.dat', 'venn.data.APL.dat')
 
 printf <- function(...) cat(sprintf(...))
 
+
 load.performance.data <- function(infn) {
   # Load data and sort string orders
   df <- read.csv(file = infn)
@@ -38,6 +40,7 @@ load.performance.data <- function(infn) {
   df$Dataset <- factor(df$Dataset, levels = Dataset.Order)
   return(df)
 }
+
 
 fig.34a.bar.plot.performance <- function(df, perf.measure = 'Accuracy', locations = locations.Singletons, bdir, figsize = c(5.8, 4), scale = 0.65) {
   #Select data in locations
@@ -56,6 +59,7 @@ fig.34a.bar.plot.performance <- function(df, perf.measure = 'Accuracy', location
   printf("save to %s\n", outfn)
 }
 
+
 fig.34a.bar.plot1d.performance <- function(df, perf.measure = 'Accuracy', locations = locations.Singletons, bdir, figsize = c(5.8, 4), scale = 0.65) {
   sel_data = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', 'Accuracy')]
 
@@ -70,6 +74,7 @@ fig.34a.bar.plot1d.performance <- function(df, perf.measure = 'Accuracy', locati
   ggsave(filename = outfn, width = 10, height = 4, dpi = 600, limitsize = FALSE)
 
 }
+
 
 fig.34a.scatter.plot.performance <- function(df, measure.pair, locations, bdir, scale = 0.75) {
   # Select data, transfer wide to long format
@@ -114,9 +119,10 @@ fig.34a.line.plot.performance <- function(df, perf.measure, locations, bdir, sca
     theme(strip.text.x = element_text(size = 12))
 
   outfn = sprintf("%s/fig.34a.line.%s.%s.jpg", bdir, perf.measure, locations[1])
-  ggsave(filename = outfn, width = 6.5, height = 4, scale = scale, dpi = 600)
+  ggsave(filename = outfn, width = 6.5, height = 6, scale = scale, dpi = 600)
   printf("save to %s\n", outfn)
 }
+
 
 fig.34a.bar.dataset.location.performance <- function(df, dsname, perf.pair, bdir, scale = 1) {
   sel_data = df[df$Dataset == dsname, c('Dataset', 'Tool', 'Location', perf.pair)]

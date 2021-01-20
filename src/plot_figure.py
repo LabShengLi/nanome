@@ -863,8 +863,8 @@ def parse_arguments():
 def plot_performance_curves(ret, outdir, tagname="tagname"):
     figure_size = (4, 4)
 
-    title_font_size = 16
-    label_font_size = 14
+    title_font_size = 18
+    label_font_size = 16
 
     plt.clf()
     plt.figure(figsize=figure_size)
@@ -905,7 +905,7 @@ def plot_performance_curves(ret, outdir, tagname="tagname"):
     plt.xlabel('Recall', fontsize=label_font_size)
     plt.ylabel('Precision', fontsize=label_font_size)
     plt.ylim([0.0, 1.05])
-    plt.title('Precision-Recall curve', fontsize=title_font_size)
+    plt.title('Precision-Recall Curves', fontsize=title_font_size)
 
     outfn = os.path.join(outdir, f'{tagname}.pr.curves.jpg')
     plt.savefig(outfn, format='png', bbox_inches='tight', dpi=600)

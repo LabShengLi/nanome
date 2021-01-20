@@ -16,6 +16,7 @@ importlib.reload(pp)
 humanChrs = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
 
 ToolNameList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon']
+Top3ToolNameList = ['DeepSignal', 'Nanopolish', 'Megalodon']
 
 # ToolsColorList = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal'])
 

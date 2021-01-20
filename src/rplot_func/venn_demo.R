@@ -76,3 +76,21 @@ outfn = sprintf("%s/ven-demo.pdf", bdir)
 ggsave(venn.plot, file = outfn, dpi = 600)
 
 printf('save to %s', outfn)
+
+
+
+venn.plot <- draw.triple.venn(
+	area1 = 65,
+	area2 = 75,
+	area3 = 85,
+	n12 = 35,
+	n23 = 15,
+	n13 = 25,
+	n123 = 5,
+	category = c("First", "Second", "Third"),
+	fill = c("blue", "red", "green"),
+	lty = "blank",
+	cex = 2,
+	cat.cex = 2,
+	cat.col = c("blue", "red", "green")
+	);
