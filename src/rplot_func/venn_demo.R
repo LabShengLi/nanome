@@ -15,7 +15,7 @@ for (fn in venn_flist) {
   base_infn = basename(infn)
   outfn = sprintf("%s/%s.jpg", outdir, base_infn)
 
-  fig.34c.venn.plot(dt$V1, outfn)
+  fig.34c.venn.plot.set5(dt$V1, outfn)
 }
 
 
@@ -78,19 +78,48 @@ ggsave(venn.plot, file = outfn, dpi = 600)
 printf('save to %s', outfn)
 
 
+library(eulerr)
+
+# Input in the form of a named numeric vector
+fit1 <- euler(c("A" = 25, "B" = 5, "C" = 5,
+                "A&B" = 5, "A&C" = 5, "B&C" = 3,
+                "A&B&C" = 3))
+
+
+ret = dt$V1
+fit1 <- euler(c("A" = ret[1], "B" = ret[2], "C" = ret[3],
+                "A&B" = ret[4], "A&C" = ret[5], "B&C" = ret[6],
+                "A&B&C" = ret[7]), input = 'union', shape = 'circle')
+
+
+gp <- plot(fit1,
+           quantities = list(type = c("counts", "percent"),
+                             font = 1, round = 2, cex = 1),
+           labels = NULL,
+           pal = Top3.ToolColorPal,
+           fills = Top3.ToolColorPal,
+           alpha = 0.5,
+           fill_opacity = 0.5,
+           edges = list(lty = 1),
+           main = 'Title',
+           counts = TRUE,
+           legend = list(labels = Top3.Tool.Order, cex = 1.5)
+)
+
+ggsave(gp, file = 'test-euller.jpg', dpi = 600)
 
 venn.plot <- draw.triple.venn(
-	area1 = 65,
-	area2 = 75,
-	area3 = 85,
-	n12 = 35,
-	n23 = 15,
-	n13 = 25,
-	n123 = 5,
-	category = c("First", "Second", "Third"),
-	fill = c("blue", "red", "green"),
-	lty = "blank",
-	cex = 2,
-	cat.cex = 2,
-	cat.col = c("blue", "red", "green")
-	);
+  area1 = 65,
+  area2 = 75,
+  area3 = 85,
+  n12 = 35,
+  n23 = 15,
+  n13 = 25,
+  n123 = 5,
+  category = c("First", "Second", "Third"),
+  fill = c("blue", "red", "green"),
+  lty = "blank",
+  cex = 2,
+  cat.cex = 2,
+  cat.col = c("blue", "red", "green")
+);

@@ -11,7 +11,7 @@ All usedful functions are located in nanocompare.meth_stats.meth_stats_common
 import argparse
 import subprocess
 
-from nanocompare.global_settings import get_tool_name, Top3ToolNameList
+from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList
 from nanocompare.meth_stats.meth_stats_common import *
 
 
@@ -250,13 +250,14 @@ if __name__ == '__main__':
     cpg_set_dict = defaultdict()
     for callname in ToolNameList:
         cpg_set_dict[callname] = set(callresult_dict[callname][1].keys()).intersection(set(bgTruth.keys()))
-    gen_venn_data(cpg_set_dict, namelist=ToolNameList, outdir=out_dir, tagname=f'{args.dsname}.with.bgtruth')
+    gen_venn_data(cpg_set_dict, namelist=ToolNameList, outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.with.bgtruth')
 
+    logger.info(f"Start gen venn data for TOP3 tools (cov>={minToolCovCutt})")
     # Study top3 tool's venn data, no join with bgtruth
-    cpg_set_dict = defaultdict()
+    top3_cpg_set_dict = defaultdict()
     for callname in Top3ToolNameList:
-        cpg_set_dict[callname] = set(callresult_dict[callname][1].keys())
-    gen_venn_data(cpg_set_dict, namelist=Top3ToolNameList, outdir=out_dir, tagname=f'{args.dsname}.top3')
+        top3_cpg_set_dict[callname] = set(callresult_dict[callname][1].keys())
+    gen_venn_data(top3_cpg_set_dict, namelist=Top3ToolNameList, outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.top3')
 
     logger.info(f"Start set intersection with all tools joined together with bgtruth")
 

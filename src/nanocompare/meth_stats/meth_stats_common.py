@@ -22,7 +22,7 @@ from sklearn.metrics import roc_curve, auc, average_precision_score, f1_score, p
 from tqdm import tqdm
 
 from nanocompare.global_config import *
-from nanocompare.global_settings import humanChrs, ToolNameList
+from nanocompare.global_settings import humanChrs
 
 
 def report2dict(cr):
@@ -2705,23 +2705,23 @@ def compare_cpg_key(item1, item2):
     return 0
 
 
-def gen_venn_data(cpg_set_tools_dict, outdir, namelist=ToolNameList, tagname='tagname'):
+def gen_venn_data(set_dict, namelist, outdir, tagname='tagname'):
     """
-    Generate 31 data for five set joining Venn Diagram plotting
-    :param cpg_set_tools_dict:
+    Generate 7 data for three set or 31 data for five set joining Venn Diagram plotting
+    :param set_dict:
     :param outdir:
     :param tagname:
     :return:
     """
     retlist = []
-    for k in range(len(cpg_set_tools_dict)):
-        for combin in combinations(list(range(len(cpg_set_tools_dict))), k):
-            join_set = set(cpg_set_tools_dict[namelist[combin[0]]])
+    for k in range(len(set_dict)):
+        for combin in combinations(namelist, k + 1):
+            join_set = set(set_dict[combin[0]])
             for t in range(1, len(combin)):
-                join_set = join_set.intersection(cpg_set_tools_dict[namelist[combin[t]]])
+                join_set = join_set.intersection(set_dict[combin[t]])
             retlist.append(len(join_set))
-    # if len(retlist) != 31:
-    #     raise Exception(f'five set need to have combinations 31, but get cnt={len(retlist)}, code bugs.')
+    if (len(namelist) == 5 and len(retlist) != 31) or (len(namelist) == 3 and len(retlist) != 7):
+        raise Exception(f'Number of set need to have combinations corresponding, but get cnt={len(retlist)} for set number={len(namelist)}, code bugs.')
 
     outfn = os.path.join(outdir, f'venn.data.{tagname}.dat')
     with open(outfn, 'w') as outf:

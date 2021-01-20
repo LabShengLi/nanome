@@ -14,6 +14,38 @@ outdir = here('figures')
 infn = here('result', 'performance-results.csv')
 df <- load.performance.data(infn)
 
+## Set venn and euller plot
+source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
+data_dir = here('result', 'venn-data')
+out_dir = here('figures', 'venn-plot')
+dir.create(out_dir, showWarnings = FALSE)
+for (venfn in list.files(data_dir, 'venn.data.*.dat')) {
+  infn = here('result', 'venn-data', venfn)
+  dt <- read.table(infn)
+  base_infn = basename(infn)
+
+  if (length(dt$V1) == 31) {
+    outfn = sprintf("%s/venn.plot.%s.jpg", out_dir, base_infn)
+    fig.34c.venn.plot.set5(dt$V1, outfn)
+  }else if (length(dt$V1) == 7) {
+    outfn1 = sprintf("%s/venn.plot.%s.jpg", out_dir, base_infn)
+    fig.34c.venn.plot.set3(dt$V1, outfn1)
+    outfn2 = sprintf("%s/euller.plot.%s.jpg", out_dir, base_infn)
+    fig.34c.euller.plot.set3(dt$V1, outfn2)
+    #break
+  }
+  #break
+}
+
+
+## Box plot
+for (perf.measure in measure.list) {
+  fig.34a.box.location.performance(df, perf.measure, bdir = outdir, locations = locations.Singletons)
+  fig.34a.box.location.performance(df, perf.measure, bdir = outdir, locations = locations.Genome)
+  #break
+}
+
+
 ## Figure 3, 4 a:Bar plot
 source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
 
@@ -43,7 +75,7 @@ for (fn in venn_flist) {
   base_infn = basename(infn)
   outfn = sprintf("%s/%s.jpg", outdir, base_infn)
 
-  fig.34c.venn.plot(dt$V1, outfn)
+  fig.34c.venn.plot.set5(dt$V1, outfn)
 }
 
 

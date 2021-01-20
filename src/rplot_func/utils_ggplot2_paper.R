@@ -1,6 +1,7 @@
 library(ggplot2)
 library(VennDiagram)
 library(data.table)
+library(eulerr)
 
 locations.Singletons = c("Singleton", "Nonsingleton", "Discordant", "Concordant")
 locations.Genome = c("Genomewide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns")
@@ -9,16 +10,19 @@ Dataset.Order = c('APL', 'HL60', 'K562')
 Tool.Order = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon')
 
 measure.pair.list = list(c('Accuracy', 'Micro.F1'), c('Accuracy', 'ROC.AUC'), c('Micro.Precision', 'Micro.Recall'), c('F1_5mC', 'F1_5C'), c('Macro.Precision', 'Macro.Recall'))
-
 measure.list = c('Accuracy', 'ROC.AUC', 'Micro.F1', 'Macro.F1', 'Average.Precision', 'Micro.Precision', 'Micro.Recall', 'Macro.Precision', 'Macro.Recall')
 
 # The palette with grey:
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 # The palette with black:
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-
 ToolColorPal <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442")
+
 ToolShapeList <- c(0, 1, 2, 3, 4, 5)
+
+Top3.Tool.Index = c(1, 3, 5)
+Top3.Tool.Order = Tool.Order[Top3.Tool.Index]
+Top3.ToolColorPal <- ToolColorPal[Top3.Tool.Index]
 
 venn_flist = c('venn.data.HL60.dat', 'venn.data.K562.dat', 'venn.data.APL.dat')
 
@@ -144,10 +148,8 @@ fig.34a.bar.dataset.location.performance <- function(df, dsname, perf.pair, bdir
 }
 
 
-fig.34c.venn.plot <- function(ret, outfn) {
-
+fig.34c.venn.plot.set5 <- function(ret, outfn) {
   graphics.off()
-
   venn.plot <- draw.quintuple.venn(
     area1 = ret[1],
     area2 = ret[2],
@@ -194,4 +196,81 @@ fig.34c.venn.plot <- function(ret, outfn) {
 
   ggsave(venn.plot, file = outfn, dpi = 600)
   printf('save to %s', outfn)
+}
+
+
+fig.34c.venn.plot.set3 <- function(ret, outfn) {
+  graphics.off()
+  venn.plot <- draw.triple.venn(
+    area1 = ret[1],
+    area2 = ret[2],
+    area3 = ret[3],
+    n12 = ret[4],
+    n23 = ret[6],
+    n13 = ret[5],
+    n123 = ret[7],
+    category = Top3.Tool.Order,
+    fill = Top3.ToolColorPal,
+    lty = "blank",
+    cex = 2,
+    cat.cex = c(3, 3, 3),
+    cat.col = Top3.ToolColorPal,
+    ind = FALSE,
+    cat.pos = c(-20, 20, 180),
+    print.mode = c("raw", "percent"),
+    fontfamily = rep("Times New Roman", 7),
+    cat.fontfamily = rep("Times New Roman", 3),
+    euler.d = TRUE, scaled = TRUE
+  );
+
+  #print("Add title")
+  #require(gridExtra)
+  #grid.arrange(gTree(children = venn.plot), top = basename(outfn))
+
+  #print(venn.plot)
+
+  ggsave(venn.plot, file = outfn, dpi = 600)
+  printf('save to %s', outfn)
+}
+
+
+fig.34c.euller.plot.set3 <- function(ret, outfn) {
+  graphics.off()
+
+  fit1 <- euler(c("A" = ret[1], "B" = ret[2], "C" = ret[3],
+                  "A&B" = ret[4], "A&C" = ret[5], "B&C" = ret[6],
+                  "A&B&C" = ret[7]), input = 'union', shape = 'circle')
+  gp <- plot(fit1,
+             quantities = list(type = c("counts"),
+                               font = 1, round = 2, cex = 0.6),
+             labels = identical(legend, FALSE),
+             fills = Top3.ToolColorPal,
+             alpha = 0.5,
+             fill_opacity = 0.5,
+             edges = list(lty = 1),
+             #main = basename(outfn),
+             counts = TRUE,
+             legend = list(labels = Top3.Tool.Order, cex = 0.5,
+                           colors = Top3.ToolColorPal, alpha = 1, side = 'top', ncol = 3, nrow = 1),
+             adjust_labels = TRUE,
+             pal = Top3.ToolColorPal,
+  )
+  ggsave(gp, file = outfn, dpi = 600, width = 3, height = 2)
+}
+
+
+fig.34a.box.location.performance <- function(df, perf.measure, locations, bdir, scale = 1) {
+  sel_data = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', perf.measure)]
+
+  ggplot(sel_data, aes_string(x = 'Tool', y = perf.measure, fill = 'Tool')) +
+    #geom_violin() +
+    geom_boxplot() +
+    facet_grid(~Location) +
+    scale_fill_manual(values = ToolColorPal) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10))
+
+  outfn = sprintf("%s/fig.34a.box.perfmeasure.%s.%s.jpg", bdir, perf.measure, locations[1])
+  ggsave(filename = outfn, width = 7.5, height = 3, scale = scale, dpi = 600)
+  printf("save to %s\n", outfn)
+
 }
