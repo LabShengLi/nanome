@@ -1011,7 +1011,7 @@ if __name__ == '__main__':
             logger.info(f'For runPrefix={runPrefix} at dir={bdir}, total files={cnt}')
     elif args.cmd == 'plot-curve-data':
         ## find /projects/li-lab/Nanopore_compare/result/plot-curve-data -name '*.pkl' -exec python plot_figure.py plot-curve-data -i {} \;
-        outdir = os.path.join(args.o, 'curves-figures')
+        outdir = os.path.join(args.o, f'curves-figures{f"-{args.tagname}" if args.tagname else ""}')
         os.makedirs(outdir, exist_ok=True)
         for fn in args.i:
             logger.debug(f'Plot data from fn={fn}')

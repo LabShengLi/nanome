@@ -11,7 +11,7 @@ Tool.Order = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon')
 
 measure.pair.list = list(c('Accuracy', 'Micro.F1'), c('Accuracy', 'ROC.AUC'), c('Micro.Precision', 'Micro.Recall'), c('F1_5mC', 'F1_5C'), c('Macro.Precision', 'Macro.Recall'))
 measure.list = c('Accuracy', 'ROC.AUC', 'Micro.F1', 'Macro.F1', 'Average.Precision', 'Micro.Precision', 'Micro.Recall', 'Macro.Precision', 'Macro.Recall')
-
+Corr.Perf.List = c('Corr_All', 'Corr_Mix')
 # The palette with grey:
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 # The palette with black:
@@ -256,6 +256,25 @@ fig.34c.euller.plot.set3 <- function(ret, outfn) {
              pal = Top3.ToolColorPal,
   )
   ggsave(gp, file = outfn, dpi = 600, width = 3, height = 2)
+}
+
+
+fig.34a.violin.corr.performance <- function(df, corr.perf, bdir, scale = 1) {
+  graphics.off()
+  ggplot(df, aes_string(x = 'Tool', y = corr.perf, fill = 'Tool')) +
+    geom_violin() +
+    scale_fill_manual(values = ToolColorPal) +
+    geom_jitter(shape = 16, position = position_jitter(0.2), size = 0.5) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1.2, size = 10)) +
+    theme(legend.title = element_text(size = 8), legend.text = element_text(size = 8)) +
+    theme(legend.position = "top") +
+    guides(fill = guide_legend(ncol = 3, nrow = 2, byrow = TRUE))
+  #scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  #NULL
+
+  outfn = sprintf("%s/fig.34a.violin.corr.%s.jpg", bdir, corr.perf)
+  ggsave(filename = outfn, width = 3.5, height = 3.5, scale = scale, dpi = 600)
+  printf("save to %s\n", outfn)
 }
 
 

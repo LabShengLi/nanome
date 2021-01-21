@@ -14,6 +14,14 @@ outdir = here('figures')
 infn = here('result', 'performance-results.csv')
 df <- load.performance.data(infn)
 
+## Test
+source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
+
+for (corr_col in Corr.Perf.List) {
+  fig.34a.violin.corr.performance (df, corr_col, outdir, scale = 1)
+}
+
+
 ## Set venn and euller plot
 source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
 data_dir = here('result', 'venn-data')
@@ -58,10 +66,12 @@ for (measure.pair in measure.pair.list) {
 
 ## Figure 3, 4 a:Line plot
 source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
+out_dir = here('figures', 'line-plot-CPG')
+dir.create(out_dir, showWarnings = FALSE)
 
 for (perf.measure in measure.list) {
-  fig.34a.line.plot.performance(df, perf.measure, bdir = outdir, locations = locations.Singletons)
-  fig.34a.line.plot.performance(df, perf.measure, bdir = outdir, locations = locations.Genome)
+  fig.34a.line.plot.performance(df, perf.measure, bdir = out_dir, locations = locations.Singletons)
+  fig.34a.line.plot.performance(df, perf.measure, bdir = out_dir, locations = locations.Genome)
   #break
 }
 
