@@ -856,6 +856,8 @@ def parse_arguments():
     parser.add_argument("cmd", help="name of command, lung or lesion")
     parser.add_argument('-i', nargs='+', help='list of input files', default=[])
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
+    parser.add_argument('--tagname', type=str, help="tagname of files", default=None)
+
     args = parser.parse_args()
     return args
 
@@ -942,15 +944,24 @@ if __name__ == '__main__':
         gen_figure_5a()
     elif args.cmd == 'export-data':
         # using global setting variable runPrefixDict to locate all data
-        save_wide_format_performance_results(runPrefixDict, args.o)
+        ## python plot_figure.py export-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-APL_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS_CPG --tagname CPG
+        if len(args.i) == 0:
+            run_prefix = runPrefixDict
+        else:
+            run_prefix = defaultdict()
+            for dirname in args.i:
+                run_prefix[os.path.basename(dirname)] = dirname
+        save_wide_format_performance_results(run_prefix, args.o, args.tagname)
         df = collect_singleton_vs_nonsingleton_df(runPrefixDict)
         # logger.debug(df)
-        outfn = os.path.join(args.o, 'dataset.singleton.vs.non-singleton.csv')
+        outfn = os.path.join(args.o, f'dataset.singleton.vs.non-singleton{f"-{args.tagname}" if args.tagname else ""}.csv')
         df.to_csv(outfn)
         logger.info(f'save stats of singleton and non-singleton to {outfn}')
     elif args.cmd == 'export-curve-data':
         ## python plot_figure.py export-curve-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS
-        outdir = os.path.join(args.o, 'plot-curve-data')
+
+        ## python plot_figure.py export-curve-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-APL_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS_CPG --tagname CPG
+        outdir = os.path.join(args.o, f'plot-curve-data{f"-{args.tagname}" if args.tagname else ""}')
         os.makedirs(outdir, exist_ok=True)
 
         if len(args.i) == 0:

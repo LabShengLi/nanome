@@ -473,13 +473,13 @@ def load_wide_format_performance_results(runPrefixDict, sel_locations=locations_
     return seldf
 
 
-def save_wide_format_performance_results(runPrefixDict, outdir):
+def save_wide_format_performance_results(runPrefixDict, outdir, tagname):
     """
     Save all performance report results into a csv
     :return:
     """
     df = load_wide_format_performance_results(runPrefixDict)
-    outfn = os.path.join(outdir, 'performance-results.csv')
+    outfn = os.path.join(outdir, f'performance-results{f"-{tagname}" if tagname else ""}.csv')
     df.to_csv(outfn)
     logger.info(f'save to {outfn}')
 
