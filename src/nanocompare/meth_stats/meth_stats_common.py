@@ -22,7 +22,7 @@ from sklearn.metrics import roc_curve, auc, average_precision_score, f1_score, p
 from tqdm import tqdm
 
 from nanocompare.global_config import *
-from nanocompare.global_settings import humanChrs
+from nanocompare.global_settings import humanChrs, ToolEncodeList, BGTruthEncodeList
 
 
 def report2dict(cr):
@@ -2611,39 +2611,90 @@ def filter_non_human_chrs(cpgDict):
     return retDict
 
 
-def import_call(infn, callname, baseFormat=0, include_score=False, deepmod_cluster_freq_cov_format=True):
+def get_cache_filename(infn, params):
+    basefn = os.path.basename(infn)
+    cachefn = f'cachefile.{basefn}.encode.{params["encode"]}.base.{params["baseFormat"]}'
+
+    if params["encode"] in ToolEncodeList:
+        cachefn += f'.inscore.{params["include_score"]}'
+        if params["encode"] == 'DeepMod.Cluster':
+            cachefn += f'.deepmod_cluster_cov.{params["deepmod_cluster_freq_cov_format"]}'
+    elif params["encode"] in BGTruthEncodeList:
+        cachefn += f'.cov.{params["cov"]}.incov.{params["includeCov"]}'
+    else:
+        raise Exception(f'Encode {params["encode"]} is not support now')
+    cachefn = os.path.join(cache_dir, cachefn + '.pkl')
+    return cachefn
+
+
+def save_to_cache(infn, data, **params):
+    if not data:
+        return
+    # logger.debug(f'infn={infn}, data={len(data)}, params={params}')
+    cache_fn = get_cache_filename(infn, params)
+    with open(cache_fn, 'wb') as outf:
+        pickle.dump(data, outf)
+    logger.debug(f'Cached to file:{cache_fn}')
+
+
+def check_cache_available(infn, **params):
+    cachefn = get_cache_filename(infn, params)
+
+    if os.path.exists(cachefn):
+        try:
+            with open(cachefn, 'rb') as inf:
+                ret = pickle.load(inf)
+                logger.info(f'Get from cache:{cachefn}')
+            return ret
+        except:
+            return None
+
+    return None
+
+
+def import_call(infn, encode, baseFormat=0, include_score=False, deepmod_cluster_freq_cov_format=True, enable_cache=False, using_cache=False):
     """
     Import fn based on callname and return key=(chr, start, strand) -> value=[0 0 1 1 1 1 ]
 
     If include_score=True, then value= (0, score)
         call0   -   original results
     :param infn:
-    :param callname:
+    :param encode:
     :return:
     """
-    logger.debug(f"Start load {callname}")
-    if callname == 'DeepSignal':
+    logger.debug(f"Start load {encode}")
+
+    if enable_cache and using_cache:
+        ret = check_cache_available(infn=infn, encode=encode, baseFormat=baseFormat, include_score=include_score, deepmod_cluster_freq_cov_format=deepmod_cluster_freq_cov_format)
+        if ret:
+            return ret
+        logger.debug(f'Not cached yet, we load from raw file')
+    call0 = None
+    if encode == 'DeepSignal':
         calls0 = importPredictions_DeepSignal(infn, baseFormat=baseFormat, include_score=include_score)
-    elif callname == 'Tombo':
+    elif encode == 'Tombo':
         calls0 = importPredictions_Tombo(infn, baseFormat=baseFormat, include_score=include_score)
-    elif callname == 'Nanopolish':
+    elif encode == 'Nanopolish':
         calls0 = importPredictions_Nanopolish(infn, baseFormat=baseFormat, llr_cutoff=2.0, include_score=include_score)
-    elif callname == 'DeepMod':
+    elif encode == 'DeepMod':
         calls0 = importPredictions_DeepMod_Read_Level(infn, baseFormat=baseFormat, include_score=include_score)
-    elif callname == 'Megalodon':
+    elif encode == 'Megalodon':
         calls0 = importPredictions_Megalodon_Read_Level(infn, baseFormat=baseFormat, include_score=include_score)
-    elif callname == 'DeepMod.Cluster':  # import DeepMod itself tool reports by cluster, key->value={'freq':68, 'cov':10}
+    elif encode == 'DeepMod.Cluster':  # import DeepMod itself tool reports by cluster, key->value={'freq':68, 'cov':10}
         calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat, as_freq_cov_format=deepmod_cluster_freq_cov_format, include_score=include_score)
-    elif callname == 'DeepMod.C':  # import DeepMod itself tool
+    elif encode == 'DeepMod.C':  # import DeepMod itself tool
         calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, include_score=include_score)
     else:
-        raise Exception(f'Not support {callname} for file {infn} now')
+        raise Exception(f'Not support {encode} for file {infn} now')
 
-    logger.debug(f'Import {callname} finished!\n')
+    if enable_cache:
+        save_to_cache(infn, calls0, encode=encode, baseFormat=baseFormat, include_score=include_score, deepmod_cluster_freq_cov_format=deepmod_cluster_freq_cov_format)
+
+    logger.debug(f'Import {encode} finished!\n')
     return calls0
 
 
-def import_bgtruth(infn, encode, cov=10, baseFormat=0, includeCov=True):
+def import_bgtruth(infn, encode, cov=10, baseFormat=0, includeCov=True, enable_cache=False, using_cache=False):
     """
     Import bgtruth from file fn using encode, when use new dataset, MUST check input file start baseFormat and import functions are consistent!!!
     :param infn:
@@ -2651,6 +2702,12 @@ def import_bgtruth(infn, encode, cov=10, baseFormat=0, includeCov=True):
     :param includeCov:  return [freq, cov] as value of each key=(chr, (int)start, strand)
     :return:
     """
+    if enable_cache and using_cache:
+        ret = check_cache_available(infn, encode=encode, cov=10, baseFormat=0, includeCov=True)
+        if ret:
+            return ret
+        logger.debug(f'Not cached yet, we load from raw file')
+
     if encode == "encode":  # not used now, function need to check if use
         bgTruth = importGroundTruth_BedMethyl_from_Encode(infn, covCutt=cov, baseCount=baseFormat)
     elif encode == "oxBS_sudo":  # not used now, function need to check if use
@@ -2667,6 +2724,10 @@ def import_bgtruth(infn, encode, cov=10, baseFormat=0, includeCov=True):
         raise Exception(f"encode={encode} is not supported yet, for inputfile={infn}")
 
     logger.debug(f'Import BG-Truth finished!\n')
+
+    if enable_cache:
+        save_to_cache(infn, bgTruth, encode=encode, cov=10, baseFormat=0, includeCov=True)
+
     return bgTruth
 
 

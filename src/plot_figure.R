@@ -36,11 +36,11 @@ for (venfn in list.files(data_dir, 'venn.data.*.dat')) {
     outfn = sprintf("%s/venn.plot.%s.jpg", out_dir, base_infn)
     fig.34c.venn.plot.set5(dt$V1, outfn)
   }else if (length(dt$V1) == 7) {
-    outfn1 = sprintf("%s/venn.plot.%s.jpg", out_dir, base_infn)
-    fig.34c.venn.plot.set3(dt$V1, outfn1)
+    #outfn1 = sprintf("%s/venn.plot.%s.jpg", out_dir, base_infn)
+    #fig.34c.venn.plot.set3(dt$V1, outfn1)
     outfn2 = sprintf("%s/euller.plot.%s.jpg", out_dir, base_infn)
     fig.34c.euller.plot.set3(dt$V1, outfn2)
-    break
+    #break
   }
   #break
 }

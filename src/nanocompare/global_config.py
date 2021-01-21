@@ -36,6 +36,7 @@ if sys.platform == 'linux':  # Linux helix dir config
     pkl_base_dir = '/projects/liuya/results/pkl'  # will deprecated later
 
     results_base_dir = '/projects/li-lab/Nanopore_compare/result'
+    cache_dir = '/fastscratch/liuya/nanocompare/cache_dir'
 
     import platform
 

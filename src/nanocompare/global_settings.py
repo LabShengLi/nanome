@@ -18,6 +18,8 @@ humanChrs = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
 ToolNameList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon']
 Top3ToolNameList = ['DeepSignal', 'Nanopolish', 'Megalodon']
 
+ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'DeepMod.C', 'DeepMod.Cluster', 'Megalodon']
+BGTruthEncodeList = ['bed', 'bismark']
 # ToolsColorList = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal'])
 
 ToolsColorList = ["#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442"]

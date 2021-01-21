@@ -187,14 +187,14 @@ fig.34c.venn.plot.set5 <- function(ret, outfn) {
     cat.col = ToolColorPal[1:5],
     cat.pos = c(0, 2, 8, 3, 11),
     cat.dist = c(0.20, 0.22, -0.17, -0.18, 0.22),
-    cat.cex = 2,
+    cat.cex = 1.8,
     margin = 0.05,
     cex = c(1.5, 1.5, 1.5, 1.5, 1.5, 1, 0.8, 1, 0.8, 1, 0.8, 1, 0.8, 1, 0.8,
             1, 0.55, 1, 0.55, 1, 0.55, 1, 0.55, 1, 0.55, 1, 1, 1, 1, 1, 1.5),
     ind = TRUE
   );
 
-  ggsave(venn.plot, file = outfn, dpi = 600)
+  ggsave(venn.plot, file = outfn, width = 5, height = 5, dpi = 600)
   printf('save to %s', outfn)
 }
 

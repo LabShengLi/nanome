@@ -92,7 +92,7 @@ elif [ "${Tool}" = "DeepMod" ] ; then
 	rm -f ${methCallsDir}/*.C.bed
 
 	#Summarize bed results
-	time python deepmod_sum_chr_mod.py ${methCallsDir}/ C ${dsname}.deepmod
+	time python ${DeepModDir}/DeepMod_tools/sum_chr_mod.py ${methCallsDir}/ C ${dsname}.deepmod
 
 	## Step: Output C in CpG motifs in a genome, i.e. CpG index in a human genome: (must be done only once per genome)
 	## TODO: check why only once, generate common file for all dataset used? CHeck results firstly running. DeepMod N70

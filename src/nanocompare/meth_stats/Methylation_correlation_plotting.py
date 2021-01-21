@@ -188,6 +188,9 @@ def parse_arguments():
     parser.add_argument('--toolcov-cutoff', type=int, help="cutoff of coverage in nanopore calls", default=3)
     parser.add_argument('--baseFormat', type=int, help="cutoff of coverage in nanopore calls", default=0)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
+    parser.add_argument('--enable-cache', action='store_true')
+    parser.add_argument('--using-cache', action='store_true')
+
     return parser.parse_args()
 
 
@@ -195,6 +198,12 @@ if __name__ == '__main__':
     set_log_debug_level()
 
     args = parse_arguments()
+
+    enable_cache = args.enable_cache
+    using_cache = args.using_cache
+
+    if enable_cache:
+        os.makedirs(cache_dir, exist_ok=True)
 
     RunPrefix = args.runid.replace('MethCorr-', '')
 
@@ -230,13 +239,13 @@ if __name__ == '__main__':
         callname = get_tool_name(callencode)
         callfn_dict[callname] = callfn
         callname_list.append(callname)
-        callresult_dict[callname] = [import_call(callfn, callencode, baseFormat=baseFormat)]
+        callresult_dict[callname] = [import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache)]
 
     logger.debug(callfn_dict)
     encode, fn = args.bgtruth.split(':')
 
     logger.debug(f'BGTruth fn={fn}, encode={encode}')
-    bgTruth = import_bgtruth(fn, encode, cov=bgtruthCutt, baseFormat=baseFormat)
+    bgTruth = import_bgtruth(fn, encode, cov=bgtruthCutt, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache)
 
     # Filter cov of nanopore tools
     for callname in callname_list:
@@ -245,19 +254,19 @@ if __name__ == '__main__':
     logger.debug(callfn_dict)
     logger.debug(callname_list)
 
-    logger.info(f"Start gen venn data for each tool (cov>={minToolCovCutt}) with bgtruth (cov>={bgtruthCutt})")
+    logger.info(f"Start gen venn data for each tool (cov>={minToolCovCutt}) with or without bgtruth (cov>={bgtruthCutt})")
     # Study five set venn data
     cpg_set_dict = defaultdict()
     for callname in ToolNameList:
-        cpg_set_dict[callname] = set(callresult_dict[callname][1].keys()).intersection(set(bgTruth.keys()))
-    gen_venn_data(cpg_set_dict, namelist=ToolNameList, outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.with.bgtruth')
+        cpg_set_dict[callname] = set(callresult_dict[callname][1].keys())  # .intersection(set(bgTruth.keys()))
+    gen_venn_data(cpg_set_dict, namelist=ToolNameList, outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.five.tools.cov{minToolCovCutt}')
 
     logger.info(f"Start gen venn data for TOP3 tools (cov>={minToolCovCutt})")
     # Study top3 tool's venn data, no join with bgtruth
     top3_cpg_set_dict = defaultdict()
     for callname in Top3ToolNameList:
         top3_cpg_set_dict[callname] = set(callresult_dict[callname][1].keys())
-    gen_venn_data(top3_cpg_set_dict, namelist=Top3ToolNameList, outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.top3')
+    gen_venn_data(top3_cpg_set_dict, namelist=Top3ToolNameList, outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.top3.cov{minToolCovCutt}')
 
     logger.info(f"Start set intersection with all tools joined together with bgtruth")
 
