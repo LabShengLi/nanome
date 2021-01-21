@@ -251,7 +251,7 @@ fig.34c.euller.plot.set3 <- function(ret, outfn) {
              #main = basename(outfn),
              counts = TRUE,
              legend = list(labels = Top3.Tool.Order, cex = 0.5,
-                           colors = Top3.ToolColorPal, alpha = 1, side = 'top', ncol = 3, nrow = 1),
+                           colors = Top3.ToolColorPal, alpha = 1, side = 'bottom', ncol = 3, nrow = 1, hgap = 0),
              adjust_labels = TRUE,
              pal = Top3.ToolColorPal,
   )

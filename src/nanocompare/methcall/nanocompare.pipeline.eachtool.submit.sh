@@ -15,7 +15,7 @@
 if [ "${run_methcall}" = true ] ; then
 	echo "Step4.1: methylation calling"
 
-	rm -rf ${methCallsDir}
+#	rm -rf ${methCallsDir}
 	mkdir -p ${methCallsDir}/log
 
 	# If previous step need to depend on
@@ -35,9 +35,11 @@ if [ "${run_methcall}" = true ] ; then
 	elif [ "${Tool}" = "DeepSignal" ] ; then
 		# DeepSignal methylation call pipeline
 		meth_arrayjob_ret=$(sbatch --job-name=dpsig.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.deepsignal.sh)
-	elif [ "${Tool}" = "DeepMod" ] ; then
+	elif [ "${Tool}" = "DeepMod" ] ; then # TODO: we use only 2 cores for speed up
 		# DeepSignal methylation call pipeline
-		meth_arrayjob_ret=$(sbatch --job-name=dpmod.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.deepmod.sh)
+#		meth_arrayjob_ret=$(sbatch --job-name=dpmod.mcal.${analysisPrefix} --ntasks=2 --output=${out_param} --error=${err_param} --array=147-${targetNum} --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.deepmod.sh)
+
+		meth_arrayjob_ret=$(sbatch --job-name=dpmod.mcal.${analysisPrefix} --ntasks=2 --output=${out_param} --error=${err_param} --array=41-43 --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.deepmod.sh)
 	elif [ "${Tool}" = "Nanopolish" ] ; then
 		# Nanopolish methylation call pipeline
 		meth_arrayjob_ret=$(sbatch --job-name=napol.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.nanopolish.sh)

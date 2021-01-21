@@ -1,11 +1,30 @@
 library(VennDiagram)
 library(ggplot2)
 library(here)
+library(eulerr)
 
 
-source(here('src', 'rplot_func', 'utils_ggplot2_paper.R'))
+source(here('src', 'rplot_func', 'paper_utils.R'))
 
 outdir = here('figures')
+
+
+fit1 <- euler(c("Day 1" = 69, "Day 2" = 109, "Day 3" = 152,
+                "Day 1&Day 2" = 11, "Day 1&Day 3" = 18, "Day 2&Day 3" = 28,
+                "Day 1&Day 2&Day 3" = 2), input = 'union', shape = 'ellipse')
+
+col <- c("#66D2D6", "#FBC740", "#E56997")
+
+plot(fit1,
+     #quantities = TRUE,
+     fills = list(fill = col, alpha = 0.6),
+     edges = "black",
+     quantities = list(type = c("counts", 'percent'), cex = 1.5),
+     #counts=list(cex=5),
+     main = list(label = "test", cex = 2),
+     legend = list(side = "bottom", nrow = 1, ncol = 3, vgap = 5, hgap=0.5),
+     adjust_labels = TRUE)
+
 
 # Venn diagram plot
 for (fn in venn_flist) {

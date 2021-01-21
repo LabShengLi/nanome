@@ -2,7 +2,7 @@
 #SBATCH --job-name=deepsignal.methcall
 #SBATCH --partition=compute
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 8 # number of cores
+#SBATCH -n 2 # number of cores
 #SBATCH --mem=250g # memory pool for all cores
 #SBATCH --time=1-23:00:00
 #SBATCH -o log/%x.%j.out # STDOUT
@@ -22,10 +22,10 @@ source ../../utils.common.sh
 set -x
 
 job_index=$((SLURM_ARRAY_TASK_ID))
-jobkBasecallOutputDir=${basecallOutputDir}/${job_index}
+#jobkBasecallOutputDir=${basecallOutputDir}/${job_index}
 
 ## Modify directory for processed files after basecalling:
-processedFast5DIR=${jobkBasecallOutputDir}/workspace
+processedFast5DIR=${basecallOutputDir}/${job_index}/workspace
 
 set -u
 echo "##################"
@@ -34,7 +34,6 @@ echo "Tool: ${Tool}"
 echo "targetNum: ${targetNum}"
 echo "analysisPrefix: ${analysisPrefix}"
 echo "basecallOutputDir: ${basecallOutputDir}"
-echo "jobkBasecallOutputDir: ${jobkBasecallOutputDir}"
 echo "processedFast5DIR: ${processedFast5DIR}"
 echo "methCallsDir: ${methCallsDir}"
 echo "refGenome: ${refGenome}"
@@ -48,6 +47,8 @@ set +u
 set +x
 conda activate nanoai
 set -x
+
+rm -rf ${methCallsDir}/batch_${job_index} ${methCallsDir}/batch_${job_index}.done
 
 ## Call methylation from processed fast5 files:
 ## For guppy results, add --move for correct Events data location in fast5 files. ref:https://github.com/WGLab/DeepMod/issues/29#issuecomment-594121403
