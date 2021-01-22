@@ -2,6 +2,8 @@ library(ggplot2)
 library(VennDiagram)
 library(data.table)
 library(eulerr)
+library(tidyverse)
+
 
 locations.Singletons = c("Singleton", "Nonsingleton", "Discordant", "Concordant")
 locations.Genome = c("Genomewide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns")
@@ -16,6 +18,7 @@ Corr.Perf.List = c('Corr_All', 'Corr_Mix')
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 # The palette with black:
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
 ToolColorPal <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442")
 
 ToolShapeList <- c(0, 1, 2, 3, 4, 5)
@@ -265,15 +268,17 @@ fig.34a.violin.corr.performance <- function(df, corr.perf, bdir, scale = 1) {
     geom_violin() +
     scale_fill_manual(values = ToolColorPal) +
     geom_jitter(shape = 16, position = position_jitter(0.2), size = 0.5) +
+    theme_classic() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1.2, size = 10)) +
     theme(legend.title = element_text(size = 8), legend.text = element_text(size = 8)) +
     theme(legend.position = "top") +
     guides(fill = guide_legend(ncol = 3, nrow = 2, byrow = TRUE))
+
   #scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
   #NULL
 
   outfn = sprintf("%s/fig.34a.violin.corr.%s.jpg", bdir, corr.perf)
-  ggsave(filename = outfn, width = 3.5, height = 3.5, scale = scale, dpi = 600)
+  ggsave(filename = outfn, width = 3.5, height = 4, scale = scale, dpi = 600)
   printf("save to %s\n", outfn)
 }
 
@@ -292,4 +297,45 @@ fig.34a.box.location.performance <- function(df, perf.measure, locations, bdir, 
   ggsave(filename = outfn, width = 7.5, height = 3, scale = scale, dpi = 600)
   printf("save to %s\n", outfn)
 
+}
+
+
+fig5c.running.resource.bar.plot <- function(bdir) {
+  infn = here('result', 'running.summary.table.csv')
+  running.summary.table <- read_csv(infn)
+
+  running.summary.table$rt <- running.summary.table$running.time.seconds / running.summary.table$fast5
+  running.summary.table$mem <- running.summary.table$mem.usage.gb / running.summary.table$fast5 * 1000
+  running.summary.table$type <- factor(running.summary.table$type, levels = Tool.Order)
+
+  g1 <- running.summary.table %>%
+    drop_na(type) %>%
+    ggplot(mapping = aes(x = type, y = rt, fill = type)) +
+    geom_bar(stat = "summary", fun = mean, width = 0.5) +
+    scale_fill_manual(values = ToolColorPal) +
+    theme_classic() +
+    ylab("Running time(seconds) per Fast5 file") +
+    xlab("Tool") +
+    coord_flip() +
+    labs(fill = 'Tool') +
+    theme(text = element_text(size = 12))
+
+  g2 <- running.summary.table %>%
+    drop_na(type) %>%
+    ggplot(mapping = aes(x = type, y = mem, fill = type)) +
+    geom_bar(stat = "summary", fun = mean, width = 0.5) +
+    scale_x_discrete(limits = levels(Tool.Order)) +
+    coord_flip() +
+    scale_fill_manual(values = ToolColorPal[1:4]) +
+    theme_classic() +
+    ylab("Memory usage(MB) per Fast5 file") +
+    xlab("Tool") +
+    labs(fill = 'Tool') +
+    theme(text = element_text(size = 12))
+
+  gg <- ggarrange(g1, g2, ncol = 2, nrow = 1, common.legend = TRUE, legend = "bottom")
+
+  outfn = sprintf("%s/running.resource.bar.plot.jpg", bdir)
+  ggsave(gg, filename = outfn, width = 8, height = 3)
+  printf("save to %s\n", outfn)
 }

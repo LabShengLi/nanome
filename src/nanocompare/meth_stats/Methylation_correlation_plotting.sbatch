@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=meth-corr
-##SBATCH --partition=compute
+#SBATCH --partition=compute
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 1 # number of cores
 #SBATCH --mem 150g # memory pool for all cores
@@ -8,9 +8,9 @@
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
-#SBATCH -p gpu
-#SBATCH --gres=gpu:1             # number of gpus per node
-#SBATCH -q inference
+##SBATCH -p gpu
+##SBATCH --gres=gpu:1             # number of gpus per node
+##SBATCH -q inference
 
 ## Pass all following vars to the py script
 set -x

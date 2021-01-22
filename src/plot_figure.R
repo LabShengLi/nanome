@@ -10,6 +10,8 @@ getwd()
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 outdir = here('figures')
 
+fig5c.running.resource.bar.plot(outdir)
+
 # Load data and sort string orders
 infn = here('result', 'performance-results.csv')
 df <- load.performance.data(infn)
