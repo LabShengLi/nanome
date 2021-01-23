@@ -191,7 +191,7 @@ def str_extract_time_mem(jobret):
     mem_use = None
 
     for line in jobret.splitlines():
-        if line.strip().startswith('State: F'):
+        if line.strip().startswith('State: F') or line.strip().startswith('State: CANCELLED'):
             return None, None
 
         if line.strip().startswith('CPU Utilized:'):

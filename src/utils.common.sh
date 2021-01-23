@@ -26,7 +26,11 @@ chromSizesFile="${NanoCompareDir}/data/genome-annotation/hg38.chrom.sizes"
 
 deepsignalModel="${NanoCompareDir}/data/dl-model/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+/bn_17.sn_360.epoch_9.ckpt"
 
-deepModModel="${DeepModDir}/train_deepmod/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0"
+## rnn_f7_wd21_chr1to10_4 Ref: https://github.com/WGLab/DeepMod/blob/d822ebaaab3e673cfdb6017637e7603f07cadccd/docs/Description%20of%20well-trained%20models.md
+deepModModel="${DeepModDir}/train_deepmod/rnn_f7_wd21_chr1to10_4/mod_train_f7_wd21_chr1to10"
+
+
+## 2. Cluster-effect model (the second neural network), na12878_cluster_train_mod-keep_prob0.7-nb25-chr1 Ref: https://github.com/WGLab/DeepMod/blob/d822ebaaab3e673cfdb6017637e7603f07cadccd/docs/Description%20of%20well-trained%20models.md#21-na12878_cluster_train_mod-keep_prob07-nb25-chr1
 clusterDeepModModel="${DeepModDir}/train_deepmod/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25"
 
 # will deprecated, due to we can use --dependency=afterok:1234[1-50] now.

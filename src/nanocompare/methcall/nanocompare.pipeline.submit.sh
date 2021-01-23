@@ -27,7 +27,7 @@ elif [ "Resquiggle" = "${cmd}" ] ; then ## bash APL.nanocompare.pipeline.submit.
 	run_resquiggling=true
 elif [ "Methcall" = "${cmd}" ] ; then
 	run_methcall=true
-	run_combine=true
+#	run_combine=true
 elif [ "Combine" = "${cmd}" ] ; then
 	run_combine=true
 else

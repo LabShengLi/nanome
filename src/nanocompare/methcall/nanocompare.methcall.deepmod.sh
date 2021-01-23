@@ -2,9 +2,9 @@
 #SBATCH --job-name=deepsignal.methcall
 #SBATCH --partition=compute
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 2 # number of cores
+#SBATCH -n 3 # number of cores
 #SBATCH --mem=250g # memory pool for all cores
-#SBATCH --time=1-23:00:00
+#SBATCH --time=2-23:00:00
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 ##SBATCH --array=1-11
