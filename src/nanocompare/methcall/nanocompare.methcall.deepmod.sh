@@ -22,7 +22,6 @@ source ../../utils.common.sh
 set -x
 
 job_index=$((SLURM_ARRAY_TASK_ID))
-#jobkBasecallOutputDir=${basecallOutputDir}/${job_index}
 
 ## Modify directory for processed files after basecalling:
 processedFast5DIR=${basecallOutputDir}/${job_index}/workspace

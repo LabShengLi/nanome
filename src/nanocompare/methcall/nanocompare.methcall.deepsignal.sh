@@ -23,13 +23,8 @@ set -x
 
 job_index=$((SLURM_ARRAY_TASK_ID))
 
-jobkBasecallOutputDir=${basecallOutputDir}/${job_index}
-
 ## Modify directory for processed files after basecalling:
-#processedFast5DIR=${jobkBasecallOutputDir}/workspace/pass/0
-## Resquiggle results, firstly copy from basecall, then do resquiggling
-jobkResquiggleOutputDir=${resquiggleDir}/${job_index}
-processedFast5DIR=${jobkResquiggleOutputDir}/workspace
+processedFast5DIR=${resquiggleDir}/${job_index}/workspace
 
 set -u
 echo "##################"
@@ -38,7 +33,7 @@ echo "Tool: ${Tool}"
 echo "targetNum: ${targetNum}"
 echo "analysisPrefix: ${analysisPrefix}"
 echo "basecallOutputDir: ${basecallOutputDir}"
-echo "jobkBasecallOutputDir: ${jobkBasecallOutputDir}"
+echo "resquiggleDir: ${resquiggleDir}"
 echo "processedFast5DIR: ${processedFast5DIR}"
 echo "methCallsDir: ${methCallsDir}"
 echo "refGenome: ${refGenome}"
@@ -55,8 +50,9 @@ set +x
 conda activate nanoai
 set -x
 
+rm -rf ${methCallsDir}/${analysisPrefix}.batch_${job_index}.CpG.deepsignal.call_mods.tsv
+
 ## Call methylation from processed fast5 files:
-#date
 time deepsignal call_mods --input_path ${processedFast5DIR} --model_path ${deepsignalModel} \
 		--result_file ${methCallsDir}/${analysisPrefix}.batch_${job_index}.CpG.deepsignal.call_mods.tsv \
 		--reference_path ${refGenome} --corrected_group ${correctedGroup} --nproc ${processors} --is_gpu ${isGPU}

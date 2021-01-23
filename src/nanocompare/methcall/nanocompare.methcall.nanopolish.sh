@@ -57,8 +57,6 @@ bamFileName="${analysisPrefix}.batch_${job_index}.sorted.bam"
 
 
 ## Do alignment firstly
-#if [ "${run_resquiggling}" = true ] ; then
-
 rm -rf ${fastqFile}
 touch ${fastqFile}
 for f in $(ls -1 ${jobkBasecallOutputDir}/*.fastq)
@@ -82,7 +80,6 @@ samtools index -@ threads ${jobkBasecallOutputDir}/${bamFileName}
 echo "### samtools finished"
 
 echo "### Alignment step DONE"
-#fi
 
 # calling methylation:
 time ${NanopolishDir}/nanopolish call-methylation -t ${processors} -r ${fastqNoDupFile} -b ${jobkBasecallOutputDir}/${bamFileName} -g ${refGenome} > ${methCallsDir}/${analysisPrefix}.batch_${job_index}.nanopolish.methylation_calls.tsv

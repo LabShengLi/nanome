@@ -473,11 +473,11 @@ def process_pred_detail_f5file(fn, f5_readid_map):
     return sumdf
 
 
-def extract_deepmod_read_level_results_mp(basecallDir='/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-basecall', methcallDir='/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-methcall'):
-    f5_readid_map = build_map_fast5_to_readid_mp(basedir=basecallDir, ntask=300)
+def extract_deepmod_read_level_results_mp(basecallDir='/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-basecall', methcallDir='/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-methcall', ntask=50):
+    f5_readid_map = build_map_fast5_to_readid_mp(basedir=basecallDir, ntask=ntask)
     # logger.debug(f5_readid_map)
 
-    dirname = '/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-methcall/**/rnn.pred.detail.fast5.*'
+    # dirname = '/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-methcall/**/rnn.pred.detail.fast5.*'
     dirname = os.path.join(methcallDir, '**', 'rnn.pred.detail.fast5.*')
     fast5_flist = glob.glob(dirname, recursive=True)
     logger.info(f'Total deepmod fast5 files:{len(fast5_flist)}')

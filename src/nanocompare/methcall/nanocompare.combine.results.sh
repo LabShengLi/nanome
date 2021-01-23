@@ -79,7 +79,7 @@ elif [ "${Tool}" = "DeepSignal" ] ; then
 elif [ "${Tool}" = "DeepMod" ] ; then
 
 	## Extract read-level DeepMod results, save to -o <read-level results> -o2 <base-level results>
-	sbatch --nodes=1 --ntasks=50 --job-name=extr.rldepmd.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ../meth_stats/meth_stats_tool_mpi.sh deepmod-read-level --processors 50 --basecallDir ${basecallOutputDir} --methcallDir ${methCallsDir} -o ${methCallsDir}/${dsname}.deepmod_read_level.read_level.combine.tsv --o2 ${methCallsDir}/${dsname}.deepmod_read_level.base_level.combine.tsv
+#	sbatch --nodes=1 --ntasks=20 --job-name=extr.rldepmd.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ../meth_stats/meth_stats_tool_mpi.sh deepmod-read-level --processors 50 --basecallDir ${basecallOutputDir} --methcallDir ${methCallsDir} -o ${methCallsDir}/${dsname}.deepmod_read_level.read_level.combine.tsv --o2 ${methCallsDir}/${dsname}.deepmod_read_level.base_level.combine.tsv
 
 	## Step:  join results from different batches, based on ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md
 	## We need firstly use DeepMod script to merge different runs of modification detection
@@ -137,9 +137,9 @@ elif [ "${Tool}" = "DeepMod" ] ; then
 	echo "### DeepMod combine all batches results. ###"
 
 	# we need do filter out non-CG patterns also, now using MPI version
-	sbatch --nodes=1 --ntasks=32 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ${NanoCompareDir}/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh deepmod-add-seq -i ${methCallsDir}/${dsname}.deepmod.C.combine.tsv --mpi --processors 32 -o ${methCallsDir}
-
-	filter_taskid=${filter_taskid}:$(echo ${filter_ret} |grep -Eo '[0-9]+$')
+#	sbatch --nodes=1 --ntasks=32 --job-name=flt.noCG.${analysisPrefix} --output=${methCallsDir}/log/%x.%j.out --error=${methCallsDir}/log/%x.%j.err ${NanoCompareDir}/src/nanocompare/meth_stats/meth_stats_tool_mpi.sh deepmod-add-seq -i ${methCallsDir}/${dsname}.deepmod.C.combine.tsv --mpi --processors 32 -o ${methCallsDir}
+#
+#	filter_taskid=${filter_taskid}:$(echo ${filter_ret} |grep -Eo '[0-9]+$')
 	echo "### DeepMod combine results DONE. ###"
 
 elif [ "${Tool}" = "Nanopolish" ] ; then
