@@ -552,6 +552,10 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
             methCallsList = [(1, 1.0)] * methReads + [(0, 0.0)] * (coverage - methReads)
         else:
             methCallsList = [1] * methReads + [0] * (coverage - methReads)
+
+        if key in cpgDict:
+            raise Exception(f'In DeepMod results, we found duplicate key={key}, this is not correct')
+
         cpgDict[key] = methCallsList
 
         count_calls += len(methCallsList)
@@ -695,7 +699,10 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
         coverage = int(tmp[coverage_col])
         meth_cov = int(tmp[meth_cov_col])
 
-        if as_freq_cov_format:
+        if key in cpgDict:
+            raise Exception(f'In DeepMod_Cluster results, we found duplicate key={key}, this is not correct')
+
+        if as_freq_cov_format:  # in dict
             cpgDict[key] = {'freq': meth_freq, 'cov': coverage}
         elif include_score:
             cpgDict[key] = [(1, 1.0)] * meth_cov + [(0, 0.0)] * (coverage - meth_cov)
@@ -2703,7 +2710,7 @@ def import_bgtruth(infn, encode, cov=10, baseFormat=0, includeCov=True, enable_c
     :return:
     """
     if enable_cache and using_cache:
-        ret = check_cache_available(infn, encode=encode, cov=10, baseFormat=0, includeCov=True)
+        ret = check_cache_available(infn, encode=encode, cov=cov, baseFormat=baseFormat, includeCov=includeCov)
         if ret:
             return ret
         logger.debug(f'Not cached yet, we load from raw file')
@@ -2726,8 +2733,7 @@ def import_bgtruth(infn, encode, cov=10, baseFormat=0, includeCov=True, enable_c
     logger.debug(f'Import BG-Truth finished!\n')
 
     if enable_cache:
-        save_to_cache(infn, bgTruth, encode=encode, cov=10, baseFormat=0, includeCov=True)
-
+        save_to_cache(infn, bgTruth, encode=encode, cov=cov, baseFormat=baseFormat, includeCov=includeCov)
     return bgTruth
 
 

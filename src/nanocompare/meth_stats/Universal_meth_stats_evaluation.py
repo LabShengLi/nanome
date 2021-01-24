@@ -31,6 +31,8 @@ def parse_arguments():
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name>', required=True)
     parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>", required=True)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
+    parser.add_argument('--enable-cache', action='store_true')
+    parser.add_argument('--using-cache', action='store_true')
     return parser.parse_args()
 
 
@@ -43,6 +45,8 @@ if __name__ == '__main__':
     bgtruth_cov_cutoff = args.min_bgtruth_cov
     tool_cov_cutoff = args.min_tool_cov
     report_joined = args.report_joined
+    enable_cache = args.enable_cache
+    using_cache = args.using_cache
 
     RunPrefix = args.runid.replace('MethPerf-', '')
 
@@ -71,15 +75,13 @@ if __name__ == '__main__':
         callfn_dict[call_name] = callfn
 
         ## MUST import read-level results, and include score for plot ROC curve and PR curve
-        callresult_dict[call_name] = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False)
+        callresult_dict[call_name] = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache)
 
     logger.debug(callfn_dict)
     encode, fn = args.bgtruth.split(':')
     logger.debug(f'BGTruth fn={fn}, encode={encode}')
 
-    bgTruth = import_bgtruth(fn, encode, cov=bgtruth_cov_cutoff, baseFormat=baseFormat, includeCov=True)
-
-
+    bgTruth = import_bgtruth(fn, encode, cov=bgtruth_cov_cutoff, baseFormat=baseFormat, includeCov=True, using_cache=using_cache, enable_cache=enable_cache)
 
     relateCoord = list(narrowCoord)  # copy the basic coordinate
 
@@ -113,8 +115,11 @@ if __name__ == '__main__':
     fn_secondFilterBed_4Corr = f"{out_dir}/{RunPrefix}.Tools_BGTruth_Joined.4Corr.bed"
 
     joinedCPG = set(bgTruth.keys())
+    # logger.debug(f'len={len(joinedCPG)}, key={list(bgTruth.keys())[0]}')
     for toolname in callresult_dict:
         joinedCPG = joinedCPG.intersection(set(callresult_dict[toolname].keys()))
+        # logger.debug(f'after toolname={toolname}, len={len(joinedCPG)}, key={list(callresult_dict[toolname].keys())[0]}')
+
     save_keys_to_single_site_bed(joinedCPG, outfn=bedfn_tool_join_bgtruth, callBaseFormat=baseFormat, outBaseFormat=1)
 
     logger.info(f"Data points for joined all tools with bg-truth (cov>={bgtruth_cov_cutoff}) stats: {len(joinedCPG):,}\n\n")

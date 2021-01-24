@@ -40,7 +40,12 @@ mkdir -p ${outbasedir}
 # Do preprocessing only once for all tools
 untaredInputDir=${outbasedir}/${dsname}-N${targetNum}-untar
 septInputDir=${outbasedir}/${dsname}-N${targetNum}-sept
+
 basecallOutputDir=${outbasedir}/${dsname}-N${targetNum}-basecall
+
+if [ "${basecall_name}" = "Albacore" ] ; then
+	basecallOutputDir=${outbasedir}/${dsname}-N${targetNum}-basecall-Albacore
+fi
 
 ## Modify directory for processed files after basecalling:
 resquiggleDir=${outbasedir}/${dsname}-N${targetNum}-resquiggle
@@ -50,6 +55,9 @@ resquiggleDir=${outbasedir}/${dsname}-N${targetNum}-resquiggle
 ################################################################################
 if [ "${run_preprocessing}" = true ] ; then
 	echo "Step1: pre-processing"
+
+	rm -rf ${septInputDir}/log/*
+	mkdir -p ${septInputDir}/log
 
 	prep_ret=$(sbatch --job-name=prep.fast5.${dsname}.N${targetNum} --output=${septInputDir}/log/%x.%j.out --error=${septInputDir}/log/%x.%j.err --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},inputDataDir=${inputDataDir},untaredInputDir=${untaredInputDir},septInputDir=${septInputDir},multipleInputs=${multipleInputs} nanocompare.preprocessing.sh)
 	prep_taskid=$(echo ${prep_ret} |grep -Eo '[0-9]+$')
@@ -68,17 +76,25 @@ if [ "${run_basecall}" = true ] ; then
 		depend_param="--dependency=afterok:${prep_taskid}"
 	fi
 
-	rm -rf ${basecallOutputDir}/log
+#	rm -rf ${basecallOutputDir}/log
 	mkdir -p ${basecallOutputDir}/log
 
 	if [ "${basecall_name}" = "Albacore" ] ; then
-		# Albacore basecall
-		basecall_task_ret=$(sbatch --job-name=bascal.${basecall_name}.${dsname}.N${targetNum} --ntasks=${processors} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${depend_param} --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name} nanocompare.basecall.sh)
-
+		cpuCFG="--partition=compute --ntasks=8 --time=1-23:00:00 --array=1-${targetNum}%50"
 	elif [ "${basecall_name}" = "Guppy" ] ; then
-		# Use GPU of Winter server to do Guppy basecall
-		basecall_task_ret=$(sbatch --job-name=bascal.${basecall_name}.${dsname}.N${targetNum} --ntasks=${processors} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${depend_param} --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name} nanocompare.basecall.sh)
+		cpuCFG="--gres=gpu:1 --partition=gpu --qos=inference --ntasks=4 --time=06:00:00 --array=1-${targetNum}%20"
 	fi
+
+	basecall_task_ret=$(sbatch --job-name=bascal.${basecall_name}.${dsname}.N${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${cpuCFG} ${depend_param} --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name} nanocompare.basecall.sh)
+
+#	if [ "${basecall_name}" = "Albacore" ] ; then
+#		# Albacore basecall
+#		basecall_task_ret=$(sbatch --job-name=bascal.${basecall_name}.${dsname}.N${targetNum} --ntasks=${processors} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${depend_param} --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name} nanocompare.basecall.sh)
+#
+#	elif [ "${basecall_name}" = "Guppy" ] ; then
+#		# Use GPU of Winter server to do Guppy basecall
+#		basecall_task_ret=$(sbatch --job-name=bascal.${basecall_name}.${dsname}.N${targetNum} --ntasks=${processors} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${depend_param} --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name} nanocompare.basecall.sh)
+#	fi
 
 	# Get the job id as :123_1:123_2, etc.
 	base_taskids=$(get_arrayjob_ids "${basecall_task_ret}" "${targetNum}")

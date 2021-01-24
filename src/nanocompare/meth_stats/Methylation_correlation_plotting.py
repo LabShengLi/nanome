@@ -240,7 +240,6 @@ if __name__ == '__main__':
         callfn_dict[callname] = callfn
         callname_list.append(callname)
         callresult_dict[callname] = [import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache)]
-
     logger.debug(callfn_dict)
     encode, fn = args.bgtruth.split(':')
 

@@ -5,7 +5,7 @@
 ##SBATCH -q inference
 ##SBATCH --gres=gpu:1
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 16 # number of cores
+#SBATCH -n 4 # number of cores
 #SBATCH --mem=250g # memory pool for all cores
 ##SBATCH --time=06:00:00 # time (D-HH:MM)
 #SBATCH --time=1-06:00:00 # time (D-HH:MM) # for NA19240 large input
@@ -23,7 +23,6 @@ set -x
 set -u
 echo "##################"
 echo "dsname: ${dsname}"
-echo "Tool: ${Tool}"
 echo "targetNum: ${targetNum}"
 echo "inputDataDir: ${inputDataDir}"
 echo "untaredInputDir: ${untaredInputDir}"
@@ -34,9 +33,11 @@ set +u
 
 
 # Remove previous pre-processing dataset dir if we redo it
-rm -rf ${untaredInputDir} ${septInputDir}
+rm -rf ${untaredInputDir}/*
+
 mkdir -p ${untaredInputDir}
-mkdir -p ${septInputDir}/log
+
+rm -rf "${septInputDir}/!(log)"
 
 # How may seperate file folders used to seperate all fast5 files to # of groups
 # ${targetNum}=N, 1-N: will create 0 -- (N-1) folder names
