@@ -24,7 +24,12 @@ set -x
 job_index=$((SLURM_ARRAY_TASK_ID))
 
 ## Modify directory for processed files after basecalling:
-processedFast5DIR=${basecallOutputDir}/${job_index}/workspace
+if [ "${basecall_name}" = "Albacore" ] ; then # Albacore processed file dir
+	processedFast5DIR=${basecallOutputDir}/${job_index}/workspace/pass/0
+elif [ "${basecall_name}" = "Guppy" ] ; then # Guppy processed file dir
+	processedFast5DIR=${basecallOutputDir}/${job_index}/workspace
+fi
+
 
 set -u
 echo "##################"

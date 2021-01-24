@@ -24,7 +24,7 @@ source ${NanoCompareDir}/src/utils.common.sh
 dsname=HL60
 targetNum=50
 
-### Nanopore raw signal fast5 files, K562 is from tier2: /tier2/li-lab/Nanopore/NanoporeData/Leukemia_ONT/20180612_180601-18-li-004-GXB01102-001/  47.46GB
+### Nanopore raw signal fast5 files, HL60 is from tier2: /tier2/li-lab/Nanopore/NanoporeData/Leukemia_ONT/20180612_180601-18-li-004-GXB01102-002/HL60-Nanopore_GT18-07373.fast5.tar
 # inputDataDir  -   input of Nanopore reads file/files, can be tar file or a directory contains files
 inputDataDir=/fastscratch/liuya/nanocompare/Nanopore-reads/HL60-Nanopore_GT18-07373.fast5.tar
 
@@ -37,8 +37,8 @@ ToolList=(DeepMod)
 
 
 ### Which step is going to run, true or false, if 'true' means running this step
-#basecall_name=Albacore
-basecall_name=Guppy
+basecall_name=Albacore
+#basecall_name=Guppy
 
 run_preprocessing=false
 run_basecall=false

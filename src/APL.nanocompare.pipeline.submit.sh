@@ -27,21 +27,22 @@ source ${NanoCompareDir}/src/utils.common.sh
 dsname=APL
 targetNum=50
 
-### Nanopore raw signal fast5 files, K562 is from: /projects/li-lab/AML-Nanopore/20180517_180508-18-li-001-GXB01186-001/APL-1750_GT18-06409.fast5.tar
+### Nanopore raw signal fast5 files, APL is from: /projects/li-lab/AML-Nanopore/20180517_180508-18-li-001-GXB01186-001/APL-1750_GT18-06409.fast5.tar
 # inputDataDir  -   input of Nanopore reads file/files, can be tar file or a directory contains files
-inputDataDir=/fastscratch/liuya/nanocompare/Nanopore-reads/APL/APL-1750_GT18-06409.fast5.tar
+inputDataDir=/projects/li-lab/AML-Nanopore/20180517_180508-18-li-001-GXB01186-001/APL-1750_GT18-06409.fast5.tar
 
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
 # ToolList  -   a list of Nanopore tools prepared to run
+
 ToolList=(DeepMod)
 
 #ToolList=(DeepSignal Tombo DeepMod Nanopolish)
 
 
 ### Which step is going to run, true or false, if 'true' means running this step
-
-basecall_name=Guppy
+basecall_name=Albacore
+#basecall_name=Guppy
 
 run_preprocessing=false
 run_basecall=false

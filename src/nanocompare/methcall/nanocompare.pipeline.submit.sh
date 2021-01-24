@@ -7,7 +7,7 @@
 # Working dir now must be ${NanoCmpDir}/src/nanocompare/methcall
 set +x
 #source ../../utils.common.sh
-#set -x
+set -x
 
 ## Currently we use command arg to do four kind of actions
 cmd=${1:-noaction} # Preprocess, Basecall, Resquiggle, Methcall
@@ -76,30 +76,19 @@ if [ "${run_basecall}" = true ] ; then
 		depend_param="--dependency=afterok:${prep_taskid}"
 	fi
 
-#	rm -rf ${basecallOutputDir}/log
 	mkdir -p ${basecallOutputDir}/log
 
 	if [ "${basecall_name}" = "Albacore" ] ; then
-		cpuCFG="--partition=compute --ntasks=8 --time=1-23:00:00 --array=1-${targetNum}%50"
+		cpuCFG="--partition=compute --qos=batch --ntasks=8 --time=1-23:00:00 --array=1-${targetNum}%50 --mem=200g"
 	elif [ "${basecall_name}" = "Guppy" ] ; then
-		cpuCFG="--gres=gpu:1 --partition=gpu --qos=inference --ntasks=4 --time=06:00:00 --array=1-${targetNum}%20"
+		cpuCFG="--gres=gpu:1 --partition=gpu --qos=inference --ntasks=4 --time=06:00:00 --array=1-${targetNum}%20 --mem=150g"
 	fi
 
 	basecall_task_ret=$(sbatch --job-name=bascal.${basecall_name}.${dsname}.N${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${cpuCFG} ${depend_param} --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name} nanocompare.basecall.sh)
 
-#	if [ "${basecall_name}" = "Albacore" ] ; then
-#		# Albacore basecall
-#		basecall_task_ret=$(sbatch --job-name=bascal.${basecall_name}.${dsname}.N${targetNum} --ntasks=${processors} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${depend_param} --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name} nanocompare.basecall.sh)
-#
-#	elif [ "${basecall_name}" = "Guppy" ] ; then
-#		# Use GPU of Winter server to do Guppy basecall
-#		basecall_task_ret=$(sbatch --job-name=bascal.${basecall_name}.${dsname}.N${targetNum} --ntasks=${processors} --array=1-${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${depend_param} --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name} nanocompare.basecall.sh)
-#	fi
+	basecall_arrayjob_id=${basecall_task_ret##* }
+	base_taskids="afterok:${basecall_arrayjob_id}_[1-${targetNum}]"
 
-	# Get the job id as :123_1:123_2, etc.
-	base_taskids=$(get_arrayjob_ids "${basecall_task_ret}" "${targetNum}")
-
-	# set -x
 	echo ${basecall_task_ret}
 	echo "### Submitted all basecalling for by basecall_name=${basecall_name} array-job finished."
 fi
@@ -125,9 +114,10 @@ if [ "${run_resquiggling}" = true ] ; then
 	resquiggling_task_ret=$(sbatch --job-name=rsquigl.${dsname}.N${targetNum} --ntasks=${processors} --array=1-${targetNum} --output=${resquiggleDir}/log/%x.batch%a.%j.out --error=${resquiggleDir}/log/%x.batch%a.%j.err ${depend_param} --export=ALL,dsname=${dsname},targetNum=${targetNum},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name},resquiggleDir=${resquiggleDir} nanocompare.resquiggle.sh)
 
 	# Get the job id as :123_1:123_2, etc.
-	resquiggling_taskids=$(get_arrayjob_ids "${resquiggling_task_ret}" "${targetNum}")
+#	resquiggling_taskids=$(get_arrayjob_ids "${resquiggling_task_ret}" "${targetNum}")
+	resquiggling_arrayjob_id=${resquiggling_task_ret##* }
+	resquiggling_taskids="afterok:${resquiggling_arrayjob_id}_[1-${targetNum}]"
 
-	# set -x
 	echo ${resquiggling_task_ret}
 	echo "### Submitted all resquiggling for ${dsname}.N${targetNum} array-job finished."
 
@@ -156,6 +146,11 @@ if [ "${run_methcall}" = true ] || [ "${run_combine}" = true ] ; then
 #		└── HL60-Tombo-N50
 		analysisPrefix=${dsname}-${Tool}-N${targetNum}
 		methCallsDir=${outbasedir}/${analysisPrefix}/${analysisPrefix}-methcall
+
+		if [ "${basecall_name}" = "Albacore" ] ; then
+			methCallsDir=${outbasedir}/${analysisPrefix}/${analysisPrefix}-methcall-Albacore
+		fi
+
 		### Start script for submiting jobs
 		echo "########################################################################"
 		echo "Start pipeline submit for tool with analysisPrefix=${analysisPrefix}"

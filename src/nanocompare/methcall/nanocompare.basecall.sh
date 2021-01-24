@@ -4,9 +4,9 @@
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 4 # number of cores
 #SBATCH -p gpu
-#SBATCH --gres=gpu:1
-#SBATCH -q inference
-#SBATCH --mem=100g
+##SBATCH --gres=gpu:1
+##SBATCH -q inference
+##SBATCH --mem=100g
 #SBATCH --time=01:00:00
 #SBATCH -o log/%x.%j.out
 #SBATCH -e log/%x.%j.err
@@ -59,7 +59,6 @@ elif [ "${basecall_name}" = "Guppy" ] ; then
 	time ${GuppyDir}/bin/guppy_basecaller --input_path ${jobkSeptInputDir} \
 	    --save_path ${jobkBasecallOutputDir} --config dna_r9.4.1_450bps_hac.cfg \
 	    --gpu_runners_per_device ${processors} --num_callers 3 --fast5_out --verbose_logs --device auto
-#	echo "Not implemented yet"
 fi
 
 set +x
