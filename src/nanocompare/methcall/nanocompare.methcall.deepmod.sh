@@ -13,7 +13,6 @@
 # DeepMod methylation call workflow
 # Need to populate the parameters into this script
 ################################################################################
-#cd "$(dirname "$0")"
 
 set -e
 set +x

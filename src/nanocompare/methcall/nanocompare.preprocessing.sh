@@ -5,7 +5,7 @@
 ##SBATCH -q inference
 ##SBATCH --gres=gpu:1
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 4 # number of cores
+#SBATCH -n 8 # number of cores
 #SBATCH --mem=250g # memory pool for all cores
 ##SBATCH --time=06:00:00 # time (D-HH:MM)
 #SBATCH --time=1-06:00:00 # time (D-HH:MM) # for NA19240 large input
