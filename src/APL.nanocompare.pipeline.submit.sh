@@ -35,14 +35,15 @@ inputDataDir=/projects/li-lab/AML-Nanopore/20180517_180508-18-li-001-GXB01186-00
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
 # ToolList  -   a list of Nanopore tools prepared to run
 
-ToolList=(DeepMod)
+#ToolList=(DeepMod)
+ToolList=(Megalodon)
 
 #ToolList=(DeepSignal Tombo DeepMod Nanopolish)
 
 
 ### Which step is going to run, true or false, if 'true' means running this step
-basecall_name=Albacore
-#basecall_name=Guppy
+#basecall_name=Albacore
+basecall_name=Guppy
 
 run_preprocessing=false
 run_basecall=false

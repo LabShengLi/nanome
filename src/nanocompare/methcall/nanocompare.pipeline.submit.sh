@@ -21,6 +21,7 @@ run_clean=false
 
 if [ "Preprocess" = "${cmd}" ] ; then ## bash APL.nanocompare.pipeline.submit.sh Preprocess
 	run_preprocessing=true
+#	run_basecall=true
 elif [ "Basecall" = "${cmd}" ] ; then
 	run_basecall=true
 elif [ "Resquiggle" = "${cmd}" ] ; then ## bash APL.nanocompare.pipeline.submit.sh Resquiggle
@@ -87,7 +88,7 @@ if [ "${run_basecall}" = true ] ; then
 	basecall_task_ret=$(sbatch --job-name=bascal.${basecall_name}.${dsname}.N${targetNum} --output=${basecallOutputDir}/log/%x.batch%a.%j.out --error=${basecallOutputDir}/log/%x.batch%a.%j.err ${cpuCFG} ${depend_param} --export=ALL,dsname=${dsname},Tool=${Tool},targetNum=${targetNum},analysisPrefix=${analysisPrefix},septInputDir=${septInputDir},basecallOutputDir=${basecallOutputDir},processors=${processors},basecall_name=${basecall_name} nanocompare.basecall.sh)
 
 	basecall_arrayjob_id=${basecall_task_ret##* }
-	base_taskids="afterok:${basecall_arrayjob_id}_[1-${targetNum}]"
+	base_taskids="${basecall_arrayjob_id}_[1-${targetNum}]"
 
 	echo ${basecall_task_ret}
 	echo "### Submitted all basecalling for by basecall_name=${basecall_name} array-job finished."
