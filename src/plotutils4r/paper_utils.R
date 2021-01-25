@@ -4,6 +4,8 @@ library(data.table)
 library(eulerr)
 library(tidyverse)
 library(here)
+library(ggpubr)
+
 
 locations.Singletons = c("Singleton", "Nonsingleton", "Discordant", "Concordant")
 locations.Genome = c("Genomewide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns")
@@ -301,17 +303,25 @@ fig.34a.box.location.performance <- function(df, perf.measure, locations, bdir, 
 
 
 fig5c.running.resource.bar.plot <- function(bdir) {
-  infn = here('result', 'running.summary.table.csv')
-  running.summary.table <- read_csv(infn)
+  infn1 = here('result', 'recalculate.running.summary.csv')
+  run.table1 <- read_csv(infn1)
 
-  running.summary.table$rt <- running.summary.table$running.time.seconds / running.summary.table$fast5
-  running.summary.table$mem <- running.summary.table$mem.usage.gb / running.summary.table$fast5 * 1000
-  running.summary.table$type <- factor(running.summary.table$type, levels = Tool.Order)
+  infn2 = here('result', 'recalculate.running.summary.Megalodon.csv')
+  run.table2 <- read_csv(infn2)
 
-  g1 <- running.summary.table %>%
-    drop_na(type) %>%
-    ggplot(mapping = aes(x = type, y = rt, fill = type)) +
-    geom_bar(stat = "summary", fun = mean, width = 0.5) +
+  run.table = bind_rows(run.table1, run.table2)
+
+
+  run.table$rt <- run.table$running.time.seconds / run.table$fast5
+  run.table$mem <- run.table$mem.usage.gb / run.table$fast5 * 1000
+  run.table$tool <- factor(run.table$tool, levels = Tool.Order)
+  run.table$dsname <- factor(run.table$dsname, levels = Dataset.Order)
+
+
+  g1 <- run.table %>%
+    #drop_na(tool) %>%
+    ggplot(mapping = aes(x = dsname, y = rt, fill = tool)) +
+    geom_bar(stat = "summary", fun = mean, width = 0.8, position = position_dodge()) +
     scale_fill_manual(values = ToolColorPal) +
     theme_classic() +
     ylab("Running time(seconds) per Fast5 file") +
@@ -320,22 +330,27 @@ fig5c.running.resource.bar.plot <- function(bdir) {
     labs(fill = 'Tool') +
     theme(text = element_text(size = 12))
 
-  g2 <- running.summary.table %>%
-    drop_na(type) %>%
-    ggplot(mapping = aes(x = type, y = mem, fill = type)) +
-    geom_bar(stat = "summary", fun = mean, width = 0.5) +
-    scale_x_discrete(limits = levels(Tool.Order)) +
+  #g1
+
+  g2 <- run.table %>%
+    ggplot(mapping = aes(x = dsname, y = mem, fill = tool)) +
+    geom_bar(stat = "summary", fun = mean, width = 0.8, position = position_dodge()) +
+    #scale_x_discrete(limits = levels(Tool.Order)) +
     coord_flip() +
-    scale_fill_manual(values = ToolColorPal[1:4]) +
+    scale_fill_manual(values = ToolColorPal) +
     theme_classic() +
     ylab("Memory usage(MB) per Fast5 file") +
     xlab("Tool") +
     labs(fill = 'Tool') +
     theme(text = element_text(size = 12))
 
+  #g2
+
   gg <- ggarrange(g1, g2, ncol = 2, nrow = 1, common.legend = TRUE, legend = "bottom")
 
+  #gg
+
   outfn = sprintf("%s/running.resource.bar.plot.jpg", bdir)
-  ggsave(gg, filename = outfn, width = 8, height = 3)
+  ggsave(gg, filename = outfn, width = 8, height = 3, dpi=600)
   printf("save to %s\n", outfn)
 }

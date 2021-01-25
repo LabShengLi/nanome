@@ -11,8 +11,11 @@ from tqdm import tqdm
 
 from nanocompare.global_config import set_log_debug_level, pic_base_dir, logger
 
-basedir = '/fastscratch/liuya/nanocompare'
-fastdir = '/projects/li-lab/Nanopore_compare/result/running-logs'
+## TODO: not use anymore
+basedir = '/fastscratch/liuya/nanocompare1'
+
+run_log_dir = '/projects/li-lab/Nanopore_compare/result/running-logs'
+basedir = run_log_dir
 
 tool_list_on_sumner = ['Tombo', 'DeepMod', 'DeepSignal', 'Nanopolish']
 tool_list_on_winter = ['Guppy']
@@ -90,6 +93,44 @@ def winter_task_summary():
 
     outfn = os.path.join(pic_base_dir, 'winter.task.resource.summary.xlsx')
     df.to_excel(outfn)
+
+
+def winter_megalodon_task_summary():
+    dataset = defaultdict(list)
+    for dsname in ntarget_dict:
+        logging.info(dsname)
+        methdir = os.path.join(basedir, f'{dsname}-Runs', f'{dsname}-Megalodon-N{ntarget_dict[dsname]}', f'{dsname}-Megalodon-N{ntarget_dict[dsname]}-methcall', 'log')
+
+        pat_fns = os.path.join(methdir, '*.mcal.*.out')
+        fnlist = glob.glob(pat_fns)
+        logging.info(f'Megalodon of {dsname} collect: {len(fnlist)}')
+
+        for fn in tqdm(fnlist):
+            taskid, batchid = get_jobid_and_taskid(fn)
+            command = f"""
+                               seff {taskid}
+                               """
+            jobret = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
+
+            dataset['dsname'].append(dsname)
+            dataset['batchid'].append(int(batchid))
+            dataset['tool'].append('Megalodon')
+            dataset['job.results'].append(jobret)
+
+            runtime_seconds, mem_gb = str_extract_time_mem(jobret)
+            dataset['running.time.seconds'].append(runtime_seconds)
+            dataset['mem.usage.gb'].append(mem_gb)
+        df1 = pd.DataFrame.from_dict(dataset)
+        df2 = pd.read_pickle(batch_fast5_pkl)
+        df = df1.merge(df2, on=['dsname', 'batchid'], how='left')
+
+        dfout = df[['dsname', 'tool', 'batchid', 'fast5', 'running.time.seconds', 'mem.usage.gb', 'job.results']]
+        outfn = os.path.join(pic_base_dir, 'recalculate.running.summary.Megalodon.xlsx')
+        dfout.to_excel(outfn)
+
+        dfout = df[['dsname', 'tool', 'batchid', 'fast5', 'running.time.seconds', 'mem.usage.gb']]
+        outfn = os.path.join(pic_base_dir, 'recalculate.running.summary.Megalodon.csv')
+        dfout.to_csv(outfn)
 
 
 def sunmer_task_summary():
@@ -187,20 +228,36 @@ def str_extract_time_mem(jobret):
     :param jobret:
     :return:
     """
-    cpu_use = None
-    mem_use = None
+    cpu_use_time = None
+    mem_use_gb = None
 
     for line in jobret.splitlines():
         if line.strip().startswith('State: F') or line.strip().startswith('State: CANCELLED'):
             return None, None
 
         if line.strip().startswith('CPU Utilized:'):
-            cpu_use = line.strip().replace('CPU Utilized:', '').strip()
+            cpu_use_time = line.strip().replace('CPU Utilized:', '').strip()
         elif line.strip().startswith('Memory Utilized:'):
             mem_use = line.strip().replace('Memory Utilized:', '').strip()
             break
+    start_time = datetime.strptime("00:00:00", '%H:%M:%S')
 
-    return cpu_use, mem_use
+    try:
+        end_time = datetime.strptime(cpu_use_time, '%H:%M:%S')
+    except:
+        end_time = datetime.strptime(cpu_use_time, '%d-%H:%M:%S')
+
+    duration_time = end_time - start_time
+
+    # 71.49 MB
+    if mem_use.endswith('MB'):
+        mem_gb = float(mem_use.replace('MB', '').strip()) / 1000
+    elif mem_use.endswith('GB'):
+        mem_gb = float(mem_use.replace('GB', '').strip())
+    else:
+        raise Exception(f'Unrecognized mem={mem_use} from jobret={jobret}')
+
+    return duration_time.total_seconds(), mem_gb
 
 
 def running_resouce_extraction(row):
@@ -257,6 +314,40 @@ def unify_data_df():
     logger.info(f'save to {outfn}')
 
 
+def recalculate():
+    df = pd.read_csv(os.path.join(run_log_dir, 'running.summary.table.csv'), index_col=0)
+    # logger.info(df)
+
+    dataset = defaultdict(list)
+    for index, row in df.iterrows():
+        if row['type'] not in tool_list_on_sumner:
+            continue
+        dsname = row['dsname']
+        batchid = row['batchid']
+        runt = row['running.time.seconds']
+        memg = row['mem.usage.gb']
+
+        basecall_row = df[(df['dsname'] == dsname) & (df['batchid'] == batchid) & (df['type'] == 'basecall')].iloc[0, :]
+        resquiggle_row = df[(df['dsname'] == dsname) & (df['batchid'] == batchid) & (df['type'] == 'resquiggle')].iloc[0, :]
+
+        if row['type'] in ['DeepSignal', 'Tombo']:
+            runt += basecall_row['running.time.seconds'] + resquiggle_row['running.time.seconds']
+            memg += basecall_row['mem.usage.gb'] + resquiggle_row['mem.usage.gb']
+        elif row['type'] in ['Nanopolish', 'DeepMod']:
+            runt += basecall_row['running.time.seconds']
+            memg += basecall_row['mem.usage.gb']
+        dataset['dsname'].append(dsname)
+        dataset['tool'].append(row['type'])
+        dataset['batchid'].append(row['batchid'])
+        dataset['fast5'].append(row['fast5'])
+        dataset['running.time.seconds'].append(runt)
+        dataset['mem.usage.gb'].append(memg)
+    outdf = pd.DataFrame.from_dict(dataset)
+    logger.info(outdf)
+    outfn = os.path.join(pic_base_dir, 'recalculate.running.summary.csv')
+    outdf.to_csv(outfn)
+
+
 def parse_arguments():
     """
     :return:
@@ -266,6 +357,9 @@ def parse_arguments():
     parser.add_argument('--gpu-task', action='store_true')
     parser.add_argument('--dataset-batch', action='store_true')
     parser.add_argument('--unify', action='store_true')
+    parser.add_argument('--recalculate', action='store_true')
+    parser.add_argument('--megalodon', action='store_true')
+
     return parser.parse_args()
 
 
@@ -282,4 +376,9 @@ if __name__ == '__main__':
         dataset_batch_summary()
     if args.unify:
         unify_data_df()
+    if args.recalculate:
+        recalculate()
+    if args.megalodon:
+        winter_megalodon_task_summary()
+
     logger.info("DONE")
