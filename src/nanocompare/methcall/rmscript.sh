@@ -16,8 +16,10 @@
 
 set -x
 #mv /fastscratch/liuya/nanocompare/HL60-Runs/HL60-N50-sept /projects/li-lab/Nanopore_compare/nanopore_fast5
-cp -rf /fastscratch/liuya/nanocompare/APL-Runs/APL-N50-sept /projects/li-lab/Nanopore_compare/nanopore_fast5
-cp -rf /fastscratch/liuya/nanocompare/K562-Runs/K562-N50-sept /projects/li-lab/Nanopore_compare/nanopore_fast5
+#cp -rf /fastscratch/liuya/nanocompare/APL-Runs/APL-N50-sept /projects/li-lab/Nanopore_compare/nanopore_fast5
+#cp -rf /fastscratch/liuya/nanocompare/K562-Runs/K562-N50-sept /projects/li-lab/Nanopore_compare/nanopore_fast5
+cp -rf /fastscratch/liuya/nanocompare/NA19240-Runs/NA19240-N300-sept /projects/li-lab/Nanopore_compare/nanopore_fast5
+
 echo "done"
 
 

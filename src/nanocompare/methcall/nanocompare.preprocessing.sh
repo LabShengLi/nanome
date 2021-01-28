@@ -50,14 +50,14 @@ if [ "${multipleInputs}" = true ] ; then
 	for fast5tarfn in ${filelist}; do
 		echo "fn=${fast5tarfn}"
 		if [ "${fast5tarfn##*.}" = "tar" ]; then
-			tar -xf ${fast5tarfn} -C ${untaredInputDir} & # bg running
+			tar -xf ${fast5tarfn} -C ${untaredInputDir}  # bg running
         elif [ "${fast5tarfn##*.}" = "gz" ]; then
-			tar -xzf ${fast5tarfn} -C ${untaredInputDir} & # bg running
+			tar -xzf ${fast5tarfn} -C ${untaredInputDir} # bg running
         elif [ "${fast5tarfn##*.}" = "fast5" ]; then
-			cp ${fast5tarfn} ${untaredInputDir} & # bg running
+			cp ${fast5tarfn} ${untaredInputDir}  # bg running
         fi
 	done
-	wait # wait until all background task finished
+#	wait # wait until all background task finished
 else
 	if [ "${inputDataDir##*.}" = "tar" ]; then
 		tar -xf ${inputDataDir} -C ${untaredInputDir}

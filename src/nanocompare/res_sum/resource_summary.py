@@ -117,18 +117,20 @@ def winter_megalodon_task_summary():
             dataset['tool'].append('Megalodon')
             dataset['job.results'].append(jobret)
 
-            runtime_seconds, mem_gb = str_extract_time_mem(jobret)
+            runtime_seconds, mem_gb, jobid, array_jobid = str_extract_time_mem(jobret)
             dataset['running.time.seconds'].append(runtime_seconds)
             dataset['mem.usage.gb'].append(mem_gb)
+            dataset['jobid'].append(jobid)
+            dataset['array.jobid'].append(array_jobid)
         df1 = pd.DataFrame.from_dict(dataset)
         df2 = pd.read_pickle(batch_fast5_pkl)
         df = df1.merge(df2, on=['dsname', 'batchid'], how='left')
 
-        dfout = df[['dsname', 'tool', 'batchid', 'fast5', 'running.time.seconds', 'mem.usage.gb', 'job.results']]
+        dfout = df[['dsname', 'tool', 'batchid', 'jobid', 'array.jobid', 'fast5', 'running.time.seconds', 'mem.usage.gb', 'job.results']]
         outfn = os.path.join(pic_base_dir, 'recalculate.running.summary.Megalodon.xlsx')
         dfout.to_excel(outfn)
 
-        dfout = df[['dsname', 'tool', 'batchid', 'fast5', 'running.time.seconds', 'mem.usage.gb']]
+        dfout = df[['dsname', 'tool', 'batchid', 'jobid', 'array.jobid', 'fast5', 'running.time.seconds', 'mem.usage.gb']]
         outfn = os.path.join(pic_base_dir, 'recalculate.running.summary.Megalodon.csv')
         dfout.to_csv(outfn)
 
@@ -214,26 +216,36 @@ def str_extract_time_mem(jobret):
     """
     Example
 
-    Job ID: 6289162
-    Cluster: slurm_cluster
-    User/Group: root/jaxuser
+    Job ID: 23443
+    Array Job ID: 23398_23
+    Cluster: winter
+    User/Group: liuya/jaxuser
     State: COMPLETED (exit code 0)
-    Cores: 1
-    CPU Utilized: 00:18:08
-    CPU Efficiency: 17.31% of 01:44:46 core-walltime
-    Job Wall-clock time: 01:44:46
-    Memory Utilized: 71.49 MB
-    Memory Efficiency: 0.05% of 150.00 GB
+    Nodes: 1
+    Cores per node: 16
+    CPU Utilized: 00:24:01
+    CPU Efficiency: 9.26% of 04:19:28 core-walltime
+    Job Wall-clock time: 00:16:13
+    Memory Utilized: 2.52 GB
+    Memory Efficiency: 0.16% of 1.56 TB
 
     :param jobret:
     :return:
     """
     cpu_use_time = None
-    mem_use_gb = None
+    mem_use = None
+    jobid = None
+    array_jobid = None
 
     for line in jobret.splitlines():
         if line.strip().startswith('State: F') or line.strip().startswith('State: CANCELLED'):
             return None, None
+
+        if line.strip().startswith('Job ID:'):
+            jobid = line.strip().replace('Job ID:', '').strip()
+
+        if line.strip().startswith('Array Job ID:'):
+            array_jobid = line.strip().replace('Array Job ID:', '').strip()
 
         if line.strip().startswith('CPU Utilized:'):
             cpu_use_time = line.strip().replace('CPU Utilized:', '').strip()
@@ -257,7 +269,7 @@ def str_extract_time_mem(jobret):
     else:
         raise Exception(f'Unrecognized mem={mem_use} from jobret={jobret}')
 
-    return duration_time.total_seconds(), mem_gb
+    return duration_time.total_seconds(), mem_gb, jobid, array_jobid
 
 
 def running_resouce_extraction(row):

@@ -317,6 +317,12 @@ fig5c.running.resource.bar.plot <- function(bdir) {
   run.table$tool <- factor(run.table$tool, levels = Tool.Order)
   run.table$dsname <- factor(run.table$dsname, levels = Dataset.Order)
 
+  run.mean.table <- run.table %>%
+    group_by(dsname, tool) %>%
+    summarise(mean.rt = mean(rt), mean.mem = mean(mem))
+
+  outfn = here('result', 'mean.runnning.summary.csv')
+  write_csv(run.mean.table, outfn)
 
   g1 <- run.table %>%
     #drop_na(tool) %>%
@@ -351,6 +357,6 @@ fig5c.running.resource.bar.plot <- function(bdir) {
   #gg
 
   outfn = sprintf("%s/running.resource.bar.plot.jpg", bdir)
-  ggsave(gg, filename = outfn, width = 8, height = 3, dpi=600)
+  ggsave(gg, filename = outfn, width = 8, height = 3, dpi = 600)
   printf("save to %s\n", outfn)
 }

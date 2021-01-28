@@ -37,7 +37,7 @@ if [ "${run_methcall}" = true ] ; then
 		meth_arrayjob_ret=$(sbatch --job-name=dpsig.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.deepsignal.sh)
 	elif [ "${Tool}" = "DeepMod" ] ; then # TODO: we use only 2 cores for speed up
 		# DeepMod methylation call pipeline
-		meth_arrayjob_ret=$(sbatch --job-name=dpmod.mcal.${analysisPrefix} --ntasks=6 --output=${out_param} --error=${err_param} --array=1-${targetNum}%50 --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.deepmod.sh)
+		meth_arrayjob_ret=$(sbatch --job-name=dpmod.mcal.${analysisPrefix} --ntasks=8 --output=${out_param} --error=${err_param} --array=1-${targetNum} --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.deepmod.sh)
 
 #		meth_arrayjob_ret=$(sbatch --job-name=dpmod.mcal.${analysisPrefix} --ntasks=6 --output=${out_param} --error=${err_param} --array=147,148,1,166,267,294,297,298 --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.deepmod.sh)
 
@@ -49,7 +49,9 @@ if [ "${run_methcall}" = true ] ; then
 		meth_arrayjob_ret=$(sbatch --job-name=guppy.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum}%20 --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.guppy.sh)
 	elif [ "${Tool}" = "Megalodon" ] ; then
 		# Megalodon mehylation Must run on GPU now
-		meth_arrayjob_ret=$(sbatch --job-name=mgldn.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum}%20 --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.megalodon.sh)
+#		meth_arrayjob_ret=$(sbatch --job-name=mgldn.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=1-${targetNum}%20 --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.megalodon.sh)
+
+		meth_arrayjob_ret=$(sbatch --job-name=mgldn.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=85,87,88 --export=ALL,${exp_param} --dependency=${depend_param} nanocompare.methcall.megalodon.sh)
 	else
 		echo "Tool=${Tool} is not support now"
 		exit -1
