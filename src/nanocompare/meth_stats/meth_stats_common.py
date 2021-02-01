@@ -11,6 +11,7 @@ import pickle
 import re
 from collections import defaultdict
 from itertools import combinations
+from multiprocessing import Pool
 
 import numpy as np
 import pandas as pd
@@ -1870,6 +1871,70 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     return df
 
 
+def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, secondFilterBed=None, secondFilterBed_4Corr=None, cutoff_meth=1.0, outdir=None, tagname=None, processors=10):
+    """
+    New performance evaluation by Yang
+    referenceCpGs is number of all CpGs that is fully-methylated (>=cutoff_meth) or unmethylated in BG-Truth
+
+    :param ontCalls:
+    :param bgTruth:
+    :param analysisPrefix:
+    :param narrowedCoordinatesList:
+    :param ontCutt:
+    :param secondFilterBed: Joined of 4 tools and bgtruth bed file
+    :param secondFilterBed_4Corr: Joined of 4 tools and bgtruth bed file for cor analysis (with cutoff cov)
+    :param cutoff_meth:
+    :return:
+    """
+
+    ret_list = []
+    with Pool(processes=processors) as pool:
+        for coord_fn in narrowedCoordinatesList:
+            accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = \
+                computePerReadStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFile=secondFilterBed,
+                                    secondFilterBed_4CorrFile=secondFilterBed_4Corr,
+                                    cutoff_meth=cutoff_meth, outdir=outdir, tagname=tagname)
+            coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genome-wide"}')
+            ret_list.append((coord, pool.apply_async(computePerReadStats, (ontCalls, bgTruth, analysisPrefix,), kwds={'coordBedFileName': coord_fn, 'secondFilterBed': secondFilterBed, 'secondFilterBed_4CorrFile': secondFilterBed_4Corr, 'cutoff_meth': cutoff_meth, 'outdir': outdir, 'tagname': tagname}),))
+
+        pool.close()
+        pool.join()
+
+    d = defaultdict(list)
+    for k in range(len(narrowedCoordinatesList)):
+        coord, ret = ret_list[k]
+        accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = ret.get()
+        d["prefix"].append(analysisPrefix)
+        d["coord"].append(coord)
+        d["Accuracy"].append(accuracy)
+        d["Average-Precision"].append(ap)
+        d["Macro-F1"].append(f1_macro)
+        d["Micro-F1"].append(f1_micro)
+        d["Macro-Precision"].append(precision_macro)
+        d["Micro-Precision"].append(precision_micro)
+        d["Macro-Recall"].append(recall_macro)
+        d["Micro-Recall"].append(recall_micro)
+        d["ROC-AUC"].append(roc_auc)
+        d["Precision_5C"].append(precision_5C)
+        d["Recall_5C"].append(recall_5C)
+        d["F1_5C"].append(F1_5C)
+        d["Csites_called"].append(cCalls)
+        d["Csites"].append(cSites_BGTruth)
+        d["Precision_5mC"].append(precision_5mC)
+        d["Recall_5mC"].append(recall_5mC)
+        d["F1_5mC"].append(F1_5mC)
+        d["mCsites_called"].append(mCalls)
+        d["mCsites"].append(mSites_BGTruth)
+        d["referenceCpGs"].append(referenceCpGs)
+        d["Corr_Mix"].append(corrMix)
+        d["Corr_mixedSupport"].append(Corr_mixedSupport)
+        d["Corr_All"].append(corrAll)
+        d["Corr_allSupport"].append(Corr_allSupport)
+
+    df = pd.DataFrame.from_dict(d)
+    return df
+
+
 def save_ontcalls_to_pkl(ontCalls, outfn):
     with open(outfn, 'wb') as handle:
         pickle.dump(ontCalls, handle)
@@ -2639,15 +2704,18 @@ def save_to_cache(infn, data, **params):
         return
     # logger.debug(f'infn={infn}, data={len(data)}, params={params}')
     cache_fn = get_cache_filename(infn, params)
-    with open(cache_fn, 'wb') as outf:
-        pickle.dump(data, outf)
-    logger.debug(f'Cached to file:{cache_fn}')
+
+    if not os.path.exists(cache_fn):
+        with open(cache_fn, 'wb') as outf:
+            pickle.dump(data, outf)
+        logger.debug(f'Cached to file:{cache_fn}')
 
 
 def check_cache_available(infn, **params):
     cachefn = get_cache_filename(infn, params)
 
     if os.path.exists(cachefn):
+        logger.debug(f'Start to get from cache:{cachefn}')
         try:
             with open(cachefn, 'rb') as inf:
                 ret = pickle.load(inf)
@@ -2655,7 +2723,6 @@ def check_cache_available(infn, **params):
             return ret
         except:
             return None
-
     return None
 
 
@@ -2674,6 +2741,7 @@ def import_call(infn, encode, baseFormat=0, include_score=False, deepmod_cluster
     if enable_cache and using_cache:
         ret = check_cache_available(infn=infn, encode=encode, baseFormat=baseFormat, include_score=include_score, deepmod_cluster_freq_cov_format=deepmod_cluster_freq_cov_format)
         if ret:
+            logger.debug(f'Import {encode} finished!\n')
             return ret
         logger.debug(f'Not cached yet, we load from raw file')
     call0 = None
@@ -2712,6 +2780,7 @@ def import_bgtruth(infn, encode, cov=10, baseFormat=0, includeCov=True, enable_c
     if enable_cache and using_cache:
         ret = check_cache_available(infn, encode=encode, cov=cov, baseFormat=baseFormat, includeCov=includeCov)
         if ret:
+            logger.debug(f'Import BG-Truth using encode={encode} finished!\n')
             return ret
         logger.debug(f'Not cached yet, we load from raw file')
 
@@ -2730,10 +2799,10 @@ def import_bgtruth(infn, encode, cov=10, baseFormat=0, includeCov=True, enable_c
     else:
         raise Exception(f"encode={encode} is not supported yet, for inputfile={infn}")
 
-    logger.debug(f'Import BG-Truth finished!\n')
-
     if enable_cache:
         save_to_cache(infn, bgTruth, encode=encode, cov=cov, baseFormat=baseFormat, includeCov=includeCov)
+
+    logger.debug(f'Import BG-Truth using encode={encode} finished!\n')
     return bgTruth
 
 

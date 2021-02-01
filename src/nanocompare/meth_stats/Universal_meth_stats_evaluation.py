@@ -25,6 +25,7 @@ def parse_arguments():
     parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff", default=5)
     parser.add_argument('--min-tool-cov', type=int, help="min tool coverage cutoff", default=3)
     parser.add_argument('--dsname', type=str, help="dataset name", default='DS')
+    parser.add_argument('--processors', type=int, help="multi-processors", default=10)
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--report-joined', action='store_true', help="True if report on only joined sets")
     parser.add_argument('--test', action='store_true', help="True if only test for short time running")
@@ -148,9 +149,9 @@ if __name__ == '__main__':
         # Note: relateCoord - all singleton (absolute and mixed) and non-singleton generated bed. ranges
         #       secondFilterBed - joined sites of four tools and bg-truth. points
         if report_joined:  # step: with joined results of all tools
-            df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=bedfn_tool_join_bgtruth, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, test=args.test)
+            df = report_per_read_performance_mp(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=bedfn_tool_join_bgtruth, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, processors=args.processors)
         else:  # step: no joined results
-            df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=None, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, test=args.test)
+            df = report_per_read_performance_mp(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=None, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, processors=args.processors)
 
         df['Tool'] = tool
         df['Dataset'] = dsname
