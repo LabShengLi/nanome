@@ -25,6 +25,7 @@ def parse_arguments():
     parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff", default=5)
     parser.add_argument('--min-tool-cov', type=int, help="min tool coverage cutoff", default=3)
     parser.add_argument('--dsname', type=str, help="dataset name", default='DS')
+    parser.add_argument('--processors', type=int, help="multi-processors", default=10)
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--report-joined', action='store_true', help="True if report on only joined sets")
     parser.add_argument('--test', action='store_true', help="True if only test for short time running")
@@ -63,6 +64,12 @@ if __name__ == '__main__':
     # So we must import as 1-based format for our tool or bgtruth, DO NOT USE baseFormat=0
     baseFormat = 1
 
+    # We firstly import bg-truth, then each tool results, and remove non-bg-truth cpgs for memory usage
+    encode, fn = args.bgtruth.split(':')
+    logger.debug(f'BGTruth fn={fn}, encode={encode}')
+
+    bgTruth = import_bgtruth(fn, encode, cov=bgtruth_cov_cutoff, baseFormat=baseFormat, includeCov=True, using_cache=using_cache, enable_cache=enable_cache)
+
     callfn_dict = defaultdict()  # callname -> filename
     callresult_dict = defaultdict()  # name->call
     callname_list = []  # [DeepSignal, DeepMod, etc.]
@@ -75,13 +82,11 @@ if __name__ == '__main__':
         callfn_dict[call_name] = callfn
 
         ## MUST import read-level results, and include score for plot ROC curve and PR curve
-        callresult_dict[call_name] = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache)
+        call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache)
+        # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
+        callresult_dict[call_name] = filter_cpg_dict(call0, bgTruth)
 
     logger.debug(callfn_dict)
-    encode, fn = args.bgtruth.split(':')
-    logger.debug(f'BGTruth fn={fn}, encode={encode}')
-
-    bgTruth = import_bgtruth(fn, encode, cov=bgtruth_cov_cutoff, baseFormat=baseFormat, includeCov=True, using_cache=using_cache, enable_cache=enable_cache)
 
     relateCoord = list(narrowCoord)  # copy the basic coordinate
 
@@ -148,9 +153,9 @@ if __name__ == '__main__':
         # Note: relateCoord - all singleton (absolute and mixed) and non-singleton generated bed. ranges
         #       secondFilterBed - joined sites of four tools and bg-truth. points
         if report_joined:  # step: with joined results of all tools
-            df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=bedfn_tool_join_bgtruth, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, test=args.test)
+            df = report_per_read_performance_mp(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=bedfn_tool_join_bgtruth, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, processors=args.processors)
         else:  # step: no joined results
-            df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=None, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, test=args.test)
+            df = report_per_read_performance_mp(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=None, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, processors=args.processors)
 
         df['Tool'] = tool
         df['Dataset'] = dsname
@@ -167,8 +172,8 @@ if __name__ == '__main__':
         logger.info(f"save to {outfn}")
 
         # This file will always report intermediate results
-        tmpfn = os.path.join(perf_dir, 'performance.report.tmp.csv')
-        os.remove(tmpfn)
+        # tmpfn = os.path.join(perf_dir, 'performance.report.tmp.csv')
+        # os.remove(tmpfn)
 
         if args.test:
             break

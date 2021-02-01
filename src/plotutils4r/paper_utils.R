@@ -128,7 +128,7 @@ fig.34a.line.plot.performance <- function(df, perf.measure, locations, bdir, sca
     theme(strip.text.x = element_text(size = 12))
 
   outfn = sprintf("%s/fig.34a.line.%s.%s.jpg", bdir, perf.measure, locations[1])
-  ggsave(filename = outfn, width = 6.5, height = 6, scale = scale, dpi = 600)
+  ggsave(filename = outfn, width = 6.5, height = 4, scale = scale, dpi = 600)
   printf("save to %s\n", outfn)
 }
 

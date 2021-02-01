@@ -37,7 +37,7 @@ inputDataDir=/fastscratch/liuya/nanocompare/Nanopore-reads/NA19240
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
 # ToolList  -   a list of Nanopore tools prepared to run
 #ToolList=(DeepMod)
-ToolList=(Megalodon)
+ToolList=(DeepMod)
 #ToolList=(DeepSignal Tombo)
 
 

@@ -18,7 +18,7 @@ run_log_dir = '/projects/li-lab/Nanopore_compare/result/running-logs'
 basedir = run_log_dir
 
 tool_list_on_sumner = ['Tombo', 'DeepMod', 'DeepSignal', 'Nanopolish']
-tool_list_on_winter = ['Guppy']
+tool_list_on_winter = ['Guppy', 'Megalodon']
 
 ntarget_dict = {'HL60': 50, 'K562': 50, 'APL': 50, 'NA19240': 300}  # , 'NA19240': 300
 
@@ -92,6 +92,75 @@ def winter_task_summary():
     logging.info(f'save to {outfn}')
 
     outfn = os.path.join(pic_base_dir, 'winter.task.resource.summary.xlsx')
+    df.to_excel(outfn)
+
+
+def winter_task_summary_na19240():
+    dsname = 'NA19240'
+    dataset = defaultdict(list)
+    logging.info(dsname)
+    ## Resquiggle collection
+    #   HL60-Runs/HL60-N50-basecall/log
+    basecall_logdir = os.path.join(basedir, f'{dsname}-Runs', f'{dsname}-N{ntarget_dict[dsname]}-basecall', 'log')
+    pat_fns = os.path.join(basecall_logdir, 'bascal.*.out')
+    fnlist = glob.glob(pat_fns)
+    logging.info(f'Basecall collect: {len(fnlist)}')
+
+    for fn in tqdm(fnlist):
+        taskid, batchid = get_jobid_and_taskid(fn)
+        command = f"""
+               seff {taskid}
+               """
+        ret = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
+
+        rt_secs, mem_gb, jobid, array_jobid = str_extract_time_mem(ret)
+
+        if not rt_secs:  # Failed tasks are not consider
+            continue
+
+        dataset['dsname'].append(dsname)
+        dataset['tool'].append('basecall')
+        dataset['batchid'].append(int(batchid))
+        dataset['running.time.seconds'].append(rt_secs)
+        dataset['mem.usage.gb'].append(mem_gb)
+        dataset['jobid'].append(jobid)
+        dataset['array.jobid'].append(array_jobid)
+        dataset['job.results'].append(ret)
+
+    ## Tool methcall collection
+    for tool in tool_list_on_winter:
+        methcall_logdir = os.path.join(basedir, f'{dsname}-Runs', f'{dsname}-{tool}-N{ntarget_dict[dsname]}', f'{dsname}-{tool}-N{ntarget_dict[dsname]}-methcall', 'log')
+        pat_fns = os.path.join(methcall_logdir, '*.mcal.*.batch*.*.out')
+        fnlist = glob.glob(pat_fns)
+        logging.info(f'Methcall of {tool} collect: {len(fnlist)}')
+
+        for fn in tqdm(fnlist):
+            taskid, batchid = get_jobid_and_taskid(fn)
+            # logging.debug(taskid)
+            command = f"""
+    seff {taskid}
+    """
+            ret = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
+            rt_secs, mem_gb, jobid, array_jobid = str_extract_time_mem(ret)
+
+            if not rt_secs:  # Failed tasks are not consider
+                continue
+
+            dataset['dsname'].append(dsname)
+            dataset['tool'].append(tool)
+            dataset['batchid'].append(int(batchid))
+            dataset['running.time.seconds'].append(rt_secs)
+            dataset['mem.usage.gb'].append(mem_gb)
+            dataset['jobid'].append(jobid)
+            dataset['array.jobid'].append(array_jobid)
+            dataset['job.results'].append(ret)
+
+    df = pd.DataFrame.from_dict(dataset)
+    outfn = os.path.join(pic_base_dir, 'na19240.winter.task.resource.summary.pkl')
+    df.to_pickle(outfn)
+    logging.info(f'save to {outfn}')
+
+    outfn = os.path.join(pic_base_dir, 'na19240.winter.task.resource.summary.xlsx')
     df.to_excel(outfn)
 
 
@@ -189,6 +258,77 @@ def sunmer_task_summary():
     df.to_excel(outfn)
 
 
+def sunmer_task_summary_na19240():
+    dsname = 'NA19240'
+    dataset = defaultdict(list)
+    resquiggle_dir = os.path.join(basedir, f'{dsname}-Runs', f'{dsname}-N{ntarget_dict[dsname]}-resquiggle', 'log')
+    pat_fns = os.path.join(resquiggle_dir, 'rsquigl.*.out')
+    logger.debug(f'pat_fns={pat_fns}')
+    fnlist = glob.glob(pat_fns)
+    logging.info(f'Resquiggle collect: {len(fnlist)}')
+
+    for fn in tqdm(fnlist):
+        taskid, batchid = get_jobid_and_taskid(fn)
+        command = f"""
+            seff {taskid}
+            """
+        ret = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
+
+        rt_secs, mem_gb, jobid, array_jobid = str_extract_time_mem(ret)
+
+        if not rt_secs:  # Failed tasks are not consider
+            continue
+
+        dataset['dsname'].append(dsname)
+        dataset['tool'].append('resquiggle')
+        dataset['batchid'].append(int(batchid))
+        dataset['running.time.seconds'].append(rt_secs)
+        dataset['mem.usage.gb'].append(mem_gb)
+        dataset['jobid'].append(jobid)
+        dataset['array.jobid'].append(array_jobid)
+        dataset['job.results'].append(ret)
+
+    ## Tool methcall collection
+    for tool in tool_list_on_sumner:
+        # HL60-Runs/HL60-Nanopolish-N50/HL60-Nanopolish-N50-methcall/log
+        methcall_logdir = os.path.join(basedir, f'{dsname}-Runs', f'{dsname}-{tool}-N{ntarget_dict[dsname]}', f'{dsname}-{tool}-N{ntarget_dict[dsname]}-methcall', 'log')
+        # logging.debug(meth_logdir)
+
+        pat_fns = os.path.join(methcall_logdir, '*.mcal.*.batch*.*.out')
+        fnlist = glob.glob(pat_fns)
+        logging.info(f'Methcall of {tool} collect: {len(fnlist)}')
+
+        for fn in tqdm(fnlist):
+            taskid, batchid = get_jobid_and_taskid(fn)
+            # logging.debug(taskid)
+            command = f"""
+seff {taskid}
+"""
+            ret = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
+
+            rt_secs, mem_gb, jobid, array_jobid = str_extract_time_mem(ret)
+
+            if not rt_secs:  # Failed tasks are not consider
+                continue
+
+            dataset['dsname'].append(dsname)
+            dataset['tool'].append(tool)
+            dataset['batchid'].append(int(batchid))
+            dataset['running.time.seconds'].append(rt_secs)
+            dataset['mem.usage.gb'].append(mem_gb)
+            dataset['jobid'].append(jobid)
+            dataset['array.jobid'].append(array_jobid)
+            dataset['job.results'].append(ret)
+
+    df = pd.DataFrame.from_dict(dataset)
+    # logging.info(df)
+    outfn = os.path.join(pic_base_dir, 'na19240.sumner.task.resource.summary.pkl')
+    df.to_pickle(outfn)
+    logging.info(f'save to {outfn}')
+    outfn = os.path.join(pic_base_dir, 'na19240.sumner.task.resource.summary.xlsx')
+    df.to_excel(outfn)
+
+
 def dataset_batch_summary():
     dataset = defaultdict(list)
     for dsname in ntarget_dict:
@@ -239,7 +379,7 @@ def str_extract_time_mem(jobret):
 
     for line in jobret.splitlines():
         if line.strip().startswith('State: F') or line.strip().startswith('State: CANCELLED'):
-            return None, None
+            return None, None, None, None
 
         if line.strip().startswith('Job ID:'):
             jobid = line.strip().replace('Job ID:', '').strip()
@@ -326,37 +466,43 @@ def unify_data_df():
     logger.info(f'save to {outfn}')
 
 
-def recalculate():
-    df = pd.read_csv(os.path.join(run_log_dir, 'running.summary.table.csv'), index_col=0)
-    # logger.info(df)
+def recalculate(fnlist=['na19240.sumner.task.resource.summary.pkl', 'na19240.winter.task.resource.summary.pkl']):
+    dflist = []
+    for fn in fnlist:
+        dflist.append(pd.read_pickle(os.path.join(pkldir, fn)))
+    df = pd.concat(dflist)
+
+    df3 = pd.read_pickle(batch_fast5_pkl)
+    df = df.merge(df3, on=['dsname', 'batchid'], how='left')
+    logger.debug(df)
 
     dataset = defaultdict(list)
     for index, row in df.iterrows():
-        if row['type'] not in tool_list_on_sumner:
+        if row['tool'] not in tool_list_on_sumner + tool_list_on_winter:
             continue
         dsname = row['dsname']
         batchid = row['batchid']
         runt = row['running.time.seconds']
         memg = row['mem.usage.gb']
 
-        basecall_row = df[(df['dsname'] == dsname) & (df['batchid'] == batchid) & (df['type'] == 'basecall')].iloc[0, :]
-        resquiggle_row = df[(df['dsname'] == dsname) & (df['batchid'] == batchid) & (df['type'] == 'resquiggle')].iloc[0, :]
+        basecall_row = df[(df['dsname'] == dsname) & (df['batchid'] == batchid) & (df['tool'] == 'basecall')].iloc[0, :]
+        resquiggle_row = df[(df['dsname'] == dsname) & (df['batchid'] == batchid) & (df['tool'] == 'resquiggle')].iloc[0, :]
 
-        if row['type'] in ['DeepSignal', 'Tombo']:
+        if row['tool'] in ['DeepSignal', 'Tombo']:
             runt += basecall_row['running.time.seconds'] + resquiggle_row['running.time.seconds']
             memg += basecall_row['mem.usage.gb'] + resquiggle_row['mem.usage.gb']
-        elif row['type'] in ['Nanopolish', 'DeepMod']:
+        elif row['tool'] in ['Nanopolish', 'DeepMod']:
             runt += basecall_row['running.time.seconds']
             memg += basecall_row['mem.usage.gb']
         dataset['dsname'].append(dsname)
-        dataset['tool'].append(row['type'])
+        dataset['tool'].append(row['tool'])
         dataset['batchid'].append(row['batchid'])
         dataset['fast5'].append(row['fast5'])
         dataset['running.time.seconds'].append(runt)
         dataset['mem.usage.gb'].append(memg)
     outdf = pd.DataFrame.from_dict(dataset)
     logger.info(outdf)
-    outfn = os.path.join(pic_base_dir, 'recalculate.running.summary.csv')
+    outfn = os.path.join(pic_base_dir, 'recalculate.running.summary.na19240.csv')
     outdf.to_csv(outfn)
 
 
@@ -371,6 +517,8 @@ def parse_arguments():
     parser.add_argument('--unify', action='store_true')
     parser.add_argument('--recalculate', action='store_true')
     parser.add_argument('--megalodon', action='store_true')
+    parser.add_argument('--na19240-winter', action='store_true')
+    parser.add_argument('--na19240-sumner', action='store_true')
 
     return parser.parse_args()
 
@@ -392,5 +540,9 @@ if __name__ == '__main__':
         recalculate()
     if args.megalodon:
         winter_megalodon_task_summary()
+    if args.na19240_sumner:
+        sunmer_task_summary_na19240()
+    if args.na19240_winter:
+        winter_task_summary_na19240()
 
     logger.info("DONE")
