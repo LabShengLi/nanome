@@ -34,7 +34,7 @@ for (fn in venn_flist) {
   base_infn = basename(infn)
   outfn = sprintf("%s/%s.jpg", outdir, base_infn)
 
-  fig.34c.venn.plot.set5(dt$V1, outfn)
+  fig.6a.venn.plot.set5(dt$V1, outfn)
 }
 
 

@@ -10,7 +10,7 @@ library(ggpubr)
 locations.Singletons = c("Singleton", "Nonsingleton", "Discordant", "Concordant")
 locations.Genome = c("Genomewide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns")
 Coord.Order = c(locations.Genome, locations.Singletons)
-Dataset.Order = c('APL', 'HL60', 'K562')
+Dataset.Order = c('APL', 'HL60', 'K562', 'NA19240')
 Tool.Order = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon')
 
 measure.pair.list = list(c('Accuracy', 'Micro.F1'), c('Accuracy', 'ROC.AUC'), c('Micro.Precision', 'Micro.Recall'), c('F1_5mC', 'F1_5C'), c('Macro.Precision', 'Macro.Recall'))
@@ -153,7 +153,7 @@ fig.34a.bar.dataset.location.performance <- function(df, dsname, perf.pair, bdir
 }
 
 
-fig.34c.venn.plot.set5 <- function(ret, outfn) {
+fig.6a.venn.plot.set5 <- function(ret, outfn) {
   graphics.off()
   venn.plot <- draw.quintuple.venn(
     area1 = ret[1],
@@ -204,7 +204,7 @@ fig.34c.venn.plot.set5 <- function(ret, outfn) {
 }
 
 
-fig.34c.venn.plot.set3 <- function(ret, outfn) {
+fig.6a.venn.plot.set3 <- function(ret, outfn) {
   graphics.off()
   venn.plot <- draw.triple.venn(
     area1 = ret[1],
@@ -239,7 +239,7 @@ fig.34c.venn.plot.set3 <- function(ret, outfn) {
 }
 
 
-fig.34c.euller.plot.set3 <- function(ret, outfn) {
+fig.6b.euller.plot.set3 <- function(ret, outfn) {
   graphics.off()
 
   fit1 <- euler(c("A" = ret[1], "B" = ret[2], "C" = ret[3],
@@ -264,7 +264,7 @@ fig.34c.euller.plot.set3 <- function(ret, outfn) {
 }
 
 
-fig.34a.violin.corr.performance <- function(df, corr.perf, bdir, scale = 1) {
+fig.5d.violin.corr.performance <- function(df, corr.perf, bdir, scale = 1) {
   graphics.off()
   ggplot(df, aes_string(x = 'Tool', y = corr.perf, fill = 'Tool')) +
     geom_violin() +
@@ -285,7 +285,7 @@ fig.34a.violin.corr.performance <- function(df, corr.perf, bdir, scale = 1) {
 }
 
 
-fig.34a.box.location.performance <- function(df, perf.measure, locations, bdir, scale = 1) {
+fig.34b.box.location.performance <- function(df, perf.measure, locations, bdir, scale = 1) {
   sel_data = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', perf.measure)]
 
   ggplot(sel_data, aes_string(x = 'Tool', y = perf.measure, fill = 'Tool')) +
@@ -302,14 +302,17 @@ fig.34a.box.location.performance <- function(df, perf.measure, locations, bdir, 
 }
 
 
-fig5c.running.resource.bar.plot <- function(bdir) {
+fig.5c.running.resource.bar.plot <- function(bdir) {
   infn1 = here('result', 'recalculate.running.summary.csv')
   run.table1 <- read_csv(infn1)
 
   infn2 = here('result', 'recalculate.running.summary.Megalodon.csv')
   run.table2 <- read_csv(infn2)
 
-  run.table = bind_rows(run.table1, run.table2)
+  infn3 = here('result', 'recalculate.running.summary.na19240.csv')
+  run.table3 <- read_csv(infn3)
+
+  run.table = bind_rows(run.table1, run.table2, run.table3)
 
 
   run.table$rt <- run.table$running.time.seconds / run.table$fast5
@@ -325,13 +328,13 @@ fig5c.running.resource.bar.plot <- function(bdir) {
   write_csv(run.mean.table, outfn)
 
   g1 <- run.table %>%
-    #drop_na(tool) %>%
+    drop_na(tool) %>%
     ggplot(mapping = aes(x = dsname, y = rt, fill = tool)) +
     geom_bar(stat = "summary", fun = mean, width = 0.8, position = position_dodge()) +
     scale_fill_manual(values = ToolColorPal) +
     theme_classic() +
     ylab("Running time(seconds) per Fast5 file") +
-    xlab("Tool") +
+    xlab("Dataset") +
     coord_flip() +
     labs(fill = 'Tool') +
     theme(text = element_text(size = 12))
@@ -339,6 +342,7 @@ fig5c.running.resource.bar.plot <- function(bdir) {
   #g1
 
   g2 <- run.table %>%
+    drop_na(tool) %>%
     ggplot(mapping = aes(x = dsname, y = mem, fill = tool)) +
     geom_bar(stat = "summary", fun = mean, width = 0.8, position = position_dodge()) +
     #scale_x_discrete(limits = levels(Tool.Order)) +
@@ -346,7 +350,7 @@ fig5c.running.resource.bar.plot <- function(bdir) {
     scale_fill_manual(values = ToolColorPal) +
     theme_classic() +
     ylab("Memory usage(MB) per Fast5 file") +
-    xlab("Tool") +
+    xlab("Dataset") +
     labs(fill = 'Tool') +
     theme(text = element_text(size = 12))
 

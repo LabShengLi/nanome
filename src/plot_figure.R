@@ -3,28 +3,40 @@ rm(list = ls())
 library(here)
 here()
 
-getwd()
-#wdir = here('src')  #"/Users/liuya/PycharmProjects/nano-compare/src/rplot_func"
-#setwd(wdir)
-
-source(here('src', 'plotutils4r', 'paper_utils.R'))
-outdir = here('figures')
-
-fig5c.running.resource.bar.plot(outdir)
-
 # Load data and sort string orders
+source(here('src', 'plotutils4r', 'paper_utils.R'))
 infn = here('result', 'performance-results.csv')
 df <- load.performance.data(infn)
 
-## Test
+## Figure 3, 4 a:Line plot
 source(here('src', 'plotutils4r', 'paper_utils.R'))
+out_dir = here('figures', 'line-plot')
+dir.create(out_dir, showWarnings = FALSE)
 
-for (corr_col in Corr.Perf.List) {
-  fig.34a.violin.corr.performance(df, corr_col, outdir, scale = 1)
+for (perf.measure in measure.list) {
+  fig.34a.line.plot.performance(df, perf.measure, bdir = out_dir, locations = locations.Singletons)
+  fig.34a.line.plot.performance(df, perf.measure, bdir = out_dir, locations = locations.Genome)
+  #break
 }
 
 
-## Set venn and euller plot
+## Figure 3, 4 b:Box plot
+source(here('src', 'plotutils4r', 'paper_utils.R'))
+out_dir = here('figures', 'box-plot')
+dir.create(out_dir, showWarnings = FALSE)
+for (perf.measure in measure.list) {
+  fig.34b.box.location.performance(df, perf.measure, bdir = out_dir, locations = locations.Singletons)
+  fig.34b.box.location.performance(df, perf.measure, bdir = out_dir, locations = locations.Genome)
+  #break
+}
+
+## Figure 5 c: Resource summary
+source(here('src', 'plotutils4r', 'paper_utils.R'))
+outdir = here('figures')
+fig.5c.running.resource.bar.plot(outdir)
+
+
+## Figure 6 ab: Set venn and euller plot
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 data_dir = here('result', 'venn-data')
 out_dir = here('figures', 'venn-plot')
@@ -36,29 +48,28 @@ for (venfn in list.files(data_dir, 'venn.data.*.dat')) {
 
   if (length(dt$V1) == 31) {
     outfn = sprintf("%s/venn.plot.%s.jpg", out_dir, base_infn)
-    fig.34c.venn.plot.set5(dt$V1, outfn)
+    fig.6a.venn.plot.set5(dt$V1, outfn)
   }else if (length(dt$V1) == 7) {
     #outfn1 = sprintf("%s/venn.plot.%s.jpg", out_dir, base_infn)
     #fig.34c.venn.plot.set3(dt$V1, outfn1)
     outfn2 = sprintf("%s/euller.plot.%s.jpg", out_dir, base_infn)
-    fig.34c.euller.plot.set3(dt$V1, outfn2)
+    fig.6b.euller.plot.set3(dt$V1, outfn2)
     #break
   }
   #break
 }
 
 
-## Box plot
-for (perf.measure in measure.list) {
-  fig.34a.box.location.performance(df, perf.measure, bdir = outdir, locations = locations.Singletons)
-  fig.34a.box.location.performance(df, perf.measure, bdir = outdir, locations = locations.Genome)
-  #break
+
+## Test
+source(here('src', 'plotutils4r', 'paper_utils.R'))
+for (corr_col in Corr.Perf.List) {
+  fig.5d.violin.corr.performance(df, corr_col, outdir, scale = 1)
 }
 
 
 ## Figure 3, 4 a:Bar plot
 source(here('src', 'plotutils4r', 'paper_utils.R'))
-
 for (measure.pair in measure.pair.list) {
   for (dsname in Dataset.Order) {
     fig.34a.bar.dataset.location.performance(df, dsname, measure.pair, outdir)
@@ -66,16 +77,7 @@ for (measure.pair in measure.pair.list) {
   #break
 }
 
-## Figure 3, 4 a:Line plot
-source(here('src', 'plotutils4r', 'paper_utils.R'))
-out_dir = here('figures', 'line-plot-CPG')
-dir.create(out_dir, showWarnings = FALSE)
 
-for (perf.measure in measure.list) {
-  fig.34a.line.plot.performance(df, perf.measure, bdir = out_dir, locations = locations.Singletons)
-  fig.34a.line.plot.performance(df, perf.measure, bdir = out_dir, locations = locations.Genome)
-  #break
-}
 
 
 quit()
