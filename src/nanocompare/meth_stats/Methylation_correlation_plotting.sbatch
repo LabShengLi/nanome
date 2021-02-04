@@ -3,7 +3,8 @@
 #SBATCH --partition=compute
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 4 # number of cores
-#SBATCH --mem 290g # memory pool for all cores
+##SBATCH --mem 290g # memory pool for all cores
+#SBATCH --mem-per-cpu=290g
 #SBATCH --time=2-23:59:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR

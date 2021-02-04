@@ -1,7 +1,9 @@
 rm(list = ls())
 
 library(here)
-here()
+source(here('src', 'plotutils4r', 'paper_utils.R'))
+
+
 
 # Load data and sort string orders
 source(here('src', 'plotutils4r', 'paper_utils.R'))
@@ -60,12 +62,10 @@ for (venfn in list.files(data_dir, 'venn.data.*.dat')) {
 }
 
 
-
-## Test
+## Figure 5d: Violin plot of corr COE
 source(here('src', 'plotutils4r', 'paper_utils.R'))
-for (corr_col in Corr.Perf.List) {
-  fig.5d.violin.corr.performance(df, corr_col, outdir, scale = 1)
-}
+outdir = here('figures')
+fig.5d.violin.corr.performance(df, outdir)
 
 
 ## Figure 3, 4 a:Bar plot
@@ -76,8 +76,6 @@ for (measure.pair in measure.pair.list) {
   }
   #break
 }
-
-
 
 
 quit()

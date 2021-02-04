@@ -264,23 +264,27 @@ fig.6b.euller.plot.set3 <- function(ret, outfn) {
 }
 
 
-fig.5d.violin.corr.performance <- function(df, corr.perf, bdir, scale = 1) {
+fig.5d.violin.corr.performance <- function(df, bdir) {
+  tdf <- as_tibble(df)
+  seldf <- tdf %>% select(Corr.Perf.List, 'Tool')
+
+  longdf <- seldf %>%
+    pivot_longer(!Tool, names_to = "value_name", values_to = "Pearson_COE")
+
+  longdf <- longdf[longdf$Pearson_COE >= 0,]
+
   graphics.off()
-  ggplot(df, aes_string(x = 'Tool', y = corr.perf, fill = 'Tool')) +
+  ggplot(longdf, aes_string(x = 'Tool', y = 'Pearson_COE', fill = 'Tool')) +
     geom_violin() +
+    facet_grid(. ~ value_name) +
     scale_fill_manual(values = ToolColorPal) +
     geom_jitter(shape = 16, position = position_jitter(0.2), size = 0.5) +
-    theme_classic() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1.2, size = 10)) +
-    theme(legend.title = element_text(size = 8), legend.text = element_text(size = 8)) +
     theme(legend.position = "top") +
-    guides(fill = guide_legend(ncol = 3, nrow = 2, byrow = TRUE))
+    theme(legend.title = element_blank())
 
-  #scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
-  #NULL
-
-  outfn = sprintf("%s/fig.34a.violin.corr.%s.jpg", bdir, corr.perf)
-  ggsave(filename = outfn, width = 3.5, height = 4, scale = scale, dpi = 600)
+  outfn = sprintf("%s/fig.5d.violin.corr.violin.jpg", bdir)
+  ggsave(filename = outfn, width = 5.5, height = 3, dpi = 600)
   printf("save to %s\n", outfn)
 }
 
@@ -321,6 +325,7 @@ fig.5c.running.resource.bar.plot <- function(bdir) {
   run.table$dsname <- factor(run.table$dsname, levels = Dataset.Order)
 
   run.mean.table <- run.table %>%
+    drop_na(tool) %>%
     group_by(dsname, tool) %>%
     summarise(mean.rt = mean(rt), mean.mem = mean(mem))
 
@@ -363,4 +368,47 @@ fig.5c.running.resource.bar.plot <- function(bdir) {
   outfn = sprintf("%s/running.resource.bar.plot.jpg", bdir)
   ggsave(gg, filename = outfn, width = 8, height = 3, dpi = 600)
   printf("save to %s\n", outfn)
+}
+
+
+pie.plot.supf1 <- function() {
+  # Prepare a color palette. Here with R color brewer:
+  library(RColorBrewer)
+  myPalette <- brewer.pal(5, "Set1")
+
+  piedatafn = here('result', 'dataset.singleton.vs.non-singleton.csv')
+  piedata <- read.csv(file = piedatafn)
+
+  out_dir = here('figures', 'pie-plot')
+  dir.create(out_dir, showWarnings = FALSE)
+
+  for (i in 1:nrow(piedata)) {
+    row <- piedata[i,]
+    dsname = row$Dataset
+    total.singletons = row$Singleton.5mc + row$Singleton.5C
+    total.concordant = row$Concordant.5mC + row$Concordant.5C
+    total.discordant = row$Discordant.5mC + row$Discordant.5C
+
+    data <- c(total.singletons, total.concordant + total.discordant)
+    pct <- round(data / sum(data) * 100)
+    lbls <- c('Singletons', 'Non-Singletons')
+    #lbls <- paste(lbls, ":\n", sep = "") # ad % to labels
+    lbls <- paste(lbls, pct) # add percents to labels
+    lbls <- paste(lbls, "%", sep = "") # ad % to labels
+
+    outfn = sprintf("%s/pie.plot.%s.jpg", out_dir, dsname)
+    jpeg(filename = outfn, width = 3, height = 3, units = "in", res = 600)
+
+    # You can change the border of each area with the classical parameters:
+    pie(data, labels = lbls,
+        border = "white", col = myPalette, main = dsname, cex = 0.5)
+
+    dev.off()
+
+    #ggsave(filename = outfn, dpi = 600)
+    printf("save to %s\n", outfn)
+
+    #break
+  }
+
 }
