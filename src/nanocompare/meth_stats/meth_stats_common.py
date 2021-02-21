@@ -96,7 +96,7 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                 start = int(tmp[start_col])
                 num_sites = int(tmp[num_motifs_col])
                 llr = float(tmp[log_lik_ratio_col])
-                if abs(llr) < llr_cutoff:
+                if abs(llr) < llr_cutoff * num_sites: # Consider all sites as a group when there are multiple sites
                     continue
 
                 meth_score = llr
