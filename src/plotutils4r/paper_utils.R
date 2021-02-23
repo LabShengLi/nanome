@@ -242,9 +242,17 @@ fig.6a.venn.plot.set3 <- function(ret, outfn) {
 fig.6b.euller.plot.set3 <- function(ret, outfn) {
   graphics.off()
 
-  fit1 <- euler(c("A" = ret[1], "B" = ret[2], "C" = ret[3],
-                  "A&B" = ret[4], "A&C" = ret[5], "B&C" = ret[6],
-                  "A&B&C" = ret[7]), input = 'union', shape = 'circle')
+  comb = c("A" = ret[1], "B" = ret[2], "C" = ret[3],
+           "A&B" = ret[4], "A&C" = ret[5], "B&C" = ret[6],
+           "A&B&C" = ret[7])
+
+  print(comb)
+
+  #fit1 <- euler(comb, input = 'union', shape = 'circle')
+  fit1 <- venn(comb, input = 'union')
+
+  print(fit1)
+
   gp <- plot(fit1,
              quantities = list(type = c("counts"),
                                font = 1, round = 2, cex = 0.6),

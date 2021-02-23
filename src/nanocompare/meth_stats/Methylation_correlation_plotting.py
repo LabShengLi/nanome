@@ -194,6 +194,38 @@ def parse_arguments():
     return parser.parse_args()
 
 
+def save_meth_corr_data(callresult_dict, bgTruth, reportCpGSet, outfn):
+    """
+    Save meth freq and cov results into csv file
+    :param callresult_dict:
+    :param bgTruth:
+    :param reportCpGSet:
+    :param outfn:
+    :return:
+    """
+    outfile = open(outfn, 'w')
+
+    header_list = ['chr', 'start', 'end', 'BGTruth_freq', 'BGTruth_cov', 'strand']
+
+    for name in callname_list:
+        header_list.extend([f'{name}_freq', f'{name}_cov'])
+    outfile.write(sep.join(header_list))
+    outfile.write("\n")
+
+    for cpg in reportCpGSet:
+        row_list = [cpg[0], str(cpg[1]), str(cpg[1] + 1), f'{bgTruth[cpg][0]:.3f}', str(bgTruth[cpg][1]), cpg[2]]
+
+        for name in callname_list:
+            if cpg in callresult_dict[name][1]:  # if cpg is in tool results
+                row_list.extend([f'{callresult_dict[name][1][cpg][0]:.3f}', f'{callresult_dict[name][1][cpg][1]}'])
+            else:  # if cpg key is not exist, we use NA as ''
+                row_list.extend(['', ''])
+        outfile.write(sep.join(row_list))
+        outfile.write("\n")
+    outfile.close()
+    logger.info(f"save to {outfn}\n")
+
+
 if __name__ == '__main__':
     set_log_debug_level()
 
@@ -276,28 +308,12 @@ if __name__ == '__main__':
     logger.info(f"Reporting {len(coveredCpGs)} CpGs are covered by all tools and bgtruth")
 
     logger.info('Output data of coverage and meth-freq on joined CpG sites for correlation analysis')
-    outfn = os.path.join(out_dir, f"Meth_corr_plot_data-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv")
+    
+    outfn = os.path.join(out_dir, f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv")
+    save_meth_corr_data(callresult_dict, bgTruth, coveredCpGs, outfn)
 
-    outfile = open(outfn, 'w')
-
-    header_list = ['chr', 'start', 'end', 'BGTruth_freq', 'BGTruth_cov', 'strand']
-
-    for name in callname_list:
-        header_list.extend([f'{name}_freq', f'{name}_cov'])
-    outfile.write(sep.join(header_list))
-    outfile.write("\n")
-
-    for cpg in coveredCpGs:
-        row_list = [cpg[0], str(cpg[1]), str(cpg[1] + 1), f'{bgTruth[cpg][0]:.3f}', str(bgTruth[cpg][1]), cpg[2]]
-        # outfile.write(f'{sep}'.join(cpg[0], cpg[1], cpg[1] + 1, bgTruth[cpg][0], bgTruth[cpg][1], cpg[2]))
-        # outfile.write(f"{cpg[0]}\t{cpg[1]}\t{cpg[1] + 1}\t{bgTruth[cpg][0]}\t{bgTruth[cpg][1]}\t{cpg[2]}")
-
-        for name in callname_list:
-            row_list.extend([f'{callresult_dict[name][1][cpg][0]:.3f}', f'{callresult_dict[name][1][cpg][1]}'])
-        outfile.write(sep.join(row_list))
-        outfile.write("\n")
-    outfile.close()
-    logger.info(f"save to {outfn}\n")
+    outfn = os.path.join(out_dir, f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv")
+    save_meth_corr_data(callresult_dict, bgTruth, set(list(bgTruth.keys())), outfn)
 
     # Report correlation matrix here
     df = pd.read_csv(outfn, sep=sep)

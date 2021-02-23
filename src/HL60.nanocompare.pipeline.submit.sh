@@ -26,7 +26,7 @@ targetNum=50
 
 ### Nanopore raw signal fast5 files, HL60 is from tier2: /tier2/li-lab/Nanopore/NanoporeData/Leukemia_ONT/20180612_180601-18-li-004-GXB01102-002/HL60-Nanopore_GT18-07373.fast5.tar
 # inputDataDir  -   input of Nanopore reads file/files, can be tar file or a directory contains files
-inputDataDir=/fastscratch/liuya/nanocompare/Nanopore-reads/HL60-Nanopore_GT18-07373.fast5.tar
+inputDataDir=/fastscratch/liuya/nanocompare/raw_reads/HL60-Nanopore_GT18-07373.fast5.tar
 
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)

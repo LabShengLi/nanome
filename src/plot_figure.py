@@ -1021,6 +1021,25 @@ if __name__ == '__main__':
                 ret = pickle.load(infn)
                 # logger.debug(ret.keys())
                 plot_performance_curves(ret, outdir, tagname=bn)
+    elif args.cmd == 'guppy-qos':
+        ## python plot_figure.py guppy-qos -i /fastscratch/liuya/nanocompare/HL60-Runs/HL60-N50-basecall /fastscratch/liuya/nanocompare/K562-Runs/K562-N50-basecall /projects/li-lab/Nanopore_compare/nanopore_fast5/NA19240-N300-basecall /fastscratch/liuya/nanocompare/APL-Runs/APL-N50-basecall
+        for basedir in args.i:
+            fpatstr = os.path.join(basedir, '*', 'sequencing_summary.txt')
+            flist = glob.glob(fpatstr)
+            # logger.debug(flist)
+            dflist = []
+            for fn in flist:
+                df = pd.read_csv(fn, sep='\t')
+                dflist.append(df)
+            outdf = pd.concat(dflist)
+            logger.info(outdf)
+
+            bfn = os.path.basename(basedir)
+            outfn = os.path.join(pic_base_dir, f'{bfn}.sequencing_summary.txt')
+            outdf.to_csv(outfn, index=False, sep='\t')
+
+
+
     else:
         raise Exception(f'Command={args.cmd} is not support')
 

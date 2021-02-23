@@ -96,7 +96,7 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                 start = int(tmp[start_col])
                 num_sites = int(tmp[num_motifs_col])
                 llr = float(tmp[log_lik_ratio_col])
-                if abs(llr) < llr_cutoff * num_sites: # Consider all sites as a group when there are multiple sites
+                if abs(llr) < llr_cutoff * num_sites:  # Consider all sites as a group when there are multiple sites
                     continue
 
                 meth_score = llr
@@ -2706,6 +2706,7 @@ def save_to_cache(infn, data, **params):
     cache_fn = get_cache_filename(infn, params)
 
     if not os.path.exists(cache_fn):
+        os.makedirs(cache_dir, exist_ok=True)
         with open(cache_fn, 'wb') as outf:
             pickle.dump(data, outf)
         logger.debug(f'Cached to file:{cache_fn}')
@@ -2884,7 +2885,6 @@ def gen_venn_data(set_dict, namelist, outdir, tagname='tagname'):
 
 if __name__ == '__main__':
     set_log_debug_level()
-
     # scatter_plot_cov_compare_df(infn='/projects/li-lab/yang/results/2020-12-28/K562_WGBS_Joined/K562_WGBS_Joinedtombo-nanopolish-scatter.pkl')
 
     # importGroundTruth_genome_wide_output_from_Bismark(covCutt=4)

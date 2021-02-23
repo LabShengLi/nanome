@@ -4,7 +4,6 @@ library(here)
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 
 
-
 # Load data and sort string orders
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 infn = here('result', 'performance-results.csv')
@@ -43,17 +42,17 @@ source(here('src', 'plotutils4r', 'paper_utils.R'))
 data_dir = here('result', 'venn-data')
 out_dir = here('figures', 'venn-plot')
 dir.create(out_dir, showWarnings = FALSE)
-for (venfn in list.files(data_dir, 'venn.data.*.dat')) {
+pattern.str = 'venn.data.*.dat'
+pattern.str = 'venn.data.NA19240.*.dat'
+for (venfn in list.files(data_dir, pattern = pattern.str)) {
   infn = here('result', 'venn-data', venfn)
   dt <- read.table(infn)
   base_infn = basename(infn)
 
   if (length(dt$V1) == 31) {
-    outfn = sprintf("%s/venn.plot.%s.jpg", out_dir, base_infn)
-    fig.6a.venn.plot.set5(dt$V1, outfn)
+    #outfn = sprintf("%s/venn.plot.%s.jpg", out_dir, base_infn)
+    #fig.6a.venn.plot.set5(dt$V1, outfn)
   }else if (length(dt$V1) == 7) {
-    #outfn1 = sprintf("%s/venn.plot.%s.jpg", out_dir, base_infn)
-    #fig.34c.venn.plot.set3(dt$V1, outfn1)
     outfn2 = sprintf("%s/euller.plot.%s.jpg", out_dir, base_infn)
     fig.6b.euller.plot.set3(dt$V1, outfn2)
     #break

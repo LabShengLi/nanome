@@ -29,7 +29,7 @@ targetNum=50
 
 ### Nanopore raw signal fast5 files, APL is from: /projects/li-lab/AML-Nanopore/20180517_180508-18-li-001-GXB01186-001/APL-1750_GT18-06409.fast5.tar
 # inputDataDir  -   input of Nanopore reads file/files, can be tar file or a directory contains files
-inputDataDir=/projects/li-lab/AML-Nanopore/20180517_180508-18-li-001-GXB01186-001/APL-1750_GT18-06409.fast5.tar
+inputDataDir=/fastscratch/liuya/nanocompare/raw_reads/APL-1750_GT18-06409.fast5.tar
 
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)

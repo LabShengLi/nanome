@@ -29,7 +29,7 @@ targetNum=50
 
 ### Nanopore raw signal fast5 files, K562 is from tier2: /tier2/li-lab/Nanopore/NanoporeData/Leukemia_ONT/20180612_180601-18-li-004-GXB01102-001/  47.46GB
 # inputDataDir  -   input of Nanopore reads file/files, can be tar file or a directory contains files
-inputDataDir=/projects/li-lab/yang/workspace/nano-compare/data/raw-fast5/K562/K562-Nanopore_GT18-07372.fast5.tar
+inputDataDir=/fastscratch/liuya/nanocompare/raw_reads/K562-Nanopore_GT18-07372.fast5.tar
 
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
