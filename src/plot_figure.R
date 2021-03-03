@@ -37,12 +37,19 @@ outdir = here('figures')
 fig.5c.running.resource.bar.plot(outdir)
 
 
+## Figure 5d: Violin plot of corr COE
+source(here('src', 'plotutils4r', 'paper_utils.R'))
+outdir = here('figures')
+fig.5d.violin.corr.performance(df, outdir)
+
+
+
 ## Figure 6 ab: Set venn and euller plot
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 data_dir = here('result', 'venn-data')
 out_dir = here('figures', 'venn-plot')
 dir.create(out_dir, showWarnings = FALSE)
-pattern.str = 'venn.data.*.dat'
+#pattern.str = 'venn.data.*.dat'
 pattern.str = 'venn.data.NA19240.*.dat'
 for (venfn in list.files(data_dir, pattern = pattern.str)) {
   infn = here('result', 'venn-data', venfn)
@@ -50,8 +57,8 @@ for (venfn in list.files(data_dir, pattern = pattern.str)) {
   base_infn = basename(infn)
 
   if (length(dt$V1) == 31) {
-    #outfn = sprintf("%s/venn.plot.%s.jpg", out_dir, base_infn)
-    #fig.6a.venn.plot.set5(dt$V1, outfn)
+    outfn = sprintf("%s/venn.plot.%s.jpg", out_dir, base_infn)
+    fig.6a.venn.plot.set5(dt$V1, outfn)
   }else if (length(dt$V1) == 7) {
     outfn2 = sprintf("%s/euller.plot.%s.jpg", out_dir, base_infn)
     fig.6b.euller.plot.set3(dt$V1, outfn2)
@@ -60,12 +67,7 @@ for (venfn in list.files(data_dir, pattern = pattern.str)) {
   #break
 }
 
-
-## Figure 5d: Violin plot of corr COE
-source(here('src', 'plotutils4r', 'paper_utils.R'))
-outdir = here('figures')
-fig.5d.violin.corr.performance(df, outdir)
-
+quit()
 
 ## Figure 3, 4 a:Bar plot
 source(here('src', 'plotutils4r', 'paper_utils.R'))

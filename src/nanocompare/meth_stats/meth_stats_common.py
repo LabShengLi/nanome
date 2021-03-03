@@ -1895,14 +1895,19 @@ def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCo
             #                         secondFilterBed_4CorrFile=secondFilterBed_4Corr,
             #                         cutoff_meth=cutoff_meth, outdir=outdir, tagname=tagname)
             coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genome-wide"}')
-            ret_list.append((coord, pool.apply_async(computePerReadStats, (ontCalls, bgTruth, analysisPrefix,), kwds={'coordBedFileName': coord_fn, 'secondFilterBedFile': secondFilterBed, 'secondFilterBed_4CorrFile': secondFilterBed_4Corr, 'cutoff_meth': cutoff_meth, 'outdir': outdir, 'tagname': tagname}),))
+            ret = pool.apply_async(computePerReadStats, (ontCalls, bgTruth, analysisPrefix,), kwds={'coordBedFileName': coord_fn, 'secondFilterBedFile': secondFilterBed, 'secondFilterBed_4CorrFile': secondFilterBed_4Corr, 'cutoff_meth': cutoff_meth, 'outdir': outdir, 'tagname': tagname})
+            ret_list.append((coord, ret))
 
         pool.close()
         pool.join()
 
     d = defaultdict(list)
-    for k in range(len(narrowedCoordinatesList)):
+    for k in range(len(ret_list)):
         coord, ret = ret_list[k]
+
+        logger.info(coord)
+        logger.info(ret_list[k])
+        logger.info(ret.get())
         accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = ret.get()
         d["prefix"].append(analysisPrefix)
         d["coord"].append(coord)

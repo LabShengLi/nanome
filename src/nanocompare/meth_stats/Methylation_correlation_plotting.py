@@ -286,14 +286,14 @@ if __name__ == '__main__':
     logger.debug(callname_list)
 
     logger.info(f"Start gen venn data for each tool (cov>={minToolCovCutt}) with or without bgtruth (cov>={bgtruthCutt})")
-    # Study five set venn data
+    # Study five set venn data, no join with bgtruth, tool-cov > tool-cutoff=3
     cpg_set_dict = defaultdict()
     for callname in ToolNameList:
         cpg_set_dict[callname] = set(callresult_dict[callname][1].keys())  # .intersection(set(bgTruth.keys()))
     gen_venn_data(cpg_set_dict, namelist=ToolNameList, outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.five.tools.cov{minToolCovCutt}')
 
     logger.info(f"Start gen venn data for TOP3 tools (cov>={minToolCovCutt})")
-    # Study top3 tool's venn data, no join with bgtruth
+    # Study top3 tool's venn data, no join with bgtruth, tool-cov > tool-cutoff=3
     top3_cpg_set_dict = defaultdict()
     for callname in Top3ToolNameList:
         top3_cpg_set_dict[callname] = set(callresult_dict[callname][1].keys())
@@ -309,14 +309,14 @@ if __name__ == '__main__':
 
     logger.info('Output data of coverage and meth-freq on joined CpG sites for correlation analysis')
     
-    outfn = os.path.join(out_dir, f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv")
-    save_meth_corr_data(callresult_dict, bgTruth, coveredCpGs, outfn)
+    outfn_joined = os.path.join(out_dir, f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv")
+    save_meth_corr_data(callresult_dict, bgTruth, coveredCpGs, outfn_joined)
 
-    outfn = os.path.join(out_dir, f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv")
-    save_meth_corr_data(callresult_dict, bgTruth, set(list(bgTruth.keys())), outfn)
+    outfn_bgtruth = os.path.join(out_dir, f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv")
+    save_meth_corr_data(callresult_dict, bgTruth, set(list(bgTruth.keys())), outfn_bgtruth)
 
     # Report correlation matrix here
-    df = pd.read_csv(outfn, sep=sep)
+    df = pd.read_csv(outfn_joined, sep=sep)
     df = df.filter(regex='_freq$', axis=1)
     cordf = df.corr()
     logger.info(f'Correlation matrix is:\n{cordf}')
@@ -324,7 +324,7 @@ if __name__ == '__main__':
     cordf.to_excel(corr_outfn)
 
     # plot fig5a of correlation plot
-    command = f"set -x; PYTHONPATH=$NanoCompareDir/src python $NanoCompareDir/src/plot_figure.py fig5a -i {outfn} -o {out_dir}"
+    command = f"set -x; PYTHONPATH=$NanoCompareDir/src python $NanoCompareDir/src/plot_figure.py fig5a -i {outfn_joined} -o {out_dir}"
     subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
 
     summary_cpgs_joined_results_table()

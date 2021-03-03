@@ -154,6 +154,7 @@ if __name__ == '__main__':
         #       secondFilterBed - joined sites of four tools and bg-truth. points
         if report_joined:  # step: with joined results of all tools
             df = report_per_read_performance_mp(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=bedfn_tool_join_bgtruth, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, processors=args.processors)
+            # df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=bedfn_tool_join_bgtruth, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix)
         else:  # step: no joined results
             df = report_per_read_performance_mp(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=None, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, processors=args.processors)
 
@@ -177,4 +178,4 @@ if __name__ == '__main__':
 
         if args.test:
             break
-    logger.info("Meth stats performance data generation DONE.")
+    logger.info("Meth stats performance evaluation results generation DONE.")

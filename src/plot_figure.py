@@ -945,6 +945,8 @@ if __name__ == '__main__':
     elif args.cmd == 'export-data':
         # using global setting variable runPrefixDict to locate all data
         ## python plot_figure.py export-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-APL_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS_CPG --tagname CPG
+
+        ## python plot_figure.py export-data -i /projects/li-lab/yang/results/2021-02-22/Meth
         if len(args.i) == 0:
             run_prefix = runPrefixDict
         else:

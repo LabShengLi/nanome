@@ -248,8 +248,10 @@ fig.6b.euller.plot.set3 <- function(ret, outfn) {
 
   print(comb)
 
-  #fit1 <- euler(comb, input = 'union', shape = 'circle')
-  fit1 <- venn(comb, input = 'union')
+  fit1 <- euler(comb, input = 'union', shape = 'circle')
+  #fit1 <- euler(comb, input = 'union', shape = 'ellipse')
+
+  #fit1 <- venn(comb, input = 'union')
 
   print(fit1)
 
@@ -280,6 +282,8 @@ fig.5d.violin.corr.performance <- function(df, bdir) {
     pivot_longer(!Tool, names_to = "value_name", values_to = "Pearson_COE")
 
   longdf <- longdf[longdf$Pearson_COE >= 0,]
+
+  longdf <- longdf %>% drop_na(Pearson_COE)
 
   graphics.off()
   ggplot(longdf, aes_string(x = 'Tool', y = 'Pearson_COE', fill = 'Tool')) +
