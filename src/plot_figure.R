@@ -3,7 +3,6 @@ rm(list = ls())
 library(here)
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 
-
 # Load data and sort string orders
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 infn = here('result', 'performance-results.csv')
@@ -43,7 +42,6 @@ outdir = here('figures')
 fig.5d.violin.corr.performance(df, outdir)
 
 
-
 ## Figure 6 ab: Set venn and euller plot
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 data_dir = here('result', 'venn-data')
@@ -66,6 +64,12 @@ for (venfn in list.files(data_dir, pattern = pattern.str)) {
   }
   #break
 }
+
+
+## Figure 6 c: bar plot of number of sites for each tool
+source(here('src', 'plotutils4r', 'paper_utils.R'))
+fig.6c.bar.plot.tools()
+
 
 quit()
 

@@ -274,6 +274,33 @@ fig.6b.euller.plot.set3 <- function(ret, outfn) {
 }
 
 
+fig.6c.bar.plot.tools <- function() {
+  data_dir = here('result')
+  out_dir = here('figures', 'bar-plot')
+  dir.create(out_dir, showWarnings = FALSE)
+  pattern.str = '*-summary-bgtruth-tools-bsCov5-minCov3.csv'
+
+  for (fn in list.files(data_dir, pattern = pattern.str)) {
+    infn = here('result', fn)
+    basename_infn = basename(infn)
+    dt <- read_csv(infn)
+    seldt <- dt[, c(1, 5)]
+    names(seldt) <- c('Tool', 'Sites')
+    seldt$Tool <- factor(seldt$Tool, levels = Tool.Order)
+    p1 <- ggplot(data = seldt, aes(x = Tool, y = Sites, , fill = Tool)) +
+      geom_bar(stat = "identity") +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+      theme(strip.text.x = element_text(size = 12)) +
+      scale_fill_manual(values = ToolColorPal) +
+      ylab("") +
+      ggtitle("Number of CpGs (cov>=3)")
+
+    outfn = sprintf("%s/bar.sites.of.tools.%s.jpg", out_dir, basename_infn)
+    ggsave(p1, filename = outfn, width = 3.5, height = 3, dpi = 600,)
+    printf("save to %s\n", outfn)
+  }
+}
+
 fig.5d.violin.corr.performance <- function(df, bdir) {
   tdf <- as_tibble(df)
   seldf <- tdf %>% select(Corr.Perf.List, 'Tool')

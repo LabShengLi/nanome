@@ -20,7 +20,7 @@ process preProcess {
 fast5Inputs.subscribe { println it }
 
 process baseCall {
-	input:
+	input: /* TODO: how to get the exact folder name of previous process here? */
     file x from fast5Inputs.flatten()
 
     output:
