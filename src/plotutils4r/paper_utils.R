@@ -280,14 +280,22 @@ fig.6c.bar.plot.tools <- function() {
   dir.create(out_dir, showWarnings = FALSE)
   pattern.str = '*-summary-bgtruth-tools-bsCov5-minCov3.csv'
 
+  totaldt = tibble()
   for (fn in list.files(data_dir, pattern = pattern.str)) {
     infn = here('result', fn)
     basename_infn = basename(infn)
+
+    pos = str_locate(basename_infn, "_")[1]
+    dsname = substr(basename_infn, 1, pos - 1)
     dt <- read_csv(infn)
     seldt <- dt[, c(1, 5)]
     names(seldt) <- c('Tool', 'Sites')
     seldt$Tool <- factor(seldt$Tool, levels = Tool.Order)
-    p1 <- ggplot(data = seldt, aes(x = Tool, y = Sites, , fill = Tool)) +
+    seldt$dsname = dsname
+
+    totaldt <- bind_rows(totaldt, seldt)
+
+    p1 <- ggplot(data = seldt, aes(x = Tool, y = Sites, fill = Tool)) +
       geom_bar(stat = "identity") +
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
       theme(strip.text.x = element_text(size = 12)) +
@@ -298,7 +306,22 @@ fig.6c.bar.plot.tools <- function() {
     outfn = sprintf("%s/bar.sites.of.tools.%s.jpg", out_dir, basename_infn)
     ggsave(p1, filename = outfn, width = 3.5, height = 3, dpi = 600,)
     printf("save to %s\n", outfn)
+    #break
   }
+  totaldt$dsname <- factor(totaldt$dsname, levels = c('HL60', 'APL', 'K562', 'NA19240'))
+
+  p1 <- ggplot(data = totaldt, aes(x = Tool, y = Sites, fill = Tool)) +
+    geom_bar(stat = 'identity') +
+    facet_wrap(~dsname, scales = "free") +
+    theme(axis.text.x = element_text(size = 12, angle = 90, vjust = 0.5, hjust = 1)) +
+    theme(strip.text.x = element_text(size = 12)) +
+    scale_fill_manual(values = ToolColorPal) +
+    ylab("Number of CpGs")
+
+  outfn = sprintf("%s/bar.sites.of.tools.facet.plot.jpg", out_dir)
+  ggsave(p1, filename = outfn, width = 5, height = 5, dpi = 600,)
+  printf("save to %s\n", outfn)
+
 }
 
 fig.5d.violin.corr.performance <- function(df, bdir) {
