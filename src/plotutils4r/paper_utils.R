@@ -308,20 +308,22 @@ fig.6c.bar.plot.tools <- function() {
     printf("save to %s\n", outfn)
     #break
   }
-  totaldt$dsname <- factor(totaldt$dsname, levels = c('HL60', 'APL', 'K562', 'NA19240'))
+  totaldt$dsname <- factor(totaldt$dsname, levels = c('HL60', 'K562', 'APL', 'NA19240'))
 
   p1 <- ggplot(data = totaldt, aes(x = Tool, y = Sites, fill = Tool)) +
     geom_bar(stat = 'identity') +
-    facet_wrap(~dsname, scales = "free") +
+    facet_wrap(~dsname, ncol = 4) +
     theme(axis.text.x = element_text(size = 12, angle = 90, vjust = 0.5, hjust = 1)) +
     theme(strip.text.x = element_text(size = 12)) +
     scale_fill_manual(values = ToolColorPal) +
-    ylab("Number of CpGs")
+    ylab("Number of CpGs(cov>=3)") +
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x)))
+  #p1
 
   outfn = sprintf("%s/bar.sites.of.tools.facet.plot.jpg", out_dir)
-  ggsave(p1, filename = outfn, width = 5, height = 5, dpi = 600,)
+  ggsave(p1, filename = outfn, width = 6, height = 3, dpi = 600)
   printf("save to %s\n", outfn)
-
 }
 
 fig.5d.violin.corr.performance <- function(df, bdir) {
