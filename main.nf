@@ -5,8 +5,13 @@ Channel
     .ifEmpty { exit 1, "Cannot find input file"}
     .set {ch_input}
 
-process Preprocess {
+Channel
+    .from( 'a', 'b', 'aa', 'bc', 3, 4.5 )
+    .filter( ~/^a.*/ )
+    .view()
 
+
+process Preprocess {
     input:
     set file(fast5_tar) from ch_input
 
@@ -15,37 +20,29 @@ process Preprocess {
 
     """
     mkdir -p untar_dir
+    tar xzf ${fast5_tar} -C untar_dir
+
     mkdir -p sept_dir
-    tar xzvf ${fast5_tar} -C untar_dir
     python ${workflow.projectDir}/src/nanocompare/methcall/FilesSeparatorNew.py untar_dir ${params.ntask} sept_dir
     """
 }
 
+//fast5Inputs.into { fast5Inputs; fast5Inputs2 }
+//fast5Inputs2.view()
 //fast5Inputs.subscribe { println it }
 
-/*
-[/pod/2/li-lab/yang/workspace/nano-compare/nf/work/10/40a474166d37b7e9128c8767eea9bd/sept_dir/1,
-/pod/2/li-lab/yang/workspace/nano-compare/nf/work/10/40a474166d37b7e9128c8767eea9bd/sept_dir/10,
-/pod/2/li-lab/yang/workspace/nano-compare/nf/work/10/40a474166d37b7e9128c8767eea9bd/sept_dir/2, /pod/2/li-lab/yang/workspace/nano-compare/nf/work/10/40a474166d37b7e9128c8767eea9bd/sept_dir/3, /pod/2/li-lab/yang/workspace/nano-compare/nf/work/10/40a474166d37b7e9128c8767eea9bd/sept_dir/4, /pod/2/li-lab/yang/workspace/nano-compare/nf/work/10/40a474166d37b7e9128c8767eea9bd/sept_dir/5, /pod/2/li-lab/yang/workspace/nano-compare/nf/work/10/40a474166d37b7e9128c8767eea9bd/sept_dir/6, /pod/2/li-lab/yang/workspace/nano-compare/nf/work/10/40a474166d37b7e9128c8767eea9bd/sept_dir/7, /pod/2/li-lab/yang/workspace/nano-compare/nf/work/10/40a474166d37b7e9128c8767eea9bd/sept_dir/8, /pod/2/li-lab/yang/workspace/nano-compare/nf/work/10/40a474166d37b7e9128c8767eea9bd/sept_dir/9]
-*/
-
 process Basecall {
-	input: /* TODO: how to get the exact folder name and number of task id of previous process here? */
+	input:
     file x from fast5Inputs.flatten()
 
     output:
     file 'basecall_dir/M*' into basecallOutputs
 
 	/*
-	TODO: how to use GPU and slurm task on it
+	TODO: how to use GPU and slurm task on this single process
 	*/
     """
-    echo hello
-    mkdir -p basecall_dir
-    echo ${x}
-
-    ls $x
-
+    mkdir -p basecall_dir/${x}
     ${params.guppy.basecall} --input_path $x \
         --save_path "basecall_dir/${x}" \
         --config dna_r9.4.1_450bps_hac.cfg \
@@ -57,40 +54,64 @@ process Basecall {
     """
 }
 
+//basecallOutputs.subscribe { println it }
 
 process Resquiggle {
-	input: /* TODO: how to get the exact folder name of previous process here? */
+	input:
     file x from basecallOutputs.flatten()
 
     output:
-    file 'resquiggle_dir/*' into resquiggleOutputs
+    file 'resquiggle_dir/M*' into resquiggleOutputs
 
     """
-	# TODO: how to get $x folder and num of task
-	mkdir -p resquiggle_dir/numofx
-    cp $x resquiggle_dir/numofx
+	mkdir -p resquiggle_dir/${x}
+	cp -rf ${x}/* resquiggle_dir/${x}
 
-    tombo resquiggle --dna --processes ${params.processors} --corrected-group ${params.correctedGroup} \
-		--basecall-group Basecall_1D_000 --overwrite $x ${params.refGenome}
+    tombo resquiggle --dna --processes ${params.processors} \
+        --corrected-group ${params.correctedGroup} \
+		--basecall-group Basecall_1D_000 --overwrite \
+		resquiggle_dir/${x} ${params.refGenome}
     """
 }
 
+//resquiggleOutputs.subscribe { println it }
+
 process DeepSignal {
-	input: /* TODO: how to get the exact folder name of previous process here? */
+	input:
     file x from resquiggleOutputs.flatten()
 
     output:
     file '*.tsv' into deepsignalOutput
 
     """
-	# TODO: how to get $x folder and num of task
-	deepsignal call_mods --input_path $x --model_path ${params.deepsignalModel} \
-		--result_file ${params.analysisPrefix}-DeepSignal.batch_${numofx}.CpG.deepsignal.call_mods.tsv \
-		--reference_path ${params.refGenome} --corrected_group ${params.correctedGroup} --nproc ${params.processors} --is_gpu ${params.isGPU}
-
+	deepsignal call_mods --input_path $x \
+	    --model_path ${params.deepsignalModel} \
+		--result_file "${params.dsname}-N${params.ntask}-DeepSignal.batch_${x}.CpG.deepsignal.call_mods.tsv" \
+		--reference_path ${params.refGenome} \
+		--corrected_group ${params.correctedGroup} \
+		--nproc ${params.processors} \
+		--is_gpu ${params.isGPU}
     """
 }
 
+deepsignalOutput.view()
 
+/*
+process DeepSignalPostprocess {
+	input:
+    file x from deepsignalOutput
+
+    output:
+    file 'combine.tsv' into deepsignalPostOutput
+
+    """
+	echo ${x}
+	touch combine.tsv
+    """
+}
+*/
+
+
+//deepsignalOutput.subscribe { println it }
 
 
