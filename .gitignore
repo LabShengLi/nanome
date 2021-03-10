@@ -10,3 +10,6 @@ gen
 src/nanocompare/.DS_Store
 /figures/
 /result/
+work
+.nextflow*
+nextflow
