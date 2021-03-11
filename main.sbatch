@@ -17,7 +17,7 @@
 
 #curl -fsSL get.nextflow.io | bash
 
-#rm -rf work
+rm -rf work
 
-./nextflow run main.nf -resume
+./nextflow run main.nf
 

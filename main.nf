@@ -5,13 +5,10 @@ Channel
     .ifEmpty { exit 1, "Cannot find input file"}
     .set {ch_input}
 
-Channel
-    .from( 'a', 'b', 'aa', 'bc', 3, 4.5 )
-    .filter( ~/^a.*/ )
-    .view()
-
-
 process Preprocess {
+	executor 'slurm'
+	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
+
     input:
     set file(fast5_tar) from ch_input
 
@@ -27,20 +24,16 @@ process Preprocess {
     """
 }
 
-//fast5Inputs.into { fast5Inputs; fast5Inputs2 }
-//fast5Inputs2.view()
-//fast5Inputs.subscribe { println it }
-
 process Basecall {
+	executor 'slurm'
+	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
+
 	input:
     file x from fast5Inputs.flatten()
 
     output:
     file 'basecall_dir/M*' into basecallOutputs
 
-	/*
-	TODO: how to use GPU and slurm task on this single process
-	*/
     """
     mkdir -p basecall_dir/${x}
     ${params.guppy.basecall} --input_path $x \
@@ -57,6 +50,8 @@ process Basecall {
 //basecallOutputs.subscribe { println it }
 
 process Resquiggle {
+	executor 'slurm'
+	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 	input:
     file x from basecallOutputs.flatten()
 
@@ -77,6 +72,8 @@ process Resquiggle {
 //resquiggleOutputs.subscribe { println it }
 
 process DeepSignal {
+	executor 'slurm'
+	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 	input:
     file x from resquiggleOutputs.flatten()
 
@@ -94,24 +91,22 @@ process DeepSignal {
     """
 }
 
-deepsignalOutput.view()
+combInputs = deepsignalOutput.toList()
 
-/*
-process DeepSignalPostprocess {
+process DeepSignalCombine {
+	executor 'slurm'
+	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
+
 	input:
-    file x from deepsignalOutput
+    file x from combInputs
 
     output:
-    file 'combine.tsv' into deepsignalPostOutput
+    file '*.combine.tsv' into deepsignalCombineOutput
 
     """
 	echo ${x}
-	touch combine.tsv
+	touch ${params.dsname}.DeepSignal.combine.tsv
+	cat ${x} > ${params.dsname}.DeepSignal.combine.tsv
     """
 }
-*/
-
-
-//deepsignalOutput.subscribe { println it }
-
 
