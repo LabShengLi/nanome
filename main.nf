@@ -1,14 +1,13 @@
 #!/usr/bin/env nextflow
 
 Channel
-    .fromPath(params.indir)
+    .fromPath(params.indata)
     .ifEmpty { exit 1, "Cannot find input file"}
     .set {ch_input}
 
 // untar file, seperate into N folders named 'M1', ..., 'M10', etc.
 process Preprocess {
 	// TODO: how to change conda env name here, or in whole nextflow pipeline?
-	// conda '/home/liuya/anaconda3/envs/nanoai'
 	executor 'slurm'
 	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 
@@ -19,21 +18,48 @@ process Preprocess {
     file 'sept_dir/M*' into fast5Inputs
 
     """
-    # conda env list
+    set -x
+    echo ${fast5_tar}
+    infn=${fast5_tar}
 
     mkdir -p untar_dir
-    tar xzf ${fast5_tar} -C untar_dir
+
+    if [ "${params.isfile}" = true ] ; then
+        #mkdir -p untar_dir
+        #tar xzf \${infn} -C untar_dir
+        if [ "\${infn##*.}" = "tar" ]; then
+			tar -xf \${infn} -C untar_dir
+		elif [ "\${infn##*.}" = "gz" ]; then
+			tar -xzf \${infn} -C untar_dir
+		fi
+    else
+        echo "Multiple fast5.tar need to be untared"
+		#filelist=\$(find \${infn}/ -type f \\( -iname \\*.fast5.tar -o -iname \\*.fast5.tar.gz -o -iname \\*.fast5 \\) )
+		filelist=\$( find \${infn}/ -type f -name '*.tar.gz' )
+		for fast5tarfn in \${filelist}; do
+			echo "fn=\${fast5tarfn}"
+			if [ "\${fast5tarfn##*.}" = "tar" ]; then
+				tar -xf \${fast5tarfn} -C untar_dir
+	        elif [ "\${fast5tarfn##*.}" = "gz" ]; then
+				tar -xzf \${fast5tarfn} -C untar_dir
+	        elif [ "\${fast5tarfn##*.}" = "fast5" ]; then
+				cp \${fast5tarfn} untar_dir
+	        fi
+		done
+    fi
+    echo "### Untar input done. ###"
 
     mkdir -p sept_dir
     python ${workflow.projectDir}/src/nanocompare/methcall/FilesSeparatorNew.py untar_dir ${params.ntask} sept_dir
+    echo "### Seperation fast5 files done. ###"
     """
 }
 
-fast5Inputs.into { fast5Inputs1; fast5Inputs2 }
+fast5Inputs.into { fast5Inputs1ForBasecall; fast5Inputs2ForMegalodon }
 
 
-// fast5Inputs1.close()
-// fast5Inputs2.close()
+// fast5Inputs1ForBasecall.close()
+// fast5Inputs2ForMegalodon.close()
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
@@ -42,7 +68,7 @@ process Basecall {
 	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 
 	input:
-    file x from fast5Inputs1.flatten()
+    file x from fast5Inputs1ForBasecall.flatten()
 
     output:
     file 'basecall_dir/M*' into basecallOutputs
@@ -61,35 +87,35 @@ process Basecall {
 }
 
 
-basecallOutputs.into { basecallOutputs1; basecallOutputs2; basecallOutputs3; basecallOutputs4 }
+basecallOutputs.into { basecallOutputs1ForResquiggle; basecallOutputs2ForNanopolish; basecallOutputs3ForDeepMod }
 
-//basecallOutputs1.close()
-//basecallOutputs2.close()
-//basecallOutputs3.close()
 
 // resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
 process Resquiggle {
 	executor 'slurm'
 	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 	input:
-    file x from basecallOutputs1.flatten()
+    file x from basecallOutputs1ForResquiggle.flatten()
 
     output:
     file 'resquiggle_dir/M*' into resquiggleOutputs
 
     """
+    set -x
 	mkdir -p resquiggle_dir/${x}
 	cp -rf ${x}/* resquiggle_dir/${x}
 
     tombo resquiggle --dna --processes ${params.processors} \
         --corrected-group ${params.correctedGroup} \
 		--basecall-group Basecall_1D_000 --overwrite \
-		resquiggle_dir/${x} ${params.refGenome}
+		resquiggle_dir/${x}/workspace ${params.refGenome}
     """
 }
 
+
 // duplicate resquiggle results for DeepSignal and Tombo
-resquiggleOutputs.into { resquiggleOutputs1; resquiggleOutputs2 }
+resquiggleOutputs.into { resquiggleOutputs1ForDeepSignal; resquiggleOutputs2ForTombo }
+
 
 // DeepSignal runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepSignal {
@@ -97,7 +123,7 @@ process DeepSignal {
 	executor 'slurm'
 	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 	input:
-    file x from resquiggleOutputs1.flatten()
+    file x from resquiggleOutputs1ForDeepSignal.flatten()
 
     output:
     file '*.tsv' into deepsignalOutput
@@ -113,13 +139,14 @@ process DeepSignal {
     """
 }
 
+
 // Tombo runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Tombo {
 	conda '/home/liuya/anaconda3/envs/nanoai'
 	executor 'slurm'
 	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 	input:
-    file x from resquiggleOutputs2.flatten()
+    file x from resquiggleOutputs2ForTombo.flatten()
 
     output:
     file '*.per_read_stats.bed' into tomboOutput
@@ -141,13 +168,14 @@ process Tombo {
     """
 }
 
+
 // Megalodon runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Megalodon {
 	conda '/home/liuya/anaconda3/envs/nanoai'
 	executor 'slurm'
 	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 	input:
-    file x from fast5Inputs2.flatten()
+    file x from fast5Inputs2ForMegalodon.flatten()
 
     output:
     file 'megalodon_results/*.per_read_modified_base_calls.txt' into megalodonOutput
@@ -182,13 +210,14 @@ process Megalodon {
     """
 }
 
+
 // DeepMod runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepMod {
 	conda '/home/liuya/anaconda3/envs/nanoai'
 	executor 'slurm'
 	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 	input:
-    file x from basecallOutputs4.flatten()
+    file x from basecallOutputs3ForDeepMod.flatten()
 
     output:
     file 'mod_output/batch_*_num' into deepmodOutput
@@ -204,8 +233,7 @@ process DeepMod {
     """
 }
 
-//deepmodOutput.toList().view()
-deepmodResults=deepmodOutput.toList()
+
 
 
 // Nanopolish runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
@@ -215,7 +243,7 @@ process Nanopolish {
 	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 
 	input:
-    file x from basecallOutputs3.flatten()
+    file x from basecallOutputs2ForNanopolish.flatten()
 
     output:
     file '*.tsv' into nanopolishOutput
@@ -230,16 +258,16 @@ process Nanopolish {
 	echo \${fastqFile}
 	echo \${fastqNoDupFile}
 
+	rm -rf \${fastqFile} \${fastqNoDupFile}
+	rm -rf ${x}/\${bamFileName} \${fastqNoDupFile}
+
 	## Do alignment firstly
-	rm -rf \${fastqFile}
 	touch \${fastqFile}
 	for f in \$(ls -1 ${x}/*.fastq)
 	do
 		cat \$f >> \$fastqFile
 		# echo "cat \$f >> \$fastqFile - COMPLETED"
 	done
-
-	rm -rf ${x}/\${bamFileName} \${fastqNoDupFile}
 
 	python ${workflow.projectDir}/src/nanocompare/methcall/nanopore_nanopolish.NA19240_pipeline.step_02.preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
 
@@ -259,13 +287,14 @@ process Nanopolish {
     """
 }
 
+
+// prepare combining results
 nanopolishResults = nanopolishOutput.toList()
-
-//megalodonOutput.toList().view()
+deepmodResults=deepmodOutput.toList()
 megalodonResults = megalodonOutput.toList()
-
 tomboResults = tomboOutput.toList()
 deepsignalResults = deepsignalOutput.toList()
+
 
 // Combine DeepSignal runs' all results together
 process DpSigCombine {
@@ -284,6 +313,7 @@ process DpSigCombine {
 	cat ${x} > ${params.dsname}.DeepSignal.combine.tsv
     """
 }
+
 
 // Combine Tombo runs' all results together
 process TomboCombine {
@@ -330,6 +360,7 @@ process MgldnCombine {
     """
 }
 
+
 // Combine Nanopolish runs' all results together
 process NplshCombine {
 	executor 'slurm'
@@ -374,7 +405,6 @@ process DpmodCombine {
 
     """
     set -x
-    echo [${x}]
 
 	mkdir -p indir
     for dx in $x
@@ -407,7 +437,7 @@ process DpmodCombine {
     """
 }
 
-allCombineResults=deepsignalCombineResult.concat(tomboCombineResult, megalodonCombineResult, nanopolishCombineResult, deepmodCombineResult)
 
-allCombineResults.view()
+//allCombineResults=deepsignalCombineResult.concat(tomboCombineResult, megalodonCombineResult, nanopolishCombineResult, deepmodCombineResult)
+//allCombineResults.view()
 
