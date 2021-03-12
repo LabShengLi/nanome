@@ -17,7 +17,8 @@
 
 #curl -fsSL get.nextflow.io | bash
 
-rm -rf work
+workdir=/fastscratch/liuya/nanocompare/demo-work
 
-./nextflow run main.nf
+rm -rf $workdir
 
+./nextflow run main.nf -resume -w $workdir
