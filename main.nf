@@ -66,7 +66,6 @@ fast5Inputs.into { fast5Inputs1ForBasecall; fast5Inputs2ForMegalodon }
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
-	conda '/home/liuya/anaconda3/envs/nanoai'
 	executor 'slurm'
 	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 
@@ -95,6 +94,7 @@ basecallOutputs.into { basecallOutputs1ForResquiggle; basecallOutputs2ForNanopol
 
 // resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
 process Resquiggle {
+	conda ${params.condaEnvName}
 	executor 'slurm'
 	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 	input:
