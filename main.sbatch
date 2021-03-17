@@ -32,3 +32,6 @@ workdir=/fastscratch/liuya/nanocompare/work-HL60
 #	--indata ${indata} --ntask ${ntask} \
 #	-cache -resume -with-report -with-timeline \
 #	-with-trace
+
+# builder="singularity run http://s3-far.jax.org/builder/builder"
+# $builder nanocompare.def nanocompare.sif
