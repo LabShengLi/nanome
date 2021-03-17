@@ -209,7 +209,7 @@ process DeepMod {
     params.RunDeepMod == "true"
 
     """
-    python ${params.DeepModDir}/bin/DeepMod.py detect \
+    DeepMod.py detect \
 			--wrkBase ${x}/workspace --Ref ${params.refGenome} \
 			--Base C --modfile ${workflow.projectDir}/model_params/${params.deepModModel} \
 			--FileID batch_${x}_num \
