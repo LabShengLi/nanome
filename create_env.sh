@@ -30,6 +30,7 @@ conda install -c bioconda samtools
 
 conda install -c bioconda minimap2
 
+pip install ont-pyguppy-client-lib==4.2.2
 
 conda env export > nanocompare.yml
 

@@ -7,10 +7,6 @@ Channel
 
 // untar file, seperate into N folders named 'M1', ..., 'M10', etc.
 process Preprocess {
-	// TODO: how to change conda env name here, or in whole nextflow pipeline?
-	executor 'slurm'
-	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
-
     input:
     set file(fast5_tar) from ch_input
 
@@ -22,6 +18,10 @@ process Preprocess {
 
     """
     set -x
+
+    echo ${workflow.projectDir}/${params.chromSizesFile}
+
+
     echo ${fast5_tar}
     infn=${fast5_tar}
 
@@ -58,17 +58,12 @@ process Preprocess {
     """
 }
 
+
 fast5Inputs.into { fast5Inputs1ForBasecall; fast5Inputs2ForMegalodon }
 
 
-// fast5Inputs1ForBasecall.close()
-// fast5Inputs2ForMegalodon.close()
-
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
-	executor 'slurm'
-	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
-
 	input:
     file x from fast5Inputs1ForBasecall.flatten()
 
@@ -94,9 +89,6 @@ basecallOutputs.into { basecallOutputs1ForResquiggle; basecallOutputs2ForNanopol
 
 // resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
 process Resquiggle {
-	conda ${params.condaEnvName}
-	executor 'slurm'
-	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 	input:
     file x from basecallOutputs1ForResquiggle.flatten()
 
@@ -122,9 +114,6 @@ resquiggleOutputs.into { resquiggleOutputs1ForDeepSignal; resquiggleOutputs2ForT
 
 // DeepSignal runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepSignal {
-	conda '/home/liuya/anaconda3/envs/nanoai'
-	executor 'slurm'
-	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 	input:
     file x from resquiggleOutputs1ForDeepSignal.flatten()
 
@@ -133,7 +122,7 @@ process DeepSignal {
 
     """
 	deepsignal call_mods --input_path ${x}/workspace \
-	    --model_path ${params.deepsignalModel} \
+	    --model_path ${params.deepsignalModel}/bn_17.sn_360.epoch_9.ckpt \
 		--result_file "${params.dsname}-N${params.ntask}-DeepSignal.batch_${x}.CpG.deepsignal.call_mods.tsv" \
 		--reference_path ${params.refGenome} \
 		--corrected_group ${params.correctedGroup} \
@@ -145,9 +134,6 @@ process DeepSignal {
 
 // Tombo runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Tombo {
-	conda '/home/liuya/anaconda3/envs/nanoai'
-	executor 'slurm'
-	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 	input:
     file x from resquiggleOutputs2ForTombo.flatten()
 
@@ -165,7 +151,7 @@ process Tombo {
 		--processes ${params.processors} \
 		--corrected-group ${params.correctedGroup}
 
-	python ${workflow.projectDir}/src/nanocompare/methcall/Tombo_extract_per_read_stats.py ${params.chromSizesFile} \
+	python ${workflow.projectDir}/src/nanocompare/methcall/Tombo_extract_per_read_stats.py ${workflow.projectDir}/model_params/${params.chromSizesFile} \
 				"${params.analysisPrefix}.batch_${x}.CpG.tombo.per_read_stats" \
 				"${params.analysisPrefix}.batch_${x}.CpG.tombo.per_read_stats.bed"
     """
@@ -174,9 +160,6 @@ process Tombo {
 
 // Megalodon runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Megalodon {
-	conda '/home/liuya/anaconda3/envs/nanoai'
-	executor 'slurm'
-	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 	input:
     file x from fast5Inputs2ForMegalodon.flatten()
 
@@ -216,9 +199,6 @@ process Megalodon {
 
 // DeepMod runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepMod {
-	conda '/home/liuya/anaconda3/envs/nanoai'
-	executor 'slurm'
-	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
 	input:
     file x from basecallOutputs3ForDeepMod.flatten()
 
@@ -231,7 +211,7 @@ process DeepMod {
     """
     python ${params.DeepModDir}/bin/DeepMod.py detect \
 			--wrkBase ${x}/workspace --Ref ${params.refGenome} \
-			--Base C --modfile ${params.deepModModel} \
+			--Base C --modfile ${workflow.projectDir}/model_params/${params.deepModModel} \
 			--FileID batch_${x}_num \
 			--threads ${params.processors} --move
 
@@ -244,10 +224,6 @@ process DeepMod {
 
 // Nanopolish runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Nanopolish {
-	conda '/home/liuya/anaconda3/envs/nanoai'
-	executor 'slurm'
-	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
-
 	input:
     file x from basecallOutputs2ForNanopolish.flatten()
 
@@ -277,7 +253,7 @@ process Nanopolish {
 
 	python ${workflow.projectDir}/src/nanocompare/methcall/nanopore_nanopolish.NA19240_pipeline.step_02.preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
 
-	${params.NanopolishDir}/nanopolish index -d ${x}/workspace \${fastqNoDupFile}
+	nanopolish index -d ${x}/workspace \${fastqNoDupFile}
 
 	minimap2 -t ${params.processors} -a -x map-ont ${params.refGenome} \${fastqNoDupFile} | samtools sort -T tmp -o ${x}/\${bamFileName}
 	echo "### minimap2 finished"
@@ -287,9 +263,7 @@ process Nanopolish {
 
 	echo "### Alignment step DONE"
 
-	${params.NanopolishDir}/nanopolish call-methylation -t ${params.processors} -r \${fastqNoDupFile} -b ${x}/\${bamFileName} -g ${params.refGenome} > ${params.analysisPrefix}.batch_${x}.nanopolish.methylation_calls.tsv
-
-	# touch batch_${x}.nanopolish.tsv
+	nanopolish call-methylation -t ${params.processors} -r \${fastqNoDupFile} -b ${x}/\${bamFileName} -g ${params.refGenome} > ${params.analysisPrefix}.batch_${x}.nanopolish.methylation_calls.tsv
     """
 }
 
@@ -304,9 +278,6 @@ deepsignalResults = deepsignalOutput.toList()
 
 // Combine DeepSignal runs' all results together
 process DpSigCombine {
-	executor 'slurm'
-	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
-
 	input:
     file x from deepsignalResults
 
@@ -326,9 +297,6 @@ process DpSigCombine {
 
 // Combine Tombo runs' all results together
 process TomboCombine {
-	executor 'slurm'
-	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
-
 	input:
     file x from tomboResults
 
@@ -347,9 +315,6 @@ process TomboCombine {
 
 // Combine Megalodon runs' all results together
 process MgldnCombine {
-	executor 'slurm'
-	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
-
 	input:
     file x from megalodonResults
 
@@ -378,9 +343,6 @@ process MgldnCombine {
 
 // Combine Nanopolish runs' all results together
 process NplshCombine {
-	executor 'slurm'
-	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
-
 	input:
     file x from nanopolishResults
 
@@ -411,10 +373,6 @@ process NplshCombine {
 
 // Combine DeepMod runs' all results together
 process DpmodCombine {
-	conda '/home/liuya/anaconda3/envs/nanoai'
-	executor 'slurm'
-	clusterOptions '-p gpu -q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem-per-cpu=170G'
-
 	input:
     file x from deepmodResults
 
@@ -434,13 +392,13 @@ process DpmodCombine {
         cp -rf \$dx/* indir/\$dx
     done
 
-    python ${params.DeepModDir}/DeepMod_tools/sum_chr_mod.py \
+    python ${workflow.projectDir}/model_params/sum_chr_mod.py \
         indir/ C ${params.dsname}.deepmod
 
-	python ${params.DeepModDir}/DeepMod_tools/hm_cluster_predict.py \
+	python ${workflow.projectDir}/model_params/hm_cluster_predict.py \
 		indir/${params.dsname}.deepmod \
 		${params.genomeMotifC} \
-		${params.clusterDeepModModel}  || true
+		${workflow.projectDir}/model_params/${params.clusterDeepModModel}  || true
 
 	> ${params.dsname}.DeepModC.combine.tsv
 

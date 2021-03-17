@@ -24,9 +24,11 @@ workdir=/fastscratch/liuya/nanocompare/work-HL60
 
 #rm -rf ${workdir}
 
-#/nextflow run main.nf -resume -with-report -with-timeline -with-trace
+#./nextflow run main.nf -profile winter
 
-./nextflow run main.nf -work-dir ${workdir} \
-	--indata ${indata} --ntask ${ntask} \
-	-cache -resume -with-report -with-timeline \
-	-with-trace
+#/nextflow run main.nf -resume -with-report -with-timeline -with-trace
+#
+#./nextflow run main.nf -work-dir ${workdir} \
+#	--indata ${indata} --ntask ${ntask} \
+#	-cache -resume -with-report -with-timeline \
+#	-with-trace
