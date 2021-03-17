@@ -17,6 +17,9 @@ process Preprocess {
 	output:
     file 'sept_dir/M*' into fast5Inputs
 
+    //when:
+    //params.RunDeepMod == "true"
+
     """
     set -x
     echo ${fast5_tar}
@@ -222,6 +225,9 @@ process DeepMod {
     output:
     file 'mod_output/batch_*_num' into deepmodOutput
 
+    when:
+    params.RunDeepMod == "true"
+
     """
     python ${params.DeepModDir}/bin/DeepMod.py detect \
 			--wrkBase ${x}/workspace --Ref ${params.refGenome} \
@@ -307,6 +313,9 @@ process DpSigCombine {
     output:
     file '*.combine.tsv' into deepsignalCombineResult
 
+    when:
+    x.size() >= 1
+
     """
 	echo ${x}
 	touch ${params.dsname}.DeepSignal.combine.tsv
@@ -326,6 +335,9 @@ process TomboCombine {
     output:
     file '*.combine.tsv' into tomboCombineResult
 
+    when:
+    x.size() >= 1
+
     """
 	touch ${params.dsname}.Tombo.combine.tsv
 	cat ${x} > ${params.dsname}.Tombo.combine.tsv
@@ -343,6 +355,9 @@ process MgldnCombine {
 
     output:
     file '*.combine.tsv' into megalodonCombineResult
+
+    when:
+    x.size() >= 1
 
     """
 	> ${params.dsname}.Megalodon.combine.tsv
@@ -371,6 +386,9 @@ process NplshCombine {
 
     output:
     file '*.combine.tsv' into nanopolishCombineResult
+
+    when:
+    x.size() >= 1
 
     """
     set -x
@@ -402,6 +420,9 @@ process DpmodCombine {
 
     output:
     file '*.combine.tsv' into deepmodCombineResult
+
+    when:
+    x.size() >= 1
 
     """
     set -x

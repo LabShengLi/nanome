@@ -6,7 +6,7 @@
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 8 # number of cores
 #SBATCH --mem-per-cpu=170G # memory pool for all cores
-#SBATCH --time=1-23:00:00 # time
+#SBATCH --time=00:50:00 # time
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
@@ -22,6 +22,11 @@ indata=/fastscratch/liuya/nanocompare/input/HL60-Nanopore_GT18-07373.fast5.tar
 ntask=50
 workdir=/fastscratch/liuya/nanocompare/work-HL60
 
-rm -rf ${workdir}
+#rm -rf ${workdir}
 
-./nextflow run main.nf -w ${workdir} --indata ${indata} --ntask ${ntask} -resume
+#/nextflow run main.nf -resume -with-report -with-timeline -with-trace
+
+./nextflow run main.nf -work-dir ${workdir} \
+	--indata ${indata} --ntask ${ntask} \
+	-cache -resume -with-report -with-timeline \
+	-with-trace
