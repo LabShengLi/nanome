@@ -411,12 +411,11 @@ def corr_grid_plot_for_fig5a(infn):
     right = left + width
     top = bottom + height
 
-    gridRes = 30
     position = 1
     for y in range(1, num_col + 1):
         for x in range(1, num_col + 1):
             if x == y:
-                # Diagonal:
+                # Diagonal, distribution lines:
                 plt.subplot(num_col, num_col, position)
                 #             df[fields[x-1]].hist(bins=100)
                 params = {'legend.fontsize': 16, 'legend.handlelength': 0, 'legend.handletextpad': 0, 'legend.fancybox': True}
@@ -435,7 +434,7 @@ def corr_grid_plot_for_fig5a(infn):
                 ax.set_xlabel('')
 
             elif x > y:
-                # upper triangle:
+                # upper triangle, COE number:
                 ax2 = plt.subplot(num_col, num_col, position)
 
                 corrValue = pearsonr(df.iloc[:, x - 1], df.iloc[:, y - 1])
@@ -451,10 +450,13 @@ def corr_grid_plot_for_fig5a(infn):
                 ax2.set_xticklabels([])
 
             elif x < y:
-                # lower triangle:
+                # lower triangle, scatter plot, using hexbin, x-column label, y-row label:
                 ax3 = plt.subplot(num_col, num_col, position)
 
-                plt.hexbin(df.iloc[:, x - 1], df.iloc[:, y - 1], gridsize=(gridRes, gridRes), cmap=agressiveHot)  # plt.cm.gray_r )
+                # plt.hexbin(df.iloc[:, x - 1], df.iloc[:, y - 1], gridsize=(gridRes, gridRes), cmap=agressiveHot)  # plt.cm.gray_r )
+                gridRes = 50
+                mincnt = 1
+                plt.hexbin(df.iloc[:, x - 1], df.iloc[:, y - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
 
                 ax3.set_yticklabels([])
                 ax3.set_xticklabels([])
@@ -927,6 +929,7 @@ if __name__ == '__main__':
     if args.cmd == 'fig5a':
         ## find ${resultDir} -name 'Meth_corr_plot_data*.csv' \
         ##      -type f -exec python plot_figure.py fig5a -i {} \;
+        ## python plot_figure.py fig5a -i /projects/li-lab/Nanopore_compare/result/MethCorr-NA19240_RRBS/Meth_corr_plot_data_joined-NA19240_RRBS-bsCov5-minToolCov3-baseFormat1.csv
         for fn in args.i:
             gen_figure_5a(fn)
     elif args.cmd == 'fig5c':

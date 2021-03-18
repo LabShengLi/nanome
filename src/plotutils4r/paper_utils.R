@@ -10,8 +10,8 @@ library(ggpubr)
 locations.Singletons = c("Singleton", "Nonsingleton", "Discordant", "Concordant")
 locations.Genome = c("Genomewide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns")
 Coord.Order = c(locations.Genome, locations.Singletons)
-Dataset.Order = c('APL', 'HL60', 'K562', 'NA19240')
-Tool.Order = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon')
+Dataset.Order = c('HL60', 'K562', 'APL', 'NA19240')
+Tool.Order = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon', 'Joined')
 
 measure.pair.list = list(c('Accuracy', 'Micro.F1'), c('Accuracy', 'ROC.AUC'), c('Micro.Precision', 'Micro.Recall'), c('F1_5mC', 'F1_5C'), c('Macro.Precision', 'Macro.Recall'))
 measure.list = c('Accuracy', 'ROC.AUC', 'Micro.F1', 'Macro.F1', 'Average.Precision', 'Micro.Precision', 'Micro.Recall', 'Macro.Precision', 'Macro.Recall')
@@ -295,20 +295,37 @@ fig.6c.bar.plot.tools <- function() {
 
     totaldt <- bind_rows(totaldt, seldt)
 
-    p1 <- ggplot(data = seldt, aes(x = Tool, y = Sites, fill = Tool)) +
-      geom_bar(stat = "identity") +
-      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-      theme(strip.text.x = element_text(size = 12)) +
-      scale_fill_manual(values = ToolColorPal) +
-      ylab("") +
-      ggtitle("Number of CpGs (cov>=3)")
-
-    outfn = sprintf("%s/bar.sites.of.tools.%s.jpg", out_dir, basename_infn)
-    ggsave(p1, filename = outfn, width = 3.5, height = 3, dpi = 600,)
-    printf("save to %s\n", outfn)
+    #p1 <- ggplot(data = seldt, aes(x = Tool, y = Sites, fill = Tool)) +
+    #  geom_bar(stat = "identity") +
+    #  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+    #  theme(strip.text.x = element_text(size = 12)) +
+    #  scale_fill_manual(values = ToolColorPal) +
+    #  ylab("") +
+    #  ggtitle("Number of CpGs (cov>=3)")
+    #
+    #outfn = sprintf("%s/bar.sites.of.tools.%s.jpg", out_dir, basename_infn)
+    #ggsave(p1, filename = outfn, width = 3.5, height = 3, dpi = 600,)
+    #printf("save to %s\n", outfn)
     #break
   }
   totaldt$dsname <- factor(totaldt$dsname, levels = c('HL60', 'K562', 'APL', 'NA19240'))
+
+  venndata.dir = here('result', 'venn-data')
+
+  for (fn in list.files(venndata.dir, 'venn.data.*.five.tools.cov3.dat')) {
+    dsname = str_replace_all(fn, "venn.data.", "")
+    pos = str_locate(dsname, "_")[1]
+    dsname = substr(dsname, 1, pos - 1)
+
+    dt <- read.table(here('result', 'venn-data', fn))
+    joinednum = dt[31, 1]
+    printf("%s: %d\n", dsname, joinednum)
+
+    totaldt <- totaldt %>% add_row(Tool = 'Joined', Sites = joinednum, dsname = dsname)
+  }
+
+  totaldt$dsname <- factor(totaldt$dsname, levels = Dataset.Order)
+  totaldt$Tool <- factor(totaldt$Tool, levels = Tool.Order)
 
   p1 <- ggplot(data = totaldt, aes(x = Tool, y = Sites, fill = Tool)) +
     geom_bar(stat = 'identity') +
@@ -317,9 +334,10 @@ fig.6c.bar.plot.tools <- function() {
     theme(strip.text.x = element_text(size = 12)) +
     scale_fill_manual(values = ToolColorPal) +
     ylab("Number of CpGs(cov>=3)") +
+    theme(legend.title = element_blank()) +
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
                   labels = scales::trans_format("log10", scales::math_format(10^.x)))
-  #p1
+  p1
 
   outfn = sprintf("%s/bar.sites.of.tools.facet.plot.jpg", out_dir)
   ggsave(p1, filename = outfn, width = 6, height = 3, dpi = 600)
