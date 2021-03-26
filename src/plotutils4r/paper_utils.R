@@ -11,7 +11,9 @@ locations.Singletons = c("Singleton", "Nonsingleton", "Discordant", "Concordant"
 locations.Genome = c("Genomewide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns")
 Coord.Order = c(locations.Genome, locations.Singletons)
 Dataset.Order = c('HL60', 'K562', 'APL', 'NA19240')
-Tool.Order = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon', 'Joined')
+Tool.Order = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon', 'Joined', 'Union')
+Tool.Order.show.SingleRead = c('DeepSignal', 'Tombo', 'Nanopolish*', 'DeepMod', 'Megalodon*', 'Joined', 'Union')
+
 
 measure.pair.list = list(c('Accuracy', 'Micro.F1'), c('Accuracy', 'ROC.AUC'), c('Micro.Precision', 'Micro.Recall'), c('F1_5mC', 'F1_5C'), c('Macro.Precision', 'Macro.Recall'))
 measure.list = c('Accuracy', 'ROC.AUC', 'Micro.F1', 'Macro.F1', 'Average.Precision', 'Micro.Precision', 'Micro.Recall', 'Macro.Precision', 'Macro.Recall')
@@ -51,70 +53,10 @@ load.performance.data <- function(infn) {
 }
 
 
-fig.34a.bar.plot.performance <- function(df, perf.measure = 'Accuracy', locations = locations.Singletons, bdir, figsize = c(5.8, 4), scale = 0.65) {
-  #Select data in locations
-  sel_data = df[df$Location %in% locations,]
-
-  #Plot and save
-  outfn = sprintf("%s/fig.34a.bar.%s.%s.jpg", bdir, locations[1], perf.measure)
-  p1 <- ggplot(sel_data, aes_string(x = 'Tool', y = perf.measure, fill = 'Tool')) +
-    geom_bar(stat = 'identity') +
-    facet_grid(Dataset ~ Location) +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-    theme(strip.text.x = element_text(size = 7)) +
-    scale_fill_manual(values = ToolColorPal)
-
-  ggsave(p1, filename = outfn, scale = scale)
-  printf("save to %s\n", outfn)
-}
-
-
-fig.34a.bar.plot1d.performance <- function(df, perf.measure = 'Accuracy', locations = locations.Singletons, bdir, figsize = c(5.8, 4), scale = 0.65) {
-  sel_data = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', 'Accuracy')]
-
-  ggplot(sel_data, aes_string(x = 'Tool', y = perf.measure, fill = 'Tool')) +
-    geom_bar(stat = 'identity') +
-    facet_grid(~Dataset + Location) +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-    theme(strip.text.x = element_text(size = 7)) +
-    scale_fill_manual(values = cbPalette)
-
-  outfn = sprintf("%s/bar1d.%s.%s.jpg", bdir, perf.measure, locations[1])
-  ggsave(filename = outfn, width = 10, height = 4, dpi = 600, limitsize = FALSE)
-
-}
-
-
-fig.34a.scatter.plot.performance <- function(df, measure.pair, locations, bdir, scale = 0.75) {
-  # Select data, transfer wide to long format
-  sel_data = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', measure.pair)]
-  longdf <- melt(setDT(sel_data), id.vars = c("Dataset", "Tool", "Location"), variable.name = "perf_name")
-
-  # Scatter plot
-  p1 <- ggplot(longdf, aes(x = Location, y = value, shape = Tool, color = Location)) +
-    geom_point(size = 4) +
-    facet_grid(perf_name ~ Dataset, switch = "y") +
-    scale_shape_manual(values = c(0, 1, 2, 3, 4, 5)) +
-    #scale_fill_manual(values = cbPalette) +
-    scale_color_manual(values = cbPalette) +
-    ylim(0, 1) +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-    theme(legend.title = element_text(size = 10), legend.text = element_text(size = 10)) +
-    guides(colour = guide_legend(order = 1), shape = guide_legend(order = 2)) +
-    theme(axis.title.y = element_blank()) +
-    theme(strip.background.y = element_blank(), strip.placement = "outside")
-
-  outfn = sprintf("%s/fig.34a.scatter.%s.%s.jpg", bdir, locations[1], measure.pair[1])
-  ggsave(p1, filename = outfn, scale = scale)
-  printf("save to %s\n", outfn)
-
-}
-
-
 fig.34a.line.plot.performance <- function(df, perf.measure, locations, bdir, scale = 1) {
   sel_df = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', perf.measure)]
 
-  ggplot(data = sel_df, mapping = aes_string(x = 'Location', y = perf.measure, group = 'Tool')) +
+  p <- ggplot(data = sel_df, mapping = aes_string(x = 'Location', y = perf.measure, group = 'Tool')) +
     facet_grid(~Dataset) +
     geom_point(aes(shape = Tool, color = Tool), size = 5) +
     geom_line(aes(linetype = Tool, color = Tool)) +
@@ -127,9 +69,34 @@ fig.34a.line.plot.performance <- function(df, perf.measure, locations, bdir, sca
     theme(legend.title = element_text(size = 10), legend.text = element_text(size = 10)) +
     theme(strip.text.x = element_text(size = 12))
 
+  if (perf.measure == 'Macro.F1') {
+    p <- p + labs(y = "F1")
+  }
+
   outfn = sprintf("%s/fig.34a.line.%s.%s.jpg", bdir, perf.measure, locations[1])
-  ggsave(filename = outfn, width = 6.5, height = 4, scale = scale, dpi = 600)
+  ggsave(p, filename = outfn, width = 6.5, height = 4, scale = scale, dpi = 600)
   printf("save to %s\n", outfn)
+}
+
+
+fig.34b.box.location.performance <- function(df, perf.measure, locations, bdir, scale = 1) {
+  sel_data = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', perf.measure)]
+
+  p <- ggplot(sel_data, aes_string(x = 'Tool', y = perf.measure, fill = 'Tool')) +
+    #geom_violin() +
+    geom_boxplot() +
+    facet_grid(~Location) +
+    scale_fill_manual(values = ToolColorPal) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10))
+
+  if (perf.measure == 'Macro.F1') {
+    p <- p + labs(y = "F1")
+  }
+
+  outfn = sprintf("%s/fig.34a.box.perfmeasure.%s.%s.jpg", bdir, perf.measure, locations[1])
+  ggsave(p, filename = outfn, width = 7.5, height = 3, scale = scale, dpi = 600)
+  printf("save to %s\n", outfn)
+
 }
 
 
@@ -295,34 +262,22 @@ fig.6c.bar.plot.tools <- function() {
 
     totaldt <- bind_rows(totaldt, seldt)
 
-    #p1 <- ggplot(data = seldt, aes(x = Tool, y = Sites, fill = Tool)) +
-    #  geom_bar(stat = "identity") +
-    #  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-    #  theme(strip.text.x = element_text(size = 12)) +
-    #  scale_fill_manual(values = ToolColorPal) +
-    #  ylab("") +
-    #  ggtitle("Number of CpGs (cov>=3)")
-    #
-    #outfn = sprintf("%s/bar.sites.of.tools.%s.jpg", out_dir, basename_infn)
-    #ggsave(p1, filename = outfn, width = 3.5, height = 3, dpi = 600,)
-    #printf("save to %s\n", outfn)
-    #break
   }
-  totaldt$dsname <- factor(totaldt$dsname, levels = c('HL60', 'K562', 'APL', 'NA19240'))
-
-  venndata.dir = here('result', 'venn-data')
-
-  for (fn in list.files(venndata.dir, 'venn.data.*.five.tools.cov3.dat')) {
-    dsname = str_replace_all(fn, "venn.data.", "")
-    pos = str_locate(dsname, "_")[1]
-    dsname = substr(dsname, 1, pos - 1)
-
-    dt <- read.table(here('result', 'venn-data', fn))
-    joinednum = dt[31, 1]
-    printf("%s: %d\n", dsname, joinednum)
-
-    totaldt <- totaldt %>% add_row(Tool = 'Joined', Sites = joinednum, dsname = dsname)
-  }
+  #totaldt$dsname <- factor(totaldt$dsname, levels = c('HL60', 'K562', 'APL', 'NA19240'))
+  #
+  #venndata.dir = here('result', 'venn-data')
+  #
+  #for (fn in list.files(venndata.dir, 'venn.data.*.five.tools.cov3.dat')) {
+  #  dsname = str_replace_all(fn, "venn.data.", "")
+  #  pos = str_locate(dsname, "_")[1]
+  #  dsname = substr(dsname, 1, pos - 1)
+  #
+  #  dt <- read.table(here('result', 'venn-data', fn))
+  #  joinednum = dt[31, 1]
+  #  printf("%s: %d\n", dsname, joinednum)
+  #
+  #  totaldt <- totaldt %>% add_row(Tool = 'Joined', Sites = joinednum, dsname = dsname)
+  #}
 
   totaldt$dsname <- factor(totaldt$dsname, levels = Dataset.Order)
   totaldt$Tool <- factor(totaldt$Tool, levels = Tool.Order)
@@ -340,7 +295,7 @@ fig.6c.bar.plot.tools <- function() {
   p1
 
   outfn = sprintf("%s/bar.sites.of.tools.facet.plot.jpg", out_dir)
-  ggsave(p1, filename = outfn, width = 6, height = 3, dpi = 600)
+  ggsave(p1, filename = outfn, width = 6.5, height = 3, dpi = 600)
   printf("save to %s\n", outfn)
 }
 
@@ -371,23 +326,6 @@ fig.5d.violin.corr.performance <- function(df, bdir) {
 }
 
 
-fig.34b.box.location.performance <- function(df, perf.measure, locations, bdir, scale = 1) {
-  sel_data = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', perf.measure)]
-
-  ggplot(sel_data, aes_string(x = 'Tool', y = perf.measure, fill = 'Tool')) +
-    #geom_violin() +
-    geom_boxplot() +
-    facet_grid(~Location) +
-    scale_fill_manual(values = ToolColorPal) +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10))
-
-  outfn = sprintf("%s/fig.34a.box.perfmeasure.%s.%s.jpg", bdir, perf.measure, locations[1])
-  ggsave(filename = outfn, width = 7.5, height = 3, scale = scale, dpi = 600)
-  printf("save to %s\n", outfn)
-
-}
-
-
 fig.5c.running.resource.bar.plot <- function(bdir) {
   infn1 = here('result', 'recalculate.running.summary.csv')
   run.table1 <- read_csv(infn1)
@@ -401,15 +339,23 @@ fig.5c.running.resource.bar.plot <- function(bdir) {
   run.table = bind_rows(run.table1, run.table2, run.table3)
 
 
+  run.table <- run.table %>%
+    mutate_at("tool", str_replace, "Nanopolish", "Nanopolish*") %>%
+    mutate_at("tool", str_replace, "Megalodon", "Megalodon*")
+
   run.table$rt <- run.table$running.time.seconds / run.table$fast5
   run.table$mem <- run.table$mem.usage.gb / run.table$fast5 * 1000
-  run.table$tool <- factor(run.table$tool, levels = Tool.Order)
+  run.table$tool <- factor(run.table$tool, levels = Tool.Order.show.SingleRead)
   run.table$dsname <- factor(run.table$dsname, levels = Dataset.Order)
 
   run.mean.table <- run.table %>%
     drop_na(tool) %>%
     group_by(dsname, tool) %>%
     summarise(mean.rt = mean(rt), mean.mem = mean(mem))
+
+  #run.mean.table <- run.mean.table %>%
+  #  mutate_at("tool", str_replace, "Nanopolish", "Nanopolish*") %>%
+  #  mutate_at("tool", str_replace, "Megalodon", "Megalodon*")
 
   outfn = here('result', 'mean.runnning.summary.csv')
   write_csv(run.mean.table, outfn)
@@ -420,7 +366,7 @@ fig.5c.running.resource.bar.plot <- function(bdir) {
     geom_bar(stat = "summary", fun = mean, width = 0.8, position = position_dodge()) +
     scale_fill_manual(values = ToolColorPal) +
     theme_classic() +
-    ylab("Running time(seconds) per Fast5 file") +
+    ylab("Running time(seconds) per fast5 file") +
     xlab("Dataset") +
     coord_flip() +
     labs(fill = 'Tool') +
@@ -436,7 +382,7 @@ fig.5c.running.resource.bar.plot <- function(bdir) {
     coord_flip() +
     scale_fill_manual(values = ToolColorPal) +
     theme_classic() +
-    ylab("Memory usage(MB) per Fast5 file") +
+    ylab("Memory usage(MB) per fast5 file") +
     xlab("Dataset") +
     labs(fill = 'Tool') +
     theme(text = element_text(size = 12))
@@ -445,7 +391,7 @@ fig.5c.running.resource.bar.plot <- function(bdir) {
 
   gg <- ggarrange(g1, g2, ncol = 2, nrow = 1, common.legend = TRUE, legend = "bottom")
 
-  #gg
+  gg
 
   outfn = sprintf("%s/running.resource.bar.plot.jpg", bdir)
   ggsave(gg, filename = outfn, width = 8, height = 3, dpi = 600)
@@ -494,3 +440,65 @@ pie.plot.supf1 <- function() {
   }
 
 }
+
+
+fig.34a.bar.plot.performance <- function(df, perf.measure = 'Accuracy', locations = locations.Singletons, bdir, figsize = c(5.8, 4), scale = 0.65) {
+  #Select data in locations
+  sel_data = df[df$Location %in% locations,]
+
+  #Plot and save
+  outfn = sprintf("%s/fig.34a.bar.%s.%s.jpg", bdir, locations[1], perf.measure)
+  p1 <- ggplot(sel_data, aes_string(x = 'Tool', y = perf.measure, fill = 'Tool')) +
+    geom_bar(stat = 'identity') +
+    facet_grid(Dataset ~ Location) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+    theme(strip.text.x = element_text(size = 7)) +
+    scale_fill_manual(values = ToolColorPal)
+
+  ggsave(p1, filename = outfn, scale = scale)
+  printf("save to %s\n", outfn)
+}
+
+
+fig.34a.bar.plot1d.performance <- function(df, perf.measure = 'Accuracy', locations = locations.Singletons, bdir, figsize = c(5.8, 4), scale = 0.65) {
+  sel_data = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', 'Accuracy')]
+
+  ggplot(sel_data, aes_string(x = 'Tool', y = perf.measure, fill = 'Tool')) +
+    geom_bar(stat = 'identity') +
+    facet_grid(~Dataset + Location) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+    theme(strip.text.x = element_text(size = 7)) +
+    scale_fill_manual(values = cbPalette)
+
+  outfn = sprintf("%s/bar1d.%s.%s.jpg", bdir, perf.measure, locations[1])
+  ggsave(filename = outfn, width = 10, height = 4, dpi = 600, limitsize = FALSE)
+
+}
+
+
+fig.34a.scatter.plot.performance <- function(df, measure.pair, locations, bdir, scale = 0.75) {
+  # Select data, transfer wide to long format
+  sel_data = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', measure.pair)]
+  longdf <- melt(setDT(sel_data), id.vars = c("Dataset", "Tool", "Location"), variable.name = "perf_name")
+
+  # Scatter plot
+  p1 <- ggplot(longdf, aes(x = Location, y = value, shape = Tool, color = Location)) +
+    geom_point(size = 4) +
+    facet_grid(perf_name ~ Dataset, switch = "y") +
+    scale_shape_manual(values = c(0, 1, 2, 3, 4, 5)) +
+    #scale_fill_manual(values = cbPalette) +
+    scale_color_manual(values = cbPalette) +
+    ylim(0, 1) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+    theme(legend.title = element_text(size = 10), legend.text = element_text(size = 10)) +
+    guides(colour = guide_legend(order = 1), shape = guide_legend(order = 2)) +
+    theme(axis.title.y = element_blank()) +
+    theme(strip.background.y = element_blank(), strip.placement = "outside")
+
+  outfn = sprintf("%s/fig.34a.scatter.%s.%s.jpg", bdir, locations[1], measure.pair[1])
+  ggsave(p1, filename = outfn, scale = scale)
+  printf("save to %s\n", outfn)
+
+}
+
+

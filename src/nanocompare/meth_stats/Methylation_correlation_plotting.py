@@ -148,17 +148,26 @@ def summary_cpgs_joined_results_table():
     logger.debug(f"Study set intersection of each tool with bgtruth")
     dataset = []
     bgtruthCpGs = set(list(bgTruth.keys()))
+    joinedSet = None
+    unionSet = set()
     for name in callname_list:
+        ## CpG sites set with cov >= cutoff(3)
+        callSet = set(list(callresult_dict[name][1].keys()))
+        if not joinedSet:
+            joinedSet = set(callSet)
+        else:
+            joinedSet = joinedSet.intersection(callSet)
+        unionSet = unionSet.union(callSet)
         overlapCpGs = bgtruthCpGs.intersection(set(list(callresult_dict[name][1].keys())))
-        ret = {f'CpG sites in BG-Truth cov>={bgtruthCutt}': len(bgtruthCpGs), 'Total CpG sites by Nanopore tool': len(callresult_dict[name][0]), f'Total CpG sites by cov>={minToolCovCutt}': len(callresult_dict[name][1]), 'Joined CpG sites with BG-Truth': len(overlapCpGs)}
+        ret = {f'CpG sites in BG-Truth cov>={bgtruthCutt}': len(bgtruthCpGs), 'Total CpG sites by Nanopore tool': len(callresult_dict[name][0]), f'Total CpG sites by tool cov>={minToolCovCutt}': len(callresult_dict[name][1]), 'Joined CpG sites with BG-Truth': len(overlapCpGs)}
 
         cnt_calls = 0
 
-        if name != "DeepMod_cluster":
-            for cpg in callresult_dict[name][0]:
-                cnt_calls += len(callresult_dict[name][0][cpg])
-        else:
+        if name == "DeepMod_cluster":
             raise Exception("DeepMod_cluster need to be deal with")
+
+        for cpg in callresult_dict[name][0]:
+            cnt_calls += len(callresult_dict[name][0][cpg])
         ret.update({'Total calls by Nanopore reads': cnt_calls})
         dataset.append(ret)
 
@@ -166,8 +175,34 @@ def summary_cpgs_joined_results_table():
         # outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-bgtruth-{name1}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
         # save_keys_to_bed(overlapCpGs, outfn)
 
-    df = pd.DataFrame(dataset, index=callname_list)
+    ret = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(joinedSet)}
+    dataset.append(ret)
+
+    ret = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(unionSet)}
+    dataset.append(ret)
+
+    # also report top3 joined and union set
+    top3JointSet=None
+    top3UnionSet = set()
+
+    for callname in Top3ToolNameList:
+        toolSet = top3_cpg_set_dict[callname]
+        if not top3JointSet:
+            top3JointSet = toolSet
+        else:
+            top3JointSet = top3JointSet.intersection(toolSet)
+        top3UnionSet = top3UnionSet.union(toolSet)
+
+    ret = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(top3JointSet)}
+    dataset.append(ret)
+
+    ret = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(top3UnionSet)}
+    dataset.append(ret)
+
+
+    df = pd.DataFrame(dataset, index=callname_list + ['Joined', 'Union','TOP3 Joined', 'TOP3 Union'])
     df = df.iloc[:, [4, 0, 1, 2, 3]]
+
     outfn = os.path.join(out_dir, f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.csv')
     df.to_csv(outfn, sep=args.sep)
     logger.info(f'save to {outfn}\n')
@@ -308,7 +343,7 @@ if __name__ == '__main__':
     logger.info(f"Reporting {len(coveredCpGs)} CpGs are covered by all tools and bgtruth")
 
     logger.info('Output data of coverage and meth-freq on joined CpG sites for correlation analysis')
-    
+
     outfn_joined = os.path.join(out_dir, f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv")
     save_meth_corr_data(callresult_dict, bgTruth, coveredCpGs, outfn_joined)
 

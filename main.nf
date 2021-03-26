@@ -5,6 +5,31 @@ Channel
     .ifEmpty { exit 1, "Cannot find input file"}
     .set {ch_input}
 
+process FirstCheck {
+
+	tag 'checkEnv'
+
+	"""
+    set -x
+    echo hello
+	pwd
+    ls -la
+    conda env list
+
+	echo ${params.genomeMotifC}
+    ls -la ${params.genomeMotifC}
+
+    tombo -v
+    nanopolish --version
+    megalodon -v
+    deepsignal
+    DeepMod.py
+
+    ${params.guppy.basecall} -v
+    """
+}
+
+
 // untar file, seperate into N folders named 'M1', ..., 'M10', etc.
 process Preprocess {
     input:
@@ -14,7 +39,7 @@ process Preprocess {
     file 'sept_dir/M*' into fast5Inputs
 
     //when:
-    //params.RunDeepMod == "true"
+    //false
 
     """
     set -x
@@ -64,6 +89,8 @@ fast5Inputs.into { fast5Inputs1ForBasecall; fast5Inputs2ForMegalodon }
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
+	tag "${x}"
+
 	input:
     file x from fast5Inputs1ForBasecall.flatten()
 

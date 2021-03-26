@@ -66,6 +66,24 @@ for (venfn in list.files(data_dir, pattern = pattern.str)) {
 }
 
 
+## Figure 6 data: Provide pecentage data
+source(here('src', 'plotutils4r', 'paper_utils.R'))
+data_dir = here('result', 'venn-data')
+pattern.str = 'venn.data.*.top3.cov3.dat'
+for (venfn in list.files(data_dir, pattern = pattern.str)) {
+  print(venfn)
+  infn = here('result', 'venn-data', venfn)
+  dt <- read.table(infn)
+  base_infn = basename(infn)
+
+  if (length(dt$V1) == 31) {
+  }else if (length(dt$V1) == 7) {
+    print((dt$V1[1]-dt$V1[2])/ dt$V1[2])
+    print((dt$V1[3]-dt$V1[2])/ dt$V1[2])
+  }
+}
+
+
 ## Figure 6 c: bar plot of number of sites for each tool
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 fig.6c.bar.plot.tools()

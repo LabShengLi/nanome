@@ -33,5 +33,6 @@ workdir=/fastscratch/liuya/nanocompare/work-HL60
 #	-cache -resume -with-report -with-timeline \
 #	-with-trace
 
+# module load singularity
 # builder="singularity run http://s3-far.jax.org/builder/builder"
 # $builder nanocompare.def nanocompare.sif
