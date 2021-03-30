@@ -116,6 +116,8 @@ basecallOutputs.into { basecallOutputs1ForResquiggle; basecallOutputs2ForNanopol
 
 // resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
 process Resquiggle {
+	tag "${x}"
+
 	input:
     file x from basecallOutputs1ForResquiggle.flatten()
 
@@ -141,6 +143,8 @@ resquiggleOutputs.into { resquiggleOutputs1ForDeepSignal; resquiggleOutputs2ForT
 
 // DeepSignal runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepSignal {
+	tag "${x}"
+
 	input:
     file x from resquiggleOutputs1ForDeepSignal.flatten()
 
@@ -161,6 +165,8 @@ process DeepSignal {
 
 // Tombo runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Tombo {
+	tag "${x}"
+
 	input:
     file x from resquiggleOutputs2ForTombo.flatten()
 
@@ -187,6 +193,8 @@ process Tombo {
 
 // Megalodon runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Megalodon {
+	tag "${x}"
+
 	input:
     file x from fast5Inputs2ForMegalodon.flatten()
 
@@ -226,6 +234,8 @@ process Megalodon {
 
 // DeepMod runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepMod {
+	tag "${x}"
+
 	input:
     file x from basecallOutputs3ForDeepMod.flatten()
 
@@ -251,6 +261,8 @@ process DeepMod {
 
 // Nanopolish runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Nanopolish {
+	tag "${x}"
+
 	input:
     file x from basecallOutputs2ForNanopolish.flatten()
 

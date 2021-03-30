@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=meth-corr
 #SBATCH --partition=compute
+#SBATCH --qos=long
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 4 # number of cores
 ##SBATCH --mem 290g # memory pool for all cores
@@ -34,7 +35,7 @@ prjBaseDir=/projects/li-lab/yang/workspace/nano-compare
 
 pythonFn=${prjBaseDir}/src/nanocompare/meth_stats/Methylation_correlation_plotting.py
 
-PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:$DeepSignal_calls \
-	Tombo:$Tombo_calls Nanopolish:$Nanopolish_calls $DeepMod_calls \
-	Megalodon:${Megalodon_calls} --bgtruth $parser:$bgTruth --runid MethCorr-$RunPrefix --dsname ${Dataset}\
-	--toolcov-cutoff 3 --enable-cache --using-cache --baseFormat 1 # cutoff=3 is reasonable now
+PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:${DeepSignal_calls} \
+	Tombo:${Tombo_calls} Nanopolish:${Nanopolish_calls} ${DeepMod_calls} \
+	Megalodon:${Megalodon_calls} --bgtruth ${parser}:${bgTruth} --runid MethCorr-${RunPrefix} --dsname ${Dataset}\
+	--toolcov-cutoff 3 --baseFormat 1 --enable-cache # --using-cache  # cutoff=3 is reasonable now

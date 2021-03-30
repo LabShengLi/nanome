@@ -24,7 +24,7 @@ set -x
 
 
 job_index=$((SLURM_ARRAY_TASK_ID))
-jobkSeptInputDir=${septInputDir}/${job_index}
+jobkSeptInputDir=${septInputDir}/M${job_index}
 jobkBasecallOutputDir=${basecallOutputDir}/${job_index}
 
 set -u

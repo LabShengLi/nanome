@@ -454,8 +454,8 @@ def corr_grid_plot_for_fig5a(infn):
                 ax3 = plt.subplot(num_col, num_col, position)
 
                 # plt.hexbin(df.iloc[:, x - 1], df.iloc[:, y - 1], gridsize=(gridRes, gridRes), cmap=agressiveHot)  # plt.cm.gray_r )
-                gridRes = 15 # for HL60
-                # gridRes = 50
+                # gridRes = 15 # for HL60
+                gridRes = 50
                 mincnt = None
                 plt.hexbin(df.iloc[:, x - 1], df.iloc[:, y - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
 

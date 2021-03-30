@@ -569,6 +569,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     return cpgDict
 
 
+# Deprecated now
 def importPredictions_DeepMod_Read_Level(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=-1, baseFormat=0, sep='\t', output_first=False, include_score=False):
     infile = open(infileName, "r")
     # cpgDict = {}
@@ -667,7 +668,7 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     '''
 
     infile = open(infileName, "r")
-    cpgDict = defaultdict(dict)
+    cpgDict = defaultdict()
     count_calls = 0
     meth_cnt = 0
     unmeth_cnt = 0
@@ -691,6 +692,7 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
         else:
             logger.error("###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
             sys.exit(-1)
+
         if strand not in ['+', '-']:
             raise Exception(f'Strand info={strand} is not correctly recognized, row={row}, in file {infileName}')
 
@@ -705,9 +707,9 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
 
         if as_freq_cov_format:  # in dict
             cpgDict[key] = {'freq': meth_freq, 'cov': coverage}
-        elif include_score:
+        elif include_score:  # For site-level evaluation
             cpgDict[key] = [(1, 1.0)] * meth_cov + [(0, 0.0)] * (coverage - meth_cov)
-        else:
+        else:  # For read-level evaluation
             cpgDict[key] = [1] * meth_cov + [0] * (coverage - meth_cov)
 
         count_calls += coverage
@@ -840,9 +842,11 @@ def coverageFiltering(calls_dict, minCov=4, byLength=True, toolname="Tool"):
         if type(calls_dict[cpg]) == list:  # value is [0 0 1 1 0 ...]
             if len(calls_dict[cpg]) >= minCov:
                 result[cpg] = [sum(calls_dict[cpg]) / float(len(calls_dict[cpg])), len(calls_dict[cpg])]
-        else:  # Used by DeepMod_cluster results, value is {'freq':0.72, 'cov':18}
+        elif type(calls_dict[cpg]) == dict:  # Used by DeepMod_cluster results, value is {'freq':0.72, 'cov':18}
             if calls_dict[cpg]['cov'] >= minCov:
                 result[cpg] = [calls_dict[cpg]['freq'], calls_dict[cpg]['cov']]
+        else:
+            raise Exception('Not support type of value of dict')
 
     logger.info(f"###\tcoverageFiltering: completed filtering with minCov={minCov}, {len(result):,} CpG sites left for {toolname}")
     return result
@@ -905,9 +909,8 @@ def importGroundTruth_oxBS(infileName, chr_col='#chromosome', start_col='start',
     return cpgDict
 
 
-def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, meth_col=10, cov_col=9, covCutt=10, baseCount=1, chrFilter=False):
+def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, methfreq_col=-1, cov_col=4, strand_col=5, covCutt=10, baseFormat=0, gzippedInput=False, includeCov=True):
     '''
-
     ### Description of the columns in this format (https://www.encodeproject.org/data-standards/wgbs/):
 
     1. Reference chromosome or scaffold
@@ -952,32 +955,53 @@ def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, 
 
     cpgDict = {}
 
-    infile = open(infileName, 'r')
+    if infileName.endswith('.gz'):
+        gzippedInput = True
+
+    if gzippedInput:
+        infile = gzip.open(infileName, 'rb')
+    else:
+        infile = open(infileName, 'r')
 
     nrow = 0
     for row in infile:
         nrow += 1
         tmp = row.strip().split("\t")
-        if baseCount == 1:
-            start = int(tmp[start_col]) + 1
-            end = start
-        elif baseCount == 0:
-            start = int(tmp[start_col])
-            end = start + 1
-        else:
-            logger.error("###\timportGroundTruth_BedMethyl_from_Encode InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            sys.exit(-1)
 
-        if chrFilter == False or chrFilter == tmp[chr_col]:
-            if int(tmp[cov_col]) >= covCutt:
-                key = "{}\t{}\t{}\n".format(tmp[chr_col], start, end)
-                if key not in cpgDict:
-                    cpgDict[key] = float(tmp[meth_col]) / 100.0
-                else:
-                    logger.error("###\timportGroundTruth_BedMethyl_from_Encode SanityCheckError: One CpG should not have more than 1 entry")
+        if tmp[chr_col] not in humanChrs:  # Filter out non-human chrs
+            continue
+
+        strand = tmp[strand_col]
+        try:
+            if baseFormat == 1:
+                start = int(tmp[start_col]) + 1
+            elif baseFormat == 0:
+                start = int(tmp[start_col])
+            else:
+                logger.error("###\timportGroundTruth_BedMethyl_from_Encode InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseFormat))
+                sys.exit(-1)
+            cov_cnt = int(tmp[cov_col])
+            meth_freq = int(tmp[methfreq_col]) / 100.0  # [0,1]
+        except:
+            logger.error(f" ### Error parse gbTruth row = {row}")
+            continue
+
+        if cov_cnt < covCutt:
+            continue
+
+        key = (tmp[chr_col], start, strand)
+
+        if key in cpgDict:
+            raise Exception(f"Found duplicate CpG sites for {row}")
+
+        if includeCov:
+            cpgDict[key] = [meth_freq, cov_cnt]
+        else:
+            cpgDict[key] = meth_freq
 
     infile.close()
-    logger.debug("###\timportGroundTruth_BedMethyl_from_Encode: loaded information for {} CpGs, ({} rows)".format(len(cpgDict), nrow))
+    logger.debug(f"###\timportGroundTruth_BedMethyl_from_Encode: loaded information for {len(cpgDict):,} CpGs, with cutoff={covCutt} ({nrow:,} rows)")
+
     return cpgDict
 
 
@@ -1056,7 +1080,7 @@ def importGroundTruth_bed_file_format(infileName, chr_col=0, start_col=1, meth_c
     for row in infile:
         tmp = row.decode('ascii').strip().split("\t")
 
-        if tmp[chr_col] not in humanChrs:
+        if tmp[chr_col] not in humanChrs:  # Filter out non-human chrs
             continue
 
         if baseFormat == 1:
@@ -1175,7 +1199,7 @@ def importGroundTruth_genome_wide_Bismark_Report(infn='/projects/li-lab/yang/res
     for index, row in df.iterrows():
         chr = row['chr']
 
-        if chr not in humanChrs:
+        if chr not in humanChrs:  # Filter out non-human chrs
             continue
 
         start = int(row['start'])
@@ -1193,7 +1217,7 @@ def importGroundTruth_genome_wide_Bismark_Report(infn='/projects/li-lab/yang/res
         else:
             raise Exception(f'In genome-wide, we found duplicate sites: for key={key} in row={row}, please check input file {infn}')
 
-    logger.info(f"###\timportGroundTruth_genome_wide_from_Bismark: loaded information for {len(cpgDict):,} CpGs from file {infn}")
+    logger.info(f"###\timportGroundTruth_genome_wide_from_Bismark: loaded {len(cpgDict):,} CpGs with cutoff={covCutt} from file {infn}")
 
     return cpgDict
 
@@ -1905,9 +1929,9 @@ def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCo
     for k in range(len(ret_list)):
         coord, ret = ret_list[k]
 
-        logger.info(coord)
-        logger.info(ret_list[k])
-        logger.info(ret.get())
+        # logger.info(coord)
+        # logger.info(ret_list[k])
+        # logger.info(ret.get())
         accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = ret.get()
         d["prefix"].append(analysisPrefix)
         d["coord"].append(coord)
@@ -2109,132 +2133,6 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
     return ret
 
 
-# TODO: deprecated, only care about the correctness of data generated by it
-def nonSingletonsPostprocessing2(referenceMeth, regionsBedFile, dataset, outdir=None, cutoff_meth=1.0):
-    '''
-
-    90% threshold, just set cutoff_meth = 0.9
-
-    This function will take the input *.bed file from "NonSingletonsScanner" funtion, which corresponds with non-singletons.
-    Next it will separate them into concordant non-singletons (i.e. fully methylated or fully unmethylated), and disconcordant (those with at least one CpG fully methylated and at least one fully unmethylated), or fully mixed (i.e. all CpGs in non-singletons have methylation level >0 and < 100)
-    This kind of preprocessing will have to be done for each studied library separately.
-    '''
-
-    raise Exception('No need this function')
-
-    refMeth = BedTool(dict2txt(referenceMeth), from_string=True)
-    refMeth = refMeth.sort()
-
-    infn = os.path.join("reports", regionsBedFile)
-    # regions = BedTool(regionsBedFile)
-    regions = BedTool(infn)
-
-    regions = regions.sort()
-
-    regions_refMeth = regions.intersect(refMeth, wa=True, wb=True)
-
-    regions_refMeth_dict = {}  # {regionCoords : [methylation percentage list]}
-    for ovr in regions_refMeth:
-        regionKey = "{}\t{}\t{}\n".format(ovr[0], ovr[1], ovr[2])
-        methKey = "{}\t{}\t{}\n".format(ovr[3], ovr[4], ovr[5])
-        if regionKey not in regions_refMeth_dict:
-            regions_refMeth_dict[regionKey] = []
-        # regions_refMeth_dict value are a list of tuple as (sites, meth_val)
-        regions_refMeth_dict[regionKey].append((methKey, referenceMeth[methKey]))
-
-    outfile_prefix = regionsBedFile.replace(".bed", '')
-
-    outfn = concat_dir_fn(outdir, f"{dataset}.{outfile_prefix}.concordant.bed")
-    outfile_concordant = open(outfn, "w")
-
-    outfn = concat_dir_fn(outdir, f"{dataset}.{outfile_prefix}.concordant.bed.sites")
-    outfile_concordant_sites = open(outfn, "w")
-
-    outfn = concat_dir_fn(outdir, f"{dataset}.{outfile_prefix}.discordant.bed")
-    outfile_discordant = open(outfn, "w")
-
-    outfn = concat_dir_fn(outdir, f"{dataset}.{outfile_prefix}.discordant.bed.sites")
-    outfile_discordant_sites = open(outfn, "w")
-
-    outfn = concat_dir_fn(outdir, f"{dataset}.{outfile_prefix}.fullyMixed.bed")
-    outfile_fullyMixed = open(outfn, "w")
-
-    outfn = concat_dir_fn(outdir, f"{dataset}.{outfile_prefix}.other.bed")
-    outfile_other = open(outfn, "w")
-
-    cnt_concordant_fully_methylated = 0
-    cnt_concordant_unmethylated = 0
-
-    cnt_concordant = 0
-    cnt_discordant = 0
-    cnt_fullyMixed = 0
-    cnt_other = 0
-
-    for region in regions_refMeth_dict:
-        fullMeth = 0
-        nullMeth = 0
-        mixMeth = 0
-
-        cur_sites = []
-
-        # meth is a tuple of (sites, meth_val)
-        for meth in regions_refMeth_dict[region]:
-            if meth[1] >= (cutoff_meth - 1e-6):  # > 90% methlation level
-                fullMeth = 1
-                cur_sites.append(meth[0])
-            elif meth[1] == 0:
-                nullMeth = 1
-                cur_sites.append(meth[0])
-            else:
-                mixMeth = 1
-
-        if (fullMeth + nullMeth) == 1 and mixMeth == 0:
-            #             print("Concordant")
-
-            if fullMeth == 1:
-                cnt_concordant_fully_methylated += 1
-            else:
-                cnt_concordant_unmethylated += 1
-
-            outfile_concordant.write(region)
-            cnt_concordant += 1
-
-            for sites in cur_sites:
-                outfile_concordant_sites.write(sites)
-
-        elif (fullMeth + nullMeth) == 2:
-            #             print("Discordant")
-            outfile_discordant.write(region)
-            cnt_discordant += 1
-
-            for sites in cur_sites:
-                outfile_discordant_sites.write(sites)
-
-        elif (fullMeth + nullMeth) == 0 and mixMeth == 1:
-            #             print("mixed")
-            outfile_fullyMixed.write(region)
-            cnt_fullyMixed += 1
-        else:
-            #             print("What do we have here? ", fullMeth, nullMeth, mixMeth)
-            outfile_other.write("{}\t{}_{}_{}\n".format(region.strip(), fullMeth, nullMeth, mixMeth))
-            cnt_other += 1
-
-    outfile_concordant.close()
-    outfile_discordant.close()
-    outfile_fullyMixed.close()
-    outfile_other.close()
-
-    logger.info(f"DSNAME={dataset}, Non-singletons stats: concordant= {cnt_concordant} CpGs, discordant= {cnt_discordant} CpGs")
-    logger.info(f"DSNAME={dataset}, Non-singletons stats: fully meth (Concordant)= {cnt_concordant_fully_methylated} CpGs, unmeth (Concordant)= {cnt_concordant_unmethylated} CpGs")
-
-    ret = {'Nonsingletons'               : cnt_concordant + cnt_discordant,
-            'Concordant'                 : cnt_concordant,
-            'Discordant'                 : cnt_discordant,
-            'Concordant.fully_methylated': cnt_concordant_fully_methylated,
-            'Concordant.unmethylated'    : cnt_concordant_unmethylated}
-    return ret
-
-
 def singletonsPostprocessing(referenceMeth, singletonsBedFile, runPrefix, outdir, print_first=False):
     """
 
@@ -2294,66 +2192,7 @@ def singletonsPostprocessing(referenceMeth, singletonsBedFile, runPrefix, outdir
     logger.debug(f'save to {absolute_fn}')
     logger.debug(f'save to {mixed_fn}')
 
-    ret = {'Singleton.5mc': absl_msite, 'Singleton.5C': absl_csite}
-    return ret
-
-
-# TODO: Deprecated, but can check before results if it is correct
-def singletonsPostprocessing2(referenceMeth, singletonsBedFile, dataset, outdir=None, cutoff_meth=1.0):
-    '''
-    This function will take the input *.bed file from "NonSingletonsScanner" funtion, which corresponds with singletons.
-    Next it will separate them into absolute (i.e. fully methylated or fully unmethylated), and mixed (i.e. all CpGs in non-singletons have methylation level >0 and < 100)
-    This kind of preprocessing will have to be done for each studied library separately.
-    '''
-    raise Exception('No need this function')
-    refMeth = BedTool(dict2txt(referenceMeth), from_string=True)
-    refMeth = refMeth.sort()
-
-    infn = os.path.join("reports", singletonsBedFile)
-
-    # regions = BedTool(singletonsBedFile)
-    regions = BedTool(infn)
-
-    regions = regions.sort()
-
-    refMeth_regions = refMeth.intersect(regions, wa=True, u=True)
-
-    outfile_prefix = singletonsBedFile.replace(".bed", '')
-
-    outfn = concat_dir_fn(outdir, f"{dataset}.{outfile_prefix}.absolute.bed")
-    outfile_absolute = open(outfn, "w")
-
-    outfn = concat_dir_fn(outdir, f"{dataset}.{outfile_prefix}.mixed.bed")
-    outfile_mixed = open(outfn, "w")
-
-    cnt_absolute = 0
-    cnt_absolute_fully_methylated = 0
-    cnt_absolute_unmethylated = 0
-
-    cnt_mixed = 0
-    for ovr in refMeth_regions:
-        methKey = "{}\t{}\t{}\n".format(ovr[0], ovr[1], ovr[2])
-
-        if referenceMeth[methKey] >= (cutoff_meth - 1e-6) or referenceMeth[methKey] == 0:
-            outfile_absolute.write(methKey)
-            cnt_absolute = cnt_absolute + 1
-            if referenceMeth[methKey] == 0:
-                cnt_absolute_unmethylated += 1
-            else:
-                cnt_absolute_fully_methylated += 1
-        else:
-            outfile_mixed.write(methKey)
-            cnt_mixed = cnt_mixed + 1
-
-    outfile_absolute.close()
-    outfile_mixed.close()
-    logger.info(f"DSNAME={dataset}, Singletons stats: absolute= {cnt_absolute} CpGs, mixed= {cnt_mixed} CpGs.")
-    logger.info(f"DSNAME={dataset}, Singletons stats: unmethylated= {cnt_absolute_unmethylated} CpGs, fully_methylated= {cnt_absolute_fully_methylated} CpGs.")
-
-    ret = {'Singletons'                  : cnt_absolute,
-            'Singletons.fully_methylated': cnt_absolute_fully_methylated,
-            'Singletons.unmethylated'    : cnt_absolute_unmethylated}
-
+    ret = {'Singleton.5mC': absl_msite, 'Singleton.5C': absl_csite}
     return ret
 
 
@@ -2775,39 +2614,38 @@ def import_call(infn, encode, baseFormat=0, include_score=False, deepmod_cluster
     return calls0
 
 
-def import_bgtruth(infn, encode, cov=10, baseFormat=0, includeCov=True, enable_cache=False, using_cache=False):
+def import_bgtruth(infn, encode, covCutoff=10, baseFormat=0, includeCov=True, enable_cache=False, using_cache=False):
     """
     Import bgtruth from file fn using encode, when use new dataset, MUST check input file start baseFormat and import functions are consistent!!!
     :param infn:
     :param encode:
-    :param includeCov:  return [freq, cov] as value of each key=(chr, (int)start, strand)
+    :param includeCov:  if true return [freq, cov] as value of each key=(chr, (int)start, strand), or just value=freq. Note: freq is in range of [0,1]
     :return:
     """
     if enable_cache and using_cache:
-        ret = check_cache_available(infn, encode=encode, cov=cov, baseFormat=baseFormat, includeCov=includeCov)
+        ret = check_cache_available(infn, encode=encode, cov=covCutoff, baseFormat=baseFormat, includeCov=includeCov)
         if ret:
             logger.debug(f'Import BG-Truth using encode={encode} finished!\n')
             return ret
         logger.debug(f'Not cached yet, we load from raw file')
 
-    if encode == "encode":  # not used now, function need to check if use
-        raise Exception(f'Please check this function is ok, encode={encode}')
-        bgTruth = importGroundTruth_BedMethyl_from_Encode(infn, covCutt=cov, baseCount=baseFormat)
+    if encode == "encode":  # This is official K562 BS seq data, 0-based start
+        bgTruth = importGroundTruth_BedMethyl_from_Encode(infn, covCutt=covCutoff, baseFormat=baseFormat, includeCov=includeCov)
     elif encode == "oxBS_sudo":  # not used now, function need to check if use
         raise Exception(f'Please check this function is ok, encode={encode}')
-        bgTruth = importGroundTruth_oxBS(infn, covCutt=cov, baseCount=baseFormat)
-    elif encode == "bed":  # like K562 bg-truth, 0-based start input
-        bgTruth = importGroundTruth_bed_file_format(infn, covCutt=cov, baseFormat=baseFormat, includeCov=includeCov)
+        bgTruth = importGroundTruth_oxBS(infn, covCutt=covCutoff, baseCount=baseFormat)
+    elif encode == "bed":  # like K562 joined bg-truth, 0-based start input
+        bgTruth = importGroundTruth_bed_file_format(infn, covCutt=covCutoff, baseFormat=baseFormat, includeCov=includeCov)
     elif encode == "bismark_bedgraph":  # not used now, function need to check if use
         raise Exception(f'Please check this function is ok, encode={encode}')
         bgTruth = importGroundTruth_coverage_output_from_Bismark_BedGraph(infn, baseCount=baseFormat)
     elif encode == "bismark":  # for genome-wide Bismark Report ouput format results, such as HL60, etc. 1-based start input
-        bgTruth = importGroundTruth_genome_wide_Bismark_Report(infn, covCutt=cov, baseFormat=baseFormat, includeCov=includeCov)
+        bgTruth = importGroundTruth_genome_wide_Bismark_Report(infn, covCutt=covCutoff, baseFormat=baseFormat, includeCov=includeCov)
     else:
         raise Exception(f"encode={encode} is not supported yet, for inputfile={infn}")
 
     if enable_cache:
-        save_to_cache(infn, bgTruth, encode=encode, cov=cov, baseFormat=baseFormat, includeCov=includeCov)
+        save_to_cache(infn, bgTruth, encode=encode, cov=covCutoff, baseFormat=baseFormat, includeCov=includeCov)
 
     logger.debug(f'Import BG-Truth using encode={encode} finished!\n')
     return bgTruth
@@ -2860,6 +2698,56 @@ def compare_cpg_key(item1, item2):
     elif item1[2][0] != item2[2][0]:
         return ord(item1[2][0]) - ord(item2[2][0])
     return 0
+
+
+def combineBGTruthList(bgTruthList, covCutoff=1):
+    """
+    Combine two replicates together, we joined two replicates together as one bgtruth, and retain only cov >= covCutoff sites
+    :param bgTruthList:
+    :return:
+    """
+    logger.info('Start study union and joint of BG-Truth')
+    unionBGTruth = {}  # used for singleton and non-singletons detect, used for performance eval
+    jointBGTruth = {}  # intersection of CpG sites
+    if len(bgTruthList) == 2:  # sites must in both replicates, and
+        unionSet = set(bgTruthList[0].keys()).union(set(bgTruthList[1].keys()))
+        jointSet = set(bgTruthList[0].keys()).intersection(set(bgTruthList[1].keys()))
+
+        for key in unionSet:
+            meth1 = meth2 = 0
+            cov1 = cov2 = 0
+            if key in bgTruthList[0]:
+                cov1 = bgTruthList[0][key][1]
+                meth1 = round(bgTruthList[0][key][0] * cov1)
+
+            if key in bgTruthList[1]:
+                cov2 = bgTruthList[1][key][1]
+                meth2 = round(bgTruthList[1][key][0] * cov2)
+
+            # Joined of two replicates
+            meth_freq = (meth1 + meth2) / float(cov1 + cov2)
+
+            if meth_freq > 1.0:
+                raise Exception(f"Compute joined meth_freq={meth_freq} error")
+
+            cov = int(cov1 + cov2)
+
+            if cov < covCutoff:
+                continue
+
+            unionBGTruth[key] = [meth_freq, cov]
+            if key in jointSet:
+                jointBGTruth[key] = [meth_freq, cov]
+        logger.info(f'unionBGTruth = {len(unionBGTruth):,}, jointBGTruth={len(jointBGTruth):,}, with cov-cutoff={covCutoff}')
+    elif len(bgTruthList) == 1:
+        for key in bgTruthList[0]:
+            if bgTruthList[0][key][1] >= covCutoff:
+                unionBGTruth[key] = bgTruthList[0][key]
+        logger.info(f'Only 1 replicates, BGTruth = {len(unionBGTruth):,}, with cov-cutoff={covCutoff}')
+    else:
+        raise Exception(f'len={len(bgTruthList)}, is not support now.')
+
+    return unionBGTruth
 
 
 def gen_venn_data(set_dict, namelist, outdir, tagname='tagname'):

@@ -182,7 +182,7 @@ def summary_cpgs_joined_results_table():
     dataset.append(ret)
 
     # also report top3 joined and union set
-    top3JointSet=None
+    top3JointSet = None
     top3UnionSet = set()
 
     for callname in Top3ToolNameList:
@@ -199,8 +199,7 @@ def summary_cpgs_joined_results_table():
     ret = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(top3UnionSet)}
     dataset.append(ret)
 
-
-    df = pd.DataFrame(dataset, index=callname_list + ['Joined', 'Union','TOP3 Joined', 'TOP3 Union'])
+    df = pd.DataFrame(dataset, index=callname_list + ['Joined', 'Union', 'TOP3 Joined', 'TOP3 Union'])
     df = df.iloc[:, [4, 0, 1, 2, 3]]
 
     outfn = os.path.join(out_dir, f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.csv')
@@ -308,10 +307,21 @@ if __name__ == '__main__':
         callname_list.append(callname)
         callresult_dict[callname] = [import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache)]
     logger.debug(callfn_dict)
-    encode, fn = args.bgtruth.split(':')
 
-    logger.debug(f'BGTruth fn={fn}, encode={encode}')
-    bgTruth = import_bgtruth(fn, encode, cov=bgtruthCutt, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache)
+    # we can import multiple replicates and join them
+    encode, fnlist = args.bgtruth.split(':')
+    fnlist = fnlist.split(';')
+    logger.debug(f'BGTruth fnlist={fnlist}, encode={encode}')
+
+    bgTruthList = []
+    for fn in fnlist:
+        # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
+        bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True, using_cache=using_cache, enable_cache=enable_cache)
+        bgTruthList.append(bgTruth1)
+
+    # bgTruth = import_bgtruth(fn, encode, covCutoff=bgtruthCutt, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache)
+
+    bgTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruthCutt)
 
     # Filter cov of nanopore tools
     for callname in callname_list:

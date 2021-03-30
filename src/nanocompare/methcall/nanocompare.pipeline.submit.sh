@@ -12,12 +12,15 @@ set -x
 ## Currently we use command arg to do four kind of actions
 cmd=${1:-noaction} # Preprocess, Basecall, Resquiggle, Methcall
 
-run_preprocessing=false
-run_basecall=false
-run_resquiggling=false
-run_methcall=false
-run_combine=false
-run_clean=false
+if [ "noaction" != "${cmd}" ] # if specify step, then use the specified steps only
+then
+	run_preprocessing=false
+	run_basecall=false
+	run_resquiggling=false
+	run_methcall=false
+	run_combine=false
+	run_clean=false
+fi
 
 if [ "Preprocess" = "${cmd}" ] ; then ## bash APL.nanocompare.pipeline.submit.sh Preprocess
 	run_preprocessing=true
@@ -28,12 +31,12 @@ elif [ "Resquiggle" = "${cmd}" ] ; then ## bash APL.nanocompare.pipeline.submit.
 	run_resquiggling=true
 elif [ "Methcall" = "${cmd}" ] ; then
 	run_methcall=true
-#	run_combine=true
+	run_combine=true
 elif [ "Combine" = "${cmd}" ] ; then
 	run_combine=true
-else
-	echo "No action needed."
-	exit -1
+#else
+#	echo "No action needed."
+#	exit -1
 fi
 
 mkdir -p ${outbasedir}

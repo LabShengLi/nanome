@@ -19,13 +19,13 @@ ToolNameList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon']
 Top3ToolNameList = ['DeepSignal', 'Nanopolish', 'Megalodon']
 
 ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'DeepMod.C', 'DeepMod.Cluster', 'Megalodon']
-BGTruthEncodeList = ['bed', 'bismark']
+BGTruthEncodeList = ['bed', 'bismark', 'encode']
 # ToolsColorList = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal'])
 
 ToolsColorList = ["#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442"]
 
 # which column of performance table is extracted and returned
-perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'Average-Precision', 'ROC-AUC', "Macro-F1", "Micro-F1", "Macro-Precision", "Micro-Precision", "Macro-Recall", "Micro-Recall", 'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C', 'Corr_Mix', 'Corr_All', 'Corr_mixedSupport', 'Corr_allSupport', 'mCsites_called',
+perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', "Macro-F1", 'ROC-AUC', 'Average-Precision', "Macro-Precision", "Macro-Recall", "Micro-F1", "Micro-Precision", "Micro-Recall", 'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C', 'Corr_Mix', 'Corr_All', 'Corr_mixedSupport', 'Corr_allSupport', 'mCsites_called',
         'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix', 'coord']
 
 # TODO: test now, will add AP later
@@ -103,10 +103,10 @@ important_region_bed_fns = [narrowCoord[-2], narrowCoord[6], narrowCoord[9], nar
 #         'NA19240_RRBS_joined_cut5'      : os.path.join(data_base_dir, 'perf-plot-data', 'NA19240_RRBS_joined_cut5')}
 
 runPrefixDict = {
-        'K562_WGBS': os.path.join(results_base_dir, 'MethPerf-K562_WGBS'),
-        'HL60_RRBS': os.path.join(results_base_dir, 'MethPerf-HL60_RRBS'),
-        'APL_RRBS' : os.path.join(results_base_dir, 'MethPerf-APL_RRBS'),
-'NA19240_RRBS' : os.path.join(results_base_dir, 'MethPerf-NA19240_RRBS'),
+        'K562_WGBS'   : os.path.join(results_base_dir, 'MethPerf-K562_WGBS'),
+        'HL60_RRBS'   : os.path.join(results_base_dir, 'MethPerf-HL60_RRBS'),
+        'APL_RRBS'    : os.path.join(results_base_dir, 'MethPerf-APL_RRBS'),
+        'NA19240_RRBS': os.path.join(results_base_dir, 'MethPerf-NA19240_RRBS'),
         }
 
 

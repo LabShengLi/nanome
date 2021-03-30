@@ -65,10 +65,19 @@ if __name__ == '__main__':
     baseFormat = 1
 
     # We firstly import bg-truth, then each tool results, and remove non-bg-truth cpgs for memory usage
-    encode, fn = args.bgtruth.split(':')
-    logger.debug(f'BGTruth fn={fn}, encode={encode}')
+    encode, fnlist = args.bgtruth.split(':')
+    fnlist = fnlist.split(';')
+    logger.debug(f'BGTruth fnlist={fnlist}, encode={encode}')
 
-    bgTruth = import_bgtruth(fn, encode, cov=bgtruth_cov_cutoff, baseFormat=baseFormat, includeCov=True, using_cache=using_cache, enable_cache=enable_cache)
+    bgTruthList = []
+    for fn in fnlist:
+        # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
+        bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True, using_cache=using_cache, enable_cache=enable_cache)
+        bgTruthList.append(bgTruth1)
+
+    # Combine multiple bgtruth together for analysis
+    # We use joined of two replicates as BG-Truth
+    evalBGTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruth_cov_cutoff)
 
     callfn_dict = defaultdict()  # callname -> filename
     callresult_dict = defaultdict()  # name->call
@@ -84,7 +93,7 @@ if __name__ == '__main__':
         ## MUST import read-level results, and include score for plot ROC curve and PR curve
         call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache)
         # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
-        callresult_dict[call_name] = filter_cpg_dict(call0, bgTruth)
+        callresult_dict[call_name] = filter_cpg_dict(call0, evalBGTruth)
 
     logger.debug(callfn_dict)
 
@@ -104,9 +113,16 @@ if __name__ == '__main__':
     logger.debug(list(enumerate(relateCoord)))  # all coordinate generated
 
     if not args.test:  # Generate singleton and non-singleton bed files based on BG-Truth results
-        ret = singletonsPostprocessing(bgTruth, singletonsFile, RunPrefix, outdir=out_dir)
-        ret.update(nonSingletonsPostprocessing(bgTruth, nonsingletonsFile, RunPrefix, outdir=out_dir))
+        ret = singletonsPostprocessing(evalBGTruth, singletonsFile, RunPrefix, outdir=out_dir)
+        ret.update(nonSingletonsPostprocessing(evalBGTruth, nonsingletonsFile, RunPrefix, outdir=out_dir))
         df = pd.DataFrame([ret], index=[f'{dsname}'])
+
+        df['Singleton.sum'] = df['Singleton.5C'] + df['Singleton.5mC']
+        df['Concordant.sum'] = df['Concordant.5C'] + df['Concordant.5mC']
+        df['Discordant.sum'] = df['Discordant.5C'] + df['Discordant.5mC']
+
+        df = df[['Singleton.5C', 'Singleton.5mC', 'Singleton.sum', 'Concordant.5C', 'Concordant.5mC', 'Concordant.sum', 'Discordant.5C', 'Discordant.5mC', 'Discordant.sum']]
+
         outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.csv')
         df.to_csv(outfn)
         logger.info(f'save to {outfn}')
@@ -119,7 +135,7 @@ if __name__ == '__main__':
     # this file is used for all coverage > 4 for correlation analysis
     fn_secondFilterBed_4Corr = f"{out_dir}/{RunPrefix}.Tools_BGTruth_Joined.4Corr.bed"
 
-    joinedCPG = set(bgTruth.keys())
+    joinedCPG = set(evalBGTruth.keys())
     # logger.debug(f'len={len(joinedCPG)}, key={list(bgTruth.keys())[0]}')
     for toolname in callresult_dict:
         joinedCPG = joinedCPG.intersection(set(callresult_dict[toolname].keys()))
@@ -129,7 +145,7 @@ if __name__ == '__main__':
 
     logger.info(f"Data points for joined all tools with bg-truth (cov>={bgtruth_cov_cutoff}) stats: {len(joinedCPG):,}\n\n")
 
-    joinedCPG4Corr = combine2programsCalls_4Corr(bgTruth, cutt=tool_cov_cutoff, only_bgtruth=True)
+    joinedCPG4Corr = combine2programsCalls_4Corr(evalBGTruth, cutt=tool_cov_cutoff, only_bgtruth=True)
     for toolname in callresult_dict:
         joinedCPG4Corr = combine2programsCalls_4Corr(joinedCPG4Corr, callresult_dict[toolname], cutt=tool_cov_cutoff)
 
@@ -153,10 +169,10 @@ if __name__ == '__main__':
         # Note: relateCoord - all singleton (absolute and mixed) and non-singleton generated bed. ranges
         #       secondFilterBed - joined sites of four tools and bg-truth. points
         if report_joined:  # step: with joined results of all tools
-            df = report_per_read_performance_mp(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=bedfn_tool_join_bgtruth, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, processors=args.processors)
+            df = report_per_read_performance_mp(callresult_dict[tool], evalBGTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=bedfn_tool_join_bgtruth, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, processors=args.processors)
             # df = report_per_read_performance(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=bedfn_tool_join_bgtruth, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix)
         else:  # step: no joined results
-            df = report_per_read_performance_mp(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=None, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, processors=args.processors)
+            df = report_per_read_performance_mp(callresult_dict[tool], evalBGTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=None, secondFilterBed_4Corr=fn_secondFilterBed_4Corr, outdir=perf_dir, tagname=tmpPrefix, processors=args.processors)
 
         df['Tool'] = tool
         df['Dataset'] = dsname

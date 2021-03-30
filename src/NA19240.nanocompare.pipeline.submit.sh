@@ -29,9 +29,7 @@ targetNum=300 # due to too large number of fast5 files
 
 ### Nanopore raw signal fast5 files, K562 is from tier2: /tier2/li-lab/Nanopore/NanoporeData/Leukemia_ONT/20180612_180601-18-li-004-GXB01102-001/  47.46GB
 # inputDataDir  -   input of Nanopore reads file/files, can be tar file or a directory contains files
-inputDataDir=/fastscratch/liuya/nanocompare/Nanopore-reads/NA19240
-
-#inputDataDir=/fastscratch/liuya/nanocompare/NA19240-Runs/NA19240-N50-sept
+inputDataDir=/fastscratch/liuya/nanocompare/input/NA19240
 
 ### Running configurations
 ### which nanopore tools can be used, such as ToolList=(Tombo DeepSignal)
@@ -42,13 +40,14 @@ ToolList=(DeepMod)
 
 
 ### Which step is going to run, true or false, if 'true' means running this step
-basecall_name=Guppy
+basecall_name=Albacore
+#basecall_name=Guppy
 
 run_preprocessing=true
-run_basecall=false
+run_basecall=true
 run_resquiggling=false
-run_methcall=false
-run_combine=false
+run_methcall=true
+run_combine=true
 run_clean=false
 
 ### true if inputDataDir is a folder contains *.tar or *.tar.gz
@@ -56,7 +55,7 @@ multipleInputs=true
 
 ### which kind of intermediate file we want to backup or clean, these options are used in final stage of combine step
 tar_basecall=false
-tar_methcall=true
+tar_methcall=false
 clean_preprocessing=false
 clean_basecall=false
 
