@@ -47,8 +47,8 @@ source(here('src', 'plotutils4r', 'paper_utils.R'))
 data_dir = here('result', 'venn-data')
 out_dir = here('figures', 'venn-plot')
 dir.create(out_dir, showWarnings = FALSE)
-#pattern.str = 'venn.data.*.dat'
-pattern.str = 'venn.data.NA19240.*.dat'
+pattern.str = 'venn.data.*.dat'
+#pattern.str = 'venn.data.NA19240.*.dat'
 for (venfn in list.files(data_dir, pattern = pattern.str)) {
   infn = here('result', 'venn-data', venfn)
   dt <- read.table(infn)
@@ -63,24 +63,6 @@ for (venfn in list.files(data_dir, pattern = pattern.str)) {
     #break
   }
   #break
-}
-
-
-## Figure 6 data: Provide pecentage data
-source(here('src', 'plotutils4r', 'paper_utils.R'))
-data_dir = here('result', 'venn-data')
-pattern.str = 'venn.data.*.top3.cov3.dat'
-for (venfn in list.files(data_dir, pattern = pattern.str)) {
-  print(venfn)
-  infn = here('result', 'venn-data', venfn)
-  dt <- read.table(infn)
-  base_infn = basename(infn)
-
-  if (length(dt$V1) == 31) {
-  }else if (length(dt$V1) == 7) {
-    print((dt$V1[1]-dt$V1[2])/ dt$V1[2])
-    print((dt$V1[3]-dt$V1[2])/ dt$V1[2])
-  }
 }
 
 

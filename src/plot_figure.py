@@ -167,210 +167,6 @@ def scatter_facet_grid_multiple_ds_5mc_5c_performance(df, location_list=location
     logger.info(f"save to {outfn}")
 
 
-# Not finished yet
-def box_plots_all_locations1():
-    prefix = current_time_str()
-    metrics = ["F1_5C", "F1_5mC"]
-
-    df = load_box_plot_all_data()
-
-    sel_cols = ['Tool', 'BasecallTool', 'Location', 'F1_5C', 'F1_5mC']
-    df1 = df[sel_cols]
-    df1 = df1.rename(columns={'Tool': 'Dataset', 'BasecallTool': 'Tool'})
-
-    refinedf = pd.melt(df1, id_vars=['Dataset', 'Location', 'Tool'], var_name='Measurement', value_name='Performance')
-
-    logger.debug(f"refinedf={refinedf}")
-
-    regions0 = ["singletons", "nonsingletons", "discordant", "concordant"]
-    regions1 = ["GW", "cpgIslandExt", "promoterFeature", "exonFeature", "intronFeature", "intergenic"]
-    regions_list = [regions0, regions1]
-
-    for r, region in enumerate(regions_list):
-        df2 = refinedf[refinedf['Location'].isin(region)]
-
-        # with sns.plotting_context(font_scale=3):
-        sns.set(font_scale=2)
-        sns.set_style("white")
-
-        # sns.set(style="ticks")
-
-        # palette = sns.color_palette(['blue', 'orange', 'green', 'red'])
-
-        # hue="Tool", hue_order=tool_list,, palette=palette
-
-        row_order = ['F1_5C', 'F1_5mC']
-        col_order = region
-        plt.figure(figsize=(25, 10))
-        plt.rcParams.update({'font.size': 15})
-
-        # violin  box
-        grid = sns.catplot(data=df2, row='Measurement', col="Location", x="Tool", y="Performance", hue="Tool", order=tools, hue_order=tools, kind="violin", height=4, aspect=0.8, row_order=row_order, col_order=col_order, width=0.8)
-
-        # ax = sns.boxplot(x="Tool", y="Performance", data=df2)
-
-        outfn = os.path.join(pic_base_dir, f"box_plot_region{r}_{current_time_str()}.png")
-
-        ncol = len(col_order)
-        for ti, ax in enumerate(grid.axes.flat):
-            col_index = ti % ncol
-            if ti // ncol == 0:
-                ax.set_title(col_order[col_index])
-            else:
-                ax.set_title("")
-            ax.set_xticklabels([])  # , rotation=30
-            ax.set_xlabel("")
-            if ti == 0:
-                ax.set_ylabel(row_order[0])
-            elif ti == ncol:
-                ax.set_ylabel(row_order[1])
-
-            t = ti
-
-        # [plt.setp(ax.texts, text="") for ax in grid.axes.flat]
-        # plt.setp(grid.fig.texts, text="")
-
-        # grid.add_legend()
-
-        outfn = os.path.join(pic_base_dir, f"box_plots_allds_data_location_f1_5c_5mc_performance__region{r}_time_{current_time_str()}.png")
-        grid.savefig(outfn, format='png', dpi=600)
-        logger.info(f"save to {outfn}")
-
-        plt.show()
-        # break
-
-        pass
-
-
-def get_pal_4():
-    set_style()
-    current_palette = sns.color_palette()
-    pal_plot = [mpatches.Patch(color=current_palette[i], label=tools_abbr[i]) for i in range(4)]
-    return pal_plot
-
-
-def box_plots_two_locations(metrics=["F1_5mC", "F1_5C"]):
-    """
-    # metric = "roc_auc"
-    # metric = "accuracy"
-    # metrics = ["accuracy", "roc_auc", "F1_5C", "F1_5mC"]
-
-    :param metrics:
-    :return:
-    """
-
-    df = load_wide_format_performance_results()
-
-    suffix = current_time_str()
-
-    set_style(font_scale=1.8)
-    current_palette = sns.color_palette()
-
-    pal_plot = [mpatches.Patch(color=current_palette[i], label=tools_abbr[i]) for i in range(4)]
-
-    regions_list = [locations_singleton, locations_category]
-
-    # For each metric in metrics, box plot region type 0 and 1
-    for metric in metrics:  # for each metric
-        for r, regions in enumerate(regions_list):  # for each regine 1 category or 2 singleton
-            plt.clf()
-            fig = plt.gcf()
-            fig.set_size_inches(20, 5)
-
-            for i, region in enumerate(regions):
-                order = i + 1
-                df_filtered = df[df.Location == region]
-                df_filtered = df_filtered[df_filtered[metric] > 0]
-                df_filtered.head()
-
-                logger.info(f"df_filtered={df_filtered}")
-
-                plt.subplot(1, len(regions), order)
-
-                # # sns.boxplot(x="method", y="AUC", hue="BinaryLabels", data=df, palette="Set1")
-                # ax = sns.violinplot(x="BasecallTool", y="accuracy", data=df_filtered, palette="Set1", order=["Tombo_calls", "Nanopolish_calls", "DeepSignal_calls", "DeepMod_calls"], width=0.3)
-
-                # x="BasecallTool",
-                ax = sns.boxplot(x="Tool", y=metric, data=df_filtered, order=tools_abbr, width=0.65, palette=sns.color_palette())
-
-                if i == len(regions) - 1:
-                    # hue="BasecallTool",
-                    # fig.legend(handles=pal_plot, bbox_to_anchor=(0.5, 1.2), title='Tool', ncol=5)
-                    plt.legend(handles=pal_plot, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., title='Tool')
-                    # plt.legend(handles=pal_plot, bbox_to_anchor=(0.1, 1.2),   title='Tool', ncol=5)
-
-                # ax = sns.stripplot(x="Tool", y=metric, data=df_filtered, order=tools_abbr, size=2.5, color=".2", edgecolor="gray", jitter=True)  # , color="grey"
-
-                ax.set_xticklabels([], rotation=90)
-
-                # xticks = ax.get_xticklabels()
-                # xticks = 'change'
-                #
-                # labels = [item.get_text() for item in ax.get_xticklabels()]
-                # labels[0] = 'Testing'
-
-                # ax.set_xticklabels(labels, rotation=45)
-
-                # plt.setp(ax.get_xticklabels(), rotation=45)
-
-                # a = ax.get_xticks().tolist()
-                # a[0] = 'change'
-                # # ax.set_xticklabels(['', '', '', ''], rotation=90)
-                # plt.xticks([1, 2, 3, 4])
-                #
-                # # for ticki, tick in enumerate(ax.get_xticklabels()):
-                # #     # tool_abbr_list[ticki]
-                # #     tick.set(rotation=90)
-                # #     tick.set()
-
-                ax.set_xlabel("")
-
-                # plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-
-                plt.ylim(0, 1)
-
-                if metric == 'ROC_AUC':
-                    ylabel_text = "AUC"
-                else:
-                    ylabel_text = metric
-
-                if order > 1:
-                    ax.set_yticklabels([])
-                    plt.ylabel("")
-                else:
-                    plt.ylabel(ylabel_text)
-
-                # if region == "cpgIslandExt":
-                #     plt.title("CpG Island")
-                # elif region == "promoters_500bp":
-                #     plt.title("Promoters")
-                # elif region == "intronFeature":
-                #     plt.title("Introns")
-                # elif region == "exonFeature":
-                #     plt.title("Exons")
-                # elif region == "singletons":
-                #     plt.title("Singletons")
-                # elif region == "nonsingletons":
-                #     plt.title("Non-singletons")
-                # elif region == "discordant":
-                #     plt.title("Discordant")
-                # elif region == "concordant":
-                #     plt.title("Concordant")
-                # elif region == "intergenic":
-                #     plt.title("Intergenic")
-                # elif region == "GW":
-                #     plt.title("Genome-wide")
-                # else:
-                plt.title(region)
-
-            outfn = os.path.join(pic_base_dir, f"box_plot.metric_{metric}.region.{regions[0]}_time_{suffix}.png")
-
-            plt.savefig(outfn, format="png", bbox_inches='tight', dpi=600)
-            logger.info(f"save to {outfn}")
-
-            plt.show()
-
-
 def corr_grid_plot_for_fig5a(infn):
     """
     Plot the grid of corr COE, distribution and scatter plot based on input files
@@ -394,6 +190,17 @@ def corr_grid_plot_for_fig5a(infn):
     num_col = len(df.columns)
     df = df.iloc[:, list(range(1, num_col)) + [0]]
     logger.debug(f'Load data = {len(df)}')
+
+    # Rearrange columns by correlation from high to low
+    corrdf = df.corr()
+    # logger.info(corrdf)
+
+    coe_series = corrdf.iloc[:, -1]
+    # logger.info(coe_series[:-1].sort_values(ascending=False))
+
+    orderedColumns = coe_series[:-1].sort_values(ascending=False).index.tolist()
+
+    df = df.loc[:, ['BGTruth'] + orderedColumns]
 
     ## Plot correlation grid figure
     basefn = os.path.basename(infn)
@@ -421,13 +228,15 @@ def corr_grid_plot_for_fig5a(infn):
                 params = {'legend.fontsize': 16, 'legend.handlelength': 0, 'legend.handletextpad': 0, 'legend.fancybox': True}
                 plt.rcParams.update(params)
                 ax = sns.kdeplot(df.iloc[:, x - 1], shade=True, color="black", legend=True)
-                leg = ax.legend(labels=[str(df.columns[x - 1])])
+                leg = ax.legend(labels=[str(df.columns[x - 1])], fontsize=14)
                 for item in leg.legendHandles:
                     item.set_visible(False)
 
                 # ax.annotate("abcd", xy=(0.2, 0.8), xycoords='axes fraction',
                 #             fontsize=14)
-
+                #
+                # ax.xaxis.set_major_locator(plt.MaxNLocator(3))
+                # ax.yaxis.set_major_locator(plt.MaxNLocator(3))
                 ax.set_yticklabels([])
                 ax.set_xticklabels([])
                 ax.set_ylabel('')
@@ -454,13 +263,18 @@ def corr_grid_plot_for_fig5a(infn):
                 ax3 = plt.subplot(num_col, num_col, position)
 
                 # plt.hexbin(df.iloc[:, x - 1], df.iloc[:, y - 1], gridsize=(gridRes, gridRes), cmap=agressiveHot)  # plt.cm.gray_r )
-                # gridRes = 15 # for HL60
-                gridRes = 50
+                if len(df) < 100:
+                    gridRes = 15  # for HL60
+                else:
+                    gridRes = 40
+
                 mincnt = None
                 plt.hexbin(df.iloc[:, x - 1], df.iloc[:, y - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
 
-                ax3.set_yticklabels([])
-                ax3.set_xticklabels([])
+                # ax3.set_yticklabels([])
+                # ax3.set_xticklabels([])
+                plt.xticks([0, 1], fontsize=8)
+                plt.yticks([0, 1], fontsize=8)
 
             position += 1
 
@@ -958,7 +772,7 @@ if __name__ == '__main__':
             for dirname in args.i:
                 run_prefix[os.path.basename(dirname)] = dirname
         save_wide_format_performance_results(run_prefix, args.o, args.tagname)
-        df = collect_singleton_vs_nonsingleton_df(runPrefixDict)
+        df = collect_singleton_vs_nonsingleton_df(run_prefix)
         # logger.debug(df)
         outfn = os.path.join(args.o, f'dataset.singleton.vs.non-singleton{f"-{args.tagname}" if args.tagname else ""}.csv')
         df.to_csv(outfn)

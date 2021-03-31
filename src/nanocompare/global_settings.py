@@ -25,8 +25,8 @@ BGTruthEncodeList = ['bed', 'bismark', 'encode']
 ToolsColorList = ["#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442"]
 
 # which column of performance table is extracted and returned
-perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', "Macro-F1", 'ROC-AUC', 'Average-Precision', "Macro-Precision", "Macro-Recall", "Micro-F1", "Micro-Precision", "Micro-Recall", 'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C', 'Corr_Mix', 'Corr_All', 'Corr_mixedSupport', 'Corr_allSupport', 'mCsites_called',
-        'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix', 'coord']
+perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', "Macro-F1", 'ROC-AUC', 'Average-Precision', "Macro-Precision", "Macro-Recall", "Micro-F1", "Micro-Precision", "Micro-Recall", 'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C', 'mCsites_called', 'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix',
+        'coord']
 
 # TODO: test now, will add AP later
 # ret_perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'ROC_AUC',
@@ -64,11 +64,11 @@ locations_singleton = ["Singletons", "Non-singletons", "Discordant", "Concordant
 singletonsFile = "hg38_singletons.bed"
 nonsingletonsFile = "hg38_nonsingletons.bed"
 
-narrowCoordList = ['x.x.GenomeWide', singletonsFile, nonsingletonsFile, "ONT.hg38.cpgIslandExt.bed", "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed", "ONT.hg38.exonFeature.bed", "ONT.hg38.geneFeature.bed", "ONT.hg38.intergenic.bed", "ONT.hg38.intronFeature.bed", "ONT.hg38.promoterFeature.flank_100.bed", "ONT.hg38.promoterFeature.flank_1000.bed",
+narrowCoordNameList = ['x.x.GenomeWide', singletonsFile, nonsingletonsFile, "ONT.hg38.cpgIslandExt.bed", "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed", "ONT.hg38.exonFeature.bed", "ONT.hg38.geneFeature.bed", "ONT.hg38.intergenic.bed", "ONT.hg38.intronFeature.bed", "ONT.hg38.promoterFeature.flank_100.bed", "ONT.hg38.promoterFeature.flank_1000.bed",
         "ONT.hg38.promoterFeature.flank_200.bed", "ONT.hg38.promoterFeature.flank_2000.bed", "ONT.hg38.promoterFeature.flank_500.bed", "ONT.hg38.promoterFeature.flank_750.bed"]
 
 # None means no coordinate used, i.e. Genome-wide
-narrowCoord = [None] + [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in narrowCoordList[1:]]
+narrowCoordFileList = [None] + [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in narrowCoordNameList[1:]]
 
 # Map each bed file name to a standard name
 coordDictToStandardName = {
@@ -94,7 +94,7 @@ coordDictToStandardName = {
         }
 
 # Not used now
-important_region_bed_fns = [narrowCoord[-2], narrowCoord[6], narrowCoord[9], narrowCoord[8], narrowCoord[3]]
+important_region_bed_fns = [narrowCoordFileList[-2], narrowCoordFileList[6], narrowCoordFileList[9], narrowCoordFileList[8], narrowCoordFileList[3]]
 
 # specify which runPrefix -> dir is the newly results you need
 # runPrefixDict = {'K562_WGBS_joined_cut5': os.path.join(data_base_dir, 'perf-plot-data', 'K562_WGBS_joined_cut5'),

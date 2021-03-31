@@ -1,143 +1,15 @@
 #!/home/liuya/anaconda3/envs/nmf/bin/python
 
 """
-Generate methy correlation plotting input data as a tsv
-
-Sample usage:
-    python /projects/li-lab/yang/workspace/nano-compare/src/nanocompare/meth_stats/Methylation_correlation_plotting.py --calls DeepSignal:/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepSignal-N50/K562-DeepSignal-N50-meth-call/K562.deepsignal.call_mods.combine.tsv Tombo:/fastscratch/liuya/nanocompare/K562-Runs/K562-Tombo-N1/K562-Tombo-N1-meth-call/K562.tombo.perReadsStatsOnlyCG.combine.tsv Nanopolish:/fastscratch/liuya/nanocompare/K562-Runs/K562-Nanopolish-N50/K562-Nanopolish-N50-meth-call/K562.nanopolish.methylation_calls.combine.tsv DeepMod:/fastscratch/liuya/nanocompare/deepmod-read-level1.tsv --bgtruth bed:/projects/li-lab/yang/workspace/nano-compare/data/bgtruth-data/K562_joined.bed.gz --runid K562_WGBS_Joined_NewRuns
+Generate site-level methy correlation plotting based on input data as a tsv
 
 All usedful functions are located in nanocompare.meth_stats.meth_stats_common
 """
 import argparse
 import subprocess
 
-from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList
+from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, narrowCoordFileList
 from nanocompare.meth_stats.meth_stats_common import *
-
-
-def scatter_plot_cov():
-    logger.debug(f"Study scatter plot of coverage for Tombo with other tool with no cutoff")
-
-    scatter_analysis_cov(Tombo_calls0, Nanopolish_calls0, outdir=out_dir, RunPrefix=RunPrefix, tool1_name='Tombo', tool2_name='Nanopolish')
-    scatter_analysis_cov(Tombo_calls0, DeepSignal_calls0, outdir=out_dir, RunPrefix=RunPrefix, tool1_name='Tombo', tool2_name='Deepsignal')
-
-    scatter_analysis_cov(DeepMod_calls0, Nanopolish_calls0, outdir=out_dir, RunPrefix=RunPrefix, tool1_name='DeepMod', tool2_name='Nanopolish')
-    scatter_analysis_cov(DeepMod_calls0, DeepSignal_calls0, outdir=out_dir, RunPrefix=RunPrefix, tool1_name='DeepMod', tool2_name='Deepsignal')
-
-
-def study_intersection():
-    logger.debug(f"Study set intersection of each tool with bgtruth")
-    dataset = []
-    bgtruthCpGs = set(list(bgTruth.keys()))
-    for call1, name1, call1_before_cutoff in zip(all_calls, name_calls, all_calls_before_cutoff):
-        if name1 == "DeepMod_cluster":
-            continue
-        if call1 is None:
-            # dataset.append({'bgtruth': len(bgtruthCpGs), 'tool': np.nan, f'tool-covcut{minToolCovCutt}': np.nan, 'joined': np.nan})
-            continue
-        overlapCpGs = bgtruthCpGs.intersection(set(list(call1.keys())))
-        ret = {f'CpG sites in BG-Truth cov>={bgtruthCutt}': len(bgtruthCpGs), 'Total CpG sites by Nanopore tool': len(set(list(call1_before_cutoff))), f'Total CpG sites by cov>={minToolCovCutt}': len(set(list(call1.keys()))), 'Joined CpG sites with BG-Truth': len(overlapCpGs)}
-
-        cnt_calls = 0
-
-        if name1 != "DeepMod_cluster":
-            for cpg in call1_before_cutoff:
-                cnt_calls += len(call1_before_cutoff[cpg])
-        else:
-            for cpg in call1_before_cutoff:
-                cnt_calls += call1_before_cutoff[cpg][1]
-        ret.update({'Total calls by Nanopore reads': cnt_calls})
-        dataset.append(ret)
-
-        logger.info(f'BG-Truth join with {name1} get {len(overlapCpGs):,} CpGs')
-        # outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-bgtruth-{name1}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
-        # save_keys_to_bed(overlapCpGs, outfn)
-
-    df = pd.DataFrame(dataset, index=name_calls[:-1])
-    df = df.iloc[:, [4, 0, 1, 2, 3]]
-    outfn = os.path.join(out_dir, f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.csv')
-    df.to_csv(outfn)
-
-    return
-
-    logger.debug(f"Study set intersection of deepsignal, nanopolish with bgtruth")
-    dataset = []
-    overlapCpGs = set(list(bgTruth.keys()))
-    for call1, name1 in zip(all_calls, name_calls):
-        if call1 is None:
-            continue
-        if name1 not in ['DeepSignal', 'Nanopolish']:
-            continue
-        overlapCpGs = overlapCpGs.intersection(set(list(call1.keys())))
-    # outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-deepsignal-nanopolish-bgtruth-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
-    # save_keys_to_bed(overlapCpGs, outfn)
-    logger.info(f'Reporting deepsignal, nanopolish with bgtruth, joined results = {len(overlapCpGs)}')
-
-    logger.debug(f"Study set intersection of deepsignal, nanopolish, deepmod and tombo")
-    dataset = []
-    overlapCpGs = None
-    for call1, name1 in zip(all_calls, name_calls):
-        if call1 is None:
-            continue
-        if name1 not in ['DeepSignal', 'Nanopolish', 'DeepMod', 'Tombo']:
-            continue
-        if overlapCpGs is None:
-            overlapCpGs = set(list(call1.keys()))
-        else:
-            overlapCpGs = overlapCpGs.intersection(set(list(call1.keys())))
-    # outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-deepsignal-nanopolish-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
-    # save_keys_to_bed(overlapCpGs, outfn)
-    logger.info(f'Reporting deepsignal, nanopolish,deepmod,and tombo joined results = {len(overlapCpGs)}')
-
-    logger.debug(f"Next, study set intersection of deepsignal, nanopolish but not in Tombo")
-    newOverlapCpGs = overlapCpGs - Tombo_calls.keys()
-
-    # outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-deepsignal-nanopolish-notombo-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
-    # save_keys_to_bed(newOverlapCpGs, outfn)
-    logger.info(f'Reporting deepsignal, nanopolish but not in Tombo results = {len(newOverlapCpGs)}')
-
-
-def study_high_cov_tool1_low_cov_tool2():
-    logger.debug(f'Study and find high cov in DeepSignal and Nanopolish, but low in Tombo (before cutoff)')
-
-    df = get_high_cov_call1_low_cov_call2_df(Nanopolish_calls0, Tombo_calls0, low_cutoff=minToolCovCutt)
-    # logger.debug(df)
-    outfn = os.path.join(out_dir, f'{RunPrefix}-high-cov-nanopolish-low-cov-tombo-baseCount{baseFormat}.bed')
-    df.to_csv(outfn, sep='\t', index=False)
-
-    outfn = os.path.join(out_dir, f'{RunPrefix}-high-cov-nanopolish-low-cov-tombo-baseCount{baseFormat}.pkl')
-    df.to_pickle(outfn)
-
-    logger.debug(f'Study DeepSignal cov>={minToolCovCutt} , but low in Tombo cov < {minToolCovCutt}')
-
-    df = get_high_cov_call1_low_cov_call2_df(DeepSignal_calls0, Tombo_calls0, low_cutoff=minToolCovCutt, call1_name='deepsignal')
-    logger.debug(df)
-    outfn = os.path.join(out_dir, f'{RunPrefix}-high-cov-deepsignal-low-cov-tombo-baseCount{baseFormat}.bed')
-    df.to_csv(outfn, sep='\t', index=False)
-
-    outfn = os.path.join(out_dir, f'{RunPrefix}-high-cov-deepsignal-low-cov-tombo-baseCount{baseFormat}.pkl')
-    df.to_pickle(outfn)
-
-
-def output_bed_of_tools_bgtruth():
-    logger.debug(f"Output bed files of each tool, and bgtruth")
-
-    # Note bgTruth in format of {'chr\t123\t123\n':[0.56, 15], etc.}
-    outfn = os.path.join(out_dir, f'{RunPrefix}-meth-cov-bgtruth-baseCount{baseFormat}.bed')
-    save_call_or_bgtruth_to_bed(bgTruth, outfn, callBaseFormat=baseFormat)
-
-    # Note each tool call filtered results is in format of {'chr\t123\t123\n':[0.56, 15], etc.}
-    for call1, name1, call2 in zip(all_calls, name_calls, all_calls_before_cutoff):
-        outfn = os.path.join(out_dir, f'{RunPrefix}-meth-cov{minToolCovCutt}-tool-{name1}-baseCount{baseFormat}.bed')
-        save_call_or_bgtruth_to_bed(call1, outfn, callBaseFormat=baseFormat)
-
-        outfn = os.path.join(out_dir, f'{RunPrefix}-meth-covcutoff{minToolCovCutt}-tool-{name1}-baseCount{baseFormat}.myCpG.txt')
-        save_call_to_methykit_txt(call1, outfn, callBaseFormat=baseFormat)
-
-        if 'DeepMod_cluster' == name1:
-            continue
-        outfn = os.path.join(out_dir, f'{RunPrefix}-meth-nocovcutoff-tool-{name1}-baseCount{baseFormat}.myCpG.txt')
-        save_call_to_methykit_txt(call2, outfn, callBaseFormat=baseFormat, is_cov=False)
 
 
 def summary_cpgs_joined_results_table():
@@ -169,6 +41,30 @@ def summary_cpgs_joined_results_table():
         for cpg in callresult_dict[name][0]:
             cnt_calls += len(callresult_dict[name][0][cpg])
         ret.update({'Total calls by Nanopore reads': cnt_calls})
+
+        # Add coverage of singleton and non-singletons number by each tool here
+        singletonBaseDir = '/projects/li-lab/yang/results/2021-03-30'
+
+        absoluteFileName = find_bed_filename(basedir=singletonBaseDir, pattern=f'{args.dsname}*hg38_singletons.absolute.bed')
+        absoluteSet = filter_cpgkeys_using_bedfile(callSet, absoluteFileName)
+
+        concordantFileName = find_bed_filename(basedir=singletonBaseDir, pattern=f'{args.dsname}*hg38_nonsingletons.concordant.bed')
+        concordantSet = filter_cpgkeys_using_bedfile(callSet, concordantFileName)
+
+        discordantFileName = find_bed_filename(basedir=singletonBaseDir, pattern=f'{args.dsname}*hg38_nonsingletons.discordant.bed')
+        discordantSet = filter_cpgkeys_using_bedfile(callSet, discordantFileName)
+
+        # ret.update({'Absolute': len(absoluteSet), 'Concordant': len(concordantSet), 'Discordant': len(discordantSet)})
+        # ret.update({'Concordant': len(concordantSet), 'Discordant': len(discordantSet)})
+
+        singletonFileName = narrowCoordFileList[1]  # Singleton file path
+        singletonSet = filter_cpgkeys_using_bedfile(callSet, singletonFileName)
+
+        nonsingletonFilename = narrowCoordFileList[2]  # Non-Singleton file path
+        nonsingletonSet = filter_cpgkeys_using_bedfile(callSet, nonsingletonFilename)
+
+        ret.update({'Singletons': len(singletonSet), 'Non-Singletons': len(nonsingletonSet), 'Concordant': len(concordantSet), 'Discordant': len(discordantSet)})
+
         dataset.append(ret)
 
         logger.info(f'BG-Truth join with {name} get {len(overlapCpGs):,} CpGs')
@@ -200,7 +96,10 @@ def summary_cpgs_joined_results_table():
     dataset.append(ret)
 
     df = pd.DataFrame(dataset, index=callname_list + ['Joined', 'Union', 'TOP3 Joined', 'TOP3 Union'])
-    df = df.iloc[:, [4, 0, 1, 2, 3]]
+
+    logger.info(df)
+
+    df = df.iloc[:, [4, 0, 1, 2, 5, 6, 7, 8, 3]]
 
     outfn = os.path.join(out_dir, f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.csv')
     df.to_csv(outfn, sep=args.sep)
@@ -375,20 +274,3 @@ if __name__ == '__main__':
     summary_cpgs_joined_results_table()
 
     logger.info("### Methylation correlation plotting data generation program finished. DONE")
-
-    sys.exit(0)
-
-    is_scatter_plot = False
-    output_bed = False
-    study_high_low_cov = False
-
-    if study_high_low_cov:
-        study_high_cov_tool1_low_cov_tool2()
-
-    if output_bed:
-        output_bed_of_tools_bgtruth()
-
-    if is_scatter_plot:
-        scatter_plot_cov()
-
-    study_intersection()

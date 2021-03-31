@@ -16,7 +16,9 @@ Tool.Order.show.SingleRead = c('DeepSignal', 'Tombo', 'Nanopolish*', 'DeepMod', 
 
 
 measure.pair.list = list(c('Accuracy', 'Micro.F1'), c('Accuracy', 'ROC.AUC'), c('Micro.Precision', 'Micro.Recall'), c('F1_5mC', 'F1_5C'), c('Macro.Precision', 'Macro.Recall'))
-measure.list = c('Accuracy', 'ROC.AUC', 'Micro.F1', 'Macro.F1', 'Average.Precision', 'Micro.Precision', 'Micro.Recall', 'Macro.Precision', 'Macro.Recall')
+#measure.list = c('Accuracy', 'ROC.AUC', 'Micro.F1', 'Macro.F1', 'Average.Precision', 'Micro.Precision', 'Micro.Recall', 'Macro.Precision', 'Macro.Recall')
+measure.list = c('Accuracy', 'ROC.AUC', 'Macro.F1', 'Average.Precision', 'Macro.Precision', 'Macro.Recall')
+
 Corr.Perf.List = c('Corr_All', 'Corr_Mix')
 # The palette with grey:
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
@@ -100,26 +102,6 @@ fig.34b.box.location.performance <- function(df, perf.measure, locations, bdir, 
 }
 
 
-fig.34a.bar.dataset.location.performance <- function(df, dsname, perf.pair, bdir, scale = 1) {
-  sel_data = df[df$Dataset == dsname, c('Dataset', 'Tool', 'Location', perf.pair)]
-  longdf <- melt(setDT(sel_data), id.vars = c("Dataset", "Tool", "Location"), variable.name = "perf_name")
-
-  ggplot(longdf, aes_string(x = 'Tool', y = 'value', fill = 'Tool')) +
-    geom_bar(stat = 'identity') +
-    facet_grid(perf_name ~ Location, switch = "y") +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10)) +
-    theme(strip.text.x = element_text(size = 9), strip.text.y = element_text(size = 12)) +
-    scale_fill_manual(values = ToolColorPal) +
-    theme(axis.title.y = element_blank()) +
-    theme(strip.background.y = element_blank(), strip.placement = "outside") +
-    theme(legend.title = element_text(size = 10), legend.text = element_text(size = 10))
-
-  outfn = sprintf("%s/fig.34a.bar.dataset.%s.%s.jpg", bdir, dsname, perf.pair[1])
-  ggsave(filename = outfn, width = 10, height = 4, scale = scale, dpi = 600)
-  printf("save to %s\n", outfn)
-}
-
-
 fig.6a.venn.plot.set5 <- function(ret, outfn) {
   graphics.off()
   venn.plot <- draw.quintuple.venn(
@@ -154,7 +136,7 @@ fig.6a.venn.plot.set5 <- function(ret, outfn) {
     n1345 = ret[29],
     n2345 = ret[30],
     n12345 = ret[31],
-    category = Tool.Order,
+    category = Tool.Order[1:5],
     fill = ToolColorPal[1:5],
     cat.col = ToolColorPal[1:5],
     cat.pos = c(0, 2, 8, 3, 11),
@@ -167,41 +149,6 @@ fig.6a.venn.plot.set5 <- function(ret, outfn) {
   );
 
   ggsave(venn.plot, file = outfn, width = 5, height = 5, dpi = 600)
-  printf('save to %s', outfn)
-}
-
-
-fig.6a.venn.plot.set3 <- function(ret, outfn) {
-  graphics.off()
-  venn.plot <- draw.triple.venn(
-    area1 = ret[1],
-    area2 = ret[2],
-    area3 = ret[3],
-    n12 = ret[4],
-    n23 = ret[6],
-    n13 = ret[5],
-    n123 = ret[7],
-    category = Top3.Tool.Order,
-    fill = Top3.ToolColorPal,
-    lty = "blank",
-    cex = 2,
-    cat.cex = c(3, 3, 3),
-    cat.col = Top3.ToolColorPal,
-    ind = FALSE,
-    cat.pos = c(-20, 20, 180),
-    print.mode = c("raw", "percent"),
-    fontfamily = rep("Times New Roman", 7),
-    cat.fontfamily = rep("Times New Roman", 3),
-    euler.d = TRUE, scaled = TRUE
-  );
-
-  #print("Add title")
-  #require(gridExtra)
-  #grid.arrange(gTree(children = venn.plot), top = basename(outfn))
-
-  #print(venn.plot)
-
-  ggsave(venn.plot, file = outfn, dpi = 600)
   printf('save to %s', outfn)
 }
 
@@ -255,7 +202,7 @@ fig.6c.bar.plot.tools <- function() {
     pos = str_locate(basename_infn, "_")[1]
     dsname = substr(basename_infn, 1, pos - 1)
     dt <- read_csv(infn)
-    seldt <- dt[, c(1, 5)]
+    seldt <- dt[c(1,2,3,4,5,6,7), c(1, 5)]
     names(seldt) <- c('Tool', 'Sites')
     seldt$Tool <- factor(seldt$Tool, levels = Tool.Order)
     seldt$dsname = dsname
@@ -263,21 +210,6 @@ fig.6c.bar.plot.tools <- function() {
     totaldt <- bind_rows(totaldt, seldt)
 
   }
-  #totaldt$dsname <- factor(totaldt$dsname, levels = c('HL60', 'K562', 'APL', 'NA19240'))
-  #
-  #venndata.dir = here('result', 'venn-data')
-  #
-  #for (fn in list.files(venndata.dir, 'venn.data.*.five.tools.cov3.dat')) {
-  #  dsname = str_replace_all(fn, "venn.data.", "")
-  #  pos = str_locate(dsname, "_")[1]
-  #  dsname = substr(dsname, 1, pos - 1)
-  #
-  #  dt <- read.table(here('result', 'venn-data', fn))
-  #  joinednum = dt[31, 1]
-  #  printf("%s: %d\n", dsname, joinednum)
-  #
-  #  totaldt <- totaldt %>% add_row(Tool = 'Joined', Sites = joinednum, dsname = dsname)
-  #}
 
   totaldt$dsname <- factor(totaldt$dsname, levels = Dataset.Order)
   totaldt$Tool <- factor(totaldt$Tool, levels = Tool.Order)
@@ -296,32 +228,6 @@ fig.6c.bar.plot.tools <- function() {
 
   outfn = sprintf("%s/bar.sites.of.tools.facet.plot.jpg", out_dir)
   ggsave(p1, filename = outfn, width = 6.5, height = 3, dpi = 600)
-  printf("save to %s\n", outfn)
-}
-
-fig.5d.violin.corr.performance <- function(df, bdir) {
-  tdf <- as_tibble(df)
-  seldf <- tdf %>% select(Corr.Perf.List, 'Tool')
-
-  longdf <- seldf %>%
-    pivot_longer(!Tool, names_to = "value_name", values_to = "Pearson_COE")
-
-  longdf <- longdf[longdf$Pearson_COE >= 0,]
-
-  longdf <- longdf %>% drop_na(Pearson_COE)
-
-  graphics.off()
-  ggplot(longdf, aes_string(x = 'Tool', y = 'Pearson_COE', fill = 'Tool')) +
-    geom_violin() +
-    facet_grid(. ~ value_name) +
-    scale_fill_manual(values = ToolColorPal) +
-    geom_jitter(shape = 16, position = position_jitter(0.2), size = 0.5) +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1.2, size = 10)) +
-    theme(legend.position = "top") +
-    theme(legend.title = element_blank())
-
-  outfn = sprintf("%s/fig.5d.violin.corr.violin.jpg", bdir)
-  ggsave(filename = outfn, width = 5.5, height = 3, dpi = 600)
   printf("save to %s\n", outfn)
 }
 
@@ -502,3 +408,86 @@ fig.34a.scatter.plot.performance <- function(df, measure.pair, locations, bdir, 
 }
 
 
+
+fig.6a.venn.plot.set3 <- function(ret, outfn) {
+  graphics.off()
+  venn.plot <- draw.triple.venn(
+    area1 = ret[1],
+    area2 = ret[2],
+    area3 = ret[3],
+    n12 = ret[4],
+    n23 = ret[6],
+    n13 = ret[5],
+    n123 = ret[7],
+    category = Top3.Tool.Order,
+    fill = Top3.ToolColorPal,
+    lty = "blank",
+    cex = 2,
+    cat.cex = c(3, 3, 3),
+    cat.col = Top3.ToolColorPal,
+    ind = FALSE,
+    cat.pos = c(-20, 20, 180),
+    print.mode = c("raw", "percent"),
+    fontfamily = rep("Times New Roman", 7),
+    cat.fontfamily = rep("Times New Roman", 3),
+    euler.d = TRUE, scaled = TRUE
+  );
+
+  #print("Add title")
+  #require(gridExtra)
+  #grid.arrange(gTree(children = venn.plot), top = basename(outfn))
+
+  #print(venn.plot)
+
+  ggsave(venn.plot, file = outfn, dpi = 600)
+  printf('save to %s', outfn)
+}
+
+
+
+fig.34a.bar.dataset.location.performance <- function(df, dsname, perf.pair, bdir, scale = 1) {
+  sel_data = df[df$Dataset == dsname, c('Dataset', 'Tool', 'Location', perf.pair)]
+  longdf <- melt(setDT(sel_data), id.vars = c("Dataset", "Tool", "Location"), variable.name = "perf_name")
+
+  ggplot(longdf, aes_string(x = 'Tool', y = 'value', fill = 'Tool')) +
+    geom_bar(stat = 'identity') +
+    facet_grid(perf_name ~ Location, switch = "y") +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10)) +
+    theme(strip.text.x = element_text(size = 9), strip.text.y = element_text(size = 12)) +
+    scale_fill_manual(values = ToolColorPal) +
+    theme(axis.title.y = element_blank()) +
+    theme(strip.background.y = element_blank(), strip.placement = "outside") +
+    theme(legend.title = element_text(size = 10), legend.text = element_text(size = 10))
+
+  outfn = sprintf("%s/fig.34a.bar.dataset.%s.%s.jpg", bdir, dsname, perf.pair[1])
+  ggsave(filename = outfn, width = 10, height = 4, scale = scale, dpi = 600)
+  printf("save to %s\n", outfn)
+}
+
+
+
+fig.5d.violin.corr.performance <- function(df, bdir) {
+  tdf <- as_tibble(df)
+  seldf <- tdf %>% select(Corr.Perf.List, 'Tool')
+
+  longdf <- seldf %>%
+    pivot_longer(!Tool, names_to = "value_name", values_to = "Pearson_COE")
+
+  longdf <- longdf[longdf$Pearson_COE >= 0,]
+
+  longdf <- longdf %>% drop_na(Pearson_COE)
+
+  graphics.off()
+  ggplot(longdf, aes_string(x = 'Tool', y = 'Pearson_COE', fill = 'Tool')) +
+    geom_violin() +
+    facet_grid(. ~ value_name) +
+    scale_fill_manual(values = ToolColorPal) +
+    geom_jitter(shape = 16, position = position_jitter(0.2), size = 0.5) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1.2, size = 10)) +
+    theme(legend.position = "top") +
+    theme(legend.title = element_blank())
+
+  outfn = sprintf("%s/fig.5d.violin.corr.violin.jpg", bdir)
+  ggsave(filename = outfn, width = 5.5, height = 3, dpi = 600)
+  printf("save to %s\n", outfn)
+}

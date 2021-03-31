@@ -5,6 +5,7 @@ Such as import_DeepSignal, import_BGTruth, etc.
 """
 
 import csv
+import glob
 import gzip
 import itertools
 import pickle
@@ -18,7 +19,6 @@ import pandas as pd
 import pysam
 from Bio import SeqIO
 from pybedtools import BedTool
-from scipy.stats import pearsonr
 from sklearn.metrics import roc_curve, auc, average_precision_score, f1_score, precision_score, recall_score
 from tqdm import tqdm
 
@@ -724,8 +724,7 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
 
 
 def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, strand_col=3, mod_log_prob_col=4, can_log_prob_col=5, baseFormat=0, cutoff=0.8, sep='\t', output_first=False, include_score=False):
-    '''
-
+    """
     0-based start for Magelodon：
         1. baseFormat=0， start=Megalondon start；
         2.  baseFormat=1， start=Megalondon start +1
@@ -757,7 +756,7 @@ def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, s
     (https://github.com/nanoporetech/megalodon/issues/47#issuecomment-673742805)
 
     ============
-    '''
+    """
     infile = open(infileName, "r")
     cpgDict = defaultdict(list)
     call_cnt = 0
@@ -798,22 +797,22 @@ def importPredictions_Megalodon_Read_Level(infileName, chr_col=0, start_col=1, s
         key = (tmp[chr_col], start, strand)
 
         try:
-            meth_score = float(np.e ** float(tmp[mod_log_prob_col]))  # Calculate mod_prob
+            meth_prob = float(np.e ** float(tmp[mod_log_prob_col]))  # Calculate mod_prob
         except Exception as e:
             logger.error(f" ####Megalodon parse error at row={row}, exception={e}")
             continue
 
-        if meth_score > cutoff:  ##Keep methylated reads
+        if meth_prob > cutoff:  ##Keep methylated reads
             meth_indicator = 1
             meth_cnt += 1
-        elif meth_score < 1 - cutoff:  ##Count unmethylated reads
+        elif meth_prob < 1 - cutoff:  ##Count unmethylated reads
             meth_indicator = 0
             unmeth_cnt += 1
         else:  ## Neglect other cases 0.2<= prob <=0.8
             continue
 
         if include_score:
-            cpgDict[key].append((meth_indicator, meth_score))
+            cpgDict[key].append((meth_indicator, meth_prob))
         else:
             cpgDict[key].append(meth_indicator)
         call_cnt += 1
@@ -909,7 +908,21 @@ def importGroundTruth_oxBS(infileName, chr_col='#chromosome', start_col='start',
     return cpgDict
 
 
-def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, methfreq_col=-1, cov_col=4, strand_col=5, covCutt=10, baseFormat=0, gzippedInput=False, includeCov=True):
+def open_file(infn):
+    """
+    Open a txt or gz file, based on suffix
+    :param infn:
+    :return:
+    """
+    if infn.endswith('.gz'):
+        infile = gzip.open(infn, 'rb')
+    else:
+        infile = open(infn, 'r')
+    return infile
+
+
+# encode format
+def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, methfreq_col=-1, cov_col=4, strand_col=5, covCutt=1, baseFormat=0, gzippedInput=False, includeCov=True):
     '''
     ### Description of the columns in this format (https://www.encodeproject.org/data-standards/wgbs/):
 
@@ -955,13 +968,17 @@ def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, 
 
     cpgDict = {}
 
-    if infileName.endswith('.gz'):
-        gzippedInput = True
+    # if infileName.endswith('.gz'):
+    #     gzippedInput = True
+    # else:
+    #     gzippedInput = False
+    #
+    # if gzippedInput:
+    #     infile = gzip.open(infileName, 'rb')
+    # else:
+    #     infile = open(infileName, 'r')
 
-    if gzippedInput:
-        infile = gzip.open(infileName, 'rb')
-    else:
-        infile = open(infileName, 'r')
+    infile = open_file(infileName)
 
     nrow = 0
     for row in infile:
@@ -972,6 +989,10 @@ def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, 
             continue
 
         strand = tmp[strand_col]
+
+        if strand not in ['+', '-']:
+            raise Exception(f'input file format error when parsing: {row}, tmp={tmp}')
+
         try:
             if baseFormat == 1:
                 start = int(tmp[start_col]) + 1
@@ -1005,7 +1026,95 @@ def importGroundTruth_BedMethyl_from_Encode(infileName, chr_col=0, start_col=1, 
     return cpgDict
 
 
-# Deal with K562 bed with strand info
+# bismark format, Deal with file name like 'bismark_bt2.CpG_report.txt.gz'
+def importGroundTruth_genome_wide_Bismark_Report(infn, chr_col=0, start_col=1, strand_col=2, meth_col=3, unmeth_col=4, covCutt=1, baseFormat=0, includeCov=True):
+    """
+    We are sure the input file is start using 1-based format.
+    We use this format due to it contains strand info.
+    Ensure that in + strand, position is pointed to CG's C
+                in - strand, position is pointed to CG's G, (for positive strand sequence)
+            in our imported into programs.
+    We design this due to other bismark output contains no strand-info.
+
+    The genome-wide cytosine methylation output file is tab-delimited in the following format:
+    ==========================================================================================
+    <chromosome>  <position>  <strand>  <count methylated>  <count non-methylated>  <C-context>  <trinucleotide context>
+
+
+    Sample input file:
+
+    gunzip -cd HL60_RRBS_ENCFF000MDA.Read_R1.Rep_1_trimmed_bismark_bt2.CpG_report.txt.gz| head
+    chr4	10164	+	0	0	CG	CGC
+    chr4	10165	-	0	0	CG	CGT
+    chr4	10207	+	0	0	CG	CGG
+    chr4	10208	-	0	0	CG	CGA
+    chr4	10233	+	0	0	CG	CGT
+    chr4	10234	-	0	0	CG	CGG
+    chr4	10279	+	0	0	CG	CGT
+    chr4	10280	-	0	0	CG	CGT
+    chr4	10297	+	0	0	CG	CGC
+    chr4	10298	-	0	0	CG	CGC
+
+    :param infn:
+    :param chr_col:
+    :param start_col:
+    :param strand_col:
+    :param meth_col:
+    :param unmeth_col:
+    :param ccontect_col:
+    :param covCutt:
+    :param baseFormat:
+    :param includeCov:
+    :return:
+    """
+    df = pd.read_csv(infn, sep='\t', compression='gzip', header=None)
+
+    df['cov'] = df.iloc[:, meth_col] + df.iloc[:, unmeth_col]
+    df = df[df['cov'] >= covCutt]
+
+    # df = df[df.iloc[:, ccontect_col] == 'CG']
+
+    # Based on import format 0, we need minus 1, due to input format is 1-based start
+    if baseFormat == 0:
+        df.iloc[:, start_col] = df.iloc[:, start_col] - 1
+        df['end'] = df.iloc[:, start_col] + 1
+    elif baseFormat == 1:
+        df['end'] = df.iloc[:, start_col]
+
+    df['meth-freq'] = (df.iloc[:, meth_col] / df['cov'] * 100).astype(np.int32)
+
+    df = df.iloc[:, [chr_col, start_col, df.columns.get_loc("end"), df.columns.get_loc("meth-freq"), df.columns.get_loc("cov"), strand_col]]
+
+    df.columns = ['chr', 'start', 'end', 'meth-freq', 'cov', 'strand']
+
+    cpgDict = defaultdict(list)
+    for index, row in df.iterrows():
+        chr = row['chr']
+
+        if chr not in humanChrs:  # Filter out non-human chrs
+            continue
+
+        start = int(row['start'])
+        strand = row['strand']
+
+        if strand not in ['+', '-']:
+            raise Exception(f'strand={strand}  for row={row} is not acceptable, please check use correct function to parse bgtruth file {infn}')
+
+        key = (chr, int(start), strand)
+        if key not in cpgDict:
+            if includeCov:
+                cpgDict[key] = [row['meth-freq'] / 100.0, row['cov']]
+            else:
+                cpgDict[key] = row['meth-freq'] / 100.0
+        else:
+            raise Exception(f'In genome-wide, we found duplicate sites: for key={key} in row={row}, please check input file {infn}')
+
+    logger.info(f"###\timportGroundTruth_genome_wide_from_Bismark: loaded {len(cpgDict):,} CpGs with cutoff={covCutt} from file {infn}")
+
+    return cpgDict
+
+
+# Will deprecated, before is deal with K562 bed with strand info
 def importGroundTruth_bed_file_format(infileName, chr_col=0, start_col=1, meth_col=3, meth_reads_col=4, unmeth_reads_col=5, strand_col=6, covCutt=10, baseFormat=0, chrFilter=False, gzippedInput=True, includeCov=False):
     '''
     We modified this function due to the histogram shows it is 0-based format, NOT 1-based format.
@@ -1131,94 +1240,6 @@ def importGroundTruth_bed_file_format(infileName, chr_col=0, start_col=1, meth_c
 
     infile.close()
     logger.info(f"###\timportGroundTruth_coverage_output_from_Bismark: loaded information for {len(cpgDict):,} CpGs with cutoff={covCutt}, before cutoff={row_cnt:,}")
-    return cpgDict
-
-
-# Deal with bismark_bt2.CpG_report.txt.gz
-def importGroundTruth_genome_wide_Bismark_Report(infn='/projects/li-lab/yang/results/2020-12-21/hl60-results-1/extractBismark/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz', chr_col=0, start_col=1, strand_col=2, meth_col=3, unmeth_col=4, ccontect_col=5, covCutt=10, baseFormat=0, includeCov=True):
-    """
-    We are sure the input file is start using 1-based format.
-    We use this format due to it contains strand info.
-    Ensure that in + strand, position is pointed to CG's C
-                in - strand, position is pointed to CG's G, (for positive strand sequence)
-            in our imported into programs.
-    We design this due to other bismark output contains no strand-info.
-
-    The genome-wide cytosine methylation output file is tab-delimited in the following format:
-    ==========================================================================================
-    <chromosome>  <position>  <strand>  <count methylated>  <count non-methylated>  <C-context>  <trinucleotide context>
-
-
-    Sample input file:
-
-    gunzip -cd HL60_RRBS_ENCFF000MDA.Read_R1.Rep_1_trimmed_bismark_bt2.CpG_report.txt.gz| head
-    chr4	10164	+	0	0	CG	CGC
-    chr4	10165	-	0	0	CG	CGT
-    chr4	10207	+	0	0	CG	CGG
-    chr4	10208	-	0	0	CG	CGA
-    chr4	10233	+	0	0	CG	CGT
-    chr4	10234	-	0	0	CG	CGG
-    chr4	10279	+	0	0	CG	CGT
-    chr4	10280	-	0	0	CG	CGT
-    chr4	10297	+	0	0	CG	CGC
-    chr4	10298	-	0	0	CG	CGC
-
-    :param infn:
-    :param chr_col:
-    :param start_col:
-    :param strand_col:
-    :param meth_col:
-    :param unmeth_col:
-    :param ccontect_col:
-    :param covCutt:
-    :param baseFormat:
-    :param includeCov:
-    :return:
-    """
-    df = pd.read_csv(infn, sep='\t', compression='gzip', header=None)
-
-    df['cov'] = df.iloc[:, meth_col] + df.iloc[:, unmeth_col]
-    df = df[df['cov'] >= covCutt]
-
-    # df = df[df.iloc[:, ccontect_col] == 'CG']
-
-    # Based on import format 0, we need minus 1, due to input format is 1-based start
-    if baseFormat == 0:
-        df.iloc[:, start_col] = df.iloc[:, start_col] - 1
-        df['end'] = df.iloc[:, start_col] + 1
-    elif baseFormat == 1:
-        df['end'] = df.iloc[:, start_col]
-
-    df['meth-freq'] = (df.iloc[:, meth_col] / df['cov'] * 100).astype(np.int32)
-
-    df = df.iloc[:, [chr_col, start_col, df.columns.get_loc("end"), df.columns.get_loc("meth-freq"), df.columns.get_loc("cov"), strand_col]]
-
-    df.columns = ['chr', 'start', 'end', 'meth-freq', 'cov', 'strand']
-
-    cpgDict = defaultdict(list)
-    for index, row in df.iterrows():
-        chr = row['chr']
-
-        if chr not in humanChrs:  # Filter out non-human chrs
-            continue
-
-        start = int(row['start'])
-        strand = row['strand']
-
-        if strand not in ['+', '-']:
-            raise Exception(f'strand={strand}  for row={row} is not acceptable, please check use correct function to parse bgtruth file {infn}')
-
-        key = (chr, int(start), strand)
-        if key not in cpgDict:
-            if includeCov:
-                cpgDict[key] = [row['meth-freq'] / 100.0, row['cov']]
-            else:
-                cpgDict[key] = row['meth-freq'] / 100.0
-        else:
-            raise Exception(f'In genome-wide, we found duplicate sites: for key={key} in row={row}, please check input file {infn}')
-
-    logger.info(f"###\timportGroundTruth_genome_wide_from_Bismark: loaded {len(cpgDict):,} CpGs with cutoff={covCutt} from file {infn}")
-
     return cpgDict
 
 
@@ -1353,12 +1374,11 @@ def load_single_sites_bed_as_set(infn):
     return ret
 
 
-def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt_perRead=1, ontCutt_4corr=3, secondFilterBedFile=None, secondFilterBed_4CorrFile=None, cutoff_meth=1.0, outdir=None, tagname=None, is_save=True):
+def computePerReadStats(ontCalls, bgTruth, title, ontCutt_perRead=1, coordBedFileName=None, secondFilterBedFileName=None, cutoff_fully_meth=1.0, outdir=None, tagname=None, is_save=True):
     """
     Compute ontCalls with bgTruth performance results by per-read count.
-    bedFile                 -   coordinate used to eval
-    secondFilterBed         -   joined sets of four tools with bg-truth, or False with out joined sets
-    secondFilterBed_4Corr   -   for report corr purpose, currently not fixed bugs.
+    coordBedFileName        -   full file name of coordinate used to eval
+    secondFilterBed         -   joined sets of four tools with bg-truth, or None with out joined sets
 
     Note: in our experiments, bed files of singleton, non-singleton and related files are all start 1-based format.
 
@@ -1376,41 +1396,35 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
     title - prefix of the analysis, output plots etc. - should be as short as possible, but unique in context of other analyses
     bedFile - BED file which will be used to narrow down the list of CpGs for example to those inside CGIs or promoters etc.. By default "False" - which means no restrictions are done (i.e. genome wide)
     secondFilterBed - these should be CpGs covered in some reference list. Format: BED
-
-
-    ============================================
-
-    Basically i want to fill in the table below:
-               Positive	Negative	Total
-     Presence	a	        b	        a+b
-     Absence	c	        d	        c+d
-     Total	    a+c	        b+d	        a+b+c+d
-
-    Nice summary also at wiki: https://en.wikipedia.org/wiki/F1_score
-    , where "Positive" and "Negative" corresponds with ONT based observations, while "Presence" and "Absence" is based on BS-Seq
-
     """
 
-    switch = 0
-    ontCalls_narrow_set = None
+    # Firstly reduce ontCalls with in bgTruth keys
+    ontCallsKeySet = set(ontCalls.keys()).intersection(set(bgTruth.keys()))
+    # newOntCalls = {}
+    # for key in bgTruth:
+    #     if key in ontCalls:
+    #         newOntCalls[key] = ontCalls[key]
+
+    # switch = 0  # 1 if genome-wide
+    ontCalls_narrow_set = None  # Intersection of ontCall with coord, or None if genome-wide
     if coordBedFileName:
-        # logger.debug(bedFile)
-        ontCalls_bed = BedTool(dict2txt(ontCalls), from_string=True)
+        # Try ontCall intersect with coord (Genomewide, Singletons, etc.)
+        ontCalls_bed = BedTool(dict2txt(ontCallsKeySet), from_string=True)
         ontCalls_bed = ontCalls_bed.sort()
 
-        narrowBed = BedTool(coordBedFileName)
-        narrowBed = narrowBed.sort()
-        ontCalls_intersect = ontCalls_bed.intersect(narrowBed, u=True, wa=True)
+        coordBed = BedTool(coordBedFileName)
+        coordBed = coordBed.sort()
+        ontCalls_intersect = ontCalls_bed.intersect(coordBed, u=True, wa=True)
         ontCalls_narrow_set = set(txt2dict(ontCalls_intersect).keys())
-    else:
-        switch = 1
+    # else:
+    #     switch = 1
 
     ## Second optional filter, organized in the same fashion as the first one. Designed to accomodate for example list of CpGs covered by second program
-    secondSwitch = 0
-    ontCalls_narrow_second_set = None
-    if secondFilterBedFile:
-        joined_set = load_single_sites_bed_as_set(secondFilterBedFile)
-        infile = open(secondFilterBedFile, 'r')
+    # secondSwitch = 0
+    ontCalls_narrow_second_set = None  # if using joined sites of all tools, or None for not using joined sites
+    if secondFilterBedFileName:
+        joined_set = load_single_sites_bed_as_set(secondFilterBedFileName)
+        infile = open(secondFilterBedFileName, 'r')
         secondFilterDict = {}
         for row in infile:  # each row: chr123  123   123  .  .  +
             rowsplit = row[:-1].split('\t')
@@ -1418,24 +1432,8 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
             secondFilterDict[key] = 0
         infile.close()
         ontCalls_narrow_second_set = set(ontCalls.keys()).intersection(joined_set)
-    else:
-        secondSwitch = 1
-
-    # Second optional filter, shoudl be used in combination with second optional filter above
-    secondSwitch_4corr = 0
-    ontCalls_narrow_second_4corr_set = None
-    if secondFilterBed_4CorrFile != False:
-        narrow_second_4corr_set = load_single_sites_bed_as_set(secondFilterBed_4CorrFile)
-        infile = open(secondFilterBed_4CorrFile, 'r')
-        secondFilterDict = {}
-        for row in infile:
-            rowsplit = row[:-1].split('\t')
-            key = (rowsplit[0], int(rowsplit[1]), rowsplit[5])
-            secondFilterDict[key] = 0
-        infile.close()
-        ontCalls_narrow_second_4corr_set = set(ontCalls.keys()).intersection(narrow_second_4corr_set)
-    else:
-        secondSwitch_4corr = 1
+    # else:
+    #     secondSwitch = 1
 
     # Initial evaluation vars
     TP_5mC = FP_5mC = FN_5mC = TN_5mC = TP_5C = FP_5C = FN_5C = TN_5C = 0
@@ -1443,91 +1441,72 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
     ypred_of_ont_tool = []
     yscore_of_ont_tool = []
 
-    ontSites = 0  # count how many reads is methy or unmethy
-    mCalls = 0  # count how many read call is methy
-    cCalls = 0  # count how many read call is unmethy
+    mCalls = 0  # count how many reads call is methy
+    cCalls = 0  # count how many reads call is unmethy
 
-    referenceCpGs = 0
+    referenceCpGs = 0  # number of sites
 
     # really CpGs for fully methylation and unmethylation,
     mCsites_BGTruth = 0
     Csites_BGTruth = 0
 
-    ## four tuples for correlation:
-    ontFrequencies_4corr_mix = []  # mix(ed) are those, which in reference have methylation level >0 and <1
-    refFrequencies_4corr_mix = []
-
-    ontFrequencies_4corr_all = []  # all are all:) i.e. all CpGs with methyaltion level in refence in range 0-1
-    refFrequencies_4corr_all = []
-
     # We find the narrowed CpG set to evaluate, try to reduce running time
-    targetedSet = set(ontCalls.keys())
+    targetedSet = ontCallsKeySet
     if ontCalls_narrow_set:
         targetedSet = targetedSet.intersection(ontCalls_narrow_set)
 
     if ontCalls_narrow_second_set:
         targetedSet = targetedSet.intersection(ontCalls_narrow_second_set)
 
-    if ontCalls_narrow_second_4corr_set:
-        targetedSet = targetedSet.union(ontCalls_narrow_second_4corr_set)
-
     for cpgKey in targetedSet:  # key = (chr, start, strand)
-        ##### for per read stats:
-        if cpgKey in bgTruth and len(ontCalls[cpgKey]) >= ontCutt_perRead and (switch == 1 or cpgKey in ontCalls_narrow_set) and (
-                secondSwitch == 1 or cpgKey in ontCalls_narrow_second_set):  # we should not take onCuttoffs for per read stats - shouldn't we? actually, we need to have the option to use this parameter, because at some point we may want to narrow down the per read stats to cover only the sites which were also covered by correlation with BS-Seq. Using this
-            # cutoff here is the easiest way to do just that
-            #         if cpg_ont in bsReference and (switch == 1 or cpg_ont in ontCalls_narrow):
-            if bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6) or bgTruth[cpgKey][0] <= 1e-5:  # we only consider absolute states here, 0, or 1 in bgtruth
-                referenceCpGs += 1
+        ##### for each sites, we perform per read stats:
+        if satisfy_fully_meth_or_unmeth(bgTruth[cpgKey][0]):
+            # if bgTruth[cpgKey][0] >= (cutoff_fully_meth - 1e-6) or bgTruth[cpgKey][0] <= 1e-5:  # we only consider absolute states here, 0, or 1 in bgtruth
+            referenceCpGs += 1
 
-                if bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):
-                    mCsites_BGTruth += 1
-                elif bgTruth[cpgKey][0] <= 1e-5:
-                    Csites_BGTruth += 1
+            if is_fully_meth(bgTruth[cpgKey][0]):
+                mCsites_BGTruth += 1
+            elif is_fully_unmeth(bgTruth[cpgKey][0]):
+                Csites_BGTruth += 1
+            else:
+                raise Exception(f'We must see all certain sites here, but see meth_freq={bgTruth[cpgKey][0]}')
 
-                for perCall in ontCalls[cpgKey]:  # perCall is a tupple of (pred_class, pred_score)
-                    if perCall[0] >= (cutoff_meth - 1e-6):
-                        mCalls += 1
-                    elif perCall[0] <= 1e-5:
-                        cCalls += 1
-                    ontSites += 1
+            for perCall in ontCalls[cpgKey]:  # perCall is a tupple of (pred_class, pred_score)
+                if perCall[0] >= (cutoff_fully_meth - 1e-6):
+                    mCalls += 1
+                elif perCall[0] <= 1e-5:
+                    cCalls += 1
+                # totalCalls += 1
 
-                    ### variables needed to compute precission, recall etc.:
-                    if perCall[0] == 1 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # true positive
-                        TP_5mC += 1
-                    elif perCall[0] == 1 and bgTruth[cpgKey][0] <= 1e-5:  # false positive
-                        FP_5mC += 1
-                    elif perCall[0] == 0 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # false negative
-                        FN_5mC += 1
-                    elif perCall[0] == 0 and bgTruth[cpgKey][0] <= 1e-5:  # true negative
-                        TN_5mC += 1
+                ### variables needed to compute precission, recall etc.:
+                if perCall[0] == 1 and is_fully_meth(bgTruth[cpgKey][0]):  # true positive
+                    TP_5mC += 1
+                elif perCall[0] == 1 and is_fully_unmeth(bgTruth[cpgKey][0]):  # false positive
+                    FP_5mC += 1
+                elif perCall[0] == 0 and is_fully_meth(bgTruth[cpgKey][0]):  # false negative
+                    FN_5mC += 1
+                elif perCall[0] == 0 and is_fully_unmeth(bgTruth[cpgKey][0]):  # true negative
+                    TN_5mC += 1
 
-                    if perCall[0] == 0 and bgTruth[cpgKey][0] <= 1e-5:  # true positive
-                        TP_5C += 1
-                    elif perCall[0] == 0 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # false positive
-                        FP_5C += 1
-                    elif perCall[0] == 1 and bgTruth[cpgKey][0] <= 1e-5:  # false negative
-                        FN_5C += 1
-                    elif perCall[0] == 1 and bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):  # true negative
-                        TN_5C += 1
+                if perCall[0] == 0 and is_fully_unmeth(bgTruth[cpgKey][0]):  # true positive
+                    TP_5C += 1
+                elif perCall[0] == 0 and is_fully_meth(bgTruth[cpgKey][0]):  # false positive
+                    FP_5C += 1
+                elif perCall[0] == 1 and is_fully_unmeth(bgTruth[cpgKey][0]):  # false negative
+                    FN_5C += 1
+                elif perCall[0] == 1 and is_fully_meth(bgTruth[cpgKey][0]):  # true negative
+                    TN_5C += 1
 
-                    ### AUC related:
-                    ypred_of_ont_tool.append(perCall[0])
-                    yscore_of_ont_tool.append(perCall[1])
+                ### prediction results, AUC related:
+                ypred_of_ont_tool.append(perCall[0])
+                yscore_of_ont_tool.append(perCall[1])
 
-                    if bgTruth[cpgKey][0] >= (cutoff_meth - 1e-6):
-                        y_of_bgtruth.append(1)
-                    else:
-                        y_of_bgtruth.append(0)
-
-        ##### for correlation stats: all is all CpG sites for COE, mix is the only mixed CpG sites COE # TODO Currently not used
-        if cpgKey in bgTruth and len(ontCalls[cpgKey]) >= ontCutt_4corr and (switch == 1 or cpgKey in ontCalls_narrow_set) and (secondSwitch_4corr == 1 or cpgKey in ontCalls_narrow_second_4corr_set):
-            ontMethFreq = np.mean([pair[0] for pair in ontCalls[cpgKey]])
-            ontFrequencies_4corr_all.append(ontMethFreq)
-            refFrequencies_4corr_all.append(bgTruth[cpgKey][0])
-            if bgTruth[cpgKey][0] > 0 and bgTruth[cpgKey][0] < (cutoff_meth - 1e-6):  # Mixed case based on BG-Truth results (0.0, 1.0)
-                ontFrequencies_4corr_mix.append(ontMethFreq)
-                refFrequencies_4corr_mix.append(bgTruth[cpgKey][0])
+                if is_fully_meth(bgTruth[cpgKey][0]):  # BG Truth label
+                    y_of_bgtruth.append(1)
+                else:
+                    y_of_bgtruth.append(0)
+        else:
+            raise Exception(f'We must see all certain sites here, but see meth_freq={bgTruth[cpgKey][0]}')
 
     ### compute all per read stats:
     #     Accuracy:
@@ -1589,7 +1568,7 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
         fpr, tpr, _ = roc_curve(y_of_bgtruth, yscore_of_ont_tool)
         average_precision = average_precision_score(y_of_bgtruth, yscore_of_ont_tool)
     except ValueError:
-        logger.error(f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{ypred_of_ont_tool}, \nother settings: {title}, {coordBedFileName}, {secondFilterBedFile}, {secondFilterBed_4CorrFile}")
+        logger.error(f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{ypred_of_ont_tool}, \nother settings: {title}, {coordBedFileName}, {secondFilterBedFileName}")
         fprSwitch = 0
         roc_auc = 0.0
         average_precision = 0.0
@@ -1609,20 +1588,7 @@ def computePerReadStats(ontCalls, bgTruth, title, coordBedFileName=None, ontCutt
         with open(outfn, 'wb') as handle:
             pickle.dump(curve_data, handle)
 
-    ########################
-    # correlation based stats:
-    try:
-        corrMix, pvalMix = pearsonr(ontFrequencies_4corr_mix, refFrequencies_4corr_mix)
-    except:
-        corrMix, pvalMix = (0, 0)
-
-    try:
-        corrAll, pvalAll = pearsonr(ontFrequencies_4corr_all, refFrequencies_4corr_all)
-    except:
-        corrAll, pvalAll = (0, 0)
-
-    return accuracy, roc_auc, average_precision, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, len(ontFrequencies_4corr_mix), corrAll, len(ontFrequencies_4corr_all), Csites_BGTruth, mCsites_BGTruth  # , leftovers,
-    # leftovers1
+    return accuracy, roc_auc, average_precision, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, Csites_BGTruth, mCsites_BGTruth
 
 
 def plot_confusion_matrix(cm, classes,
@@ -1754,86 +1720,7 @@ def save_call_to_methykit_txt(call, outfn, callBaseFormat=0, is_cov=True):
     outfile.close()
 
 
-def combine2programsCalls(calls1, calls2, outfileName=None):
-    '''
-    call1 and call2 should have the following format:
-    {"chr\tstart\tend\n" : [list of methylation calls]}
-
-    result: dictionary of shared sites in the same format as input
-    '''
-    tmp = dict.fromkeys(set(calls1.keys()).intersection(set(calls2.keys())), -1)
-    if outfileName is not None:
-        outfile = open(outfileName, 'w')
-        for key in tmp:
-            # outfile.write(key)
-            outfile.write('\t'.join([key[0], str(key[1]), str(key[1]), '.', '.', key[2]]))
-            outfile.write('\n')
-        outfile.close()
-    return tmp
-    #     return dict.fromkeys(set(calls1.keys()).intersection(set(calls2.keys())), -1)
-    # else:
-    #     return dict.fromkeys(set(calls1.keys()).intersection(set(calls2.keys())), -1)
-
-
-def combine2programsCalls_4Corr(calls1, calls2=None, cutt=3, outfileName=None, only_bgtruth=False, print_first=False):
-    """
-    call1 and call2 should have the following format:
-    {"chr\tstart\tend\n" : [list of methylation calls]}
-
-    result: dictionary of shared sites in the same format as input with coverage of calls1 over calls 2 - use this with caution
-
-    """
-
-    if only_bgtruth:  # value = [freq, cov]
-        filteredCalls1 = {}
-        for key in calls1:
-            if calls1[key][1] >= cutt:
-                filteredCalls1[key] = cutt
-        return filteredCalls1
-
-    # Next only allow value=[0 1 0 0 ...], value=[(0,0.2), (1,0.9) , ...] or value=cov
-    filteredCalls1 = {}
-    for key in calls1:
-        if print_first:
-            logger.debug(key)
-            print_first = False
-        if isinstance(calls1[key], list):
-            if len(calls1[key]) >= cutt:
-                filteredCalls1[key] = cutt  # calls1[call]
-        elif isinstance(calls1[key], int):  # This will be used for first joined results vars
-            if calls1[key] >= cutt:
-                filteredCalls1[key] = cutt  # calls1[call]
-        else:
-            raise Exception(f"can not recognize type of value for key={key}, value type={type(calls1[key])}")
-
-    filteredCalls2 = {}
-    for key in calls2:
-        if print_first:
-            logger.debug(key)
-            print_first = False
-        if isinstance(calls2[key], list):
-            if len(calls2[key]) >= cutt:
-                filteredCalls2[key] = cutt  # calls2[call]
-        elif isinstance(calls2[key], int):  # This will be used for first joined results vars
-            if calls2[key] >= cutt:
-                filteredCalls2[key] = cutt  # calls2[call]
-        else:
-            raise Exception(f"can not recognize type of value for key={key}, value type={type(calls1[key])}")
-    tmp = dict.fromkeys(set(filteredCalls1.keys()).intersection(set(filteredCalls2.keys())), cutt)
-    if outfileName:
-        outfile = open(outfileName, 'w')
-        for key in tmp:
-            outfile.write(key)
-        outfile.close()
-
-    # logger.debug("combine2programsCalls_4Corr DONE")
-    return tmp
-    # else:
-    #     print("combine2programsCalls_4Corr DONE")
-    #     return dict.fromkeys(set(filteredCalls1.keys()).intersection(set(filteredCalls2.keys())), cutt)
-
-
-def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, ontCutt=4, secondFilterBed=None, secondFilterBed_4Corr=None, cutoff_meth=1.0, outdir=None, tagname=None, test=False):
+def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, secondFilterBed=None, secondFilterBed_4Corr=None, cutoff_meth=1.0, outdir=None, tagname=None, test=False):
     """
     New performance evaluation by Yang
     referenceCpGs is number of all CpGs that is fully-methylated (>=cutoff_meth) or unmethylated in BG-Truth
@@ -1844,17 +1731,15 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     :param narrowedCoordinatesList:
     :param ontCutt:
     :param secondFilterBed: Joined of 4 tools and bgtruth bed file
-    :param secondFilterBed_4Corr: Joined of 4 tools and bgtruth bed file for cor analysis (with cutoff cov)
     :param cutoff_meth:
     :return:
     """
     d = defaultdict(list)
 
     for coord_fn in tqdm(narrowedCoordinatesList):
-        accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = \
-            computePerReadStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFile=secondFilterBed,
-                                secondFilterBed_4CorrFile=secondFilterBed_4Corr,
-                                cutoff_meth=cutoff_meth, outdir=outdir, tagname=tagname)
+        accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth = \
+            computePerReadStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFileName=secondFilterBed,
+                                cutoff_fully_meth=cutoff_meth, outdir=outdir, tagname=tagname)
 
         coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genome-wide"}')
 
@@ -1895,7 +1780,7 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     return df
 
 
-def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, secondFilterBed=None, secondFilterBed_4Corr=None, cutoff_meth=1.0, outdir=None, tagname=None, processors=10):
+def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, secondFilterBedFileName=None, cutoff_fully_meth=1.0, outdir=None, tagname=None, processors=10):
     """
     New performance evaluation by Yang
     referenceCpGs is number of all CpGs that is fully-methylated (>=cutoff_meth) or unmethylated in BG-Truth
@@ -1903,11 +1788,10 @@ def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCo
     :param ontCalls:
     :param bgTruth:
     :param analysisPrefix:
-    :param narrowedCoordinatesList:
+    :param narrowedCoordinatesList: coord such as Genome-wide, Singletons, etc.
     :param ontCutt:
-    :param secondFilterBed: Joined of 4 tools and bgtruth bed file
-    :param secondFilterBed_4Corr: Joined of 4 tools and bgtruth bed file for cor analysis (with cutoff cov)
-    :param cutoff_meth:
+    :param secondFilterBedFileName: Joined of 4 tools and bgtruth bed file, or None for not joined
+    :param cutoff_fully_meth:
     :return:
     """
 
@@ -1919,7 +1803,7 @@ def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCo
             #                         secondFilterBed_4CorrFile=secondFilterBed_4Corr,
             #                         cutoff_meth=cutoff_meth, outdir=outdir, tagname=tagname)
             coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genome-wide"}')
-            ret = pool.apply_async(computePerReadStats, (ontCalls, bgTruth, analysisPrefix,), kwds={'coordBedFileName': coord_fn, 'secondFilterBedFile': secondFilterBed, 'secondFilterBed_4CorrFile': secondFilterBed_4Corr, 'cutoff_meth': cutoff_meth, 'outdir': outdir, 'tagname': tagname})
+            ret = pool.apply_async(computePerReadStats, (ontCalls, bgTruth, analysisPrefix,), kwds={'coordBedFileName': coord_fn, 'secondFilterBedFileName': secondFilterBedFileName, 'cutoff_fully_meth': cutoff_fully_meth, 'outdir': outdir, 'tagname': tagname})
             ret_list.append((coord, ret))
 
         pool.close()
@@ -1932,7 +1816,8 @@ def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCo
         # logger.info(coord)
         # logger.info(ret_list[k])
         # logger.info(ret.get())
-        accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = ret.get()
+        # accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = ret.get()
+        accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth = ret.get()
         d["prefix"].append(analysisPrefix)
         d["coord"].append(coord)
         d["Accuracy"].append(accuracy)
@@ -1955,25 +1840,9 @@ def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCo
         d["mCsites_called"].append(mCalls)
         d["mCsites"].append(mSites_BGTruth)
         d["referenceCpGs"].append(referenceCpGs)
-        d["Corr_Mix"].append(corrMix)
-        d["Corr_mixedSupport"].append(Corr_mixedSupport)
-        d["Corr_All"].append(corrAll)
-        d["Corr_allSupport"].append(Corr_allSupport)
 
     df = pd.DataFrame.from_dict(d)
     return df
-
-
-def save_ontcalls_to_pkl(ontCalls, outfn):
-    with open(outfn, 'wb') as handle:
-        pickle.dump(ontCalls, handle)
-    logger.info(f"save to {outfn}")
-
-
-def load_ontcalls_pkl(infn):
-    with open(infn, 'rb') as handle:
-        ontCalls = pickle.load(handle)
-    return ontCalls
 
 
 def NonSingletonsScanner(referenceGenomeFile, outfileName_s, outfileName_ns):
@@ -2271,16 +2140,6 @@ def load_deepmod_df(infn):
     return df
 
 
-def load_deepmod_read_level_df(infn):
-    """
-    Load the DeepMod read level output results tsv into a dataframe
-    :param infn:
-    :return:
-    """
-    df = pd.read_csv(infn, sep='\t', header=None)
-    return df
-
-
 def load_sam_as_strand_info_df(infn='/projects/li-lab/yang/workspace/nano-compare/data/bam-files/K562.sam'):
     """
     Load strand info from SAM files, and make a df of read-name and strand-info as follows:
@@ -2549,11 +2408,11 @@ def save_to_cache(infn, data, **params):
     # logger.debug(f'infn={infn}, data={len(data)}, params={params}')
     cache_fn = get_cache_filename(infn, params)
 
-    if not os.path.exists(cache_fn):
+    if not os.path.exists(cache_dir):
         os.makedirs(cache_dir, exist_ok=True)
-        with open(cache_fn, 'wb') as outf:
-            pickle.dump(data, outf)
-        logger.debug(f'Cached to file:{cache_fn}')
+    with open(cache_fn, 'wb') as outf:
+        pickle.dump(data, outf)
+    logger.debug(f'Cached to file:{cache_fn}')
 
 
 def check_cache_available(infn, **params):
@@ -2700,6 +2559,35 @@ def compare_cpg_key(item1, item2):
     return 0
 
 
+def is_fully_meth(methfreq, eps=1e-5, cutoff_fully_meth=1.0):
+    if methfreq > cutoff_fully_meth - eps:  # near 1
+        return True
+    return False
+
+
+def is_fully_unmeth(methfreq, eps=1e-5):
+    if methfreq < eps:  # near 0
+        return True
+    return False
+
+
+def satisfy_fully_meth_or_unmeth(methfreq, eps=1e-5, cutoff_fully_meth=1.0):
+    """
+    Return true if fully meth or unmeth, eps is a near number of 0 and 1
+    :param methfreq:
+    :return:
+    """
+    if is_fully_meth(methfreq, eps=eps, cutoff_fully_meth=cutoff_fully_meth) or is_fully_unmeth(methfreq, eps=eps):
+        return True
+    return False
+
+    # if methfreq < eps:  # near 0
+    #     return True
+    # if methfreq > cutoff_fully_meth - eps:  # near 1
+    #     return True
+    # return False
+
+
 def combineBGTruthList(bgTruthList, covCutoff=1):
     """
     Combine two replicates together, we joined two replicates together as one bgtruth, and retain only cov >= covCutoff sites
@@ -2728,7 +2616,7 @@ def combineBGTruthList(bgTruthList, covCutoff=1):
             meth_freq = (meth1 + meth2) / float(cov1 + cov2)
 
             if meth_freq > 1.0:
-                raise Exception(f"Compute joined meth_freq={meth_freq} error")
+                raise Exception(f"Compute joined meth_freq={meth_freq} error, using meth1={meth1}, cov1={cov1}, meth2={meth2}, cov2={cov2}, in sites key={key}, and bgTruthList[0][key]={bgTruthList[0][key]}, bgTruthList[1][key]={bgTruthList[1][key]}")
 
             cov = int(cov1 + cov2)
 
@@ -2748,6 +2636,32 @@ def combineBGTruthList(bgTruthList, covCutoff=1):
         raise Exception(f'len={len(bgTruthList)}, is not support now.')
 
     return unionBGTruth
+
+
+def filter_cpgkeys_using_bedfile(cpgKeys, bedFileName):
+    """
+    Keep only cpg keys in bed file range, return set of keys
+    :param cpgKeys:
+    :param bedFileName:
+    :return:
+    """
+    cpgBed = BedTool(dict2txt(cpgKeys), from_string=True)
+    cpgBed = cpgBed.sort()
+
+    coordBed = BedTool(bedFileName)
+    coordBed = coordBed.sort()
+
+    intersectBed = cpgBed.intersect(coordBed, u=True, wa=True)
+    ret = set(txt2dict(intersectBed).keys())
+    return ret
+
+
+def find_bed_filename(basedir, pattern):
+    fnlist = glob.glob(os.path.join(basedir, '**', pattern), recursive=True)
+    # logger.info(fnlist)
+    if len(fnlist) != 1:
+        raise Exception(f'Find more files: {fnlist}, please check the basedir is correct')
+    return fnlist[0]
 
 
 def gen_venn_data(set_dict, namelist, outdir, tagname='tagname'):
@@ -2778,6 +2692,8 @@ def gen_venn_data(set_dict, namelist, outdir, tagname='tagname'):
 
 if __name__ == '__main__':
     set_log_debug_level()
+
+    find_bed_filename(basedir='/projects/li-lab/yang/results/2021-03-30', pattern=f'HL60*hg38_singletons.absolute.bed')
     # scatter_plot_cov_compare_df(infn='/projects/li-lab/yang/results/2020-12-28/K562_WGBS_Joined/K562_WGBS_Joinedtombo-nanopolish-scatter.pkl')
 
     # importGroundTruth_genome_wide_output_from_Bismark(covCutt=4)

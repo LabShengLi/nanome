@@ -4,12 +4,12 @@
 #SBATCH --qos=long
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 4 # number of cores
-##SBATCH --mem 290g # memory pool for all cores
 #SBATCH --mem-per-cpu=290g
 #SBATCH --time=2-23:59:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
+##SBATCH --mem 290g # memory pool for all cores
 ##SBATCH -p gpu
 ##SBATCH --gres=gpu:1             # number of gpus per node
 ##SBATCH -q inference
@@ -38,4 +38,4 @@ pythonFn=${prjBaseDir}/src/nanocompare/meth_stats/Methylation_correlation_plotti
 PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:${DeepSignal_calls} \
 	Tombo:${Tombo_calls} Nanopolish:${Nanopolish_calls} ${DeepMod_calls} \
 	Megalodon:${Megalodon_calls} --bgtruth ${parser}:${bgTruth} --runid MethCorr-${RunPrefix} --dsname ${Dataset}\
-	--toolcov-cutoff 3 --baseFormat 1 --enable-cache # --using-cache  # cutoff=3 is reasonable now
+	--toolcov-cutoff 3 --baseFormat 1 --enable-cache #--using-cache  # cutoff=3 is reasonable now
