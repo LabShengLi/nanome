@@ -425,13 +425,16 @@ def load_singleton_nonsingleton_sites():
     df.to_excel(outfn, index=False)
 
 
-def collect_singleton_vs_nonsingleton_df(runPrefix):
+def collect_singleton_vs_nonsingleton_df(runPrefix, pattern="*.summary.singleton.nonsingleton.cov1.csv"):
     dflist = []
+    # logger.debug(runPrefix)
     for run1 in runPrefix:
-        pattern = os.path.join(runPrefix[run1], "*.summary.singleton.nonsingleton.csv")
-        flist = glob.glob(pattern)
+        filepat = os.path.join(runPrefix[run1], pattern)
+        # logger.debug(run1)
+        flist = glob.glob(filepat)
         if len(flist) != 1:
             raise Exception(f"Too much/No summary of singleton vs non-singleton for {runPrefix} in folder {runPrefix[runPrefix]} with pattern={pattern}, len={len(flist)}")
+        # logger.debug(f'Get file:{flist[0]}')
         df = pd.read_csv(flist[0], index_col=0)
         dflist.append(df)
     retdf = pd.concat(dflist)

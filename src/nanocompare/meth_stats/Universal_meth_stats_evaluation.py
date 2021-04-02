@@ -5,6 +5,7 @@ This script will generate all per-read performance results, bed files of singlet
 """
 
 import argparse
+from multiprocessing import Manager
 
 from nanocompare.global_settings import rename_coordinate_name, perf_report_columns, get_tool_name
 from nanocompare.global_settings import singletonsFile, narrowCoordFileList, nonsingletonsFile
@@ -28,7 +29,192 @@ def parse_arguments():
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
     parser.add_argument('--enable-cache', action='store_true')
     parser.add_argument('--using-cache', action='store_true')
+    parser.add_argument('--mpi', action='store_true')
     return parser.parse_args()
+
+
+def calculate_meth_unmeth(bgTruth, keySet):
+    """
+    bgTruth is format of key->value, key=cpg, value=[freq, cov]
+    :param bgTruth:
+    :param keySet:
+    :return:
+    """
+    num5c = num5mc = 0
+    for key in keySet:
+        if is_fully_meth(bgTruth[key][0]):
+            num5mc += 1
+        elif is_fully_unmeth(bgTruth[key][0]):
+            num5c += 1
+    return num5mc, num5c
+
+
+def report_singleton_nonsingleton_table(bgTruth, outfn):
+    ret = {}
+    combineBGTruthSet = set(combineBGTruth.keys())
+
+    singletonFileName = narrowCoordFileList[1]  # Singleton file path
+    singletonSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, singletonFileName)
+
+    meth_unmeth = calculate_meth_unmeth(combineBGTruth, singletonSet)
+    ret.update({'Singleton.5C': meth_unmeth[1], 'Singleton.5mC': meth_unmeth[0]})
+
+    nonsingletonFilename = narrowCoordFileList[2]  # Non-Singleton file path
+    nonsingletonSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, nonsingletonFilename)
+    meth_unmeth = calculate_meth_unmeth(combineBGTruth, nonsingletonSet)
+    ret.update({'Non-Singleton.5C': meth_unmeth[1], 'Non-Singleton.5mC': meth_unmeth[0]})
+
+    concordantFileName = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed"
+    concordantSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, concordantFileName)
+    meth_unmeth = calculate_meth_unmeth(combineBGTruth, concordantSet)
+    ret.update({'Concordant.5C': meth_unmeth[1], 'Concordant.5mC': meth_unmeth[0]})
+
+    discordantFileName = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed"
+    discordantSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, discordantFileName)
+    meth_unmeth = calculate_meth_unmeth(combineBGTruth, discordantSet)
+    ret.update({'Discordant.5C': meth_unmeth[1], 'Discordant.5mC': meth_unmeth[0]})
+
+    otherFileName = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.other.bed"
+    otherSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, otherFileName)
+    meth_unmeth = calculate_meth_unmeth(combineBGTruth, otherSet)
+    ret.update({'Other.5C': meth_unmeth[1], 'Other.5mC': meth_unmeth[0]})
+
+    df = pd.DataFrame([ret], index=[f'{dsname}'])
+
+    df['Singleton.sum'] = df['Singleton.5C'] + df['Singleton.5mC']
+    df['Non-Singleton.sum'] = df['Non-Singleton.5C'] + df['Non-Singleton.5mC']
+    df['Concordant.sum'] = df['Concordant.5C'] + df['Concordant.5mC']
+    df['Discordant.sum'] = df['Discordant.5C'] + df['Discordant.5mC']
+    df['Other.sum'] = df['Other.5C'] + df['Other.5mC']
+
+    df = df[['Singleton.5C', 'Singleton.5mC', 'Singleton.sum', 'Non-Singleton.5C', 'Non-Singleton.5mC', 'Non-Singleton.sum', 'Concordant.5C', 'Concordant.5mC', 'Concordant.sum', 'Discordant.5C', 'Discordant.5mC', 'Discordant.sum', 'Other.5C', 'Other.5mC', 'Other.sum']]
+
+    df.to_csv(outfn)
+    logger.info(f'save to {outfn}')
+
+
+def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, secondFilterBedFileName=None, cutoff_meth=1.0, outdir=None, tagname=None, test=False):
+    """
+    Report performance results
+    :param ontCalls: tool's call
+    :param bgTruth:  BS seq results as bg-truth for evaluation
+    :param analysisPrefix:
+    :param narrowedCoordinatesList: The bed file list for evaluation performance at regions (Genome-wide, Singleton, non-singleton, etc.)
+    :param secondFilterBedFileName: None for bgTruth or Joined bed files
+    :param cutoff_meth:
+    :return:
+    """
+    d = defaultdict(list)
+
+    for coord_fn in tqdm(narrowedCoordinatesList):
+        accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth = \
+            computePerReadStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFileName=secondFilterBedFileName,
+                                cutoff_fully_meth=cutoff_meth, outdir=outdir, tagname=tagname)
+
+        coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genome-wide"}')
+
+        d["prefix"].append(analysisPrefix)
+        d["coord"].append(coord)
+        d["Accuracy"].append(accuracy)
+        d["Average-Precision"].append(ap)
+        d["Macro-F1"].append(f1_macro)
+        d["Micro-F1"].append(f1_micro)
+        d["Macro-Precision"].append(precision_macro)
+        d["Micro-Precision"].append(precision_micro)
+        d["Macro-Recall"].append(recall_macro)
+        d["Micro-Recall"].append(recall_micro)
+        d["ROC-AUC"].append(roc_auc)
+        d["Precision_5C"].append(precision_5C)
+        d["Recall_5C"].append(recall_5C)
+        d["F1_5C"].append(F1_5C)
+        d["Csites_called"].append(cCalls)
+        d["Csites"].append(cSites_BGTruth)
+        d["Precision_5mC"].append(precision_5mC)
+        d["Recall_5mC"].append(recall_5mC)
+        d["F1_5mC"].append(F1_5mC)
+        d["mCsites_called"].append(mCalls)
+        d["mCsites"].append(mSites_BGTruth)
+        d["referenceCpGs"].append(referenceCpGs)
+
+        tmpdf = pd.DataFrame.from_dict(d)
+        tmpfn = os.path.join(outdir, 'performance.report.tmp.csv')
+        tmpdf.to_csv(tmpfn)
+
+        if test:
+            break
+    df = pd.DataFrame.from_dict(d)
+    return df
+
+
+def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, secondFilterBedFileName=None, cutoff_fully_meth=1.0, outdir=None, tagname=None, processors=10):
+    """
+    New performance evaluation by Yang
+    referenceCpGs is number of all CpGs that is fully-methylated (>=cutoff_meth) or unmethylated in BG-Truth
+
+    :param ontCalls:
+    :param bgTruth:
+    :param analysisPrefix:
+    :param narrowedCoordinatesList: coord such as Genome-wide, Singletons, etc.
+    :param ontCutt:
+    :param secondFilterBedFileName: Joined of 4 tools and bgtruth bed file, or None for not joined
+    :param cutoff_fully_meth:
+    :return:
+    """
+
+    ret_list = []
+
+    with Manager() as manager:
+
+        ontCalls = manager.dict(ontCalls)
+        bgTruth = manager.dict(bgTruth)
+
+        with Pool(processes=processors) as pool:
+            for coord_fn in narrowedCoordinatesList:
+                # accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = \
+                #     computePerReadStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFile=secondFilterBed,
+                #                         secondFilterBed_4CorrFile=secondFilterBed_4Corr,
+                #                         cutoff_meth=cutoff_meth, outdir=outdir, tagname=tagname)
+                coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genome-wide"}')
+                ret = pool.apply_async(computePerReadStats, (ontCalls, bgTruth, analysisPrefix,), kwds={'coordBedFileName': coord_fn, 'secondFilterBedFileName': secondFilterBedFileName, 'cutoff_fully_meth': cutoff_fully_meth, 'outdir': outdir, 'tagname': tagname})
+                ret_list.append((coord, ret))
+
+            pool.close()
+            pool.join()
+
+        d = defaultdict(list)
+        for k in range(len(ret_list)):
+            coord, ret = ret_list[k]
+
+            # logger.info(coord)
+            # logger.info(ret_list[k])
+            # logger.info(ret.get())
+            # accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = ret.get()
+            accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth = ret.get()
+            d["prefix"].append(analysisPrefix)
+            d["coord"].append(coord)
+            d["Accuracy"].append(accuracy)
+            d["Average-Precision"].append(ap)
+            d["Macro-F1"].append(f1_macro)
+            d["Micro-F1"].append(f1_micro)
+            d["Macro-Precision"].append(precision_macro)
+            d["Micro-Precision"].append(precision_micro)
+            d["Macro-Recall"].append(recall_macro)
+            d["Micro-Recall"].append(recall_micro)
+            d["ROC-AUC"].append(roc_auc)
+            d["Precision_5C"].append(precision_5C)
+            d["Recall_5C"].append(recall_5C)
+            d["F1_5C"].append(F1_5C)
+            d["Csites_called"].append(cCalls)
+            d["Csites"].append(cSites_BGTruth)
+            d["Precision_5mC"].append(precision_5mC)
+            d["Recall_5mC"].append(recall_5mC)
+            d["F1_5mC"].append(F1_5mC)
+            d["mCsites_called"].append(mCalls)
+            d["mCsites"].append(mSites_BGTruth)
+            d["referenceCpGs"].append(referenceCpGs)
+
+    df = pd.DataFrame.from_dict(d)
+    return df
 
 
 if __name__ == '__main__':
@@ -37,7 +223,7 @@ if __name__ == '__main__':
     args = parse_arguments()
 
     dsname = args.dsname
-    bgtruth_cov_cutoff = args.min_bgtruth_cov
+    cutoffBGTruth = args.min_bgtruth_cov
     # tool_cov_cutoff = args.min_tool_cov # No use of tool coverage due to per-read level evaluation
     report_joined = args.report_joined
     enable_cache = args.enable_cache
@@ -71,10 +257,10 @@ if __name__ == '__main__':
 
     # Combine multiple bgtruth together for analysis
     # We use joined of two replicates as BG-Truth
-    combineBGTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruth_cov_cutoff)
+    combineBGTruth = combineBGTruthList(bgTruthList, covCutoff=1)
 
     callfn_dict = defaultdict()  # callname -> filename
-    callresult_dict = defaultdict()  # name->call
+    ontCallWithinBGTruthDict = defaultdict()  # name->call
     callname_list = []  # [DeepSignal, DeepMod, etc.]
 
     for callstr in args.calls:
@@ -88,14 +274,14 @@ if __name__ == '__main__':
         call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache)
         # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
         logger.info('Filter out CpG sites not in bgtruth')
-        callresult_dict[call_name] = filter_cpg_dict(call0, combineBGTruth)
-        logger.info(f'Left only sites={len(callresult_dict[call_name])}')
+        ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(call0, combineBGTruth)
+        logger.info(f'Left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
 
-    logger.debug(callfn_dict)
+    # logger.debug(callfn_dict)
 
     relateCoord = list(narrowCoordFileList)  # copy the basic coordinate
 
-    ## add missing region files:
+    ## add missing region files based on bgtruth:
     singletonsFilePrefix = singletonsFile.replace(".bed", '')
     # relateCoord.append("{}/{}.{}.mixed.bed".format(out_dir, RunPrefix, singletonsFilePrefix))
     relateCoord.append(f"{out_dir}/{RunPrefix}.{singletonsFilePrefix}.absolute.bed")
@@ -106,36 +292,50 @@ if __name__ == '__main__':
     relateCoord.append(f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed")
     relateCoord.append(f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed")
 
-    logger.debug(list(enumerate(relateCoord)))  # all coordinate generated
+    # logger.debug(list(enumerate(relateCoord)))  # all coordinate generated
 
-    if not args.test:  # Generate singleton and non-singleton bed files based on BG-Truth results
-        logger.info('Start singletons and non-singletons bed generation')
-        ret = singletonsPostprocessing(combineBGTruth, singletonsFile, RunPrefix, outdir=out_dir)
-        ret.update(nonSingletonsPostprocessing(combineBGTruth, nonsingletonsFile, RunPrefix, outdir=out_dir))
-        df = pd.DataFrame([ret], index=[f'{dsname}'])
+    logger.info('Start singletons and non-singletons bed and table generation, using sites with coverage >=1 in bgtruth')
+    ret = singletonsPostprocessing(combineBGTruth, singletonsFile, RunPrefix, outdir=out_dir)
+    ret.update(nonSingletonsPostprocessing(combineBGTruth, nonsingletonsFile, RunPrefix, outdir=out_dir))
+    # df = pd.DataFrame([ret], index=[f'{dsname}'])
+    #
+    # df['Singleton.sum'] = df['Singleton.5C'] + df['Singleton.5mC']
+    # df['Concordant.sum'] = df['Concordant.5C'] + df['Concordant.5mC']
+    # df['Discordant.sum'] = df['Discordant.5C'] + df['Discordant.5mC']
+    # df['Other.sum'] = df['Other.5C'] + df['Other.5mC']
+    #
+    # df = df[['Singleton.5C', 'Singleton.5mC', 'Singleton.sum', 'Concordant.5C', 'Concordant.5mC', 'Concordant.sum', 'Discordant.5C', 'Discordant.5mC', 'Discordant.sum', 'Other.5C', 'Other.5mC', 'Other.sum']]
+    #
+    # outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.csv')
+    # df.to_csv(outfn)
+    # logger.info(f'save to {outfn}')
 
-        df['Singleton.sum'] = df['Singleton.5C'] + df['Singleton.5mC']
-        df['Concordant.sum'] = df['Concordant.5C'] + df['Concordant.5mC']
-        df['Discordant.sum'] = df['Discordant.5C'] + df['Discordant.5mC']
+    # apply cutoff to bgTruth, for evaluation
+    logger.info(f'Before apply cutoff, bgtruth sites={len(combineBGTruth):,}')
 
-        df = df[['Singleton.5C', 'Singleton.5mC', 'Singleton.sum', 'Concordant.5C', 'Concordant.5mC', 'Concordant.sum', 'Discordant.5C', 'Discordant.5mC', 'Discordant.sum']]
+    # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
+    outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.cov1.csv')
+    report_singleton_nonsingleton_table(combineBGTruth, outfn)
 
-        outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.csv')
-        df.to_csv(outfn)
-        logger.info(f'save to {outfn}')
+    combineBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if combineBGTruth[key][1] >= cutoffBGTruth}
+    logger.info(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(combineBGTruth):,}')
 
-    logger.info("\n\n############\n\n")
+    # Report singletons vs non-singletons of bgtruth with cov cutoff >= 5
+    outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.cov{cutoffBGTruth}.csv')
+    report_singleton_nonsingleton_table(combineBGTruth, outfn)
+
+    logger.info("\n\n########################\n\n")
 
     # this file is the all tool joined together sites
     bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}.Tools_BGTruth_Joined.bed"
 
     joinedCPG = set(combineBGTruth.keys())
-    for toolname in callresult_dict:
-        joinedCPG = joinedCPG.intersection(set(callresult_dict[toolname].keys()))
+    for toolname in ontCallWithinBGTruthDict:
+        joinedCPG = joinedCPG.intersection(set(ontCallWithinBGTruthDict[toolname].keys()))
 
     save_keys_to_single_site_bed(joinedCPG, outfn=bedfn_tool_join_bgtruth, callBaseFormat=baseFormat, outBaseFormat=1)
 
-    logger.info(f"Data points for joined all tools with bg-truth (cov>={bgtruth_cov_cutoff}) stats: {len(joinedCPG):,}\n\n")
+    logger.info(f"Data points for joined all tools with bg-truth (cov>={cutoffBGTruth}) sites={len(joinedCPG):,}\n\n")
 
     # Next calculate fully methylated and unmethylated sites
     certainJoinedBGTruth = {}
@@ -177,14 +377,17 @@ if __name__ == '__main__':
         bgTruth = certainBGTruth
         secondBedFileName = None
 
-    for tool in callresult_dict:
+    for tool in ontCallWithinBGTruthDict:
         tmpPrefix = f'{RunPrefix}.{tool}'
         logger.info(f'Evaluating: {tmpPrefix}')
 
         # Note: narrowedCoordinatesList - all singleton (absolute and mixed) and non-singleton generated bed. ranges
         #       secondFilterBedFileName - joined sites of four tools and bg-truth. points
-        df = report_per_read_performance_mp(callresult_dict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBedFileName=secondBedFileName, outdir=perf_dir, tagname=tmpPrefix, processors=args.processors)
-        # df = report_per_read_performance(callresult_dict[tool], certainBGTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBed=bedfn_tool_join_bgtruth,  outdir=perf_dir, tagname=tmpPrefix)
+
+        if args.mpi:  # Using mpi may cause error, not fixed, but fast running
+            df = report_per_read_performance_mp(ontCallWithinBGTruthDict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBedFileName=secondBedFileName, outdir=perf_dir, tagname=tmpPrefix, processors=args.processors)
+        else:
+            df = report_per_read_performance(ontCallWithinBGTruthDict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBedFileName=secondBedFileName, outdir=perf_dir, tagname=tmpPrefix)
 
         df['Tool'] = tool
         df['Dataset'] = dsname

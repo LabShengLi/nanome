@@ -772,10 +772,17 @@ if __name__ == '__main__':
             for dirname in args.i:
                 run_prefix[os.path.basename(dirname)] = dirname
         save_wide_format_performance_results(run_prefix, args.o, args.tagname)
-        df = collect_singleton_vs_nonsingleton_df(run_prefix)
-        # logger.debug(df)
-        outfn = os.path.join(args.o, f'dataset.singleton.vs.non-singleton{f"-{args.tagname}" if args.tagname else ""}.csv')
+
+        pattern1 = "*.summary.singleton.nonsingleton.cov1.csv"
+        df = collect_singleton_vs_nonsingleton_df(run_prefix, pattern=pattern1)
+        outfn = os.path.join(args.o, f'dataset.singleton.vs.non-singleton{f"-{args.tagname}" if args.tagname else ""}.cov1.csv')
         df.to_csv(outfn)
+
+        pattern2 = "*.summary.singleton.nonsingleton.cov5.csv"
+        df = collect_singleton_vs_nonsingleton_df(run_prefix, pattern=pattern2)
+        outfn = os.path.join(args.o, f'dataset.singleton.vs.non-singleton{f"-{args.tagname}" if args.tagname else ""}.cov5.csv')
+        df.to_csv(outfn)
+
         logger.info(f'save stats of singleton and non-singleton to {outfn}')
     elif args.cmd == 'export-curve-data':
         ## python plot_figure.py export-curve-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS

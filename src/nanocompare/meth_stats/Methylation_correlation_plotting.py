@@ -43,7 +43,7 @@ def summary_cpgs_joined_results_table():
         ret.update({'Total calls by Nanopore reads': cnt_calls})
 
         # Add coverage of singleton and non-singletons number by each tool here
-        singletonBaseDir = '/projects/li-lab/yang/results/2021-03-30'
+        singletonBaseDir = args.beddir
 
         absoluteFileName = find_bed_filename(basedir=singletonBaseDir, pattern=f'{args.dsname}*hg38_singletons.absolute.bed')
         absoluteSet = filter_cpgkeys_using_bedfile(callSet, absoluteFileName)
@@ -54,6 +54,9 @@ def summary_cpgs_joined_results_table():
         discordantFileName = find_bed_filename(basedir=singletonBaseDir, pattern=f'{args.dsname}*hg38_nonsingletons.discordant.bed')
         discordantSet = filter_cpgkeys_using_bedfile(callSet, discordantFileName)
 
+        otherFileName = find_bed_filename(basedir=singletonBaseDir, pattern=f'{args.dsname}*hg38_nonsingletons.other.bed')
+        otherSet = filter_cpgkeys_using_bedfile(callSet, otherFileName)
+
         # ret.update({'Absolute': len(absoluteSet), 'Concordant': len(concordantSet), 'Discordant': len(discordantSet)})
         # ret.update({'Concordant': len(concordantSet), 'Discordant': len(discordantSet)})
 
@@ -63,7 +66,7 @@ def summary_cpgs_joined_results_table():
         nonsingletonFilename = narrowCoordFileList[2]  # Non-Singleton file path
         nonsingletonSet = filter_cpgkeys_using_bedfile(callSet, nonsingletonFilename)
 
-        ret.update({'Singletons': len(singletonSet), 'Non-Singletons': len(nonsingletonSet), 'Concordant': len(concordantSet), 'Discordant': len(discordantSet)})
+        ret.update({'Singletons': len(singletonSet), 'Non-Singletons': len(nonsingletonSet), 'Concordant': len(concordantSet), 'Discordant': len(discordantSet), 'Other': len(otherSet)})
 
         dataset.append(ret)
 
@@ -99,7 +102,7 @@ def summary_cpgs_joined_results_table():
 
     logger.info(df)
 
-    df = df.iloc[:, [4, 0, 1, 2, 5, 6, 7, 8, 3]]
+    df = df.iloc[:, [4, 0, 1, 2, 5, 6, 7, 8, 9, 3]]
 
     outfn = os.path.join(out_dir, f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.csv')
     df.to_csv(outfn, sep=args.sep)
@@ -115,6 +118,7 @@ def parse_arguments():
     parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>", required=True)
     parser.add_argument('--dsname', type=str, help="running dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
+    parser.add_argument('--beddir', type=str, help="base dir for bed files", default='/projects/li-lab/yang/results/2021-04-01')
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
     parser.add_argument('--processors', type=int, help="running processors", default=8)
     parser.add_argument('--bgtruthcov-cutoff', type=int, help="cutoff of coverage in bg-truth", default=5)

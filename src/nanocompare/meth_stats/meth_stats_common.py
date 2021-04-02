@@ -12,7 +12,6 @@ import pickle
 import re
 from collections import defaultdict
 from itertools import combinations
-from multiprocessing import Pool
 
 import numpy as np
 import pandas as pd
@@ -20,7 +19,6 @@ import pysam
 from Bio import SeqIO
 from pybedtools import BedTool
 from sklearn.metrics import roc_curve, auc, average_precision_score, f1_score, precision_score, recall_score
-from tqdm import tqdm
 
 from nanocompare.global_config import *
 from nanocompare.global_settings import humanChrs, ToolEncodeList, BGTruthEncodeList
@@ -1720,131 +1718,6 @@ def save_call_to_methykit_txt(call, outfn, callBaseFormat=0, is_cov=True):
     outfile.close()
 
 
-def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, secondFilterBed=None, secondFilterBed_4Corr=None, cutoff_meth=1.0, outdir=None, tagname=None, test=False):
-    """
-    New performance evaluation by Yang
-    referenceCpGs is number of all CpGs that is fully-methylated (>=cutoff_meth) or unmethylated in BG-Truth
-
-    :param ontCalls:
-    :param bgTruth:
-    :param analysisPrefix:
-    :param narrowedCoordinatesList:
-    :param ontCutt:
-    :param secondFilterBed: Joined of 4 tools and bgtruth bed file
-    :param cutoff_meth:
-    :return:
-    """
-    d = defaultdict(list)
-
-    for coord_fn in tqdm(narrowedCoordinatesList):
-        accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth = \
-            computePerReadStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFileName=secondFilterBed,
-                                cutoff_fully_meth=cutoff_meth, outdir=outdir, tagname=tagname)
-
-        coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genome-wide"}')
-
-        d["prefix"].append(analysisPrefix)
-        d["coord"].append(coord)
-        d["Accuracy"].append(accuracy)
-        d["Average-Precision"].append(ap)
-        d["Macro-F1"].append(f1_macro)
-        d["Micro-F1"].append(f1_micro)
-        d["Macro-Precision"].append(precision_macro)
-        d["Micro-Precision"].append(precision_micro)
-        d["Macro-Recall"].append(recall_macro)
-        d["Micro-Recall"].append(recall_micro)
-        d["ROC-AUC"].append(roc_auc)
-        d["Precision_5C"].append(precision_5C)
-        d["Recall_5C"].append(recall_5C)
-        d["F1_5C"].append(F1_5C)
-        d["Csites_called"].append(cCalls)
-        d["Csites"].append(cSites_BGTruth)
-        d["Precision_5mC"].append(precision_5mC)
-        d["Recall_5mC"].append(recall_5mC)
-        d["F1_5mC"].append(F1_5mC)
-        d["mCsites_called"].append(mCalls)
-        d["mCsites"].append(mSites_BGTruth)
-        d["referenceCpGs"].append(referenceCpGs)
-        d["Corr_Mix"].append(corrMix)
-        d["Corr_mixedSupport"].append(Corr_mixedSupport)
-        d["Corr_All"].append(corrAll)
-        d["Corr_allSupport"].append(Corr_allSupport)
-
-        tmpdf = pd.DataFrame.from_dict(d)
-        tmpfn = os.path.join(outdir, 'performance.report.tmp.csv')
-        tmpdf.to_csv(tmpfn)
-
-        if test:
-            break
-    df = pd.DataFrame.from_dict(d)
-    return df
-
-
-def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, secondFilterBedFileName=None, cutoff_fully_meth=1.0, outdir=None, tagname=None, processors=10):
-    """
-    New performance evaluation by Yang
-    referenceCpGs is number of all CpGs that is fully-methylated (>=cutoff_meth) or unmethylated in BG-Truth
-
-    :param ontCalls:
-    :param bgTruth:
-    :param analysisPrefix:
-    :param narrowedCoordinatesList: coord such as Genome-wide, Singletons, etc.
-    :param ontCutt:
-    :param secondFilterBedFileName: Joined of 4 tools and bgtruth bed file, or None for not joined
-    :param cutoff_fully_meth:
-    :return:
-    """
-
-    ret_list = []
-    with Pool(processes=processors) as pool:
-        for coord_fn in narrowedCoordinatesList:
-            # accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = \
-            #     computePerReadStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFile=secondFilterBed,
-            #                         secondFilterBed_4CorrFile=secondFilterBed_4Corr,
-            #                         cutoff_meth=cutoff_meth, outdir=outdir, tagname=tagname)
-            coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genome-wide"}')
-            ret = pool.apply_async(computePerReadStats, (ontCalls, bgTruth, analysisPrefix,), kwds={'coordBedFileName': coord_fn, 'secondFilterBedFileName': secondFilterBedFileName, 'cutoff_fully_meth': cutoff_fully_meth, 'outdir': outdir, 'tagname': tagname})
-            ret_list.append((coord, ret))
-
-        pool.close()
-        pool.join()
-
-    d = defaultdict(list)
-    for k in range(len(ret_list)):
-        coord, ret = ret_list[k]
-
-        # logger.info(coord)
-        # logger.info(ret_list[k])
-        # logger.info(ret.get())
-        # accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = ret.get()
-        accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth = ret.get()
-        d["prefix"].append(analysisPrefix)
-        d["coord"].append(coord)
-        d["Accuracy"].append(accuracy)
-        d["Average-Precision"].append(ap)
-        d["Macro-F1"].append(f1_macro)
-        d["Micro-F1"].append(f1_micro)
-        d["Macro-Precision"].append(precision_macro)
-        d["Micro-Precision"].append(precision_micro)
-        d["Macro-Recall"].append(recall_macro)
-        d["Micro-Recall"].append(recall_micro)
-        d["ROC-AUC"].append(roc_auc)
-        d["Precision_5C"].append(precision_5C)
-        d["Recall_5C"].append(recall_5C)
-        d["F1_5C"].append(F1_5C)
-        d["Csites_called"].append(cCalls)
-        d["Csites"].append(cSites_BGTruth)
-        d["Precision_5mC"].append(precision_5mC)
-        d["Recall_5mC"].append(recall_5mC)
-        d["F1_5mC"].append(F1_5mC)
-        d["mCsites_called"].append(mCalls)
-        d["mCsites"].append(mSites_BGTruth)
-        d["referenceCpGs"].append(referenceCpGs)
-
-    df = pd.DataFrame.from_dict(d)
-    return df
-
-
 def NonSingletonsScanner(referenceGenomeFile, outfileName_s, outfileName_ns):
     '''
     The output file is in 1-based coordinate system.
@@ -1945,12 +1818,12 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
 
     fn_concordant = f"{outdir}/{runPrefix}.{outfile_prefix}.concordant.bed"
     fn_discordant = f"{outdir}/{runPrefix}.{outfile_prefix}.discordant.bed"
-    fn_fullyMixed = f"{outdir}/{runPrefix}.{outfile_prefix}.fullyMixed.bed"
+    # fn_fullyMixed = f"{outdir}/{runPrefix}.{outfile_prefix}.fullyMixed.bed"
     fn_other = f"{outdir}/{runPrefix}.{outfile_prefix}.other.bed"
 
     outfile_concordant = open(fn_concordant, "w")
     outfile_discordant = open(fn_discordant, "w")
-    outfile_fullyMixed = open(fn_fullyMixed, "w")
+    # outfile_fullyMixed = open(fn_fullyMixed, "w")
     outfile_other = open(fn_other, "w")
 
     meth_cnt_dict = defaultdict(int)
@@ -1975,30 +1848,33 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
         region_txt = '\t'.join([region[0], str(region[1]), str(region[2])]) + '\n'
 
         if (fullMeth + nullMeth) == 1 and mixMeth == 0:
-            #             print("Concordant")
+            # "Concordant"
             outfile_concordant.write(region_txt)
             meth_cnt_dict['Concordant'] += cntMeth
             unmeth_cnt_dict['Concordant'] += cntUnmeth
         elif (fullMeth + nullMeth) == 2 and mixMeth == 0:
-            #             print("Discordant")
+            # "Discordant"
             outfile_discordant.write(region_txt)
             meth_cnt_dict['Discordant'] += cntMeth
             unmeth_cnt_dict['Discordant'] += cntUnmeth
-        elif (fullMeth + nullMeth) == 0 and mixMeth == 1:
-            #             print("mixed")
-            outfile_fullyMixed.write(region_txt)
-        else:
+        # elif (fullMeth + nullMeth) == 0 and mixMeth == 1:
+        #     #             print("mixed")
+        #     outfile_fullyMixed.write(region_txt)
+        else:  # Other cases
+            outfile_other.write(region_txt)
+            meth_cnt_dict['Other'] += cntMeth
+            unmeth_cnt_dict['Other'] += cntUnmeth
             #             print("What do we have here? ", fullMeth, nullMeth, mixMeth)
-            outfile_other.write(f'{region_txt[:-1]}\t{fullMeth}\t{nullMeth}\t{mixMeth}\n')
+            # outfile_other.write(f'{region_txt[:-1]}\t{fullMeth}\t{nullMeth}\t{mixMeth}\n')
     outfile_concordant.close()
     outfile_discordant.close()
-    outfile_fullyMixed.close()
+    # outfile_fullyMixed.close()
     outfile_other.close()
-    logger.info(f'save to {[fn_concordant, fn_discordant, fn_fullyMixed, fn_other]}')
+    logger.info(f'save to {[fn_concordant, fn_discordant, fn_other]}')
 
     logger.debug(f'meth_cnt={meth_cnt_dict}, unmeth_cnt={unmeth_cnt_dict}')
 
-    ret = {'Concordant.5mC': meth_cnt_dict['Concordant'], 'Concordant.5C': unmeth_cnt_dict['Concordant'], 'Discordant.5mC': meth_cnt_dict['Discordant'], 'Discordant.5C': unmeth_cnt_dict['Discordant'], }
+    ret = {'Concordant.5mC': meth_cnt_dict['Concordant'], 'Concordant.5C': unmeth_cnt_dict['Concordant'], 'Discordant.5mC': meth_cnt_dict['Discordant'], 'Discordant.5C': unmeth_cnt_dict['Discordant'], 'Other.5mC': meth_cnt_dict['Other'], 'Other.5C': unmeth_cnt_dict['Other']}
     return ret
 
 
@@ -2661,6 +2537,7 @@ def find_bed_filename(basedir, pattern):
     # logger.info(fnlist)
     if len(fnlist) != 1:
         raise Exception(f'Find more files: {fnlist}, please check the basedir is correct')
+    logger.debug(f'find bed file:{fnlist[0]}')
     return fnlist[0]
 
 

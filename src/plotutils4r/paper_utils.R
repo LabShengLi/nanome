@@ -202,7 +202,7 @@ fig.6c.bar.plot.tools <- function() {
     pos = str_locate(basename_infn, "_")[1]
     dsname = substr(basename_infn, 1, pos - 1)
     dt <- read_csv(infn)
-    seldt <- dt[c(1,2,3,4,5,6,7), c(1, 5)]
+    seldt <- dt[c(1, 2, 3, 4, 5, 6, 7), c(1, 5)]
     names(seldt) <- c('Tool', 'Sites')
     seldt$Tool <- factor(seldt$Tool, levels = Tool.Order)
     seldt$dsname = dsname
@@ -249,8 +249,13 @@ fig.5c.running.resource.bar.plot <- function(bdir) {
     mutate_at("tool", str_replace, "Nanopolish", "Nanopolish*") %>%
     mutate_at("tool", str_replace, "Megalodon", "Megalodon*")
 
-  run.table$rt <- run.table$running.time.seconds / run.table$fast5
-  run.table$mem <- run.table$mem.usage.gb / run.table$fast5 * 1000
+  run.table <- run.table %>%
+    group_by(dsname, tool) %>%
+    summarise(rt = sum(running.time.seconds), mem = max(mem.usage.gb))
+
+
+  #run.table$rt <- run.table$running.time.seconds / run.table$fast5
+  #run.table$mem <- run.table$mem.usage.gb / run.table$fast5 * 1000
   run.table$tool <- factor(run.table$tool, levels = Tool.Order.show.SingleRead)
   run.table$dsname <- factor(run.table$dsname, levels = Dataset.Order)
 
@@ -266,13 +271,17 @@ fig.5c.running.resource.bar.plot <- function(bdir) {
   outfn = here('result', 'mean.runnning.summary.csv')
   write_csv(run.mean.table, outfn)
 
+  outfn = here('result', 'total.runnning.summary.csv')
+  write_csv(run.table, outfn)
+
   g1 <- run.table %>%
     drop_na(tool) %>%
     ggplot(mapping = aes(x = dsname, y = rt, fill = tool)) +
     geom_bar(stat = "summary", fun = mean, width = 0.8, position = position_dodge()) +
     scale_fill_manual(values = ToolColorPal) +
     theme_classic() +
-    ylab("Running time(seconds) per fast5 file") +
+    ylab("Running time (seconds)") +
+    scale_y_log10() +
     xlab("Dataset") +
     coord_flip() +
     labs(fill = 'Tool') +
@@ -288,7 +297,7 @@ fig.5c.running.resource.bar.plot <- function(bdir) {
     coord_flip() +
     scale_fill_manual(values = ToolColorPal) +
     theme_classic() +
-    ylab("Memory usage(MB) per fast5 file") +
+    ylab("Memory usage (GB)") +
     xlab("Dataset") +
     labs(fill = 'Tool') +
     theme(text = element_text(size = 12))
@@ -408,7 +417,6 @@ fig.34a.scatter.plot.performance <- function(df, measure.pair, locations, bdir, 
 }
 
 
-
 fig.6a.venn.plot.set3 <- function(ret, outfn) {
   graphics.off()
   venn.plot <- draw.triple.venn(
@@ -444,7 +452,6 @@ fig.6a.venn.plot.set3 <- function(ret, outfn) {
 }
 
 
-
 fig.34a.bar.dataset.location.performance <- function(df, dsname, perf.pair, bdir, scale = 1) {
   sel_data = df[df$Dataset == dsname, c('Dataset', 'Tool', 'Location', perf.pair)]
   longdf <- melt(setDT(sel_data), id.vars = c("Dataset", "Tool", "Location"), variable.name = "perf_name")
@@ -463,7 +470,6 @@ fig.34a.bar.dataset.location.performance <- function(df, dsname, perf.pair, bdir
   ggsave(filename = outfn, width = 10, height = 4, scale = scale, dpi = 600)
   printf("save to %s\n", outfn)
 }
-
 
 
 fig.5d.violin.corr.performance <- function(df, bdir) {
