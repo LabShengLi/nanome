@@ -42,37 +42,22 @@ def summary_cpgs_stats_results_table():
             cnt_calls += len(callresult_dict[name][0][cpg])
         ret.update({'Total calls by Nanopore reads': cnt_calls})
 
-        # Add coverage of singleton and non-singletons number by each tool here
-        datasetBedDir = args.beddir
-
-        # absoluteFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{args.dsname}*hg38_singletons.absolute.bed')
-        # absoluteSet = filter_cpgkeys_using_bedfile(callSet, absoluteFileName)
-
-        # otherFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{args.dsname}*hg38_nonsingletons.other.bed')
-        # otherSet = filter_cpgkeys_using_bedfile(callSet, otherFileName)
-
-        # ret.update({'Absolute': len(absoluteSet), 'Concordant': len(concordantSet), 'Discordant': len(discordantSet)})
-        # ret.update({'Concordant': len(concordantSet), 'Discordant': len(discordantSet)})
-
-        # singletonFileName = narrowCoordFileList[1]  # Singleton file path
-        # singletonSet = filter_cpgkeys_using_bedfile(callSet, singletonFileName)
-        #
-        # nonsingletonFilename = narrowCoordFileList[2]  # Non-Singleton file path
-        # nonsingletonSet = filter_cpgkeys_using_bedfile(callSet, nonsingletonFilename)
-
+        # Add coverage of every regions by each tool here
         for bedfn in narrowCoordFileList[1:]:  # calculate how overlap with Singletons, Non-Singletons, etc.
             basefn = os.path.basename(bedfn)
             tagname = location_filename_to_abbvname[basefn]
             subset = filter_cpgkeys_using_bedfile(callSet, bedfn)
             ret.update({tagname: len(subset)})
 
-        concordantFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{args.dsname}*hg38_nonsingletons.concordant.bed')
-        concordantSet = filter_cpgkeys_using_bedfile(callSet, concordantFileName)
+        if args.beddir:  # add concordant and discordant region coverage if needed
+            datasetBedDir = args.beddir
+            concordantFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{args.dsname}*hg38_nonsingletons.concordant.bed')
+            concordantSet = filter_cpgkeys_using_bedfile(callSet, concordantFileName)
 
-        discordantFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{args.dsname}*hg38_nonsingletons.discordant.bed')
-        discordantSet = filter_cpgkeys_using_bedfile(callSet, discordantFileName)
+            discordantFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{args.dsname}*hg38_nonsingletons.discordant.bed')
+            discordantSet = filter_cpgkeys_using_bedfile(callSet, discordantFileName)
 
-        ret.update({'Concordant': len(concordantSet), 'Discordant': len(discordantSet)})
+            ret.update({'Concordant': len(concordantSet), 'Discordant': len(discordantSet)})
 
         dataset.append(ret)
 
@@ -120,16 +105,16 @@ def parse_arguments():
     :return:
     """
     parser = argparse.ArgumentParser(description='Correlation data gen task')
-    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name>', required=True)
-    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>", required=True)
-    parser.add_argument('--dsname', type=str, help="running dataset name", required=True)
+    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces', required=True)
+    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name1>", required=True)
+    parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
-    parser.add_argument('--beddir', type=str, help="base dir for bed files", default='/projects/li-lab/yang/results/2021-04-01')
+    parser.add_argument('--beddir', type=str, help="base dir for bed files", default=None)  # need perform performance evaluation before, then get concordant, etc. bed files, like '/projects/li-lab/yang/results/2021-04-01'
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
     parser.add_argument('--processors', type=int, help="running processors", default=8)
     parser.add_argument('--bgtruthcov-cutoff', type=int, help="cutoff of coverage in bg-truth", default=5)
     parser.add_argument('--toolcov-cutoff', type=int, help="cutoff of coverage in nanopore calls", default=3)
-    parser.add_argument('--baseFormat', type=int, help="cutoff of coverage in nanopore calls", default=0)
+    parser.add_argument('--baseFormat', type=int, help="base format after imported", default=1)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
     parser.add_argument('--enable-cache', action='store_true')
     parser.add_argument('--using-cache', action='store_true')
