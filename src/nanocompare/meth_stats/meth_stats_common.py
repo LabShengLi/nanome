@@ -1778,7 +1778,7 @@ def concat_dir_fn(outdir, fn):
     return outfn
 
 
-def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir, print_first=False):
+def nonSingletonsPostprocessing(bgTruth, regionsBedFileName, runPrefix, outdir, print_first=False):
     '''
 
     Concordant: all CpG in the region are 0, or 1. And they will be same 0 or 1.   00000000000    111111
@@ -1791,18 +1791,21 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
     This kind of preprocessing will have to be done for each studied library separately.
     '''
     logger.debug("nonSingletonsPostprocessing")
-    refMeth = BedTool(dict2txt(referenceMeth), from_string=True)
-    refMeth = refMeth.sort()
+    bedBGTruth = BedTool(dict2txt(bgTruth), from_string=True)
+    bedBGTruth = bedBGTruth.sort()
 
-    infn = os.path.join(data_base_dir, 'genome-annotation', regionsBedFile)
-    regions = BedTool(infn)
-    regions = regions.sort()
+    infn = os.path.join(data_base_dir, 'genome-annotation', regionsBedFileName)
+    regionNonsingletons = BedTool(infn)
+    regionNonsingletons = regionNonsingletons.sort()
 
-    regions_refMeth = regions.intersect(refMeth, wa=True, wb=True)  # chr start end   chr start end strand
+    regionWithBGTruth = regionNonsingletons.intersect(bedBGTruth, wa=True, wb=True)  # chr start end   chr start end strand
 
-    regions_refMeth_dict = defaultdict(list)  # {}  # {regionCoords : [methylation percentage list]}
+    regionDict = defaultdict(list)  # key->value, key=region of (chr, start, end), value=list of [f1,f2,etc.] , suche as {regionCoords : [methylation percentage list]}
 
-    for ovr in regions_refMeth:
+    print_first = True
+    cntBedLines = 0
+    for ovr in regionWithBGTruth:
+        cntBedLines+=1
         if print_first:
             logger.debug(f'ovr={ovr}')
             print_first = False
@@ -1812,9 +1815,11 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
         methKey = (ovr[3], int(ovr[4]), ovr[6])  # chr, start, strand
         # if regionKey not in regions_refMeth_dict:
         #     regions_refMeth_dict[regionKey] = []
-        regions_refMeth_dict[regionKey].append(referenceMeth[methKey][0])
+        regionDict[regionKey].append(bgTruth[methKey][0])
 
-    outfile_prefix = regionsBedFile.replace(".bed", '')
+    logger.info(f'cntBedLines={cntBedLines}')
+
+    outfile_prefix = regionsBedFileName.replace(".bed", '')
 
     fn_concordant = f"{outdir}/{runPrefix}.{outfile_prefix}.concordant.bed"
     fn_discordant = f"{outdir}/{runPrefix}.{outfile_prefix}.discordant.bed"
@@ -1828,13 +1833,13 @@ def nonSingletonsPostprocessing(referenceMeth, regionsBedFile, runPrefix, outdir
 
     meth_cnt_dict = defaultdict(int)
     unmeth_cnt_dict = defaultdict(int)
-    for region in regions_refMeth_dict:
+    for region in regionDict:
         cntMeth = 0  # count how many methylated sites
         cntUnmeth = 0  # count how many unmeth
         fullMeth = 0  # indicate there is a fully meth case site in the region
         nullMeth = 0  # indicate there is a fully unmeth case site in the region
         mixMeth = 0  # indicate there is mixed ( 0.2 0.3) case site in the region
-        for meth in regions_refMeth_dict[region]:
+        for meth in regionDict[region]:
             if meth >= 1 - 1e-5:
                 fullMeth = 1
                 cntMeth += 1

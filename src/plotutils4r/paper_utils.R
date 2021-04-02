@@ -259,6 +259,10 @@ fig.5c.running.resource.bar.plot <- function(bdir) {
   run.table$tool <- factor(run.table$tool, levels = Tool.Order.show.SingleRead)
   run.table$dsname <- factor(run.table$dsname, levels = Dataset.Order)
 
+  run.table <- run.table %>%
+    drop_na(tool) %>%
+    arrange(dsname, tool)
+
   run.mean.table <- run.table %>%
     drop_na(tool) %>%
     group_by(dsname, tool) %>%

@@ -766,11 +766,12 @@ if __name__ == '__main__':
 
         ## python plot_figure.py export-data -i /projects/li-lab/yang/results/2021-02-22/Meth
         if len(args.i) == 0:
-            run_prefix = runPrefixDict
+            run_prefix = runPrefixDefault
         else:
             run_prefix = defaultdict()
             for dirname in args.i:
                 run_prefix[os.path.basename(dirname)] = dirname
+        logger.info(run_prefix)
         save_wide_format_performance_results(run_prefix, args.o, args.tagname)
 
         pattern1 = "*.summary.singleton.nonsingleton.cov1.csv"
@@ -792,13 +793,13 @@ if __name__ == '__main__':
         os.makedirs(outdir, exist_ok=True)
 
         if len(args.i) == 0:
-            args.i = list(runPrefixDict.values())
+            args.i = list(runPrefixDefault.values())
             logger.info(f'No input, we use default args.i={args.i}')
 
         for bdir in args.i:
             runPrefix = os.path.basename(bdir)
             cnt = 0
-            for coordinate_bed_name in coordDictToStandardName.keys():
+            for coordinate_bed_name in location_filename_to_abbvname.keys():
                 curve_data = defaultdict(list)
                 for toolname in ToolNameList:
                     pattern_str = os.path.join(bdir, 'performance?results', 'curve_data', f'*.{toolname}.*{coordinate_bed_name}.curve_data.pkl')
@@ -812,12 +813,12 @@ if __name__ == '__main__':
                         curve_data[f'{toolname}_true'] = ret['yTrue']  # Ground truth label
                         curve_data[f'{toolname}_pred'] = ret['yPred']  # Prediction label
                         curve_data[f'{toolname}_score'] = ret['yScore']  # Prediction score, used for roc curve plotting
-                outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{coordDictToStandardName[coordinate_bed_name]}.pkl')
+                outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{location_filename_to_abbvname[coordinate_bed_name]}.pkl')
                 with open(outfn, 'wb') as f:
                     pickle.dump(curve_data, f)
                 # logger.info(f'save to {outfn}')
 
-                outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{coordDictToStandardName[coordinate_bed_name]}.dat')
+                outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{location_filename_to_abbvname[coordinate_bed_name]}.dat')
                 with open(outfn, "w") as f:
                     for toolname in ToolNameList:
                         f.write(f"{toolname}_true:")

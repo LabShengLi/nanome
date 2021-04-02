@@ -5,7 +5,9 @@ This script will generate all per-read performance results, bed files of singlet
 """
 
 import argparse
-from multiprocessing import Manager
+from multiprocessing import Manager, Pool
+
+from tqdm import tqdm
 
 from nanocompare.global_settings import rename_coordinate_name, perf_report_columns, get_tool_name
 from nanocompare.global_settings import singletonsFile, narrowCoordFileList, nonsingletonsFile
@@ -297,18 +299,6 @@ if __name__ == '__main__':
     logger.info('Start singletons and non-singletons bed and table generation, using sites with coverage >=1 in bgtruth')
     ret = singletonsPostprocessing(combineBGTruth, singletonsFile, RunPrefix, outdir=out_dir)
     ret.update(nonSingletonsPostprocessing(combineBGTruth, nonsingletonsFile, RunPrefix, outdir=out_dir))
-    # df = pd.DataFrame([ret], index=[f'{dsname}'])
-    #
-    # df['Singleton.sum'] = df['Singleton.5C'] + df['Singleton.5mC']
-    # df['Concordant.sum'] = df['Concordant.5C'] + df['Concordant.5mC']
-    # df['Discordant.sum'] = df['Discordant.5C'] + df['Discordant.5mC']
-    # df['Other.sum'] = df['Other.5C'] + df['Other.5mC']
-    #
-    # df = df[['Singleton.5C', 'Singleton.5mC', 'Singleton.sum', 'Concordant.5C', 'Concordant.5mC', 'Concordant.sum', 'Discordant.5C', 'Discordant.5mC', 'Discordant.sum', 'Other.5C', 'Other.5mC', 'Other.sum']]
-    #
-    # outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.csv')
-    # df.to_csv(outfn)
-    # logger.info(f'save to {outfn}')
 
     # apply cutoff to bgTruth, for evaluation
     logger.info(f'Before apply cutoff, bgtruth sites={len(combineBGTruth):,}')
@@ -391,6 +381,8 @@ if __name__ == '__main__':
 
         df['Tool'] = tool
         df['Dataset'] = dsname
+
+        # Rename function need to be checked
         df = rename_coordinate_name(df)
 
         # logger.debug(df)

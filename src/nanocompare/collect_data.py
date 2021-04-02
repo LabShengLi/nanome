@@ -12,6 +12,7 @@ etc.
 """
 import glob
 import os
+import sys
 
 import numpy as np
 import pandas as pd
@@ -384,8 +385,13 @@ def select_locations_from_reportdf(df, sel_locations=locations_category + locati
     :param sel_locations:
     :return:
     """
-    return df[df['Location'].isin(sel_locations)]
+    # logger.info(df)
+    # logger.info(df['Location'].value_counts())
+    retdf = df[df['Location'].isin(sel_locations)]
 
+    # return df[df['Location'].isin(sel_locations)]
+
+    return retdf
 
 def get_num_lines(fn):
     """
@@ -442,33 +448,33 @@ def collect_singleton_vs_nonsingleton_df(runPrefix, pattern="*.summary.singleton
     return retdf
 
 
-def collect_performance_report_as_df(runPrefixDict):
+def collect_performance_report_as_df(runPrefix):
     """
     create report from list of runPrefix, return specified columns
     :return:
     """
     dflist = []
-    for runPrefix in runPrefixDict:
-        logger.debug(f'runPrefix={runPrefix}')
-        pattern = os.path.join(runPrefixDict[runPrefix], "performance?results", "*.performance.report.csv")
+    for runKey in runPrefix:
+        logger.debug(f'runPrefix={runKey}')
+        pattern = os.path.join(runPrefix[runKey], "performance?results", "*.performance.report.csv")
         files = glob.glob(pattern)
         for infn in files:
             df = pd.read_csv(infn, index_col=0, sep=",")
             dflist.append(df)
-            logger.debug(f'Collect data from {runPrefix}:{os.path.basename(infn)} = {len(df)}')
+            logger.debug(f'Collect data from {runKey}:{os.path.basename(infn)} = {len(df)}')
     if len(dflist) == 0:
-        raise Exception(f"Can not find report at {runPrefix} in folder {runPrefixDict[runPrefix]} with pattern={pattern}")
+        raise Exception(f"Can not find report at {runKey} in folder {runPrefix[runKey]} with pattern={pattern}")
     combdf = pd.concat(dflist, ignore_index=True)
     logger.info(f'We collected total {len(dflist)} files with {len(combdf)} records')
     return combdf
 
 
-def load_wide_format_performance_results(runPrefixDict, sel_locations=locations_category + locations_singleton):
+def load_wide_format_performance_results(runPrefix, sel_locations=locations_category + locations_singleton):
     """
     Collect the currently new performance of exp results for paper
     :return:
     """
-    df = collect_performance_report_as_df(runPrefixDict)
+    df = collect_performance_report_as_df(runPrefix)
     seldf = select_locations_from_reportdf(df, sel_locations=sel_locations)
 
     logger.debug(f"collect_newly_exp_data, wide-format seldf={len(seldf)} using locations={sel_locations}")
@@ -476,12 +482,12 @@ def load_wide_format_performance_results(runPrefixDict, sel_locations=locations_
     return seldf
 
 
-def save_wide_format_performance_results(runPrefixDict, outdir, tagname):
+def save_wide_format_performance_results(runPrefix, outdir, tagname):
     """
     Save all performance report results into a csv
     :return:
     """
-    df = load_wide_format_performance_results(runPrefixDict)
+    df = load_wide_format_performance_results(runPrefix)
     outfn = os.path.join(outdir, f'performance-results{f"-{tagname}" if tagname else ""}.csv')
     df.to_csv(outfn)
     logger.info(f'save to {outfn}')

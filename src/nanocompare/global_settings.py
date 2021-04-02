@@ -19,59 +19,42 @@ ToolNameList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon']
 Top3ToolNameList = ['DeepSignal', 'Nanopolish', 'Megalodon']
 
 ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'DeepMod.C', 'DeepMod.Cluster', 'Megalodon']
-BGTruthEncodeList = ['bed', 'bismark', 'encode']
+BGTruthEncodeList = ['bismark', 'encode']  # 'bed',
 # ToolsColorList = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal'])
 
 ToolsColorList = ["#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442"]
 
-# which column of performance table is extracted and returned
-perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', "Macro-F1", 'ROC-AUC', 'Average-Precision', "Macro-Precision", "Macro-Recall", "Micro-F1", "Micro-Precision", "Micro-Recall", 'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C', 'mCsites_called', 'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix',
-        'coord']
-
-# TODO: test now, will add AP later
-# ret_perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', 'ROC_AUC',
-#         'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C',
-#         'Corr_Mix', 'Corr_All', 'Corr_mixedSupport', 'Corr_allSupport',
-#         'mCsites_called', 'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix', 'coord']
-
-# Rename raw column name to print name
-# raw_to_standard_perf_colname = {'precision_5mC': 'Precision_5mC',
-#         'precision_5C'                         : 'Precision_5C',
-#         'recall_5mC'                           : 'Recall_5mC',
-#         'recall_5C'                            : 'Recall_5C',
-#         'ap'                                   : 'AP',
-#         'accuracy'                             : 'Accuracy',
-#         'roc_auc'                              : 'ROC_AUC',
-#         'corrMix'                              : 'Corr_Mix',
-#         'corrAll'                              : 'Corr_All'}
-
-# Rename raw name of cpg type to print name
-cpg_name_map_raw_to_standard = {
-        'cpgIslandExt'      : 'CpG Island',
-        'discordant'        : 'Discordant',
-        'concordant'        : 'Concordant',
-        'cpgShoresExt'      : 'CpG Shores',
-        'cpgShelvesExt'     : 'CpG Shelves',
-        'exonFeature'       : 'Exons',
-        'intergenic'        : 'Intergenic',
-        'intronFeature'     : 'Introns',
-        'promoterFeature500': 'Promoters',
-        'absolute'          : 'Absolute'}
-
-locations_category = ["Genome-wide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns"]
-locations_singleton = ["Singletons", "Non-singletons", "Discordant", "Concordant"]
 
 singletonsFile = "hg38_singletons.bed"
 nonsingletonsFile = "hg38_nonsingletons.bed"
 
-narrowCoordNameList = ['x.x.GenomeWide', singletonsFile, nonsingletonsFile, "ONT.hg38.cpgIslandExt.bed", "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed", "ONT.hg38.exonFeature.bed", "ONT.hg38.geneFeature.bed", "ONT.hg38.intergenic.bed", "ONT.hg38.intronFeature.bed", "ONT.hg38.promoterFeature.flank_100.bed", "ONT.hg38.promoterFeature.flank_1000.bed",
+narrowCoordNameList = ['x.x.GenomeWide', singletonsFile, nonsingletonsFile, "ONT.hg38.cpgIslandExt.bed", "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed", "ONT.hg38.exonFeature.bed", "ONT.hg38.geneFeature.bed", "ONT.hg38.intergenic.bed", "ONT.hg38.intronFeature.bed", "ONT.hg38.promoterFeature.flank_100.bed",
+        "ONT.hg38.promoterFeature.flank_1000.bed",
         "ONT.hg38.promoterFeature.flank_200.bed", "ONT.hg38.promoterFeature.flank_2000.bed", "ONT.hg38.promoterFeature.flank_500.bed", "ONT.hg38.promoterFeature.flank_750.bed"]
 
 # None means no coordinate used, i.e. Genome-wide
 narrowCoordFileList = [None] + [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in narrowCoordNameList[1:]]
 
-# Map each bed file name to a standard name
-coordDictToStandardName = {
+# which column of performance table is extracted and returned
+perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', "Macro-F1", 'ROC-AUC', 'Average-Precision', "Macro-Precision", "Macro-Recall", "Micro-F1", "Micro-Precision", "Micro-Recall", 'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C', 'mCsites_called', 'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix',
+        'coord']
+
+# Rename raw name of retion to print name
+location_name_map_raw_to_standard = {
+        'cpgIslandExt'       : 'CpG Island',
+        'discordant'         : 'Discordant',
+        'concordant'         : 'Concordant',
+        'cpgShoresExt'       : 'CpG Shores',
+        'cpgShelvesExt'      : 'CpG Shelves',
+        'exonFeature'        : 'Exons',
+        'intergenic'         : 'Intergenic',
+        'intronFeature'      : 'Introns',
+        'promoterFeature2000': 'Promoters',  # We use 2k bp promoter bed region
+        'absolute'           : 'Absolute',
+        'geneFeature'        : 'GeneFeature'}
+
+# Map each bed file name to a standard name, used by curve data plotting
+location_filename_to_abbvname = {
         'x.x.GenomeWide'                         : 'Genomewide',
         singletonsFile                           : 'Singleton',
         nonsingletonsFile                        : 'Nonsingleton',
@@ -85,24 +68,19 @@ coordDictToStandardName = {
         "ONT.hg38.promoterFeature.flank_100.bed" : 'Promoter_flank100',
         "ONT.hg38.promoterFeature.flank_1000.bed": 'Promoter_flank1000',
         "ONT.hg38.promoterFeature.flank_200.bed" : 'Promoter_flank200',
-        "ONT.hg38.promoterFeature.flank_2000.bed": 'Promoter_flank2000',
-        "ONT.hg38.promoterFeature.flank_500.bed" : 'Promoters',
+        "ONT.hg38.promoterFeature.flank_2000.bed": 'Promoters',  # 2k bp promoters used
+        "ONT.hg38.promoterFeature.flank_500.bed" : 'Promoter_flank500',
         "ONT.hg38.promoterFeature.flank_750.bed" : 'Promoter_flank750',
         'hg38_singletons.absolute.bed'           : 'Absolute',
         'hg38_nonsingletons.concordant.bed'      : 'Concordant',
         'hg38_nonsingletons.discordant.bed'      : 'Discordant'
         }
 
-# Not used now
-important_region_bed_fns = [narrowCoordFileList[-2], narrowCoordFileList[6], narrowCoordFileList[9], narrowCoordFileList[8], narrowCoordFileList[3]]
 
-# specify which runPrefix -> dir is the newly results you need
-# runPrefixDict = {'K562_WGBS_joined_cut5': os.path.join(data_base_dir, 'perf-plot-data', 'K562_WGBS_joined_cut5'),
-#         'APL_Bsseq_cut5'                : os.path.join(data_base_dir, 'perf-plot-data', 'APL_Bsseq_cut5'),
-#         'HL60_AML_Bsseq_cut5'           : os.path.join(data_base_dir, 'perf-plot-data', 'HL60_AML_Bsseq_cut5'),
-#         'NA19240_RRBS_joined_cut5'      : os.path.join(data_base_dir, 'perf-plot-data', 'NA19240_RRBS_joined_cut5')}
+locations_category = ["Genome-wide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns"]
+locations_singleton = ["Singletons", "Non-singletons", "Discordant", "Concordant"]
 
-runPrefixDict = {
+runPrefixDefault = {
         'K562_WGBS'   : os.path.join(results_base_dir, 'MethPerf-K562_WGBS'),
         'HL60_RRBS'   : os.path.join(results_base_dir, 'MethPerf-HL60_RRBS'),
         'APL_RRBS'    : os.path.join(results_base_dir, 'MethPerf-APL_RRBS'),
@@ -156,7 +134,7 @@ def rename_coordinate_name(df):
     df = df.replace(to_replace="hg38_nonsingletons.bed", value="x.x.Non-singletons")
     df['coord'] = df['coord'].str.replace("promoterFeature.flank_", "promoterFeature")
     df["Location"] = df["coord"].str.split(".", n=3, expand=True)[2]
-    df['Location'] = df['Location'].replace(cpg_name_map_raw_to_standard)
+    df['Location'] = df['Location'].replace(location_name_map_raw_to_standard)
     return df
 
 

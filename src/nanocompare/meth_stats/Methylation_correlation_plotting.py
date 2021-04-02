@@ -8,11 +8,11 @@ All usedful functions are located in nanocompare.meth_stats.meth_stats_common
 import argparse
 import subprocess
 
-from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, narrowCoordFileList
+from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, narrowCoordFileList, location_filename_to_abbvname
 from nanocompare.meth_stats.meth_stats_common import *
 
 
-def summary_cpgs_joined_results_table():
+def summary_cpgs_stats_results_table():
     """
     Study and summary each tool joined with bg-truth results, make table as dataframe
     :return:
@@ -43,30 +43,36 @@ def summary_cpgs_joined_results_table():
         ret.update({'Total calls by Nanopore reads': cnt_calls})
 
         # Add coverage of singleton and non-singletons number by each tool here
-        singletonBaseDir = args.beddir
+        datasetBedDir = args.beddir
 
-        absoluteFileName = find_bed_filename(basedir=singletonBaseDir, pattern=f'{args.dsname}*hg38_singletons.absolute.bed')
-        absoluteSet = filter_cpgkeys_using_bedfile(callSet, absoluteFileName)
+        # absoluteFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{args.dsname}*hg38_singletons.absolute.bed')
+        # absoluteSet = filter_cpgkeys_using_bedfile(callSet, absoluteFileName)
 
-        concordantFileName = find_bed_filename(basedir=singletonBaseDir, pattern=f'{args.dsname}*hg38_nonsingletons.concordant.bed')
-        concordantSet = filter_cpgkeys_using_bedfile(callSet, concordantFileName)
-
-        discordantFileName = find_bed_filename(basedir=singletonBaseDir, pattern=f'{args.dsname}*hg38_nonsingletons.discordant.bed')
-        discordantSet = filter_cpgkeys_using_bedfile(callSet, discordantFileName)
-
-        otherFileName = find_bed_filename(basedir=singletonBaseDir, pattern=f'{args.dsname}*hg38_nonsingletons.other.bed')
-        otherSet = filter_cpgkeys_using_bedfile(callSet, otherFileName)
+        # otherFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{args.dsname}*hg38_nonsingletons.other.bed')
+        # otherSet = filter_cpgkeys_using_bedfile(callSet, otherFileName)
 
         # ret.update({'Absolute': len(absoluteSet), 'Concordant': len(concordantSet), 'Discordant': len(discordantSet)})
         # ret.update({'Concordant': len(concordantSet), 'Discordant': len(discordantSet)})
 
-        singletonFileName = narrowCoordFileList[1]  # Singleton file path
-        singletonSet = filter_cpgkeys_using_bedfile(callSet, singletonFileName)
+        # singletonFileName = narrowCoordFileList[1]  # Singleton file path
+        # singletonSet = filter_cpgkeys_using_bedfile(callSet, singletonFileName)
+        #
+        # nonsingletonFilename = narrowCoordFileList[2]  # Non-Singleton file path
+        # nonsingletonSet = filter_cpgkeys_using_bedfile(callSet, nonsingletonFilename)
 
-        nonsingletonFilename = narrowCoordFileList[2]  # Non-Singleton file path
-        nonsingletonSet = filter_cpgkeys_using_bedfile(callSet, nonsingletonFilename)
+        for bedfn in narrowCoordFileList[1:]:  # calculate how overlap with Singletons, Non-Singletons, etc.
+            basefn = os.path.basename(bedfn)
+            tagname = location_filename_to_abbvname[basefn]
+            subset = filter_cpgkeys_using_bedfile(callSet, bedfn)
+            ret.update({tagname: len(subset)})
 
-        ret.update({'Singletons': len(singletonSet), 'Non-Singletons': len(nonsingletonSet), 'Concordant': len(concordantSet), 'Discordant': len(discordantSet), 'Other': len(otherSet)})
+        concordantFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{args.dsname}*hg38_nonsingletons.concordant.bed')
+        concordantSet = filter_cpgkeys_using_bedfile(callSet, concordantFileName)
+
+        discordantFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{args.dsname}*hg38_nonsingletons.discordant.bed')
+        discordantSet = filter_cpgkeys_using_bedfile(callSet, discordantFileName)
+
+        ret.update({'Concordant': len(concordantSet), 'Discordant': len(discordantSet)})
 
         dataset.append(ret)
 
@@ -102,7 +108,7 @@ def summary_cpgs_joined_results_table():
 
     logger.info(df)
 
-    df = df.iloc[:, [4, 0, 1, 2, 5, 6, 7, 8, 9, 3]]
+    # df = df.iloc[:, [4, 0, 1, 2, 5, 6, 7, 8, 9, 3]]
 
     outfn = os.path.join(out_dir, f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.csv')
     df.to_csv(outfn, sep=args.sep)
@@ -150,7 +156,12 @@ def save_meth_corr_data(callresult_dict, bgTruth, reportCpGSet, outfn):
     outfile.write("\n")
 
     for cpg in reportCpGSet:
-        row_list = [cpg[0], str(cpg[1]), str(cpg[1] + 1), f'{bgTruth[cpg][0]:.3f}', str(bgTruth[cpg][1]), cpg[2]]
+        if baseFormat == 0:
+            end = cpg[1] + 1
+        elif baseFormat == 1:
+            end = cpg[1]
+
+        row_list = [cpg[0], str(cpg[1]), str(end), f'{bgTruth[cpg][0]:.3f}', str(bgTruth[cpg][1]), cpg[2]]
 
         for name in callname_list:
             if cpg in callresult_dict[name][1]:  # if cpg is in tool results
@@ -275,6 +286,6 @@ if __name__ == '__main__':
     command = f"set -x; PYTHONPATH=$NanoCompareDir/src python $NanoCompareDir/src/plot_figure.py fig5a -i {outfn_joined} -o {out_dir}"
     subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
 
-    summary_cpgs_joined_results_table()
+    summary_cpgs_stats_results_table()
 
     logger.info("### Methylation correlation plotting data generation program finished. DONE")
