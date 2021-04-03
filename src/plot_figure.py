@@ -187,7 +187,9 @@ def corr_grid_plot_for_fig5a(infn):
             rename_dict.update({str(col): new_col_name})
     df = df[sel_col]
     df = df.rename(columns=rename_dict)
+
     num_col = len(df.columns)
+
     df = df.iloc[:, list(range(1, num_col)) + [0]]
     logger.debug(f'Load data = {len(df)}')
 
@@ -219,35 +221,31 @@ def corr_grid_plot_for_fig5a(infn):
     top = bottom + height
 
     position = 1
-    for y in range(1, num_col + 1):
-        for x in range(1, num_col + 1):
-            if x == y:
+    for yrow in range(1, num_col + 1):  # row
+        for xcol in range(1, num_col + 1):  # column, each tool
+            if xcol == yrow:
                 # Diagonal, distribution lines:
                 plt.subplot(num_col, num_col, position)
-                #             df[fields[x-1]].hist(bins=100)
                 params = {'legend.fontsize': 16, 'legend.handlelength': 0, 'legend.handletextpad': 0, 'legend.fancybox': True}
                 plt.rcParams.update(params)
-                ax = sns.kdeplot(df.iloc[:, x - 1], shade=True, color="black", legend=True)
-                leg = ax.legend(labels=[str(df.columns[x - 1])], fontsize=14)
+                ax = sns.kdeplot(df.iloc[:, xcol - 1], shade=True, color="black", legend=True)
+                leg = ax.legend(labels=[str(df.columns[xcol - 1])], fontsize=14)
                 for item in leg.legendHandles:
                     item.set_visible(False)
 
                 # ax.annotate("abcd", xy=(0.2, 0.8), xycoords='axes fraction',
                 #             fontsize=14)
-                #
-                # ax.xaxis.set_major_locator(plt.MaxNLocator(3))
-                # ax.yaxis.set_major_locator(plt.MaxNLocator(3))
                 ax.set_yticklabels([])
                 ax.set_xticklabels([])
                 ax.set_ylabel('')
                 ax.set_xlabel('')
 
-            elif x > y:
+            elif xcol > yrow:
                 # upper triangle, COE number:
                 ax2 = plt.subplot(num_col, num_col, position)
 
-                corrValue = pearsonr(df.iloc[:, x - 1], df.iloc[:, y - 1])
-                corrValueStr = "{0:2.2f}".format(corrValue[0])
+                corrValue = pearsonr(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1])
+                corrValueStr = "{0:.2f}".format(corrValue[0])
 
                 ax2.text(0.5 * (left + right), 0.5 * (bottom + top), corrValueStr,
                          horizontalalignment='center',
@@ -258,23 +256,27 @@ def corr_grid_plot_for_fig5a(infn):
                 ax2.set_yticklabels([])
                 ax2.set_xticklabels([])
 
-            elif x < y:
+            elif xcol < yrow:
                 # lower triangle, scatter plot, using hexbin, x-column label, y-row label:
                 ax3 = plt.subplot(num_col, num_col, position)
 
-                # plt.hexbin(df.iloc[:, x - 1], df.iloc[:, y - 1], gridsize=(gridRes, gridRes), cmap=agressiveHot)  # plt.cm.gray_r )
                 if len(df) < 100:
                     gridRes = 15  # for HL60
                 else:
                     gridRes = 40
 
                 mincnt = None
-                plt.hexbin(df.iloc[:, x - 1], df.iloc[:, y - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
+                plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
 
-                # ax3.set_yticklabels([])
-                # ax3.set_xticklabels([])
-                plt.xticks([0, 1], fontsize=8)
-                plt.yticks([0, 1], fontsize=8)
+                if yrow == num_col:  # last row scatter plot shows x ticks
+                    plt.xticks([0, 0.5, 1], fontsize=8)
+                else:
+                    plt.xticks([], fontsize=8)
+
+                if xcol == 1:  # first column scatter plot shows y ticks
+                    plt.yticks([0, 0.5, 1], fontsize=8)
+                else:
+                    plt.yticks([], fontsize=8)
 
             position += 1
 

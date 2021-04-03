@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 
 init_log_level_prj = logging.INFO
 
-if sys.platform == 'linux':  # Linux helix dir config
+if sys.platform == 'linux':  # Linux HPC dir config
     # print("Running on Linux")
     results_dir = "/projects/li-lab/yang/results"  # temp output base
     project_base_dir = "/projects/li-lab/yang/workspace/nano-compare"  # project base
@@ -36,7 +36,7 @@ if sys.platform == 'linux':  # Linux helix dir config
     pkl_base_dir = '/projects/liuya/results/pkl'  # will deprecated later
 
     results_base_dir = '/projects/li-lab/Nanopore_compare/result'
-    cache_dir = '/fastscratch/liuya/nanocompare/cache_dir'
+    cache_dir = '/fastscratch/liuya/nanocompare/cache_dir' # cache readed object to pkl
 
     import platform
 
