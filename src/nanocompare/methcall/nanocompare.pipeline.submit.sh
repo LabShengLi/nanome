@@ -9,6 +9,10 @@ set +x
 #source ../../utils.common.sh
 set -x
 
+# NanoCompareDir should be env var set to project dir
+source ${NanoCompareDir}/src/utils.common.sh
+
+
 ## Currently we use command arg to do four kind of actions
 cmd=${1:-noaction} # Preprocess, Basecall, Resquiggle, Methcall
 
@@ -34,10 +38,24 @@ elif [ "Methcall" = "${cmd}" ] ; then
 	run_combine=true
 elif [ "Combine" = "${cmd}" ] ; then
 	run_combine=true
-#else
-#	echo "No action needed."
-#	exit -1
+elif [ "All" = "${cmd}" ] ; then
+	run_preprocessing=true
+	run_basecall=true
+	run_resquiggling=true
+	run_methcall=true
+	run_combine=true
+	run_clean=false
+else
+	echo "No action needed."
+	exit -1
 fi
+
+### which kind of intermediate file we want to backup or clean, these options are used in final stage of combine step
+tar_basecall=false
+tar_methcall=false
+clean_preprocessing=false
+clean_basecall=false
+
 
 mkdir -p ${outbasedir}
 

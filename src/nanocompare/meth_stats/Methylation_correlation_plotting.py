@@ -22,24 +22,21 @@ def summary_cpgs_stats_results_table():
     bgtruthCpGs = set(list(bgTruth.keys()))
     joinedSet = None
     unionSet = set()
-    for name in callname_list:
+    for toolname in callname_list:
         ## CpG sites set with cov >= cutoff(3)
-        callSet = set(list(callresult_dict[name][1].keys()))
+        logger.info(f'Study tool={toolname}')
+        callSet = set(list(callresult_dict[toolname][1].keys()))
         if not joinedSet:
             joinedSet = set(callSet)
         else:
             joinedSet = joinedSet.intersection(callSet)
         unionSet = unionSet.union(callSet)
-        overlapCpGs = bgtruthCpGs.intersection(set(list(callresult_dict[name][1].keys())))
-        ret = {f'CpG sites in BG-Truth cov>={bgtruthCutt}': len(bgtruthCpGs), 'Total CpG sites by Nanopore tool': len(callresult_dict[name][0]), f'Total CpG sites by tool cov>={minToolCovCutt}': len(callresult_dict[name][1]), 'Joined CpG sites with BG-Truth': len(overlapCpGs)}
+        toolOverlapBGTruthCpGs = bgtruthCpGs.intersection(set(list(callresult_dict[toolname][1].keys())))
+        ret = {f'CpG sites in BG-Truth cov>={bgtruthCutt}': len(bgtruthCpGs), 'Total CpG sites by Nanopore tool': len(callresult_dict[toolname][0]), f'Total CpG sites by tool cov>={minToolCovCutt}': len(callresult_dict[toolname][1]), 'Joined CpG sites with BG-Truth': len(toolOverlapBGTruthCpGs)}
 
         cnt_calls = 0
-
-        if name == "DeepMod_cluster":
-            raise Exception("DeepMod_cluster need to be deal with")
-
-        for cpg in callresult_dict[name][0]:
-            cnt_calls += len(callresult_dict[name][0][cpg])
+        for cpg in callresult_dict[toolname][0]:
+            cnt_calls += len(callresult_dict[toolname][0][cpg])
         ret.update({'Total calls by Nanopore reads': cnt_calls})
 
         # Add coverage of every regions by each tool here
@@ -61,7 +58,9 @@ def summary_cpgs_stats_results_table():
 
         dataset.append(ret)
 
-        logger.info(f'BG-Truth join with {name} get {len(overlapCpGs):,} CpGs')
+        logger.info(ret)
+
+        logger.info(f'BG-Truth join with {toolname} get {len(toolOverlapBGTruthCpGs):,} CpGs')
         # outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-bgtruth-{name1}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
         # save_keys_to_bed(overlapCpGs, outfn)
 
