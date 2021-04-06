@@ -266,10 +266,12 @@ def corr_grid_plot_for_fig5a(infn):
                     gridRes = 50
 
                 mincnt = 1
-                plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
-                # plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt, marginals=True)
 
-                # plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', mincnt=mincnt)
+                if len(df) < 100: # for HL60 plot
+                    plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=None)
+                    pass
+                else:
+                    plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
 
                 if yrow == num_col:  # last row scatter plot shows x ticks
                     plt.xticks([0, 0.5, 1], fontsize=10)
@@ -283,7 +285,7 @@ def corr_grid_plot_for_fig5a(infn):
 
             position += 1
 
-    fig.savefig(outfn, dpi=600, bbox_inches='tight')
+    fig.savefig(outfn, dpi=300, bbox_inches='tight')
     plt.show()
     plt.close()
     logger.info(f"save to {outfn}")
