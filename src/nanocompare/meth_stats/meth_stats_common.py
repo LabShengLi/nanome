@@ -1805,7 +1805,7 @@ def nonSingletonsPostprocessing(bgTruth, regionsBedFileName, runPrefix, outdir, 
     print_first = True
     cntBedLines = 0
     for ovr in regionWithBGTruth:
-        cntBedLines+=1
+        cntBedLines += 1
         if print_first:
             logger.debug(f'ovr={ovr}')
             print_first = False
@@ -2115,10 +2115,9 @@ def get_dna_sequence_from_samfile(chr, start, end, bamfile):
     return None
 
 
-def get_dna_sequence_from_reference(chr, start, num_seq=5, ref_fasta=None):
+def get_dna_base_from_reference(chr, start, num_seq=5, ref_fasta=None):
     """
-    Get the sequence from start-num_seq to start+num_seq, totally 2*num_seq+1
-
+    Get the base of DNA from start-num_seq to start+num_seq, totally 2*num_seq+1
     The center start is 0-based start position
 
     :param chr:
@@ -2137,16 +2136,37 @@ def get_dna_sequence_from_reference(chr, start, num_seq=5, ref_fasta=None):
     return short_seq
 
 
-def get_ref_fasta():
-    ref_fn = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
+def get_dna_seq_from_reference(chr, start, end, ref_fasta=None):
+    """
+    Get the sequence from [start, end), totally 2*num_seq+1
+    The center start is 0-based start position
+
+    :param chr:
+    :param start:
+    :param end:
+    :return:
+    """
+
+    if ref_fasta is None:
+        raise Exception('Please specify params: ref_fasta')
+
+    long_seq = ref_fasta[chr].seq
+    short_seq = str(long_seq)[start:end]
+
+    # logger.info(short_seq)
+    return short_seq
+
+
+def get_ref_fasta(ref_fn='/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'):
     ref_fasta = SeqIO.to_dict(SeqIO.parse(open(ref_fn), 'fasta'))
+    logger.debug(f'load ref file from {ref_fn}')
     return ref_fasta
 
 
 def sanity_check_sequence(tlist):
     ret = get_ref_fasta()
     for site in tlist:
-        ret_seq = get_dna_sequence_from_reference('chr8', site, ref_fasta=ret)
+        ret_seq = get_dna_base_from_reference('chr8', site, ref_fasta=ret)
         logger.info(f'{site}:{ret_seq}')
 
 

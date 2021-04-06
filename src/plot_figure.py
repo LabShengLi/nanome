@@ -263,15 +263,18 @@ def corr_grid_plot_for_fig5a(infn):
                 if len(df) < 100:
                     gridRes = 15  # for HL60
                 else:
-                    gridRes = 40
+                    gridRes = 50
 
-                mincnt = None
+                mincnt = 1
                 plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
+                # plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt, marginals=True)
+
+                # plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', mincnt=mincnt)
 
                 if yrow == num_col:  # last row scatter plot shows x ticks
-                    plt.xticks([0, 0.5, 1], fontsize=8)
+                    plt.xticks([0, 0.5, 1], fontsize=10)
                 else:
-                    plt.xticks([], fontsize=8)
+                    plt.xticks([], fontsize=10)
 
                 if xcol == 1:  # first column scatter plot shows y ticks
                     plt.yticks([0, 0.5, 1], fontsize=8)

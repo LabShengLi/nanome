@@ -12,7 +12,7 @@ import h5py
 
 nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
 sys.path.append(nanocompare_prj)
-from nanocompare.meth_stats.meth_stats_common import load_tombo_df, load_deepmod_df, get_dna_sequence_from_reference, load_sam_as_strand_info_df, load_nanopolish_df
+from nanocompare.meth_stats.meth_stats_common import load_tombo_df, load_deepmod_df, get_dna_base_from_reference, load_sam_as_strand_info_df, load_nanopolish_df
 
 from multiprocessing import Pool
 
@@ -78,7 +78,7 @@ def sanity_check_get_dna_seq(chrstr):
 
     show_arrow = ''.join(['~'] * 5 + ['↑'] + ['~'] * 5)
 
-    ret = get_dna_sequence_from_reference(chr, start, ref_fasta=ref_fasta)
+    ret = get_dna_base_from_reference(chr, start, ref_fasta=ref_fasta)
     logger.info(f'chr={chr}, start={start}\nSEQ={ret}\nPOS={show_arrow}')
 
 
@@ -127,7 +127,7 @@ def filter_noncg_sites_ref_seq(df, tagname, ntask=1, ttask=1, num_seq=5, chr_col
 
         # ret = get_dna_sequence_from_samfile(chr, start, start + num_seq, samfile)  # may return None, if no sequence at all reads
 
-        ret = get_dna_sequence_from_reference(chr, start, num_seq=num_seq, ref_fasta=ref_fasta)
+        ret = get_dna_base_from_reference(chr, start, num_seq=num_seq, ref_fasta=ref_fasta)
         seq_col.append(ret)
 
         if toolname == 'tombo':
@@ -184,7 +184,7 @@ def filter_noncg_sites_ref_seq_mpi(df, tagname, ntask=1, ttask=1, num_dna_seq=5,
         start = int(row[start_col])
         strand_info = row[strand_col]
 
-        ret = get_dna_sequence_from_reference(chr, start, num_seq=num_dna_seq, ref_fasta=ref_fasta)
+        ret = get_dna_base_from_reference(chr, start, num_seq=num_dna_seq, ref_fasta=ref_fasta)
         seq_col.append(ret)
 
         if toolname == 'tombo':
@@ -238,7 +238,7 @@ def convert_bismark_add_strand_and_seq(indf, outf, report_num=None):
             logger.debug(f'processed index={index}')
         chr = row['chr']
         start = int(row['start'])  # Keep raw 1-based format of bismark results
-        ret = get_dna_sequence_from_reference(chr, start - 1, ref_fasta=ref_fasta)
+        ret = get_dna_base_from_reference(chr, start - 1, ref_fasta=ref_fasta)
         if ret[5] == 'C':  # strand is +
             strand = '+'
         elif ret[5] == 'G':
@@ -439,7 +439,7 @@ def process_pred_detail_f5file(fn, f5_readid_map):
                 #     continue
 
                 # Filter non-CG patterns results
-                ret = get_dna_sequence_from_reference(mapped_chr, int(m_pred['refbasei'][mi]), ref_fasta=ref_fasta)
+                ret = get_dna_base_from_reference(mapped_chr, int(m_pred['refbasei'][mi]), ref_fasta=ref_fasta)
 
                 if mapped_strand == '+':
                     if ret[5:7] != 'CG':
