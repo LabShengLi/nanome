@@ -1721,6 +1721,8 @@ def save_call_to_methykit_txt(call, outfn, callBaseFormat=0, is_cov=True):
 def NonSingletonsScanner(referenceGenomeFile, outfileName_s, outfileName_ns):
     '''
     The output file is in 1-based coordinate system.
+    # Singletons are SR=XXXXXCGXXXXX
+    # Non-singletons are SR=XXXXXCGXXXXCGXXXCGXXCGCGXXXXX  , <5bp for pair of neighbor CGs
     '''
     reference = SeqIO.to_dict(SeqIO.parse(referenceGenomeFile, "fasta"))
     logger.debug("###\tNonSingletonsScanner: {} reference genome parsed".format(referenceGenomeFile))
@@ -1741,6 +1743,8 @@ def NonSingletonsScanner(referenceGenomeFile, outfileName_s, outfileName_ns):
             else:
                 if (idx.start() - end_index) < 5:
                     # we just found a non-singleton. I.e. accordingly to the Nanopolish approach, CGs closer than 5bp, are considered as non-singletons
+                    # Singletons are SR=XXXXXCGXXXXX
+                    # Non-singletons are SR=XXXXXCGXXXXCGXXXCGXXCGCGXXXXX  , <5bp for pair of neighbor CGs
                     end_index = idx.end()
                     singleton = 0
                 else:
@@ -1778,20 +1782,20 @@ def concat_dir_fn(outdir, fn):
     return outfn
 
 
-def nonSingletonsPostprocessing(bgTruth, regionsBedFileName, runPrefix, outdir, print_first=False):
-    '''
+def nonSingletonsPostprocessing(absoluteBGTruth, regionsBedFileName, runPrefix, outdir, print_first=False):
+    """
+    Return 1-based Cocordant and Discordant regions in bed file
 
-    Concordant: all CpG in the region are 0, or 1. And they will be same 0 or 1.   00000000000    111111
-    Discordant: all CpG in the region are 0, or 1. And they be both 0 and 1.   001000   110111
-    Mix:        All CpG are valued 0.2, not 0 or 1.
-    Other:      Not in case of before.
+    Based on only 100% or 0% bg-truth in BS-seq (absoluteBGTruth), we define
+    Concordant: All CpGs in this group is same states, such as 0000, or 1111.
+    Discordant: CpGs in this group is not all same states, such as 01000, 10101, etc.
 
     This function will take the input *.bed file from "NonSingletonsScanner" funtion, which corresponds with non-singletons.
-    Next it will separate them into concordant non-singletons (i.e. fully methylated or fully unmethylated), and disconcordant (those with at least one CpG fully methylated and at least one fully unmethylated), or fully mixed (i.e. all CpGs in non-singletons have methylation level >0 and < 100)
+    Next it will separate them into concordant non-singletons (i.e. fully methylated or fully unmethylated), and discordant (those with at least one CpG fully methylated and at least one fully unmethylated), or fully mixed (i.e. all CpGs in non-singletons have methylation level >0 and < 100)
     This kind of preprocessing will have to be done for each studied library separately.
-    '''
+    """
     logger.debug("nonSingletonsPostprocessing")
-    bedBGTruth = BedTool(dict2txt(bgTruth), from_string=True)
+    bedBGTruth = BedTool(dict2txt(absoluteBGTruth), from_string=True)
     bedBGTruth = bedBGTruth.sort()
 
     infn = os.path.join(data_base_dir, 'genome-annotation', regionsBedFileName)
@@ -1815,7 +1819,7 @@ def nonSingletonsPostprocessing(bgTruth, regionsBedFileName, runPrefix, outdir, 
         methKey = (ovr[3], int(ovr[4]), ovr[6])  # chr, start, strand
         # if regionKey not in regions_refMeth_dict:
         #     regions_refMeth_dict[regionKey] = []
-        regionDict[regionKey].append(bgTruth[methKey][0])
+        regionDict[regionKey].append(absoluteBGTruth[methKey][0])
 
     logger.info(f'cntBedLines={cntBedLines}')
 
@@ -1824,12 +1828,12 @@ def nonSingletonsPostprocessing(bgTruth, regionsBedFileName, runPrefix, outdir, 
     fn_concordant = f"{outdir}/{runPrefix}.{outfile_prefix}.concordant.bed"
     fn_discordant = f"{outdir}/{runPrefix}.{outfile_prefix}.discordant.bed"
     # fn_fullyMixed = f"{outdir}/{runPrefix}.{outfile_prefix}.fullyMixed.bed"
-    fn_other = f"{outdir}/{runPrefix}.{outfile_prefix}.other.bed"
+    # fn_other = f"{outdir}/{runPrefix}.{outfile_prefix}.other.bed"
 
     outfile_concordant = open(fn_concordant, "w")
     outfile_discordant = open(fn_discordant, "w")
     # outfile_fullyMixed = open(fn_fullyMixed, "w")
-    outfile_other = open(fn_other, "w")
+    # outfile_other = open(fn_other, "w")
 
     meth_cnt_dict = defaultdict(int)
     unmeth_cnt_dict = defaultdict(int)
@@ -1838,48 +1842,39 @@ def nonSingletonsPostprocessing(bgTruth, regionsBedFileName, runPrefix, outdir, 
         cntUnmeth = 0  # count how many unmeth
         fullMeth = 0  # indicate there is a fully meth case site in the region
         nullMeth = 0  # indicate there is a fully unmeth case site in the region
-        mixMeth = 0  # indicate there is mixed ( 0.2 0.3) case site in the region
+        # mixMeth = 0  # indicate there is mixed ( 0.2 0.3) case site in the region
         for meth in regionDict[region]:
-            if meth >= 1 - 1e-5:
+            if is_fully_meth(meth):
                 fullMeth = 1
                 cntMeth += 1
-            elif meth <= 1e-5:
+            elif is_fully_unmeth(meth):
                 nullMeth = 1
                 cntUnmeth += 1
             else:
-                mixMeth = 1
+                raise Exception(f'meth={meth}, region={region}, is not correct. Only fully meth and unmeth is allowed here.')
 
         # region of chr start end
         region_txt = '\t'.join([region[0], str(region[1]), str(region[2])]) + '\n'
 
-        if (fullMeth + nullMeth) == 1 and mixMeth == 0:
+        if (fullMeth + nullMeth) == 1:
             # "Concordant"
             outfile_concordant.write(region_txt)
             meth_cnt_dict['Concordant'] += cntMeth
             unmeth_cnt_dict['Concordant'] += cntUnmeth
-        elif (fullMeth + nullMeth) == 2 and mixMeth == 0:
+        else:
             # "Discordant"
             outfile_discordant.write(region_txt)
             meth_cnt_dict['Discordant'] += cntMeth
             unmeth_cnt_dict['Discordant'] += cntUnmeth
-        # elif (fullMeth + nullMeth) == 0 and mixMeth == 1:
-        #     #             print("mixed")
-        #     outfile_fullyMixed.write(region_txt)
-        else:  # Other cases
-            outfile_other.write(region_txt)
-            meth_cnt_dict['Other'] += cntMeth
-            unmeth_cnt_dict['Other'] += cntUnmeth
-            #             print("What do we have here? ", fullMeth, nullMeth, mixMeth)
-            # outfile_other.write(f'{region_txt[:-1]}\t{fullMeth}\t{nullMeth}\t{mixMeth}\n')
     outfile_concordant.close()
     outfile_discordant.close()
     # outfile_fullyMixed.close()
-    outfile_other.close()
-    logger.info(f'save to {[fn_concordant, fn_discordant, fn_other]}')
+    # outfile_other.close()
+    logger.info(f'save to {[fn_concordant, fn_discordant]}')
 
     logger.debug(f'meth_cnt={meth_cnt_dict}, unmeth_cnt={unmeth_cnt_dict}')
 
-    ret = {'Concordant.5mC': meth_cnt_dict['Concordant'], 'Concordant.5C': unmeth_cnt_dict['Concordant'], 'Discordant.5mC': meth_cnt_dict['Discordant'], 'Discordant.5C': unmeth_cnt_dict['Discordant'], 'Other.5mC': meth_cnt_dict['Other'], 'Other.5C': unmeth_cnt_dict['Other']}
+    ret = {'Concordant.5mC': meth_cnt_dict['Concordant'], 'Concordant.5C': unmeth_cnt_dict['Concordant'], 'Discordant.5mC': meth_cnt_dict['Discordant'], 'Discordant.5C': unmeth_cnt_dict['Discordant']}
     return ret
 
 

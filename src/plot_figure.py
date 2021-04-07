@@ -267,7 +267,7 @@ def corr_grid_plot_for_fig5a(infn):
 
                 mincnt = 1
 
-                if len(df) < 100: # for HL60 plot
+                if len(df) < 100:  # for HL60 plot
                     plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=None)
                     pass
                 else:

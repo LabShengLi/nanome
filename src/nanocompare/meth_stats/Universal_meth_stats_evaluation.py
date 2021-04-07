@@ -53,7 +53,7 @@ def calculate_meth_unmeth(bgTruth, keySet):
 
 def report_singleton_nonsingleton_table(bgTruth, outfn):
     ret = {}
-    combineBGTruthSet = set(combineBGTruth.keys())
+    combineBGTruthSet = set(bgTruth.keys())
 
     singletonFileName = narrowCoordFileList[1]  # Singleton file path
     singletonSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, singletonFileName)
@@ -76,10 +76,10 @@ def report_singleton_nonsingleton_table(bgTruth, outfn):
     meth_unmeth = calculate_meth_unmeth(combineBGTruth, discordantSet)
     ret.update({'Discordant.5C': meth_unmeth[1], 'Discordant.5mC': meth_unmeth[0]})
 
-    otherFileName = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.other.bed"
-    otherSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, otherFileName)
-    meth_unmeth = calculate_meth_unmeth(combineBGTruth, otherSet)
-    ret.update({'Other.5C': meth_unmeth[1], 'Other.5mC': meth_unmeth[0]})
+    # otherFileName = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.other.bed"
+    # otherSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, otherFileName)
+    # meth_unmeth = calculate_meth_unmeth(combineBGTruth, otherSet)
+    # ret.update({'Other.5C': meth_unmeth[1], 'Other.5mC': meth_unmeth[0]})
 
     df = pd.DataFrame([ret], index=[f'{dsname}'])
 
@@ -87,9 +87,9 @@ def report_singleton_nonsingleton_table(bgTruth, outfn):
     df['Non-Singleton.sum'] = df['Non-Singleton.5C'] + df['Non-Singleton.5mC']
     df['Concordant.sum'] = df['Concordant.5C'] + df['Concordant.5mC']
     df['Discordant.sum'] = df['Discordant.5C'] + df['Discordant.5mC']
-    df['Other.sum'] = df['Other.5C'] + df['Other.5mC']
+    # df['Other.sum'] = df['Other.5C'] + df['Other.5mC']
 
-    df = df[['Singleton.5C', 'Singleton.5mC', 'Singleton.sum', 'Non-Singleton.5C', 'Non-Singleton.5mC', 'Non-Singleton.sum', 'Concordant.5C', 'Concordant.5mC', 'Concordant.sum', 'Discordant.5C', 'Discordant.5mC', 'Discordant.sum', 'Other.5C', 'Other.5mC', 'Other.sum']]
+    df = df[['Singleton.5C', 'Singleton.5mC', 'Singleton.sum', 'Non-Singleton.5C', 'Non-Singleton.5mC', 'Non-Singleton.sum', 'Concordant.5C', 'Concordant.5mC', 'Concordant.sum', 'Discordant.5C', 'Discordant.5mC', 'Discordant.sum']]
 
     df.to_csv(outfn)
     logger.info(f'save to {outfn}')
@@ -286,7 +286,7 @@ if __name__ == '__main__':
     ## add missing region files based on bgtruth:
     singletonsFilePrefix = singletonsFile.replace(".bed", '')
     # relateCoord.append("{}/{}.{}.mixed.bed".format(out_dir, RunPrefix, singletonsFilePrefix))
-    relateCoord.append(f"{out_dir}/{RunPrefix}.{singletonsFilePrefix}.absolute.bed")
+    # relateCoord.append(f"{out_dir}/{RunPrefix}.{singletonsFilePrefix}.absolute.bed")
 
     nonsingletonsFilePrefix = nonsingletonsFile.replace(".bed", '')
     # relateCoord.append("{}/{}.{}.other.bed".format(out_dir, RunPrefix, nonsingletonsFilePrefix))
@@ -297,8 +297,14 @@ if __name__ == '__main__':
     # logger.debug(list(enumerate(relateCoord)))  # all coordinate generated
 
     logger.info('Start singletons and non-singletons bed and table generation, using sites with coverage >=1 in bgtruth')
-    ret = singletonsPostprocessing(combineBGTruth, singletonsFile, RunPrefix, outdir=out_dir)
-    ret.update(nonSingletonsPostprocessing(combineBGTruth, nonsingletonsFile, RunPrefix, outdir=out_dir))
+
+    absoluteBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if satisfy_fully_meth_or_unmeth(combineBGTruth[key][0])}
+
+    ret = {}
+    # ret = singletonsPostprocessing(absoluteBGTruth, singletonsFile, RunPrefix, outdir=out_dir)
+
+    # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth)
+    ret.update(nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, RunPrefix, outdir=out_dir))
 
     # apply cutoff to bgTruth, for evaluation
     logger.info(f'Before apply cutoff, bgtruth sites={len(combineBGTruth):,}')

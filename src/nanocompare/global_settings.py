@@ -24,7 +24,9 @@ BGTruthEncodeList = ['bismark', 'encode']  # 'bed',
 
 ToolsColorList = ["#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442"]
 
-
+# These two files are defined from Reference Genome
+# Singletons:       XXXXXCGXXXXX            >=5bp CpGs
+# Nonsingletons:    XXXXXCGXXXCGXXXXCGXX    <5bp for pair of neighbors of CpGs
 singletonsFile = "hg38_singletons.bed"
 nonsingletonsFile = "hg38_nonsingletons.bed"
 
@@ -76,8 +78,7 @@ location_filename_to_abbvname = {
         'hg38_nonsingletons.discordant.bed'      : 'Discordant'
         }
 
-
-locations_category = ["Genome-wide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns"]
+locations_category = ["Genome-wide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns", "CpG Shores", "CpG Shelves", "GeneFeature"]
 locations_singleton = ["Singletons", "Non-singletons", "Discordant", "Concordant"]
 
 runPrefixDefault = {
