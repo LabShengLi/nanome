@@ -34,8 +34,33 @@ narrowCoordNameList = ['x.x.GenomeWide', singletonsFile, nonsingletonsFile, "ONT
         "ONT.hg38.promoterFeature.flank_1000.bed",
         "ONT.hg38.promoterFeature.flank_200.bed", "ONT.hg38.promoterFeature.flank_2000.bed", "ONT.hg38.promoterFeature.flank_500.bed", "ONT.hg38.promoterFeature.flank_750.bed"]
 
+# Map each bed file name to a standard name, used by curve data plotting
+location_filename_to_abbvname = {
+        'x.x.GenomeWide'                         : 'Genomewide',
+        singletonsFile                           : 'Singleton',
+        nonsingletonsFile                        : 'Nonsingleton',
+        "ONT.hg38.cpgIslandExt.bed"              : "CpG Island",
+        "ONT.hg38.cpgShoresExt.bed"              : 'CpG Shores',
+        "ONT.hg38.cpgShelvesExt.bed"             : 'CpG Shelves',
+        "ONT.hg38.exonFeature.bed"               : 'Exons',
+        "ONT.hg38.geneFeature.bed"               : 'GeneFeature',
+        "ONT.hg38.intergenic.bed"                : 'Intergenic',
+        "ONT.hg38.intronFeature.bed"             : 'Introns',
+        "ONT.hg38.promoterFeature.flank_100.bed" : 'Promoter_flank100',
+        "ONT.hg38.promoterFeature.flank_1000.bed": 'Promoter_flank1000',
+        "ONT.hg38.promoterFeature.flank_200.bed" : 'Promoter_flank200',
+        "ONT.hg38.promoterFeature.flank_2000.bed": 'Promoters',  # 2k bp promoters used
+        "ONT.hg38.promoterFeature.flank_500.bed" : 'Promoter_flank500',
+        "ONT.hg38.promoterFeature.flank_750.bed" : 'Promoter_flank750',
+        # 'hg38_singletons.absolute.bed'           : 'Absolute',
+        'hg38_nonsingletons.concordant.bed'      : 'Concordant',
+        'hg38_nonsingletons.discordant.bed'      : 'Discordant'
+        }
+
 # None means no coordinate used, i.e. Genome-wide
 narrowCoordFileList = [None] + [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in narrowCoordNameList[1:]]
+
+narrowCoordFileTag = ['Genomewide'] + [location_filename_to_abbvname[cofn] for cofn in narrowCoordNameList[1:]]
 
 # which column of performance table is extracted and returned
 perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', "Macro-F1", 'ROC-AUC', 'Average-Precision', "Macro-Precision", "Macro-Recall", "Micro-F1", "Micro-Precision", "Micro-Recall", 'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C', 'mCsites_called', 'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix',
@@ -52,31 +77,8 @@ location_name_map_raw_to_standard = {
         'intergenic'         : 'Intergenic',
         'intronFeature'      : 'Introns',
         'promoterFeature2000': 'Promoters',  # We use 2k bp promoter bed region
-        'absolute'           : 'Absolute',
+        # 'absolute'           : 'Absolute',
         'geneFeature'        : 'GeneFeature'}
-
-# Map each bed file name to a standard name, used by curve data plotting
-location_filename_to_abbvname = {
-        'x.x.GenomeWide'                         : 'Genomewide',
-        singletonsFile                           : 'Singleton',
-        nonsingletonsFile                        : 'Nonsingleton',
-        "ONT.hg38.cpgIslandExt.bed"              : "CpG_Island",
-        "ONT.hg38.cpgShoresExt.bed"              : 'CpG_Shores',
-        "ONT.hg38.cpgShelvesExt.bed"             : 'CpG_Shelves',
-        "ONT.hg38.exonFeature.bed"               : 'Exons',
-        "ONT.hg38.geneFeature.bed"               : 'GeneFeature',
-        "ONT.hg38.intergenic.bed"                : 'Intergenic',
-        "ONT.hg38.intronFeature.bed"             : 'Introns',
-        "ONT.hg38.promoterFeature.flank_100.bed" : 'Promoter_flank100',
-        "ONT.hg38.promoterFeature.flank_1000.bed": 'Promoter_flank1000',
-        "ONT.hg38.promoterFeature.flank_200.bed" : 'Promoter_flank200',
-        "ONT.hg38.promoterFeature.flank_2000.bed": 'Promoters',  # 2k bp promoters used
-        "ONT.hg38.promoterFeature.flank_500.bed" : 'Promoter_flank500',
-        "ONT.hg38.promoterFeature.flank_750.bed" : 'Promoter_flank750',
-        'hg38_singletons.absolute.bed'           : 'Absolute',
-        'hg38_nonsingletons.concordant.bed'      : 'Concordant',
-        'hg38_nonsingletons.discordant.bed'      : 'Discordant'
-        }
 
 locations_category = ["Genome-wide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns", "CpG Shores", "CpG Shelves", "GeneFeature"]
 locations_singleton = ["Singletons", "Non-singletons", "Discordant", "Concordant"]

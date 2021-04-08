@@ -18,10 +18,11 @@ import pandas as pd
 import pysam
 from Bio import SeqIO
 from pybedtools import BedTool
+from scipy import stats
 from sklearn.metrics import roc_curve, auc, average_precision_score, f1_score, precision_score, recall_score
 
 from nanocompare.global_config import *
-from nanocompare.global_settings import humanChrs, ToolEncodeList, BGTruthEncodeList
+from nanocompare.global_settings import humanChrs, ToolEncodeList, BGTruthEncodeList, narrowCoordFileList, narrowCoordFileTag
 
 
 def report2dict(cr):
@@ -1439,14 +1440,14 @@ def computePerReadStats(ontCalls, bgTruth, title, ontCutt_perRead=1, coordBedFil
     ypred_of_ont_tool = []
     yscore_of_ont_tool = []
 
-    mCalls = 0  # count how many reads call is methy
-    cCalls = 0  # count how many reads call is unmethy
+    mCalls = 0  # count how many reads call is methy of a tool
+    cCalls = 0  # count how many reads call is unmethy of a tool
 
     referenceCpGs = 0  # number of sites
 
     # really CpGs for fully methylation and unmethylation,
-    mCsites_BGTruth = 0
-    Csites_BGTruth = 0
+    mCsites_BGTruth = 0  # count sites 5mC
+    Csites_BGTruth = 0  # count sites 5C
 
     # We find the narrowed CpG set to evaluate, try to reduce running time
     targetedSet = ontCallsKeySet
@@ -1470,10 +1471,12 @@ def computePerReadStats(ontCalls, bgTruth, title, ontCutt_perRead=1, coordBedFil
                 raise Exception(f'We must see all certain sites here, but see meth_freq={bgTruth[cpgKey][0]}')
 
             for perCall in ontCalls[cpgKey]:  # perCall is a tupple of (pred_class, pred_score)
-                if perCall[0] >= (cutoff_fully_meth - 1e-6):
+                if perCall[0] == 1:
                     mCalls += 1
-                elif perCall[0] <= 1e-5:
+                elif perCall[0] == 0:
                     cCalls += 1
+                else:
+                    raise Exception(f'Pred_class is only 0 or 1, but is {perCall}')
                 # totalCalls += 1
 
                 ### variables needed to compute precission, recall etc.:
@@ -2587,10 +2590,90 @@ def gen_venn_data(set_dict, namelist, outdir, tagname='tagname'):
     logger.info(f'save {len(retlist)} points venn data for {tagname} to {outfn}')
 
 
+def filter_corrdata_df_by_bedfile(df, df_bed, coord_fn):
+    """
+    Filter lines in correlation data, within coordinate BED file
+    :param df:
+    :param coord_fn:
+    :return:
+    """
+    if not coord_fn:  # None means genome wide
+        return df
+
+    coordBed = BedTool(coord_fn)
+    coordBed = coordBed.sort()
+    df_bed_intersect = df_bed.intersect(coordBed, u=True, wa=True)
+
+    select_lines = []
+    for line in df_bed_intersect:
+        select_lines.append(str(line)[:-1])
+        # logger.info(select_lines)
+    df = df[df['bedline'].isin(select_lines)]
+    # logger.info(df)
+    return df
+
+    pass
+
+
+def correlation_report_on_regions(corr_infn, beddir='/projects/li-lab/yang/results/2021-04-07/MethPerf-cut5', dsname=None, outdir=pic_base_dir):
+    df = pd.read_csv(corr_infn)
+    logger.info(df)
+
+    location_flist = list(narrowCoordFileList)
+    location_ftag = list(narrowCoordFileTag)
+
+    if beddir:
+        concordantFileName = find_bed_filename(basedir=beddir, pattern=f'{dsname}*hg38_nonsingletons.concordant.bed')
+
+        discordantFileName = find_bed_filename(basedir=beddir, pattern=f'{dsname}*hg38_nonsingletons.discordant.bed')
+        location_flist.extend([concordantFileName, discordantFileName])
+        location_ftag.extend(['Concordant', 'Discordant'])
+    # logger.info(location_ftag)
+    # logger.info(location_flist)
+
+    df['bedline'] = df["chr"] + '\t' + df["start"].astype(str) + '\t' + df["end"].astype(str) + '\t' + df["strand"]  # df[['chr', 'start', 'end']].agg('\t'.join, axis=1)
+    bedline_str = '\n'.join(df['bedline'].tolist())
+    df_bed = BedTool(bedline_str, from_string=True)
+    df_bed = df_bed.sort()
+
+    dataset = defaultdict(list)
+    for tagname, coord_fn in zip(location_ftag[:], location_flist[:]):
+        logger.info(f'tagname={tagname}, coord_fn={coord_fn}')
+        newdf = filter_corrdata_df_by_bedfile(df, df_bed, coord_fn)
+
+        # Computer COE and pvalue
+        newdf = newdf.filter(regex='_freq$', axis=1)
+        for i in range(1, len(newdf.columns)):
+            toolname = str(newdf.columns[i]).replace('_freq', '')
+            try:  # too few samples will fail
+                coe, pval = stats.pearsonr(newdf.iloc[:, 0], newdf.iloc[:, i])
+            except:
+                coe, pval = None, None
+
+            # report to dataset
+            dataset['dsname'].append(dsname)
+            dataset['Tool'].append(toolname)
+            dataset['Location'].append(tagname)
+            dataset['#Bases'].append(len(newdf))
+            dataset['COE'].append(coe)
+            dataset['p-value'].append(pval)
+
+    # logger.info(dataset)
+    outdf = pd.DataFrame.from_dict(dataset)
+    logger.info(outdf)
+
+    outfn = os.path.join(outdir, f'{dsname}.corrdata.coe.pvalue.each.regions.xlsx')
+    outdf.to_excel(outfn)
+    logger.info(f'save to {outfn}')
+
+    return outdf
+
+
 if __name__ == '__main__':
     set_log_debug_level()
+    correlation_report_on_regions(dsname='HL60')
 
-    find_bed_filename(basedir='/projects/li-lab/yang/results/2021-03-30', pattern=f'HL60*hg38_singletons.absolute.bed')
+    # find_bed_filename(basedir='/projects/li-lab/yang/results/2021-03-30', pattern=f'HL60*hg38_singletons.absolute.bed')
     # scatter_plot_cov_compare_df(infn='/projects/li-lab/yang/results/2020-12-28/K562_WGBS_Joined/K562_WGBS_Joinedtombo-nanopolish-scatter.pkl')
 
     # importGroundTruth_genome_wide_output_from_Bismark(covCutt=4)

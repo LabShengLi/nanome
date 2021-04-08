@@ -7,8 +7,8 @@ library(here)
 library(ggpubr)
 
 
-locations.Singletons = c("Singleton", "Nonsingleton", "Discordant", "Concordant")
-locations.Genome = c("Genomewide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns")
+locations.Singletons = c("Genomewide", "Singleton", "Nonsingleton", "Discordant", "Concordant")
+locations.Genome = c("CpG Island", "Promoters", "Exons", "Intergenic", "Introns")
 Coord.Order = c(locations.Genome, locations.Singletons)
 Dataset.Order = c('HL60', 'K562', 'APL', 'NA19240')
 Tool.Order = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon', 'Joined', 'Union')
@@ -17,7 +17,8 @@ Tool.Order.show.SingleRead = c('DeepSignal', 'Tombo', 'Nanopolish*', 'DeepMod', 
 
 measure.pair.list = list(c('Accuracy', 'Micro.F1'), c('Accuracy', 'ROC.AUC'), c('Micro.Precision', 'Micro.Recall'), c('F1_5mC', 'F1_5C'), c('Macro.Precision', 'Macro.Recall'))
 #measure.list = c('Accuracy', 'ROC.AUC', 'Micro.F1', 'Macro.F1', 'Average.Precision', 'Micro.Precision', 'Micro.Recall', 'Macro.Precision', 'Macro.Recall')
-measure.list = c('Accuracy', 'ROC.AUC', 'Macro.F1', 'Average.Precision', 'Macro.Precision', 'Macro.Recall')
+#measure.list = c('Accuracy', 'ROC.AUC', 'Macro.F1', 'Average.Precision', 'Macro.Precision', 'Macro.Recall')
+measure.list = c('Accuracy', 'ROC.AUC', 'Macro.F1', 'Average.Precision')
 
 Corr.Perf.List = c('Corr_All', 'Corr_Mix')
 # The palette with grey:
@@ -51,11 +52,12 @@ load.performance.data <- function(infn) {
   df$Tool <- factor(df$Tool, levels = Tool.Order)
   df$Location <- factor(df$Location, levels = Coord.Order)
   df$Dataset <- factor(df$Dataset, levels = Dataset.Order)
+
   return(df)
 }
 
 
-fig.34a.line.plot.performance <- function(df, perf.measure, locations, bdir, scale = 1) {
+fig.s34a.line.plot.performance <- function(df, perf.measure, locations, bdir, scale = 1) {
   sel_df = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', perf.measure)]
 
   p <- ggplot(data = sel_df, mapping = aes_string(x = 'Location', y = perf.measure, group = 'Tool')) +
@@ -75,18 +77,18 @@ fig.34a.line.plot.performance <- function(df, perf.measure, locations, bdir, sca
     p <- p + labs(y = "F1")
   }
 
-  outfn = sprintf("%s/fig.34a.line.%s.%s.jpg", bdir, perf.measure, locations[1])
+  outfn = sprintf("%s/fig.34a.line.%s.%s.jpg", bdir, perf.measure, locations[2])
   ggsave(p, filename = outfn, width = 6.5, height = 4, scale = scale, dpi = 600)
   printf("save to %s\n", outfn)
 }
 
 
-fig.34b.box.location.performance <- function(df, perf.measure, locations, bdir, scale = 1) {
+fig.34a.box.location.performance <- function(df, perf.measure, locations, bdir, scale = 1) {
   sel_data = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', perf.measure)]
 
   p <- ggplot(sel_data, aes_string(x = 'Tool', y = perf.measure, fill = 'Tool')) +
     #geom_violin() +
-    geom_boxplot() +
+    geom_boxplot(outlier.size = 0.2) +
     facet_grid(~Location) +
     scale_fill_manual(values = ToolColorPal) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10))
@@ -95,8 +97,8 @@ fig.34b.box.location.performance <- function(df, perf.measure, locations, bdir, 
     p <- p + labs(y = "F1")
   }
 
-  outfn = sprintf("%s/fig.34a.box.perfmeasure.%s.%s.jpg", bdir, perf.measure, locations[1])
-  ggsave(p, filename = outfn, width = 7.5, height = 3, scale = scale, dpi = 600)
+  outfn = sprintf("%s/fig.34a.box.perfmeasure.%s.%s.jpg", bdir, perf.measure, locations[2])
+  ggsave(p, filename = outfn, width = 6.5, height = 3, scale = scale, dpi = 600)
   printf("save to %s\n", outfn)
 
 }

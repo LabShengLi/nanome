@@ -15,7 +15,7 @@ rawReadDir = '/pod/2/li-lab/Nanopore_compare/data/Nanopore_cov'
 # rawReadDir = '/projects/li-lab/yang/results/2021-04-05'
 baseReadCovDir = '/projects/li-lab/yang/results/2021-04-05'
 
-datasetBedDir = '/projects/li-lab/yang/results/2021-04-01'
+datasetBedDir = '/projects/li-lab/yang/results/2021-04-07'
 
 
 def convert_region_to_cpg_base(dsname):
@@ -188,6 +188,6 @@ if __name__ == '__main__':
     set_log_debug_level()
 
     refFasta = None
-    refFasta = get_ref_fasta()
-    preprocess_bed_to_cgp_base()
+    # refFasta = get_ref_fasta()
+    # preprocess_bed_to_cgp_base()
     report_table()

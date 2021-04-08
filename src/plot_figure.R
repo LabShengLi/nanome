@@ -1,32 +1,62 @@
 rm(list = ls())
-
 library(here)
+
+# Figure 5b: Correlation bar for each region
 source(here('src', 'plotutils4r', 'paper_utils.R'))
+library(readxl)
+library(tidyverse)
+out_dir = here('figures')
+infn = here('result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
+df = read_excel(infn)
+
+df$dsname <- factor(df$dsname, levels = Dataset.Order)
+df$Tool <- factor(df$Tool, levels = Tool.Order[1:5])
+df$Location <- factor(df$Location, levels = c(locations.Singletons, locations.Genome))
+df <- df %>%
+  drop_na(Tool, Location) %>%
+  filter(dsname == 'NA19240')
+
+p1 <- ggplot(data = df, aes(x = Tool, y = COE, fill = Tool)) +
+  geom_bar(stat = 'identity') +
+  facet_wrap(~Location, ncol = 5) +
+  theme(axis.text.x = element_text(size = 12, angle = 90, vjust = 0.5, hjust = 1)) +
+  theme(strip.text.x = element_text(size = 10)) +
+  scale_fill_manual(values = ToolColorPal) +
+  ylab("Pearson correlation coefficient") +
+  theme(legend.title = element_blank()) +
+  ylim(min(df$COE), 1)
+
+p1
+
+outfn = sprintf("%s/bar.plot.coe.in.each.regions.jpg", out_dir)
+ggsave(p1, filename = outfn, width = 6.5, height = 5, dpi = 600)
+printf("save to %s\n", outfn)
+
 
 # Load data and sort string orders
 source(here('src', 'plotutils4r', 'paper_utils.R'))
-infn = here('result', 'performance-results.csv')
+infn = here('result', 'performance-results-cut5.csv')
 df <- load.performance.data(infn)
 
-## Figure 3, 4 a:Line plot
+## Figure S for 3, 4: Line plot
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 out_dir = here('figures', 'line-plot')
 dir.create(out_dir, showWarnings = FALSE)
 
 for (perf.measure in measure.list) {
-  fig.34a.line.plot.performance(df, perf.measure, bdir = out_dir, locations = locations.Singletons)
-  fig.34a.line.plot.performance(df, perf.measure, bdir = out_dir, locations = locations.Genome)
+  fig.s34a.line.plot.performance(df, perf.measure, bdir = out_dir, locations = locations.Singletons)
+  fig.s34a.line.plot.performance(df, perf.measure, bdir = out_dir, locations = locations.Genome)
   #break
 }
 
 
-## Figure 3, 4 b:Box plot
+## Figure 3, 4 a:Box plot
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 out_dir = here('figures', 'box-plot')
 dir.create(out_dir, showWarnings = FALSE)
 for (perf.measure in measure.list) {
-  fig.34b.box.location.performance(df, perf.measure, bdir = out_dir, locations = locations.Singletons)
-  fig.34b.box.location.performance(df, perf.measure, bdir = out_dir, locations = locations.Genome)
+  fig.34a.box.location.performance(df, perf.measure, bdir = out_dir, locations = locations.Singletons)
+  fig.34a.box.location.performance(df, perf.measure, bdir = out_dir, locations = locations.Genome)
   #break
 }
 

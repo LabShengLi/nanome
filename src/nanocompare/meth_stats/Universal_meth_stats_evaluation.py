@@ -1,5 +1,5 @@
 """
-Evaluation based on per-read methylation calls of tools, compute the performance results(F1, accuracy, ROC-AUC, etc.)
+Read-level evaluation on methylation calls of tools, compute the performance results(F1, accuracy, ROC-AUC, etc.)
 
 This script will generate all per-read performance results, bed files of singleton, non-singleton, based on results by Nanopore methylation calling tool related to BGTruth results
 """

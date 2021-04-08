@@ -17,6 +17,7 @@ from sklearn.metrics import precision_recall_curve
 from nanocompare.collect_data import collect_singleton_vs_nonsingleton_df, save_wide_format_performance_results
 from nanocompare.global_settings import *
 from nanocompare.load_data import *
+from nanocompare.meth_stats.meth_stats_common import correlation_report_on_regions
 
 
 def single_ds_5mc_5c_performance(dsname="HL60_AML_Bsseq_cut5"):
@@ -681,6 +682,7 @@ def parse_arguments():
     parser.add_argument('-i', nargs='+', help='list of input files', default=[])
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
     parser.add_argument('--tagname', type=str, help="tagname of files", default=None)
+    parser.add_argument('--beddir', type=str, help="bed file dir of Concordant and Discordant", default=None)
 
     args = parser.parse_args()
     return args
@@ -767,6 +769,24 @@ if __name__ == '__main__':
         gen_figure_3a_4a()
         gen_figure_3b_4b()
         gen_figure_5a()
+    elif args.cmd == 'export-corr-data':
+        # python plot_figure.py export-corr-data -i /projects/li-lab/yang/results/2021-04-02-methcorr/MethCorr-HL60_RRBS_2Reps --beddir /projects/li-lab/yang/results/2021-04-07/MethPerf-cut5
+        dflist = []
+        for indir in args.i:
+            fnlist = glob.glob(os.path.join(indir, 'Meth_corr_plot_data_joined-*.csv'))
+            if len(fnlist) != 1:
+                raise Exception(f'Found more fnlist={fnlist}')
+            logger.info(f'Find file: {fnlist[0]}')
+
+            basefn = os.path.basename(fnlist[0])
+            tagname = basefn.replace('Meth_corr_plot_data_joined-', '')
+            dsname = tagname[:tagname.find('_')]
+            df = correlation_report_on_regions(fnlist[0], beddir=args.beddir, dsname=dsname, outdir=args.o)
+            dflist.append(df)
+        outdf = pd.concat(dflist)
+        outfn = os.path.join(args.o, 'All.corrdata.coe.pvalue.each.regions.xlsx')
+        outdf.to_excel(outfn)
+        logger.info(f'save to {outfn}')
     elif args.cmd == 'export-data':
         # using global setting variable runPrefixDict to locate all data
         ## python plot_figure.py export-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-APL_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS_CPG --tagname CPG

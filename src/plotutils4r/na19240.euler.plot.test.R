@@ -43,6 +43,7 @@ fit1 <- euler(comb, shape = 'circle')
 
 print(fit1)
 
+# Original data results
 #print(comb)
 #       A        B        C      A&B      A&C      B&C    A&B&C
 #  208755     5627   294122   137679  3600069   345747 52687665
