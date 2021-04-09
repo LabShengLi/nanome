@@ -104,7 +104,7 @@ fig.34a.box.location.performance <- function(df, perf.measure, locations, bdir, 
 }
 
 
-fig.6a.venn.plot.set5 <- function(ret, outfn) {
+fig.5cd.venn.plot.set5 <- function(ret, outfn) {
   graphics.off()
   venn.plot <- draw.quintuple.venn(
     area1 = ret[1],
@@ -155,7 +155,7 @@ fig.6a.venn.plot.set5 <- function(ret, outfn) {
 }
 
 
-fig.6b.euller.plot.set3 <- function(ret, outfn) {
+fig.5cd.euller.plot.set3 <- function(ret, outfn) {
   graphics.off()
 
   comb = c("A" = ret[1], "B" = ret[2], "C" = ret[3],
@@ -190,7 +190,7 @@ fig.6b.euller.plot.set3 <- function(ret, outfn) {
 }
 
 
-fig.6c.bar.plot.tools <- function() {
+fig.5cd.bar.plot.tools.sites.all.datasets <- function() {
   data_dir = here('result')
   out_dir = here('figures', 'bar-plot')
   dir.create(out_dir, showWarnings = FALSE)
@@ -219,22 +219,36 @@ fig.6c.bar.plot.tools <- function() {
   p1 <- ggplot(data = totaldt, aes(x = Tool, y = Sites, fill = Tool)) +
     geom_bar(stat = 'identity') +
     facet_wrap(~dsname, ncol = 4) +
+    theme_bw() +
+    theme(
+      strip.background = element_blank(),
+      panel.grid.major = element_line(colour = "grey80"),
+      panel.border = element_blank(),
+      #axis.ticks = element_line(size = 0),
+      #panel.grid.minor.y = element_blank(),
+      #panel.grid.major.y = element_blank(),
+      panel.grid.minor.x = element_blank(),
+      panel.grid.major.x = element_blank(),
+      strip.text.x = element_text(size = 8, face="bold"),
+      #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
+      #legend.position = "none"
+    ) +
     theme(axis.text.x = element_text(size = 12, angle = 90, vjust = 0.5, hjust = 1)) +
     theme(strip.text.x = element_text(size = 12)) +
     scale_fill_manual(values = ToolColorPal) +
     ylab("Number of CpGs(cov>=3)") +
-    theme(legend.title = element_blank()) +
+    #theme(legend.title = element_blank()) +
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
                   labels = scales::trans_format("log10", scales::math_format(10^.x)))
   p1
 
-  outfn = sprintf("%s/bar.sites.of.tools.facet.plot.jpg", out_dir)
+  outfn = sprintf("%s/fig.5cd.bar.sites.of.tools.all.data.facet.plot.jpg", out_dir)
   ggsave(p1, filename = outfn, width = 6.5, height = 3, dpi = 600)
   printf("save to %s\n", outfn)
 }
 
 
-fig.5c.running.resource.bar.plot <- function(bdir) {
+fig.6.running.resource.bar.plot <- function(bdir) {
   infn1 = here('result', 'recalculate.running.summary.csv')
   run.table1 <- read_csv(infn1)
 
@@ -247,9 +261,9 @@ fig.5c.running.resource.bar.plot <- function(bdir) {
   run.table = bind_rows(run.table1, run.table2, run.table3)
 
 
-  run.table <- run.table %>%
-    mutate_at("tool", str_replace, "Nanopolish", "Nanopolish*") %>%
-    mutate_at("tool", str_replace, "Megalodon", "Megalodon*")
+  #run.table <- run.table %>%
+  #  mutate_at("tool", str_replace, "Nanopolish", "Nanopolish*") %>%
+  #  mutate_at("tool", str_replace, "Megalodon", "Megalodon*")
 
   run.table <- run.table %>%
     group_by(dsname, tool) %>%
@@ -258,7 +272,7 @@ fig.5c.running.resource.bar.plot <- function(bdir) {
 
   #run.table$rt <- run.table$running.time.seconds / run.table$fast5
   #run.table$mem <- run.table$mem.usage.gb / run.table$fast5 * 1000
-  run.table$tool <- factor(run.table$tool, levels = Tool.Order.show.SingleRead)
+  run.table$tool <- factor(run.table$tool, levels = Tool.Order)
   run.table$dsname <- factor(run.table$dsname, levels = Dataset.Order)
 
   run.table <- run.table %>%
@@ -316,6 +330,139 @@ fig.5c.running.resource.bar.plot <- function(bdir) {
 
   outfn = sprintf("%s/running.resource.bar.plot.jpg", bdir)
   ggsave(gg, filename = outfn, width = 8, height = 3, dpi = 600)
+  printf("save to %s\n", outfn)
+}
+
+
+fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
+  library(readxl)
+  library(tidyverse)
+  out_dir = here('figures')
+  infn = here('result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
+  df = read_excel(infn)
+
+  df$dsname <- factor(df$dsname, levels = Dataset.Order)
+  df$Tool <- factor(df$Tool, levels = Tool.Order[1:5])
+  df$Location <- factor(df$Location, levels = c(locations.Singletons, locations.Genome))
+
+  #df <- df %>%
+  #  drop_na(Tool, Location) %>%
+  #  filter(dsname == 'NA19240')  #%>%
+
+  #filter(Location == 'Genomewide')
+  #
+  #p1 <- ggplot(data = df, aes(x = Tool, y = COE, fill = Tool)) +
+  #  facet_wrap(~Location, ncol = 5) +
+  #  geom_bar(stat = 'identity', aes(x = reorder(Tool, -COE), y = COE, fill = Tool)) +
+  #  theme(axis.text.x = element_blank()) +
+  #  theme(axis.ticks.x = element_blank()) +
+  #  theme(strip.text.x = element_text(size = 10)) +
+  #  scale_fill_manual(values = ToolColorPal) +
+  #  ylab("Pearson correlation coefficient") +
+  #  xlab("") +
+  #  theme(legend.title = element_blank()) +
+  #  ylim(min(df$COE), 1)
+  #
+  #p1
+
+  ## Bar plot using facet grid, and order Tools by values
+  p1 <- df %>%
+    drop_na(Tool, Location) %>%
+    filter(dsname == 'NA19240')  %>%
+    mutate(ReorderTool = tidytext::reorder_within(Tool, COE, Location)) %>%
+    ggplot(aes(ReorderTool, COE, fill = Tool)) +
+    geom_col() +
+    coord_flip() +
+    tidytext::scale_x_reordered() +
+    facet_wrap(vars(Location), scales = "free_y", ncol = 5) +
+    scale_fill_manual(values = ToolColorPal[1:5]) +
+    labs(y = "Pearson correlation coefficient", x = NULL) +
+    theme_bw() +
+    theme(
+      strip.background = element_blank(),
+      panel.grid.major = element_line(colour = "grey80"),
+      panel.border = element_blank(),
+      axis.ticks = element_line(size = 0),
+      panel.grid.minor.y = element_blank(),
+      panel.grid.major.y = element_blank(),
+      strip.text.x = element_text(size = 8, face="bold"),
+      #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
+      #legend.position = "none"
+    ) +
+    ylim(min(df$COE), 1)  +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=7)) +
+    theme(axis.text.y = element_text(size=8)) +
+    theme(legend.position="top")
+
+
+  p1
+
+  outfn = sprintf("%s/bar.plot.coe.in.each.regions.jpg", out_dir)
+  ggsave(p1, filename = outfn, width = 8, height = 3, dpi = 600)
+  printf("save to %s\n", outfn)
+
+}
+
+
+fig.s1.pie.plot.singletons.nonsingletons.raw.fast5 <- function() {
+  library(readxl)
+  library(tidyverse)
+  infn = here('result', 'raw.fast5.reads.cpg.coverage.across.regions.cutoff3.xlsx')
+  df = read_excel(infn)
+
+  meltdf = df[, c(2, 6, 7)]
+
+  colnames(meltdf) <- c('dsname', 'Singletons', 'Nonsingletons')
+
+  meltdf$dsname <- factor(meltdf$dsname, levels = Dataset.Order)
+
+  row_sum = rowSums(select(meltdf, -dsname))
+
+  #meltdf <- meltdf %>% select(-dsname) %>% mutate_all(~ ./row_sum) %>% head()
+
+  meltdf <- meltdf %>%
+    mutate(row_sum = rowSums(select(., 2:3))) %>%
+    mutate_at(2:3, ~. / row_sum) %>%
+    select(-row_sum) %>%
+    head()
+
+  meltdf <- meltdf %>%
+    pivot_longer(!dsname, names_to = "type", values_to = "count") %>%
+    mutate(label = paste0(round(count * 100, 1), "%"))
+
+  meltdf$type <- factor(meltdf$type, levels = c('Singletons', 'Nonsingletons'))
+
+
+  p1 <- ggplot(data = meltdf, aes(x = "", y = count, fill = type)) +
+    theme_bw() +
+    theme(
+      strip.background = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.border = element_blank(),
+      axis.ticks = element_line(size = 0),
+      panel.grid.minor.y = element_blank(),
+      panel.grid.major.y = element_blank(),
+      strip.text.x = element_text(size = 12, face="bold"),
+      #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
+      #legend.position = "none"
+    ) +
+    geom_bar(stat = "identity", position = position_fill()) +
+    geom_text(aes(label = label), position = position_fill(vjust = 0.5)) +
+    coord_polar(theta = "y") +
+    facet_wrap(~dsname) +
+    theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank()) +
+    theme(legend.position = 'bottom', legend.title = element_blank()) +
+    guides(fill = guide_legend(nrow = 1, byrow = TRUE)) +
+    theme(axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          panel.grid = element_blank()) +
+    scale_fill_brewer(palette="Dark2")
+
+  p1
+  out_dir = here('figures')
+  outfn = sprintf("%s/pie.chart.singleton.nonsingleton.raw.fast5.read.cov3.jpg", out_dir)
+  ggsave(p1, filename = outfn, width = 3, height = 4, dpi = 600)
   printf("save to %s\n", outfn)
 }
 
