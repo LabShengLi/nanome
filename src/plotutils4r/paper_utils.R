@@ -60,22 +60,46 @@ load.performance.data <- function(infn) {
 fig.s34a.line.plot.performance <- function(df, perf.measure, locations, bdir, scale = 1) {
   sel_df = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', perf.measure)]
 
+  out.y.label = perf.measure
+  if (perf.measure == 'ROC.AUC') {
+    out.y.label = 'ROC AUC'
+  }
+
+  if (perf.measure == 'Average.Precision') {
+    out.y.label = 'Average Precision'
+  }
+
+  if (perf.measure == 'Macro.F1') {
+    out.y.label = 'F1'
+  }
   p <- ggplot(data = sel_df, mapping = aes_string(x = 'Location', y = perf.measure, group = 'Tool')) +
     facet_grid(~Dataset) +
     geom_point(aes(shape = Tool, color = Tool), size = 5) +
     geom_line(aes(linetype = Tool, color = Tool)) +
     ylim(0, 1) +
+    theme_bw() +
+    theme(
+      strip.background = element_blank(),
+      #panel.grid.major = element_blank(),
+      #panel.border = element_blank(),
+      #axis.ticks = element_line(size = 0),
+      #panel.grid.minor.y = element_blank(),
+      #panel.grid.major.y = element_blank(),
+      panel.grid.minor.x = element_blank(),
+      panel.grid.major.x = element_blank(),
+      strip.text.x = element_text(size = 8, face = "bold"),
+      #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
+      #legend.position = "none"
+    ) +
     scale_shape_manual(values = ToolShapeList) +
     scale_color_manual(values = ToolColorPal) +
     scale_linetype_manual(values = c("dashed", "dotted", "twodash", "dotdash", "longdash", "twodash")) +
     theme(legend.position = "top") +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10)) +
     theme(legend.title = element_text(size = 10), legend.text = element_text(size = 10)) +
-    theme(strip.text.x = element_text(size = 12))
+    theme(strip.text.x = element_text(size = 12)) +
+    labs(y = out.y.label)
 
-  if (perf.measure == 'Macro.F1') {
-    p <- p + labs(y = "F1")
-  }
 
   outfn = sprintf("%s/fig.34a.line.%s.%s.jpg", bdir, perf.measure, locations[2])
   ggsave(p, filename = outfn, width = 6.5, height = 4, scale = scale, dpi = 600)
@@ -85,17 +109,42 @@ fig.s34a.line.plot.performance <- function(df, perf.measure, locations, bdir, sc
 
 fig.34a.box.location.performance <- function(df, perf.measure, locations, bdir, scale = 1) {
   sel_data = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', perf.measure)]
+  out.y.label = perf.measure
+  if (perf.measure == 'ROC.AUC') {
+    out.y.label = 'ROC AUC'
+  }
+
+  if (perf.measure == 'Average.Precision') {
+    out.y.label = 'Average Precision'
+  }
+
+  if (perf.measure == 'Macro.F1') {
+    out.y.label = 'F1'
+  }
 
   p <- ggplot(sel_data, aes_string(x = 'Tool', y = perf.measure, fill = 'Tool')) +
     #geom_violin() +
     geom_boxplot(outlier.size = 0.2) +
     facet_grid(~Location) +
     scale_fill_manual(values = ToolColorPal) +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10))
-
-  if (perf.measure == 'Macro.F1') {
-    p <- p + labs(y = "F1")
-  }
+    theme_bw() +
+    theme(
+      strip.background = element_blank(),
+      #panel.grid.major = element_blank(),
+      #panel.border = element_blank(),
+      #axis.ticks = element_line(size = 0),
+      #panel.grid.minor.y = element_blank(),
+      #panel.grid.major.y = element_blank(),
+      panel.grid.minor.x = element_blank(),
+      panel.grid.major.x = element_blank(),
+      strip.text.x = element_text(size = 8, face = "bold"),
+      panel.border = element_rect(colour = "black"),
+      #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
+      #legend.position = "none"
+    ) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10)) +
+    ylim(0, 1) +
+    labs(y = out.y.label)
 
   outfn = sprintf("%s/fig.34a.box.perfmeasure.%s.%s.jpg", bdir, perf.measure, locations[2])
   ggsave(p, filename = outfn, width = 6.5, height = 3, scale = scale, dpi = 600)
@@ -223,13 +272,14 @@ fig.5cd.bar.plot.tools.sites.all.datasets <- function() {
     theme(
       strip.background = element_blank(),
       panel.grid.major = element_line(colour = "grey80"),
-      panel.border = element_blank(),
+      #panel.border = element_blank(),
+      panel.border = element_rect(colour = "black"),
       #axis.ticks = element_line(size = 0),
       #panel.grid.minor.y = element_blank(),
       #panel.grid.major.y = element_blank(),
       panel.grid.minor.x = element_blank(),
       panel.grid.major.x = element_blank(),
-      strip.text.x = element_text(size = 8, face="bold"),
+      strip.text.x = element_text(size = 8, face = "bold"),
       #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
       #legend.position = "none"
     ) +
@@ -248,7 +298,8 @@ fig.5cd.bar.plot.tools.sites.all.datasets <- function() {
 }
 
 
-fig.6.running.resource.bar.plot <- function(bdir) {
+fig.6.running.resource.bar.plot <- function() {
+  bdir = here('figures')
   infn1 = here('result', 'recalculate.running.summary.csv')
   run.table1 <- read_csv(infn1)
 
@@ -267,7 +318,8 @@ fig.6.running.resource.bar.plot <- function(bdir) {
 
   run.table <- run.table %>%
     group_by(dsname, tool) %>%
-    summarise(rt = sum(running.time.seconds), mem = max(mem.usage.gb))
+    summarise(rt = sum(running.time.seconds), mem = max(mem.usage.gb)) %>%
+    mutate(rt=rt/60/60)
 
 
   #run.table$rt <- run.table$running.time.seconds / run.table$fast5
@@ -300,7 +352,7 @@ fig.6.running.resource.bar.plot <- function(bdir) {
     geom_bar(stat = "summary", fun = mean, width = 0.8, position = position_dodge()) +
     scale_fill_manual(values = ToolColorPal) +
     theme_classic() +
-    ylab("Running time (seconds)") +
+    ylab("Real CPU time (hours)") +
     scale_y_log10() +
     xlab("Dataset") +
     coord_flip() +
@@ -317,7 +369,7 @@ fig.6.running.resource.bar.plot <- function(bdir) {
     coord_flip() +
     scale_fill_manual(values = ToolColorPal) +
     theme_classic() +
-    ylab("Memory usage (GB)") +
+    ylab("Peak memory usage (GB)") +
     xlab("Dataset") +
     labs(fill = 'Tool') +
     theme(text = element_text(size = 12))
@@ -328,7 +380,7 @@ fig.6.running.resource.bar.plot <- function(bdir) {
 
   gg
 
-  outfn = sprintf("%s/running.resource.bar.plot.jpg", bdir)
+  outfn = sprintf("%s/fig.6.running.resource.bar.plot.jpg", bdir)
   ggsave(gg, filename = outfn, width = 8, height = 3, dpi = 600)
   printf("save to %s\n", outfn)
 }
@@ -368,7 +420,7 @@ fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
   ## Bar plot using facet grid, and order Tools by values
   p1 <- df %>%
     drop_na(Tool, Location) %>%
-    filter(dsname == 'NA19240')  %>%
+    filter(dsname == 'NA19240') %>%
     mutate(ReorderTool = tidytext::reorder_within(Tool, COE, Location)) %>%
     ggplot(aes(ReorderTool, COE, fill = Tool)) +
     geom_col() +
@@ -385,14 +437,14 @@ fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
       axis.ticks = element_line(size = 0),
       panel.grid.minor.y = element_blank(),
       panel.grid.major.y = element_blank(),
-      strip.text.x = element_text(size = 8, face="bold"),
+      strip.text.x = element_text(size = 8, face = "bold"),
       #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
       #legend.position = "none"
     ) +
-    ylim(min(df$COE), 1)  +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=7)) +
-    theme(axis.text.y = element_text(size=8)) +
-    theme(legend.position="top")
+    ylim(min(df$COE), 1) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 7)) +
+    theme(axis.text.y = element_text(size = 8)) +
+    theme(legend.position = "top")
 
 
   p1
@@ -442,7 +494,7 @@ fig.s1.pie.plot.singletons.nonsingletons.raw.fast5 <- function() {
       axis.ticks = element_line(size = 0),
       panel.grid.minor.y = element_blank(),
       panel.grid.major.y = element_blank(),
-      strip.text.x = element_text(size = 12, face="bold"),
+      strip.text.x = element_text(size = 12, face = "bold"),
       #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
       #legend.position = "none"
     ) +
@@ -457,7 +509,7 @@ fig.s1.pie.plot.singletons.nonsingletons.raw.fast5 <- function() {
     theme(axis.text = element_blank(),
           axis.ticks = element_blank(),
           panel.grid = element_blank()) +
-    scale_fill_brewer(palette="Dark2")
+    scale_fill_brewer(palette = "Dark2")
 
   p1
   out_dir = here('figures')

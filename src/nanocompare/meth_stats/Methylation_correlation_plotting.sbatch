@@ -39,5 +39,5 @@ PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:${DeepSignal_
 	Tombo:${Tombo_calls} Nanopolish:${Nanopolish_calls} ${DeepMod_calls} \
 	Megalodon:${Megalodon_calls} --bgtruth ${parser}:${bgTruth} \
 	--runid MethCorr-${RunPrefix} --dsname ${Dataset} \
-	--toolcov-cutoff 3 --bgtruthcov-cutoff 5 --baseFormat 1 --enable-cache --using-cache \
-	--beddir /projects/li-lab/yang/results/2021-04-07/MethPerf-cut5 # cutoff=3 is reasonable now
+	--toolcov-cutoff 3 --bgtruthcov-cutoff 5 --baseFormat 1 \
+	--beddir /projects/li-lab/yang/results/2021-04-07/MethPerf-cut5 #--enable-cache --using-cache # cutoff=3 is reasonable now

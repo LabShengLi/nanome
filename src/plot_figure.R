@@ -41,8 +41,7 @@ fig.5b.sorted.bar.plot.coe.in.each.region()
 
 ## Figure 6: Resource summary
 source(here('src', 'plotutils4r', 'paper_utils.R'))
-outdir = here('figures')
-fig.6.running.resource.bar.plot(outdir)
+fig.6.running.resource.bar.plot()
 
 
 ## Figure 5 cd: Set venn and euller plot
@@ -69,7 +68,7 @@ for (venfn in list.files(data_dir, pattern = pattern.str)) {
 }
 
 
-## Figure 6 c: bar plot of number of sites for each tool
+## Figure 5 c: bar plot of number of sites for each tool
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 fig.5cd.bar.plot.tools.sites.all.datasets()
 

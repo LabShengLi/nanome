@@ -7,10 +7,8 @@ This script will generate all per-read performance results, bed files of singlet
 import argparse
 from multiprocessing import Manager, Pool
 
-from tqdm import tqdm
-
-from nanocompare.global_settings import rename_coordinate_name, perf_report_columns, get_tool_name
-from nanocompare.global_settings import singletonsFile, narrowCoordFileList, nonsingletonsFile
+from nanocompare.global_settings import nonsingletonsFile
+from nanocompare.global_settings import rename_location_from_coordinate_name, perf_report_columns, get_tool_name, singletonFileExtStr
 from nanocompare.meth_stats.meth_stats_common import *
 
 
@@ -113,7 +111,7 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
             computePerReadStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFileName=secondFilterBedFileName,
                                 cutoff_fully_meth=cutoff_meth, outdir=outdir, tagname=tagname)
 
-        coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genome-wide"}')
+        coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genomewide"}')
 
         d["prefix"].append(analysisPrefix)
         d["coord"].append(coord)
@@ -284,27 +282,25 @@ if __name__ == '__main__':
     relateCoord = list(narrowCoordFileList)  # copy the basic coordinate
 
     ## add missing region files based on bgtruth:
-    singletonsFilePrefix = singletonsFile.replace(".bed", '')
+    # singletonsFilePrefix = singletonsFile.replace(".bed", '')
     # relateCoord.append("{}/{}.{}.mixed.bed".format(out_dir, RunPrefix, singletonsFilePrefix))
     # relateCoord.append(f"{out_dir}/{RunPrefix}.{singletonsFilePrefix}.absolute.bed")
 
-    nonsingletonsFilePrefix = nonsingletonsFile.replace(".bed", '')
-    # relateCoord.append("{}/{}.{}.other.bed".format(out_dir, RunPrefix, nonsingletonsFilePrefix))
-    # relateCoord.append("{}/{}.{}.fullyMixed.bed".format(out_dir, RunPrefix, nonsingletonsFilePrefix))
-    relateCoord.append(f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed")
-    relateCoord.append(f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed")
+    nonsingletonsFilePrefix = nonsingletonsFile.replace(singletonFileExtStr, '')
+    fn_concordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed"
+    fn_discordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed"
 
-    # logger.debug(list(enumerate(relateCoord)))  # all coordinate generated
-
-    logger.info('Start singletons and non-singletons bed and table generation, using sites with coverage >=1 in bgtruth')
-
-    absoluteBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if satisfy_fully_meth_or_unmeth(combineBGTruth[key][0])}
-
-    ret = {}
-    # ret = singletonsPostprocessing(absoluteBGTruth, singletonsFile, RunPrefix, outdir=out_dir)
+    relateCoord.append(fn_concordant)
+    relateCoord.append(fn_discordant)
 
     # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth)
-    ret.update(nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, RunPrefix, outdir=out_dir))
+    absoluteBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if satisfy_fully_meth_or_unmeth(combineBGTruth[key][0])}
+
+    nonSingletonsPostprocessing_bk(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=True)
+
+    # nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=True)
+
+    logger.info('Start singletons and non-singletons bed and table generation, using sites with coverage >=1 in bgtruth')
 
     # apply cutoff to bgTruth, for evaluation
     logger.info(f'Before apply cutoff, bgtruth sites={len(combineBGTruth):,}')
@@ -389,7 +385,7 @@ if __name__ == '__main__':
         df['Dataset'] = dsname
 
         # Rename function need to be checked
-        df = rename_coordinate_name(df)
+        df = rename_location_from_coordinate_name(df)
 
         # logger.debug(df)
         # logger.debug(df.columns)

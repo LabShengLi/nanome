@@ -13,7 +13,8 @@ from nanocompare.global_config import data_base_dir, results_base_dir
 
 importlib.reload(pp)
 
-humanChrs = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
+# chr 1-22 X and Y
+humanChrSet = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
 
 ToolNameList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon']
 Top3ToolNameList = ['DeepSignal', 'Nanopolish', 'Megalodon']
@@ -24,11 +25,18 @@ BGTruthEncodeList = ['bismark', 'encode']  # 'bed',
 
 ToolsColorList = ["#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442"]
 
+referenceGenomeFile = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
+
 # These two files are defined from Reference Genome
-# Singletons:       XXXXXCGXXXXX            >=5bp CpGs
-# Nonsingletons:    XXXXXCGXXXCGXXXXCGXX    <5bp for pair of neighbors of CpGs
+# Singletons:       XXXXXCGXXXXX            >=k bp CpGs
+# Nonsingletons:    XXXXXCGXXXCGXXXXCGXX    <k bp for pair of neighbors of CpGs
+# singletonsFile = "hg38_singletons_10bp.bed"
+# nonsingletonsFile = "hg38_nonsingletons_10bp.bed"
+# singletonFileExtStr = "_10bp.bed"
+
 singletonsFile = "hg38_singletons.bed"
 nonsingletonsFile = "hg38_nonsingletons.bed"
+singletonFileExtStr = ".bed"
 
 narrowCoordNameList = ['x.x.GenomeWide', singletonsFile, nonsingletonsFile, "ONT.hg38.cpgIslandExt.bed", "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed", "ONT.hg38.exonFeature.bed", "ONT.hg38.geneFeature.bed", "ONT.hg38.intergenic.bed", "ONT.hg38.intronFeature.bed", "ONT.hg38.promoterFeature.flank_100.bed",
         "ONT.hg38.promoterFeature.flank_1000.bed",
@@ -81,7 +89,7 @@ location_name_map_raw_to_standard = {
         'geneFeature'        : 'GeneFeature'}
 
 locations_category = ["Genome-wide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns", "CpG Shores", "CpG Shelves", "GeneFeature"]
-locations_singleton = ["Singletons", "Non-singletons", "Discordant", "Concordant"]
+locations_singleton = ["Singletons", "Non-singletons", "Discordant", "Concordant"] #TODO: Nonsingletons
 
 runPrefixDefault = {
         'K562_WGBS'   : os.path.join(results_base_dir, 'MethPerf-K562_WGBS'),
@@ -122,7 +130,7 @@ def get_tool_name(toolname):
     return toolname
 
 
-def rename_coordinate_name(df):
+def rename_location_from_coordinate_name(df):
     """
     Rename and change raw values of report df to more meaning full for display
     :param df:
@@ -133,9 +141,12 @@ def rename_coordinate_name(df):
 
     # Replace coordinate name, and define unified Location column
     # df = df.replace(to_replace="False", value="x.x.Genome-wide")
-    df = df.replace(to_replace="hg38_singletons.bed", value="x.x.Singletons")
-    df = df.replace(to_replace="hg38_nonsingletons.bed", value="x.x.Non-singletons")
+    df = df.replace(to_replace=singletonsFile, value="x.x.Singletons")
+    df = df.replace(to_replace=nonsingletonsFile, value="x.x.Nonsingletons")
     df['coord'] = df['coord'].str.replace("promoterFeature.flank_", "promoterFeature")
+
+    # coord file like: x.x.Singletons, x.x.Non-singletons, HL60_RRBS_2Reps.hg38_nonsingletons.discordant.bed
+    # we select the third of . split sections
     df["Location"] = df["coord"].str.split(".", n=3, expand=True)[2]
     df['Location'] = df['Location'].replace(location_name_map_raw_to_standard)
     return df
