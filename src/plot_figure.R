@@ -6,6 +6,14 @@ library(here)
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 fig.s1.pie.plot.singletons.nonsingletons.raw.fast5()
 
+# Export Tabls S3 by order
+source(here('src', 'plotutils4r', 'paper_utils.R'))
+export.table.s3.xlsx()
+
+# Export Tabls S4 by order
+source(here('src', 'plotutils4r', 'paper_utils.R'))
+export.table.s4.xlsx()
+
 
 # Load data and sort string orders
 source(here('src', 'plotutils4r', 'paper_utils.R'))

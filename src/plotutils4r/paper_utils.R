@@ -7,8 +7,8 @@ library(here)
 library(ggpubr)
 
 
-locations.Singletons = c("Genomewide", "Singleton", "Nonsingleton", "Discordant", "Concordant")
-locations.Genome = c("CpG Island", "Promoters", "Exons", "Intergenic", "Introns")
+locations.Singletons = c("Genome-wide", "Singletons", "Non-singletons", "Concordant", "Discordant")
+locations.Genome = c("CpG Island", "Promoters", "Exons", "Introns", "Intergenic")
 Coord.Order = c(locations.Genome, locations.Singletons)
 Dataset.Order = c('HL60', 'K562', 'APL', 'NA19240')
 Tool.Order = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon', 'Joined', 'Union')
@@ -40,20 +40,83 @@ venn_flist = c('venn.data.HL60.dat', 'venn.data.K562.dat', 'venn.data.APL.dat')
 printf <- function(...) cat(sprintf(...))
 
 
+export.table.s3.xlsx <- function() {
+  infn = here('result', 'performance-results-cut5.csv')
+
+  locations.Singletons = c("Genome-wide", "Singletons", "Non-singletons", "Concordant", "Discordant")
+  locations.Genome = c("CpG Island", "Promoters", "Exons", "Introns", "Intergenic", "CpG Shores", "CpG Shelves", "GeneFeature")
+
+  library(readxl)
+  library(tidyverse)
+  out_dir = here('figures')
+  df <- read_csv(infn)
+
+  selected.columns = c('referenceCpGs', 'mCsites', 'Csites')
+  #df$Location <- factor(df$Location, levels = c(locations.Singletons, locations.Genome))
+  #df$Dataset <- factor(df$Dataset, levels = Dataset.Order)
+  outdf <- df %>%
+    mutate(Dataset = factor(Dataset, levels = Dataset.Order),
+           Location = factor(Location, levels = c(locations.Singletons, locations.Genome))) %>%
+    arrange(desc(Dataset), Location, desc(Accuracy)) %>%
+    select(seq(2, 10), selected.columns)
+
+  outfn = here("figures", "Table.S3.csv")
+  write_csv(outdf, outfn)
+
+
+}
+
+
+export.table.s4.xlsx <- function() {
+  library(readxl)
+  library(tidyverse)
+
+  infn = here('result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
+  df = read_excel(infn)
+
+  locations.Singletons = c("Genome-wide", "Singletons", "Non-singletons", "Concordant", "Discordant")
+  locations.Genome = c("CpG Island", "Promoters", "Exons", "Introns", "Intergenic", "CpG Shores", "CpG Shelves", "GeneFeature")
+
+  outdf <- df %>%
+    mutate(Location =
+             recode(Location, 'Genomewide' = 'Genome-wide'
+               , 'Singleton' = 'Singletons', 'Nonsingleton' = 'Non-singletons')) %>%
+    mutate(dsname = factor(dsname, levels = Dataset.Order),
+           Location = factor(Location, levels = c(locations.Singletons, locations.Genome))) %>%
+    arrange(desc(dsname), Location, desc(COE)) %>%
+    drop_na() %>%
+    select(2:ncol(df))
+
+  outfn = here("figures", "Table.S4.csv")
+  write_csv(outdf, outfn)
+
+
+}
+
+
 load.performance.data <- function(infn) {
+  library(readxl)
+  library(tidyverse)
+
   # Load data and sort string orders
-  df <- read.csv(file = infn)
+  df <- read.csv(infn)
 
-  df$Location <- as.character(df$Location)
-  df[df$Location == 'Genome-wide', 'Location'] <- 'Genomewide'
-  df[df$Location == 'Non-singletons', 'Location'] <- 'Nonsingleton'
-  df[df$Location == 'Singletons', 'Location'] <- 'Singleton'
+  #df$Location <- as.character(df$Location)
+  #df[df$Location == 'Genome-wide', 'Location'] <- 'Genomewide'
+  #df[df$Location == 'Non-singletons', 'Location'] <- 'Nonsingleton'
+  #df[df$Location == 'Singletons', 'Location'] <- 'Singleton'
+  outdf <- df %>%
+    mutate(Dataset = factor(Dataset, levels = Dataset.Order),
+           Location = factor(Location, levels = c(locations.Singletons, locations.Genome)),
+           Tool = factor(Tool, levels = Tool.Order)
+    ) %>%
+    drop_na()
 
-  df$Tool <- factor(df$Tool, levels = Tool.Order)
-  df$Location <- factor(df$Location, levels = Coord.Order)
-  df$Dataset <- factor(df$Dataset, levels = Dataset.Order)
+  #  df$Tool <- factor(df$Tool, levels = Tool.Order)
+  #df$Location <- factor(df$Location, levels = Coord.Order)
+  #df$Dataset <- factor(df$Dataset, levels = Dataset.Order)
 
-  return(df)
+  return(outdf)
 }
 
 
@@ -138,16 +201,18 @@ fig.34a.box.location.performance <- function(df, perf.measure, locations, bdir, 
       panel.grid.minor.x = element_blank(),
       panel.grid.major.x = element_blank(),
       strip.text.x = element_text(size = 8, face = "bold"),
+      #strip.text.x = element_text(size = 10),
+
       panel.border = element_rect(colour = "black"),
       #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
       #legend.position = "none"
     ) +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10)) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 8)) +
     ylim(0, 1) +
     labs(y = out.y.label)
 
   outfn = sprintf("%s/fig.34a.box.perfmeasure.%s.%s.jpg", bdir, perf.measure, locations[2])
-  ggsave(p, filename = outfn, width = 6.5, height = 3, scale = scale, dpi = 600)
+  ggsave(p, filename = outfn, width = 6.5, height = 2.5, dpi = 600)
   printf("save to %s\n", outfn)
 
 }
@@ -299,7 +364,7 @@ fig.5cd.bar.plot.tools.sites.all.datasets <- function() {
 
 
 fig.6.running.resource.bar.plot <- function() {
-  bdir = here('figures')
+  outdir = here('figures')
   infn1 = here('result', 'recalculate.running.summary.csv')
   run.table1 <- read_csv(infn1)
 
@@ -311,37 +376,17 @@ fig.6.running.resource.bar.plot <- function() {
 
   run.table = bind_rows(run.table1, run.table2, run.table3)
 
-
-  #run.table <- run.table %>%
-  #  mutate_at("tool", str_replace, "Nanopolish", "Nanopolish*") %>%
-  #  mutate_at("tool", str_replace, "Megalodon", "Megalodon*")
-
   run.table <- run.table %>%
     group_by(dsname, tool) %>%
     summarise(rt = sum(running.time.seconds), mem = max(mem.usage.gb)) %>%
-    mutate(rt=rt/60/60)
+    mutate(rt = rt / 60 / 60)
 
-
-  #run.table$rt <- run.table$running.time.seconds / run.table$fast5
-  #run.table$mem <- run.table$mem.usage.gb / run.table$fast5 * 1000
   run.table$tool <- factor(run.table$tool, levels = Tool.Order)
   run.table$dsname <- factor(run.table$dsname, levels = Dataset.Order)
 
   run.table <- run.table %>%
     drop_na(tool) %>%
     arrange(dsname, tool)
-
-  run.mean.table <- run.table %>%
-    drop_na(tool) %>%
-    group_by(dsname, tool) %>%
-    summarise(mean.rt = mean(rt), mean.mem = mean(mem))
-
-  #run.mean.table <- run.mean.table %>%
-  #  mutate_at("tool", str_replace, "Nanopolish", "Nanopolish*") %>%
-  #  mutate_at("tool", str_replace, "Megalodon", "Megalodon*")
-
-  outfn = here('result', 'mean.runnning.summary.csv')
-  write_csv(run.mean.table, outfn)
 
   outfn = here('result', 'total.runnning.summary.csv')
   write_csv(run.table, outfn)
@@ -369,8 +414,8 @@ fig.6.running.resource.bar.plot <- function() {
     coord_flip() +
     scale_fill_manual(values = ToolColorPal) +
     theme_classic() +
-    ylab("Peak memory usage (GB)") +
-    xlab("Dataset") +
+    ylab("Peak memory (GB)") +
+    xlab("") +
     labs(fill = 'Tool') +
     theme(text = element_text(size = 12))
 
@@ -380,8 +425,8 @@ fig.6.running.resource.bar.plot <- function() {
 
   gg
 
-  outfn = sprintf("%s/fig.6.running.resource.bar.plot.jpg", bdir)
-  ggsave(gg, filename = outfn, width = 8, height = 3, dpi = 600)
+  outfn = sprintf("%s/fig.6.running.resource.bar.plot.jpg", outdir)
+  ggsave(gg, filename = outfn, width = 6, height = 3, dpi = 600)
   printf("save to %s\n", outfn)
 }
 
