@@ -27,7 +27,7 @@ dir.create(out_dir, showWarnings = FALSE)
 
 for (perf.measure in measure.list) {
   fig.s34a.line.plot.performance(df, perf.measure, bdir = out_dir, locations = locations.Singletons)
-  fig.s34a.line.plot.performance(df, perf.measure, bdir = out_dir, locations = locations.Genome)
+  fig.s34a.line.plot.performance(df, perf.measure, bdir = out_dir, locations = locations.Regions)
   #break
 }
 
@@ -38,7 +38,7 @@ out_dir = here('figures', 'box-plot')
 dir.create(out_dir, showWarnings = FALSE)
 for (perf.measure in measure.list) {
   fig.34a.box.location.performance(df, perf.measure, bdir = out_dir, locations = locations.Singletons)
-  fig.34a.box.location.performance(df, perf.measure, bdir = out_dir, locations = locations.Genome)
+  fig.34a.box.location.performance(df, perf.measure, bdir = out_dir, locations = locations.Regions)
   #break
 }
 

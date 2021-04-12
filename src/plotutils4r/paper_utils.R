@@ -8,8 +8,8 @@ library(ggpubr)
 
 
 locations.Singletons = c("Genome-wide", "Singletons", "Non-singletons", "Concordant", "Discordant")
-locations.Genome = c("CpG Island", "Promoters", "Exons", "Introns", "Intergenic")
-Coord.Order = c(locations.Genome, locations.Singletons)
+locations.Regions = c("CpG Island", "Promoters", "Exons", "Introns", "Intergenic")
+Coord.Order = c(locations.Regions, locations.Singletons)
 Dataset.Order = c('HL60', 'K562', 'APL', 'NA19240')
 Tool.Order = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon', 'Joined', 'Union')
 Tool.Order.show.SingleRead = c('DeepSignal', 'Tombo', 'Nanopolish*', 'DeepMod', 'Megalodon*', 'Joined', 'Union')
@@ -107,7 +107,7 @@ load.performance.data <- function(infn) {
   #df[df$Location == 'Singletons', 'Location'] <- 'Singleton'
   outdf <- df %>%
     mutate(Dataset = factor(Dataset, levels = Dataset.Order),
-           Location = factor(Location, levels = c(locations.Singletons, locations.Genome)),
+           Location = factor(Location, levels = c(locations.Singletons, locations.Regions)),
            Tool = factor(Tool, levels = Tool.Order)
     ) %>%
     drop_na()
@@ -438,32 +438,23 @@ fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
   infn = here('result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
   df = read_excel(infn)
 
-  df$dsname <- factor(df$dsname, levels = Dataset.Order)
-  df$Tool <- factor(df$Tool, levels = Tool.Order[1:5])
-  df$Location <- factor(df$Location, levels = c(locations.Singletons, locations.Genome))
+  outdf <- df %>%
+     mutate(Location =
+             recode(Location, 'Genomewide' = 'Genome-wide'
+               , 'Singleton' = 'Singletons', 'Nonsingleton' = 'Non-singletons')) %>%
+    mutate(dsname = factor(dsname, levels = Dataset.Order),
+           Tool = factor(Tool, levels = Tool.Order[1:5]),
+           Location=factor(Location, levels = c(locations.Singletons, locations.Regions)),
 
-  #df <- df %>%
-  #  drop_na(Tool, Location) %>%
-  #  filter(dsname == 'NA19240')  #%>%
+           ) #%>%
 
-  #filter(Location == 'Genomewide')
-  #
-  #p1 <- ggplot(data = df, aes(x = Tool, y = COE, fill = Tool)) +
-  #  facet_wrap(~Location, ncol = 5) +
-  #  geom_bar(stat = 'identity', aes(x = reorder(Tool, -COE), y = COE, fill = Tool)) +
-  #  theme(axis.text.x = element_blank()) +
-  #  theme(axis.ticks.x = element_blank()) +
-  #  theme(strip.text.x = element_text(size = 10)) +
-  #  scale_fill_manual(values = ToolColorPal) +
-  #  ylab("Pearson correlation coefficient") +
-  #  xlab("") +
-  #  theme(legend.title = element_blank()) +
-  #  ylim(min(df$COE), 1)
-  #
-  #p1
+  #df$dsname <- factor(df$dsname, levels = Dataset.Order)
+  #df$Tool <- factor(df$Tool, levels = Tool.Order[1:5])
+  #df$Location <- factor(df$Location, levels = c(locations.Singletons, locations.Regions))
+
 
   ## Bar plot using facet grid, and order Tools by values
-  p1 <- df %>%
+  p1 <- outdf %>%
     drop_na(Tool, Location) %>%
     filter(dsname == 'NA19240') %>%
     mutate(ReorderTool = tidytext::reorder_within(Tool, COE, Location)) %>%
@@ -471,7 +462,7 @@ fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
     geom_col() +
     coord_flip() +
     tidytext::scale_x_reordered() +
-    facet_wrap(vars(Location), scales = "free_y", ncol = 5) +
+    facet_wrap(vars(Location), scales = "free_y", ncol = 2, dir='v') +
     scale_fill_manual(values = ToolColorPal[1:5]) +
     labs(y = "Pearson correlation coefficient", x = NULL) +
     theme_bw() +
@@ -489,13 +480,13 @@ fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
     ylim(min(df$COE), 1) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 7)) +
     theme(axis.text.y = element_text(size = 8)) +
-    theme(legend.position = "top")
+    theme(legend.position = "right", legend.text=element_text(size=8))
 
 
   p1
 
   outfn = sprintf("%s/bar.plot.coe.in.each.regions.jpg", out_dir)
-  ggsave(p1, filename = outfn, width = 8, height = 3, dpi = 600)
+  ggsave(p1, filename = outfn, width = 5, height = 5, dpi = 600)
   printf("save to %s\n", outfn)
 
 }

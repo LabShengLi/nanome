@@ -1585,7 +1585,7 @@ def computePerReadStats(ontCalls, bgTruth, title, ontCutt_perRead=1, coordBedFil
         roc_auc = auc(fpr, tpr)
 
     ########################
-    basefn = 'x.x.GenomeWide' if not coordBedFileName else os.path.basename(coordBedFileName)
+    basefn = 'x.x.Genome-wide' if not coordBedFileName else os.path.basename(coordBedFileName)
 
     if is_save:
         # save y and y-pred and y-score for later plot:
@@ -1731,7 +1731,7 @@ def save_call_to_methykit_txt(call, outfn, callBaseFormat=0, is_cov=True):
 def NonSingletonsScanner(referenceGenomeFile, outfileName_s, outfileName_ns, kbp=10):
     '''
     The output file is in 1-based at start coordinate system.
-    kbp is up and down k-bp regions
+    kbp is up and down k-bp regions and evaluated on positive strand.
     Singletons: only one CpG in the region
     Nonsingletons: more than one CpG in the region
     '''
@@ -1762,6 +1762,7 @@ def NonSingletonsScanner(referenceGenomeFile, outfileName_s, outfileName_ns, kbp
                     singleton = 0
                 else:
                     # current CG is not part of non-singleton. It might mean that its not part of a big non-singleton or singleton upstream from it. We test which of these options below
+                    # The current CG is up to k-bp to previous CG, we store the previous regions into Singletons or Non-singletons
                     if singleton == 1:
                         #                         print(chromosome, s, e, "SINGLETON")
                         outfile_s.write("{}\t{}\t{}\n".format(chromosome, s, end_index))
@@ -1795,7 +1796,7 @@ def concat_dir_fn(outdir, fn):
     return outfn
 
 
-def nonSingletonsPostprocessing_bk(absoluteBGTruth, nsRegionsBedFileName, nsConcordantFileName, nsDisCordantFileName, print_first=False):
+def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcordantFileName, nsDisCordantFileName, print_first=False):
     """
     Return 1-based Cocordant and Discordant regions in bed file
 
@@ -1884,7 +1885,139 @@ def nonSingletonsPostprocessing_bk(absoluteBGTruth, nsRegionsBedFileName, nsConc
     return ret
 
 
-def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcordantFileName, nsDisCordantFileName, kbp=10, print_first=False):
+# 10-bp regions, current work on it
+def eval_concordant_within_kbp_region(cpgList, evalcpg, kbp=10):
+    """
+    Evaluate the kth elem if is concordant, by checking state of sites in k-bp region meth states
+
+    For example with in 5bp: CGXXXXCG 4 times X is considered
+    :param cpgList:
+    :param k:
+    :return: True if concordant, False is discordant
+    """
+    # cpgList=list(cpgList)
+
+    for cpg in cpgList:  # cpg is (start,strand, meth_indicator)
+        if abs(evalcpg[0] - cpg[0]) - 2 >= kbp:  # not within kbp regions, skip
+            continue
+        if evalcpg[2] != cpg[2]:  # found there is a CPG not same state, return Discordant
+            return False
+    return True  # Concordant
+
+
+def nonSingletonsPostprocessing_same_deepsignal(absoluteBGTruth, nsRegionsBedFileName, nsConcordantFileName, nsDisCordantFileName, kbp=10, print_first=False):
+    """
+    Return 1-based Cocordant and Discordant regions in bed file
+
+    Based on only 100% or 0% bg-truth in BS-seq (absoluteBGTruth), we define
+    Concordant: All CpGs in this group is same states, such as 0000, or 1111.
+    Discordant: CpGs in this group is not all same states, such as 01000, 10101, etc.
+
+    This function will take the input *.bed file from "NonSingletonsScanner" funtion, which corresponds with non-singletons.
+    Next it will separate them into concordant non-singletons (i.e. fully methylated or fully unmethylated), and discordant (those with at least one CpG fully methylated and at least one fully unmethylated), or fully mixed (i.e. all CpGs in non-singletons have methylation level >0 and < 100)
+    This kind of preprocessing will have to be done for each studied library separately.
+    """
+    logger.debug(f"nonSingletonsPostprocessing_bk, based on file={nsRegionsBedFileName}")
+    bedBGTruth = BedTool(dict2txt(absoluteBGTruth), from_string=True)
+    bedBGTruth = bedBGTruth.sort()
+
+    infn = os.path.join(data_base_dir, 'genome-annotation', nsRegionsBedFileName)
+    regionNonsingletons = BedTool(infn)
+    regionNonsingletons = regionNonsingletons.sort()
+
+    regionWithBGTruth = regionNonsingletons.intersect(bedBGTruth, wa=True, wb=True)  # chr start end   chr start end strand
+
+    regionDict = defaultdict(list)  # key->value, key=region of (chr, start, end), value=list of [f1,f2,etc.] , suche as {regionCoords : [methylation percentage list]}
+
+    is_print_first = print_first
+    cntBedLines = 0
+
+    for ovr in regionWithBGTruth:
+        cntBedLines += 1
+        if is_print_first:
+            logger.debug(f'ovr={ovr}')
+
+        # regionKey = "{}\t{}\t{}\n".format(ovr[0], ovr[1], ovr[2])
+        regionKey = (ovr[0], int(ovr[1]), int(ovr[2]))  # chr  start  end
+        # methKey = "{}\t{}\t{}\t{}\n".format(ovr[3], ovr[4], ovr[5], ovr[6])
+
+        methKey = (ovr[3], int(ovr[4]), ovr[6])  # chr, start, strand
+
+        tmpStart = int(ovr[4])
+        tmpStrand = ovr[6]
+        meth_freq = absoluteBGTruth[methKey][0]
+        if is_fully_meth(meth_freq):
+            methIndicator = 1
+        else:
+            methIndicator = 0
+
+        regionDict[regionKey].append((tmpStart, tmpStrand, methIndicator))
+
+        if is_print_first:
+            logger.info(f'regionDict[regionKey]={regionDict[regionKey]}, regionKey={regionKey}')
+        is_print_first = False
+
+    logger.info(f'cntBedLines={cntBedLines}')
+
+    is_print_first = print_first
+    concordantList = []  # list of (chr, start)
+    discordantList = []
+    meth_cnt_dict = defaultdict(int)  # count meth states in concordant and discordant
+    unmeth_cnt_dict = defaultdict(int)
+    for region in tqdm(regionDict):  # region is (chr, start, end)
+        cpgList = regionDict[region]  # get values as the list of (start, strand, methIndicator)
+        chrOut = region[0]
+
+        if is_print_first:
+            logger.info(f'cpgList={cpgList}')
+
+        for k in range(len(cpgList)):  # for each CpG
+            if cpgList[k][1] == '+':
+                startOut = cpgList[k][0]
+            else:  # - strand, back to CG's C
+                startOut = cpgList[k][0] - 1
+            if eval_concordant_within_kbp_region(cpgList, cpgList[k], kbp=kbp):
+                # add this cpg to concordant
+                concordantList.append((chrOut, startOut))  # list of (chr, start)
+                if cpgList[k][2] == 1:
+                    meth_cnt_dict['Concordant'] += 1
+                else:
+                    unmeth_cnt_dict['Concordant'] += 1
+            else:
+                # add this cpg to discordant
+                discordantList.append((chrOut, startOut))
+                if cpgList[k][2] == 1:
+                    meth_cnt_dict['Discordant'] += 1
+                else:
+                    unmeth_cnt_dict['Discordant'] += 1
+            pass
+        if is_print_first:
+            logger.info(f'concordantList={concordantList}, discordantList={discordantList}')
+        is_print_first = False
+
+    concordantList = list(set(concordantList) - set(discordantList))  # remove duplicate and same in discordant
+    outfile_concordant = open(nsConcordantFileName, "w")
+    for cpg in concordantList:
+        region_txt = '\t'.join([cpg[0], str(cpg[1]), str(cpg[1] + 1)]) + '\n'
+        outfile_concordant.write(region_txt)
+    outfile_concordant.close()
+
+    discordantList = list(set(discordantList))  # remove duplicate
+    outfile_discordant = open(nsDisCordantFileName, "w")
+    for cpg in discordantList:
+        region_txt = '\t'.join([cpg[0], str(cpg[1]), str(cpg[1] + 1)]) + '\n'
+        outfile_discordant.write(region_txt)
+    outfile_discordant.close()
+
+    logger.info(f'save to {[nsConcordantFileName, nsDisCordantFileName]}')
+
+    logger.debug(f'meth_cnt={meth_cnt_dict}, unmeth_cnt={unmeth_cnt_dict}')
+
+    ret = {'Concordant.5mC': meth_cnt_dict['Concordant'], 'Concordant.5C': unmeth_cnt_dict['Concordant'], 'Discordant.5mC': meth_cnt_dict['Discordant'], 'Discordant.5C': unmeth_cnt_dict['Discordant']}
+    return ret
+
+
+def nonSingletonsPostprocessing_deprecated(absoluteBGTruth, nsRegionsBedFileName, nsConcordantFileName, nsDisCordantFileName, kbp=10, print_first=False):
     """
     Return 1-based Cocordant and Discordant regions in bed file
 

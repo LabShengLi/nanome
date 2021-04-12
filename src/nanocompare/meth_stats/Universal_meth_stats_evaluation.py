@@ -49,7 +49,7 @@ def calculate_meth_unmeth(bgTruth, keySet):
     return num5mc, num5c
 
 
-def report_singleton_nonsingleton_table(bgTruth, outfn):
+def report_singleton_nonsingleton_table(bgTruth, outfn, fn_concordant, fn_discordant):
     ret = {}
     combineBGTruthSet = set(bgTruth.keys())
 
@@ -57,37 +57,33 @@ def report_singleton_nonsingleton_table(bgTruth, outfn):
     singletonSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, singletonFileName)
 
     meth_unmeth = calculate_meth_unmeth(combineBGTruth, singletonSet)
-    ret.update({'Singleton.5C': meth_unmeth[1], 'Singleton.5mC': meth_unmeth[0]})
+    ret.update({'Singletons.5C': meth_unmeth[1], 'Singletons.5mC': meth_unmeth[0]})
 
     nonsingletonFilename = narrowCoordFileList[2]  # Non-Singleton file path
     nonsingletonSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, nonsingletonFilename)
     meth_unmeth = calculate_meth_unmeth(combineBGTruth, nonsingletonSet)
-    ret.update({'Non-Singleton.5C': meth_unmeth[1], 'Non-Singleton.5mC': meth_unmeth[0]})
+    ret.update({'Non-Singletons.5C': meth_unmeth[1], 'Non-Singletons.5mC': meth_unmeth[0]})
 
-    concordantFileName = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed"
+    # Concordant
+    concordantFileName = fn_concordant  # f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed"
     concordantSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, concordantFileName)
     meth_unmeth = calculate_meth_unmeth(combineBGTruth, concordantSet)
     ret.update({'Concordant.5C': meth_unmeth[1], 'Concordant.5mC': meth_unmeth[0]})
 
-    discordantFileName = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed"
+    # Discordant
+    discordantFileName = fn_discordant  # f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed"
     discordantSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, discordantFileName)
     meth_unmeth = calculate_meth_unmeth(combineBGTruth, discordantSet)
     ret.update({'Discordant.5C': meth_unmeth[1], 'Discordant.5mC': meth_unmeth[0]})
 
-    # otherFileName = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.other.bed"
-    # otherSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, otherFileName)
-    # meth_unmeth = calculate_meth_unmeth(combineBGTruth, otherSet)
-    # ret.update({'Other.5C': meth_unmeth[1], 'Other.5mC': meth_unmeth[0]})
-
     df = pd.DataFrame([ret], index=[f'{dsname}'])
 
-    df['Singleton.sum'] = df['Singleton.5C'] + df['Singleton.5mC']
-    df['Non-Singleton.sum'] = df['Non-Singleton.5C'] + df['Non-Singleton.5mC']
+    df['Singletons.sum'] = df['Singletons.5C'] + df['Singletons.5mC']
+    df['Non-Singletons.sum'] = df['Non-Singletons.5C'] + df['Non-Singletons.5mC']
     df['Concordant.sum'] = df['Concordant.5C'] + df['Concordant.5mC']
     df['Discordant.sum'] = df['Discordant.5C'] + df['Discordant.5mC']
-    # df['Other.sum'] = df['Other.5C'] + df['Other.5mC']
 
-    df = df[['Singleton.5C', 'Singleton.5mC', 'Singleton.sum', 'Non-Singleton.5C', 'Non-Singleton.5mC', 'Non-Singleton.sum', 'Concordant.5C', 'Concordant.5mC', 'Concordant.sum', 'Discordant.5C', 'Discordant.5mC', 'Discordant.sum']]
+    df = df[['Singletons.5C', 'Singletons.5mC', 'Singletons.sum', 'Non-Singletons.5C', 'Non-Singletons.5mC', 'Non-Singletons.sum', 'Concordant.5C', 'Concordant.5mC', 'Concordant.sum', 'Discordant.5C', 'Discordant.5mC', 'Discordant.sum']]
 
     df.to_csv(outfn)
     logger.info(f'save to {outfn}')
@@ -111,7 +107,7 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
             computePerReadStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFileName=secondFilterBedFileName,
                                 cutoff_fully_meth=cutoff_meth, outdir=outdir, tagname=tagname)
 
-        coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genomewide"}')
+        coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genome-wide"}')
 
         d["prefix"].append(analysisPrefix)
         d["coord"].append(coord)
@@ -296,9 +292,10 @@ if __name__ == '__main__':
     # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth)
     absoluteBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if satisfy_fully_meth_or_unmeth(combineBGTruth[key][0])}
 
-    nonSingletonsPostprocessing_bk(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=True)
-
+    # Current results version
     # nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=True)
+
+    nonSingletonsPostprocessing_same_deepsignal(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=True)
 
     logger.info('Start singletons and non-singletons bed and table generation, using sites with coverage >=1 in bgtruth')
 
@@ -307,14 +304,14 @@ if __name__ == '__main__':
 
     # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
     outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.cov1.csv')
-    report_singleton_nonsingleton_table(combineBGTruth, outfn)
+    report_singleton_nonsingleton_table(combineBGTruth, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
 
     combineBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if combineBGTruth[key][1] >= cutoffBGTruth}
     logger.info(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(combineBGTruth):,}')
 
     # Report singletons vs non-singletons of bgtruth with cov cutoff >= 5
     outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.cov{cutoffBGTruth}.csv')
-    report_singleton_nonsingleton_table(combineBGTruth, outfn)
+    report_singleton_nonsingleton_table(combineBGTruth, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
 
     logger.info("\n\n########################\n\n")
 
