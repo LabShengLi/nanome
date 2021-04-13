@@ -1890,7 +1890,7 @@ def eval_concordant_within_kbp_region(cpgList, evalcpg, kbp=10):
     """
     Evaluate the kth elem if is concordant, by checking state of sites in k-bp region meth states
 
-    For example with in 5bp: CGXXXXCG 4 times X is considered
+    For example with in 5bp: CGXXXXCG 4 times X is considered in 5bp region
     :param cpgList:
     :param k:
     :return: True if concordant, False is discordant
@@ -1898,9 +1898,9 @@ def eval_concordant_within_kbp_region(cpgList, evalcpg, kbp=10):
     # cpgList=list(cpgList)
 
     for cpg in cpgList:  # cpg is (start,strand, meth_indicator)
-        if abs(evalcpg[0] - cpg[0]) - 2 >= kbp:  # not within kbp regions, skip
+        if abs(evalcpg[0] - cpg[0]) - 2 >= kbp:  # not within kbp regions, skip (Note: kbp is number of X between CG, ex. CGXXCGXXCG)
             continue
-        if evalcpg[2] != cpg[2]:  # found there is a CPG not same state, return Discordant
+        if evalcpg[1] != cpg[1]:  # found there is a CPG not same state, return Discordant
             return False
     return True  # Concordant
 
@@ -1917,7 +1917,7 @@ def nonSingletonsPostprocessing_same_deepsignal(absoluteBGTruth, nsRegionsBedFil
     Next it will separate them into concordant non-singletons (i.e. fully methylated or fully unmethylated), and discordant (those with at least one CpG fully methylated and at least one fully unmethylated), or fully mixed (i.e. all CpGs in non-singletons have methylation level >0 and < 100)
     This kind of preprocessing will have to be done for each studied library separately.
     """
-    logger.debug(f"nonSingletonsPostprocessing_bk, based on file={nsRegionsBedFileName}")
+    logger.debug(f"nonSingletonsPostprocessing, based on file={nsRegionsBedFileName}, kbp={kbp}")
     bedBGTruth = BedTool(dict2txt(absoluteBGTruth), from_string=True)
     bedBGTruth = bedBGTruth.sort()
 
@@ -1945,13 +1945,16 @@ def nonSingletonsPostprocessing_same_deepsignal(absoluteBGTruth, nsRegionsBedFil
 
         tmpStart = int(ovr[4])
         tmpStrand = ovr[6]
+
+        if tmpStrand == '-':  # group + - strand CpG together, for simplicity
+            tmpStart -= 1
         meth_freq = absoluteBGTruth[methKey][0]
         if is_fully_meth(meth_freq):
             methIndicator = 1
         else:
             methIndicator = 0
 
-        regionDict[regionKey].append((tmpStart, tmpStrand, methIndicator))
+        regionDict[regionKey].append((tmpStart, methIndicator))  # save value as (start, 0/1) # (start, strand, 0/1)
 
         if is_print_first:
             logger.info(f'regionDict[regionKey]={regionDict[regionKey]}, regionKey={regionKey}')
@@ -1965,28 +1968,27 @@ def nonSingletonsPostprocessing_same_deepsignal(absoluteBGTruth, nsRegionsBedFil
     meth_cnt_dict = defaultdict(int)  # count meth states in concordant and discordant
     unmeth_cnt_dict = defaultdict(int)
     for region in tqdm(regionDict):  # region is (chr, start, end)
-        cpgList = regionDict[region]  # get values as the list of (start, strand, methIndicator)
+        cpgList = regionDict[region]  # get values as the list of (start, methIndicator) #(start, strand, methIndicator)
         chrOut = region[0]
 
         if is_print_first:
             logger.info(f'cpgList={cpgList}')
 
         for k in range(len(cpgList)):  # for each CpG
-            if cpgList[k][1] == '+':
-                startOut = cpgList[k][0]
-            else:  # - strand, back to CG's C
-                startOut = cpgList[k][0] - 1
+            # Since before we group + - to +, now we assure use start
+            startOut = cpgList[k][0]
+
             if eval_concordant_within_kbp_region(cpgList, cpgList[k], kbp=kbp):
                 # add this cpg to concordant
                 concordantList.append((chrOut, startOut))  # list of (chr, start)
-                if cpgList[k][2] == 1:
+                if cpgList[k][1] == 1:
                     meth_cnt_dict['Concordant'] += 1
                 else:
                     unmeth_cnt_dict['Concordant'] += 1
             else:
                 # add this cpg to discordant
                 discordantList.append((chrOut, startOut))
-                if cpgList[k][2] == 1:
+                if cpgList[k][1] == 1:
                     meth_cnt_dict['Discordant'] += 1
                 else:
                     unmeth_cnt_dict['Discordant'] += 1

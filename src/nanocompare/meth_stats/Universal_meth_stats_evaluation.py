@@ -50,6 +50,7 @@ def calculate_meth_unmeth(bgTruth, keySet):
 
 
 def report_singleton_nonsingleton_table(bgTruth, outfn, fn_concordant, fn_discordant):
+    logger.info('Start report sites in singletons and nonsingltons')
     ret = {}
     combineBGTruthSet = set(bgTruth.keys())
 
@@ -255,6 +256,15 @@ if __name__ == '__main__':
     # We use joined of two replicates as BG-Truth
     combineBGTruth = combineBGTruthList(bgTruthList, covCutoff=1)
 
+    # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth)
+    logger.info(f'Start find absolute state (100% or 0% level), take times')
+    absoluteBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if satisfy_fully_meth_or_unmeth(combineBGTruth[key][0])}
+    logger.info(f'Combined bgtruth sites={len(combineBGTruth):,}, Absolute bgtruth (100% and 0% level) sites={len(absoluteBGTruth):,}')
+
+    logger.info(f'Start cutoff on absolute bg-truth, take times')
+    absoluteBGTruthCov = {key: absoluteBGTruth[key] for key in absoluteBGTruth if absoluteBGTruth[key][1] >= cutoffBGTruth}
+    logger.info(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(absoluteBGTruthCov):,}')
+
     callfn_dict = defaultdict()  # callname -> filename
     ontCallWithinBGTruthDict = defaultdict()  # name->call
     callname_list = []  # [DeepSignal, DeepMod, etc.]
@@ -270,18 +280,15 @@ if __name__ == '__main__':
         call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache)
         # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
         logger.info('Filter out CpG sites not in bgtruth')
-        ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(call0, combineBGTruth)
+        ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(call0, absoluteBGTruth)
         logger.info(f'Left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
 
     # logger.debug(callfn_dict)
 
+    # The all coordinate file list (full path) in this runs
     relateCoord = list(narrowCoordFileList)  # copy the basic coordinate
 
-    ## add missing region files based on bgtruth:
-    # singletonsFilePrefix = singletonsFile.replace(".bed", '')
-    # relateCoord.append("{}/{}.{}.mixed.bed".format(out_dir, RunPrefix, singletonsFilePrefix))
-    # relateCoord.append(f"{out_dir}/{RunPrefix}.{singletonsFilePrefix}.absolute.bed")
-
+    ## add additional two region files based on bgtruth (Concordant, Discordant):
     nonsingletonsFilePrefix = nonsingletonsFile.replace(singletonFileExtStr, '')
     fn_concordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed"
     fn_discordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed"
@@ -289,36 +296,25 @@ if __name__ == '__main__':
     relateCoord.append(fn_concordant)
     relateCoord.append(fn_discordant)
 
-    # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth)
-    absoluteBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if satisfy_fully_meth_or_unmeth(combineBGTruth[key][0])}
-
     # Current results version
     # nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=True)
 
     nonSingletonsPostprocessing_same_deepsignal(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=True)
 
-    logger.info('Start singletons and non-singletons bed and table generation, using sites with coverage >=1 in bgtruth')
-
-    # apply cutoff to bgTruth, for evaluation
-    logger.info(f'Before apply cutoff, bgtruth sites={len(combineBGTruth):,}')
-
     # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
     outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.cov1.csv')
-    report_singleton_nonsingleton_table(combineBGTruth, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
-
-    combineBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if combineBGTruth[key][1] >= cutoffBGTruth}
-    logger.info(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(combineBGTruth):,}')
+    report_singleton_nonsingleton_table(absoluteBGTruth, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
 
     # Report singletons vs non-singletons of bgtruth with cov cutoff >= 5
     outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.cov{cutoffBGTruth}.csv')
-    report_singleton_nonsingleton_table(combineBGTruth, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
+    report_singleton_nonsingleton_table(absoluteBGTruthCov, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
 
     logger.info("\n\n########################\n\n")
 
     # this file is the all tool joined together sites
-    bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}.Tools_BGTruth_Joined.bed"
+    bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}.Tools_BGTruth_cov{cutoffBGTruth}_Joined.bed"
 
-    joinedCPG = set(combineBGTruth.keys())
+    joinedCPG = set(absoluteBGTruthCov.keys())
     for toolname in ontCallWithinBGTruthDict:
         joinedCPG = joinedCPG.intersection(set(ontCallWithinBGTruthDict[toolname].keys()))
 
@@ -327,31 +323,30 @@ if __name__ == '__main__':
     logger.info(f"Data points for joined all tools with bg-truth (cov>={cutoffBGTruth}) sites={len(joinedCPG):,}\n\n")
 
     # Next calculate fully methylated and unmethylated sites
-    certainJoinedBGTruth = {}
+    certainJoinedBGTruth = {}  # all joined bg-truth
     cnt5C = 0
     cnt5mC = 0
     for key in joinedCPG:
-        if satisfy_fully_meth_or_unmeth(combineBGTruth[key][0]):
-            certainJoinedBGTruth[key] = combineBGTruth[key]
-            if is_fully_meth(combineBGTruth[key][0]):
+        if satisfy_fully_meth_or_unmeth(absoluteBGTruthCov[key][0]):
+            # only add joined CpG keys
+            certainJoinedBGTruth[key] = absoluteBGTruthCov[key]
+            if is_fully_meth(absoluteBGTruthCov[key][0]):
                 cnt5mC += 1
             else:
                 cnt5C += 1
 
     logger.info(f'The fully meth or unmeth sites of Joined BGTruth = {len(certainJoinedBGTruth):,}  (5C={cnt5C:,}, 5mC={cnt5mC:,}) for performance comparison')
 
-    certainBGTruth = {}
+    certainBGTruth = dict(absoluteBGTruthCov)  # not used now
     cntNoJoined5C = 0
     cntNoJoined5mC = 0
-    for key in combineBGTruth:
-        if satisfy_fully_meth_or_unmeth(combineBGTruth[key][0]):
-            certainBGTruth[key] = combineBGTruth[key]
-            if is_fully_meth(combineBGTruth[key][0]):
-                cntNoJoined5mC += 1
-            else:
-                cntNoJoined5C += 1
+    for key in absoluteBGTruthCov:
+        if is_fully_meth(absoluteBGTruthCov[key][0]):
+            cntNoJoined5mC += 1
+        else:
+            cntNoJoined5C += 1
 
-    logger.info(f'The fully meth or unmeth sites of No-Joined BGTruth = {len(certainBGTruth):,}  (5C={cntNoJoined5C:,}, 5mC={cntNoJoined5mC:,}) for performance comparison if No-joined')
+    logger.info(f'The fully meth or unmeth sites of No-Joined BGTruth (cov>={cutoffBGTruth}) = {len(certainBGTruth):,}  (5C={cntNoJoined5C:,}, 5mC={cntNoJoined5mC:,}) for performance comparison if No-joined')
 
     logger.info("\n\n############\n\n")
 

@@ -68,13 +68,13 @@ location_filename_to_abbvname = {
 # None means no coordinate used, i.e. Genome-wide
 narrowCoordFileList = [None] + [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in narrowCoordNameList[1:]]
 
-narrowCoordFileTag = ['Genomewide'] + [location_filename_to_abbvname[cofn] for cofn in narrowCoordNameList[1:]]
+narrowCoordFileTag = ['Genome-wide'] + [location_filename_to_abbvname[cofn] for cofn in narrowCoordNameList[1:]]
 
 # which column of performance table is extracted and returned
 perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', "Macro-F1", 'ROC-AUC', 'Average-Precision', "Macro-Precision", "Macro-Recall", "Micro-F1", "Micro-Precision", "Micro-Recall", 'F1_5mC', 'F1_5C', 'Precision_5mC', 'Precision_5C', 'Recall_5mC', 'Recall_5C', 'mCsites_called', 'Csites_called', 'mCsites', 'Csites', 'referenceCpGs', 'prefix',
         'coord']
 
-# Rename raw name of retion to print name
+# Rename raw name of region file to print name
 location_name_map_raw_to_standard = {
         'cpgIslandExt'       : 'CpG Island',
         'discordant'         : 'Discordant',
