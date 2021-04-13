@@ -6,6 +6,8 @@ library(tidyverse)
 library(here)
 library(ggpubr)
 
+infn.perf = here('result', 'performance-results.csv')
+infn.corr = here('result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
 
 locations.Singletons = c("Genome-wide", "Singletons", "Non-singletons", "Concordant", "Discordant")
 locations.Regions = c("CpG Island", "Promoters", "Exons", "Introns", "Intergenic")
@@ -18,7 +20,7 @@ Tool.Order.show.SingleRead = c('DeepSignal', 'Tombo', 'Nanopolish*', 'DeepMod', 
 measure.pair.list = list(c('Accuracy', 'Micro.F1'), c('Accuracy', 'ROC.AUC'), c('Micro.Precision', 'Micro.Recall'), c('F1_5mC', 'F1_5C'), c('Macro.Precision', 'Macro.Recall'))
 #measure.list = c('Accuracy', 'ROC.AUC', 'Micro.F1', 'Macro.F1', 'Average.Precision', 'Micro.Precision', 'Micro.Recall', 'Macro.Precision', 'Macro.Recall')
 #measure.list = c('Accuracy', 'ROC.AUC', 'Macro.F1', 'Average.Precision', 'Macro.Precision', 'Macro.Recall')
-measure.list = c('Accuracy', 'ROC.AUC', 'Macro.F1', 'Average.Precision')
+measure.list = c('Accuracy', 'ROC.AUC', 'Macro.F1')
 
 Corr.Perf.List = c('Corr_All', 'Corr_Mix')
 # The palette with grey:
@@ -41,15 +43,13 @@ printf <- function(...) cat(sprintf(...))
 
 
 export.table.s3.xlsx <- function() {
-  infn = here('result', 'performance-results-cut5.csv')
-
   locations.Singletons = c("Genome-wide", "Singletons", "Non-singletons", "Concordant", "Discordant")
   locations.Genome = c("CpG Island", "Promoters", "Exons", "Introns", "Intergenic", "CpG Shores", "CpG Shelves", "GeneFeature")
 
   library(readxl)
   library(tidyverse)
   out_dir = here('figures')
-  df <- read_csv(infn)
+  df <- read_csv(infn.perf)
 
   selected.columns = c('referenceCpGs', 'mCsites', 'Csites')
   #df$Location <- factor(df$Location, levels = c(locations.Singletons, locations.Genome))
@@ -71,8 +71,7 @@ export.table.s4.xlsx <- function() {
   library(readxl)
   library(tidyverse)
 
-  infn = here('result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
-  df = read_excel(infn)
+  df = read_excel(infn.corr)
 
   locations.Singletons = c("Genome-wide", "Singletons", "Non-singletons", "Concordant", "Discordant")
   locations.Genome = c("CpG Island", "Promoters", "Exons", "Introns", "Intergenic", "CpG Shores", "CpG Shelves", "GeneFeature")
@@ -94,12 +93,12 @@ export.table.s4.xlsx <- function() {
 }
 
 
-load.performance.data <- function(infn) {
+load.performance.data <- function() {
   library(readxl)
   library(tidyverse)
 
   # Load data and sort string orders
-  df <- read.csv(infn)
+  df <- read.csv(infn.perf)
 
   #df$Location <- as.character(df$Location)
   #df[df$Location == 'Genome-wide', 'Location'] <- 'Genomewide'
@@ -120,7 +119,9 @@ load.performance.data <- function(infn) {
 }
 
 
-fig.s34a.line.plot.performance <- function(df, perf.measure, locations, bdir, scale = 1) {
+fig.s34a.line.plot.performance <- function(perf.measure, locations, bdir, scale = 1) {
+  df <- load.performance.data()
+
   sel_df = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', perf.measure)]
 
   out.y.label = perf.measure
@@ -170,7 +171,9 @@ fig.s34a.line.plot.performance <- function(df, perf.measure, locations, bdir, sc
 }
 
 
-fig.34a.box.location.performance <- function(df, perf.measure, locations, bdir, scale = 1) {
+fig.34a.box.location.performance <- function(perf.measure, locations, bdir, scale = 1) {
+  df <- load.performance.data()
+
   sel_data = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', perf.measure)]
   out.y.label = perf.measure
   if (perf.measure == 'ROC.AUC') {
@@ -200,7 +203,7 @@ fig.34a.box.location.performance <- function(df, perf.measure, locations, bdir, 
       #panel.grid.major.y = element_blank(),
       panel.grid.minor.x = element_blank(),
       panel.grid.major.x = element_blank(),
-      strip.text.x = element_text(size = 8, face = "bold"),
+      strip.text.x = element_text(size = 8.5, face = "bold"),
       #strip.text.x = element_text(size = 10),
 
       panel.border = element_rect(colour = "black"),
@@ -397,7 +400,7 @@ fig.6.running.resource.bar.plot <- function() {
     geom_bar(stat = "summary", fun = mean, width = 0.8, position = position_dodge()) +
     scale_fill_manual(values = ToolColorPal) +
     theme_classic() +
-    ylab("Real CPU time (hours)") +
+    ylab("Running time (hours)") +
     scale_y_log10() +
     xlab("Dataset") +
     coord_flip() +
@@ -414,7 +417,7 @@ fig.6.running.resource.bar.plot <- function() {
     coord_flip() +
     scale_fill_manual(values = ToolColorPal) +
     theme_classic() +
-    ylab("Peak memory (GB)") +
+    ylab("Memory usage (GB)") +
     xlab("") +
     labs(fill = 'Tool') +
     theme(text = element_text(size = 12))
@@ -435,18 +438,18 @@ fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
   library(readxl)
   library(tidyverse)
   out_dir = here('figures')
-  infn = here('result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
-  df = read_excel(infn)
+  #infn = here('result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
+  df = read_excel(infn.corr)
 
   outdf <- df %>%
-     mutate(Location =
+    mutate(Location =
              recode(Location, 'Genomewide' = 'Genome-wide'
                , 'Singleton' = 'Singletons', 'Nonsingleton' = 'Non-singletons')) %>%
     mutate(dsname = factor(dsname, levels = Dataset.Order),
            Tool = factor(Tool, levels = Tool.Order[1:5]),
-           Location=factor(Location, levels = c(locations.Singletons, locations.Regions)),
+           Location = factor(Location, levels = c(locations.Singletons, locations.Regions)),
 
-           ) #%>%
+    ) #%>%
 
   #df$dsname <- factor(df$dsname, levels = Dataset.Order)
   #df$Tool <- factor(df$Tool, levels = Tool.Order[1:5])
@@ -462,7 +465,7 @@ fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
     geom_col() +
     coord_flip() +
     tidytext::scale_x_reordered() +
-    facet_wrap(vars(Location), scales = "free_y", ncol = 2, dir='v') +
+    facet_wrap(vars(Location), scales = "free_y", ncol = 2, dir = 'v') +
     scale_fill_manual(values = ToolColorPal[1:5]) +
     labs(y = "Pearson correlation coefficient", x = NULL) +
     theme_bw() +
@@ -473,14 +476,14 @@ fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
       axis.ticks = element_line(size = 0),
       panel.grid.minor.y = element_blank(),
       panel.grid.major.y = element_blank(),
-      strip.text.x = element_text(size = 8, face = "bold"),
+      strip.text.x = element_text(size = 9, face = "bold"),
       #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
       #legend.position = "none"
     ) +
     ylim(min(df$COE), 1) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 7)) +
     theme(axis.text.y = element_text(size = 8)) +
-    theme(legend.position = "right", legend.text=element_text(size=8))
+    theme(legend.position = "right", legend.text = element_text(size = 8))
 
 
   p1

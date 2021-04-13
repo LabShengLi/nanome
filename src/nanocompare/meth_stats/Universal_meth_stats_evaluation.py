@@ -246,6 +246,7 @@ if __name__ == '__main__':
     fnlist = fnlist.split(';')
     logger.debug(f'BGTruth fnlist={fnlist}, encode={encode}')
 
+    # Load bgtruth
     bgTruthList = []
     for fn in fnlist:
         # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
@@ -265,6 +266,21 @@ if __name__ == '__main__':
     absoluteBGTruthCov = {key: absoluteBGTruth[key] for key in absoluteBGTruth if absoluteBGTruth[key][1] >= cutoffBGTruth}
     logger.info(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(absoluteBGTruthCov):,}')
 
+    # The all coordinate file list (full path) in this runs
+    relateCoord = list(narrowCoordFileList)  # copy the basic coordinate
+
+    ## add additional two region files based on bgtruth (Concordant, Discordant):
+    nonsingletonsFilePrefix = nonsingletonsFile.replace(singletonFileExtStr, '')
+    fn_concordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed"
+    fn_discordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed"
+
+    relateCoord.append(fn_concordant)
+    relateCoord.append(fn_discordant)
+
+    # Classify concordant and discordant based on cov>=1 bgtruth
+    nonSingletonsPostprocessing_same_deepsignal(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=True)
+
+    # Load methlation callings by tools
     callfn_dict = defaultdict()  # callname -> filename
     ontCallWithinBGTruthDict = defaultdict()  # name->call
     callname_list = []  # [DeepSignal, DeepMod, etc.]
@@ -285,21 +301,7 @@ if __name__ == '__main__':
 
     # logger.debug(callfn_dict)
 
-    # The all coordinate file list (full path) in this runs
-    relateCoord = list(narrowCoordFileList)  # copy the basic coordinate
 
-    ## add additional two region files based on bgtruth (Concordant, Discordant):
-    nonsingletonsFilePrefix = nonsingletonsFile.replace(singletonFileExtStr, '')
-    fn_concordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed"
-    fn_discordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed"
-
-    relateCoord.append(fn_concordant)
-    relateCoord.append(fn_discordant)
-
-    # Current results version
-    # nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=True)
-
-    nonSingletonsPostprocessing_same_deepsignal(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=True)
 
     # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
     outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.cov1.csv')

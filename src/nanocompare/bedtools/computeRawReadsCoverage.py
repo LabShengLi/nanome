@@ -9,13 +9,17 @@ from tqdm import tqdm
 
 from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir
 from nanocompare.global_settings import humanChrSet, narrowCoordFileList, location_filename_to_abbvname
-from nanocompare.meth_stats.meth_stats_common import get_dna_seq_from_reference, open_file, find_bed_filename, get_ref_fasta
+from nanocompare.meth_stats.meth_stats_common import get_dna_seq_from_reference, open_file, find_bed_filename
 
+# used for convert region bed cov to base level cov
 rawReadDir = '/pod/2/li-lab/Nanopore_compare/data/Nanopore_cov'
 # rawReadDir = '/projects/li-lab/yang/results/2021-04-05'
+
+# base level cov bed files (combined + - strand)
 baseReadCovDir = '/projects/li-lab/yang/results/2021-04-05'
 
-datasetBedDir = '/projects/li-lab/yang/results/2021-04-07'
+# modify this dir to newly concordant and discordant perf results base dir
+datasetBedDir = '/projects/li-lab/yang/results/2021-04-12'
 
 
 def convert_region_to_cpg_base(dsname):

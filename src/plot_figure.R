@@ -14,31 +14,24 @@ export.table.s3.xlsx()
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 export.table.s4.xlsx()
 
-
-# Load data and sort string orders
-source(here('src', 'plotutils4r', 'paper_utils.R'))
-infn = here('result', 'performance-results-cut5.csv')
-df <- load.performance.data(infn)
-
 ## Figure S for 3, 4: Line plot
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 out_dir = here('figures', 'line-plot')
 dir.create(out_dir, showWarnings = FALSE)
 
 for (perf.measure in measure.list) {
-  fig.s34a.line.plot.performance(df, perf.measure, bdir = out_dir, locations = locations.Singletons)
-  fig.s34a.line.plot.performance(df, perf.measure, bdir = out_dir, locations = locations.Regions)
+  fig.s34a.line.plot.performance(perf.measure, bdir = out_dir, locations = locations.Singletons)
+  fig.s34a.line.plot.performance(perf.measure, bdir = out_dir, locations = locations.Regions)
   #break
 }
-
 
 ## Figure 3, 4 a:Box plot
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 out_dir = here('figures', 'box-plot')
 dir.create(out_dir, showWarnings = FALSE)
 for (perf.measure in measure.list) {
-  fig.34a.box.location.performance(df, perf.measure, bdir = out_dir, locations = locations.Singletons)
-  fig.34a.box.location.performance(df, perf.measure, bdir = out_dir, locations = locations.Regions)
+  fig.34a.box.location.performance(perf.measure, bdir = out_dir, locations = locations.Singletons)
+  fig.34a.box.location.performance(perf.measure, bdir = out_dir, locations = locations.Regions)
   #break
 }
 
