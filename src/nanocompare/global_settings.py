@@ -10,6 +10,12 @@ from nanocompare.global_config import data_base_dir
 
 # importlib.reload(pp)
 
+# define the small error of 0 and 1, for fully-meth and unmeth eval
+epslong = 1e-5
+
+# can be 1.0, or 0.9 for the level of fully-meth definition
+fully_meth_level = 1.0
+
 # chr 1-22 X and Y
 humanChrSet = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
 

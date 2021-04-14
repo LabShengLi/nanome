@@ -1,36 +1,15 @@
 """
-Read-level evaluation on methylation calls of tools, compute the performance results(F1, accuracy, ROC-AUC, etc.)
+Read-level evaluation on methylation calls of tools, compute the performance results(F1, accuracy, ROC-AUC, etc.) in Nanocompare paper.
 
-This script will generate all per-read performance results, bed files of singleton, non-singleton, based on results by Nanopore methylation calling tool related to BGTruth results
+This script will generate all per-read performance results, with regard to BED files of singleton, non-singleton, etc.
 """
 
 import argparse
 from multiprocessing import Manager, Pool
 
+from nanocompare.eval_common import *
 from nanocompare.global_settings import nonsingletonsFile
 from nanocompare.global_settings import rename_location_from_coordinate_name, perf_report_columns, get_tool_name, singletonFileExtStr
-from nanocompare.eval_common import *
-
-
-def parse_arguments():
-    """
-    :return:
-    """
-    parser = argparse.ArgumentParser(description='Performance evaluation task')
-    parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff", default=5)
-    # parser.add_argument('--min-tool-cov', type=int, help="min tool coverage cutoff", default=3)
-    parser.add_argument('--dsname', type=str, help="dataset name", default='DS')
-    parser.add_argument('--processors', type=int, help="multi-processors", default=8)
-    parser.add_argument('--runid', type=str, help="running prefix", required=True)
-    parser.add_argument('--report-joined', action='store_true', help="True if report on only joined sets")
-    parser.add_argument('--test', action='store_true', help="True if only test for short time running")
-    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by space', required=True)
-    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>;<file-name>", required=True)
-    parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
-    parser.add_argument('--enable-cache', action='store_true')
-    parser.add_argument('--using-cache', action='store_true')
-    parser.add_argument('--mpi', action='store_true')
-    return parser.parse_args()
 
 
 def calculate_meth_unmeth(bgTruth, keySet):
@@ -50,6 +29,14 @@ def calculate_meth_unmeth(bgTruth, keySet):
 
 
 def report_singleton_nonsingleton_table(bgTruth, outfn, fn_concordant, fn_discordant):
+    """
+    Report the number of fully-methylated or unmethylated sites in Singletons, Non-Singletons, Concordant and Discordant.
+    :param bgTruth:
+    :param outfn:
+    :param fn_concordant:
+    :param fn_discordant:
+    :return:
+    """
     logger.info('Start report sites in singletons and nonsingltons')
     ret = {}
     combineBGTruthSet = set(bgTruth.keys())
@@ -105,8 +92,8 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
 
     for coord_fn in tqdm(narrowedCoordinatesList):
         accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth = \
-            computePerReadStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFileName=secondFilterBedFileName,
-                                cutoff_fully_meth=cutoff_meth, outdir=outdir, tagname=tagname)
+            computePerReadPerfStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFileName=secondFilterBedFileName,
+                                    cutoff_fully_meth=cutoff_meth, outdir=outdir, tagname=tagname)
 
         coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genome-wide"}')
 
@@ -145,17 +132,19 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
 
 def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, secondFilterBedFileName=None, cutoff_fully_meth=1.0, outdir=None, tagname=None, processors=10):
     """
-    New performance evaluation by Yang
-    referenceCpGs is number of all CpGs that is fully-methylated (>=cutoff_meth) or unmethylated in BG-Truth
+    Multi-processor version of per-read performance evaluation.
 
-    :param ontCalls:
-    :param bgTruth:
-    :param analysisPrefix:
-    :param narrowedCoordinatesList: coord such as Genome-wide, Singletons, etc.
-    :param ontCutt:
-    :param secondFilterBedFileName: Joined of 4 tools and bgtruth bed file, or None for not joined
-    :param cutoff_fully_meth:
-    :return:
+    :param ontCalls:    ONT methylation call results
+    :param bgTruth:     1 or 2 replicates as bgtruth
+    :param analysisPrefix:  output file tagname for this runs
+    :param narrowedCoordinatesList: coordinate BED files for regions such as Genome-wide, Singletons, Promoters, etc.
+    :param secondFilterBedFileName: Joined of tools and bgtruth bed file, or None for not joined
+    :param cutoff_fully_meth: 1.0 means 1 is fully-meth, or 0.9 for >=0.9 is fully-meth
+    :param outdir:  output dir for curve data
+    :return: Dataframe of results
+
+    results DF:
+        referenceCpGs is number of all CpGs that is fully-methylated or unmethylated in BG-Truth
     """
 
     ret_list = []
@@ -172,7 +161,7 @@ def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCo
                 #                         secondFilterBed_4CorrFile=secondFilterBed_4Corr,
                 #                         cutoff_meth=cutoff_meth, outdir=outdir, tagname=tagname)
                 coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genome-wide"}')
-                ret = pool.apply_async(computePerReadStats, (ontCalls, bgTruth, analysisPrefix,), kwds={'coordBedFileName': coord_fn, 'secondFilterBedFileName': secondFilterBedFileName, 'cutoff_fully_meth': cutoff_fully_meth, 'outdir': outdir, 'tagname': tagname})
+                ret = pool.apply_async(computePerReadPerfStats, (ontCalls, bgTruth, analysisPrefix,), kwds={'coordBedFileName': coord_fn, 'secondFilterBedFileName': secondFilterBedFileName, 'cutoff_fully_meth': cutoff_fully_meth, 'outdir': outdir, 'tagname': tagname})
                 ret_list.append((coord, ret))
 
             pool.close()
@@ -212,6 +201,27 @@ def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCo
 
     df = pd.DataFrame.from_dict(d)
     return df
+
+
+def parse_arguments():
+    """
+    :return:
+    """
+    parser = argparse.ArgumentParser(description='Performance evaluation task')
+    parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff", default=5)
+    # parser.add_argument('--min-tool-cov', type=int, help="min tool coverage cutoff", default=3)
+    parser.add_argument('--dsname', type=str, help="dataset name", default='DS')
+    parser.add_argument('--processors', type=int, help="multi-processors", default=8)
+    parser.add_argument('--runid', type=str, help="running prefix", required=True)
+    parser.add_argument('--report-joined', action='store_true', help="True if report on only joined sets")
+    parser.add_argument('--test', action='store_true', help="True if only test for short time running")
+    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by space', required=True)
+    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>;<file-name>", required=True)
+    parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
+    parser.add_argument('--enable-cache', action='store_true')
+    parser.add_argument('--using-cache', action='store_true')
+    parser.add_argument('--mpi', action='store_true')
+    return parser.parse_args()
 
 
 if __name__ == '__main__':
@@ -278,7 +288,7 @@ if __name__ == '__main__':
     relateCoord.append(fn_discordant)
 
     # Classify concordant and discordant based on cov>=1 bgtruth
-    nonSingletonsPostprocessing_same_deepsignal(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=True)
+    nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=True)
 
     # Load methlation callings by tools
     callfn_dict = defaultdict()  # callname -> filename
@@ -300,8 +310,6 @@ if __name__ == '__main__':
         logger.info(f'Left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
 
     # logger.debug(callfn_dict)
-
-
 
     # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
     outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.cov1.csv')

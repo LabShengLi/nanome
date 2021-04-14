@@ -1,15 +1,13 @@
 #!/home/liuya/anaconda3/envs/nmf/bin/python
 
 """
-Generate site-level methy correlation plotting based on input data as a tsv
-
-All usedful functions are located in nanocompare.meth_stats.meth_stats_common
+Generate site-level methylation correlation results in Nanocompare paper.
 """
 import argparse
 import subprocess
 
-from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, location_filename_to_abbvname
 from nanocompare.eval_common import *
+from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, location_filename_to_abbvname
 
 
 def summary_cpgs_stats_results_table():
@@ -99,28 +97,6 @@ def summary_cpgs_stats_results_table():
     logger.info(f'save to {outfn}\n')
 
 
-def parse_arguments():
-    """
-    :return:
-    """
-    parser = argparse.ArgumentParser(description='Correlation data gen task')
-    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces', required=True)
-    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name1>", required=True)
-    parser.add_argument('--dsname', type=str, help="dataset name", required=True)
-    parser.add_argument('--runid', type=str, help="running prefix", required=True)
-    parser.add_argument('--beddir', type=str, help="base dir for bed files", default=None)  # need perform performance evaluation before, then get concordant, etc. bed files, like '/projects/li-lab/yang/results/2021-04-01'
-    parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
-    parser.add_argument('--processors', type=int, help="running processors", default=8)
-    parser.add_argument('--bgtruthcov-cutoff', type=int, help="cutoff of coverage in bg-truth", default=5)
-    parser.add_argument('--toolcov-cutoff', type=int, help="cutoff of coverage in nanopore calls", default=3)
-    parser.add_argument('--baseFormat', type=int, help="base format after imported", default=1)
-    parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
-    parser.add_argument('--enable-cache', action='store_true')
-    parser.add_argument('--using-cache', action='store_true')
-
-    return parser.parse_args()
-
-
 def save_meth_corr_data(callresult_dict, bgTruth, reportCpGSet, outfn):
     """
     Save meth freq and cov results into csv file
@@ -156,6 +132,28 @@ def save_meth_corr_data(callresult_dict, bgTruth, reportCpGSet, outfn):
         outfile.write("\n")
     outfile.close()
     logger.info(f"save to {outfn}\n")
+
+
+def parse_arguments():
+    """
+    :return:
+    """
+    parser = argparse.ArgumentParser(description='Site level correlation analysis')
+    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces', required=True)
+    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name1>", required=True)
+    parser.add_argument('--dsname', type=str, help="dataset name", required=True)
+    parser.add_argument('--runid', type=str, help="running prefix", required=True)
+    parser.add_argument('--beddir', type=str, help="base dir for bed files", default=None)  # need perform performance evaluation before, then get concordant, etc. bed files, like '/projects/li-lab/yang/results/2021-04-01'
+    parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
+    parser.add_argument('--processors', type=int, help="running processors", default=8)
+    parser.add_argument('--bgtruthcov-cutoff', type=int, help="cutoff of coverage in bg-truth", default=5)
+    parser.add_argument('--toolcov-cutoff', type=int, help="cutoff of coverage in nanopore calls", default=3)
+    parser.add_argument('--baseFormat', type=int, help="base format after imported", default=1)
+    parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
+    parser.add_argument('--enable-cache', action='store_true')
+    parser.add_argument('--using-cache', action='store_true')
+
+    return parser.parse_args()
 
 
 if __name__ == '__main__':

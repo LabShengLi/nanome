@@ -50,7 +50,7 @@ from sklearn.metrics import classification_report, roc_auc_score
 
 from lilab.tcga.global_tcga import *
 
-from nanocompare.read_level_eval import importGroundTruth_BedMethyl_from_Encode, importPredictions_DeepMod3
+from nanocompare.read_level_eval import importGroundTruth_from_Encode, importPredictions_DeepMod3
 
 bgENCFF279HCL_fn = '/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/NA12878/ENCFF279HCL.chr20.bed'
 
@@ -172,10 +172,10 @@ def main():
     logger.debug(f'deepmodOntCall1 = {len(deepmodOntCall1)}, deepmodOntCall_atleast10 = {len(deepmodOntCall_atleast10)}')
 
     for minCov in [1, 5, 10]:
-        bgTruth1 = importGroundTruth_BedMethyl_from_Encode(bgENCFF279HCL_fn, covCutt=minCov)
+        bgTruth1 = importGroundTruth_from_Encode(bgENCFF279HCL_fn, covCutt=minCov)
         logger.debug(f'bgTruth1 = {len(bgTruth1)}')
 
-        bgTruth2 = importGroundTruth_BedMethyl_from_Encode(bgENCFF835NTC_fn, covCutt=minCov)
+        bgTruth2 = importGroundTruth_from_Encode(bgENCFF835NTC_fn, covCutt=minCov)
         logger.debug(f'bgTruth2 = {len(bgTruth2)}')
 
         logger.info(f'minCov={minCov}')
