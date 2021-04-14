@@ -3,19 +3,8 @@
 Global variable initializations
 =================================================================
 
-Sample usage:
-from global_config import *
+Define global directory and loggers
 
-Main global variables
-
-logger:  log object
-dataset_base_dir:
-results_base_dir:
-pkl_base_dir:   pickle file dir
-log_base_dir:   log file dir
-pic_base_dir:
-
-All specific used data file name, such as
 """
 
 import datetime
@@ -28,21 +17,15 @@ import matplotlib.pyplot as plt
 init_log_level_prj = logging.INFO
 
 if sys.platform == 'linux':  # Linux HPC dir config
-    # print("Running on Linux")
-    results_dir = "/projects/li-lab/yang/results"  # temp output base
     project_base_dir = "/projects/li-lab/yang/workspace/nano-compare"  # project base
+
+    results_dir = "/projects/li-lab/yang/results"  # temp output base
     data_base_dir = os.path.join(project_base_dir, 'data')  # all used data base
     src_base_dir = os.path.join(project_base_dir, 'src')  # source code base
-    pkl_base_dir = '/projects/liuya/results/pkl'  # will deprecated later
+    # pkl_base_dir = '/projects/liuya/results/pkl'  # will deprecated later
 
     results_base_dir = '/projects/li-lab/Nanopore_compare/result'
-    cache_dir = '/fastscratch/liuya/nanocompare/cache_dir' # cache readed object to pkl
-
-    import platform
-
-    if not platform.node().startswith('helix'):
-        # TODO helix do not have this settings
-        os.environ['R_HOME'] = "/home/liuya/anaconda3/envs/nmf/lib/R"
+    cache_dir = '/fastscratch/liuya/nanocompare/cache_dir'  # cache readed object to pkl
 
 elif sys.platform == 'darwin':  # Mac dir config
     print("Running on MacOS")

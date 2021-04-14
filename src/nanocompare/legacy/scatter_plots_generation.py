@@ -5,9 +5,9 @@ import pandas as pd
 import seaborn as sns
 import glob
 from lilab.tcga.global_tcga import *
-from nanocompare.collect_data import collect_data_selected_locations
+from nanocompare.legacy.collect_data import collect_data_selected_locations
 from nanocompare.global_settings import nanocompare_basedir, locations_category
-from nanocompare.load_data import load_all_perf_data, load_refined_data
+from nanocompare.legacy.load_data import load_all_perf_data, load_refined_data
 
 
 def load_data_general(path, extension="tsv", prefix="APL_BSseq_cut10/APL_Bsseq_cut10."):

@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir
 from nanocompare.global_settings import humanChrSet, narrowCoordFileList, location_filename_to_abbvname
-from nanocompare.meth_stats.meth_stats_common import get_dna_seq_from_reference, open_file, find_bed_filename
+from nanocompare.eval_common import get_dna_seq_from_reference, open_file, find_bed_filename
 
 # used for convert region bed cov to base level cov
 rawReadDir = '/pod/2/li-lab/Nanopore_compare/data/Nanopore_cov'

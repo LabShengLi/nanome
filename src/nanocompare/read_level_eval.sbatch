@@ -31,7 +31,8 @@ echo ${NanoCompareDir}
 
 prjBaseDir=/projects/li-lab/yang/workspace/nano-compare
 
-pythonFn=${prjBaseDir}/src/nanocompare/meth_stats/Universal_meth_stats_evaluation.py
+pythonFn=${prjBaseDir}/src/nanocompare/read_level_eval.py
+
 
 PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:${DeepSignal_calls} \
 	Tombo:${Tombo_calls} Nanopolish:${Nanopolish_calls} ${DeepMod_calls} \

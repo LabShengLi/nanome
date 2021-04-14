@@ -12,7 +12,7 @@ import h5py
 
 nanocompare_prj = "/projects/li-lab/yang/workspace/nano-compare/src"
 sys.path.append(nanocompare_prj)
-from nanocompare.meth_stats.meth_stats_common import load_tombo_df, load_deepmod_df, get_dna_base_from_reference, load_sam_as_strand_info_df, load_nanopolish_df
+from nanocompare.eval_common import load_tombo_df, load_deepmod_df, get_dna_base_from_reference, load_sam_as_strand_info_df, load_nanopolish_df
 
 from multiprocessing import Pool
 

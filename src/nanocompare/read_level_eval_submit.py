@@ -24,7 +24,7 @@ from sys import argv
 
 from nanocompare.global_config import src_base_dir
 
-pyFile = os.path.join(src_base_dir, 'nanocompare', 'meth_stats', "Universal_meth_stats_evaluation.sbatch")
+pyFile = os.path.join(src_base_dir, 'nanocompare', "read_level_eval.sbatch")
 
 if __name__ == '__main__':
 

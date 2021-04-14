@@ -50,7 +50,7 @@ from sklearn.metrics import classification_report, roc_auc_score
 
 from lilab.tcga.global_tcga import *
 
-from nanocompare.meth_stats.Universal_meth_stats_evaluation import importGroundTruth_BedMethyl_from_Encode, importPredictions_DeepMod, importPredictions_DeepMod3
+from nanocompare.read_level_eval import importGroundTruth_BedMethyl_from_Encode, importPredictions_DeepMod3
 
 bgENCFF279HCL_fn = '/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/EncodeMethyl/NA12878/ENCFF279HCL.chr20.bed'
 

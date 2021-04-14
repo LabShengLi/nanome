@@ -10,7 +10,7 @@ etc.
 
 import pandas as pd
 
-from nanocompare.collect_data import load_wide_format_performance_results
+from nanocompare.legacy.collect_data import load_wide_format_performance_results
 from nanocompare.global_config import *
 from nanocompare.global_settings import locations_category
 

@@ -9,7 +9,7 @@ from multiprocessing import Manager, Pool
 
 from nanocompare.global_settings import nonsingletonsFile
 from nanocompare.global_settings import rename_location_from_coordinate_name, perf_report_columns, get_tool_name, singletonFileExtStr
-from nanocompare.meth_stats.meth_stats_common import *
+from nanocompare.eval_common import *
 
 
 def parse_arguments():
@@ -397,4 +397,4 @@ if __name__ == '__main__':
 
         if args.test:
             break
-    logger.info("Meth stats performance evaluation results generation DONE.")
+    logger.info("### Read level performance evaluation results generation DONE.")

@@ -12,13 +12,11 @@ etc.
 """
 import glob
 import os
-import sys
 
 import numpy as np
 import pandas as pd
 
 from nanocompare.global_config import logger, pic_base_dir
-from nanocompare.global_settings import locations_category, locations_singleton
 
 
 def collect_data_selected_locations(path, extension="tsv", prefix="APL_BSseq_cut10/APL_Bsseq_cut10.", sel_locations=["GW", "singletons", "nonsingletons", "cpgIslandExt", "promoters_500bp"]):
@@ -378,21 +376,6 @@ def load_data(path, extension="tsv"):
     return cobmined_data
 
 
-def select_locations_from_reportdf(df, sel_locations=locations_category + locations_singleton):
-    """
-    Select only interested locations
-    :param df:
-    :param sel_locations:
-    :return:
-    """
-    # logger.info(df)
-    # logger.info(df['Location'].value_counts())
-    retdf = df[df['Location'].isin(sel_locations)]
-
-    # return df[df['Location'].isin(sel_locations)]
-
-    return retdf
-
 def get_num_lines(fn):
     """
     Count how many lines for single sites start and end bed only
@@ -431,72 +414,11 @@ def load_singleton_nonsingleton_sites():
     df.to_excel(outfn, index=False)
 
 
-def collect_singleton_vs_nonsingleton_df(runPrefix, pattern="*.summary.singleton.nonsingleton.cov1.csv"):
-    dflist = []
-    # logger.debug(runPrefix)
-    for run1 in runPrefix:
-        filepat = os.path.join(runPrefix[run1], pattern)
-        # logger.debug(run1)
-        flist = glob.glob(filepat)
-        if len(flist) != 1:
-            raise Exception(f"Too much/No summary of singleton vs non-singleton for {runPrefix} in folder {runPrefix[runPrefix]} with pattern={pattern}, len={len(flist)}")
-        # logger.debug(f'Get file:{flist[0]}')
-        df = pd.read_csv(flist[0], index_col=0)
-        dflist.append(df)
-    retdf = pd.concat(dflist)
-    retdf.index.name = 'Dataset'
-    return retdf
-
-
-def collect_performance_report_as_df(runPrefix):
-    """
-    create report from list of runPrefix, return specified columns
-    :return:
-    """
-    dflist = []
-    for runKey in runPrefix:
-        logger.debug(f'runPrefix={runKey}')
-        pattern = os.path.join(runPrefix[runKey], "performance?results", "*.performance.report.csv")
-        files = glob.glob(pattern)
-        for infn in files:
-            df = pd.read_csv(infn, index_col=0, sep=",")
-            dflist.append(df)
-            logger.debug(f'Collect data from {runKey}:{os.path.basename(infn)} = {len(df)}')
-    if len(dflist) == 0:
-        raise Exception(f"Can not find report at {runKey} in folder {runPrefix[runKey]} with pattern={pattern}")
-    combdf = pd.concat(dflist, ignore_index=True)
-    logger.info(f'We collected total {len(dflist)} files with {len(combdf)} records')
-    return combdf
-
-
-def load_wide_format_performance_results(runPrefix, sel_locations=locations_category + locations_singleton):
-    """
-    Collect the currently new performance of exp results for paper
-    :return:
-    """
-    df = collect_performance_report_as_df(runPrefix)
-    seldf = select_locations_from_reportdf(df, sel_locations=sel_locations)
-
-    logger.debug(f"collect_newly_exp_data, wide-format seldf={len(seldf)} using locations={sel_locations}")
-
-    return seldf
-
-
-def save_wide_format_performance_results(runPrefix, outdir, tagname):
-    """
-    Save all performance report results into a csv
-    :return:
-    """
-    df = load_wide_format_performance_results(runPrefix)
-    outfn = os.path.join(outdir, f'performance-results{f"-{tagname}" if tagname else ""}.csv')
-    df.to_csv(outfn)
-    logger.info(f'save to {outfn}')
-
-
 if __name__ == '__main__':
+    pass
     # df = load_singleton_nonsingleton_sites()
-    df = load_wide_format_performance_results()
-    logger.info(f'df={df}')
+    # df = load_wide_format_performance_results()
+    # logger.info(f'df={df}')
 
     # df = get_data_all()
     # save_alldata(df)

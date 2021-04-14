@@ -8,8 +8,8 @@ All usedful functions are located in nanocompare.meth_stats.meth_stats_common
 import argparse
 import subprocess
 
-from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, narrowCoordFileList, location_filename_to_abbvname
-from nanocompare.meth_stats.meth_stats_common import *
+from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, location_filename_to_abbvname
+from nanocompare.eval_common import *
 
 
 def summary_cpgs_stats_results_table():
@@ -272,4 +272,4 @@ if __name__ == '__main__':
 
     summary_cpgs_stats_results_table()
 
-    logger.info("### Methylation correlation plotting data generation program finished. DONE")
+    logger.info("### Site level correlation data for plotting generation DONE")

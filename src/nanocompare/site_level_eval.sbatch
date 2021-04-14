@@ -5,7 +5,7 @@
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 4 # number of cores
 #SBATCH --mem-per-cpu=290g
-#SBATCH --time=13:59:00 # time (D-HH:MM:SS)
+#SBATCH --time=2-13:59:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
@@ -33,7 +33,7 @@ echo ${NanoCompareDir}
 
 prjBaseDir=/projects/li-lab/yang/workspace/nano-compare
 
-pythonFn=${prjBaseDir}/src/nanocompare/meth_stats/Methylation_correlation_plotting.py
+pythonFn=${prjBaseDir}/src/nanocompare/site_level_eval.py
 
 PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:${DeepSignal_calls} \
 	Tombo:${Tombo_calls} Nanopolish:${Nanopolish_calls} ${DeepMod_calls} \

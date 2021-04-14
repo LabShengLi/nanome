@@ -18,7 +18,7 @@ from sys import argv
 
 from nanocompare.global_config import src_base_dir
 
-scriptFileName = os.path.join(src_base_dir, "nanocompare/meth_stats", "Methylation_correlation_plotting.sbatch")
+scriptFileName = os.path.join(src_base_dir, "nanocompare", "site_level_eval.sbatch")
 
 if __name__ == '__main__':
 
