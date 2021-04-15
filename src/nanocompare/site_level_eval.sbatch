@@ -26,6 +26,7 @@ echo "Megalodon_calls": ${Megalodon_calls}
 echo "bgTruth: $bgTruth"
 echo "parser: $parser"
 echo "RunPrefix: $RunPrefix"
+echo "otherOptions:" $otherOptions
 
 set -x
 
@@ -36,8 +37,8 @@ prjBaseDir=/projects/li-lab/yang/workspace/nano-compare
 pythonFn=${prjBaseDir}/src/nanocompare/site_level_eval.py
 
 PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:${DeepSignal_calls} \
-	Tombo:${Tombo_calls} Nanopolish:${Nanopolish_calls} ${DeepMod_calls} \
+	Tombo:${Tombo_calls} Nanopolish:${Nanopolish_calls} DeepMod.Cluster:${DeepMod_calls} \
 	Megalodon:${Megalodon_calls} --bgtruth ${parser}:${bgTruth} \
 	--runid MethCorr-${RunPrefix} --dsname ${Dataset} \
 	--toolcov-cutoff 3 --bgtruthcov-cutoff 5 --baseFormat 1 \
-	--beddir /projects/li-lab/yang/results/2021-04-12  --enable-cache --using-cache #--enable-cache --using-cache # cutoff=3 is reasonable now
+	$otherOptions #--enable-cache --using-cache #--enable-cache --using-cache # cutoff=3 is reasonable now

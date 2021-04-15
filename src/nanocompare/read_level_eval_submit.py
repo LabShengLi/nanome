@@ -24,11 +24,15 @@ from sys import argv
 
 from nanocompare.global_config import src_base_dir
 
-pyFile = os.path.join(src_base_dir, 'nanocompare', "read_level_eval.sbatch")
+sbatchFile = os.path.join(src_base_dir, 'nanocompare', "read_level_eval.sbatch")
 
 if __name__ == '__main__':
 
     infile = open(argv[1], 'r')
+
+    others = ' '.join(argv[2:])
+    print(f'Other options={others}')
+
     csvfile = csv.DictReader(infile, delimiter='\t')
     for row in csvfile:
         if row['status'] == "submit":
@@ -39,7 +43,7 @@ if __name__ == '__main__':
                 f"""
 set -x; sbatch --job-name=meth_perf_{row['RunPrefix']} --output=log/%x.%j.out --error=log/%x.%j.err \
  --export=ALL,DeepSignal_calls="{row['DeepSignal_calls']}",Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",DeepMod_calls="{row['DeepMod_calls']}",Megalodon_calls="{row['Megalodon_calls']}",bgTruth="{row['bgTruth']}",\
-RunPrefix="{row['RunPrefix']}",parser="{row['parser']}",minCov="{row['minCov']}",dsname="{row['Dataset']}" {pyFile}
+RunPrefix="{row['RunPrefix']}",parser="{row['parser']}",minCov="{row['minCov']}",dsname="{row['Dataset']}",otherOptions="{others}" {sbatchFile}
 """
 
             print(row['RunPrefix'], subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8"))

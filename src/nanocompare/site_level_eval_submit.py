@@ -23,6 +23,9 @@ scriptFileName = os.path.join(src_base_dir, "nanocompare", "site_level_eval.sbat
 if __name__ == '__main__':
 
     infile = open(argv[1], 'r')
+    others = ' '.join(argv[2:])
+    print(f'Other options={others}')
+
     csvfile = csv.DictReader(infile, delimiter='\t')
     for row in csvfile:
         if row['status'] == "submit":
@@ -32,12 +35,12 @@ if __name__ == '__main__':
             command = f"""
 set -x; 
 
-sbatch --output=log/%x.%j.out --error=log/%x.%j.err \
+sbatch --job-name=meth-corr-{row['RunPrefix']} --output=log/%x.%j.out --error=log/%x.%j.err \
 --export=ALL,Dataset="{row['Dataset']}",DeepSignal_calls="{row['DeepSignal_calls']}",\
 Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",\
 DeepMod_calls="{row['DeepMod_calls']}",Megalodon_calls="{row['Megalodon_calls']}",\
-bgTruth="{row['bgTruth']}",RunPrefix="{row['RunPrefix']}",parser="{row['parser']}" \
---job-name=meth-corr-{row['RunPrefix']} {scriptFileName}
+bgTruth="{row['bgTruth']}",RunPrefix="{row['RunPrefix']}",parser="{row['parser']}",\
+otherOptions="{others}" {scriptFileName}
 
 echo DONE
 """

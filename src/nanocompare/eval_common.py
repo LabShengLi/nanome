@@ -415,7 +415,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     return cpgDict
 
 
-def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-3, meth_cov_col=-1, baseFormat=1, sep=' ', output_first=False, include_score=False):
+def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-3, meth_freq_col=-2, meth_cov_col=-1, baseFormat=1, sep=' ', output_first=False, include_score=False):
     """
     We treate input as 0-based format for start col.
 
@@ -465,6 +465,8 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     meth_cnt = 0
     unmeth_cnt = 0
 
+    first_row_checked = False
+
     for row in infile:
         tmp = row.strip().split(sep)
 
@@ -474,6 +476,15 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
         if output_first:
             logger.debug(f'row = {list(enumerate(tmp))}')
             output_first = False
+
+        if not first_row_checked:
+            # We check if this is DeepMod.C format, not DeepMod.Cluster Mode, ensure correct file used
+            cov_num = int(tmp[coverage_col])
+            meth_num = int(tmp[meth_cov_col])
+            meth_freq_num = int(tmp[meth_freq_col])
+            if int(100.0 * meth_num / cov_num) != meth_freq_num:
+                raise Exception(f'Found not DeepMod.C format in file {infileName}, with line: {row}')
+            first_row_checked = True
 
         if baseFormat == 1:
             start = int(tmp[start_col]) + 1
@@ -501,7 +512,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
             methCallsList = [1] * methReads + [0] * (coverage - methReads)
 
         if key in cpgDict:
-            raise Exception(f'In DeepMod results, we found duplicate key={key}, this is not correct')
+            raise Exception(f'In DeepMod.C results, we found duplicate key={key}, this is not correct')
 
         cpgDict[key] = methCallsList
 
@@ -1194,6 +1205,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, deepmod_cluster
     :param encode:
     :return:
     """
+    logger.debug("\n\n####################\n\n")
     logger.debug(f"Start load {encode}")
 
     if enable_cache and using_cache:
@@ -1213,9 +1225,9 @@ def import_call(infn, encode, baseFormat=1, include_score=False, deepmod_cluster
     #     calls0 = importPredictions_DeepMod_Read_Level(infn, baseFormat=baseFormat, include_score=include_score)
     elif encode == 'Megalodon':
         calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score)
-    elif encode == 'DeepMod.Cluster':  # import DeepMod itself tool reports by cluster, key->value={'freq':68, 'cov':10}
+    elif encode == 'DeepMod.Cluster':  # import DeepMod Clustered output for site level, itself tool reports by cluster, key->value={'freq':68, 'cov':10}
         calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat, as_freq_cov_format=deepmod_cluster_freq_cov_format, include_score=include_score)
-    elif encode == 'DeepMod.C':  # import DeepMod itself tool
+    elif encode == 'DeepMod.C':  # import DeepMod itself tool for read level
         calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, include_score=include_score)
     else:
         raise Exception(f'Not support {encode} for file {infn} now')
@@ -2142,10 +2154,10 @@ def combineBGTruthList(bgTruthList, covCutoff=1):
     :param bgTruthList:
     :return:
     """
-    logger.info('Start study union and joint of BG-Truth')
     unionBGTruth = {}  # used for singleton and non-singletons detect, used for performance eval
     jointBGTruth = {}  # intersection of CpG sites
     if len(bgTruthList) == 2:  # sites must in both replicates, and
+        logger.info(f'Start study union of multiple BG-Truth, with coverage={covCutoff}')
         unionSet = set(bgTruthList[0].keys()).union(set(bgTruthList[1].keys()))
         jointSet = set(bgTruthList[0].keys()).intersection(set(bgTruthList[1].keys()))
 

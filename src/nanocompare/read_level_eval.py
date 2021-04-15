@@ -37,7 +37,7 @@ def report_singleton_nonsingleton_table(bgTruth, outfn, fn_concordant, fn_discor
     :param fn_discordant:
     :return:
     """
-    logger.info('Start report sites in singletons and nonsingltons')
+    logger.info('Start report BS seq data, the number of sites in singletons and nonsingltons')
     ret = {}
     combineBGTruthSet = set(bgTruth.keys())
 
@@ -230,12 +230,20 @@ if __name__ == '__main__':
     args = parse_arguments()
 
     dsname = args.dsname
+
+    # We use coverage >= args.min_bgtruth_cov for bg-truth, but 1x coverage for ONT calls
     cutoffBGTruth = args.min_bgtruth_cov
-    # tool_cov_cutoff = args.min_tool_cov # No use of tool coverage due to per-read level evaluation
+
+    # Report performance on joined sites
     report_joined = args.report_joined
+
+    # If enable cache, loaded results will be saved to cache
     enable_cache = args.enable_cache
+
+    # If enable and using, import functions can read from cache
     using_cache = args.using_cache
 
+    # runid is always like 'MethPerf-K562_WGBS_2Reps', remove first word as RunPrefix like K562_WGBS_2Reps
     RunPrefix = args.runid.replace('MethPerf-', '')
 
     out_dir = os.path.join(args.o, args.runid)
@@ -251,35 +259,38 @@ if __name__ == '__main__':
     # So we must import as 1-based format for our tool or bgtruth, DO NOT USE baseFormat=0
     baseFormat = 1
 
-    # We firstly import bg-truth, then each tool results, and remove non-bg-truth cpgs for memory usage
+    # We firstly parse and import bg-truth
     encode, fnlist = args.bgtruth.split(':')
     fnlist = fnlist.split(';')
-    logger.debug(f'BGTruth fnlist={fnlist}, encode={encode}')
+    logger.debug(f'We are going to import BS-seq data from fnlist={fnlist}, encode={encode}')
 
-    # Load bgtruth
+    # Load bgtruth one/two replicates
     bgTruthList = []
     for fn in fnlist:
         # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
+        # bgTruth1 is dict of key->value, key=(chr, start, strand), and value=[meth.freq, cov]
         bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True, using_cache=using_cache, enable_cache=enable_cache)
         bgTruthList.append(bgTruth1)
 
     # Combine multiple bgtruth together for analysis
-    # We use joined of two replicates as BG-Truth
+    # We use union of two replicates as BG-Truth
     combineBGTruth = combineBGTruthList(bgTruthList, covCutoff=1)
+    logger.info("\n\n########################\n\n")
 
-    # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth)
     logger.info(f'Start find absolute state (100% or 0% level), take times')
     absoluteBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if satisfy_fully_meth_or_unmeth(combineBGTruth[key][0])}
     logger.info(f'Combined bgtruth sites={len(combineBGTruth):,}, Absolute bgtruth (100% and 0% level) sites={len(absoluteBGTruth):,}')
 
     logger.info(f'Start cutoff on absolute bg-truth, take times')
+    # This is the smallest sites we use for evaluation
     absoluteBGTruthCov = {key: absoluteBGTruth[key] for key in absoluteBGTruth if absoluteBGTruth[key][1] >= cutoffBGTruth}
     logger.info(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(absoluteBGTruthCov):,}')
 
-    # The all coordinate file list (full path) in this runs
+    # Load all coordinate file list (full path) in this runs
     relateCoord = list(narrowCoordFileList)  # copy the basic coordinate
 
     ## add additional two region files based on bgtruth (Concordant, Discordant):
+    ## file name is like: K562_WGBS_2Reps.hg38_nonsingletons.concordant.bed
     nonsingletonsFilePrefix = nonsingletonsFile.replace(singletonFileExtStr, '')
     fn_concordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed"
     fn_discordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed"
@@ -287,8 +298,10 @@ if __name__ == '__main__':
     relateCoord.append(fn_concordant)
     relateCoord.append(fn_discordant)
 
+    # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth)
     # Classify concordant and discordant based on cov>=1 bgtruth
-    nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=True)
+    nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=False)
+    logger.info("\n\n########################\n\n")
 
     # Load methlation callings by tools
     callfn_dict = defaultdict()  # callname -> filename
@@ -298,30 +311,35 @@ if __name__ == '__main__':
     for callstr in args.calls:
         call_encode, callfn = callstr.split(':')
 
+        # Only DeepMod.C/DeepMod.Cluster will always named as DeepMod
         call_name = get_tool_name(call_encode)
         callname_list.append(call_name)
         callfn_dict[call_name] = callfn
+
+        # We do now allow import DeepMod.Cluster for read level evaluation
+        if call_encode == 'DeepMod.Cluster':
+            raise Exception(f'{call_encode} is not allowed for read level evaluation, please use DeepMod.C file here')
 
         ## MUST import read-level results, and include score for plot ROC curve and PR curve
         call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache)
         # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
         logger.info('Filter out CpG sites not in bgtruth')
-        ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(call0, absoluteBGTruth)
+        ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(call0, absoluteBGTruth)  # TODO:using absoluteBGTruthCov for even fewer sites
         logger.info(f'Left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
 
     # logger.debug(callfn_dict)
 
     # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
-    outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.cov1.csv')
+    outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov1.csv')
     report_singleton_nonsingleton_table(absoluteBGTruth, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
 
     # Report singletons vs non-singletons of bgtruth with cov cutoff >= 5
-    outfn = os.path.join(out_dir, f'{RunPrefix}.summary.singleton.nonsingleton.cov{cutoffBGTruth}.csv')
+    outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov{cutoffBGTruth}.csv')
     report_singleton_nonsingleton_table(absoluteBGTruthCov, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
 
     logger.info("\n\n########################\n\n")
 
-    # this file is the all tool joined together sites
+    # this file is the all tool joined together sites BED file, for evaluation on joined sites
     bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}.Tools_BGTruth_cov{cutoffBGTruth}_Joined.bed"
 
     joinedCPG = set(absoluteBGTruthCov.keys())
@@ -332,7 +350,7 @@ if __name__ == '__main__':
 
     logger.info(f"Data points for joined all tools with bg-truth (cov>={cutoffBGTruth}) sites={len(joinedCPG):,}\n\n")
 
-    # Next calculate fully methylated and unmethylated sites
+    # Next extract sites in joined set only
     certainJoinedBGTruth = {}  # all joined bg-truth
     cnt5C = 0
     cnt5mC = 0
@@ -350,8 +368,8 @@ if __name__ == '__main__':
     certainBGTruth = dict(absoluteBGTruthCov)  # not used now
     cntNoJoined5C = 0
     cntNoJoined5mC = 0
-    for key in absoluteBGTruthCov:
-        if is_fully_meth(absoluteBGTruthCov[key][0]):
+    for key in certainBGTruth:
+        if is_fully_meth(certainBGTruth[key][0]):
             cntNoJoined5mC += 1
         else:
             cntNoJoined5C += 1
@@ -360,37 +378,39 @@ if __name__ == '__main__':
 
     logger.info("\n\n############\n\n")
 
-    if report_joined:  # Joined together evaluation
+    if report_joined:  # Joined all together sites for evaluation
         perf_dir = os.path.join(out_dir, 'performance-results')
         os.makedirs(perf_dir, exist_ok=True)
         bgTruth = certainJoinedBGTruth
-        secondBedFileName = bedfn_tool_join_bgtruth
-    else:  # only based on bgtruth
+        secondBedFileName = bedfn_tool_join_bgtruth  # params passed for joined sets evaluation, may be remove, due to bgtruth is now joined
+    else:  # only based on bgtruth joined with a tool
         perf_dir = os.path.join(out_dir, 'performance-results-nojoined')
         os.makedirs(perf_dir, exist_ok=True)
         bgTruth = certainBGTruth
         secondBedFileName = None
 
+    if args.mpi:  # Using mpi may cause error, not fixed, but fast running
+        logger.info('Using multi-processor function for evaluations:')
+
     for tool in ontCallWithinBGTruthDict:
         tmpPrefix = f'{RunPrefix}.{tool}'
         logger.info(f'Evaluating: {tmpPrefix}')
 
-        # Note: narrowedCoordinatesList - all singleton (absolute and mixed) and non-singleton generated bed. ranges
-        #       secondFilterBedFileName - joined sites of four tools and bg-truth. points
-
         if args.mpi:  # Using mpi may cause error, not fixed, but fast running
+            # Note: narrowedCoordinatesList - all singleton (absolute and mixed) and non-singleton generated bed. ranges
+            #       secondFilterBedFileName - joined sites of four tools and bg-truth. points
             df = report_per_read_performance_mp(ontCallWithinBGTruthDict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBedFileName=secondBedFileName, outdir=perf_dir, tagname=tmpPrefix, processors=args.processors)
         else:
             df = report_per_read_performance(ontCallWithinBGTruthDict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord, secondFilterBedFileName=secondBedFileName, outdir=perf_dir, tagname=tmpPrefix)
+            # This file will always report intermediate results
+            tmpfn = os.path.join(perf_dir, 'performance.report.tmp.csv')
+            os.remove(tmpfn)
 
         df['Tool'] = tool
         df['Dataset'] = dsname
 
         # Rename function need to be checked
         df = rename_location_from_coordinate_name(df)
-
-        # logger.debug(df)
-        # logger.debug(df.columns)
 
         # Select columns to save
         df = df[perf_report_columns]
@@ -399,10 +419,7 @@ if __name__ == '__main__':
         df.to_csv(outfn)
         logger.info(f"save to {outfn}")
 
-        # This file will always report intermediate results
-        # tmpfn = os.path.join(perf_dir, 'performance.report.tmp.csv')
-        # os.remove(tmpfn)
-
         if args.test:
+            logger.info("Only test, so just output one tool's results")
             break
     logger.info("### Read level performance evaluation results generation DONE.")
