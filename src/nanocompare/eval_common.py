@@ -599,7 +599,9 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     return cpgDict
 
 
-def importPredictions_Megalodon(infileName, chr_col=0, start_col=1, strand_col=3, mod_log_prob_col=4, can_log_prob_col=5, baseFormat=1, cutoff=0.8, sep='\t', output_first=False, include_score=False):
+## def importPredictions_Megalodon(infileName, chr_col=0, start_col=1, strand_col=3, mod_log_prob_col=4, can_log_prob_col=5, baseFormat=1, cutoff=0.8, sep='\t', output_first=False, include_score=False):
+
+def importPredictions_Megalodon(infileName, chr_col=1, start_col=3, strand_col=2, mod_log_prob_col=4, can_log_prob_col=5, baseFormat=1, cutoff=0.8, sep='\t', output_first=False, include_score=False):
     """
     0-based start for Magelodon：
         1.  baseFormat=0， start=Megalondon start；
@@ -659,6 +661,7 @@ def importPredictions_Megalodon(infileName, chr_col=0, start_col=1, strand_col=3
             raise Exception(f'The file [{infileName}] can not recognized strand-info from row={row}, please check it')
 
         key = (tmp[chr_col], start, strand)
+
 
         try:
             meth_prob = float(np.e ** float(tmp[mod_log_prob_col]))  # Calculate mod_prob

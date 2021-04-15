@@ -5,12 +5,29 @@ Channel
     .ifEmpty { exit 1, "Cannot find input file"}
     .set {ch_input}
 
+aa = Channel
+    .from( "Megalodon", "Tombo", "DeepMod", "DeepSignal", "Nanopolish" )
+    .toList()
+
+print(aa)
+
+
 process FirstCheck {
+	input:
+	val aa1 from aa
 
 	tag 'checkEnv'
 
 	"""
-    set -x
+	set -x
+
+	echo $aa1
+	echo ${aa1[0]}
+	echo ${aa1[1]}
+	echo ${aa1[2]}
+	echo ${aa1[3]}
+	echo ${aa1[4]}
+
     echo hello
 	pwd
     ls -la
@@ -25,7 +42,7 @@ process FirstCheck {
     deepsignal
     DeepMod.py
 
-    ${params.guppy.basecall} -v
+    ${params.GuppyDir}/bin/guppy_basecaller -v
     """
 }
 
@@ -33,13 +50,13 @@ process FirstCheck {
 // untar file, seperate into N folders named 'M1', ..., 'M10', etc.
 process Preprocess {
     input:
-    set file(fast5_tar) from ch_input
+    file fast5_tar from ch_input
 
 	output:
     file 'sept_dir/M*' into fast5Inputs
 
-    //when:
-    //false
+    when:
+    true
 
     """
     set -x
@@ -99,9 +116,9 @@ process Basecall {
 
     """
     mkdir -p basecall_dir/${x}
-    ${params.guppy.basecall} --input_path $x \
+    ${params.GuppyDir}/bin/guppy_basecaller --input_path $x \
         --save_path "basecall_dir/${x}" \
-        --config dna_r9.4.1_450bps_hac.cfg \
+        --config ${params.GUPPY_BASECALL_MODEL} \
         --gpu_runners_per_device ${params.processors} \
         --num_callers 3 \
         --fast5_out \
@@ -455,7 +472,105 @@ process DpmodCombine {
     """
 }
 
+//TODO: how sort the list???
 
-//allCombineResults=deepsignalCombineResult.concat(tomboCombineResult, megalodonCombineResult, nanopolishCombineResult, deepmodCombineResult)
-//allCombineResults.view()
+deepsignalCombineResult.concat(tomboCombineResult,megalodonCombineResult, \
+	nanopolishCombineResult,deepmodCombineResult.flatten())
+	.toSortedList()
+	.set{allCombinedResultsList}
+
+allCombinedResultsList.into { allCombinedResultsList_ch1; allCombinedResultsList_ch2 }
+
+
+// Evaluation on combined results
+process ReadLevelPerf {
+	input: // TODO: I can not sort fileList by name, seems sorted by date????
+    file fileList from allCombinedResultsList_ch1
+
+    output:
+    file "MethPerf-*" into ReadLevelPerfOut
+
+    when:
+    params.eval == "true"
+
+    """
+    set -x
+
+	# Sort file by my self
+    flist=(\$(ls *.combine.tsv))
+
+    echo \${flist[@]}
+
+    for fn in \${flist[@]}
+    do
+        echo File: \$fn
+        head -n 3 \$fn
+    done
+
+    export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}
+
+    ## python ${workflow.projectDir}/src/nanocompare/read_level_eval.py --help
+
+	## Read level evaluations
+	python ${workflow.projectDir}/src/nanocompare/read_level_eval.py \
+		--calls DeepSignal:\${flist[2]} \
+				Tombo:\${flist[5]} \
+				Nanopolish:\${flist[4]} \
+				DeepMod.C:\${flist[1]} \
+				Megalodon:\${flist[3]} \
+		--bgtruth 'bismark:/projects/li-lab/Nanopore_compare/data/HL60/HL60_RRBS_ENCFF000MDA.Read_R1.Rep_1_trimmed_bismark_bt2.CpG_report.txt.gz;/projects/li-lab/Nanopore_compare/data/HL60/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz' \
+		--runid MethPerf-${params.runid} \
+		--dsname ${params.dsname} \
+		--min-bgtruth-cov ${params.bgtruthCov} --report-joined --mpi --enable-cache --using-cache -o .
+
+	echo "### Read level analysis DONE"
+    """
+}
+
+// Site level correlation analysis
+process SiteLevelCorr {
+	input:
+    file perfDir from ReadLevelPerfOut
+    file fileList from allCombinedResultsList_ch2
+
+    output:
+    file "MethCorr-*" into SiteLevelCorrOut
+
+    when:
+    params.eval == "true"
+
+    """
+    set -x
+
+	# Sort file by my self
+    flist=(\$(ls *.combine.tsv))
+
+    echo \${flist[@]}
+
+    for fn in \${flist[@]}
+    do
+        echo File: \$fn
+        head -n 3 \$fn
+    done
+
+    export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}
+
+	## Site level evaluations
+	python ${workflow.projectDir}/src/nanocompare/site_level_eval.py \
+		--calls DeepSignal:\${flist[2]} \
+				Tombo:\${flist[5]} \
+				Nanopolish:\${flist[4]} \
+				DeepMod.Cluster:\${flist[0]} \
+				Megalodon:\${flist[3]} \
+		--bgtruth 'bismark:/projects/li-lab/Nanopore_compare/data/HL60/HL60_RRBS_ENCFF000MDA.Read_R1.Rep_1_trimmed_bismark_bt2.CpG_report.txt.gz;/projects/li-lab/Nanopore_compare/data/HL60/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz' \
+		--runid MethPerf-${params.runid} \
+		--dsname ${params.dsname} \
+		--min-bgtruth-cov ${params.bgtruthCov} --toolcov-cutoff ${params.toolCov} \
+		--beddir ${perfDir} \
+		--enable-cache --using-cache -o .
+
+	echo "### Site level analysis DONE"
+    """
+}
+
 

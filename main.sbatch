@@ -10,24 +10,33 @@
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
-#cd $SLURM_SUBMIT_DIR
-#date;hostname;pwd
-#
-#module load singularity
-
-#curl -fsSL get.nextflow.io | bash
 set -x
 
-indata=/fastscratch/liuya/nanocompare/input/HL60-Nanopore_GT18-07373.fast5.tar
-ntask=50
-workdir=/fastscratch/liuya/nanocompare/work-HL60
+#cd $SLURM_SUBMIT_DIR
 
-#rm -rf ${workdir}
+date;hostname;pwd
 
+#module load singularity
+
+# Get nextflow from internet
+#curl -fsSL get.nextflow.io | bash
+
+
+# Test default datasets on winter
 #./nextflow run main.nf -profile winter
 
-#/nextflow run main.nf -resume -with-report -with-timeline -with-trace
-#
+# Test with output report timelines
+#/nextflow run main.nf -profile winter -with-report -with-timeline -with-trace
+
+# Running resource test
+#./nextflow main.nf run --eval false -profile winter \
+#   -with-report -with-timeline -with-trace -work-dir /fastscratch/liuya/nanocompare/work
+
+# Test HL60 as input, $ntask subjobs on winter, output to $workdir
+#indata=/fastscratch/liuya/nanocompare/input/HL60-Nanopore_GT18-07373.fast5.tar
+#ntask=50
+#workdir=/fastscratch/liuya/nanocompare/work-HL60
+
 #./nextflow run main.nf -work-dir ${workdir} \
 #	--indata ${indata} --ntask ${ntask} \
 #	-cache -resume -with-report -with-timeline \

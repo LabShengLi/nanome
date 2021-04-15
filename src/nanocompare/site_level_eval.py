@@ -233,6 +233,8 @@ if __name__ == '__main__':
         callname_list.append(callname)
 
         # For site level evaluation, only need (freq, cov) results, no score needed. Especially for DeepMod, we must import as freq and cov format from DeepMod.Cluster encode
+        # TODO: cov=1 will lead to too large size of dict objects, do we really report cov=1 results?
+        # Do not filter bgtruth, because we use later for overlapping (without bg-truth)
         callresult_dict[callname] = [import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, deepmod_cluster_freq_cov_format=True)]
 
     logger.debug(callfn_dict)

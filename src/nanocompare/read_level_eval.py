@@ -207,7 +207,7 @@ def parse_arguments():
     """
     :return:
     """
-    parser = argparse.ArgumentParser(description='Performance evaluation task')
+    parser = argparse.ArgumentParser(description='Read level performance evaluation in Nanocompare paper')
     parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff", default=5)
     # parser.add_argument('--min-tool-cov', type=int, help="min tool coverage cutoff", default=3)
     parser.add_argument('--dsname', type=str, help="dataset name", default='DS')
