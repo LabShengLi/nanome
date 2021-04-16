@@ -31,6 +31,8 @@ date;hostname;pwd
 
 #./nextflow run main.nf -profile winter,test -with-report -with-timeline -with-trace  -with-dag
 
+./nextflow run main.nf -profile winter,test -resume
+
 # Run on benchmarking data
 rm -rf /fastscratch/liuya/nanocompare/work
 ./nextflow run main.nf -profile winter,benchmarking  \

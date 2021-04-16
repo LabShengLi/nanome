@@ -52,6 +52,8 @@ process EnvCheck {
 
 // untar file, seperate into N folders named 'M1', ..., 'M10', etc.
 process Preprocess {
+	echo true
+	cache  'lenient'
     input:
     file fast5_tar from ch_input
 
@@ -63,15 +65,11 @@ process Preprocess {
 
     """
     set -x
+    echo "Input=${fast5_tar}"
 
-    echo ${workflow.projectDir}/${params.chromSizesFile}
-
-
-    echo ${fast5_tar}
     infn=${fast5_tar}
 
     mkdir -p untar_dir
-
     if [ "${params.isfile}" = true ] ; then
         #mkdir -p untar_dir
         #tar xzf \${infn} -C untar_dir
@@ -112,6 +110,7 @@ preprocess_out_ch
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
 	tag "${x}"
+	cache  'lenient'
 
 	input:
     file x from basecall_input_ch.flatten()
@@ -145,6 +144,7 @@ basecall_out_ch
 // resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
 process Resquiggle {
 	tag "${x}"
+	cache  'lenient'
 
 	input:
     file x from resquiggle_in_ch.flatten()
@@ -173,6 +173,8 @@ resquiggle_out_ch.into { deepsignal_in_ch; tombo_in_ch }
 process DeepSignal {
 	tag "${x}"
 
+	cache  'lenient'
+
 	input:
     file x from deepsignal_in_ch.flatten()
 
@@ -194,6 +196,7 @@ process DeepSignal {
 // Tombo runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Tombo {
 	tag "${x}"
+	cache  'lenient'
 
 	input:
     file x from tombo_in_ch.flatten()
@@ -225,6 +228,7 @@ process Tombo {
 // Megalodon runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Megalodon {
 	tag "${x}"
+	cache  'lenient'
 
 	input:
     file x from megalodon_in_ch.flatten()
@@ -270,6 +274,8 @@ process Megalodon {
 process DeepMod {
 	tag "${x}"
 
+	cache  'lenient'
+
 	errorStrategy 'ignore'
 
 	input:
@@ -296,6 +302,7 @@ process DeepMod {
 // Nanopolish runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Nanopolish {
 	tag "${x}"
+	cache  'lenient'
 
 	input:
     file x from nanopolish_in_ch.flatten()
@@ -504,7 +511,10 @@ process DpmodCombine {
 deepsignal_combine_out_ch.concat(tombo_combine_out_ch,megalodon_combine_out_ch, \
 	nanopolish_combine_out_ch,deepmod_combine_out_ch.flatten())
 	.toSortedList()
-	.into { readlevel_in_ch; sitelevel_in_ch }
+	.into { readlevel_in_ch; sitelevel_in_ch; test_out_ch }
+
+println("test_out_ch=" + test_out_ch)
+test_out_ch.view()
 
 
 // Read level evaluations
@@ -518,10 +528,12 @@ process ReadLevelPerf {
     file "MethPerf-*" into readlevel_out_ch
 
     when:
-    params.eval
+    params.eval && (fileList.size() >= 1)
 
     """
     set -x
+
+    echo ${fileList}
 
 	# Sort file by my self
     flist=(\$(ls *.combine.tsv))
@@ -573,7 +585,7 @@ process SiteLevelCorr {
     file "MethCorr-*" into sitelevel_out_ch
 
     when:
-    params.eval
+    params.eval && (fileList.size() >= 1)
 
     """
     set -x
