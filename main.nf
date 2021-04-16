@@ -52,7 +52,7 @@ process EnvCheck {
 
 // untar file, seperate into N folders named 'M1', ..., 'M10', etc.
 process Preprocess {
-	echo true
+//	echo true
 	cache  'lenient'
     input:
     file fast5_tar from ch_input
@@ -511,10 +511,10 @@ process DpmodCombine {
 deepsignal_combine_out_ch.concat(tombo_combine_out_ch,megalodon_combine_out_ch, \
 	nanopolish_combine_out_ch,deepmod_combine_out_ch.flatten())
 	.toSortedList()
-	.into { readlevel_in_ch; sitelevel_in_ch; test_out_ch }
+	.into { readlevel_in_ch; sitelevel_in_ch }
 
-println("test_out_ch=" + test_out_ch)
-test_out_ch.view()
+//println("test_out_ch=" + test_out_ch)
+//test_out_ch.view()
 
 
 // Read level evaluations
