@@ -1,29 +1,32 @@
 #!/usr/bin/env nextflow
 
-Channel
-    .fromPath(params.input)
-    .ifEmpty { "Cannot find input file yet"}
-    .set {ch_input}  // a fast5.tar.gz file or a dir include more files
+//println params.input
+//println params.is_benchmarking
 
+//Channel
+//    .fromPath(params.input)
+//    .ifEmpty { "Cannot find input file yet"}
+//    .set {ch_input}  // a fast5.tar.gz file or a dir include more files
 
+//Channel
+//        .fromPath('/projects/li-lab/yang/results/2021-04-15/BenchData8000/MB*', type: 'dir')
+//        .view()
 
-println params.input
-println params.is_benchmarking
+println("Welcome to use nanome designed by JAX Sheng Li group (http://nanome.jax.org)")
 
-Channel
-        .fromPath('/projects/li-lab/yang/results/2021-04-15/BenchData8000/MB*', type: 'dir')
-        .view()
+// Input for preprocessing (untar, seperate)
+ch_input = params.is_benchmarking ? Channel.empty() : Channel.fromPath(params.input)
 
-// Get benchmarking inputs
+// Benchmarking inputs
 benchmarking_out_ch = params.is_benchmarking ? Channel
         .fromPath('/projects/li-lab/yang/results/2021-04-15/BenchData8000/MB*', type: 'dir') : Channel.empty()
 
 
-// Check all tools work on the platform
+// Check all tools work well on the platform
 process EnvCheck {
-	// teminate all later processes if this process is not passed
-	tag 'EnvCheck'
 
+	tag 'EnvCheck'
+	// teminate all later processes if this process is not passed
 	errorStrategy 'terminate'
 
 	"""
@@ -95,17 +98,16 @@ process Preprocess {
     echo "### Untar input done. ###"
 
     mkdir -p sept_dir
-    python ${workflow.projectDir}/src/nanocompare/methcall/FilesSeparatorNew.py untar_dir ${params.ntask} sept_dir
+    python ${workflow.projectDir}/model_params/FilesSeparatorNew.py untar_dir ${params.ntask} sept_dir
     echo "### Seperation fast5 files done. ###"
     """
 }
 
+
 preprocess_out_ch
 	.mix(benchmarking_out_ch)
-	.into { basecall_input_ch; megalodon_input_ch; testout }
+	.into { basecall_input_ch; megalodon_in_ch }
 
-testout.flatten()
-	.view()
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
@@ -199,6 +201,9 @@ process Tombo {
     output:
     file '*.per_read_stats.bed' into tombo_out_ch
 
+    when:
+    ! params.RunTop3Tools
+
     """
 	tombo detect_modifications alternative_model \
 		--fast5-basedirs ${x}/workspace \
@@ -210,7 +215,7 @@ process Tombo {
 		--processes ${params.processors} \
 		--corrected-group ${params.correctedGroup}
 
-	python ${workflow.projectDir}/src/nanocompare/methcall/Tombo_extract_per_read_stats.py ${workflow.projectDir}/model_params/${params.chromSizesFile} \
+	python ${workflow.projectDir}/model_params/Tombo_extract_per_read_stats.py ${workflow.projectDir}/model_params/${params.chromSizesFile} \
 				"${params.analysisPrefix}.batch_${x}.CpG.tombo.per_read_stats" \
 				"${params.analysisPrefix}.batch_${x}.CpG.tombo.per_read_stats.bed"
     """
@@ -222,7 +227,7 @@ process Megalodon {
 	tag "${x}"
 
 	input:
-    file x from megalodon_input_ch.flatten()
+    file x from megalodon_in_ch.flatten()
 
     output:
     file 'megalodon_results/*.per_read_modified_base_calls.txt' into megalodon_out_ch
@@ -274,7 +279,7 @@ process DeepMod {
     file 'mod_output/batch_*_num' into deepmod_out_ch
 
     when:
-    params.RunDeepMod == "true"
+    ! params.RunTop3Tools && params.RunDeepMod
 
     """
     DeepMod.py detect \
@@ -286,8 +291,6 @@ process DeepMod {
 	# rm -rf mod_output/batch_*.done
     """
 }
-
-
 
 
 // Nanopolish runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
@@ -321,7 +324,7 @@ process Nanopolish {
 		# echo "cat \$f >> \$fastqFile - COMPLETED"
 	done
 
-	python ${workflow.projectDir}/src/nanocompare/methcall/nanopore_nanopolish.NA19240_pipeline.step_02.preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
+	python ${workflow.projectDir}/model_params/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
 
 	nanopolish index -d ${x}/workspace \${fastqNoDupFile}
 
@@ -348,11 +351,13 @@ deepsignal_combine_in_ch = deepsignal_out_ch.toList()
 
 // Combine DeepSignal runs' all results together
 process DpSigCombine {
+	publishDir "outputs/methylation-callings" //, mode: "copy"
+
 	input:
     file x from deepsignal_combine_in_ch
 
     output:
-    file '*.combine.tsv' into deepsignalCombineResult
+    file '*.combine.tsv' into deepsignal_combine_out_ch
 
     when:
     x.size() >= 1
@@ -367,11 +372,13 @@ process DpSigCombine {
 
 // Combine Tombo runs' all results together
 process TomboCombine {
+	publishDir "outputs/methylation-callings" //, mode: "copy"
+
 	input:
     file x from tombo_combine_in_ch
 
     output:
-    file '*.combine.tsv' into tomboCombineResult
+    file '*.combine.tsv' into tombo_combine_out_ch
 
     when:
     x.size() >= 1
@@ -385,11 +392,14 @@ process TomboCombine {
 
 // Combine Megalodon runs' all results together
 process MgldnCombine {
+
+	publishDir "outputs/methylation-callings" //, mode: "copy"
+
 	input:
     file x from megalodon_combine_in_ch
 
     output:
-    file '*.combine.tsv' into megalodonCombineResult
+    file '*.combine.tsv' into megalodon_combine_out_ch
 
     when:
     x.size() >= 1
@@ -413,11 +423,13 @@ process MgldnCombine {
 
 // Combine Nanopolish runs' all results together
 process NplshCombine {
+	publishDir "outputs/methylation-callings" //, mode: "copy"
+
 	input:
     file x from nanopolish_combine_in_ch
 
     output:
-    file '*.combine.tsv' into nanopolishCombineResult
+    file '*.combine.tsv' into nanopolish_combine_out_ch
 
     when:
     x.size() >= 1
@@ -443,11 +455,13 @@ process NplshCombine {
 
 // Combine DeepMod runs' all results together
 process DpmodCombine {
+	publishDir "outputs/methylation-callings" //, mode: "copy"
+
 	input:
     file x from deepmod_combine_in_ch
 
     output:
-    file '*.combine.tsv' into deepmodCombineResult
+    file '*.combine.tsv' into deepmod_combine_out_ch
 
     when:
     x.size() >= 1
@@ -487,17 +501,16 @@ process DpmodCombine {
 }
 
 //TODO: how sort the list???
-deepsignalCombineResult.concat(tomboCombineResult,megalodonCombineResult, \
-	nanopolishCombineResult,deepmodCombineResult.flatten())
+deepsignal_combine_out_ch.concat(tombo_combine_out_ch,megalodon_combine_out_ch, \
+	nanopolish_combine_out_ch,deepmod_combine_out_ch.flatten())
 	.toSortedList()
-	.into { readlevel_in_ch; sitelevel_in_ch; test_out }
+	.into { readlevel_in_ch; sitelevel_in_ch }
 
-test_out.view()
 
-println params.eval
-
-// Evaluation on combined results
+// Read level evaluations
 process ReadLevelPerf {
+	publishDir "outputs/nanome-analysis" //, mode: "copy"
+
 	input: // TODO: I can not sort fileList by name, seems sorted by date????
     file fileList from readlevel_in_ch
 
@@ -518,8 +531,14 @@ process ReadLevelPerf {
     for fn in \${flist[@]}
     do
         echo File: \$fn
-        head -n 3 \$fn
+        # head -n 3 \$fn
     done
+
+    deepsignalFile=\$(find . -maxdepth 1 -name '*.DeepSignal.combine.tsv')
+    tomboFile=\$(find . -maxdepth 1 -name '*.Tombo.combine.tsv')
+    nanopolishFile=\$(find . -maxdepth 1 -name '*.Nanopolish.combine.tsv')
+    deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC.combine.tsv')
+    megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.tsv')
 
     export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}
 
@@ -527,15 +546,16 @@ process ReadLevelPerf {
 
 	## Read level evaluations
 	python ${workflow.projectDir}/src/nanocompare/read_level_eval.py \
-		--calls DeepSignal:\${flist[2]} \
-				Tombo:\${flist[5]} \
-				Nanopolish:\${flist[4]} \
-				DeepMod.C:\${flist[1]} \
-				Megalodon:\${flist[3]} \
+		--calls DeepSignal:\${deepsignalFile} \
+				Tombo:\${tomboFile} \
+				Nanopolish:\${nanopolishFile} \
+				DeepMod.C:\${deepmodFile} \
+				Megalodon:\${megalodonFile} \
 		--bgtruth "${params.bgtruthWithEncode}" \
 		--runid MethPerf-${params.runid} \
 		--dsname ${params.dsname} \
-		--min-bgtruth-cov ${params.bgtruthCov} --report-joined --mpi --enable-cache --using-cache -o .
+		--min-bgtruth-cov ${params.bgtruthCov} \
+		--report-joined --mpi -o . ###--enable-cache --using-cache
 
 	echo "### Read level analysis DONE"
     """
@@ -543,6 +563,8 @@ process ReadLevelPerf {
 
 // Site level correlation analysis
 process SiteLevelCorr {
+	publishDir "outputs/nanome-analysis" //, mode: "copy"
+
 	input:
     file perfDir from readlevel_out_ch
     file fileList from sitelevel_in_ch
@@ -558,33 +580,31 @@ process SiteLevelCorr {
 
 	# Sort file by my self
     flist=(\$(ls *.combine.tsv))
-
     echo \${flist[@]}
 
-    for fn in \${flist[@]}
-    do
-        echo File: \$fn
-        head -n 3 \$fn
-    done
+    deepsignalFile=\$(find . -maxdepth 1 -name '*.DeepSignal.combine.tsv')
+    tomboFile=\$(find . -maxdepth 1 -name '*.Tombo.combine.tsv')
+    nanopolishFile=\$(find . -maxdepth 1 -name '*.Nanopolish.combine.tsv')
+    deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC_clusterCpG.combine.tsv')
+    megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.tsv')
 
     export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}
 
 	## Site level evaluations
 	python ${workflow.projectDir}/src/nanocompare/site_level_eval.py \
-		--calls DeepSignal:\${flist[2]} \
-				Tombo:\${flist[5]} \
-				Nanopolish:\${flist[4]} \
-				DeepMod.Cluster:\${flist[0]} \
-				Megalodon:\${flist[3]} \
+		--calls DeepSignal:\${deepsignalFile} \
+				Tombo:\${tomboFile} \
+				Nanopolish:\${nanopolishFile} \
+				DeepMod.Cluster:\${deepmodFile} \
+				Megalodon:\${megalodonFile} \
 		--bgtruth "${params.bgtruthWithEncode}" \
-		--runid MethPerf-${params.runid} \
+		--runid MethCorr-${params.runid} \
 		--dsname ${params.dsname} \
-		--min-bgtruth-cov ${params.bgtruthCov} --toolcov-cutoff ${params.toolCov} \
+		--min-bgtruth-cov ${params.bgtruthCov} \
+		--toolcov-cutoff ${params.toolCov} \
 		--beddir ${perfDir} \
-		--enable-cache --using-cache -o .
+		-o .
 
 	echo "### Site level analysis DONE"
     """
 }
-
-

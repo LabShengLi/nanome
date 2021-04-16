@@ -42,7 +42,7 @@ fig.5b.sorted.bar.plot.coe.in.each.region()
 
 ## Figure 6: Resource summary
 source(here('src', 'plotutils4r', 'paper_utils.R'))
-fig.6.running.resource.bar.plot()
+fig.6.running.resource.bar.plot1()
 
 
 ## Figure 5 cd: Set venn and euller plot

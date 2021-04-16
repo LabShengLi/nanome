@@ -35,6 +35,6 @@ pythonFn=${prjBaseDir}/src/nanocompare/read_level_eval.py
 
 PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:${DeepSignal_calls} \
 	Tombo:${Tombo_calls} Nanopolish:${Nanopolish_calls} DeepMod.C:${DeepMod_calls} \
-	Megalodon:${Megalodon_calls} --bgtruth ${parser}:${bgTruth} --runid MethPerf-${RunPrefix} \
+	Megalodon.ZW:${Megalodon_calls} --bgtruth ${parser}:${bgTruth} --runid MethPerf-${RunPrefix} \
 	--dsname ${dsname} --min-bgtruth-cov ${minCov} \
 	--report-joined $otherOptions #--enable-cache --using-cache --mpi # --test

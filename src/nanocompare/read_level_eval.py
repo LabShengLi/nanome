@@ -298,36 +298,9 @@ if __name__ == '__main__':
     relateCoord.append(fn_concordant)
     relateCoord.append(fn_discordant)
 
-    # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth)
+    # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth) with cov>=1
     # Classify concordant and discordant based on cov>=1 bgtruth
     nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=False)
-    logger.info("\n\n########################\n\n")
-
-    # Load methlation callings by tools
-    callfn_dict = defaultdict()  # callname -> filename
-    ontCallWithinBGTruthDict = defaultdict()  # name->call
-    callname_list = []  # [DeepSignal, DeepMod, etc.]
-
-    for callstr in args.calls:
-        call_encode, callfn = callstr.split(':')
-
-        # Only DeepMod.C/DeepMod.Cluster will always named as DeepMod
-        call_name = get_tool_name(call_encode)
-        callname_list.append(call_name)
-        callfn_dict[call_name] = callfn
-
-        # We do now allow import DeepMod.Cluster for read level evaluation
-        if call_encode == 'DeepMod.Cluster':
-            raise Exception(f'{call_encode} is not allowed for read level evaluation, please use DeepMod.C file here')
-
-        ## MUST import read-level results, and include score for plot ROC curve and PR curve
-        call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache)
-        # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
-        logger.info('Filter out CpG sites not in bgtruth')
-        ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(call0, absoluteBGTruth)  # TODO:using absoluteBGTruthCov for even fewer sites
-        logger.info(f'Left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
-
-    # logger.debug(callfn_dict)
 
     # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
     outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov1.csv')
@@ -339,9 +312,41 @@ if __name__ == '__main__':
 
     logger.info("\n\n########################\n\n")
 
+    # Load methlation callings by tools
+    callfn_dict = defaultdict()  # callname -> filename
+    ontCallWithinBGTruthDict = defaultdict()  # name->call
+    loaded_callname_list = []  # [DeepSignal, DeepMod, etc.]
+
+    for callstr in args.calls:
+        call_encode, callfn = callstr.split(':')
+
+        if len(callfn.strip()) == 0:  # skip empty filename
+            continue
+
+        # Only DeepMod.C/DeepMod.Cluster will always named as DeepMod
+        call_name = get_tool_name(call_encode)
+        loaded_callname_list.append(call_name)
+        callfn_dict[call_name] = callfn
+
+        # We do now allow import DeepMod.Cluster for read level evaluation
+        if call_encode == 'DeepMod.Cluster':
+            raise Exception(f'{call_encode} is not allowed for read level evaluation, please use DeepMod.C file here')
+
+        ## MUST import read-level results, and include score for plot ROC curve and PR curve
+        call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache)
+        # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
+        logger.info(f'Filter out CpG sites not in bgtruth for {call_name}')
+        ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(call0, absoluteBGTruth)  # TODO:using absoluteBGTruthCov for even fewer sites
+        logger.info(f'{call_name} left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
+
+    logger.debug(loaded_callname_list)
+
+    logger.info("\n\n########################\n\n")
+
     # this file is the all tool joined together sites BED file, for evaluation on joined sites
     bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}.Tools_BGTruth_cov{cutoffBGTruth}_Joined.bed"
 
+    # Study the joined CpG sites by all tools with BG-Truth
     joinedCPG = set(absoluteBGTruthCov.keys())
     for toolname in ontCallWithinBGTruthDict:
         joinedCPG = joinedCPG.intersection(set(ontCallWithinBGTruthDict[toolname].keys()))
@@ -422,4 +427,4 @@ if __name__ == '__main__':
         if args.test:
             logger.info("Only test, so just output one tool's results")
             break
-    logger.info("### Read level performance evaluation results generation DONE.")
+    logger.info("### Read level performance analysis DONE.")

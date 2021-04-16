@@ -16,6 +16,9 @@
 
 #conda info --envs
 
+# Get nextflow from internet
+#curl -fsSL get.nextflow.io | bash
+
 conda install -c bioconda nanopolish=0.13.2
 
 conda install -c bioconda deepmod
@@ -31,6 +34,8 @@ conda install -c bioconda samtools
 conda install -c bioconda minimap2
 
 pip install ont-pyguppy-client-lib==4.2.2
+
+conda install -c bioconda pybedtools
 
 conda env export > environment.yml
 

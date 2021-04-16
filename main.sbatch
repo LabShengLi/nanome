@@ -27,10 +27,14 @@ date;hostname;pwd
 # Test default test datasets on winter HPC
 #./nextflow run main.nf -profile winter,test
 
+#./nextflow run main.nf -profile winter,test -resume -with-dag -bg
+
+#./nextflow run main.nf -profile winter,test -with-report -with-timeline -with-trace  -with-dag
+
 # Run on benchmarking data
 rm -rf /fastscratch/liuya/nanocompare/work
 ./nextflow run main.nf -profile winter,benchmarking  \
-	-with-report -with-timeline -with-trace -work-dir /fastscratch/liuya/nanocompare/work
+	-with-report -with-timeline -with-trace -with-dag -work-dir /fastscratch/liuya/nanocompare/work
 
 # Test with output report timelines
 #/nextflow run main.nf -profile winter -with-report -with-timeline -with-trace

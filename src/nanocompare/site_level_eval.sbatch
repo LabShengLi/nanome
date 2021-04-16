@@ -40,5 +40,5 @@ PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:${DeepSignal_
 	Tombo:${Tombo_calls} Nanopolish:${Nanopolish_calls} DeepMod.Cluster:${DeepMod_calls} \
 	Megalodon:${Megalodon_calls} --bgtruth ${parser}:${bgTruth} \
 	--runid MethCorr-${RunPrefix} --dsname ${Dataset} \
-	--toolcov-cutoff 3 --bgtruthcov-cutoff 5 --baseFormat 1 \
+	--toolcov-cutoff 3 --min-bgtruth-cov 5 --baseFormat 1 \
 	$otherOptions #--enable-cache --using-cache #--enable-cache --using-cache # cutoff=3 is reasonable now

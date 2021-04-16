@@ -662,7 +662,6 @@ def importPredictions_Megalodon(infileName, chr_col=1, start_col=3, strand_col=2
 
         key = (tmp[chr_col], start, strand)
 
-
         try:
             meth_prob = float(np.e ** float(tmp[mod_log_prob_col]))  # Calculate mod_prob
         except Exception as e:
@@ -1226,8 +1225,10 @@ def import_call(infn, encode, baseFormat=1, include_score=False, deepmod_cluster
         calls0 = importPredictions_Nanopolish(infn, baseFormat=baseFormat, llr_cutoff=2.0, include_score=include_score)
     # elif encode == 'DeepMod':
     #     calls0 = importPredictions_DeepMod_Read_Level(infn, baseFormat=baseFormat, include_score=include_score)
-    elif encode == 'Megalodon':
+    elif encode == 'Megalodon': # Original format
         calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score)
+    elif encode == 'Megalodon.ZW':  # Here, ziwei preprocess the raw file to this format: chr_col=0, start_col=1, strand_col=3
+        calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score, chr_col=0, start_col=1, strand_col=3)
     elif encode == 'DeepMod.Cluster':  # import DeepMod Clustered output for site level, itself tool reports by cluster, key->value={'freq':68, 'cov':10}
         calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat, as_freq_cov_format=deepmod_cluster_freq_cov_format, include_score=include_score)
     elif encode == 'DeepMod.C':  # import DeepMod itself tool for read level

@@ -434,6 +434,66 @@ fig.6.running.resource.bar.plot <- function() {
 }
 
 
+fig.6.running.resource.bar.plot1 <- function() {
+  library(readxl)
+  library(tidyverse)
+
+  outdir = here('figures')
+  infn = here('result', 'running.logs.total.resource.usage.five.tools.xlsx')
+  run.table <- read_excel(infn)
+
+  outdf <- run.table %>%
+    mutate(dsname = factor(dsname, levels = Dataset.Order),
+           tool = factor(tool, levels = Tool.Order[1:5])
+    ) %>%
+    arrange(dsname, `Job Wall-clock Time`)
+
+  outfn = here('figures', 'table.s6.total.runnning.summary.new.sorted.csv')
+  write_csv(outdf, outfn)
+
+  colnames(outdf) = c('dsname', 'tool', 'cpu.time', 'wall.time', 'mem.usage')
+
+  g1 <- outdf %>%
+    drop_na(tool) %>%
+    ggplot(mapping = aes(x = dsname, y = cpu.time, fill = tool)) +
+    geom_bar(stat = "summary", fun = mean, width = 0.8, position = position_dodge()) +
+    scale_fill_manual(values = ToolColorPal) +
+    theme_classic() +
+    ylab("CPU Utilized Time (hours)") +
+    scale_y_log10() +
+    xlab("Dataset") +
+    coord_flip() +
+    labs(fill = 'Tool') +
+    theme(text = element_text(size = 12))
+
+  #g1
+
+  g2 <- outdf %>%
+    drop_na(tool) %>%
+    ggplot(mapping = aes(x = dsname, y = mem.usage, fill = tool)) +
+    geom_bar(stat = "summary", fun = mean, width = 0.8, position = position_dodge()) +
+    #scale_x_discrete(limits = levels(Tool.Order)) +
+    coord_flip() +
+    scale_fill_manual(values = ToolColorPal) +
+    theme_classic() +
+    ylab("Peak memory (GB)") +
+    xlab("") +
+    labs(fill = 'Tool') +
+    theme(text = element_text(size = 12))
+
+  #g2
+
+  gg <- ggarrange(g1, g2, ncol = 2, nrow = 1, common.legend = TRUE, legend = "bottom")
+
+  gg
+
+  outfn = sprintf("%s/fig.6.running.resource.bar.plot.jpg", outdir)
+  ggsave(gg, filename = outfn, width = 6, height = 3, dpi = 600)
+  printf("save to %s\n", outfn)
+
+}
+
+
 fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
   library(readxl)
   library(tidyverse)
