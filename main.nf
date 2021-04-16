@@ -1,34 +1,34 @@
 #!/usr/bin/env nextflow
 
 Channel
-    .fromPath(params.indata)
-    .ifEmpty { exit 1, "Cannot find input file"}
-    .set {ch_input}
-
-aa = Channel
-    .from( "Megalodon", "Tombo", "DeepMod", "DeepSignal", "Nanopolish" )
-    .toList()
-
-print(aa)
+    .fromPath(params.input)
+    .ifEmpty { "Cannot find input file yet"}
+    .set {ch_input}  // a fast5.tar.gz file or a dir include more files
 
 
-process FirstCheck {
-	input:
-	val aa1 from aa
 
-	tag 'checkEnv'
+println params.input
+println params.is_benchmarking
+
+Channel
+        .fromPath('/projects/li-lab/yang/results/2021-04-15/BenchData8000/MB*', type: 'dir')
+        .view()
+
+// Get benchmarking inputs
+benchmarking_out_ch = params.is_benchmarking ? Channel
+        .fromPath('/projects/li-lab/yang/results/2021-04-15/BenchData8000/MB*', type: 'dir') : Channel.empty()
+
+
+// Check all tools work on the platform
+process EnvCheck {
+	// teminate all later processes if this process is not passed
+	tag 'EnvCheck'
+
+	errorStrategy 'terminate'
 
 	"""
 	set -x
 
-	echo $aa1
-	echo ${aa1[0]}
-	echo ${aa1[1]}
-	echo ${aa1[2]}
-	echo ${aa1[3]}
-	echo ${aa1[4]}
-
-    echo hello
 	pwd
     ls -la
     conda env list
@@ -53,10 +53,10 @@ process Preprocess {
     file fast5_tar from ch_input
 
 	output:
-    file 'sept_dir/M*' into fast5Inputs
+    file 'sept_dir/M*' into preprocess_out_ch
 
     when:
-    true
+    ! params.is_benchmarking
 
     """
     set -x
@@ -100,35 +100,44 @@ process Preprocess {
     """
 }
 
+preprocess_out_ch
+	.mix(benchmarking_out_ch)
+	.into { basecall_input_ch; megalodon_input_ch; testout }
 
-fast5Inputs.into { fast5Inputs1ForBasecall; fast5Inputs2ForMegalodon }
-
+testout.flatten()
+	.view()
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
 	tag "${x}"
 
 	input:
-    file x from fast5Inputs1ForBasecall.flatten()
+    file x from basecall_input_ch.flatten()
 
     output:
-    file 'basecall_dir/M*' into basecallOutputs
+    file 'basecall_dir/M*' into basecall_out_ch
+
+    when:
+    ! params.is_debugging
 
     """
     mkdir -p basecall_dir/${x}
     ${params.GuppyDir}/bin/guppy_basecaller --input_path $x \
         --save_path "basecall_dir/${x}" \
         --config ${params.GUPPY_BASECALL_MODEL} \
-        --gpu_runners_per_device ${params.processors} \
         --num_callers 3 \
         --fast5_out \
         --verbose_logs \
-        --device auto
+        ${params.GuppyGPUOptions}
+
+        #--gpu_runners_per_device ${params.processors} \
+        #--device auto
     """
 }
 
 
-basecallOutputs.into { basecallOutputs1ForResquiggle; basecallOutputs2ForNanopolish; basecallOutputs3ForDeepMod }
+basecall_out_ch
+	.into { resquiggle_in_ch; nanopolish_in_ch; deepmod_in_ch }
 
 
 // resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
@@ -136,10 +145,10 @@ process Resquiggle {
 	tag "${x}"
 
 	input:
-    file x from basecallOutputs1ForResquiggle.flatten()
+    file x from resquiggle_in_ch.flatten()
 
     output:
-    file 'resquiggle_dir/M*' into resquiggleOutputs
+    file 'resquiggle_dir/M*' into resquiggle_out_ch
 
     """
     set -x
@@ -155,7 +164,7 @@ process Resquiggle {
 
 
 // duplicate resquiggle results for DeepSignal and Tombo
-resquiggleOutputs.into { resquiggleOutputs1ForDeepSignal; resquiggleOutputs2ForTombo }
+resquiggle_out_ch.into { deepsignal_in_ch; tombo_in_ch }
 
 
 // DeepSignal runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
@@ -163,10 +172,10 @@ process DeepSignal {
 	tag "${x}"
 
 	input:
-    file x from resquiggleOutputs1ForDeepSignal.flatten()
+    file x from deepsignal_in_ch.flatten()
 
     output:
-    file '*.tsv' into deepsignalOutput
+    file '*.tsv' into deepsignal_out_ch
 
     """
 	deepsignal call_mods --input_path ${x}/workspace \
@@ -185,10 +194,10 @@ process Tombo {
 	tag "${x}"
 
 	input:
-    file x from resquiggleOutputs2ForTombo.flatten()
+    file x from tombo_in_ch.flatten()
 
     output:
-    file '*.per_read_stats.bed' into tomboOutput
+    file '*.per_read_stats.bed' into tombo_out_ch
 
     """
 	tombo detect_modifications alternative_model \
@@ -213,10 +222,13 @@ process Megalodon {
 	tag "${x}"
 
 	input:
-    file x from fast5Inputs2ForMegalodon.flatten()
+    file x from megalodon_input_ch.flatten()
 
     output:
-    file 'megalodon_results/*.per_read_modified_base_calls.txt' into megalodonOutput
+    file 'megalodon_results/*.per_read_modified_base_calls.txt' into megalodon_out_ch
+
+    when:
+    ! params.is_debugging
 
     """
     mkdir -p indir/${x}
@@ -229,7 +241,7 @@ process Megalodon {
 	    per_read_mods mods mod_mappings \
 	    per_read_refs \
 	    --guppy-server-path ${params.GuppyDir}/bin/guppy_basecall_server \
-	    --guppy-config ${params.GUPPY_MOD_CONFIG} \
+	    --guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
 	    --guppy-params "--num_callers 5 --ipc_threads 80" \
 	    --reads-per-guppy-batch ${params.READS_PER_GUPPY_BATCH} \
 	    --guppy-timeout ${params.GUPPY_TIMEOUT} \
@@ -253,11 +265,13 @@ process Megalodon {
 process DeepMod {
 	tag "${x}"
 
+	errorStrategy 'ignore'
+
 	input:
-    file x from basecallOutputs3ForDeepMod.flatten()
+    file x from deepmod_in_ch.flatten()
 
     output:
-    file 'mod_output/batch_*_num' into deepmodOutput
+    file 'mod_output/batch_*_num' into deepmod_out_ch
 
     when:
     params.RunDeepMod == "true"
@@ -281,10 +295,10 @@ process Nanopolish {
 	tag "${x}"
 
 	input:
-    file x from basecallOutputs2ForNanopolish.flatten()
+    file x from nanopolish_in_ch.flatten()
 
     output:
-    file '*.tsv' into nanopolishOutput
+    file '*.tsv' into nanopolish_out_ch
 
     """
     set -x
@@ -325,17 +339,17 @@ process Nanopolish {
 
 
 // prepare combining results
-nanopolishResults = nanopolishOutput.toList()
-deepmodResults=deepmodOutput.toList()
-megalodonResults = megalodonOutput.toList()
-tomboResults = tomboOutput.toList()
-deepsignalResults = deepsignalOutput.toList()
+nanopolish_combine_in_ch = nanopolish_out_ch.toList()
+deepmod_combine_in_ch=deepmod_out_ch.toList()
+megalodon_combine_in_ch = megalodon_out_ch.toList()
+tombo_combine_in_ch = tombo_out_ch.toList()
+deepsignal_combine_in_ch = deepsignal_out_ch.toList()
 
 
 // Combine DeepSignal runs' all results together
 process DpSigCombine {
 	input:
-    file x from deepsignalResults
+    file x from deepsignal_combine_in_ch
 
     output:
     file '*.combine.tsv' into deepsignalCombineResult
@@ -354,7 +368,7 @@ process DpSigCombine {
 // Combine Tombo runs' all results together
 process TomboCombine {
 	input:
-    file x from tomboResults
+    file x from tombo_combine_in_ch
 
     output:
     file '*.combine.tsv' into tomboCombineResult
@@ -372,7 +386,7 @@ process TomboCombine {
 // Combine Megalodon runs' all results together
 process MgldnCombine {
 	input:
-    file x from megalodonResults
+    file x from megalodon_combine_in_ch
 
     output:
     file '*.combine.tsv' into megalodonCombineResult
@@ -400,7 +414,7 @@ process MgldnCombine {
 // Combine Nanopolish runs' all results together
 process NplshCombine {
 	input:
-    file x from nanopolishResults
+    file x from nanopolish_combine_in_ch
 
     output:
     file '*.combine.tsv' into nanopolishCombineResult
@@ -430,7 +444,7 @@ process NplshCombine {
 // Combine DeepMod runs' all results together
 process DpmodCombine {
 	input:
-    file x from deepmodResults
+    file x from deepmod_combine_in_ch
 
     output:
     file '*.combine.tsv' into deepmodCombineResult
@@ -473,25 +487,25 @@ process DpmodCombine {
 }
 
 //TODO: how sort the list???
-
 deepsignalCombineResult.concat(tomboCombineResult,megalodonCombineResult, \
 	nanopolishCombineResult,deepmodCombineResult.flatten())
 	.toSortedList()
-	.set{allCombinedResultsList}
+	.into { readlevel_in_ch; sitelevel_in_ch; test_out }
 
-allCombinedResultsList.into { allCombinedResultsList_ch1; allCombinedResultsList_ch2 }
+test_out.view()
 
+println params.eval
 
 // Evaluation on combined results
 process ReadLevelPerf {
 	input: // TODO: I can not sort fileList by name, seems sorted by date????
-    file fileList from allCombinedResultsList_ch1
+    file fileList from readlevel_in_ch
 
     output:
-    file "MethPerf-*" into ReadLevelPerfOut
+    file "MethPerf-*" into readlevel_out_ch
 
     when:
-    params.eval == "true"
+    params.eval
 
     """
     set -x
@@ -518,7 +532,7 @@ process ReadLevelPerf {
 				Nanopolish:\${flist[4]} \
 				DeepMod.C:\${flist[1]} \
 				Megalodon:\${flist[3]} \
-		--bgtruth 'bismark:/projects/li-lab/Nanopore_compare/data/HL60/HL60_RRBS_ENCFF000MDA.Read_R1.Rep_1_trimmed_bismark_bt2.CpG_report.txt.gz;/projects/li-lab/Nanopore_compare/data/HL60/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz' \
+		--bgtruth "${params.bgtruthWithEncode}" \
 		--runid MethPerf-${params.runid} \
 		--dsname ${params.dsname} \
 		--min-bgtruth-cov ${params.bgtruthCov} --report-joined --mpi --enable-cache --using-cache -o .
@@ -530,14 +544,14 @@ process ReadLevelPerf {
 // Site level correlation analysis
 process SiteLevelCorr {
 	input:
-    file perfDir from ReadLevelPerfOut
-    file fileList from allCombinedResultsList_ch2
+    file perfDir from readlevel_out_ch
+    file fileList from sitelevel_in_ch
 
     output:
-    file "MethCorr-*" into SiteLevelCorrOut
+    file "MethCorr-*" into sitelevel_out_ch
 
     when:
-    params.eval == "true"
+    params.eval
 
     """
     set -x
@@ -562,7 +576,7 @@ process SiteLevelCorr {
 				Nanopolish:\${flist[4]} \
 				DeepMod.Cluster:\${flist[0]} \
 				Megalodon:\${flist[3]} \
-		--bgtruth 'bismark:/projects/li-lab/Nanopore_compare/data/HL60/HL60_RRBS_ENCFF000MDA.Read_R1.Rep_1_trimmed_bismark_bt2.CpG_report.txt.gz;/projects/li-lab/Nanopore_compare/data/HL60/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz' \
+		--bgtruth "${params.bgtruthWithEncode}" \
 		--runid MethPerf-${params.runid} \
 		--dsname ${params.dsname} \
 		--min-bgtruth-cov ${params.bgtruthCov} --toolcov-cutoff ${params.toolCov} \

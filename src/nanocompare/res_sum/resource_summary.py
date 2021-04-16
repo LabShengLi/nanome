@@ -12,11 +12,15 @@ from tqdm import tqdm
 from nanocompare.global_config import set_log_debug_level, pic_base_dir, logger
 
 ## TODO: not use anymore
-basedir = '/fastscratch/liuya/nanocompare1'
+
+
+basedir = "/projects/li-lab/yang/results/share_prj/result/running-logs"
 
 run_log_dir = '/projects/li-lab/Nanopore_compare/result/running-logs'
 basedir = run_log_dir
 
+
+tool_names=['Tombo', 'DeepMod', 'DeepSignal', 'Nanopolish','Megalodon']
 tool_list_on_sumner = ['Tombo', 'DeepMod', 'DeepSignal', 'Nanopolish']
 tool_list_on_winter = ['Guppy', 'Megalodon']
 
@@ -352,9 +356,21 @@ def dataset_batch_summary():
     df.to_excel(outfn)
 
 
+def parse_time(time_string):
+    start_time = datetime.strptime("00:00:00", '%H:%M:%S')
+    try:
+        end_time = datetime.strptime(time_string, '%H:%M:%S')
+    except:
+        end_time = datetime.strptime(time_string, '%d-%H:%M:%S')
+
+    duration_time = end_time - start_time
+    return duration_time
+    pass
+
+
 def str_extract_time_mem(jobret):
     """
-    Example
+    Example:
 
     Job ID: 23443
     Array Job ID: 23398_23
@@ -373,13 +389,14 @@ def str_extract_time_mem(jobret):
     :return:
     """
     cpu_use_time = None
+    wall_clock_time = None
     mem_use = None
     jobid = None
     array_jobid = None
 
     for line in jobret.splitlines():
-        if line.strip().startswith('State: F') or line.strip().startswith('State: CANCELLED'):
-            return None, None, None, None
+        # if line.strip().startswith('State: F') or line.strip().startswith('State: CANCELLED'):
+        #     return None, None, None, None
 
         if line.strip().startswith('Job ID:'):
             jobid = line.strip().replace('Job ID:', '').strip()
@@ -391,17 +408,13 @@ def str_extract_time_mem(jobret):
             cpu_use_time = line.strip().replace('CPU Utilized:', '').strip()
         elif line.strip().startswith('Memory Utilized:'):
             mem_use = line.strip().replace('Memory Utilized:', '').strip()
-            break
-    start_time = datetime.strptime("00:00:00", '%H:%M:%S')
+        elif line.strip().startswith('Job Wall-clock time:'):
+            wall_clock_time = line.strip().replace('Job Wall-clock time:', '').strip()
 
-    try:
-        end_time = datetime.strptime(cpu_use_time, '%H:%M:%S')
-    except:
-        end_time = datetime.strptime(cpu_use_time, '%d-%H:%M:%S')
+    cpu_use_time = parse_time(cpu_use_time)
+    wall_clock_time = parse_time(wall_clock_time)
 
-    duration_time = end_time - start_time
-
-    # 71.49 MB
+    # 71.49 MB, we report GB
     if mem_use.endswith('MB'):
         mem_gb = float(mem_use.replace('MB', '').strip()) / 1000
     elif mem_use.endswith('GB'):
@@ -409,35 +422,19 @@ def str_extract_time_mem(jobret):
     else:
         raise Exception(f'Unrecognized mem={mem_use} from jobret={jobret}')
 
-    return duration_time.total_seconds(), mem_gb, jobid, array_jobid
+    return cpu_use_time.total_seconds(), wall_clock_time.total_seconds(), mem_gb, jobid
 
 
 def running_resouce_extraction(row):
     """
+
     :param row:
     :return:
     """
     jobret = row['job.results']
-    runtime, mem = str_extract_time_mem(jobret)
+    cpu_time, wall_clock_time, mem_gb, jobid = str_extract_time_mem(jobret)
 
-    start_time = datetime.strptime("00:00:00", '%H:%M:%S')
-
-    try:
-        end_time = datetime.strptime(runtime, '%H:%M:%S')
-    except:
-        end_time = datetime.strptime(runtime, '%d-%H:%M:%S')
-
-    duration_time = end_time - start_time
-
-    # 71.49 MB
-    if mem.endswith('MB'):
-        mem_gb = float(mem.replace('MB', '').strip()) / 1000
-    elif mem.endswith('GB'):
-        mem_gb = float(mem.replace('GB', '').strip())
-    else:
-        raise Exception(f'Unrecognized mem={mem}')
-
-    return pd.Series([runtime, mem, duration_time.total_seconds(), mem_gb], index=['running.time', 'mem.usage', 'running.time.seconds', 'mem.usage.gb'])
+    return pd.Series([cpu_time/60/60, wall_clock_time/60/60, mem_gb, jobid], index=['cpu.time', 'wall.clock.time', 'mem.usage', 'jobid'])
 
 
 def unify_data_df():
@@ -519,8 +516,26 @@ def parse_arguments():
     parser.add_argument('--megalodon', action='store_true')
     parser.add_argument('--na19240-winter', action='store_true')
     parser.add_argument('--na19240-sumner', action='store_true')
+    parser.add_argument('--collect-data', action='store_true')
 
     return parser.parse_args()
+
+
+def collect_log_data():
+    fnlist = glob.glob(os.path.join(basedir, '*.summary*xlsx'))
+    logger.info(fnlist)
+
+    dflist = []
+    for fn in fnlist:
+        df = pd.read_excel(fn)
+        df = df.rename(columns={'type': 'tool'})
+        dflist.append(df)
+    retdf = pd.concat(dflist)
+    retdf = retdf[['dsname', 'tool', 'batchid', 'job.results']]
+    outfn = os.path.join(pic_base_dir, 'running.logs.on.four.datasets.xlsx')
+    retdf.to_excel(outfn)
+    return retdf
+    pass
 
 
 if __name__ == '__main__':
@@ -544,5 +559,58 @@ if __name__ == '__main__':
         sunmer_task_summary_na19240()
     if args.na19240_winter:
         winter_task_summary_na19240()
+    if args.collect_data:
+        infn = os.path.join(pic_base_dir, 'running.logs.on.four.datasets.full.logs.xlsx')
+        df = pd.read_excel(infn, index_col=0)
+
+        fast5fn = os.path.join(basedir, 'dsname.batch.fast5.table.xlsx')
+        fast5df = pd.read_excel(fast5fn, index_col=0)
+
+        outdf = df.merge(fast5df, on=['dsname', 'batchid'], how='inner')
+        logger.info(outdf.iloc[0, :])
+
+        outdf[['cpu.time', 'wall.clock.time', 'mem.usage', 'jobid']] = outdf.apply(running_resouce_extraction, axis=1)
+        logger.info(df)
+
+        outfn = os.path.join(pic_base_dir, 'running.logs.on.four.datasets.extracted.fields.xlsx')
+        outdf.to_excel(outfn)
+
+        outdf = outdf.groupby(by=['dsname', 'tool']).agg({'cpu.time': 'sum', 'wall.clock.time': 'max', 'mem.usage': 'max'})
+
+        # Recalculate the total time and mem usage
+        # add basecall to DeepSignal, Tombo, DeepMod, and Nanopolish
+        # add resquiggle to DeepSignal and Tombo
+        # remove Guppy methcall
+
+        outfn = os.path.join(pic_base_dir, 'running.logs.total.resource.usage.five.tools.before.calculation.xlsx')
+        outdf.to_excel(outfn)
+
+        for index, row in outdf.iterrows():
+            if row.name[1] in ['DeepSignal', 'Tombo', 'DeepMod', 'Nanopolish']:
+                # Get basecalled row
+                basecallRow = outdf.loc[[(row.name[0], 'basecall')]].iloc[0, :]
+                row['cpu.time'] += basecallRow['cpu.time']
+                row['wall.clock.time'] += basecallRow['wall.clock.time']
+                row['mem.usage'] = max(row['mem.usage'], basecallRow['mem.usage'])
+            if row.name[1] in ['DeepSignal', 'Tombo']:
+                # Get resquiggle row
+                resquiggleRow = outdf.loc[[(row.name[0], 'resquiggle')]].iloc[0, :]
+                row['cpu.time'] += resquiggleRow['cpu.time']
+                row['wall.clock.time'] += resquiggleRow['wall.clock.time']
+                row['mem.usage'] = max(row['mem.usage'], resquiggleRow['mem.usage'])
+
+        outdf['cpu.time'] = outdf['cpu.time']   # hours
+        outdf['wall.clock.time'] = outdf['wall.clock.time']  # hours
+
+        outdf = outdf.rename(columns={"cpu.time": "CPU Utilized", 'wall.clock.time': "Job Wall-clock Time", "mem.usage": "Memory Utilized"})
+        outdf = outdf.reset_index()
+        outdf.loc[outdf.dsname == 'NA19240', 'Job Wall-clock Time'] = outdf.loc[outdf.dsname == 'NA19240', 'Job Wall-clock Time'] * 6
+        outdf = outdf[outdf['tool'].isin(tool_names)]
+
+
+
+        outfn = os.path.join(pic_base_dir, 'running.logs.total.resource.usage.five.tools.xlsx')
+        outdf.to_excel(outfn, index=False)
+        logger.info(outdf)
 
     logger.info("DONE")

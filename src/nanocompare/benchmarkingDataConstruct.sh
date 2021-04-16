@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=computeRawReadsCoverage
+#SBATCH --job-name=benchdata
 #SBATCH -q batch
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 8 # number of cores
@@ -12,9 +12,10 @@ set -x
 
 projectDir=/projects/li-lab/yang/workspace/nano-compare
 
-pythonFile=${projectDir}/src/nanocompare/computeRawReadsCoverage.py
+pythonFile=${projectDir}/src/nanocompare/benchmarkingDataConstruct.py
 
 mkdir -p log
 
+#rm -rf /projects/li-lab/yang/results/2021-04-15/BenchData
 
 python ${pythonFile} $@

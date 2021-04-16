@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=nanoc.pipe
+#SBATCH --job-name=nano.nxfl
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
-#SBATCH -q training
+#SBATCH -q dev
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 8 # number of cores
-#SBATCH --mem-per-cpu=170G # memory pool for all cores
-#SBATCH --time=00:50:00 # time
+#SBATCH -n 2 # number of cores
+#SBATCH --mem-per-cpu=70G # memory pool for all cores
+#SBATCH --time=08:00:00 # time
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
@@ -16,14 +16,21 @@ set -x
 
 date;hostname;pwd
 
+
+
 #module load singularity
 
 # Get nextflow from internet
 #curl -fsSL get.nextflow.io | bash
 
 
-# Test default datasets on winter
-#./nextflow run main.nf -profile winter
+# Test default test datasets on winter HPC
+#./nextflow run main.nf -profile winter,test
+
+# Run on benchmarking data
+rm -rf /fastscratch/liuya/nanocompare/work
+./nextflow run main.nf -profile winter,benchmarking  \
+	-with-report -with-timeline -with-trace -work-dir /fastscratch/liuya/nanocompare/work
 
 # Test with output report timelines
 #/nextflow run main.nf -profile winter -with-report -with-timeline -with-trace
@@ -45,3 +52,7 @@ date;hostname;pwd
 # module load singularity
 # builder="singularity run http://s3-far.jax.org/builder/builder"
 # $builder nanocompare.def nanocompare.sif
+
+
+
+

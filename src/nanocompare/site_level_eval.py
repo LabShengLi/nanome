@@ -147,7 +147,7 @@ def parse_arguments():
     parser.add_argument('--beddir', type=str, help="base dir for bed files", default=None)  # need perform performance evaluation before, then get concordant, etc. bed files, like '/projects/li-lab/yang/results/2021-04-01'
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
     parser.add_argument('--processors', type=int, help="running processors", default=8)
-    parser.add_argument('--bgtruthcov-cutoff', type=int, help="cutoff of coverage in bg-truth", default=5)
+    parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff of coverage in bg-truth", default=5)
     parser.add_argument('--toolcov-cutoff', type=int, help="cutoff of coverage in nanopore calls", default=3)
     parser.add_argument('--baseFormat', type=int, help="base format after imported", default=1)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
@@ -175,8 +175,8 @@ if __name__ == '__main__':
     # tool coverage cutoff 1, or 3, 5
     minToolCovCutt = args.toolcov_cutoff
 
-    # bgtruth coverage cutoff 1, or 5, 10
-    bgtruthCutt = args.bgtruthcov_cutoff
+    # bgtruth coverage cutoff 1, or 5, 10  --min-bgtruth-cov
+    bgtruthCutt = args.min_bgtruth_cov
 
     # load into program format 0-base or 1-base
     baseFormat = args.baseFormat
