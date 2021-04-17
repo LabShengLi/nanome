@@ -1,6 +1,18 @@
 bootstrap: docker
 from: continuumio/miniconda3
 
+%help
+
+NANOME - NF PIPELINE in Singularity
+by The Jackon Laboratory
+Sheng Li Lab http://nanome.jax.org
+=================================
+dsname      :DEMODATA
+input       :test_data/demo.fast5.reads.tar.gz
+benchmarking:false
+eval        :true
+debug       :false
+
 %environment
 action="${0##*/}"
 if [ "$action" = "shell" ]; then
@@ -12,12 +24,27 @@ if [ "$action" = "shell" ]; then
     fi
 fi
 
+#%files
+	#    /pod/2/li-lab/software/ont-guppy-gpu_4.2.2 /opt
+#    /pod/2/li-lab/software/ont-guppy-cpu_4.2.2 /opt
+
+%labels
+    Maintainer JAX Sheng Li Lab
+    Version v1.0
+
 %post
 cd /opt/
 wget https://raw.githubusercontent.com/liuyangzzu/nano-compare/master/environment.yml
 chmod 755 environment.yml
 /opt/conda/bin/conda env create -f environment.yml
 apt-get install -y procps
+
+cd /opt && git clone https://github.com/liuyangzzu/nano-compare.git
+
+#cp -rf /projects/li-lab/software/ont-guppy-gpu_4.2.2 /opt
+#cp -rf /projects/li-lab/software/ont-guppy-cpu_4.2.2 /opt
+
+
 
 echo "## Activate nanocompare environment" >> /.singularity_bash
 echo "source /opt/conda/etc/profile.d/conda.sh" >> /.singularity_bash

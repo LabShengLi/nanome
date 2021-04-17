@@ -39,6 +39,9 @@ rm -rf /fastscratch/liuya/nanocompare/work
 ./nextflow run main.nf -profile winter,benchmarking  \
 	-with-report -with-timeline -with-trace -with-dag -work-dir /fastscratch/liuya/nanocompare/work
 
+
+./nextflow run main.nf -profile winter,benchmarking
+
 # Test with output report timelines
 #/nextflow run main.nf -profile winter -with-report -with-timeline -with-trace
 

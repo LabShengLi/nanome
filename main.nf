@@ -5,33 +5,55 @@ log.info """\
 	NANOME - NF PIPELINE
 	by The Jackon Laboratory
 	Sheng Li Lab http://nanome.jax.org
-	========================
+	=================================
 	dsname      :${params.dsname}
 	input       :${params.input}
-
+	benchmarking:${params.benchmarking}
+	eval        :${params.eval}
+	debug       :${params.debug}
+	=================================
 	"""
 	.stripIndent()
 
-//println params.input
-//println params.is_benchmarking
 
-//Channel
-//    .fromPath(params.input)
-//    .ifEmpty { "Cannot find input file yet"}
-//    .set {ch_input}  // a fast5.tar.gz file or a dir include more files
-
-//Channel
-//        .fromPath('/projects/li-lab/yang/results/2021-04-15/BenchData8000/MB*', type: 'dir')
-//        .view()
-
-println("")
 
 // Input for preprocessing (untar, seperate)
-ch_input = params.is_benchmarking ? Channel.empty() : Channel.fromPath(params.input, checkIfExists: true)
+ch_input = params.benchmarking ? Channel.empty() : Channel.fromPath(params.input, checkIfExists: true)
 
 // Benchmarking inputs
-benchmarking_out_ch = params.is_benchmarking ? Channel
-        .fromPath(params.input, type: 'dir', checkIfExists: true) : Channel.empty()
+benchmarking_in_ch = params.benchmarking ? Channel
+        .fromPath(params.input, type: 'file', checkIfExists: true) : Channel.empty()
+
+// Check all tools work well on the platform
+process UntarBenchmarking {
+	// echo true
+	tag 'UntarBench'
+	cache  'lenient'
+	// teminate all later processes if this process is not passed
+	errorStrategy 'terminate'
+
+	when:
+	params.benchmarking
+
+	input:
+	file x from benchmarking_in_ch
+
+	output:
+	file "untar_dir/BenchData*/MB*" into benchmarking_out_ch
+
+	"""
+	echo $x
+
+	infn=$x
+	mkdir -p untar_dir
+    if [ "\${infn##*.}" = "tar" ]; then
+		tar -xf ${x} -C untar_dir
+	elif [ "\${infn##*.}" = "gz" ]; then
+		tar -xzf ${x} -C untar_dir
+	fi
+    """
+}
+
 
 
 // Check all tools work well on the platform
@@ -48,7 +70,7 @@ process EnvCheck {
     ls -la
     which conda
 	## source activate nanocompare
-	. activate nanocompare
+	## . activate nanocompare
     conda env list
 	echo ${params.genomeMotifC}
     ##ls -la ${params.genomeMotifC}
@@ -78,6 +100,7 @@ process Preprocess {
 //	echo true
 	errorStrategy 'ignore'
 	cache  'lenient'
+
     input:
     file fast5_tar from ch_input
 
@@ -85,7 +108,7 @@ process Preprocess {
     file 'sept_dir/M*' into preprocess_out_ch
 
     when:
-    ! params.is_benchmarking
+    ! params.benchmarking
 
     """
     set -x
@@ -131,6 +154,8 @@ preprocess_out_ch
 	.into { basecall_input_ch; megalodon_in_ch }
 
 
+
+
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
 	tag "${x}"
@@ -141,9 +166,10 @@ process Basecall {
 
     output:
     file 'basecall_dir/M*' into basecall_out_ch
+    file "basecall_dir/${x}/*-sequencing_summary.txt" into qc_ch
 
     when:
-    ! params.is_debugging
+    ! params.debug
 
     """
     mkdir -p basecall_dir/${x}
@@ -157,9 +183,33 @@ process Basecall {
 
         #--gpu_runners_per_device ${params.processors} \
         #--device auto
+
+    ## After basecall, rename summary file names
+	mv basecall_dir/${x}/sequencing_summary.txt basecall_dir/${x}/${x}-sequencing_summary.txt
+
     """
 }
 
+process QCStep {
+//	tag "${x}"
+	cache  'lenient'
+
+	publishDir "outputs/${params.dsname}-qc-report" //, mode: "copy"
+
+	input:
+    file flist from qc_ch.collect()
+
+    output:
+    file "summary/*-sequencing_summary.txt" into qc_out_ch
+
+    """
+    echo $flist
+
+
+	mkdir -p summary
+    cp -L -f *-sequencing_summary.txt summary/
+    """
+}
 
 basecall_out_ch
 	.into { resquiggle_in_ch; nanopolish_in_ch; deepmod_in_ch }
@@ -178,8 +228,9 @@ process Resquiggle {
 
     """
     set -x
-	mkdir -p resquiggle_dir/${x}
-	cp -rf ${x}/* resquiggle_dir/${x}
+	mkdir -p resquiggle_dir/${x}/workspace
+	### only copy workspace files, due to nanpolish modify base folder at x
+	cp -rf ${x}/workspace/* resquiggle_dir/${x}/workspace
 
     tombo resquiggle --dna --processes ${params.processors} \
         --corrected-group ${params.correctedGroup} \
@@ -212,7 +263,7 @@ process DeepSignal {
 		--reference_path ${params.refGenome} \
 		--corrected_group ${params.correctedGroup} \
 		--nproc ${params.processors} \
-		--is_gpu ${params.isGPU}
+		--is_gpu ${params.isgpu}
     """
 }
 
@@ -229,7 +280,7 @@ process Tombo {
     file '*.per_read_stats.bed' into tombo_out_ch
 
     when:
-    ! params.RunTop3Tools
+    ! params.top3
 
     """
 	tombo detect_modifications alternative_model \
@@ -261,7 +312,7 @@ process Megalodon {
     file 'megalodon_results/*.per_read_modified_base_calls.txt' into megalodon_out_ch
 
     when:
-    ! params.is_debugging
+    ! params.debug
 
     """
     mkdir -p indir/${x}
@@ -309,7 +360,7 @@ process DeepMod {
     file 'mod_output/batch_*_num' into deepmod_out_ch
 
     when:
-    ! params.RunTop3Tools && params.RunDeepMod
+    ! params.top3 && params.runDeepMod
 
     """
     DeepMod.py detect \
@@ -336,7 +387,10 @@ process Nanopolish {
 
     """
     set -x
-	fastqFile=${x}/reads.fq
+
+    ### We put all fq and bam files into working dir, DO NOT affect the basecall dir
+	##fastqFile=${x}/reads.fq
+	fastqFile=${x}.reads.fq
 	fastqNoDupFile="\${fastqFile}.noDups.fq"
 	bamFileName="${params.analysisPrefix}.batch_${x}.sorted.bam"
 
@@ -344,8 +398,8 @@ process Nanopolish {
 	echo \${fastqFile}
 	echo \${fastqNoDupFile}
 
-	rm -rf \${fastqFile} \${fastqNoDupFile}
-	rm -rf ${x}/\${bamFileName} \${fastqNoDupFile}
+	##rm -rf \${fastqFile} \${fastqNoDupFile}
+	##rm -rf ${x}/\${bamFileName} \${fastqNoDupFile}
 
 	## Do alignment firstly
 	touch \${fastqFile}
@@ -357,17 +411,18 @@ process Nanopolish {
 
 	python ${workflow.projectDir}/model_params/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
 
+	# Index the raw read with fastq
 	nanopolish index -d ${x}/workspace \${fastqNoDupFile}
 
-	minimap2 -t ${params.processors} -a -x map-ont ${params.refGenome} \${fastqNoDupFile} | samtools sort -T tmp -o ${x}/\${bamFileName}
+	minimap2 -t ${params.processors} -a -x map-ont ${params.refGenome} \${fastqNoDupFile} | samtools sort -T tmp -o \${bamFileName}
 	echo "### minimap2 finished"
 
-	samtools index -@ threads ${x}/\${bamFileName}
+	samtools index -@ threads \${bamFileName}
 	echo "### samtools finished"
 
 	echo "### Alignment step DONE"
 
-	nanopolish call-methylation -t ${params.processors} -r \${fastqNoDupFile} -b ${x}/\${bamFileName} -g ${params.refGenome} > ${params.analysisPrefix}.batch_${x}.nanopolish.methylation_calls.tsv
+	nanopolish call-methylation -t ${params.processors} -r \${fastqNoDupFile} -b \${bamFileName} -g ${params.refGenome} > ${params.analysisPrefix}.batch_${x}.nanopolish.methylation_calls.tsv
     """
 }
 
@@ -382,7 +437,7 @@ deepsignal_combine_in_ch = deepsignal_out_ch.toList()
 
 // Combine DeepSignal runs' all results together
 process DpSigCombine {
-	publishDir "outputs/methylation-callings" //, mode: "copy"
+	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
 
 	input:
     file x from deepsignal_combine_in_ch
@@ -403,7 +458,7 @@ process DpSigCombine {
 
 // Combine Tombo runs' all results together
 process TomboCombine {
-	publishDir "outputs/methylation-callings" //, mode: "copy"
+	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
 
 	input:
     file x from tombo_combine_in_ch
@@ -424,7 +479,7 @@ process TomboCombine {
 // Combine Megalodon runs' all results together
 process MgldnCombine {
 
-	publishDir "outputs/methylation-callings" //, mode: "copy"
+	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
 
 	input:
     file x from megalodon_combine_in_ch
@@ -454,7 +509,7 @@ process MgldnCombine {
 
 // Combine Nanopolish runs' all results together
 process NplshCombine {
-	publishDir "outputs/methylation-callings" //, mode: "copy"
+	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
 
 	input:
     file x from nanopolish_combine_in_ch
@@ -486,7 +541,7 @@ process NplshCombine {
 
 // Combine DeepMod runs' all results together
 process DpmodCombine {
-	publishDir "outputs/methylation-callings" //, mode: "copy"
+	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
 
 	input:
     file x from deepmod_combine_in_ch
@@ -543,7 +598,7 @@ deepsignal_combine_out_ch.concat(tombo_combine_out_ch,megalodon_combine_out_ch, 
 
 // Read level evaluations
 process ReadLevelPerf {
-	publishDir "outputs/nanome-analysis" //, mode: "copy"
+	publishDir "outputs/${params.dsname}-nanome-analysis" //, mode: "copy"
 
 	input: // TODO: I can not sort fileList by name, seems sorted by date????
     file fileList from readlevel_in_ch
@@ -590,7 +645,7 @@ process ReadLevelPerf {
 		--bgtruth "${params.bgtruthWithEncode}" \
 		--runid MethPerf-${params.runid} \
 		--dsname ${params.dsname} \
-		--min-bgtruth-cov ${params.bgtruthCov} \
+		--min-bgtruth-cov ${params.bgtruth_cov} \
 		--report-joined --mpi -o . ###--enable-cache --using-cache
 
 	echo "### Read level analysis DONE"
@@ -599,7 +654,7 @@ process ReadLevelPerf {
 
 // Site level correlation analysis
 process SiteLevelCorr {
-	publishDir "outputs/nanome-analysis" //, mode: "copy"
+	publishDir "outputs/${params.dsname}-nanome-analysis" //, mode: "copy"
 
 	input:
     file perfDir from readlevel_out_ch
@@ -636,8 +691,8 @@ process SiteLevelCorr {
 		--bgtruth "${params.bgtruthWithEncode}" \
 		--runid MethCorr-${params.runid} \
 		--dsname ${params.dsname} \
-		--min-bgtruth-cov ${params.bgtruthCov} \
-		--toolcov-cutoff ${params.toolCov} \
+		--min-bgtruth-cov ${params.bgtruth_cov} \
+		--toolcov-cutoff ${params.tool_cov} \
 		--beddir ${perfDir} \
 		-o .
 

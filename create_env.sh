@@ -46,9 +46,7 @@ docker run -v `pwd`:/usr/src/nanocompare -w /usr/src/nanocompare -t nanome conda
 
 
 # Singularity build in JAX HPC
-module load singularity
-builder="singularity run http://s3-far.jax.org/builder/builder"
-$builder nanome.def nanome.sif
+
 
 singularity shell nanocompare.sif
 
