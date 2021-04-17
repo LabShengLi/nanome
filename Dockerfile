@@ -4,8 +4,14 @@ LABEL description="Nanocompare project" \
 RUN apt-get update -y \
   && apt-get install procps -y \
   && rm -rf /var/lib/apt/lists/*
+  
+# Create the environment:
 COPY environment.yml /
 RUN conda env create -f environment.yml && conda clean -a
+
+# Make RUN commands use the new environment:
+SHELL ["conda", "run", "-n", "nanocompare", "/bin/bash", "-c"]
+
 ENV PATH /opt/conda/envs/cromwell-env/bin:$PATH
 USER root
 WORKDIR /data/
