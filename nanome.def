@@ -3,9 +3,10 @@ from: continuumio/miniconda3
 
 %post
 cd /opt/
-wget https://raw.githubusercontent.com/liuyangzzu/nano-compare/1a6f774d119b34e533d5ade4becf36b32f817bed/environment.yml
+wget https://raw.githubusercontent.com/liuyangzzu/nano-compare/5e97ddc67f70c56d3fbc9795ee5dc2b7d15c5a12/environment.yml
 chmod 755 environment.yml
 /opt/conda/bin/conda env create -f environment.yml
+apt-get install -y procps
 
 %runscript
 exec /opt/conda/envs/$(head -n 1 /opt/environment.yml | cut -f 2 -d ' ')/bin/"$@"

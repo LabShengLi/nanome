@@ -45,3 +45,11 @@ docker build -t nanome .
 docker run -v `pwd`:/usr/src/nanocompare -w /usr/src/nanocompare -t nanome conda run -n nanocompare python /usr/src/nanocompare/src/plot_figure.py
 
 
+# Singularity build in JAX HPC
+module load singularity
+builder="singularity run http://s3-far.jax.org/builder/builder"
+$builder nanome.def nanome.sif
+
+singularity shell nanocompare.sif
+
+singularity exec nanocompare.sif /opt/conda/envs/nanocompare/bin/nanopolish --version

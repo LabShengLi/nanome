@@ -1,5 +1,17 @@
 #!/usr/bin/env nextflow
 
+
+log.info """\
+	NANOME - NF PIPELINE
+	by The Jackon Laboratory
+	Sheng Li Lab http://nanome.jax.org
+	========================
+	dsname      :${params.dsname}
+	input       :${params.input}
+
+	"""
+	.stripIndent()
+
 //println params.input
 //println params.is_benchmarking
 
@@ -12,14 +24,14 @@
 //        .fromPath('/projects/li-lab/yang/results/2021-04-15/BenchData8000/MB*', type: 'dir')
 //        .view()
 
-println("Welcome to use nanome designed by JAX Sheng Li group (http://nanome.jax.org)")
+println("")
 
 // Input for preprocessing (untar, seperate)
-ch_input = params.is_benchmarking ? Channel.empty() : Channel.fromPath(params.input)
+ch_input = params.is_benchmarking ? Channel.empty() : Channel.fromPath(params.input, checkIfExists: true)
 
 // Benchmarking inputs
 benchmarking_out_ch = params.is_benchmarking ? Channel
-        .fromPath('/projects/li-lab/yang/results/2021-04-15/BenchData8000/MB*', type: 'dir') : Channel.empty()
+        .fromPath(params.input, type: 'dir', checkIfExists: true) : Channel.empty()
 
 
 // Check all tools work well on the platform
@@ -53,6 +65,7 @@ process EnvCheck {
 // untar file, seperate into N folders named 'M1', ..., 'M10', etc.
 process Preprocess {
 //	echo true
+	errorStrategy 'ignore'
 	cache  'lenient'
     input:
     file fast5_tar from ch_input
