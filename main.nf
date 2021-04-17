@@ -46,15 +46,26 @@ process EnvCheck {
 
 	pwd
     ls -la
+    which conda
+	## source activate nanocompare
+	. activate nanocompare
     conda env list
-
 	echo ${params.genomeMotifC}
-    ls -la ${params.genomeMotifC}
+    ##ls -la ${params.genomeMotifC}
 
+	which tombo
     tombo -v
+
+    which nanopolish
     nanopolish --version
+
+    which megalodon
     megalodon -v
+
+    which deepsignal
     deepsignal
+
+    which DeepMod.py
     DeepMod.py
 
     ${params.GuppyDir}/bin/guppy_basecaller -v
