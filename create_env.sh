@@ -40,3 +40,8 @@ conda install -c bioconda pybedtools
 conda env export > environment.yml
 
 docker build -t nanome .
+
+# How to run script/command using docker images and mapping folders
+docker run -v `pwd`:/usr/src/nanocompare -w /usr/src/nanocompare -t nanome conda run -n nanocompare python /usr/src/nanocompare/src/plot_figure.py
+
+
