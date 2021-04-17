@@ -39,3 +39,4 @@ conda install -c bioconda pybedtools
 
 conda env export > environment.yml
 
+docker build -t nanome .
