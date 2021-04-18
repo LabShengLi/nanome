@@ -455,18 +455,18 @@ fig.6.running.resource.bar.plot1 <- function() {
 
   g1 <- outdf %>%
     drop_na(tool) %>%
-    ggplot(mapping = aes(x = dsname, y = cpu.time, fill = tool)) +
-    geom_bar(stat = "summary", fun = mean, width = 0.8, position = position_dodge()) +
+    ggplot(mapping = aes(x = cpu.time, y = dsname, fill = tool)) +
+    geom_bar(stat = "identity",  width = 0.8, position = position_dodge()) +
     scale_fill_manual(values = ToolColorPal) +
     theme_classic() +
-    ylab("CPU Utilized Time (hours)") +
-    scale_y_log10() +
-    xlab("Dataset") +
-    coord_flip() +
+    xlab("CPU Utilized Time (hours)") +
+    scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    annotation_logticks(sides = 'b') +
+    ylab("Dataset") +
     labs(fill = 'Tool') +
     theme(text = element_text(size = 12))
 
-  #g1
 
   g2 <- outdf %>%
     drop_na(tool) %>%
@@ -487,8 +487,8 @@ fig.6.running.resource.bar.plot1 <- function() {
 
   gg
 
-  outfn = sprintf("%s/fig.6.running.resource.bar.plot.jpg", outdir)
-  ggsave(gg, filename = outfn, width = 6, height = 3, dpi = 600)
+  outfn = sprintf("%s/fig.7.running.resource.bar.plot.jpg", outdir)
+  ggsave(gg, filename = outfn, width = 6.5, height = 3.5, dpi = 600)
   printf("save to %s\n", outfn)
 
 }

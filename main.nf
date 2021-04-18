@@ -39,7 +39,7 @@ process UntarBenchmarking {
 	file x from benchmarking_in_ch
 
 	output:
-	file "untar_dir/BenchData*/MB*" into benchmarking_out_ch
+	file "untar_dir/BenchmarkingData/MB*" into benchmarking_out_ch
 
 	"""
 	echo $x
