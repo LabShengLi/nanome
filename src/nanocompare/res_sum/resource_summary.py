@@ -14,13 +14,10 @@ from nanocompare.global_config import set_log_debug_level, pic_base_dir, logger
 ## TODO: not use anymore
 
 
-basedir = "/projects/li-lab/yang/results/share_prj/result/running-logs"
-
 run_log_dir = '/projects/li-lab/Nanopore_compare/result/running-logs'
 basedir = run_log_dir
 
-
-tool_names=['Tombo', 'DeepMod', 'DeepSignal', 'Nanopolish','Megalodon']
+tool_names = ['Tombo', 'DeepMod', 'DeepSignal', 'Nanopolish', 'Megalodon']
 tool_list_on_sumner = ['Tombo', 'DeepMod', 'DeepSignal', 'Nanopolish']
 tool_list_on_winter = ['Guppy', 'Megalodon']
 
@@ -434,7 +431,7 @@ def running_resouce_extraction(row):
     jobret = row['job.results']
     cpu_time, wall_clock_time, mem_gb, jobid = str_extract_time_mem(jobret)
 
-    return pd.Series([cpu_time/60/60, wall_clock_time/60/60, mem_gb, jobid], index=['cpu.time', 'wall.clock.time', 'mem.usage', 'jobid'])
+    return pd.Series([cpu_time / 60 / 60, wall_clock_time / 60 / 60, mem_gb, jobid], index=['cpu.time', 'wall.clock.time', 'mem.usage', 'jobid'])
 
 
 def unify_data_df():
@@ -560,7 +557,7 @@ if __name__ == '__main__':
     if args.na19240_winter:
         winter_task_summary_na19240()
     if args.collect_data:
-        infn = os.path.join(pic_base_dir, 'running.logs.on.four.datasets.full.logs.xlsx')
+        infn = os.path.join('/projects/li-lab/yang/results/2021-04-15', 'running.logs.on.four.datasets.full.logs.xlsx')
         df = pd.read_excel(infn, index_col=0)
 
         fast5fn = os.path.join(basedir, 'dsname.batch.fast5.table.xlsx')
@@ -572,7 +569,7 @@ if __name__ == '__main__':
         outdf[['cpu.time', 'wall.clock.time', 'mem.usage', 'jobid']] = outdf.apply(running_resouce_extraction, axis=1)
         logger.info(df)
 
-        outfn = os.path.join(pic_base_dir, 'running.logs.on.four.datasets.extracted.fields.xlsx')
+        outfn = os.path.join(pic_base_dir, 'running.logs.on.four.datasets.step1.extracted.fields.xlsx')
         outdf.to_excel(outfn)
 
         outdf = outdf.groupby(by=['dsname', 'tool']).agg({'cpu.time': 'sum', 'wall.clock.time': 'max', 'mem.usage': 'max'})
@@ -582,34 +579,38 @@ if __name__ == '__main__':
         # add resquiggle to DeepSignal and Tombo
         # remove Guppy methcall
 
-        outfn = os.path.join(pic_base_dir, 'running.logs.total.resource.usage.five.tools.before.calculation.xlsx')
+        outfn = os.path.join(pic_base_dir, 'running.logs.on.four.datasets.step2.before.calculation.xlsx')
         outdf.to_excel(outfn)
 
         for index, row in outdf.iterrows():
             if row.name[1] in ['DeepSignal', 'Tombo', 'DeepMod', 'Nanopolish']:
                 # Get basecalled row
                 basecallRow = outdf.loc[[(row.name[0], 'basecall')]].iloc[0, :]
-                row['cpu.time'] += basecallRow['cpu.time']
-                row['wall.clock.time'] += basecallRow['wall.clock.time']
-                row['mem.usage'] = max(row['mem.usage'], basecallRow['mem.usage'])
+
+                # row['cpu.time'] += basecallRow['cpu.time']
+                # row['wall.clock.time'] += basecallRow['wall.clock.time']
+                # row['mem.usage'] = max(row['mem.usage'], basecallRow['mem.usage'])
+                outdf.at[index, 'cpu.time'] += basecallRow['cpu.time']
+                outdf.at[index, 'wall.clock.time'] += basecallRow['wall.clock.time']
+                outdf.at[index, 'mem.usage'] = max(outdf.at[index, 'mem.usage'], basecallRow['mem.usage'])
+
             if row.name[1] in ['DeepSignal', 'Tombo']:
                 # Get resquiggle row
                 resquiggleRow = outdf.loc[[(row.name[0], 'resquiggle')]].iloc[0, :]
-                row['cpu.time'] += resquiggleRow['cpu.time']
-                row['wall.clock.time'] += resquiggleRow['wall.clock.time']
-                row['mem.usage'] = max(row['mem.usage'], resquiggleRow['mem.usage'])
 
-        outdf['cpu.time'] = outdf['cpu.time']   # hours
-        outdf['wall.clock.time'] = outdf['wall.clock.time']  # hours
+                # row['cpu.time'] += resquiggleRow['cpu.time']
+                # row['wall.clock.time'] += resquiggleRow['wall.clock.time']
+                # row['mem.usage'] = max(row['mem.usage'], resquiggleRow['mem.usage'])
+                outdf.at[index, 'cpu.time'] += resquiggleRow['cpu.time']
+                outdf.at[index, 'wall.clock.time'] += resquiggleRow['wall.clock.time']
+                outdf.at[index, 'mem.usage'] = max(outdf.at[index, 'mem.usage'], resquiggleRow['mem.usage'])
 
         outdf = outdf.rename(columns={"cpu.time": "CPU Utilized", 'wall.clock.time': "Job Wall-clock Time", "mem.usage": "Memory Utilized"})
         outdf = outdf.reset_index()
         outdf.loc[outdf.dsname == 'NA19240', 'Job Wall-clock Time'] = outdf.loc[outdf.dsname == 'NA19240', 'Job Wall-clock Time'] * 6
         outdf = outdf[outdf['tool'].isin(tool_names)]
 
-
-
-        outfn = os.path.join(pic_base_dir, 'running.logs.total.resource.usage.five.tools.xlsx')
+        outfn = os.path.join(pic_base_dir, 'running.logs.on.four.datasets.step3.five.tools.xlsx')
         outdf.to_excel(outfn, index=False)
         logger.info(outdf)
 

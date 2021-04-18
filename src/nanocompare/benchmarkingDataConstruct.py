@@ -129,12 +129,38 @@ def analyse_trace():
     df[['tool', 'dsname', 'reads', 'duration', 'realtime', '%cpu', 'peak_rss', 'peak_vmem', 'rchar', 'wchar']] = df.apply(extract_tool_and_dsname_from_name, axis=1, result_type="expand")
     logger.info(df)
 
-    outfn = os.path.join(pic_base_dir, 'benchmarking.log.formated.table.all.steps.csv')
+    outfn = os.path.join(pic_base_dir, 'benchmarking.log.formated.table.step1.all.steps.csv')
     df.to_csv(outfn, sep=',')
 
     ## Recalculate the time and memory for each tools
+    for index, row in df.iterrows():
+        if row['tool'] in ['DeepSignal', 'Tombo', 'DeepMod', 'Nanopolish']:
+            # Get basecalled row
+            basecallRow = df.loc[(df.tool == 'Basecall') & (df.dsname == row['dsname']), :].iloc[0, :]
+            df.at[index, 'duration'] = df.at[index, 'duration'] + basecallRow['duration']
+            df.at[index, 'realtime'] = df.at[index, 'realtime'] + basecallRow['realtime']
 
+            df.at[index, 'peak_rss'] = max(df.at[index, 'peak_rss'], basecallRow['peak_rss'])
+            df.at[index, 'peak_vmem'] = max(df.at[index, 'peak_vmem'], basecallRow['peak_vmem'])
+            df.at[index, 'rchar'] = max(df.at[index, 'rchar'], basecallRow['rchar'])
+            df.at[index, 'wchar'] = max(df.at[index, 'wchar'], basecallRow['wchar'])
+        if row['tool'] in ['DeepSignal', 'Tombo']:
+            # Get resquiggle row
+            resquiggleRow = df.loc[(df.tool == 'Resquiggle') & (df.dsname == row['dsname']), :].iloc[0, :]
+            df.at[index, 'duration'] = df.at[index, 'duration'] + resquiggleRow['duration']
+            df.at[index, 'realtime'] = df.at[index, 'realtime'] + resquiggleRow['realtime']
 
+            df.at[index, 'peak_rss'] = max(df.at[index, 'peak_rss'], resquiggleRow['peak_rss'])
+            df.at[index, 'peak_vmem'] = max(df.at[index, 'peak_vmem'], resquiggleRow['peak_vmem'])
+            df.at[index, 'rchar'] = max(df.at[index, 'rchar'], resquiggleRow['rchar'])
+            df.at[index, 'wchar'] = max(df.at[index, 'wchar'], resquiggleRow['wchar'])
+
+    ## Filter out non-tool rows
+    df = df[df.tool.isin(['DeepSignal', 'Tombo', 'DeepMod', 'Nanopolish', 'Megalodon'])]
+    df = df.sort_values(by=['tool', 'reads'])
+
+    outfn = os.path.join(pic_base_dir, 'benchmarking.log.formated.table.step2.all.tools.csv')
+    df.to_csv(outfn, sep=',')
     pass
 
 
