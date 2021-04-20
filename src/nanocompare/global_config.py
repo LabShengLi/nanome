@@ -48,9 +48,11 @@ logger.setLevel(logging.DEBUG)
 # Ensure dir is created if it is not exist
 def ensure_dir(dir_name):
     if not os.path.exists(dir_name):
-        os.umask(0)
-        os.makedirs(dir_name, exist_ok=True)
-        logger.debug("create dir [{}]".format(dir_name))
+        # os.umask(0)
+        # os.makedirs(dir_name, exist_ok=True)
+
+        # logger.debug("create dir [{}]".format(dir_name))
+        pass
 
 
 # create 3 folders if needed
