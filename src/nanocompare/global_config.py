@@ -10,31 +10,27 @@ Define global directory and loggers
 import datetime
 import logging
 import os
-import sys
 
 import matplotlib.pyplot as plt
 
 init_log_level_prj = logging.INFO
 
-if sys.platform == 'linux':  # Linux HPC dir config
-    project_base_dir = "/projects/li-lab/yang/workspace/nano-compare"  # project base
+project_base_dir = "/projects/li-lab/yang/workspace/nano-compare"  # project base
 
+data_base_dir = os.path.join(project_base_dir, 'data')  # all used data base
+src_base_dir = os.path.join(project_base_dir, 'src')  # source code base
+# pkl_base_dir = '/projects/liuya/results/pkl'  # will deprecated later
+
+import socket
+
+hostname = socket.gethostname()
+
+if hostname.startswith('winter') or hostname.startswith('sumner'):  # in JAX HPC
     results_dir = "/projects/li-lab/yang/results"  # temp output base
-    data_base_dir = os.path.join(project_base_dir, 'data')  # all used data base
-    src_base_dir = os.path.join(project_base_dir, 'src')  # source code base
-    # pkl_base_dir = '/projects/liuya/results/pkl'  # will deprecated later
-
-    results_base_dir = '/projects/li-lab/Nanopore_compare/result'
     cache_dir = '/fastscratch/liuya/nanocompare/cache_dir'  # cache readed object to pkl
-
-elif sys.platform == 'darwin':  # Mac dir config
-    print("Running on MacOS")
-    dataset_base_dir = "/Users/liuya/dataset"
-    results_dir = "/Users/liuya/results"
-    project_base_dir = "/Users/liuya/PycharmProjects/tcgajax"
-    # sspairr_path = "/Users/liuya/Box/dev/R/smooth_scatter/ss_pair.R"
 else:
-    raise Exception("Unsupported running system.")
+    ## Default output dir set to pwd
+    results_dir = os.path.join(os.getcwd(), 'results')
 
 today_str = datetime.date.today().strftime("%Y-%m-%d")
 
@@ -48,12 +44,9 @@ logger.setLevel(logging.DEBUG)
 # Ensure dir is created if it is not exist
 def ensure_dir(dir_name):
     if not os.path.exists(dir_name):
-        # os.umask(0)
-        # os.makedirs(dir_name, exist_ok=True)
-
-        # logger.debug("create dir [{}]".format(dir_name))
-        pass
-
+        os.umask(0)
+        os.makedirs(dir_name, exist_ok=True)
+        logger.debug("create dir [{}]".format(dir_name))
 
 # create 3 folders if needed
 ensure_dir(pic_base_dir)
