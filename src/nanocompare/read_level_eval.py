@@ -220,7 +220,7 @@ def parse_arguments():
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
     parser.add_argument('--enable-cache', action='store_true')
     parser.add_argument('--using-cache', action='store_true')
-    parser.add_argument('--mpi', action='store_true')
+    parser.add_argument('-mpi', action='store_true')
     return parser.parse_args()
 
 

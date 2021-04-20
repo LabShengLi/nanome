@@ -149,6 +149,7 @@ process Preprocess {
 }
 
 
+// We collect all folders of fast5  files, and send into Channels for pipelines
 preprocess_out_ch
 	.mix(benchmarking_out_ch)
 	.into { basecall_input_ch; megalodon_in_ch }
@@ -219,6 +220,8 @@ basecall_out_ch
 process Resquiggle {
 	tag "${x}"
 	cache  'lenient'
+
+	clusterOptions '-q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem=50G'
 
 	input:
     file x from resquiggle_in_ch.flatten()
@@ -646,7 +649,7 @@ process ReadLevelPerf {
 		--runid MethPerf-${params.runid} \
 		--dsname ${params.dsname} \
 		--min-bgtruth-cov ${params.bgtruth_cov} \
-		--report-joined --mpi -o . ###--enable-cache --using-cache
+		--report-joined -mpi -o . ###--enable-cache --using-cache
 
 	echo "### Read level analysis DONE"
     """

@@ -434,7 +434,7 @@ fig.6.running.resource.bar.plot <- function() {
 }
 
 
-fig.6.running.resource.bar.plot1 <- function() {
+fig.7b1.running.resource.bar.plot <- function() {
   library(readxl)
   library(tidyverse)
 
@@ -456,7 +456,7 @@ fig.6.running.resource.bar.plot1 <- function() {
   g1 <- outdf %>%
     drop_na(tool) %>%
     ggplot(mapping = aes(x = cpu.time, y = dsname, fill = tool)) +
-    geom_bar(stat = "identity",  width = 0.8, position = position_dodge()) +
+    geom_bar(stat = "identity", width = 0.8, position = position_dodge()) +
     scale_fill_manual(values = ToolColorPal) +
     theme_classic() +
     xlab("CPU Utilized Time (hours)") +
@@ -489,6 +489,64 @@ fig.6.running.resource.bar.plot1 <- function() {
 
   outfn = sprintf("%s/fig.7.running.resource.bar.plot.jpg", outdir)
   ggsave(gg, filename = outfn, width = 6.5, height = 3.5, dpi = 600)
+  printf("save to %s\n", outfn)
+
+}
+
+
+fig.7b2.running.resource.bar.plot <- function() {
+  library(readxl)
+  library(tidyverse)
+
+  outdir = here('figures')
+  infn = here('result', 'benchmarking.log.formated.table.step2.all.tools.csv')
+  df <- read_csv(infn)
+
+  outdf <- df %>%
+    mutate(tool = factor(tool, levels = Tool.Order[1:5]))
+
+  p1 <- ggplot(data = outdf, aes(x = reads, y = realtime, group = tool, colour = tool)) +
+    geom_line() +
+    geom_point(aes(shape = tool), size = 5) +
+    # geom_smooth(method = "loess") +
+    scale_color_manual(values = ToolColorPal) +
+    scale_shape_manual(values = ToolShapeList) +
+    theme_classic() +
+    theme(text = element_text(size = 12)) +
+    ylab("Wall-clock time (seconds)") +
+    xlab("Number of reads") #+
+  # scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+  #              labels = scales::trans_format("log10", scales::math_format(10^.x)))
+
+
+  p1
+
+
+  p2 <- ggplot(data = outdf, aes(x = reads, y = peak_rss, group = tool, colour = tool)) +
+    geom_line() +
+    geom_point(aes(shape = tool), size = 5) +
+    # geom_smooth(method = "loess") +
+    scale_color_manual(values = ToolColorPal) +
+    scale_shape_manual(values = ToolShapeList) +
+    theme_classic() +
+    theme(text = element_text(size = 12)) +
+    ylab("Peak memory (GB)") +
+    xlab("Number of reads") +
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    annotation_logticks(sides = 'l')
+
+
+  p2
+
+
+  outfn = sprintf("%s/fig.7B1.benchmarking.running.time.jpg", outdir)
+  ggsave(p1, filename = outfn, width = 4, height = 3, dpi = 600)
+  printf("save to %s\n", outfn)
+
+
+  outfn = sprintf("%s/fig.7B2.benchmarking.peak.memory.jpg", outdir)
+  ggsave(p2, filename = outfn, width = 4, height = 3, dpi = 600)
   printf("save to %s\n", outfn)
 
 }

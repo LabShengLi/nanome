@@ -40,9 +40,14 @@ source(here('src', 'plotutils4r', 'paper_utils.R'))
 fig.5b.sorted.bar.plot.coe.in.each.region()
 
 
-## Figure 6: Resource summary
+## Figure 7b1: Resource summary
 source(here('src', 'plotutils4r', 'paper_utils.R'))
-fig.6.running.resource.bar.plot1()
+fig.7b1.running.resource.bar.plot()
+
+
+## Figure 7b2: Benchmarking
+source(here('src', 'plotutils4r', 'paper_utils.R'))
+fig.7b2.running.resource.bar.plot()
 
 
 ## Figure 5 cd: Set venn and euller plot

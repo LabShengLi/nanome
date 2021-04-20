@@ -25,7 +25,7 @@ date;hostname;pwd
 
 
 # Test default test datasets on winter HPC
-#./nextflow run main.nf -profile winter,test
+./nextflow run main.nf -profile winter,test --ntask 1
 
 #./nextflow run main.nf -profile winter,test -resume -with-dag -bg
 
@@ -35,11 +35,11 @@ date;hostname;pwd
 
 
 # Run on benchmarking data
-rm -rf /fastscratch/liuya/nanocompare/work
-./nextflow run main.nf -profile winter,benchmarking  \
-	-with-report -with-timeline -with-trace -with-dag \
-	-work-dir /fastscratch/liuya/nanocompare/work
-
+#rm -rf /fastscratch/liuya/nanocompare/work
+#./nextflow run main.nf -profile winter,benchmarking  \
+#	-with-report -with-timeline -with-trace -with-dag \
+#	-work-dir /fastscratch/liuya/nanocompare/work2
+#
 
 #./nextflow run main.nf -profile winter,benchmarking
 
@@ -63,6 +63,31 @@ rm -rf /fastscratch/liuya/nanocompare/work
 # module load singularity
 # builder="singularity run http://s3-far.jax.org/builder/builder"
 # $builder nanocompare.def nanocompare.sif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

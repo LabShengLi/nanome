@@ -8,19 +8,22 @@ from shutil import copy
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import CategoricalDtype
 
 from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir
 
 base_input = '/projects/li-lab/Nanopore_compare/nanopore_fast5/NA19240-N300-sept/10'
 out_dir = os.path.join(pic_base_dir, 'BenchmarkingData')
 
-trace_fn = '/projects/li-lab/Nanopore_compare/suppdata/benchmarking/benchmarking-trace.txt'
-
+# trace_fn = '/projects/li-lab/Nanopore_compare/suppdata/benchmarking/benchmarking-trace.txt'
+trace_fn = '/projects/li-lab/Nanopore_compare/result/benchmarking/nanome.pipeline_trace.txt'
 # sizes = [int(x) for x in np.linspace(1000, 10000, 10)]
 
 sample_sizes = [int(x) for x in np.linspace(800, 8000, 10)]
 
 random.seed(688)
+
+tools_cat_dtype = CategoricalDtype(categories=["DeepSignal", "Tombo", "Nanopolish", "DeepMod", "Megalodon", "Basecall", "Resquiggle"], ordered=True)
 
 
 def gen_benchmarking_data():
@@ -127,7 +130,11 @@ def analyse_trace():
     ## Extract all meaning fields into raw format
     # return toolname, dsname, reads, duration, realtime, cpu, peak_rss, peak_vmem, rchar, wchar
     df[['tool', 'dsname', 'reads', 'duration', 'realtime', '%cpu', 'peak_rss', 'peak_vmem', 'rchar', 'wchar']] = df.apply(extract_tool_and_dsname_from_name, axis=1, result_type="expand")
-    logger.info(df)
+
+    df['reads'] = df['reads'].astype(np.int)
+
+    df['tool'] = df['tool'].astype(tools_cat_dtype)
+    df = df.sort_values(by=['tool', 'reads'])
 
     outfn = os.path.join(pic_base_dir, 'benchmarking.log.formated.table.step1.all.steps.csv')
     df.to_csv(outfn, sep=',')
@@ -150,15 +157,15 @@ def analyse_trace():
             df.at[index, 'duration'] = df.at[index, 'duration'] + resquiggleRow['duration']
             df.at[index, 'realtime'] = df.at[index, 'realtime'] + resquiggleRow['realtime']
 
-            df.at[index, 'peak_rss'] = max(df.at[index, 'peak_rss'], resquiggleRow['peak_rss'])
-            df.at[index, 'peak_vmem'] = max(df.at[index, 'peak_vmem'], resquiggleRow['peak_vmem'])
+            df.at[index, 'peak_rss'] = max(df.at[index, 'peak_rss'], resquiggleRow['peak_rss'])  # TODO why Resquiggle costs too much memory, need / 6
+            df.at[index, 'peak_vmem'] = max(df.at[index, 'peak_vmem'], resquiggleRow['peak_vmem'])  # TODO why Resquiggle costs too much memory, need / 6
             df.at[index, 'rchar'] = max(df.at[index, 'rchar'], resquiggleRow['rchar'])
             df.at[index, 'wchar'] = max(df.at[index, 'wchar'], resquiggleRow['wchar'])
 
     ## Filter out non-tool rows
     df = df[df.tool.isin(['DeepSignal', 'Tombo', 'DeepMod', 'Nanopolish', 'Megalodon'])]
-    df = df.sort_values(by=['tool', 'reads'])
 
+    df = df.sort_values(by=['tool', 'reads'])
     outfn = os.path.join(pic_base_dir, 'benchmarking.log.formated.table.step2.all.tools.csv')
     df.to_csv(outfn, sep=',')
     pass
