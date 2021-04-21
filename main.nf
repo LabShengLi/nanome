@@ -216,12 +216,13 @@ basecall_out_ch
 	.into { resquiggle_in_ch; nanopolish_in_ch; deepmod_in_ch }
 
 
+
 // resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
 process Resquiggle {
 	tag "${x}"
 	cache  'lenient'
 
-	clusterOptions '-q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem=50G'
+	//clusterOptions '-q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem=50G'
 
 	input:
     file x from resquiggle_in_ch.flatten()
