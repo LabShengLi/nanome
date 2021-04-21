@@ -13,4 +13,4 @@ src/nanocompare/.DS_Store
 work
 .nextflow*
 nextflow
-
+.ipynb_checkpoints
