@@ -9,6 +9,7 @@ import glob
 import gzip
 import pickle
 import re
+import sys
 from collections import defaultdict
 from itertools import combinations
 
@@ -689,11 +690,14 @@ def importPredictions_Megalodon(infileName, chr_col=1, start_col=3, strand_col=2
     return cpgDict
 
 
-def coverageFiltering(calls_dict, minCov=4, byLength=True, toolname="Tool"):
+def coverageFilteringConverting(calls_dict, minCov=4, toolname="Tool"):
     """
-    Filtering low coverage CpG sites in ONT call dict object, keep only sites with cov >= minCov.
+    Filtering low coverage CpG sites in ONT call dict object, keep only sites with cov >= minCov. Convert to unified format of [[freq, cov], ......]
 
-    Convert orignial call object from dict[cpg] = {cpg: [meth_freq_read1, ..., meth_freq_readn]} to dict[cpg] = {cpg:[meth_freq, coverage_number]}
+    1. input is key-value, value like [000011100] or like [{'freq':0.7, 'cov':8}, ...]
+    2. output will be converted to [[freq, cov], ......]
+
+    Convert orignial call object from dict[cpg] = {cpg: [1 0 11 1 1 0, ..., meth_freq_readn]} to dict[cpg] = {cpg:[meth_freq, coverage_number]}
 
     meth_freq   in [0.0,1.0]
     cov_num     in int
@@ -1178,7 +1182,7 @@ def importGroundTruth_coverage_output_from_Bismark_BedGraph(infileName, chr_col=
                 continue
         else:
             logger.error("###\timportGroundTruth_coverage_output_from_Bismark InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(baseCount))
-            sys.exit(-1)
+            raise Exception(f'Check error here.')
 
         try:
             key = "{}\t{}\t{}\n".format(tmp[chr_col], start, start)
@@ -1225,7 +1229,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, deepmod_cluster
         calls0 = importPredictions_Nanopolish(infn, baseFormat=baseFormat, llr_cutoff=2.0, include_score=include_score)
     # elif encode == 'DeepMod':
     #     calls0 = importPredictions_DeepMod_Read_Level(infn, baseFormat=baseFormat, include_score=include_score)
-    elif encode == 'Megalodon': # Original format
+    elif encode == 'Megalodon':  # Original format
         calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score)
     elif encode == 'Megalodon.ZW':  # Here, ziwei preprocess the raw file to this format: chr_col=0, start_col=1, strand_col=3
         calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score, chr_col=0, start_col=1, strand_col=3)
@@ -1262,16 +1266,17 @@ def import_bgtruth(infn, encode, covCutoff=5, baseFormat=1, includeCov=True, ena
 
     if encode == "encode":  # This is official K562 BS seq data, 0-based start
         bgTruth = importGroundTruth_from_Encode(infn, covCutt=covCutoff, baseFormat=baseFormat, includeCov=includeCov)
+    elif encode == "bismark":  # for genome-wide Bismark Report ouput format results, such as HL60, etc. 1-based start input
+        bgTruth = importGroundTruth_from_Bismark(infn, covCutt=covCutoff, baseFormat=baseFormat, includeCov=includeCov)
     elif encode == "oxBS_sudo":  # not used now, function need to check if use
         raise Exception(f'Please check this function is ok, encode={encode}')
         bgTruth = importGroundTruth_oxBS_deprecated(infn, covCutt=covCutoff, baseCount=baseFormat)
     elif encode == "bed":  # like K562 joined bg-truth, 0-based start input
+        raise Exception(f'Please check this function is ok, encode={encode}')
         bgTruth = importGroundTruth_bed_file_format(infn, covCutt=covCutoff, baseFormat=baseFormat, includeCov=includeCov)
     elif encode == "bismark_bedgraph":  # not used now, function need to check if use
         raise Exception(f'Please check this function is ok, encode={encode}')
         bgTruth = importGroundTruth_coverage_output_from_Bismark_BedGraph(infn, baseCount=baseFormat)
-    elif encode == "bismark":  # for genome-wide Bismark Report ouput format results, such as HL60, etc. 1-based start input
-        bgTruth = importGroundTruth_from_Bismark(infn, covCutt=covCutoff, baseFormat=baseFormat, includeCov=includeCov)
     else:
         raise Exception(f"encode={encode} is not supported yet, for inputfile={infn}")
 

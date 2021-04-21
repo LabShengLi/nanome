@@ -4,10 +4,9 @@
 Generate site-level methylation correlation results in Nanocompare paper.
 """
 import argparse
-import subprocess
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, location_filename_to_abbvname
+from nanocompare.global_settings import Top3ToolNameList, location_filename_to_abbvname, get_tool_name
 
 
 def summary_cpgs_stats_results_table():
@@ -148,16 +147,33 @@ def parse_arguments():
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--beddir', type=str, help="base dir for bed files", default=None)  # need perform performance evaluation before, then get concordant, etc. bed files, like '/projects/li-lab/yang/results/2021-04-01'
-    parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
+    parser.add_argument('--sep', type=str, help="seperator for output csv file", default=' ')
     parser.add_argument('--processors', type=int, help="running processors", default=8)
-    parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff of coverage in bg-truth", default=5)
-    parser.add_argument('--toolcov-cutoff', type=int, help="cutoff of coverage in nanopore calls", default=3)
+    parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff of coverage in bg-truth", default=1)
+    parser.add_argument('--toolcov-cutoff', type=int, help="cutoff of coverage in nanopore calls", default=1)
     parser.add_argument('--baseFormat', type=int, help="base format after imported", default=1)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
     parser.add_argument('--enable-cache', action='store_true')
     parser.add_argument('--using-cache', action='store_true')
 
     return parser.parse_args()
+
+
+def output_dict_to_bed(dictCalls, outfn, sep=' '):
+    """
+    Assume dictCalls are key->value, key=(chr, 123, +), value=[(freq, cov), ...], note is 1-based format
+    Output is format:
+    chr start end . . freq  cov
+
+    :param dictCalls:
+    :param outfn:
+    :return:
+    """
+    with open(outfn, 'w') as outf:
+        for key in dictCalls:
+            strlist = [key[0], str(key[1]), str(key[1]), '.', '.', key[2], str(dictCalls[key][0]), str(dictCalls[key][1])]
+            outf.write(sep.join(strlist) + '\n')
+    logger.debug(f'Output for TSS analysis: {outfn}')
 
 
 if __name__ == '__main__':
@@ -173,13 +189,16 @@ if __name__ == '__main__':
     #     os.makedirs(cache_dir, exist_ok=True)
 
     # runid is always like 'MethCorr-K562_WGBS_2Reps', remove first word as RunPrefix like K562_WGBS_2Reps
-    RunPrefix = args.runid.replace('MethCorr-', '')
+    RunPrefix = args.runid.replace('TSS-', '')
 
+    ## Now, we are exporting >=1 cov results, the cov = 3,5, etc. can be later used before plotting
     # tool coverage cutoff 1, or 3, 5
     minToolCovCutt = args.toolcov_cutoff
+    minToolCovCutt = 1
 
     # bgtruth coverage cutoff 1, or 5, 10  --min-bgtruth-cov
     bgtruthCutt = args.min_bgtruth_cov
+    bgtruthCutt = 1
 
     # load into program format 0-base or 1-base
     baseFormat = args.baseFormat
@@ -220,7 +239,11 @@ if __name__ == '__main__':
     # Combine one/two replicates, using cutoff=1 or 5
     bgTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruthCutt)
 
+    outfn = os.path.join(out_dir, f'{RunPrefix}.tss.bgtruth.cov{bgtruthCutt}.bed')
+
     logger.info(f'Combined BS-seq data (cov>={bgtruthCutt}), all methylation level sites={len(bgTruth):,}')
+
+    output_dict_to_bed(bgTruth, outfn)
 
     logger.info(f'\n\n####################\n\n')
 
@@ -248,17 +271,16 @@ if __name__ == '__main__':
         # For site level evaluation, only need (freq, cov) results, no score needed. Especially for DeepMod, we must import as freq and cov format from DeepMod.Cluster encode
         # TODO: cov=1 will lead to too large size of dict objects, do we really report cov=1 results?
         # Do not filter bgtruth, because we use later for overlapping (without bg-truth)
-        callresult_dict[callname] = [import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, deepmod_cluster_freq_cov_format=True)]
 
-    logger.debug(loaded_callname_list)
-
-    logger.info(f'Start apply cutoff={minToolCovCutt} to methylation calls, take time')
-
-    # Cutoff of read cov >= 1 or 3, 5 for nanopore tools
-    for callname in loaded_callname_list:
-        callresult_dict[callname].append(coverageFilteringConverting(callresult_dict[callname][0], minCov=minToolCovCutt, toolname=callname))
+        ontCall = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, deepmod_cluster_freq_cov_format=True)
+        ontCallWithCov = coverageFilteringConverting(ontCall, minCov=minToolCovCutt, toolname=callname)
+        callresult_dict[callname] = ontCallWithCov
+        outfn = os.path.join(out_dir, f'{RunPrefix}.tss.{callname}.cov{minToolCovCutt}.bed')
+        output_dict_to_bed(ontCallWithCov, outfn)
 
     logger.info(f'\n\n####################\n\n')
+    logger.info("TSS DONE")
+    sys.exit(0)
 
     logger.info('Overlapping analysis start:')
     logger.info(f"Start gen venn data for each tool (cov>={minToolCovCutt})")
