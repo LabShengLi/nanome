@@ -27,6 +27,7 @@ date;hostname;pwd
 # Test default test datasets on winter HPC
 ./nextflow run main.nf -profile winter,test --ntask 1
 
+
 #./nextflow run main.nf -profile winter,test -resume -with-dag -bg
 
 #./nextflow run main.nf -profile winter,test -with-report -with-timeline -with-trace  -with-dag
