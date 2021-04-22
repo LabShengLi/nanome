@@ -1,10 +1,18 @@
-FROM continuumio/miniconda3@sha256:456e3196bf3ffb13fee7c9216db4b18b5e6f4d37090b31df3e0309926e98cfe2
+FROM genomicpariscentre/guppy-gpu:4.2.2
 LABEL description="Nanocompare project" \
       author="yang.liu@jax.org"
 RUN apt-get update -y \
   && apt-get install procps -y \
   && rm -rf /var/lib/apt/lists/*
-  
+ 
+#Install miniconda
+RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O Miniconda.sh && \
+    /bin/bash Miniconda.sh -b -p /opt/conda && \
+    rm Miniconda.sh
+
+# Adding conda to PATH
+ENV PATH /opt/conda/bin:$PATH
+
 # Create the environment:
 COPY environment.yml /
 RUN conda env create -f environment.yml && conda clean -a
