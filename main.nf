@@ -148,13 +148,30 @@ process Preprocess {
     """
 }
 
+fast5_tar_ch = Channel.fromPath(params.input_fast5_tar)
+
+process UntarOnlineData{
+	tag 'UntarOnlineData'
+	cache  'lenient'
+
+	when:
+	params.online
+
+	input:
+	file x from fast5_tar_ch
+
+	output:
+	file "M${x}/*" into online_out_ch
+
+	"""
+	time tar -xf ${x} -C M${x}
+    """
+}
 
 // We collect all folders of fast5  files, and send into Channels for pipelines
 preprocess_out_ch
-	.mix(benchmarking_out_ch)
+	.mix(benchmarking_out_ch, online_out_ch)
 	.into { basecall_input_ch; megalodon_in_ch }
-
-
 
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
