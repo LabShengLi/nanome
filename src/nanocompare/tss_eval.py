@@ -159,10 +159,10 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def output_dict_to_bed(dictCalls, outfn, sep=' '):
+def output_dict_to_bed(dictCalls, outfn, sep='\t'):
     """
     Assume dictCalls are key->value, key=(chr, 123, +), value=[(freq, cov), ...], note is 1-based format
-    Output is format:
+    Output is format: 0-based format for analysis
     chr start end . . freq  cov
 
     :param dictCalls:
@@ -171,7 +171,7 @@ def output_dict_to_bed(dictCalls, outfn, sep=' '):
     """
     with open(outfn, 'w') as outf:
         for key in dictCalls:
-            strlist = [key[0], str(key[1]), str(key[1]), '.', '.', key[2], str(dictCalls[key][0]), str(dictCalls[key][1])]
+            strlist = [key[0], str(key[1] - 1), str(key[1]), '.', '.', key[2], str(dictCalls[key][0]), str(dictCalls[key][1])]
             outf.write(sep.join(strlist) + '\n')
     logger.debug(f'Output for TSS analysis: {outfn}')
 
