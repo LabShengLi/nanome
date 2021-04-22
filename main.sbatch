@@ -18,6 +18,7 @@ date;hostname;pwd
 
 
 
+
 #module load singularity
 
 # Get nextflow from internet

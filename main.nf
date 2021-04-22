@@ -24,6 +24,26 @@ ch_input = params.benchmarking ? Channel.empty() : Channel.fromPath(params.input
 benchmarking_in_ch = params.benchmarking ? Channel
         .fromPath(params.input, type: 'file', checkIfExists: true) : Channel.empty()
 
+fast5_tar_ch = Channel.fromPath(params.input_fast5_tar)
+
+process UntarOnlineData{
+	tag 'UntarOnlineData'
+	cache  'lenient'
+
+	when:
+	params.online
+
+	input:
+	file x from fast5_tar_ch
+
+	output:
+	file "M${x}" into online_out_ch
+
+	"""
+	time tar -xf ${x} -C M${x}
+    """
+}
+
 // Check all tools work well on the platform
 process UntarBenchmarking {
 	// echo true
@@ -33,13 +53,16 @@ process UntarBenchmarking {
 	errorStrategy 'terminate'
 
 	when:
-	params.benchmarking
+	params.benchmarking && !params.online
 
 	input:
 	file x from benchmarking_in_ch
 
 	output:
 	file "untar_dir/BenchmarkingData/MB*" into benchmarking_out_ch
+
+	when:
+	! params.online
 
 	"""
 	echo $x
@@ -62,6 +85,9 @@ process EnvCheck {
 	tag 'EnvCheck'
 	// teminate all later processes if this process is not passed
 	errorStrategy 'terminate'
+
+	when:
+	! params.online
 
 	"""
 	set -x
@@ -108,7 +134,7 @@ process Preprocess {
     file 'sept_dir/M*' into preprocess_out_ch
 
     when:
-    ! params.benchmarking
+    ! params.benchmarking && ! params.online
 
     """
     set -x
@@ -151,10 +177,8 @@ process Preprocess {
 
 // We collect all folders of fast5  files, and send into Channels for pipelines
 preprocess_out_ch
-	.mix(benchmarking_out_ch)
+	.mix(benchmarking_out_ch, online_out_ch)
 	.into { basecall_input_ch; megalodon_in_ch }
-
-
 
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
