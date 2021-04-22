@@ -16,9 +16,6 @@ set -x
 
 date;hostname;pwd
 
-
-
-
 #module load singularity
 
 # Get nextflow from internet
@@ -27,7 +24,6 @@ date;hostname;pwd
 
 # Test default test datasets on winter HPC
 #./nextflow run main.nf -profile winter,test --ntask 1
-
 
 #./nextflow run main.nf -profile winter,test -resume -with-dag -bg
 
@@ -51,7 +47,7 @@ date;hostname;pwd
 #  -resume
 
 
-rm -rf /fastscratch/liuya/nanocompare/work
+#rm -rf /fastscratch/liuya/nanocompare/work
 
 ./nextflow run main.nf -profile winter -config conf/NA12878.config \
   -work-dir /fastscratch/liuya/nanocompare/work # -resume

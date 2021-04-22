@@ -28,12 +28,14 @@ benchmarking_in_ch = params.benchmarking ? Channel
 fast5_tar_ch = Channel.fromPath(params.input)
 
 
+// Inputs for methcalling pipelines (such as reference genome, deepsignal model, DeepMod Clustering data, Megalodon model, etc.)
 hg38_tar_ch = Channel.fromPath(params.hg38_tar)
 deepmod_ctar_ch = Channel.fromPath(params.deepmod_ctar)
 deepsignel_model_tar_ch = Channel.fromPath(params.deepsignel_model_tar)
 megalodon_model_tar_ch = Channel.fromPath(params.megalodon_model_tar)
 
 
+// Get input from internet, and output to channel for later usage
 process GetInputData{
 	tag 'GetInputData'
 	cache  'lenient'
@@ -69,8 +71,12 @@ process GetInputData{
     """
 }
 
+
+// The reference genome will be used later for: Resquiggle, Nanopolish, Megalodon, etc.
 hg38_fa_ch.into{hg38_fa_ch1; hg38_fa_ch2;hg38_fa_ch3;hg38_fa_ch4;hg38_fa_ch5}
 
+
+// Get the NA19240/NA12878 input fast5.tar files, output to Basecall/Megalodon channel
 process GetOnlineFast5{
 	tag 'GetOnlineFast5'
 	cache  'lenient'
@@ -89,7 +95,16 @@ process GetOnlineFast5{
 
 	mkdir -p untar_${x}
 
-	tar -xf ${x} -C untar_${x}
+	##tar -xf ${x} -C untar_${x}
+
+	infn=${x}
+
+	if [ "\${infn##*.}" = "tar" ]; then
+		tar -xf ${x} -C untar_${x}
+	elif [ "\${infn##*.}" = "gz" ]; then
+		tar -xzf ${x} -C untar_${x}
+	fi
+
 
 	newx=${x}
 	newx=\${newx%".tar"}
