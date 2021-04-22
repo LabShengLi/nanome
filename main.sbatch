@@ -26,7 +26,7 @@ date;hostname;pwd
 
 
 # Test default test datasets on winter HPC
-./nextflow run main.nf -profile winter,test --ntask 1
+#./nextflow run main.nf -profile winter,test --ntask 1
 
 
 #./nextflow run main.nf -profile winter,test -resume -with-dag -bg
@@ -42,6 +42,15 @@ date;hostname;pwd
 #	-with-report -with-timeline -with-trace -with-dag \
 #	-work-dir /fastscratch/liuya/nanocompare/work2
 #
+
+
+./nextflow run main.nf -profile winter \
+  --input_fast5_tar http://s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr20.part05.tar \
+  --online true \
+  -work-dir /fastscratch/liuya/nanocompare/work \
+  -resume
+
+
 
 #./nextflow run main.nf -profile winter,benchmarking
 

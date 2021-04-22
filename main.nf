@@ -37,12 +37,23 @@ process UntarOnlineData{
 	file x from fast5_tar_ch
 
 	output:
-	file "M${x}" into online_out_ch
+	file "M_*" into online_out_ch
 
 	"""
-	time tar -xf ${x} -C M${x}
+	mkdir -p untar_${x}
+	time tar -xf ${x} -C untar_${x}
+
+	newx=${x}
+	newx=\${newx%".tar"}
+
+	mkdir -p M_\${newx}
+
+	#### echo untar_${x} -name '*.fast5' -exec mv {} M_\${newx}/ \\;
+
+	find untar_${x} -name '*.fast5' -exec mv {} M_\${newx}/ \\;
     """
 }
+
 
 // Check all tools work well on the platform
 process UntarBenchmarking {
@@ -174,25 +185,7 @@ process Preprocess {
     """
 }
 
-fast5_tar_ch = Channel.fromPath(params.input_fast5_tar)
 
-process UntarOnlineData{
-	tag 'UntarOnlineData'
-	cache  'lenient'
-
-	when:
-	params.online
-
-	input:
-	file x from fast5_tar_ch
-
-	output:
-	file "M${x}/*" into online_out_ch
-
-	"""
-	time tar -xf ${x} -C M${x}
-    """
-}
 
 // We collect all folders of fast5  files, and send into Channels for pipelines
 preprocess_out_ch
@@ -222,6 +215,7 @@ process Basecall {
         --config ${params.GUPPY_BASECALL_MODEL} \
         --num_callers 3 \
         --fast5_out \
+        --recursive \
         --verbose_logs \
         ${params.GuppyGPUOptions}
 
