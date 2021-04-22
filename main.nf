@@ -6,11 +6,13 @@ log.info """\
 	by The Jackon Laboratory
 	Sheng Li Lab http://nanome.jax.org
 	=================================
-	dsname      :${params.dsname}
-	input       :${params.input}
-	benchmarking:${params.benchmarking}
-	eval        :${params.eval}
-	debug       :${params.debug}
+	dsname              :${params.dsname}
+	input               :${params.input}
+	input_fast5_tar     :${params.input_fast5_tar}
+	benchmarking        :${params.benchmarking}
+	eval                :${params.eval}
+	debug               :${params.debug}
+	online              :${params.online}
 	=================================
 	"""
 	.stripIndent()
