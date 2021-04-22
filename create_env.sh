@@ -39,6 +39,8 @@ conda install -c bioconda pybedtools
 
 conda env export > environment.yml
 
+conda env export -f enviroment-no-builds.yml --no-builds
+
 docker build -t nanome .
 
 # How to run script/command using docker images and mapping folders
