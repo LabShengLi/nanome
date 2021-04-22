@@ -2,7 +2,7 @@
 #SBATCH --job-name=nano.nxfl
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
-#SBATCH -q dev
+#SBATCH -q training
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 2 # number of cores
 #SBATCH --mem-per-cpu=70G # memory pool for all cores
@@ -44,12 +44,17 @@ date;hostname;pwd
 #
 
 
-./nextflow run main.nf -profile winter \
-  --input_fast5_tar http://s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr20.part05.tar \
-  --online true \
-  -work-dir /fastscratch/liuya/nanocompare/work \
-  -resume
+#./nextflow run main.nf -profile winter \
+#  --input_fast5_tar http://s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr20.part05.tar \
+#  --online true \
+#  -work-dir /fastscratch/liuya/nanocompare/work \
+#  -resume
 
+
+rm -rf /fastscratch/liuya/nanocompare/work
+
+./nextflow run main.nf -profile winter -config conf/NA12878.config \
+  -work-dir /fastscratch/liuya/nanocompare/work # -resume
 
 
 #./nextflow run main.nf -profile winter,benchmarking
