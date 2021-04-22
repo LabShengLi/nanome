@@ -17,6 +17,10 @@ from nanocompare.global_settings import *
 from nanocompare.eval_common import correlation_report_on_regions, logger, set_log_debug_level, pic_base_dir
 
 
+#### Additional libraries:
+import numpy as np
+from scipy import stats
+
 def set_style(font_scale=1.2):
     # sns.set()
     # sns.set(font_scale=1.15)
@@ -95,13 +99,20 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
     position = 1
     for yrow in range(1, num_col + 1):  # row
         for xcol in range(1, num_col + 1):  # column, each tool
+            logger.debug("Please wait, processing column xcol {}, yrow {}.".format(xcol, yrow)) # adding this so that one would be able to estimate how much time one has for a coffe
             if xcol == yrow:
                 # Diagonal, distribution lines:
                 plt.subplot(num_col, num_col, position)
-                params = {'legend.fontsize': 16, 'legend.handlelength': 0, 'legend.handletextpad': 0, 'legend.fancybox': True}
+                params = {'legend.fontsize': 50, 
+                          'legend.handlelength': 0, 
+                          'legend.handletextpad': 0, 
+                          'legend.fancybox': False, 
+                          'legend.loc': 'upper right', 
+                          'legend.framealpha': 0, 
+                          'legend.borderaxespad': 0}
                 plt.rcParams.update(params)
-                ax = sns.kdeplot(df.iloc[:, xcol - 1], shade=True, color="black", legend=True)
-                leg = ax.legend(labels=[str(df.columns[xcol - 1])], fontsize=14)
+                ax = sns.kdeplot(df.iloc[:, xcol - 1], shade=False, color="black", legend=True)
+                leg = ax.legend(labels=[str(df.columns[xcol - 1])], fontsize=10)
                 for item in leg.legendHandles:
                     item.set_visible(False)
 
@@ -111,53 +122,90 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
                 ax.set_xticklabels([])
                 ax.set_ylabel('')
                 ax.set_xlabel('')
+                ax.tick_params(axis=u'both', which=u'both',length=0)
 
             elif xcol > yrow:
                 # upper triangle, COE number:
                 ax2 = plt.subplot(num_col, num_col, position)
 
                 corrValue = pearsonr(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1])
-                corrValueStr = "{0:.2f}".format(corrValue[0])
-
-                ax2.text(0.5 * (left + right), 0.5 * (bottom + top), corrValueStr,
+                corrValueStr = "{0:.3f}".format(corrValue[0])
+                
+#                 print(xcol, yrow)
+                if yrow == 1:
+                    ax2.text(0.5 * (left + right), 0.5 * (bottom + top), corrValueStr,
                          horizontalalignment='center',
                          verticalalignment='center',
-                         fontsize=25, color='black',
+                         fontsize=19, color='#7B2323', weight='bold', 
                          transform=ax2.transAxes)
-
+                else:
+                    ax2.text(0.5 * (left + right), 0.5 * (bottom + top), corrValueStr,
+                         horizontalalignment='center',
+                         verticalalignment='center',
+                         fontsize=19, color='black',
+                         transform=ax2.transAxes)
+                
                 ax2.set_yticklabels([])
                 ax2.set_xticklabels([])
+                ax2.tick_params(axis=u'both', which=u'both',length=0)
 
             elif xcol < yrow:
                 # lower triangle, scatter plot, using hexbin, x-column label, y-row label:
                 ax3 = plt.subplot(num_col, num_col, position)
+                
+                ### Kernel density plot:
+                BGres = 300j # 150j # 75j # 300j ## for debugging change this parameter to "50j" or less
+                
+                m1_sign = np.array(list(df.iloc[:, xcol - 1]))
+                m2_sign = np.array(list(df.iloc[:, yrow - 1]))
+                xmin = ymin = -0.05
+                xmax = ymax = 1.05
+                
+                X, Y = np.mgrid[xmin:xmax:BGres, ymin:ymax:BGres]
+                positions = np.vstack([X.ravel(), Y.ravel()])
+                values = np.vstack([m1_sign, m2_sign])
+                kernel = stats.gaussian_kde(values)
+                Z = np.reshape(kernel(positions).T, X.shape)
+                
+                ax3.imshow(np.rot90(Z), cmap=plt.cm.Spectral_r, extent=[xmin, xmax, ymin, ymax], aspect="auto")
+                # ax3.imshow(np.rot90(Z), cmap=plt.cm.gist_stern, extent=[xmin, xmax, ymin, ymax], aspect="auto") # An example how to switch from Spectral_r to gist_stern colormap
+                # ax3.plot(m1_sign, m2_sign, marker=',', color="white", linestyle='None', markersize=0.25, alpha=0.25) # uncomment this line if you want to generate version with points marker very lightly on the figure
 
-                if len(df) < 100:
-                    gridRes = 15  # for HL60
-                else:
-                    gridRes = 50
-
-                mincnt = 1
-
-                if len(df) < 100:  # for HL60 plot
-                    plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=None)
-                    pass
-                else:
-                    plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
+                ### Scatter plot (previous implementation for the plot - i am keeping this for now but should be cleaned if we decide to go with KDE version)
+                # if len(df) < 100:
+#                     gridRes = 15  # for HL60
+#                 else:
+#                     gridRes = 50
+# 
+#                 mincnt = 1
+# 
+#                 if len(df) < 100:  # for HL60 plot
+#                     plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=None)
+#                     pass
+#                 else:
+#                     plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
 
                 if yrow == num_col:  # last row scatter plot shows x ticks
-                    plt.xticks([0, 0.5, 1], fontsize=10)
+                    plt.xticks([0, 1], fontsize=10)
+                    ax3.set_xticklabels(["0%", "100%"], fontsize = 10)
+                    for label, alnType in zip(ax3.get_xticklabels(), ['left','right']):
+                        label.set_horizontalalignment(alnType)
                 else:
                     plt.xticks([], fontsize=10)
 
                 if xcol == 1:  # first column scatter plot shows y ticks
-                    plt.yticks([0, 0.5, 1], fontsize=8)
+                    plt.yticks([0, 1], fontsize=10)
+                    ax3.set_yticklabels(["0%", "100%"], fontsize = 10)
+                    for label, alnType in zip(ax3.get_yticklabels(), ['bottom','top']):
+                        label.set_verticalalignment(alnType)
+#                     
                 else:
-                    plt.yticks([], fontsize=8)
+                    plt.yticks([], fontsize=10)
 
             position += 1
 
     fig.savefig(outfn, dpi=300, bbox_inches='tight')
+    fig.savefig(outfn.replace("jpg",".pdf"), dpi=300, bbox_inches='tight') # Generate also PDF version
     plt.show()
     plt.close()
     logger.info(f"save to {outfn}")
