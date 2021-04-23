@@ -47,7 +47,7 @@ date;hostname;pwd
 #  -resume
 
 
-#rm -rf /fastscratch/liuya/nanocompare/work
+rm -rf /fastscratch/liuya/nanocompare/work
 
 ./nextflow run main.nf -profile winter -config conf/NA12878.config \
   -work-dir /fastscratch/liuya/nanocompare/work # -resume

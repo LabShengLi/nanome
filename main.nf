@@ -272,7 +272,12 @@ process Basecall {
 
     """
     set -x
+
+    export PATH=/usr/bin:PATH
+
     mkdir -p basecall_dir/${x}
+
+
     guppy_basecaller --input_path $x \
         --save_path "basecall_dir/${x}" \
         --config ${params.GUPPY_BASECALL_MODEL} \
