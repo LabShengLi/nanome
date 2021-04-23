@@ -20,7 +20,7 @@ RUN conda env create -f environment.yml && conda clean -a
 # Make RUN commands use the new environment:
 SHELL ["conda", "run", "-n", "nanocompare", "/bin/bash", "-c"]
 
-ENV PATH /opt/conda/envs/cromwell-env/bin:$PATH
+ENV PATH /opt/conda/envs/nanocompare/bin:$PATH
 USER root
 WORKDIR /data/
 CMD ["bash"]
