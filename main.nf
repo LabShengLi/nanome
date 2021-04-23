@@ -156,6 +156,7 @@ process EnvCheck {
 	tag 'EnvCheck'
 	// teminate all later processes if this process is not passed
 	errorStrategy 'terminate'
+	label 'with_gpus'
 
 	when:
 	! params.online
@@ -197,6 +198,7 @@ process Preprocess {
 //	echo true
 	errorStrategy 'ignore'
 	cache  'lenient'
+	label 'with_gpus'
 
     input:
     file fast5_tar from ch_input
@@ -260,6 +262,7 @@ process Basecall {
 	cache  'lenient'
 
 	//errorStrategy 'ignore'
+	label 'with_gpus'
 
 	input:
     file x from basecall_input_ch.flatten()
@@ -331,6 +334,7 @@ resquiggle_in2_ch = resquiggle_in_ch.flatten().combine(hg38_fa_ch1)
 process Resquiggle {
 	tag "${ttt[0]}"
 	cache  'lenient'
+	label 'with_gpus'
 
 	//clusterOptions '-q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem=50G'
 
@@ -376,6 +380,7 @@ process DeepSignal {
 	tag "${ttt[0]}"
 
 	cache  'lenient'
+	label 'with_gpus'
 
 	input:
 //    file x from deepsignal_in_ch.flatten()
@@ -410,6 +415,7 @@ process DeepSignal {
 process Tombo {
 	tag "${x}"
 	cache  'lenient'
+	label 'with_gpus'
 
 	input:
     file x from tombo_in_ch.flatten()
@@ -446,6 +452,7 @@ process Megalodon {
 	cache  'lenient'
 
 	//errorStrategy 'ignore'
+	label 'with_gpus'
 
 	input:
 //    file x from megalodon_in_ch.flatten()
@@ -516,6 +523,7 @@ process DeepMod {
 	cache  'lenient'
 
 	errorStrategy 'ignore'
+	label 'with_gpus'
 
 	input:
 	file ttt from deepmod_in2_ch
@@ -551,6 +559,7 @@ nanopolish_in2_ch =  nanopolish_in_ch.flatten().combine(hg38_fa_ch5)
 process Nanopolish {
 	tag "${ttt[0]}"
 	cache  'lenient'
+	label 'with_gpus'
 
 	input:
 //    file x from nanopolish_in_ch.flatten()
@@ -618,6 +627,7 @@ deepsignal_combine_in_ch = deepsignal_out_ch.toList()
 // Combine DeepSignal runs' all results together
 process DpSigCombine {
 	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
+	label 'with_gpus'
 
 	input:
     file x from deepsignal_combine_in_ch
@@ -639,6 +649,7 @@ process DpSigCombine {
 // Combine Tombo runs' all results together
 process TomboCombine {
 	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
+	label 'with_gpus'
 
 	input:
     file x from tombo_combine_in_ch
@@ -658,6 +669,7 @@ process TomboCombine {
 
 // Combine Megalodon runs' all results together
 process MgldnCombine {
+	label 'with_gpus'
 
 	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
 
@@ -690,6 +702,7 @@ process MgldnCombine {
 // Combine Nanopolish runs' all results together
 process NplshCombine {
 	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
+	label 'with_gpus'
 
 	input:
     file x from nanopolish_combine_in_ch
@@ -723,6 +736,7 @@ process NplshCombine {
 // Combine DeepMod runs' all results together
 process DpmodCombine {
 	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
+	label 'with_gpus'
 
 	input:
     file x from deepmod_combine_in_ch
@@ -786,6 +800,7 @@ deepsignal_combine_out_ch.concat(tombo_combine_out_ch,megalodon_combine_out_ch, 
 // Read level evaluations
 process ReadLevelPerf {
 	publishDir "outputs/${params.dsname}-nanome-analysis" //, mode: "copy"
+	label 'with_gpus'
 
 	input: // TODO: I can not sort fileList by name, seems sorted by date????
     file fileList from readlevel_in_ch
@@ -842,6 +857,7 @@ process ReadLevelPerf {
 // Site level correlation analysis
 process SiteLevelCorr {
 	publishDir "outputs/${params.dsname}-nanome-analysis" //, mode: "copy"
+	label 'with_gpus'
 
 	input:
     file perfDir from readlevel_out_ch
