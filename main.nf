@@ -273,11 +273,10 @@ process Basecall {
     """
     set -x
 
-    export PATH=/usr/bin:PATH
+    export PATH=/usr/bin:${PATH}
 
-    #mkdir -p basecall_dir
-
-    #mkdir -p basecall_dir/${x}
+    mkdir -p basecall_dir
+    mkdir -p basecall_dir/${x}
 
 
     guppy_basecaller --input_path $x \
@@ -348,6 +347,8 @@ process Resquiggle {
 	x=\${filepair[0]}
 	ref=\${filepair[1]}
 
+	refGenome=\${ref}/hg38.fasta
+
 	mkdir -p resquiggle_dir/\${x}/workspace
 	### only copy workspace files, due to nanpolish modify base folder at x
 	cp -rf \${x}/workspace/* resquiggle_dir/\${x}/workspace
@@ -355,7 +356,7 @@ process Resquiggle {
     tombo resquiggle --dna --processes ${params.processors} \
         --corrected-group ${params.correctedGroup} \
 		--basecall-group Basecall_1D_000 --overwrite \
-		resquiggle_dir/\${x}/workspace \${ref}/hg38.fa
+		resquiggle_dir/\${x}/workspace \${refGenome}
     """
 }
 
@@ -388,7 +389,7 @@ process DeepSignal {
     filepair=(${ttt})
 	x=\${filepair[0]}
 	ref=\${filepair[1]}
-	refGenome=\${ref}/hg38.fa
+	refGenome=\${ref}/hg38.fasta
 	deepsignalModelDir=\${filepair[2]}
 
 
@@ -435,7 +436,7 @@ process Tombo {
 }
 
 
-megalodon_in2_ch = megalodon_in_ch.flatten().combine(hg38_fa_ch2)
+megalodon_in2_ch = megalodon_in_ch.flatten().combine(hg38_fa_ch2).combine(megalodon_model_ch)
 
 // Megalodon runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Megalodon {
@@ -446,8 +447,6 @@ process Megalodon {
 //    file x from megalodon_in_ch.flatten()
 //    file ref from hg38_fa_ch
 	file ttt from megalodon_in2_ch  // TODO: how to pass [basecallDir, refFile] int two vars
-	val x from 'abc'
-	val ref from 'ref'
 
     output:
     file 'megalodon_results/*.per_read_modified_base_calls.txt' into megalodon_out_ch
@@ -455,19 +454,20 @@ process Megalodon {
     when:
     ! params.debug
 
+	// TODO: how to specify Megalodon / Guppy model using full path? or put them into folder
     """
     set -x
 
 	echo $ttt
 
 	## TODO: reference to array index
-	echo ${ttt[0]},${ttt[1]}
+	echo ${ttt[0]},${ttt[1]}, ${ttt[2]}
 
 
 	filepair=(${ttt})
 	x=\${filepair[0]}
 	ref=\${filepair[1]}
-	refGenome=\${ref}/hg38.fa
+	refGenome=\${ref}/hg38.fasta
 
 
     mkdir -p indir/\${x}
@@ -528,7 +528,7 @@ process DeepMod {
 	filepair=(${ttt})
 	x=\${filepair[0]}
 	ref=\${filepair[1]}
-	refGenome=\${ref}/hg38.fa
+	refGenome=\${ref}/hg38.fasta
 
     DeepMod.py detect \
 			--wrkBase \${x}/workspace --Ref \${refGenome} \
@@ -559,7 +559,7 @@ process Nanopolish {
     filepair=(${ttt})
 	x=\${filepair[0]}
 	ref=\${filepair[1]}
-	refGenome=\${ref}/hg38.fa
+	refGenome=\${ref}/hg38.fasta
 
 
     ### We put all fq and bam files into working dir, DO NOT affect the basecall dir
