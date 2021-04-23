@@ -2,24 +2,23 @@
 Plots all Nanocompare paper out
 """
 import argparse
-import glob
 import pickle
 from collections import defaultdict
 
+import glob
 import matplotlib.pyplot as plt
+#### Additional libraries:
+import numpy as np
 import pandas as pd
 import seaborn as sns
+from scipy import stats
 from scipy.stats import pearsonr
 from sklearn import metrics
 from sklearn.metrics import precision_recall_curve
 
-from nanocompare.global_settings import *
 from nanocompare.eval_common import correlation_report_on_regions, logger, set_log_debug_level, pic_base_dir
+from nanocompare.global_settings import *
 
-
-#### Additional libraries:
-import numpy as np
-from scipy import stats
 
 def set_style(font_scale=1.2):
     # sns.set()
@@ -99,17 +98,17 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
     position = 1
     for yrow in range(1, num_col + 1):  # row
         for xcol in range(1, num_col + 1):  # column, each tool
-            logger.debug("Please wait, processing column xcol {}, yrow {}.".format(xcol, yrow)) # adding this so that one would be able to estimate how much time one has for a coffe
+            logger.debug("Please wait, processing column xcol {}, yrow {}.".format(xcol, yrow))  # adding this so that one would be able to estimate how much time one has for a coffe
             if xcol == yrow:
                 # Diagonal, distribution lines:
                 plt.subplot(num_col, num_col, position)
-                params = {'legend.fontsize': 50, 
-                          'legend.handlelength': 0, 
-                          'legend.handletextpad': 0, 
-                          'legend.fancybox': False, 
-                          'legend.loc': 'upper right', 
-                          'legend.framealpha': 0, 
-                          'legend.borderaxespad': 0}
+                params = {'legend.fontsize'   : 50,
+                        'legend.handlelength' : 0,
+                        'legend.handletextpad': 0,
+                        'legend.fancybox'     : False,
+                        'legend.loc'          : 'upper right',
+                        'legend.framealpha'   : 0,
+                        'legend.borderaxespad': 0}
                 plt.rcParams.update(params)
                 ax = sns.kdeplot(df.iloc[:, xcol - 1], shade=False, color="black", legend=True)
                 leg = ax.legend(labels=[str(df.columns[xcol - 1])], fontsize=10)
@@ -122,7 +121,7 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
                 ax.set_xticklabels([])
                 ax.set_ylabel('')
                 ax.set_xlabel('')
-                ax.tick_params(axis=u'both', which=u'both',length=0)
+                ax.tick_params(axis=u'both', which=u'both', length=0)
 
             elif xcol > yrow:
                 # upper triangle, COE number:
@@ -130,82 +129,82 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
 
                 corrValue = pearsonr(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1])
                 corrValueStr = "{0:.3f}".format(corrValue[0])
-                
-#                 print(xcol, yrow)
+
+                #                 print(xcol, yrow)
                 if yrow == 1:
                     ax2.text(0.5 * (left + right), 0.5 * (bottom + top), corrValueStr,
-                         horizontalalignment='center',
-                         verticalalignment='center',
-                         fontsize=19, color='#7B2323', weight='bold', 
-                         transform=ax2.transAxes)
+                             horizontalalignment='center',
+                             verticalalignment='center',
+                             fontsize=19, color='#7B2323', weight='bold',
+                             transform=ax2.transAxes)
                 else:
                     ax2.text(0.5 * (left + right), 0.5 * (bottom + top), corrValueStr,
-                         horizontalalignment='center',
-                         verticalalignment='center',
-                         fontsize=19, color='black',
-                         transform=ax2.transAxes)
-                
+                             horizontalalignment='center',
+                             verticalalignment='center',
+                             fontsize=19, color='black',
+                             transform=ax2.transAxes)
+
                 ax2.set_yticklabels([])
                 ax2.set_xticklabels([])
-                ax2.tick_params(axis=u'both', which=u'both',length=0)
+                ax2.tick_params(axis=u'both', which=u'both', length=0)
 
             elif xcol < yrow:
                 # lower triangle, scatter plot, using hexbin, x-column label, y-row label:
                 ax3 = plt.subplot(num_col, num_col, position)
-                
+
                 ### Kernel density plot:
-                BGres = 300j # 150j # 75j # 300j ## for debugging change this parameter to "50j" or less
-                
+                BGres = 300j  # 150j # 75j # 300j ## for debugging change this parameter to "50j" or less
+
                 m1_sign = np.array(list(df.iloc[:, xcol - 1]))
                 m2_sign = np.array(list(df.iloc[:, yrow - 1]))
                 xmin = ymin = -0.05
                 xmax = ymax = 1.05
-                
+
                 X, Y = np.mgrid[xmin:xmax:BGres, ymin:ymax:BGres]
                 positions = np.vstack([X.ravel(), Y.ravel()])
                 values = np.vstack([m1_sign, m2_sign])
                 kernel = stats.gaussian_kde(values)
                 Z = np.reshape(kernel(positions).T, X.shape)
-                
+
                 ax3.imshow(np.rot90(Z), cmap=plt.cm.Spectral_r, extent=[xmin, xmax, ymin, ymax], aspect="auto")
                 # ax3.imshow(np.rot90(Z), cmap=plt.cm.gist_stern, extent=[xmin, xmax, ymin, ymax], aspect="auto") # An example how to switch from Spectral_r to gist_stern colormap
                 # ax3.plot(m1_sign, m2_sign, marker=',', color="white", linestyle='None', markersize=0.25, alpha=0.25) # uncomment this line if you want to generate version with points marker very lightly on the figure
 
                 ### Scatter plot (previous implementation for the plot - i am keeping this for now but should be cleaned if we decide to go with KDE version)
                 # if len(df) < 100:
-#                     gridRes = 15  # for HL60
-#                 else:
-#                     gridRes = 50
-# 
-#                 mincnt = 1
-# 
-#                 if len(df) < 100:  # for HL60 plot
-#                     plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=None)
-#                     pass
-#                 else:
-#                     plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
+                #                     gridRes = 15  # for HL60
+                #                 else:
+                #                     gridRes = 50
+                #
+                #                 mincnt = 1
+                #
+                #                 if len(df) < 100:  # for HL60 plot
+                #                     plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=None)
+                #                     pass
+                #                 else:
+                #                     plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
 
                 if yrow == num_col:  # last row scatter plot shows x ticks
                     plt.xticks([0, 1], fontsize=10)
-                    ax3.set_xticklabels(["0%", "100%"], fontsize = 10)
-                    for label, alnType in zip(ax3.get_xticklabels(), ['left','right']):
+                    ax3.set_xticklabels(["0%", "100%"], fontsize=10)
+                    for label, alnType in zip(ax3.get_xticklabels(), ['left', 'right']):
                         label.set_horizontalalignment(alnType)
                 else:
                     plt.xticks([], fontsize=10)
 
                 if xcol == 1:  # first column scatter plot shows y ticks
                     plt.yticks([0, 1], fontsize=10)
-                    ax3.set_yticklabels(["0%", "100%"], fontsize = 10)
-                    for label, alnType in zip(ax3.get_yticklabels(), ['bottom','top']):
+                    ax3.set_yticklabels(["0%", "100%"], fontsize=10)
+                    for label, alnType in zip(ax3.get_yticklabels(), ['bottom', 'top']):
                         label.set_verticalalignment(alnType)
-#                     
+                #
                 else:
                     plt.yticks([], fontsize=10)
 
             position += 1
 
     fig.savefig(outfn, dpi=300, bbox_inches='tight')
-    fig.savefig(outfn.replace("jpg",".pdf"), dpi=300, bbox_inches='tight') # Generate also PDF version
+    fig.savefig(outfn.replace("jpg", ".pdf"), dpi=300, bbox_inches='tight')  # Generate also PDF version
     plt.show()
     plt.close()
     logger.info(f"save to {outfn}")
@@ -348,9 +347,10 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='Plot and export data for Nanocompare paper.')
     parser.add_argument("cmd", help="name of command, fig5a, export-data, etc.")
     parser.add_argument('-i', nargs='+', help='list of input files', default=[])
-    parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
+    parser.add_argument('-o', type=str, help="output dir", default=None)  # TODO: check all correct when change this to None
     parser.add_argument('--tagname', type=str, help="tagname of files", default=None)
     parser.add_argument('--beddir', type=str, help="bed file dir used for finding Concordant and Discordant", default=None)
+    parser.add_argument('--cutoff', type=int, help="the cutoff used on bed file", default=1)
 
     args = parser.parse_args()
     return args
@@ -491,6 +491,31 @@ if __name__ == '__main__':
             bfn = os.path.basename(basedir)
             outfn = os.path.join(pic_base_dir, f'{bfn}.sequencing_summary.txt')
             outdf.to_csv(outfn, index=False, sep='\t')
+    elif args.cmd == 'bed-to-bedGraph':
+        infn = args.i[0]
+        cutoff = args.cutoff
+        df = pd.read_csv(infn, sep='\t', header=None)
+        logger.info(len(df))
+
+        df = df[df.iloc[:, 7] >= cutoff]
+        logger.info(f'After cutoff={cutoff}, len(df)={len(df)}')
+        if not args.o:
+            outdir = pic_base_dir
+            outfn = os.path.join(outdir, f'{os.path.basename(infn).replace(".cov1.bed", "")}.cov{cutoff}.bedGraph')
+        else:
+            outfn = args.o
+        df = df.iloc[:, [0, 1, 2, 6]]
+        df.to_csv(outfn, sep='\t', header=False, index=None)
+        logger.info(f'save to {outfn}')
+
+        from pybedtools import BedTool
+        bed1 = BedTool(outfn)
+        bed1 = bed1.sort()
+        outfn2 = outfn.replace('.bedGraph', '.sorted.bedGraph')
+        bed1.saveas(outfn2)
+        logger.info(f'after sort bed, save to {outfn2}')
+
+        pass
     else:
         raise Exception(f'Command={args.cmd} is not support')
 

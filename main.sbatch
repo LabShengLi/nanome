@@ -5,7 +5,7 @@
 #SBATCH -q training
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 2 # number of cores
-#SBATCH --mem-per-cpu=70G # memory pool for all cores
+#SBATCH --mem=70G # memory pool for all cores
 #SBATCH --time=08:00:00 # time
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
@@ -47,10 +47,14 @@ date;hostname;pwd
 #  -resume
 
 
-#rm -rf /fastscratch/liuya/nanocompare/work
+rm -rf /fastscratch/liuya/nanocompare/work
 
-./nextflow run main.nf -profile winter -config conf/NA12878.config \
-  -work-dir /fastscratch/liuya/nanocompare/work -resume
+./nextflow run main.nf -profile winter \
+    -work-dir /fastscratch/liuya/nanocompare/work -resume \
+    --input http://s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr20.part05.tar \
+    --dsname NA12878 --online true
+
+
 
 
 #./nextflow run main.nf -profile winter,benchmarking

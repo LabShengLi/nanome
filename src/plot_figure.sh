@@ -2,8 +2,8 @@
 #SBATCH --job-name=plot-figure
 #SBATCH -q batch
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 10 # number of cores
-#SBATCH --mem 300g # memory pool for all cores
+#SBATCH -n 2 # number of cores
+#SBATCH --mem 250G # memory pool for all cores
 #SBATCH -t 20:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
@@ -17,14 +17,27 @@ pythonFile=${prj_dir}/src/plot_figure.py
 
 mkdir -p log
 
-#python ${pythonFile} $@
+#find /projects/li-lab/yang/results/2021-04-22 -name '*bgtruth.cov1.bed' -exec python ${pythonFile} bed-to-bedGraph -i {} --cutoff 5 \;
+
+flist=$(find /projects/li-lab/yang/results/2021-04-22 -name "*.cov1.bed")
+
+for fn in $flist; do # Not recommended, will break on whitespace
+    echo process "$fn"
+    bglabel=bgtruth
+    if [[ "$fn" == *"$bglabel"* ]]; then
+        CUTOFF=5
+    else
+        CUTOFF=3
+    fi
+    python ${pythonFile} bed-to-bedGraph -i $fn --cutoff $CUTOFF
+done
 
 # Step 4: Figure 5B data
-python ${pythonFile} export-corr-data  --beddir /projects/li-lab/yang/results/2021-04-12 \
-	-i /projects/li-lab/yang/results/2021-04-13/MethCorr-HL60_RRBS_2Reps \
-	 /projects/li-lab/yang/results/2021-04-13/MethCorr-K562_WGBS_2Reps \
-	 /projects/li-lab/yang/results/2021-04-13/MethCorr-APL_RRBS \
-	 /projects/li-lab/yang/results/2021-04-13/MethCorr-NA19240_RRBS_2Reps \
+#python ${pythonFile} export-corr-data  --beddir /projects/li-lab/yang/results/2021-04-12 \
+#	-i /projects/li-lab/yang/results/2021-04-13/MethCorr-HL60_RRBS_2Reps \
+#	 /projects/li-lab/yang/results/2021-04-13/MethCorr-K562_WGBS_2Reps \
+#	 /projects/li-lab/yang/results/2021-04-13/MethCorr-APL_RRBS \
+#	 /projects/li-lab/yang/results/2021-04-13/MethCorr-NA19240_RRBS_2Reps \
 
 
 # Step 1: Table S2,S3
