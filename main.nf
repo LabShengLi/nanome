@@ -275,7 +275,9 @@ process Basecall {
 
     export PATH=/usr/bin:PATH
 
-    mkdir -p basecall_dir/${x}
+    #mkdir -p basecall_dir
+
+    #mkdir -p basecall_dir/${x}
 
 
     guppy_basecaller --input_path $x \
