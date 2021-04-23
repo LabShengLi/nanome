@@ -67,7 +67,7 @@ process GetInputData{
 	tar xzf ${x3} -C deepsignal_model
 
 	mkdir -p megalodon_model
-	tar xzf ${x4} -C megalodon_model
+	tar xzf ${x4} -C .
     """
 }
 
@@ -259,6 +259,8 @@ process Basecall {
 	tag "${x}"
 	cache  'lenient'
 
+	errorStrategy 'ignore'
+
 	input:
     file x from basecall_input_ch.flatten()
 //    file hg38_tar from hg38_tar_ch
@@ -443,6 +445,8 @@ process Megalodon {
 	tag "${ttt[0]}"
 	cache  'lenient'
 
+	errorStrategy 'ignore'
+
 	input:
 //    file x from megalodon_in_ch.flatten()
 //    file ref from hg38_fa_ch
@@ -457,6 +461,8 @@ process Megalodon {
 	// TODO: how to specify Megalodon / Guppy model using full path? or put them into folder
     """
     set -x
+
+    git clone https://github.com/nanoporetech/rerio.git
 
 	echo $ttt
 
@@ -481,7 +487,7 @@ process Megalodon {
 	    per_read_refs \
 	    --guppy-server-path guppy_basecall_server \
 	    --guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-	    --guppy-params "--num_callers 5 --ipc_threads 80" \
+	    --guppy-params "-d ./megalodon_model/ --num_callers 5 --ipc_threads 80" \
 	    --reads-per-guppy-batch ${params.READS_PER_GUPPY_BATCH} \
 	    --guppy-timeout ${params.GUPPY_TIMEOUT} \
 	    --samtools-executable ${params.SAMTOOLS_PATH} \
