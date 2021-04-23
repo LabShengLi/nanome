@@ -66,7 +66,7 @@ process GetInputData{
 	mkdir -p deepsignal_model
 	tar xzf ${x3} -C deepsignal_model
 
-	mkdir -p megalodon_model
+	#mkdir -p megalodon_model
 	tar xzf ${x4} -C .
     """
 }
@@ -259,7 +259,7 @@ process Basecall {
 	tag "${x}"
 	cache  'lenient'
 
-	errorStrategy 'ignore'
+	//errorStrategy 'ignore'
 
 	input:
     file x from basecall_input_ch.flatten()
@@ -445,7 +445,7 @@ process Megalodon {
 	tag "${ttt[0]}"
 	cache  'lenient'
 
-	errorStrategy 'ignore'
+	//errorStrategy 'ignore'
 
 	input:
 //    file x from megalodon_in_ch.flatten()
