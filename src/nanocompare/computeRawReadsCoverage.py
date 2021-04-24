@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir
 from nanocompare.global_settings import humanChrSet, narrowCoordFileList, location_filename_to_abbvname
-from nanocompare.eval_common import get_dna_seq_from_reference, open_file, find_bed_filename
+from nanocompare.eval_common import get_dna_seq_from_reference, open_file_gz_or_txt, find_bed_filename
 
 # used for convert region bed cov to base level cov
 rawReadDir = '/pod/2/li-lab/Nanopore_compare/data/Nanopore_cov'
@@ -42,7 +42,7 @@ def convert_region_to_cpg_base(dsname):
     print_first = True
     for infn in fnlist:
         logger.info(f'processing file={infn}')
-        infile = open_file(infn)
+        infile = open_file_gz_or_txt(infn)
         for row in tqdm(infile):
             tmp = row.strip().split(" ")
             if print_first:

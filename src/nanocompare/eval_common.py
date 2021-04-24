@@ -55,7 +55,9 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
     call_cnt = 0
     meth_cnt = 0
     unmeth_cnt = 0
-    infile = open(infileName, 'r')
+
+    # infile = open(infileName, 'r')
+    infile = open_file_gz_or_txt(infileName)
 
     for row in infile:
         tmp = row.strip().split("\t")
@@ -267,7 +269,9 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     ** by default if this probability will be higher than > 0.5, DeepSignal will tell that this is methylated site, lower, unmethylated
     """
 
-    infile = open(infileName, "r")
+    # infile = open(infileName, "r")
+    infile = open_file_gz_or_txt(infileName)
+
     cpgDict = defaultdict(list)
     row_count = 0
     meth_cnt = 0
@@ -337,7 +341,10 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     chr1    8447761    8447761    c9339e26-1898-4483-a312-b78c3fafc6a9    -0.8580941645036908    -    ATGGACACAGA
     ============
     """
-    infile = open(infileName, "r")
+
+    # infile = open(infileName, "r")
+    infile = open_file_gz_or_txt(infileName)
+
     cpgDict = defaultdict(list)
     row_count = 0
     meth_cnt = 0
@@ -460,7 +467,9 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
 
     """
 
-    infile = open(infileName, "r")
+    # infile = open(infileName, "r")
+    infile = open_file_gz_or_txt(infileName)
+
     cpgDict = defaultdict(list)
     count_calls = 0
     meth_cnt = 0
@@ -544,7 +553,9 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
 
     """
 
-    infile = open(infileName, "r")
+    # infile = open(infileName, "r")
+    infile = open_file_gz_or_txt(infileName)
+
     cpgDict = defaultdict()
     count_calls = 0
     meth_cnt = 0
@@ -624,7 +635,9 @@ def importPredictions_Megalodon(infileName, chr_col=1, start_col=3, strand_col=2
 
     ============
     """
-    infile = open(infileName, "r")
+    # infile = open(infileName, "r")
+    infile = open_file_gz_or_txt(infileName)
+
     cpgDict = defaultdict(list)
     call_cnt = 0
     meth_cnt = 0
@@ -723,7 +736,7 @@ def coverageFilteringConverting(calls_dict, minCov=4, toolname="Tool"):
     return result
 
 
-def open_file(infn):
+def open_file_gz_or_txt(infn):
     """
     Open a txt or gz file, based on suffix
     :param infn:
@@ -793,7 +806,7 @@ def importGroundTruth_from_Encode(infileName, chr_col=0, start_col=1, methfreq_c
     # else:
     #     infile = open(infileName, 'r')
 
-    infile = open_file(infileName)
+    infile = open_file_gz_or_txt(infileName)
 
     nrow = 0
     for row in infile:
