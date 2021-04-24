@@ -79,10 +79,13 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
 
     df = df.loc[:, ['BGTruth'] + orderedColumns]
 
+    # Rename to BS-seq name based on WR's suggestions
+    df = df.rename(columns={'BGTruth': 'BS-seq'})
+
     ## Plot correlation grid figure
     basefn = os.path.basename(infn)
     outfileName = "{}.jpg".format(basefn.replace(".csv", ""))
-    outfn = os.path.join(args.o, outfileName)
+    outfn = os.path.join(outdir, outfileName)
 
     plt.clf()
 
@@ -366,6 +369,9 @@ if __name__ == '__main__':
         ## find ${resultDir} -name 'Meth_corr_plot_data*.csv' \
         ##      -type f -exec python plot_figure.py fig5a -i {} \;
         ## python plot_figure.py fig5a -i /projects/li-lab/Nanopore_compare/result/MethCorr-NA19240_RRBS/Meth_corr_plot_data_joined-NA19240_RRBS-bsCov5-minToolCov3-baseFormat1.csv
+
+        if not args.o:
+            outdir = pic_base_dir
         for fn in args.i:
             gen_figure_5a(fn)
     elif args.cmd == 'export-corr-data':
@@ -509,6 +515,7 @@ if __name__ == '__main__':
         logger.info(f'save to {outfn}')
 
         from pybedtools import BedTool
+
         bed1 = BedTool(outfn)
         bed1 = bed1.sort()
         outfn2 = outfn.replace('.bedGraph', '.sorted.bedGraph')
