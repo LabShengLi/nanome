@@ -198,7 +198,7 @@ process Preprocess {
 //	echo true
 	errorStrategy 'ignore'
 	cache  'lenient'
-	label 'with_gpus'
+	//label 'with_gpus'
 
     input:
     file fast5_tar from ch_input
@@ -302,7 +302,9 @@ process Basecall {
     """
 }
 
-process QCStep {
+
+// Collect and output QC results for basecall
+process QCExport {
 //	tag "${x}"
 	cache  'lenient'
 
@@ -322,6 +324,7 @@ process QCStep {
     cp -L -f *-sequencing_summary.txt summary/
     """
 }
+
 
 basecall_out_ch
 	.into { resquiggle_in_ch; nanopolish_in_ch; deepmod_in_ch }
@@ -444,7 +447,9 @@ process Tombo {
 }
 
 
+// Megalodon will need 3 input together for each emit: [fast5Dir, hg38ReferenceGenome, ModelDir]
 megalodon_in2_ch = megalodon_in_ch.flatten().combine(hg38_fa_ch2).combine(megalodon_model_ch)
+
 
 // Megalodon runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Megalodon {
@@ -469,7 +474,7 @@ process Megalodon {
     """
     set -x
 
-    git clone https://github.com/nanoporetech/rerio.git
+    ### git clone https://github.com/nanoporetech/rerio.git
 
 	echo $ttt
 
@@ -627,13 +632,13 @@ deepsignal_combine_in_ch = deepsignal_out_ch.toList()
 // Combine DeepSignal runs' all results together
 process DpSigCombine {
 	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
-	label 'with_gpus'
+	//label 'with_gpus'
 
 	input:
     file x from deepsignal_combine_in_ch
 
     output:
-    file '*.combine.tsv' into deepsignal_combine_out_ch
+    file '*.combine.tsv.gz' into deepsignal_combine_out_ch
 
     when:
     x.size() >= 1
@@ -642,6 +647,9 @@ process DpSigCombine {
 	echo ${x}
 	touch ${params.dsname}.DeepSignal.combine.tsv
 	cat ${x} > ${params.dsname}.DeepSignal.combine.tsv
+
+	gzip ${params.dsname}.DeepSignal.combine.tsv
+
     """
 }
 
@@ -649,13 +657,13 @@ process DpSigCombine {
 // Combine Tombo runs' all results together
 process TomboCombine {
 	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
-	label 'with_gpus'
+	//label 'with_gpus'
 
 	input:
     file x from tombo_combine_in_ch
 
     output:
-    file '*.combine.tsv' into tombo_combine_out_ch
+    file '*.combine.tsv.gz' into tombo_combine_out_ch
 
     when:
     x.size() >= 1
@@ -663,13 +671,15 @@ process TomboCombine {
     """
 	touch ${params.dsname}.Tombo.combine.tsv
 	cat ${x} > ${params.dsname}.Tombo.combine.tsv
+
+	gzip ${params.dsname}.Tombo.combine.tsv
     """
 }
 
 
 // Combine Megalodon runs' all results together
 process MgldnCombine {
-	label 'with_gpus'
+	//label 'with_gpus'
 
 	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
 
@@ -677,7 +687,7 @@ process MgldnCombine {
     file x from megalodon_combine_in_ch
 
     output:
-    file '*.combine.tsv' into megalodon_combine_out_ch
+    file '*.combine.tsv.gz' into megalodon_combine_out_ch
 
     when:
     x.size() >= 1
@@ -695,6 +705,8 @@ process MgldnCombine {
 	do
 		sed '1d' \${fn} >> ${params.dsname}.Megalodon.combine.tsv
 	done
+
+	gzip ${params.dsname}.Megalodon.combine.tsv
     """
 }
 
@@ -702,13 +714,13 @@ process MgldnCombine {
 // Combine Nanopolish runs' all results together
 process NplshCombine {
 	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
-	label 'with_gpus'
+	//label 'with_gpus'
 
 	input:
     file x from nanopolish_combine_in_ch
 
     output:
-    file '*.combine.tsv' into nanopolish_combine_out_ch
+    file '*.combine.tsv.gz' into nanopolish_combine_out_ch
 
     when:
     x.size() >= 1
@@ -728,6 +740,8 @@ process NplshCombine {
 	do
 		sed '1d' \${fn} >> ${params.dsname}.Nanopolish.combine.tsv
 	done
+
+	gzip ${params.dsname}.Nanopolish.combine.tsv
     """
 }
 
@@ -744,7 +758,7 @@ process DpmodCombine {
     file deepmodCDir from deepmod_c_ch
 
     output:
-    file '*.combine.tsv' into deepmod_combine_out_ch
+    file '*.combine.tsv.gz' into deepmod_combine_out_ch
 
     when:
     x.size() >= 1
@@ -784,6 +798,9 @@ process DpmodCombine {
 	do
 	  cat \$f >> ${params.dsname}.DeepModC_clusterCpG.combine.tsv
 	done
+
+	gzip ${params.dsname}.DeepModC.combine.tsv
+	gzip ${params.dsname}.DeepModC_clusterCpG.combine.tsv
     """
 }
 
@@ -817,7 +834,7 @@ process ReadLevelPerf {
     echo ${fileList}
 
 	# Sort file by my self
-    flist=(\$(ls *.combine.tsv))
+    flist=(\$(ls *.combine.tsv.gz))
 
     echo \${flist[@]}
 
@@ -827,11 +844,11 @@ process ReadLevelPerf {
         # head -n 3 \$fn
     done
 
-    deepsignalFile=\$(find . -maxdepth 1 -name '*.DeepSignal.combine.tsv')
+    deepsignalFile=\$(find . -maxdepth 1 -name '*.DeepSignal.combine.tsv.gz')
     tomboFile=\$(find . -maxdepth 1 -name '*.Tombo.combine.tsv')
-    nanopolishFile=\$(find . -maxdepth 1 -name '*.Nanopolish.combine.tsv')
-    deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC.combine.tsv')
-    megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.tsv')
+    nanopolishFile=\$(find . -maxdepth 1 -name '*.Nanopolish.combine.tsv.gz')
+    deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC.combine.tsv.gz')
+    megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.tsv.gz')
 
     export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}
 
@@ -854,6 +871,7 @@ process ReadLevelPerf {
     """
 }
 
+
 // Site level correlation analysis
 process SiteLevelCorr {
 	publishDir "outputs/${params.dsname}-nanome-analysis" //, mode: "copy"
@@ -873,14 +891,14 @@ process SiteLevelCorr {
     set -x
 
 	# Sort file by my self
-    flist=(\$(ls *.combine.tsv))
+    flist=(\$(ls *.combine.tsv.gz))
     echo \${flist[@]}
 
-    deepsignalFile=\$(find . -maxdepth 1 -name '*.DeepSignal.combine.tsv')
-    tomboFile=\$(find . -maxdepth 1 -name '*.Tombo.combine.tsv')
-    nanopolishFile=\$(find . -maxdepth 1 -name '*.Nanopolish.combine.tsv')
-    deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC_clusterCpG.combine.tsv')
-    megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.tsv')
+    deepsignalFile=\$(find . -maxdepth 1 -name '*.DeepSignal.combine.tsv.gz')
+    tomboFile=\$(find . -maxdepth 1 -name '*.Tombo.combine.tsv.gz')
+    nanopolishFile=\$(find . -maxdepth 1 -name '*.Nanopolish.combine.tsv.gz')
+    deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC_clusterCpG.combine.tsv.gz')
+    megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.tsv.gz')
 
     export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}
 
