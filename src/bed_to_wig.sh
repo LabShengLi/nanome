@@ -22,7 +22,6 @@ indir=/projects/li-lab/yang/results/2021-04-22
 outdir=/projects/li-lab/yang/results/$(date +%F)/tss-plots
 mkdir -p $outdir
 
-
 dsnamelist=(NA19240 APL K562 HL60)
 #dsnamelist=(K562 HL60)
 
