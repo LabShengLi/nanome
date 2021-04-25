@@ -1,6 +1,10 @@
-ch = Channel.value('Hello')
-ch.view()
+params.list = 'NA19240_R_9_4_1.flist.txt'
 
-println(ch)
+Channel.fromPath(params.list)
+	.splitText()
+	.map { file(it) }
+	.set { file_list }
 
-println("ch="+ch)
+file_list.view()
+
+
