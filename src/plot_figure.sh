@@ -20,19 +20,7 @@ mkdir -p log
 ## Plot figure 5a
 find /projects/li-lab/Nanopore_compare/result/meth-exp/MethCorr-cut5-tool3 -name "Meth_corr_plot_data_joined-*.csv" -exec python ${pythonFile} fig5a -i {} \;
 
-### apply cov cutoff and convert to bedGraph format for TSS plot
-#flist=$(find /projects/li-lab/yang/results/2021-04-22 -name "*.cov1.bed")
-#
-#for fn in $flist; do # Not recommended, will break on whitespace
-#    echo process "$fn"
-#    bglabel=bgtruth
-#    if [[ "$fn" == *"$bglabel"* ]]; then
-#        CUTOFF=5
-#    else
-#        CUTOFF=3
-#    fi
-#    python ${pythonFile} bed-to-bedGraph -i $fn --cutoff $CUTOFF
-#done
+
 
 # Step 4: Figure 5B data
 #python ${pythonFile} export-corr-data  --beddir /projects/li-lab/yang/results/2021-04-12 \

@@ -11,6 +11,7 @@
             </list>
           </settings>
         </remote-mappings>
+        <remote-mappings server-id="python@sftp://liuya@login.sumner.jax.org:22/home/liuya/anaconda3/envs/nanocompare/bin/python" />
       </list>
     </list>
   </component>

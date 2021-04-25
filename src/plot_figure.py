@@ -505,11 +505,11 @@ if __name__ == '__main__':
 
         df = df[df.iloc[:, 7] >= cutoff]
         logger.info(f'After cutoff={cutoff}, len(df)={len(df)}')
-        if not args.o:
+        if not args.o:  # output dir params
             outdir = pic_base_dir
-            outfn = os.path.join(outdir, f'{os.path.basename(infn).replace(".cov1.bed", "")}.cov{cutoff}.bedGraph')
         else:
-            outfn = args.o
+            outdir = args.o
+        outfn = os.path.join(outdir, f'{os.path.basename(infn).replace(".cov1.bed", "")}.cov{cutoff}.bedGraph')
         df = df.iloc[:, [0, 1, 2, 6]]
         df.to_csv(outfn, sep='\t', header=False, index=None)
         logger.info(f'save to {outfn}')
