@@ -1,24 +1,16 @@
 params.list = 'NA19240_R_9_4_1.flist.txt'
 
-//Channel.fromPath(params.list)
-//	.splitText()
-//	.map { file(it) }
-//	.set { file_list }
-//
-////file_list.view()
-
-
 Channel.fromPath( params.list )
     .splitCsv(header: false)
     .map { file(it[0]) }
     .toList()
-    .set{ fl2 }
+    .set{ online_filelist }
 
-fl2.flatten()
+//online_filelist.flatten()
 
 process test{
 	input:
-	file x from fl2.flatten()
+	file x from online_filelist.flatten()
 
 	"""
 	ls -lh $x
