@@ -2,6 +2,57 @@ rm(list = ls())
 library(here)
 
 
+## TSS plot
+library(readxl)
+library(tidyverse)
+library(ggplot2)
+
+infn = here('result', 'NA19240.bin50.outMatrix.for.R.csv.gz')
+df = read_csv(infn)
+
+flank = 2000
+binSize = 50
+
+numBins = 2 * flank / binSize
+ndf = df[, 7:(numBins * 6 + 6)]
+
+bsdata = ndf[, 1:numBins]
+deepsignal = ndf[, (1 + numBins):(numBins * 2)]
+tombo = ndf[, (1 + numBins * 2):(numBins * 3)]
+nanopolish = ndf[, (1 + numBins * 3):(numBins * 4)]
+deepmod = ndf[, (1 + numBins * 4):(numBins * 5)]
+megalodon = ndf[, (1 + numBins * 5):(numBins * 6)]
+
+xvector = seq(-flank, flank - 1, by = binSize)
+xlist = rep(xvector, nrow(bsdata))
+
+list_data <- list('BS-seq' = bsdata, 'DeepSignal' = deepsignal, 'Tombo' = tombo, 'Nanopolish' = nanopolish, 'DeepMod' = deepmod, 'Megalodon' = megalodon)
+
+for (name in names(list_data)) {
+  ylist = as.vector(t(list_data[[name]]))
+  plotdf <- tibble(x = xlist, y = ylist, tool = name) %>%
+    drop_na()
+  break
+}
+
+
+# q1 <- qplot(data = plotdf, x, y)
+# q2 <- q1+ geom_smooth(method = "loess", size = 1.5)
+# q2
+
+
+p1 <- ggplot(plotdf, aes(x, y), colour = tool) +
+  geom_point() +
+  geom_smooth(method = "loess", size = 1.5, se = FALSE)
+
+p1
+
+
+# ylist <- bsdata[1,]
+# for (i in 2:dim(bsdata)[1]) {
+#   ylist <- cbind(ylist, bsdata[i,])
+# }
+
 # Figure S1: pie plot of singleton and nonsingleton sites
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 fig.s1.pie.plot.singletons.nonsingletons.raw.fast5()

@@ -51,7 +51,7 @@ rm -rf /fastscratch/liuya/nanocompare/work
 
 ./nextflow run main.nf -profile winter \
     -work-dir /fastscratch/liuya/nanocompare/work -resume \
-    --input http://s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr20.part05.tar \
+    --input https://github.com/liuyangzzu/nano-compare/raw/6684b71587c19d191ccf87832f25536be10e372f/test_data/demo.fast5.reads.tar.gz \
     --dsname NA12878 --online true
 
 

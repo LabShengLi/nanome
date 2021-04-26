@@ -15,11 +15,11 @@ bedGraphToBigWig=/projects/li-lab/yang/scripts/bedGraphToBigWig
 
 hg38ChromSize=/projects/li-lab/yang/workspace/nano-compare/data/reference/hg38/hg38.chrom.sizes
 
-# Input dir for bed files
+# Input dir for bed files: such as *.cov1.bed
 indir=/projects/li-lab/yang/results/2021-04-22
 
-# Output dir
-outdir=/projects/li-lab/yang/results/$(date +%F)/tss-plots
+# Output dir for bw files
+outdir=/projects/li-lab/yang/results/$(date +%F)/tss-data
 mkdir -p $outdir
 
 dsnamelist=(NA19240 APL K562 HL60)
@@ -53,3 +53,6 @@ for dsname in "${dsnamelist[@]}"; do
     done
 
 done
+
+## Clean up
+rm -rf $outdir/*.bedGraph

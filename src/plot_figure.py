@@ -2,10 +2,11 @@
 Plots all Nanocompare paper out
 """
 import argparse
+import glob
+import os.path
 import pickle
 from collections import defaultdict
 
-import glob
 import matplotlib.pyplot as plt
 #### Additional libraries:
 import numpy as np
@@ -521,6 +522,23 @@ if __name__ == '__main__':
         outfn2 = outfn.replace('.bedGraph', '.sorted.bedGraph')
         bed1.saveas(outfn2)
         logger.info(f'after sort bed, save to {outfn2}')
+
+        pass
+    elif args.cmd == 'view-outmatrix':  # View the out marix for TSS, such as /projects/li-lab/yang/results/2021-04-25/tss-plots/
+        ### python plot_figure.py view-outmatrix -i /projects/li-lab/yang/results/2021-04-25/tss-plots/NA19240.bin50.outMatrix.tsv
+        infn = args.i[0]
+        df = pd.read_csv(infn, sep='\t', compression='gzip', header=None, skiprows=[0], na_values='nan')
+        logger.info(df)
+
+        if args.o:
+            outdir = args.o
+        else:
+            outdir = pic_base_dir
+        outfn = os.path.basename(infn).replace('outMatrix.tsv', 'outMatrix.for.R.csv.gz')
+        outfn = os.path.join(outdir, outfn)
+
+        df.to_csv(outfn, index=False, header=False, sep=',', compression='gzip')
+        logger.info(f'save to {outfn}')
 
         pass
     else:
