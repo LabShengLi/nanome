@@ -101,7 +101,7 @@ color_Pal <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "black", "
 
 p1 <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool)) +
   # p1 <- ggplot(plotdf, aes(x, y)) +
-  geom_point(size = 0.5) +
+  # geom_point(size = 0.5) +
   # geom_line() +
   geom_smooth(method = "loess", size = 0.5, se = FALSE, aes(color = tool)) +
   scale_color_manual(values = color_Pal) +
@@ -137,7 +137,6 @@ print("Start saving")
 
 out_dir = opt$`output dir`
 dir.create(out_dir, showWarnings = FALSE)
-
 
 outfn = sprintf("%s/TSS.%s.binsize%d.smoothed.curves.jpg", out_dir, dsname, binSize)
 ggsave(p1, filename = outfn, width = width, height = height, dpi = 600)

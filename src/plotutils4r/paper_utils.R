@@ -10,7 +10,7 @@ infn.perf = here('result', 'performance-results.csv')
 infn.corr = here('result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
 
 locations.Singletons = c("Genome-wide", "Singletons", "Non-singletons", "Concordant", "Discordant")
-locations.Regions = c("CpG Island", "Promoters", "Exons", "Introns", "Intergenic")
+locations.Regions = c("Promoters", "Exons", "Introns", "Intergenic", "CpG island", "CpG shore", "CpG shelf")
 Coord.Order = c(locations.Regions, locations.Singletons)
 Dataset.Order = c('HL60', 'K562', 'APL', 'NA19240')
 Tool.Order = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon', 'Joined', 'Union')
@@ -44,7 +44,7 @@ printf <- function(...) cat(sprintf(...))
 
 export.table.s3.xlsx <- function() {
   locations.Singletons = c("Genome-wide", "Singletons", "Non-singletons", "Concordant", "Discordant")
-  locations.Genome = c("CpG Island", "Promoters", "Exons", "Introns", "Intergenic", "CpG Shores", "CpG Shelves", "GeneFeature")
+  locations.Genome = c("Promoters", "Exons", "Introns", "Intergenic", "CpG island", "CpG shore", "CpG shelf")
 
   library(readxl)
   library(tidyverse)
@@ -52,17 +52,17 @@ export.table.s3.xlsx <- function() {
   df <- read_csv(infn.perf)
 
   selected.columns = c('referenceCpGs', 'mCsites', 'Csites')
-  #df$Location <- factor(df$Location, levels = c(locations.Singletons, locations.Genome))
-  #df$Dataset <- factor(df$Dataset, levels = Dataset.Order)
   outdf <- df %>%
+    mutate(Location = recode(Location, 'CpG Island' = 'CpG island', 'CpG Shores' = 'CpG shore', 'CpG Shelves' = 'CpG shelf')) %>%
     mutate(Dataset = factor(Dataset, levels = Dataset.Order),
            Location = factor(Location, levels = c(locations.Singletons, locations.Genome))) %>%
     arrange(desc(Dataset), Location, desc(Accuracy)) %>%
-    select(seq(2, 10), selected.columns)
+    select(seq(2, 10), selected.columns) %>%
+    drop_na()
 
   outfn = here("figures", "Table.S3.csv")
   write_csv(outdf, outfn)
-
+  print(sprintf("save to %s", outfn))
 
 }
 
@@ -74,12 +74,10 @@ export.table.s4.xlsx <- function() {
   df = read_excel(infn.corr)
 
   locations.Singletons = c("Genome-wide", "Singletons", "Non-singletons", "Concordant", "Discordant")
-  locations.Genome = c("CpG Island", "Promoters", "Exons", "Introns", "Intergenic", "CpG Shores", "CpG Shelves", "GeneFeature")
+  locations.Genome = c("Promoters", "Exons", "Introns", "Intergenic", "CpG island", "CpG shore", "CpG shelf")
 
   outdf <- df %>%
-    mutate(Location =
-             recode(Location, 'Genomewide' = 'Genome-wide'
-               , 'Singleton' = 'Singletons', 'Nonsingleton' = 'Non-singletons')) %>%
+    mutate(Location = recode(Location, 'CpG Island' = 'CpG island', 'CpG Shores' = 'CpG shore', 'CpG Shelves' = 'CpG shelf')) %>%
     mutate(dsname = factor(dsname, levels = Dataset.Order),
            Location = factor(Location, levels = c(locations.Singletons, locations.Genome))) %>%
     arrange(desc(dsname), Location, desc(COE)) %>%
@@ -100,20 +98,13 @@ load.performance.data <- function() {
   # Load data and sort string orders
   df <- read.csv(infn.perf)
 
-  #df$Location <- as.character(df$Location)
-  #df[df$Location == 'Genome-wide', 'Location'] <- 'Genomewide'
-  #df[df$Location == 'Non-singletons', 'Location'] <- 'Nonsingleton'
-  #df[df$Location == 'Singletons', 'Location'] <- 'Singleton'
   outdf <- df %>%
+    mutate(Location = recode(Location, 'CpG Island' = 'CpG island', 'CpG Shores' = 'CpG shore', 'CpG Shelves' = 'CpG shelf')) %>%
     mutate(Dataset = factor(Dataset, levels = Dataset.Order),
            Location = factor(Location, levels = c(locations.Singletons, locations.Regions)),
            Tool = factor(Tool, levels = Tool.Order)
     ) %>%
     drop_na()
-
-  #  df$Tool <- factor(df$Tool, levels = Tool.Order)
-  #df$Location <- factor(df$Location, levels = Coord.Order)
-  #df$Dataset <- factor(df$Dataset, levels = Dataset.Order)
 
   return(outdf)
 }
@@ -149,8 +140,6 @@ fig.s34a.line.plot.performance <- function(perf.measure, locations, bdir, scale 
       #axis.ticks = element_line(size = 0),
       #panel.grid.minor.y = element_blank(),
       #panel.grid.major.y = element_blank(),
-      panel.grid.minor.x = element_blank(),
-      panel.grid.major.x = element_blank(),
       strip.text.x = element_text(size = 8, face = "bold"),
       #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
       #legend.position = "none"
@@ -163,7 +152,6 @@ fig.s34a.line.plot.performance <- function(perf.measure, locations, bdir, scale 
     theme(legend.title = element_text(size = 10), legend.text = element_text(size = 10)) +
     theme(strip.text.x = element_text(size = 12)) +
     labs(y = out.y.label)
-
 
   outfn = sprintf("%s/fig.34a.line.%s.%s.jpg", bdir, perf.measure, locations[2])
   ggsave(p, filename = outfn, width = 6.5, height = 4, scale = scale, dpi = 600)
@@ -201,8 +189,6 @@ fig.34a.box.location.performance <- function(perf.measure, locations, bdir, scal
       #axis.ticks = element_line(size = 0),
       #panel.grid.minor.y = element_blank(),
       #panel.grid.major.y = element_blank(),
-      panel.grid.minor.x = element_blank(),
-      panel.grid.major.x = element_blank(),
       strip.text.x = element_text(size = 8.5, face = "bold"),
       #strip.text.x = element_text(size = 10),
 
@@ -215,7 +201,7 @@ fig.34a.box.location.performance <- function(perf.measure, locations, bdir, scal
     labs(y = out.y.label)
 
   outfn = sprintf("%s/fig.34a.box.perfmeasure.%s.%s.jpg", bdir, perf.measure, locations[2])
-  ggsave(p, filename = outfn, width = 6.5, height = 2.5, dpi = 600)
+  ggsave(p, filename = outfn, width = 7.5, height = 2.5, dpi = 600)
   printf("save to %s\n", outfn)
 
 }
@@ -307,7 +293,7 @@ fig.5cd.euller.plot.set3 <- function(ret, outfn) {
 }
 
 
-fig.5cd.bar.plot.tools.sites.all.datasets <- function() {
+fig.6a.bar.plot.tools.sites.all.datasets <- function() {
   data_dir = here('result')
   out_dir = here('figures', 'bar-plot')
   dir.create(out_dir, showWarnings = FALSE)
@@ -330,24 +316,31 @@ fig.5cd.bar.plot.tools.sites.all.datasets <- function() {
 
   }
 
-  totaldt$dsname <- factor(totaldt$dsname, levels = Dataset.Order)
-  totaldt$Tool <- factor(totaldt$Tool, levels = Tool.Order)
+  plot_totaldt <- totaldt %>%
+    mutate(dsname = factor(dsname, levels = Dataset.Order[3:4])) %>%
+    mutate(Tool = factor(Tool, levels = Tool.Order)) %>%
+    drop_na()
 
-  p1 <- ggplot(data = totaldt, aes(x = Tool, y = Sites, fill = Tool)) +
+  # totaldt$dsname <- factor(totaldt$dsname, levels = Dataset.Order)
+  # totaldt$Tool <- factor(totaldt$Tool, levels = Tool.Order)
+
+  library(scales)
+
+  p1 <- ggplot(data = plot_totaldt, aes(x = Tool, y = Sites, fill = Tool)) +
     geom_bar(stat = 'identity') +
     facet_wrap(~dsname, ncol = 4) +
     theme_bw() +
     theme(
       strip.background = element_blank(),
-      panel.grid.major = element_line(colour = "grey80"),
+      # panel.grid.major = element_line(colour = "grey80"),
       #panel.border = element_blank(),
-      panel.border = element_rect(colour = "black"),
+      # panel.border = element_rect(colour = "black"),
       #axis.ticks = element_line(size = 0),
       #panel.grid.minor.y = element_blank(),
       #panel.grid.major.y = element_blank(),
       panel.grid.minor.x = element_blank(),
       panel.grid.major.x = element_blank(),
-      strip.text.x = element_text(size = 8, face = "bold"),
+      strip.text.x = element_text(size = 12, face = "bold"),
       #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
       #legend.position = "none"
     ) +
@@ -355,13 +348,18 @@ fig.5cd.bar.plot.tools.sites.all.datasets <- function() {
     theme(strip.text.x = element_text(size = 12)) +
     scale_fill_manual(values = ToolColorPal) +
     ylab("Number of CpGs(cov>=3)") +
-    #theme(legend.title = element_blank()) +
-    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x)))
+    ylim(0, 58000000) +
+    scale_y_continuous(labels = comma)
+
+
+  #+
+  #theme(legend.title = element_blank()) +
+  # scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+  #               labels = scales::trans_format("log10", scales::math_format(10^.x)))
   p1
 
   outfn = sprintf("%s/fig.5cd.bar.sites.of.tools.all.data.facet.plot.jpg", out_dir)
-  ggsave(p1, filename = outfn, width = 6.5, height = 3, dpi = 600)
+  ggsave(p1, filename = outfn, width = 5, height = 3, dpi = 600)
   printf("save to %s\n", outfn)
 }
 
@@ -555,24 +553,17 @@ fig.7b2.running.resource.bar.plot <- function() {
 fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
   library(readxl)
   library(tidyverse)
-  out_dir = here('figures')
+  out_dir = here('figures', 'bar-plot')
   #infn = here('result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
   df = read_excel(infn.corr)
 
   outdf <- df %>%
-    mutate(Location =
-             recode(Location, 'Genomewide' = 'Genome-wide'
-               , 'Singleton' = 'Singletons', 'Nonsingleton' = 'Non-singletons')) %>%
+    mutate(Location = recode(Location, 'CpG Island' = 'CpG island', 'CpG Shores' = 'CpG shore', 'CpG Shelves' = 'CpG shelf')) %>%
     mutate(dsname = factor(dsname, levels = Dataset.Order),
            Tool = factor(Tool, levels = Tool.Order[1:5]),
-           Location = factor(Location, levels = c(locations.Singletons, locations.Regions)),
+           Location = factor(Location, levels = c(locations.Singletons[2:5], locations.Singletons[1:1], locations.Regions[1:7])),
 
     ) #%>%
-
-  #df$dsname <- factor(df$dsname, levels = Dataset.Order)
-  #df$Tool <- factor(df$Tool, levels = Tool.Order[1:5])
-  #df$Location <- factor(df$Location, levels = c(locations.Singletons, locations.Regions))
-
 
   ## Bar plot using facet grid, and order Tools by values
   p1 <- outdf %>%
@@ -583,7 +574,7 @@ fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
     geom_col() +
     coord_flip() +
     tidytext::scale_x_reordered() +
-    facet_wrap(vars(Location), scales = "free_y", ncol = 2, dir = 'v') +
+    facet_wrap(vars(Location), scales = "free_y", ncol = 3, dir = 'v') +
     scale_fill_manual(values = ToolColorPal[1:5]) +
     labs(y = "Pearson correlation coefficient", x = NULL) +
     theme_bw() +
@@ -594,22 +585,18 @@ fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
       axis.ticks = element_line(size = 0),
       panel.grid.minor.y = element_blank(),
       panel.grid.major.y = element_blank(),
-      strip.text.x = element_text(size = 9, face = "bold"),
+      strip.text.x = element_text(size = 12, face = "bold"),
       #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
       #legend.position = "none"
     ) +
     ylim(min(df$COE), 1) +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 7)) +
-    theme(axis.text.y = element_text(size = 8)) +
-    theme(legend.position = "right", legend.text = element_text(size = 8))
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 8)) +
+    theme(axis.text.y = element_text(size = 10)) +
+    theme(legend.position = "right", legend.text = element_text(size = 10))
 
-
-  p1
-
-  outfn = sprintf("%s/bar.plot.coe.in.each.regions.jpg", out_dir)
-  ggsave(p1, filename = outfn, width = 5, height = 5, dpi = 600)
+  outfn = sprintf("%s/fig.5b.bar.plot.coe.in.each.regions.jpg", out_dir)
+  ggsave(p1, filename = outfn, width = 9, height = 7.5, dpi = 600)
   printf("save to %s\n", outfn)
-
 }
 
 
