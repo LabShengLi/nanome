@@ -1679,6 +1679,10 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
     Discordant: CpGs in the 10-bp region is mixed with fully-methylated (1) and unmethylated(0) state.
 
     This kind of preprocessing will have to be done for each studied library separately.
+
+    Output format for Concordant and Discordant file:
+    chr   start  end  meth_state    coverage
+    chr1  123   124   1             16
     """
     logger.debug(f"nonSingletonsPostprocessing, based on file={nsRegionsBedFileName}, kbp={kbp}")
     bedBGTruth = BedTool(calldict2txt(absoluteBGTruth), from_string=True)
@@ -1700,10 +1704,7 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
         if is_print_first:
             logger.debug(f'ovr={ovr}')
 
-        # regionKey = "{}\t{}\t{}\n".format(ovr[0], ovr[1], ovr[2])
         regionKey = (ovr[0], int(ovr[1]), int(ovr[2]))  # chr  start  end
-        # methKey = "{}\t{}\t{}\t{}\n".format(ovr[3], ovr[4], ovr[5], ovr[6])
-
         methKey = (ovr[3], int(ovr[4]), ovr[6])  # chr, start, strand
 
         tmpStart = int(ovr[4])
@@ -1712,12 +1713,13 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
         if tmpStrand == '-':  # group + - strand CpG together, for simplicity
             tmpStart -= 1
         meth_freq = absoluteBGTruth[methKey][0]
+        coverage = absoluteBGTruth[methKey][1]
         if is_fully_meth(meth_freq):
             methIndicator = 1
         else:
             methIndicator = 0
 
-        regionDict[regionKey].append((tmpStart, methIndicator))  # save value as (start, 0/1) # (start, strand, 0/1)
+        regionDict[regionKey].append((tmpStart, methIndicator, coverage))  # save value as (start, 0/1, cov)
 
         if is_print_first:
             logger.info(f'regionDict[regionKey]={regionDict[regionKey]}, regionKey={regionKey}')
@@ -1726,12 +1728,12 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
     logger.info(f'cntBedLines={cntBedLines}')
 
     is_print_first = print_first
-    concordantList = []  # list of (chr, start)
-    discordantList = []
+    concordantList = {}  # list of (chr, start)
+    discordantList = {}
     meth_cnt_dict = defaultdict(int)  # count meth states in concordant and discordant
     unmeth_cnt_dict = defaultdict(int)
     for region in tqdm(regionDict):  # region is (chr, start, end)
-        cpgList = regionDict[region]  # get values as the list of (start, methIndicator) #(start, strand, methIndicator)
+        cpgList = regionDict[region]  # get values as the list of  (start, 0/1, cov)
         chrOut = region[0]
 
         if is_print_first:
@@ -1740,17 +1742,19 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
         for k in range(len(cpgList)):  # for each CpG
             # Since before we group + - to +, now we assure use start
             startOut = cpgList[k][0]
+            methIndicator = cpgList[k][1]
+            methCov = cpgList[k][2]
 
             if eval_concordant_within_kbp_region(cpgList, cpgList[k], kbp=kbp):
                 # add this cpg to concordant
-                concordantList.append((chrOut, startOut))  # list of (chr, start)
+                concordantList.update({(chrOut, startOut): (chrOut, startOut, methIndicator, methCov)})  # list of (chr, start)
                 if cpgList[k][1] == 1:
                     meth_cnt_dict['Concordant'] += 1
                 else:
                     unmeth_cnt_dict['Concordant'] += 1
             else:
                 # add this cpg to discordant
-                discordantList.append((chrOut, startOut))
+                discordantList.update({(chrOut, startOut): (chrOut, startOut, methIndicator, methCov)})
                 if cpgList[k][1] == 1:
                     meth_cnt_dict['Discordant'] += 1
                 else:
@@ -1760,24 +1764,24 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
             logger.info(f'concordantList={concordantList}, discordantList={discordantList}')
         is_print_first = False
 
-    concordantList = list(set(concordantList) - set(discordantList))  # remove duplicate and same in discordant
+    concordantSet = list(set(concordantList) - set(discordantList))  # remove duplicate and same in discordant
     outfile_concordant = open(nsConcordantFileName, "w")
-    for cpg in concordantList:
-        region_txt = '\t'.join([cpg[0], str(cpg[1]), str(cpg[1] + 1)]) + '\n'
+    for cpgKey in concordantSet:  # (chrOut, startOut) -> (chrOut, startOut, methIndicator, methCov)
+        cpg = concordantList[cpgKey]
+        region_txt = '\t'.join([cpg[0], str(cpg[1]), str(cpg[1] + 1), str(cpg[2]), str(cpg[3])]) + '\n'
         outfile_concordant.write(region_txt)
     outfile_concordant.close()
 
-    discordantList = list(set(discordantList))  # remove duplicate
+    discordantSet = list(set(discordantList))  # remove duplicate
     outfile_discordant = open(nsDisCordantFileName, "w")
-    for cpg in discordantList:
-        region_txt = '\t'.join([cpg[0], str(cpg[1]), str(cpg[1] + 1)]) + '\n'
+    for cpgKey in discordantSet:
+        cpg = discordantList[cpgKey]
+        region_txt = '\t'.join([cpg[0], str(cpg[1]), str(cpg[1] + 1), str(cpg[2]), str(cpg[3])]) + '\n'
         outfile_discordant.write(region_txt)
     outfile_discordant.close()
 
     logger.info(f'save to {[nsConcordantFileName, nsDisCordantFileName]}')
-
     logger.debug(f'meth_cnt={meth_cnt_dict}, unmeth_cnt={unmeth_cnt_dict}')
-
     ret = {'Concordant.5mC': meth_cnt_dict['Concordant'], 'Concordant.5C': unmeth_cnt_dict['Concordant'], 'Discordant.5mC': meth_cnt_dict['Discordant'], 'Discordant.5C': unmeth_cnt_dict['Discordant']}
     return ret
 
