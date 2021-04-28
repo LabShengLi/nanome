@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=plot.tss
+#SBATCH --job-name=plot.CTCF
 #SBATCH -q batch
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 16 # number of cores
 #SBATCH --mem 150G # memory pool for all cores
-#SBATCH -t 02:00:00 # time (D-HH:MM:SS)
+#SBATCH -t 05:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
@@ -14,20 +14,22 @@ set -e
 # Input dir for bw files
 basedir=/projects/li-lab/yang/results/2021-04-23
 
+# Region input dir
+regionDir=/fastscratch/c-panz/CTCFpeak
+
 # Output dir
-outdir=/projects/li-lab/yang/results/$(date +%F)/tss-plots
+outdir=/projects/li-lab/yang/results/$(date +%F)/CTCF-plots
 mkdir -p $outdir
-
-# Promoter +/- 2000 region file
-regionFile=/pod/2/li-lab/Nanopore_compare/data/genome_annotation/hg38.promoter.2000.bed
-
-# Plotting configuration
-flank=2000
 
 # Get input params
 dsname=${1:-NA19240}
 actions=${2:-"compute plot"}
 binSize=${3:-50}
+
+# Plotting configuration
+flank=2000
+
+regionFile=$(find ${regionDir} -name "${dsname}*.bed")
 
 # Get each bw file
 DeepSignal=$(find $basedir -name "${dsname}*DeepSignal.cov3.bw")
@@ -55,12 +57,12 @@ if [[ " ${actions} " =~ " compute " ]]; then
         --afterRegionStartLength $flank \
         --binSize $binSize \
         --skipZeros \
-        -o $outdir/$dsname.bin${binSize}.TSS.mat.gz
+        -o $outdir/$dsname.bin${binSize}.flank${flank}.CTCF.mat.gz
 fi
 
 #### Profile plot:
-plotProfile -m $outdir/$dsname.bin${binSize}.TSS.mat.gz \
-    -out $outdir/$dsname.bin${binSize}.profileplot.TSS.png \
+plotProfile -m $outdir/$dsname.bin${binSize}.flank${flank}.CTCF.mat.gz \
+    -out $outdir/$dsname.bin${binSize}.profileplot.CTCF.png \
     --plotType=lines \
     --perGroup \
     --colors black "#999999" "#E69F00" "#56B4E9" "#009E73" "#CC79A7" "#0072B2" \
@@ -71,14 +73,14 @@ plotProfile -m $outdir/$dsname.bin${binSize}.TSS.mat.gz \
 #### Generate the heatmap:
 plotHeatmap --colorMap Reds \
     --missingDataColor '#ffffff' \
-    -m $outdir/$dsname.bin${binSize}.TSS.mat.gz \
+    -m $outdir/$dsname.bin${binSize}.flank${flank}.CTCF.mat.gz \
     --whatToShow 'plot, heatmap and colorbar' \
-    --refPointLabel "TSS" \
-    --xAxisLabel "dist. to TSS" \
-    --outFileSortedRegions $outdir/$dsname.bin${binSize}.TSS.sortedRegions.txt \
-    --outFileNameMatrix $outdir/$dsname.bin${binSize}.TSS.outMatrix.tsv.gz \
+    --refPointLabel "CTCF" \
+    --xAxisLabel "dist. to CTCF" \
+    --outFileSortedRegions $outdir/$dsname.bin${binSize}.flank${flank}.CTCF.sortedRegions.txt \
+    --outFileNameMatrix $outdir/$dsname.bin${binSize}.flank${flank}.CTCF.outMatrix.tsv.gz \
     --yMin 0 \
     --yMax 1 \
-    -out $outdir/$dsname.bin${binSize}.plotheatmap.TSS.png
+    -out $outdir/$dsname.bin${binSize}.plotheatmap.CTCF.png
 
-#### Run as: bash script.sh NA19240 "compute plot" 50/100/200
+#### Run as: bash script.sh NA19240 "compute plot"

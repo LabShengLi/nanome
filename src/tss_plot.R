@@ -16,7 +16,9 @@ option_list <- list(
   make_option(c("--bin-size"), type = "integer", default = 50,
               help = "Bin size used"),
   make_option(c("--bslabel"), type = "character", default = "WGBS",
-              help = "WGBS or RRBS")
+              help = "WGBS or RRBS"),
+  make_option(c("--regionLabel"), type = "character", default = "TSS",
+              help = "TSS or CTCF")
 )
 
 opt = parse_args(OptionParser(option_list = option_list))
@@ -33,6 +35,7 @@ height = 4
 
 dsname = opt$dsname
 infn = opt$input
+regionLabel = opt$regionLabel
 
 # infn = '/Users/liuya/PycharmProjects/nano-compare/result/APL.bin50.outMatrix.tsv.gz'
 # dsname='APL'
@@ -74,20 +77,26 @@ list_data
 
 plotdf = tibble()
 for (name in names(list_data)) {
-  ylist = as.vector(t(list_data[[name]]))
-  plotdf1 <- tibble(x = xlist, y = ylist, tool = name)
-  plotdf <- bind_rows(plotdf, plotdf1)
+    ylist = as.vector(t(list_data[[name]]))
+    plotdf1 <- tibble(x = xlist, y = ylist, tool = name)
+    plotdf <- bind_rows(plotdf, plotdf1)
 }
 
 plotdf = as_tibble(plotdf)
 plotdf = transform(plotdf, x = as.numeric(x))
 # plotdf = plotdf[1:90000, ]
 
-tools_bsseq = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon', bslabel)
+if (bslabel=="WGBS") {
+    tools_bsseq = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon', bslabel)
+} else {
+    tools_bsseq = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon')
+}
+
 
 plotdf <- plotdf %>%
   mutate(tool = recode(tool, 'BS-seq' = bslabel)) %>%
-  mutate(tool = factor(tool, levels = tools_bsseq))
+  mutate(tool = factor(tool, levels = tools_bsseq))  %>%
+  drop_na()
 
 head(plotdf)
 
@@ -113,7 +122,7 @@ p1 <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool))
   xlim(-2000, 2000) +
   ylim(0, 1) +
   ylab("% methylated") +
-  xlab("Binned distance to TSS (bp)")
+  xlab(sprintf("Binned distance to %s (bp)", regionLabel))
 
 p1
 
@@ -130,7 +139,7 @@ p2 <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool))
   xlim(-2000, 2000) +
   ylim(0, 1) +
   ylab("% methylated") +
-  xlab("Binned distance to TSS (bp)")
+  xlab(sprintf("Binned distance to %s (bp)", regionLabel))
 
 
 print("Start saving")
@@ -138,10 +147,10 @@ print("Start saving")
 out_dir = opt$`output dir`
 dir.create(out_dir, showWarnings = FALSE)
 
-outfn = sprintf("%s/TSS.%s.binsize%d.smoothed.curves.jpg", out_dir, dsname, binSize)
+outfn = sprintf("%s/%s.%s.binsize%d.smoothed.curves.jpg", out_dir, regionLabel, dsname, binSize)
 ggsave(p1, filename = outfn, width = width, height = height, dpi = 600)
 
-outfn2 = sprintf("%s/TSS.%s.binsize%d.lines.curves.jpg", out_dir, dsname, binSize)
+outfn2 = sprintf("%s/%s.%s.binsize%d.lines.curves.jpg", out_dir, regionLabel, dsname, binSize)
 ggsave(p2, filename = outfn2, width = width, height = height, dpi = 600)
 
 print(sprintf("save to %s.", outfn))

@@ -1,9 +1,29 @@
 rm(list = ls())
 library(here)
 library(UpSetR)
+library(eulerr)
+library(ComplexHeatmap)
+library("optparse")
 
-data_dir = here('result', 'venn-data')
-out_dir = here('figures', 'venn-plot')
+option_list <- list(
+  make_option(c("-i", "--input"), type = "character", default = "../result/venn-data",
+              help = "Input dir"),
+  make_option(c("-o", "--output"), type = "character", default = getwd(),
+              help = "Output dir"),
+  make_option(c("--dsname"), type = "character", default = "NA19240",
+              help = "Dataset name")
+)
+
+opt = parse_args(OptionParser(option_list = option_list))
+
+print(opt)
+
+indir = opt$input
+outdir = opt$output
+dsname = opt$dsname
+
+data_dir = indir #here('result', 'venn-data')
+out_dir = outdir # here('figures', 'venn-plot')
 dir.create(out_dir, showWarnings = FALSE)
 
 pattern.str = 'venn.data.*.dat'
@@ -47,17 +67,43 @@ for (venfn in list.files(data_dir, pattern = pattern.str)) {
 
 ## TODO: why can not put plot in for loop????
 
-printi = 2
+
+if (dsname == 'NA19240') {
+    printi = 4 #NA19240
+}
+
+if (dsname == 'APL') {
+    printi = 1 #APL
+}
+
+if (dsname == 'HL60') {
+    printi = 2
+}
+
+if (dsname == 'K562') {
+    printi = 3
+}
+
 outfn = here('figures', 'venn-plot', sprintf('upset.%s.pdf', vennfn_list[[printi]]))
+outfn = here('figures', 'venn-plot', sprintf('upset.%s.jpg', vennfn_list[[printi]]))
+
 print(outfn)
+
+upsetTable = fromExpression(venndata_list[[printi]])
+
+# Make marix for ComplexHeatmap usage
+# upsetMatrix = make_comb_mat(upsetTable)
+
 dev.new()
 dev.list()
-pdf(file = outfn, onefile = FALSE) # or other device
+# pdf(file = outfn, onefile = FALSE) # or other device
 
-upset(fromExpression(venndata_list[[printi]]), scale.intersections = "identity",
+jpg(file = outfn)
+
+upset(upsetTable, scale.intersections = "identity",
       sets.x.label = "Total CpGs", mainbar.y.label = "Intersection CpGs",
-      show.numbers = 'yes', text.scale = 2, number.angles = 30, nintersects = 31, keep.order = TRUE,
-      sets.bar.color = "grey", set_size.show = TRUE, set_size.angles = 0, set_size.numbers_size = 6,
+      show.numbers = 'no', text.scale = 2.5, number.angles = 0, nintersects = 31, keep.order = TRUE,
+      set_size.show = FALSE, set_size.angles = 0, set_size.numbers_size = 6, point.size = 3,
       order.by = "freq")
 dev.off()
 print(sprintf('save to %s', outfn))

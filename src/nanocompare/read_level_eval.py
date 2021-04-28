@@ -300,6 +300,7 @@ if __name__ == '__main__':
 
     # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth) with cov>=1
     # Classify concordant and discordant based on cov>=1 bgtruth
+    # TODO: if we use cov>= 5 BS-seq define them, please update absoluteBGTruth with absoluteBGTruthCov
     nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=False)
 
     # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
