@@ -534,7 +534,7 @@ fig.7b1.running.resource.bar.plot <- function() {
     outdf <- run.table %>%
       mutate(dsname = recode(dsname, "HL60" = "HL-60")) %>%
       mutate(dsname = factor(dsname, levels = rev(Dataset.Order)),
-             tool = factor(tool, levels = Tool.Order[1:4])
+             tool = factor(tool, levels = rev(Tool.Order[1:4]))
       ) %>%
       arrange(dsname, `Job Wall-clock Time`)
     
@@ -543,11 +543,13 @@ fig.7b1.running.resource.bar.plot <- function() {
     
     colnames(outdf) = c('dsname', 'tool', 'cpu.time', 'wall.time', 'mem.usage')
     
+    colorOrder = rev(ToolColorPal[1:4])
+    
     g1 <- outdf %>%
       drop_na(tool) %>%
       ggplot(mapping = aes(x = cpu.time, y = dsname, fill = tool)) +
       geom_bar(stat = "identity", width = 0.8, position = position_dodge()) +
-      scale_fill_manual(values = ToolColorPal) +
+      scale_fill_manual(values = colorOrder) +
       theme_classic() +
       xlab("CPU Utilized Time (hours)") +
       scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
@@ -564,7 +566,7 @@ fig.7b1.running.resource.bar.plot <- function() {
       geom_bar(stat = "summary", fun = mean, width = 0.8, position = position_dodge()) +
       #scale_x_discrete(limits = levels(Tool.Order)) +
       coord_flip() +
-      scale_fill_manual(values = ToolColorPal) +
+      scale_fill_manual(values = colorOrder) +
       theme_classic() +
       ylab("Peak Memory (GB)") +
       xlab("") +
