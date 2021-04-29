@@ -262,7 +262,7 @@ process Basecall {
 	label 'with_gpus'
 
 	input:
-    file x from basecall_input_ch1.flatten()
+    file x from basecall_input_ch1.flatten()  // we are going to solve this input failed passing problems
 
     output:
     file "basecall_dir/${x}_basecalled" into basecall_out_ch  // try to fix the christina proposed problems
