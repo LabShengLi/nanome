@@ -16,6 +16,10 @@ Coord.Order = c(locations.Regions, locations.Singletons)
 Dataset.Order = c('NA19240', 'APL', 'K562', 'HL-60')
 
 Tool.Order = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon', 'Joined', 'Union')
+Tool.Order = c('Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo', 'DeepMod', 'Joined', 'Union')
+Tool.Order = c('Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo', 'Joined', 'Union')
+
+
 Tool.Order.show.SingleRead = c('DeepSignal', 'Tombo', 'Nanopolish*', 'DeepMod', 'Megalodon*', 'Joined', 'Union')
 
 
@@ -30,11 +34,15 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 # The palette with black:
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
+# order of DeepSignal, Tombo, Nanopolish, DeepMod, Megalodon to: Nanopolish, Megalodon, DeepSignal, Tombo, DeepMod
 ToolColorPal <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442")
+ToolColorPal <- c("#56B4E9", "#CC79A7", "#999999", "#E69F00", "#009E73")
 
+# order of DeepSignal, Tombo, Nanopolish, DeepMod, Megalodon to: Nanopolish, Megalodon, DeepSignal, Tombo, DeepMod
 ToolShapeList <- c(0, 1, 2, 3, 4, 5)
+ToolShapeList <- c(2, 4, 0, 1, 3)
 
-Top3.Tool.Index = c(1, 3, 5)
+Top3.Tool.Index = c(1, 2, 3)
 Top3.Tool.Order = Tool.Order[Top3.Tool.Index]
 Top3.ToolColorPal <- ToolColorPal[Top3.Tool.Index]
 
@@ -344,17 +352,16 @@ fig.5cd.venn.plot.set5 <- function(ret, outfn) {
 
 fig.5cd.euller.plot.set3 <- function(ret, outfn) {
     graphics.off()
+    ## How to reverse numbers: now A=DeepSignal, B=Nanopolish, C=Megalodon; we want change to order: A=Nanopolish, B=Megalodon,C=DeepSigal
     
-    comb = c("A" = ret[1], "B" = ret[2], "C" = ret[3],
-             "A&B" = ret[4], "A&C" = ret[5], "B&C" = ret[6],
+    comb = c("A" = ret[2], "B" = ret[3], "C" = ret[1],
+             "A&B" = ret[6],"A&C" = ret[4], "B&C" = ret[5],
              "A&B&C" = ret[7])
     
     print(comb)
     
     fit1 <- euler(comb, input = 'union', shape = 'circle')
     #fit1 <- euler(comb, input = 'union', shape = 'ellipse')
-    
-    #fit1 <- venn(comb, input = 'union')
     
     print(fit1)
     
@@ -642,6 +649,7 @@ fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
     df = read_excel(infn.corr)
     
     outdf <- df %>%
+      mutate(dsname = recode(dsname, 'HL60' = 'HL-60')) %>%
       mutate(Location = recode(Location, 'CpG Island' = 'CpG island', 'CpG Shores' = 'CpG shore', 'CpG Shelves' = 'CpG shelf')) %>%
       mutate(dsname = factor(dsname, levels = Dataset.Order),
              Tool = factor(Tool, levels = Tool.Order[1:5]),

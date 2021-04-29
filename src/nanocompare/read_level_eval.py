@@ -7,6 +7,8 @@ This script will generate all per-read performance results, with regard to BED f
 import argparse
 from multiprocessing import Manager, Pool
 
+from sklearn.metrics import confusion_matrix
+
 from nanocompare.eval_common import *
 from nanocompare.global_settings import nonsingletonsFile, ecoliChrSet
 from nanocompare.global_settings import rename_location_from_coordinate_name, perf_report_columns, get_tool_name, singletonFileExtStr
@@ -225,13 +227,14 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet):
+def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet, threshold=0.2):
     """
     We now simply check results performance on positive data
     :param ontCallDict:
     :return:
     """
-    dataset = defaultdict(list)
+    per_read_dataset = defaultdict(list)
+    per_base_dataset = defaultdict(list)
 
     for callname in ontCallDict:
         call = ontCallDict[callname]
@@ -244,6 +247,7 @@ def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet):
             cpgSet = evalCPGSet
         else:
             cpgSet = set(call.keys())
+        ## Read level evaluation
         for cpg in cpgSet:
             meth_indicator_list = [tt[0] for tt in call[cpg]]
             nsites += 1
@@ -251,22 +255,57 @@ def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet):
             methcalls += sum(meth_indicator_list)
             unmethcalls += len(meth_indicator_list) - sum(meth_indicator_list)
             numcalls += len(meth_indicator_list)
-        dataset['dsname'].append(callname)
-        dataset['#Base'].append(nsites)
-        dataset['#Call'].append(numcalls)
-        dataset['#Pos'].append(methcalls)
-        dataset['#Neg'].append(unmethcalls)
-        dataset['#Pos/#Call'].append(methcalls / numcalls)
+        per_read_dataset['dsname'].append(callname)
+        per_read_dataset['#Base'].append(nsites)
+        per_read_dataset['#Call'].append(numcalls)
+        per_read_dataset['#Pos'].append(methcalls)
+        per_read_dataset['#Neg'].append(unmethcalls)
+        per_read_dataset['#Pos/#Call'].append(methcalls / numcalls)
 
-    df = pd.DataFrame.from_dict(dataset)
+        ## Base level evaluation
+        ylabel = []
+        ypred = []
+        for cpg in cpgSet:
+            meth_indicator_list = [tt[0] for tt in call[cpg]]
+            meth_percentage = sum(meth_indicator_list) / len(meth_indicator_list)
+            ylabel.append(1)
+            ypred.append(1 if meth_percentage >= threshold else 0)
+
+        npmatrix = confusion_matrix(ylabel, ypred)
+
+        precision = precision_score(ylabel, ypred)
+        recall = recall_score(ylabel, ypred)
+
+        # logger.info(f'npmatrix={npmatrix}')
+
+        per_base_dataset['dsname'].append(callname)
+        per_base_dataset['#Base'].append(nsites)
+        per_base_dataset[f'Methylated base >= {threshold:.2f}'].append(sum(ypred))
+        per_base_dataset[f'Unmethylated base'].append(len(ypred)-sum(ypred))
+        per_base_dataset['Precision'].append(precision)
+        per_base_dataset['Recall'].append(recall)
+
+    df = pd.DataFrame.from_dict(per_read_dataset)
     logger.info(df)
 
     if evalCPGSet:
         tag = "joined_sets"
     else:
         tag = "no_joined-sets"
-    outfn = os.path.join(out_dir, f'report_ecoli_metro_paper_evaluations_on_{tag}.xlsx')
+    outfn = os.path.join(out_dir, f'report_ecoli_metro_paper_evaluations_on_{tag}.read.level.xlsx')
     df.to_excel(outfn)
+
+    df = pd.DataFrame.from_dict(per_base_dataset)
+    logger.info(df)
+
+    if evalCPGSet:
+        tag = "joined_sets"
+    else:
+        tag = "no_joined-sets"
+    outfn = os.path.join(out_dir, f'report_ecoli_metro_paper_evaluations_on_{tag}.base.level.xlsx')
+    df.to_excel(outfn)
+
+
     pass
 
 

@@ -471,6 +471,9 @@ if __name__ == '__main__':
             logger.info(f'For runPrefix={runPrefix} at dir={bdir}, total files={cnt}')
     elif args.cmd == 'plot-curve-data':
         ## find /projects/li-lab/Nanopore_compare/result/plot-curve-data -name '*.pkl' -exec python plot_figure.py plot-curve-data -i {} \;
+        if not args.o:
+            args.o = pic_base_dir
+
         outdir = os.path.join(args.o, f'curves-figures{f"-{args.tagname}" if args.tagname else ""}')
         os.makedirs(outdir, exist_ok=True)
         for fn in args.i:
@@ -479,7 +482,7 @@ if __name__ == '__main__':
                 basename = os.path.basename(fn)
                 bn = os.path.splitext(basename)[0]
                 ret = pickle.load(infn)
-                # logger.debug(ret.keys())
+                logger.debug(ret.keys())
                 plot_ROC_PR_curves(ret, outdir, tagname=bn)
     elif args.cmd == 'guppy-qos':
         ## collect basecall output for summary results, used for qos

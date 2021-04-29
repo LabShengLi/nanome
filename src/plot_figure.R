@@ -35,11 +35,6 @@ for (perf.measure in measure.list) {
     #break
 }
 
-# Figure 5b: Correlation COE bar for each region
-source(here('src', 'plotutils4r', 'paper_utils.R'))
-fig.5b.sorted.bar.plot.coe.in.each.region()
-
-
 ## Figure 7b1: Resource summary
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 fig.7b1.running.resource.bar.plot()
@@ -62,10 +57,10 @@ for (venfn in list.files(data_dir, pattern = pattern.str)) {
     dt <- read.table(infn)
     base_infn = basename(infn)
     
-    if (length(dt$V1) == 31) {
+    if (length(dt$V1) == 31) { next
         outfn = sprintf("%s/venn.plot.%s.jpg", out_dir, base_infn)
         fig.5cd.venn.plot.set5(dt$V1, outfn)
-    }else if (length(dt$V1) == 7) {
+    }else if (length(dt$V1) == 7) { ##next
         outfn2 = sprintf("%s/euller.plot.%s.jpg", out_dir, base_infn)
         fig.5cd.euller.plot.set3(dt$V1, outfn2)
         #break
@@ -74,10 +69,14 @@ for (venfn in list.files(data_dir, pattern = pattern.str)) {
 }
 
 
-## Figure 6A: bar plot of number of sites for each tool
+## Figure S6A: bar plot of number of sites for each tool, deprecated
 source(here('src', 'plotutils4r', 'paper_utils.R'))
 fig.6a.bar.plot.tools.sites.all.datasets()
 
+
+## Figure S6: each region COE bar plot
+source(here('src', 'plotutils4r', 'paper_utils.R'))
+fig.5b.sorted.bar.plot.coe.in.each.region()
 
 quit()
 

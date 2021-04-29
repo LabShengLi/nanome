@@ -86,16 +86,16 @@ plotdf = as_tibble(plotdf)
 plotdf = transform(plotdf, x = as.numeric(x))
 # plotdf = plotdf[1:90000, ]
 
-if (bslabel=="WGBS") {
-    tools_bsseq = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon', bslabel)
+if (bslabel == "WGBS") {
+    tools_bsseq = c('Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo', 'DeepMod', bslabel)
 } else {
-    tools_bsseq = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon')
+    tools_bsseq = c('Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo', 'DeepMod')
 }
 
 
 plotdf <- plotdf %>%
   mutate(tool = recode(tool, 'BS-seq' = bslabel)) %>%
-  mutate(tool = factor(tool, levels = tools_bsseq))  %>%
+  mutate(tool = factor(tool, levels = tools_bsseq)) %>%
   drop_na()
 
 head(plotdf)
@@ -106,7 +106,8 @@ dim(plotdf)
 print("Start plotting")
 
 color_Pal <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "black", "#0072B2", "#D55E00", "#F0E442")
-
+## New color order based on top performer oders
+color_Pal <- c("#56B4E9", "#CC79A7", "#999999", "#E69F00", "#009E73", "black")
 
 p1 <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool)) +
   # p1 <- ggplot(plotdf, aes(x, y)) +
