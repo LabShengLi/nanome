@@ -240,6 +240,8 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname"):
     plt.clf()
     plt.figure(figsize=figure_size)
     for toolname, toolcolor in zip(ToolNameList, ToolsColorList):
+        if toolname=='DeepMod':
+            continue
         ytrue = ret[f'{toolname}_true']
         ypred = ret[f'{toolname}_pred']
         yscore = ret[f'{toolname}_score']
@@ -265,6 +267,8 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname"):
     plt.clf()
     plt.figure(figsize=figure_size)
     for toolname, toolcolor in zip(ToolNameList, ToolsColorList):
+        if toolname=='DeepMod':
+            continue
         ytrue = ret[f'{toolname}_true']
         yscore = ret[f'{toolname}_score']
 

@@ -87,9 +87,9 @@ plotdf = transform(plotdf, x = as.numeric(x))
 # plotdf = plotdf[1:90000, ]
 
 if (bslabel == "WGBS") {
-    tools_bsseq = c('Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo', 'DeepMod', bslabel)
+    tools_bsseq = c('Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo', bslabel)
 } else {
-    tools_bsseq = c('Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo', 'DeepMod')
+    tools_bsseq = c('Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo')
 }
 
 
@@ -108,6 +108,8 @@ print("Start plotting")
 color_Pal <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "black", "#0072B2", "#D55E00", "#F0E442")
 ## New color order based on top performer oders
 color_Pal <- c("#56B4E9", "#CC79A7", "#999999", "#E69F00", "#009E73", "black")
+color_Pal <- c("#56B4E9", "#CC79A7", "#999999", "#E69F00",  "black")
+
 
 p1 <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool)) +
   # p1 <- ggplot(plotdf, aes(x, y)) +

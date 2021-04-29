@@ -24,7 +24,6 @@ set -x
     --bslabel "WGBS" \
     --regionLabel "CTCF"
 
-exit 0
 
 #/Library/Frameworks/R.framework/Resources/bin/Rscript tss_plot.R \
 #    -i ../result/tss.CTCF.data/HL60.bin100.flank2000.CTCF.outMatrix.tsv.gz \
