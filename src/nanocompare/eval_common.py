@@ -2380,6 +2380,7 @@ def correlation_report_on_regions(corr_infn, beddir=None, dsname=None, outdir=pi
 
 if __name__ == '__main__':
     set_log_debug_level()
+    ## check branch only
 
     # outs = os.path.join(pic_base_dir, 'hg38_singletons_5bp.bed')
     # outns = os.path.join(pic_base_dir, 'hg38_nonsingletons_5bp.bed')
