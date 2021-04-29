@@ -170,23 +170,24 @@ process EnvCheck {
 	"""
 	set -x
 
-	which tombo
+	#which tombo
     tombo -v
 
-    which nanopolish
+    #which nanopolish
     nanopolish --version
 
-    which megalodon
+    #which megalodon
     megalodon -v
 
-    which deepsignal
+    #which deepsignal
     deepsignal
 
-    which DeepMod.py
+    #which DeepMod.py
     DeepMod.py
 
-	which guppy_basecaller
+	#which guppy_basecaller
     guppy_basecaller -v
+
     """
 }
 
