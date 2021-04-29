@@ -56,11 +56,16 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
     meth_cnt = 0
     unmeth_cnt = 0
 
-    # infile = open(infileName, 'r')
     infile = open_file_gz_or_txt(infileName)
 
     for row in infile:
-        tmp = row.strip().split("\t")
+        if isinstance(row, str):
+            row1 = row
+        else:  # byte array need decode firstly
+            row1 = row.decode()
+
+        tmp = row1.strip().split("\t")
+
         if tmp[chr_col] != "chromosome":
             if output_first:
                 logger.debug(list(enumerate(tmp)))
@@ -268,8 +273,6 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
 
     ** by default if this probability will be higher than > 0.5, DeepSignal will tell that this is methylated site, lower, unmethylated
     """
-
-    # infile = open(infileName, "r")
     infile = open_file_gz_or_txt(infileName)
 
     cpgDict = defaultdict(list)
@@ -278,7 +281,12 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     unmeth_cnt = 0
 
     for row in infile:
-        tmp = row.strip().split("\t")
+        if isinstance(row, str):
+            row1 = row
+        else: # byte array need decode firstly
+            row1 = row.decode()
+
+        tmp = row1.strip().split("\t")
 
         if tmp[chr_col] not in humanChrSet:
             continue
@@ -341,8 +349,6 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     chr1    8447761    8447761    c9339e26-1898-4483-a312-b78c3fafc6a9    -0.8580941645036908    -    ATGGACACAGA
     ============
     """
-
-    # infile = open(infileName, "r")
     infile = open_file_gz_or_txt(infileName)
 
     cpgDict = defaultdict(list)
@@ -351,7 +357,12 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     unmeth_cnt = 0
 
     for row in infile:
-        tmp = row.strip().split("\t")
+        if isinstance(row, str):
+            row1 = row
+        else:  # byte array need decode firstly
+            row1 = row.decode()
+
+        tmp = row1.strip().split("\t")
 
         if tmp[chr_col] not in humanChrSet:
             continue
@@ -466,8 +477,6 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     ============
 
     """
-
-    # infile = open(infileName, "r")
     infile = open_file_gz_or_txt(infileName)
 
     cpgDict = defaultdict(list)
@@ -478,7 +487,11 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     first_row_checked = False
 
     for row in infile:
-        tmp = row.strip().split(sep)
+        if isinstance(row, str):
+            row1 = row
+        else:  # byte array need decode firstly
+            row1 = row.decode()
+        tmp = row1.strip().split(sep)
 
         if tmp[chr_col] not in humanChrSet:
             continue
@@ -552,8 +565,6 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     ============
 
     """
-
-    # infile = open(infileName, "r")
     infile = open_file_gz_or_txt(infileName)
 
     cpgDict = defaultdict()
@@ -562,7 +573,11 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     unmeth_cnt = 0
 
     for row in infile:
-        tmp = row.strip().split(sep)
+        if isinstance(row, str):
+            row1 = row
+        else:  # byte array need decode firstly
+            row1 = row.decode()
+        tmp = row1.strip().split(sep)
 
         if tmp[chr_col] not in humanChrSet:
             continue
@@ -611,8 +626,6 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     return cpgDict
 
 
-## def importPredictions_Megalodon(infileName, chr_col=0, start_col=1, strand_col=3, mod_log_prob_col=4, can_log_prob_col=5, baseFormat=1, cutoff=0.8, sep='\t', output_first=False, include_score=False):
-
 def importPredictions_Megalodon(infileName, chr_col=1, start_col=3, strand_col=2, mod_log_prob_col=4, can_log_prob_col=5, baseFormat=1, cutoff=0.8, sep='\t', output_first=False, include_score=False):
     """
     0-based start for Magelodon：
@@ -635,7 +648,6 @@ def importPredictions_Megalodon(infileName, chr_col=1, start_col=3, strand_col=2
 
     ============
     """
-    # infile = open(infileName, "r")
     infile = open_file_gz_or_txt(infileName)
 
     cpgDict = defaultdict(list)
@@ -644,7 +656,12 @@ def importPredictions_Megalodon(infileName, chr_col=1, start_col=3, strand_col=2
     unmeth_cnt = 0
 
     for row in infile:
-        tmp = row.strip().split(sep)
+        if isinstance(row, str):
+            row1 = row
+        else:  # byte array need decode firstly
+            row1 = row.decode()
+
+        tmp = row1.strip().split(sep)
 
         if tmp[chr_col] not in humanChrSet:
             continue
@@ -742,6 +759,7 @@ def open_file_gz_or_txt(infn):
     :param infn:
     :return:
     """
+    logger.info(f"open file: {infn}")
     if infn.endswith('.gz'):
         infile = gzip.open(infn, 'rb')
     else:
@@ -796,22 +814,20 @@ def importGroundTruth_from_Encode(infileName, chr_col=0, start_col=1, methfreq_c
 
     cpgDict = {}
 
-    # if infileName.endswith('.gz'):
-    #     gzippedInput = True
-    # else:
-    #     gzippedInput = False
-    #
-    # if gzippedInput:
-    #     infile = gzip.open(infileName, 'rb')
-    # else:
-    #     infile = open(infileName, 'r')
 
     infile = open_file_gz_or_txt(infileName)
 
     nrow = 0
     for row in infile:
         nrow += 1
-        tmp = row.strip().split("\t")
+
+        if isinstance(row, str):
+            row1 = row
+        else:  # byte array need decode firstly
+            row1 = row.decode()
+
+        tmp = row1.strip().split("\t")
+        # tmp = row.strip().split("\t")
 
         if tmp[chr_col] not in humanChrSet:  # Filter out non-human chrs
             continue
@@ -2365,10 +2381,16 @@ def correlation_report_on_regions(corr_infn, beddir=None, dsname=None, outdir=pi
 if __name__ == '__main__':
     set_log_debug_level()
 
-    outs = os.path.join(pic_base_dir, 'hg38_singletons_5bp.bed')
-    outns = os.path.join(pic_base_dir, 'hg38_nonsingletons_5bp.bed')
-    SingletonsAndNonSingletonsScanner(referenceGenomeFile=referenceGenomeFile, outfileName_s=outs, outfileName_ns=outns, kbp=5)
+    # outs = os.path.join(pic_base_dir, 'hg38_singletons_5bp.bed')
+    # outns = os.path.join(pic_base_dir, 'hg38_nonsingletons_5bp.bed')
+    # SingletonsAndNonSingletonsScanner(referenceGenomeFile=referenceGenomeFile, outfileName_s=outs, outfileName_ns=outns, kbp=5)
+    #
+    # outs = os.path.join(pic_base_dir, 'hg38_singletons_10bp.bed')
+    # outns = os.path.join(pic_base_dir, 'hg38_nonsingletons_10bp.bed')
+    # SingletonsAndNonSingletonsScanner(referenceGenomeFile=referenceGenomeFile, outfileName_s=outs, outfileName_ns=outns, kbp=10)
+    import os
+    infn = os.path.join("/projects/li-lab/yang/workspace/nano-compare/outputs/TestData-methylation-callings","TestData.DeepSignal.combine.tsv.gz")
 
-    outs = os.path.join(pic_base_dir, 'hg38_singletons_10bp.bed')
-    outns = os.path.join(pic_base_dir, 'hg38_nonsingletons_10bp.bed')
-    SingletonsAndNonSingletonsScanner(referenceGenomeFile=referenceGenomeFile, outfileName_s=outs, outfileName_ns=outns, kbp=10)
+    ontDeepSignal = importPredictions_DeepSignal(infn)
+
+    logger.info("DONE")
