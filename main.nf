@@ -261,7 +261,7 @@ process Basecall {
 	cache  'lenient'
 	label 'with_gpus'
 
-	input:
+	input: // input here is not passed
     file x from basecall_input_ch1.flatten()  // we are going to solve this input failed passing problems
 
     output:
