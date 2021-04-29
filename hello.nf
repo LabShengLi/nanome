@@ -41,7 +41,7 @@ process EnvCheck {
 	label 'with_gpus'
 
 	when:
-	! params.online
+	params.online
 
 	"""
 	set -x
