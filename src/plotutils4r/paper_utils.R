@@ -12,7 +12,9 @@ infn.corr = here('result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
 locations.Singletons = c("Genome-wide", "Singletons", "Non-singletons", "Concordant", "Discordant")
 locations.Regions = c("Promoters", "Exons", "Introns", "Intergenic", "CpG island", "CpG shore", "CpG shelf")
 Coord.Order = c(locations.Regions, locations.Singletons)
-Dataset.Order = c('HL60', 'K562', 'APL', 'NA19240')
+# Dataset.Order = c('HL60', 'K562', 'APL', 'NA19240')
+Dataset.Order = c('NA19240', 'APL', 'K562', 'HL-60')
+
 Tool.Order = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon', 'Joined', 'Union')
 Tool.Order.show.SingleRead = c('DeepSignal', 'Tombo', 'Nanopolish*', 'DeepMod', 'Megalodon*', 'Joined', 'Union')
 
@@ -53,10 +55,11 @@ export.table.s3.xlsx <- function() {
     
     selected.columns = c('referenceCpGs', 'mCsites', 'Csites')
     outdf <- df %>%
+      mutate(Dataset = recode(Dataset, 'HL60' = 'HL-60')) %>%
       mutate(Location = recode(Location, 'CpG Island' = 'CpG island', 'CpG Shores' = 'CpG shore', 'CpG Shelves' = 'CpG shelf')) %>%
       mutate(Dataset = factor(Dataset, levels = Dataset.Order),
              Location = factor(Location, levels = c(locations.Singletons, locations.Genome))) %>%
-      arrange(desc(Dataset), Location, desc(Accuracy)) %>%
+      arrange(Dataset, Location, desc(Accuracy)) %>%
       select(seq(2, 10), selected.columns) %>%
       drop_na()
     
@@ -77,10 +80,11 @@ export.table.s4.xlsx <- function() {
     locations.Genome = c("Promoters", "Exons", "Introns", "Intergenic", "CpG island", "CpG shore", "CpG shelf")
     
     outdf <- df %>%
+      mutate(dsname = recode(dsname, 'HL60' = 'HL-60')) %>%
       mutate(Location = recode(Location, 'CpG Island' = 'CpG island', 'CpG Shores' = 'CpG shore', 'CpG Shelves' = 'CpG shelf')) %>%
       mutate(dsname = factor(dsname, levels = Dataset.Order),
              Location = factor(Location, levels = c(locations.Singletons, locations.Genome))) %>%
-      arrange(desc(dsname), Location, desc(COE)) %>%
+      arrange(dsname, Location, desc(COE)) %>%
       drop_na() %>%
       select(2:ncol(df))
     
@@ -97,6 +101,7 @@ load.performance.data <- function() {
     df <- read.csv(infn.perf)
     
     outdf <- df %>%
+      mutate(Dataset = recode(Dataset, 'HL60' = 'HL-60')) %>%
       mutate(Location = recode(Location, 'CpG Island' = 'CpG island', 'CpG Shores' = 'CpG shore', 'CpG Shelves' = 'CpG shelf')) %>%
       mutate(Dataset = factor(Dataset, levels = Dataset.Order),
              Location = factor(Location, levels = c(locations.Singletons, locations.Regions)),
@@ -689,7 +694,12 @@ fig.s1.pie.plot.singletons.nonsingletons.raw.fast5 <- function() {
     
     colnames(meltdf) <- c('dsname', 'Singletons', 'Nonsingletons')
     
-    meltdf$dsname <- factor(meltdf$dsname, levels = Dataset.Order)
+    meltdf <- meltdf %>%
+      mutate(dsname = recode(dsname, 'HL60' = 'HL-60')) %>%
+      mutate(dsname = factor(dsname, levels = Dataset.Order))
+    
+    
+    # meltdf$dsname <- factor(meltdf$dsname, levels = Dataset.Order)
     
     row_sum = rowSums(select(meltdf, -dsname))
     

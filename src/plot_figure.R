@@ -1,58 +1,6 @@
 rm(list = ls())
 library(here)
 
-library(UpSetR)
-
-
-source(here('src', 'plotutils4r', 'paper_utils.R'))
-data_dir = here('result', 'venn-data')
-out_dir = here('figures', 'venn-plot')
-dir.create(out_dir, showWarnings = FALSE)
-
-pattern.str = 'venn.data.*.dat'
-# pattern.str = "venn.data.NA19240_RRBS_2Reps.NA19240.five.tools.cov3.dat"
-# pattern.str = "venn.data.APL_RRBS.APL.five.tools.cov3.dat"
-pattern.str = "venn.data.HL60_RRBS_2Reps.HL60.five.tools.cov3.dat"
-print(list.files(data_dir, pattern = pattern.str))
-
-for (venfn in list.files(data_dir, pattern = pattern.str)) {
-    infn = here('result', 'venn-data', venfn)
-    print(infn)
-    dt <- read.table(infn)
-    base_infn = basename(infn)
-    
-    if (length(dt$V1) == 7) next
-    
-    # if (length(dt$V1) == 31) {
-    outfn = sprintf("%s/upset.plot.%s.pdf", out_dir, base_infn)
-    fit1 <- fig.5newA.upset.plot.set5(dt$V1, outfn)
-    
-    # graphics.off()
-    # dev.off()
-    print("start upset plotting")
-    
-    p1 <- upset(fromExpression(fit1$original.values), scale.intersections = "identity",
-                sets.x.label = "Total CpGs", mainbar.y.label = "Intersection CpGs",
-                show.numbers = 'yes', text.scale = 2, number.angles = 30, nintersects = 31, keep.order = TRUE,
-                sets.bar.color = "grey", set_size.show = TRUE, set_size.angles = 0, set_size.numbers_size = 6,
-                order.by = "freq")
-    
-    pdf(file = outfn, onefile = FALSE) # or other device
-    p1
-    dev.off()
-    printf('save to %s', outfn)
-    
-    
-    pdf(file = outfn, onefile = FALSE) # or other device
-    p1
-    print("Start saving")
-    dev.off()
-    printf('save to %s', outfn)
-    
-    break
-    # }else
-}
-
 
 # Figure S1: pie plot of singleton and nonsingleton sites
 source(here('src', 'plotutils4r', 'paper_utils.R'))

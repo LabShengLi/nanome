@@ -9,7 +9,9 @@
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
-callsDir=/projects/li-lab/yang/workspace/nano-compare/outputs/ECOLI_METROPAPER-methylation-callings
+set -x
+
+callsDir=${1:-/projects/li-lab/yang/workspace/nano-compare/outputs/ECOLI_METROPAPER-methylation-callings}
 
 DeepSignal_calls=$(find $callsDir -name "*.DeepSignal.combine.tsv.gz")
 Tombo_calls=$(find $callsDir -name "*.Tombo.combine.tsv.gz")

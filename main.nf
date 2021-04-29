@@ -786,6 +786,7 @@ process DpmodCombine {
     python ${workflow.projectDir}/model_params/sum_chr_mod.py \
         indir/ C ${params.dsname}.deepmod ${params.DeepModSumChrSet}
 
+	## Only apply to human genome
 	python ${workflow.projectDir}/model_params/hm_cluster_predict.py \
 		indir/${params.dsname}.deepmod \
 		\${DeepMod_Cluster_CDir} \

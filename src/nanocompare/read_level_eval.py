@@ -225,6 +225,51 @@ def parse_arguments():
     return parser.parse_args()
 
 
+def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet):
+    """
+    We now simply check results performance on positive data
+    :param ontCallDict:
+    :return:
+    """
+    dataset = defaultdict(list)
+
+    for callname in ontCallDict:
+        call = ontCallDict[callname]
+
+        nsites = 0
+        numcalls = 0
+        methcalls = 0
+        unmethcalls = 0
+        if evalCPGSet:
+            cpgSet = evalCPGSet
+        else:
+            cpgSet = set(call.keys())
+        for cpg in cpgSet:
+            meth_indicator_list = [tt[0] for tt in call[cpg]]
+            nsites += 1
+            # logger.info(f'cpg={cpg}, call[cpg]={call[cpg]}')
+            methcalls += sum(meth_indicator_list)
+            unmethcalls += len(meth_indicator_list) - sum(meth_indicator_list)
+            numcalls += len(meth_indicator_list)
+        dataset['dsname'].append(callname)
+        dataset['#Base'].append(nsites)
+        dataset['#Call'].append(numcalls)
+        dataset['#Pos'].append(methcalls)
+        dataset['#Neg'].append(unmethcalls)
+        dataset['#Pos/#Call'].append(methcalls / numcalls)
+
+    df = pd.DataFrame.from_dict(dataset)
+    logger.info(df)
+
+    if evalCPGSet:
+        tag = "joined_sets"
+    else:
+        tag = "no_joined-sets"
+    outfn = os.path.join(out_dir, f'report_ecoli_metro_paper_evaluations_on_{tag}.xlsx')
+    df.to_excel(outfn)
+    pass
+
+
 if __name__ == '__main__':
     set_log_debug_level()
 
@@ -315,16 +360,18 @@ if __name__ == '__main__':
 
         logger.info("\n\n########################\n\n")
     else:
-        absoluteBGTruth=None
-        absoluteBGTruthCov=None
+        absoluteBGTruth = None
+        absoluteBGTruthCov = None
 
     # Load methlation callings by tools
     if "ecoli" in args.analysis:
         filterChr = ecoliChrSet
-    else: # default is human
+    else:  # default is human
         filterChr = humanChrSet
 
     callfn_dict = defaultdict()  # callname -> filename
+
+    ## Narrow down to BG-Truth if there BG-Truth is available
     ontCallWithinBGTruthDict = defaultdict()  # name->call
     loaded_callname_list = []  # [DeepSignal, DeepMod, etc.]
 
@@ -345,12 +392,13 @@ if __name__ == '__main__':
 
         ## MUST import read-level results, and include score for plot ROC curve and PR curve
         call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache, filterChr=filterChr)
-        # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
-        logger.info(f'Filter out CpG sites not in bgtruth for {call_name}')
 
-        if absoluteBGTruth:
+        if absoluteBGTruth:  # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
+            logger.info(f'Filter out CpG sites not in bgtruth for {call_name}')
             ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(call0, absoluteBGTruth)  # TODO:using absoluteBGTruthCov for even fewer sites
             logger.info(f'{call_name} left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
+        else:
+            ontCallWithinBGTruthDict[call_name] = call0
 
     logger.debug(loaded_callname_list)
 
@@ -359,14 +407,32 @@ if __name__ == '__main__':
     # this file is the all tool joined together sites BED file, for evaluation on joined sites
     bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}.Tools_BGTruth_cov{cutoffBGTruth}_Joined.bed"
 
-    # Study the joined CpG sites by all tools with BG-Truth
-    joinedCPG = set(absoluteBGTruthCov.keys())
+    # Study the joined CpG sites by all tools with BG-Truth,evaluation on joined CpG by default
+    if absoluteBGTruthCov:
+        joinedCPG = set(absoluteBGTruthCov.keys())
+    else:
+        joinedCPG = None
+
     for toolname in ontCallWithinBGTruthDict:
+        if not joinedCPG:
+            joinedCPG = set(ontCallWithinBGTruthDict[toolname].keys())
+            continue
         joinedCPG = joinedCPG.intersection(set(ontCallWithinBGTruthDict[toolname].keys()))
+        logger.info(f'After joined with {toolname}, cpgs={len(joinedCPG)}')
 
     save_keys_to_single_site_bed(joinedCPG, outfn=bedfn_tool_join_bgtruth, callBaseFormat=baseFormat, outBaseFormat=1)
 
-    logger.info(f"Data points for joined all tools with bg-truth (cov>={cutoffBGTruth}) sites={len(joinedCPG):,}\n\n")
+    ## Note all tools using cov>=1 for evaluation read-leval performance
+    logger.info(f"Data points for joined all tools with bg-truth (if any, cov>={cutoffBGTruth}) sites={len(joinedCPG):,}\n\n")
+
+    if "ecoli_metropaper_sanity" in args.analysis:
+        report_ecoli_metro_paper_evaluations(ontCallWithinBGTruthDict, joinedCPG)
+        logger.info(f'Analysis:[{args.analysis}] DONE')
+
+        report_ecoli_metro_paper_evaluations(ontCallWithinBGTruthDict, None)
+        logger.info(f'Analysis:[{args.analysis}] DONE')
+
+        sys.exit(0)
 
     # Next extract sites in joined set only
     certainJoinedBGTruth = {}  # all joined bg-truth
