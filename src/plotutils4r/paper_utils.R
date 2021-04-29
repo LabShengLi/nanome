@@ -355,7 +355,7 @@ fig.5cd.euller.plot.set3 <- function(ret, outfn) {
     ## How to reverse numbers: now A=DeepSignal, B=Nanopolish, C=Megalodon; we want change to order: A=Nanopolish, B=Megalodon,C=DeepSigal
     
     comb = c("A" = ret[2], "B" = ret[3], "C" = ret[1],
-             "A&B" = ret[6],"A&C" = ret[4], "B&C" = ret[5],
+             "A&B" = ret[6], "A&C" = ret[4], "B&C" = ret[5],
              "A&B&C" = ret[7])
     
     print(comb)
@@ -532,8 +532,9 @@ fig.7b1.running.resource.bar.plot <- function() {
     run.table <- read_excel(infn)
     
     outdf <- run.table %>%
-      mutate(dsname = factor(dsname, levels = Dataset.Order),
-             tool = factor(tool, levels = Tool.Order[1:5])
+      mutate(dsname = recode(dsname, "HL60" = "HL-60")) %>%
+      mutate(dsname = factor(dsname, levels = rev(Dataset.Order)),
+             tool = factor(tool, levels = Tool.Order[1:4])
       ) %>%
       arrange(dsname, `Job Wall-clock Time`)
     
@@ -565,7 +566,7 @@ fig.7b1.running.resource.bar.plot <- function() {
       coord_flip() +
       scale_fill_manual(values = ToolColorPal) +
       theme_classic() +
-      ylab("Peak memory (GB)") +
+      ylab("Peak Memory (GB)") +
       xlab("") +
       labs(fill = 'Tool') +
       theme(text = element_text(size = 12))
