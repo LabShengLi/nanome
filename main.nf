@@ -170,15 +170,6 @@ process EnvCheck {
 	"""
 	set -x
 
-	pwd
-    ls -la
-    which conda
-	## source activate nanocompare
-	## . activate nanocompare
-    conda env list
-	echo ${params.genomeMotifC}
-    ##ls -la ${params.genomeMotifC}
-
 	which tombo
     tombo -v
 
@@ -194,7 +185,8 @@ process EnvCheck {
     which DeepMod.py
     DeepMod.py
 
-    ${params.GuppyDir}/bin/guppy_basecaller -v
+	which guppy_basecaller
+    guppy_basecaller -v
     """
 }
 
@@ -259,18 +251,18 @@ preprocess_out_ch
 	.into { basecall_input_ch; megalodon_in_ch }
 
 
+basecall_input_ch.into{ basecall_input_ch1; basecall_input_ch2 }
+
+basecall_input_ch2.view()
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
 	tag "${x}"
 	cache  'lenient'
-
-	//errorStrategy 'ignore'
 	label 'with_gpus'
 
 	input:
-    file x from basecall_input_ch.flatten()
-//    file hg38_tar from hg38_tar_ch
+    file x from basecall_input_ch1.flatten()
 
     output:
     file 'basecall_dir/M*' into basecall_out_ch
@@ -282,7 +274,6 @@ process Basecall {
     """
     set -x
 
-    mkdir -p basecall_dir
     mkdir -p basecall_dir/${x}
 
     guppy_basecaller --input_path $x \
@@ -293,9 +284,6 @@ process Basecall {
         --recursive \
         --verbose_logs \
         ${params.GuppyGPUOptions}
-
-        #--gpu_runners_per_device ${params.processors} \
-        #--device auto
 
     ## After basecall, rename summary file names
 	mv basecall_dir/${x}/sequencing_summary.txt basecall_dir/${x}/${x}-sequencing_summary.txt

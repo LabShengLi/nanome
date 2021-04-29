@@ -47,18 +47,11 @@ date;hostname;pwd
 #  -resume
 
 
-rm -rf /fastscratch/liuya/nanocompare/work
+#rm -rf /fastscratch/liuya/nanocompare/work
 
 ./nextflow run main.nf -profile winter \
     -work-dir /fastscratch/liuya/nanocompare/work \
     -config conf/Ecoli_METROPAPER.config -resume
-
-#./nextflow run main.nf -profile winter \
-#    -work-dir /fastscratch/liuya/nanocompare/work \
-#    --input /fastscratch/c-panz/ecoli_meteore.tar.gz \
-#    --dsname ECOLI_METROPAPER \
-#    --referenceGenome reference_genome/ecoli/Ecoli_k12_mg1655.fasta \
-#    --chromSizesFile reference_genome/ecoli/Ecoli_k12_mg1655.fasta.genome.sizes
 
 #./nextflow run main.nf -profile winter \
 #    -work-dir /fastscratch/liuya/nanocompare/work -resume \
