@@ -12,6 +12,8 @@ log.info """\
 	eval                :${params.eval}
 	debug               :${params.debug}
 	online              :${params.online}
+	reference_genome    :${params.referenceGenome}
+	chromSizesFile      :${params.chromSizesFile}
 	=================================
 	"""
 	.stripIndent()
@@ -29,13 +31,14 @@ fast5_tar_ch = Channel.fromPath(params.input)
 
 
 // Inputs for methcalling pipelines (such as reference genome, deepsignal model, DeepMod Clustering data, Megalodon model, etc.)
-hg38_tar_ch = Channel.fromPath(params.hg38_tar)
+//hg38_tar_ch = Channel.fromPath(params.hg38_tar)
+reference_genome_tar_ch = Channel.fromPath(params.reference_genome_tar)  //reference_genome_tar
 deepmod_ctar_ch = Channel.fromPath(params.deepmod_ctar)
 deepsignel_model_tar_ch = Channel.fromPath(params.deepsignel_model_tar)
 megalodon_model_tar_ch = Channel.fromPath(params.megalodon_model_tar)
 
 
-// Get input from internet, and output to channel for later usage
+// Get input (model, reference_genome, etc.) from internet, and output to channel for later usage
 process GetInputData{
 	tag 'GetInputData'
 	cache  'lenient'
@@ -44,21 +47,20 @@ process GetInputData{
 	params.online
 
 	input:
-	file x1 from hg38_tar_ch
 	file x2 from deepmod_ctar_ch
 	file x3 from deepsignel_model_tar_ch
 	file x4 from megalodon_model_tar_ch
+	file x5 from reference_genome_tar_ch
 
 	output:
-	file "hg38" into hg38_fa_ch
+	file "reference_genome" into reference_genome_ch //hg38_fa_ch
 	file "deepmod_c" into deepmod_c_ch
+	file "DeepMod" into deepmod_prj_ch //all model online
 	file "deepsignal_model" into deepsignal_model_ch
 	file "megalodon_model" into megalodon_model_ch
 
 	"""
 	set -x
-	mkdir -p hg38
-	tar xzf ${x1} -C hg38
 
 	mkdir -p deepmod_c
 	tar xzf ${x2} -C deepmod_c
@@ -66,17 +68,20 @@ process GetInputData{
 	mkdir -p deepsignal_model
 	tar xzf ${x3} -C deepsignal_model
 
-	#mkdir -p megalodon_model
 	tar xzf ${x4} -C .
+
+	tar xzf ${x5} -C .
+
+	git clone https://github.com/WGLab/DeepMod.git
     """
 }
 
 
 // The reference genome will be used later for: Resquiggle, Nanopolish, Megalodon, etc.
-hg38_fa_ch.into{hg38_fa_ch1; hg38_fa_ch2;hg38_fa_ch3;hg38_fa_ch4;hg38_fa_ch5}
+reference_genome_ch.into{hg38_fa_ch1; hg38_fa_ch2;hg38_fa_ch3;hg38_fa_ch4;hg38_fa_ch5;hg38_fa_ch6}
 
 
-// Get the NA19240/NA12878 input fast5.tar files, output to Basecall/Megalodon channel
+// Get input fast5.tar files from local or online, output to Basecall/Megalodon channel
 process GetOnlineFast5{
 	tag 'GetOnlineFast5'
 	cache  'lenient'
@@ -88,7 +93,7 @@ process GetOnlineFast5{
 	file x from fast5_tar_ch
 
 	output:
-	file "M_*" into online_out_ch
+	file "M_*_dir" into online_out_ch
 
 	"""
 	set -x
@@ -107,10 +112,11 @@ process GetOnlineFast5{
 
 
 	newx=${x}
+	newx=\${newx%".tar.gz"}
 	newx=\${newx%".tar"}
 
-	mkdir -p M_\${newx}
-	find untar_${x} -name '*.fast5' -exec mv {} M_\${newx}/ \\;
+	mkdir -p M_\${newx}_dir
+	find untar_${x} -name '*.fast5' -exec mv {} M_\${newx}_dir/ \\;
     """
 }
 
@@ -195,10 +201,8 @@ process EnvCheck {
 
 // untar file, seperate into N folders named 'M1', ..., 'M10', etc.
 process Preprocess {
-//	echo true
 	errorStrategy 'ignore'
 	cache  'lenient'
-	//label 'with_gpus'
 
     input:
     file fast5_tar from ch_input
@@ -302,7 +306,6 @@ process Basecall {
 
 // Collect and output QC results for basecall
 process QCExport {
-//	tag "${x}"
 	cache  'lenient'
 
 	publishDir "outputs/${params.dsname}-qc-report" //, mode: "copy"
@@ -334,7 +337,7 @@ resquiggle_in2_ch = resquiggle_in_ch.flatten().combine(hg38_fa_ch1)
 process Resquiggle {
 	tag "${ttt[0]}"
 	cache  'lenient'
-	label 'with_gpus'
+//	label 'with_gpus'
 
 	//clusterOptions '-q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem=50G'
 
@@ -355,6 +358,8 @@ process Resquiggle {
 
 	refGenome=\${ref}/hg38.fasta
 
+	refGenome=${params.referenceGenome}
+
 	mkdir -p resquiggle_dir/\${x}/workspace
 	### only copy workspace files, due to nanpolish modify base folder at x
 	cp -rf \${x}/workspace/* resquiggle_dir/\${x}/workspace
@@ -373,6 +378,7 @@ resquiggle_out_ch.into { deepsignal_in_ch; tombo_in_ch }
 
 deepsignal_in2_ch =
 	deepsignal_in_ch.flatten().combine(hg38_fa_ch3).combine(deepsignal_model_ch)
+
 
 
 // DeepSignal runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
@@ -397,6 +403,8 @@ process DeepSignal {
 	x=\${filepair[0]}
 	ref=\${filepair[1]}
 	refGenome=\${ref}/hg38.fasta
+	refGenome=${params.referenceGenome}
+
 	deepsignalModelDir=\${filepair[2]}
 
 
@@ -411,14 +419,17 @@ process DeepSignal {
 }
 
 
+tombo_in_ch.flatten().combine(hg38_fa_ch6).set{tombo_in_ch1}
+
+
 // Tombo runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Tombo {
-	tag "${x}"
+	tag "${ttt[0]}"
 	cache  'lenient'
-	label 'with_gpus'
+//	label 'with_gpus'
 
 	input:
-    file x from tombo_in_ch.flatten()
+    file ttt from tombo_in_ch1 // [resquiggleDir, reference_genome]
 
     output:
     file '*.per_read_stats.bed' into tombo_out_ch
@@ -427,19 +438,22 @@ process Tombo {
     ! params.top3
 
     """
+    x=${ttt[0]}
+    reference_genome_dir=${ttt[1]}
+
 	tombo detect_modifications alternative_model \
-		--fast5-basedirs ${x}/workspace \
+		--fast5-basedirs \${x}/workspace \
 		--dna --standard-log-likelihood-ratio \
 		--statistics-file-basename \
-		${params.analysisPrefix}.batch_${x} \
-		--per-read-statistics-basename ${params.analysisPrefix}.batch_${x} \
+		${params.dsname}.batch_\${x} \
+		--per-read-statistics-basename ${params.dsname}.batch_\${x} \
 		--alternate-bases CpG \
 		--processes ${params.processors} \
 		--corrected-group ${params.correctedGroup}
 
-	python ${workflow.projectDir}/model_params/Tombo_extract_per_read_stats.py ${workflow.projectDir}/model_params/${params.chromSizesFile} \
-				"${params.analysisPrefix}.batch_${x}.CpG.tombo.per_read_stats" \
-				"${params.analysisPrefix}.batch_${x}.CpG.tombo.per_read_stats.bed"
+	python ${workflow.projectDir}/model_params/Tombo_extract_per_read_stats.py ${params.chromSizesFile} \
+				"${params.dsname}.batch_\${x}.CpG.tombo.per_read_stats" \
+				"${params.dsname}.batch_\${x}.CpG.tombo.per_read_stats.bed"
     """
 }
 
@@ -483,6 +497,7 @@ process Megalodon {
 	x=\${filepair[0]}
 	ref=\${filepair[1]}
 	refGenome=\${ref}/hg38.fasta
+	refGenome=${params.referenceGenome}
 
 
     mkdir -p indir/\${x}
@@ -510,13 +525,14 @@ process Megalodon {
 	    --devices 0 \
 	    --processes ${params.processors}
 
-	mv megalodon_results/per_read_modified_base_calls.txt megalodon_results/${params.analysisPrefix}.batch_\${x}.per_read_modified_base_calls.txt
+	mv megalodon_results/per_read_modified_base_calls.txt megalodon_results/${params.dsname}.batch_\${x}.per_read_modified_base_calls.txt
     """
 }
 
 
-deepmod_in2_ch = deepmod_in_ch.flatten().combine(hg38_fa_ch4)
+deepmod_prj_ch.into{deepmod_prj_ch1; deepmod_prj_ch2}
 
+deepmod_in2_ch = deepmod_in_ch.flatten().combine(hg38_fa_ch4).combine(deepmod_prj_ch1)
 
 // DeepMod runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepMod {
@@ -528,7 +544,7 @@ process DeepMod {
 	label 'with_gpus'
 
 	input:
-	file ttt from deepmod_in2_ch
+	file ttt from deepmod_in2_ch  // [basecallDir, refGenome, DeepModPrj]
 //    file x from deepmod_in_ch.flatten()
 
     output:
@@ -545,10 +561,13 @@ process DeepMod {
 	x=\${filepair[0]}
 	ref=\${filepair[1]}
 	refGenome=\${ref}/hg38.fasta
+	refGenome=${params.referenceGenome}
+
+	DeepModProjectDir=${ttt[2]}
 
     DeepMod.py detect \
 			--wrkBase \${x}/workspace --Ref \${refGenome} \
-			--Base C --modfile ${workflow.projectDir}/model_params/${params.deepModModel} \
+			--Base C --modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
 			--FileID batch_\${x}_num \
 			--threads ${params.processors} --move
     """
@@ -561,7 +580,7 @@ nanopolish_in2_ch =  nanopolish_in_ch.flatten().combine(hg38_fa_ch5)
 process Nanopolish {
 	tag "${ttt[0]}"
 	cache  'lenient'
-	label 'with_gpus'
+//	label 'with_gpus'
 
 	input:
 //    file x from nanopolish_in_ch.flatten()
@@ -577,13 +596,14 @@ process Nanopolish {
 	x=\${filepair[0]}
 	ref=\${filepair[1]}
 	refGenome=\${ref}/hg38.fasta
+	refGenome=${params.referenceGenome}
 
 
     ### We put all fq and bam files into working dir, DO NOT affect the basecall dir
 	##fastqFile=\${x}/reads.fq
 	fastqFile=\${x}.reads.fq
 	fastqNoDupFile="\${fastqFile}.noDups.fq"
-	bamFileName="${params.analysisPrefix}.batch_\${x}.sorted.bam"
+	bamFileName="${params.dsname}.batch_\${x}.sorted.bam"
 
 
 	echo \${fastqFile}
@@ -613,7 +633,7 @@ process Nanopolish {
 
 	echo "### Alignment step DONE"
 
-	nanopolish call-methylation -t ${params.processors} -r \${fastqNoDupFile} -b \${bamFileName} -g \${refGenome} > ${params.analysisPrefix}.batch_\${x}.nanopolish.methylation_calls.tsv
+	nanopolish call-methylation -t ${params.processors} -r \${fastqNoDupFile} -b \${bamFileName} -g \${refGenome} > ${params.dsname}.batch_\${x}.nanopolish.methylation_calls.tsv
     """
 }
 
@@ -747,11 +767,11 @@ process NplshCombine {
 // Combine DeepMod runs' all results together
 process DpmodCombine {
 	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
-	label 'with_gpus'
+	label 'with_gpus'  // cluster model need gpu
 
 	input:
     file x from deepmod_combine_in_ch
-
+	file deepmod_project_dir from deepmod_prj_ch2
     file deepmodCDir from deepmod_c_ch
 
     output:
@@ -780,7 +800,7 @@ process DpmodCombine {
 	python ${workflow.projectDir}/model_params/hm_cluster_predict.py \
 		indir/${params.dsname}.deepmod \
 		\${DeepMod_Cluster_CDir} \
-		${workflow.projectDir}/model_params/${params.clusterDeepModModel}  || true
+		${deepmod_project_dir}/train_deepmod/${params.clusterDeepModModel}  || true
 
 	> ${params.dsname}.DeepModC.combine.tsv
 
@@ -801,6 +821,7 @@ process DpmodCombine {
     """
 }
 
+
 //TODO: how sort the list???
 deepsignal_combine_out_ch.concat(tombo_combine_out_ch,megalodon_combine_out_ch, \
 	nanopolish_combine_out_ch,deepmod_combine_out_ch.flatten())
@@ -814,7 +835,7 @@ deepsignal_combine_out_ch.concat(tombo_combine_out_ch,megalodon_combine_out_ch, 
 // Read level evaluations
 process ReadLevelPerf {
 	publishDir "outputs/${params.dsname}-nanome-analysis" //, mode: "copy"
-	label 'with_gpus'
+//	label 'with_gpus'
 
 	input: // TODO: I can not sort fileList by name, seems sorted by date????
     file fileList from readlevel_in_ch
@@ -872,7 +893,7 @@ process ReadLevelPerf {
 // Site level correlation analysis
 process SiteLevelCorr {
 	publishDir "outputs/${params.dsname}-nanome-analysis" //, mode: "copy"
-	label 'with_gpus'
+//	label 'with_gpus'
 
 	input:
     file perfDir from readlevel_out_ch
