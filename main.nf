@@ -265,8 +265,8 @@ process Basecall {
     file x from basecall_input_ch1.flatten()
 
     output:
-    file 'basecall_dir/M*' into basecall_out_ch
-    file "basecall_dir/${x}/*-sequencing_summary.txt" into qc_ch
+    file "basecall_dir/${x}_basecalled" into basecall_out_ch  // try to fix the christina proposed problems
+    file "basecall_dir/${x}_basecalled/*-sequencing_summary.txt" into qc_ch
 
     when:
     ! params.debug
@@ -274,10 +274,10 @@ process Basecall {
     """
     set -x
 
-    mkdir -p basecall_dir/${x}
+    mkdir -p basecall_dir/${x}_basecalled
 
-    guppy_basecaller --input_path $x \
-        --save_path "basecall_dir/${x}" \
+    guppy_basecaller --input_path ${x} \
+        --save_path "basecall_dir/${x}_basecalled" \
         --config ${params.GUPPY_BASECALL_MODEL} \
         --num_callers 3 \
         --fast5_out \
@@ -286,7 +286,7 @@ process Basecall {
         ${params.GuppyGPUOptions}
 
     ## After basecall, rename summary file names
-	mv basecall_dir/${x}/sequencing_summary.txt basecall_dir/${x}/${x}-sequencing_summary.txt
+	mv basecall_dir/${x}_basecalled/sequencing_summary.txt basecall_dir/${x}_basecalled/${x}-sequencing_summary.txt
 
     """
 }

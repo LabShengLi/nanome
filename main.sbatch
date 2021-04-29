@@ -49,15 +49,15 @@ date;hostname;pwd
 
 #rm -rf /fastscratch/liuya/nanocompare/work
 
+## Running E coli for METROPAPER
+#./nextflow run main.nf -profile winter \
+#    -work-dir /fastscratch/liuya/nanocompare/work \
+#    -config conf/Ecoli_METROPAPER.config -resume
+
+## Running test data
 ./nextflow run main.nf -profile winter \
     -work-dir /fastscratch/liuya/nanocompare/work \
-    -config conf/Ecoli_METROPAPER.config -resume
-
-#./nextflow run main.nf -profile winter \
-#    -work-dir /fastscratch/liuya/nanocompare/work -resume \
-#    --input https://github.com/liuyangzzu/nano-compare/raw/6684b71587c19d191ccf87832f25536be10e372f/test_data/demo.fast5.reads.tar.gz \
-#    --dsname NA12878 --online true
-
+    -config conf/test.config -resume
 
 
 
