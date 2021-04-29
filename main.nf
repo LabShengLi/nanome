@@ -558,7 +558,7 @@ process DeepMod {
 			--wrkBase \${x}/workspace --Ref \${refGenome} \
 			--Base C --modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
 			--FileID batch_\${x}_num \
-			--threads ${params.processors} --move
+			--threads ${params.processors} ${params.DeepModMoveOptions}  #--move
     """
 }
 
@@ -784,7 +784,7 @@ process DpmodCombine {
     done
 
     python ${workflow.projectDir}/model_params/sum_chr_mod.py \
-        indir/ C ${params.dsname}.deepmod
+        indir/ C ${params.dsname}.deepmod ${params.DeepModSumChrSet}
 
 	python ${workflow.projectDir}/model_params/hm_cluster_predict.py \
 		indir/${params.dsname}.deepmod \
@@ -793,20 +793,23 @@ process DpmodCombine {
 
 	> ${params.dsname}.DeepModC.combine.tsv
 
-	for f in \$(ls -1 indir/${params.dsname}.deepmod.chr*.C.bed)
+	## Note: for ecoli data, no chr*, but N*
+	for f in \$(ls -1 indir/${params.dsname}.deepmod.*.C.bed)
 	do
 	  cat \$f >> ${params.dsname}.DeepModC.combine.tsv
 	done
 
 	> ${params.dsname}.DeepModC_clusterCpG.combine.tsv
 
-	for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.chr*.C.bed)
+	for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
 	do
 	  cat \$f >> ${params.dsname}.DeepModC_clusterCpG.combine.tsv
 	done
 
 	gzip ${params.dsname}.DeepModC.combine.tsv
 	gzip ${params.dsname}.DeepModC_clusterCpG.combine.tsv
+
+	echo "###DeepMod combine DONE###"
     """
 }
 

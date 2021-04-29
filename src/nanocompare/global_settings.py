@@ -18,6 +18,7 @@ fully_meth_level = 1.0
 
 # chr 1-22 X and Y
 humanChrSet = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
+ecoliChrSet = ['NC_000913.3']
 
 ToolNameList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon']
 Top3ToolNameList = ['DeepSignal', 'Nanopolish', 'Megalodon']

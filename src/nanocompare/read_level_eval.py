@@ -8,7 +8,7 @@ import argparse
 from multiprocessing import Manager, Pool
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import nonsingletonsFile
+from nanocompare.global_settings import nonsingletonsFile, ecoliChrSet
 from nanocompare.global_settings import rename_location_from_coordinate_name, perf_report_columns, get_tool_name, singletonFileExtStr
 
 
@@ -216,11 +216,12 @@ def parse_arguments():
     parser.add_argument('--report-joined', action='store_true', help="True if report on only joined sets")
     parser.add_argument('--test', action='store_true', help="True if only test for short time running")
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by space', required=True)
-    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>;<file-name>", required=True)
+    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>;<file-name>", default=None)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
     parser.add_argument('--enable-cache', action='store_true')
     parser.add_argument('--using-cache', action='store_true')
     parser.add_argument('-mpi', action='store_true')
+    parser.add_argument('--analysis', type=str, help='special analysis specifications', default="")
     return parser.parse_args()
 
 
@@ -259,61 +260,70 @@ if __name__ == '__main__':
     # So we must import as 1-based format for our tool or bgtruth, DO NOT USE baseFormat=0
     baseFormat = 1
 
-    # We firstly parse and import bg-truth
-    encode, fnlist = args.bgtruth.split(':')
-    fnlist = fnlist.split(';')
-    logger.debug(f'We are going to import BS-seq data from fnlist={fnlist}, encode={encode}')
+    if args.bgtruth:
+        # We firstly parse and import bg-truth
+        encode, fnlist = args.bgtruth.split(':')
+        fnlist = fnlist.split(';')
+        logger.debug(f'We are going to import BS-seq data from fnlist={fnlist}, encode={encode}')
 
-    # Load bgtruth one/two replicates
-    bgTruthList = []
-    for fn in fnlist:
-        # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
-        # bgTruth1 is dict of key->value, key=(chr, start, strand), and value=[meth.freq, cov]
-        bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True, using_cache=using_cache, enable_cache=enable_cache)
-        bgTruthList.append(bgTruth1)
+        # Load bgtruth one/two replicates
+        bgTruthList = []
+        for fn in fnlist:
+            # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
+            # bgTruth1 is dict of key->value, key=(chr, start, strand), and value=[meth.freq, cov]
+            bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True, using_cache=using_cache, enable_cache=enable_cache)
+            bgTruthList.append(bgTruth1)
 
-    # Combine multiple bgtruth together for analysis
-    # We use union of two replicates as BG-Truth
-    combineBGTruth = combineBGTruthList(bgTruthList, covCutoff=1)
-    logger.info("\n\n########################\n\n")
+        # Combine multiple bgtruth together for analysis
+        # We use union of two replicates as BG-Truth
+        combineBGTruth = combineBGTruthList(bgTruthList, covCutoff=1)
+        logger.info("\n\n########################\n\n")
 
-    logger.info(f'Start find absolute state (100% or 0% level), take times')
-    absoluteBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if satisfy_fully_meth_or_unmeth(combineBGTruth[key][0])}
-    logger.info(f'Combined bgtruth sites={len(combineBGTruth):,}, Absolute bgtruth (100% and 0% level) sites={len(absoluteBGTruth):,}')
+        logger.info(f'Start find absolute state (100% or 0% level), take times')
+        absoluteBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if satisfy_fully_meth_or_unmeth(combineBGTruth[key][0])}
+        logger.info(f'Combined bgtruth sites={len(combineBGTruth):,}, Absolute bgtruth (100% and 0% level) sites={len(absoluteBGTruth):,}')
 
-    logger.info(f'Start cutoff on absolute bg-truth, take times')
-    # This is the smallest sites we use for evaluation
-    absoluteBGTruthCov = {key: absoluteBGTruth[key] for key in absoluteBGTruth if absoluteBGTruth[key][1] >= cutoffBGTruth}
-    logger.info(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(absoluteBGTruthCov):,}')
+        logger.info(f'Start cutoff on absolute bg-truth, take times')
+        # This is the smallest sites we use for evaluation
+        absoluteBGTruthCov = {key: absoluteBGTruth[key] for key in absoluteBGTruth if absoluteBGTruth[key][1] >= cutoffBGTruth}
+        logger.info(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(absoluteBGTruthCov):,}')
 
-    # Load all coordinate file list (full path) in this runs
-    relateCoord = list(narrowCoordFileList)  # copy the basic coordinate
+        # Load all coordinate file list (full path) in this runs
+        relateCoord = list(narrowCoordFileList)  # copy the basic coordinate
 
-    ## add additional two region files based on bgtruth (Concordant, Discordant):
-    ## file name is like: K562_WGBS_2Reps.hg38_nonsingletons.concordant.bed
-    nonsingletonsFilePrefix = nonsingletonsFile.replace(singletonFileExtStr, '')
-    fn_concordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed"
-    fn_discordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed"
+        ## add additional two region files based on bgtruth (Concordant, Discordant):
+        ## file name is like: K562_WGBS_2Reps.hg38_nonsingletons.concordant.bed
+        nonsingletonsFilePrefix = nonsingletonsFile.replace(singletonFileExtStr, '')
+        fn_concordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed"
+        fn_discordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed"
 
-    relateCoord.append(fn_concordant)
-    relateCoord.append(fn_discordant)
+        relateCoord.append(fn_concordant)
+        relateCoord.append(fn_discordant)
 
-    # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth) with cov>=1
-    # Classify concordant and discordant based on cov>=1 bgtruth
-    # TODO: if we use cov>= 5 BS-seq define them, please update absoluteBGTruth with absoluteBGTruthCov
-    nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=False)
+        # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth) with cov>=1
+        # Classify concordant and discordant based on cov>=1 bgtruth
+        # TODO: if we use cov>= 5 BS-seq define them, please update absoluteBGTruth with absoluteBGTruthCov
+        nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=False)
 
-    # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
-    outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov1.csv')
-    report_singleton_nonsingleton_table(absoluteBGTruth, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
+        # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
+        outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov1.csv')
+        report_singleton_nonsingleton_table(absoluteBGTruth, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
 
-    # Report singletons vs non-singletons of bgtruth with cov cutoff >= 5
-    outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov{cutoffBGTruth}.csv')
-    report_singleton_nonsingleton_table(absoluteBGTruthCov, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
+        # Report singletons vs non-singletons of bgtruth with cov cutoff >= 5
+        outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov{cutoffBGTruth}.csv')
+        report_singleton_nonsingleton_table(absoluteBGTruthCov, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
 
-    logger.info("\n\n########################\n\n")
+        logger.info("\n\n########################\n\n")
+    else:
+        absoluteBGTruth=None
+        absoluteBGTruthCov=None
 
     # Load methlation callings by tools
+    if "ecoli" in args.analysis:
+        filterChr = ecoliChrSet
+    else: # default is human
+        filterChr = humanChrSet
+
     callfn_dict = defaultdict()  # callname -> filename
     ontCallWithinBGTruthDict = defaultdict()  # name->call
     loaded_callname_list = []  # [DeepSignal, DeepMod, etc.]
@@ -334,11 +344,13 @@ if __name__ == '__main__':
             raise Exception(f'{call_encode} is not allowed for read level evaluation, please use DeepMod.C file here')
 
         ## MUST import read-level results, and include score for plot ROC curve and PR curve
-        call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache)
+        call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache, filterChr=filterChr)
         # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
         logger.info(f'Filter out CpG sites not in bgtruth for {call_name}')
-        ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(call0, absoluteBGTruth)  # TODO:using absoluteBGTruthCov for even fewer sites
-        logger.info(f'{call_name} left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
+
+        if absoluteBGTruth:
+            ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(call0, absoluteBGTruth)  # TODO:using absoluteBGTruthCov for even fewer sites
+            logger.info(f'{call_name} left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
 
     logger.debug(loaded_callname_list)
 

@@ -23,10 +23,10 @@ from sklearn.metrics import roc_curve, auc, average_precision_score, f1_score, p
 from tqdm import tqdm
 
 from nanocompare.global_config import *
-from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEncodeList, narrowCoordFileList, narrowCoordFileTag, referenceGenomeFile
+from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEncodeList, narrowCoordFileList, narrowCoordFileTag
 
 
-def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, log_lik_ratio_col=5, sequence_col=-1, num_motifs_col=-2, baseFormat=1, llr_cutoff=2.0, output_first=False, include_score=False):
+def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, log_lik_ratio_col=5, sequence_col=-1, num_motifs_col=-2, baseFormat=1, llr_cutoff=2.0, output_first=False, include_score=False, filterChr=humanChrSet):
     """
     We assume the input is 0-based for the start col, such as chr10 122 122
 
@@ -71,7 +71,7 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                 logger.debug(list(enumerate(tmp)))
                 output_first = False
 
-            if tmp[chr_col] not in humanChrSet:
+            if tmp[chr_col] not in filterChr:
                 continue
 
             try:  # try to find if these columns are interpretable
@@ -240,7 +240,7 @@ def importPredictions_Nanopolish_v2(infileName, baseCount=0, logLikehoodCutt=2.5
     return cpgDict
 
 
-def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=2, meth_prob_col=7, meth_col=8, baseFormat=1, include_score=False):
+def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=2, meth_prob_col=7, meth_col=8, baseFormat=1, include_score=False, filterChr=humanChrSet):
     """
     We treat input as 0-based format for start col.
 
@@ -283,12 +283,12 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     for row in infile:
         if isinstance(row, str):
             row1 = row
-        else: # byte array need decode firstly
+        else:  # byte array need decode firstly
             row1 = row.decode()
 
         tmp = row1.strip().split("\t")
 
-        if tmp[chr_col] not in humanChrSet:
+        if tmp[chr_col] not in filterChr:
             continue
 
         if baseFormat == 1:
@@ -323,7 +323,7 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     return cpgDict
 
 
-def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=4, baseFormat=1, cutoff=[-1.5, 2.5], output_first=False, include_score=False):
+def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, meth_col=4, baseFormat=1, cutoff=[-1.5, 2.5], output_first=False, include_score=False, filterChr=humanChrSet):
     """
     We treate input as 0-based format.
 
@@ -364,7 +364,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
 
         tmp = row1.strip().split("\t")
 
-        if tmp[chr_col] not in humanChrSet:
+        if tmp[chr_col] not in filterChr:
             continue
 
         if output_first:
@@ -434,7 +434,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     return cpgDict
 
 
-def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-3, meth_freq_col=-2, meth_cov_col=-1, baseFormat=1, sep=' ', output_first=False, include_score=False):
+def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-3, meth_freq_col=-2, meth_cov_col=-1, baseFormat=1, sep=' ', output_first=False, include_score=False, filterChr=humanChrSet):
     """
     We treate input as 0-based format for start col.
 
@@ -493,7 +493,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
             row1 = row.decode()
         tmp = row1.strip().split(sep)
 
-        if tmp[chr_col] not in humanChrSet:
+        if tmp[chr_col] not in filterChr:
             continue
 
         if output_first:
@@ -549,7 +549,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     return cpgDict
 
 
-def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4, meth_cov_col=-2, clustered_meth_freq_col=-1, baseFormat=1, sep=' ', output_first=False, as_freq_cov_format=True, include_score=False):
+def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4, meth_cov_col=-2, clustered_meth_freq_col=-1, baseFormat=1, sep=' ', output_first=False, as_freq_cov_format=True, include_score=False, filterChr=humanChrSet):
     """
     Note: results of cluster is differ from other tools like:
     [methFrequency, coverage] such as key -> values [50 (freq 0-100), 10 (cov)]
@@ -579,7 +579,7 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
             row1 = row.decode()
         tmp = row1.strip().split(sep)
 
-        if tmp[chr_col] not in humanChrSet:
+        if tmp[chr_col] not in filterChr:
             continue
 
         if output_first:
@@ -626,7 +626,7 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     return cpgDict
 
 
-def importPredictions_Megalodon(infileName, chr_col=1, start_col=3, strand_col=2, mod_log_prob_col=4, can_log_prob_col=5, baseFormat=1, cutoff=0.8, sep='\t', output_first=False, include_score=False):
+def importPredictions_Megalodon(infileName, chr_col=1, start_col=3, strand_col=2, mod_log_prob_col=4, can_log_prob_col=5, baseFormat=1, cutoff=0.8, sep='\t', output_first=False, include_score=False, filterChr=humanChrSet):
     """
     0-based start for Magelodon：
         1.  baseFormat=0， start=Megalondon start；
@@ -663,7 +663,7 @@ def importPredictions_Megalodon(infileName, chr_col=1, start_col=3, strand_col=2
 
         tmp = row1.strip().split(sep)
 
-        if tmp[chr_col] not in humanChrSet:
+        if tmp[chr_col] not in filterChr:
             continue
 
         if output_first:
@@ -813,7 +813,6 @@ def importGroundTruth_from_Encode(infileName, chr_col=0, start_col=1, methfreq_c
     '''
 
     cpgDict = {}
-
 
     infile = open_file_gz_or_txt(infileName)
 
@@ -1228,7 +1227,7 @@ def importGroundTruth_coverage_output_from_Bismark_BedGraph(infileName, chr_col=
     return cpgDict
 
 
-def import_call(infn, encode, baseFormat=1, include_score=False, deepmod_cluster_freq_cov_format=True, enable_cache=False, using_cache=False):
+def import_call(infn, encode, baseFormat=1, include_score=False, deepmod_cluster_freq_cov_format=True, enable_cache=False, using_cache=False, filterChr=humanChrSet):
     """
     General purpose for import any tools methylation calling input files.
 
@@ -1251,21 +1250,21 @@ def import_call(infn, encode, baseFormat=1, include_score=False, deepmod_cluster
         logger.debug(f'Not cached yet, we load from raw file')
     call0 = None
     if encode == 'DeepSignal':
-        calls0 = importPredictions_DeepSignal(infn, baseFormat=baseFormat, include_score=include_score)
+        calls0 = importPredictions_DeepSignal(infn, baseFormat=baseFormat, include_score=include_score, filterChr=filterChr)
     elif encode == 'Tombo':
-        calls0 = importPredictions_Tombo(infn, baseFormat=baseFormat, include_score=include_score)
+        calls0 = importPredictions_Tombo(infn, baseFormat=baseFormat, include_score=include_score, filterChr=filterChr)
     elif encode == 'Nanopolish':
-        calls0 = importPredictions_Nanopolish(infn, baseFormat=baseFormat, llr_cutoff=2.0, include_score=include_score)
+        calls0 = importPredictions_Nanopolish(infn, baseFormat=baseFormat, llr_cutoff=2.0, include_score=include_score, filterChr=filterChr)
     # elif encode == 'DeepMod':
     #     calls0 = importPredictions_DeepMod_Read_Level(infn, baseFormat=baseFormat, include_score=include_score)
     elif encode == 'Megalodon':  # Original format
-        calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score)
+        calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score, filterChr=filterChr)
     elif encode == 'Megalodon.ZW':  # Here, ziwei preprocess the raw file to this format: chr_col=0, start_col=1, strand_col=3
-        calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score, chr_col=0, start_col=1, strand_col=3)
+        calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score, chr_col=0, start_col=1, strand_col=3, filterChr=filterChr)
     elif encode == 'DeepMod.Cluster':  # import DeepMod Clustered output for site level, itself tool reports by cluster, key->value={'freq':68, 'cov':10}
-        calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat, as_freq_cov_format=deepmod_cluster_freq_cov_format, include_score=include_score)
+        calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat, as_freq_cov_format=deepmod_cluster_freq_cov_format, include_score=include_score, filterChr=filterChr)
     elif encode == 'DeepMod.C':  # import DeepMod itself tool for read level
-        calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, include_score=include_score)
+        calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, include_score=include_score, filterChr=filterChr)
     else:
         raise Exception(f'Not support {encode} for file {infn} now')
 
@@ -2389,7 +2388,8 @@ if __name__ == '__main__':
     # outns = os.path.join(pic_base_dir, 'hg38_nonsingletons_10bp.bed')
     # SingletonsAndNonSingletonsScanner(referenceGenomeFile=referenceGenomeFile, outfileName_s=outs, outfileName_ns=outns, kbp=10)
     import os
-    infn = os.path.join("/projects/li-lab/yang/workspace/nano-compare/outputs/TestData-methylation-callings","TestData.DeepSignal.combine.tsv.gz")
+
+    infn = os.path.join("/projects/li-lab/yang/workspace/nano-compare/outputs/TestData-methylation-callings", "TestData.DeepSignal.combine.tsv.gz")
 
     ontDeepSignal = importPredictions_DeepSignal(infn)
 
