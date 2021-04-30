@@ -4,21 +4,19 @@
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 4 # number of cores
 #SBATCH --mem 250G # memory pool for all cores
-#SBATCH -t 20:00:00 # time (D-HH:MM:SS)
+#SBATCH -t 1-20:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
 set -x
 
-prj_dir=/projects/li-lab/yang/workspace/nano-compare
-
-pythonFile=${prj_dir}/src/plot_figure.py
+pythonFile=plot_figure.py
 
 mkdir -p log
 
 
 ## Plot figure 5a
-find /projects/li-lab/Nanopore_compare/result/meth-exp/MethCorr-cut5-tool3 -name "Meth_corr_plot_data_joined-*.csv" -exec python ${pythonFile} fig5a -i {} \;
+find /projects/li-lab/Nanopore_compare/result/meth-exp/MethCorr-cut5-tool3 -name "Meth_corr_plot_data_joined-*.csv" -exec python ${pythonFile} fig5a -i {} -o . \;
 
 
 

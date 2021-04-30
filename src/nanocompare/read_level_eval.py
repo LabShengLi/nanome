@@ -7,8 +7,10 @@ This script will generate all per-read performance results, with regard to BED f
 import argparse
 from multiprocessing import Manager, Pool
 
+from sklearn.metrics import confusion_matrix
+
 from nanocompare.eval_common import *
-from nanocompare.global_settings import nonsingletonsFile
+from nanocompare.global_settings import nonsingletonsFile, ecoliChrSet
 from nanocompare.global_settings import rename_location_from_coordinate_name, perf_report_columns, get_tool_name, singletonFileExtStr
 
 
@@ -216,12 +218,95 @@ def parse_arguments():
     parser.add_argument('--report-joined', action='store_true', help="True if report on only joined sets")
     parser.add_argument('--test', action='store_true', help="True if only test for short time running")
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by space', required=True)
-    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>;<file-name>", required=True)
+    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>;<file-name>", default=None)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
     parser.add_argument('--enable-cache', action='store_true')
     parser.add_argument('--using-cache', action='store_true')
     parser.add_argument('-mpi', action='store_true')
+    parser.add_argument('--analysis', type=str, help='special analysis specifications', default="")
     return parser.parse_args()
+
+
+def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet, threshold=0.2):
+    """
+    We now simply check results performance on positive data
+    :param ontCallDict:
+    :return:
+    """
+    per_read_dataset = defaultdict(list)
+    per_base_dataset = defaultdict(list)
+
+    for callname in ontCallDict:
+        call = ontCallDict[callname]
+
+        nsites = 0
+        numcalls = 0
+        methcalls = 0
+        unmethcalls = 0
+        if evalCPGSet:
+            cpgSet = evalCPGSet
+        else:
+            cpgSet = set(call.keys())
+        ## Read level evaluation
+        for cpg in cpgSet:
+            meth_indicator_list = [tt[0] for tt in call[cpg]]
+            nsites += 1
+            # logger.info(f'cpg={cpg}, call[cpg]={call[cpg]}')
+            methcalls += sum(meth_indicator_list)
+            unmethcalls += len(meth_indicator_list) - sum(meth_indicator_list)
+            numcalls += len(meth_indicator_list)
+        per_read_dataset['dsname'].append(callname)
+        per_read_dataset['#Base'].append(nsites)
+        per_read_dataset['#Call'].append(numcalls)
+        per_read_dataset['#Pos'].append(methcalls)
+        per_read_dataset['#Neg'].append(unmethcalls)
+        per_read_dataset['#Pos/#Call'].append(methcalls / numcalls)
+
+        ## Base level evaluation
+        ylabel = []
+        ypred = []
+        for cpg in cpgSet:
+            meth_indicator_list = [tt[0] for tt in call[cpg]]
+            meth_percentage = sum(meth_indicator_list) / len(meth_indicator_list)
+            ylabel.append(1)
+            ypred.append(1 if meth_percentage >= threshold else 0)
+
+        npmatrix = confusion_matrix(ylabel, ypred)
+
+        precision = precision_score(ylabel, ypred)
+        recall = recall_score(ylabel, ypred)
+
+        # logger.info(f'npmatrix={npmatrix}')
+
+        per_base_dataset['dsname'].append(callname)
+        per_base_dataset['#Base'].append(nsites)
+        per_base_dataset[f'Methylated base >= {threshold:.2f}'].append(sum(ypred))
+        per_base_dataset[f'Unmethylated base'].append(len(ypred)-sum(ypred))
+        per_base_dataset['Precision'].append(precision)
+        per_base_dataset['Recall'].append(recall)
+
+    df = pd.DataFrame.from_dict(per_read_dataset)
+    logger.info(df)
+
+    if evalCPGSet:
+        tag = "joined_sets"
+    else:
+        tag = "no_joined-sets"
+    outfn = os.path.join(out_dir, f'report_ecoli_metro_paper_evaluations_on_{tag}.read.level.xlsx')
+    df.to_excel(outfn)
+
+    df = pd.DataFrame.from_dict(per_base_dataset)
+    logger.info(df)
+
+    if evalCPGSet:
+        tag = "joined_sets"
+    else:
+        tag = "no_joined-sets"
+    outfn = os.path.join(out_dir, f'report_ecoli_metro_paper_evaluations_on_{tag}.base.level.xlsx')
+    df.to_excel(outfn)
+
+
+    pass
 
 
 if __name__ == '__main__':
@@ -259,62 +344,73 @@ if __name__ == '__main__':
     # So we must import as 1-based format for our tool or bgtruth, DO NOT USE baseFormat=0
     baseFormat = 1
 
-    # We firstly parse and import bg-truth
-    encode, fnlist = args.bgtruth.split(':')
-    fnlist = fnlist.split(';')
-    logger.debug(f'We are going to import BS-seq data from fnlist={fnlist}, encode={encode}')
+    if args.bgtruth:
+        # We firstly parse and import bg-truth
+        encode, fnlist = args.bgtruth.split(':')
+        fnlist = fnlist.split(';')
+        logger.debug(f'We are going to import BS-seq data from fnlist={fnlist}, encode={encode}')
 
-    # Load bgtruth one/two replicates
-    bgTruthList = []
-    for fn in fnlist:
-        # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
-        # bgTruth1 is dict of key->value, key=(chr, start, strand), and value=[meth.freq, cov]
-        bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True, using_cache=using_cache, enable_cache=enable_cache)
-        bgTruthList.append(bgTruth1)
+        # Load bgtruth one/two replicates
+        bgTruthList = []
+        for fn in fnlist:
+            # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
+            # bgTruth1 is dict of key->value, key=(chr, start, strand), and value=[meth.freq, cov]
+            bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True, using_cache=using_cache, enable_cache=enable_cache)
+            bgTruthList.append(bgTruth1)
 
-    # Combine multiple bgtruth together for analysis
-    # We use union of two replicates as BG-Truth
-    combineBGTruth = combineBGTruthList(bgTruthList, covCutoff=1)
-    logger.info("\n\n########################\n\n")
+        # Combine multiple bgtruth together for analysis
+        # We use union of two replicates as BG-Truth
+        combineBGTruth = combineBGTruthList(bgTruthList, covCutoff=1)
+        logger.info("\n\n########################\n\n")
 
-    logger.info(f'Start find absolute state (100% or 0% level), take times')
-    absoluteBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if satisfy_fully_meth_or_unmeth(combineBGTruth[key][0])}
-    logger.info(f'Combined bgtruth sites={len(combineBGTruth):,}, Absolute bgtruth (100% and 0% level) sites={len(absoluteBGTruth):,}')
+        logger.info(f'Start find absolute state (100% or 0% level), take times')
+        absoluteBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if satisfy_fully_meth_or_unmeth(combineBGTruth[key][0])}
+        logger.info(f'Combined bgtruth sites={len(combineBGTruth):,}, Absolute bgtruth (100% and 0% level) sites={len(absoluteBGTruth):,}')
 
-    logger.info(f'Start cutoff on absolute bg-truth, take times')
-    # This is the smallest sites we use for evaluation
-    absoluteBGTruthCov = {key: absoluteBGTruth[key] for key in absoluteBGTruth if absoluteBGTruth[key][1] >= cutoffBGTruth}
-    logger.info(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(absoluteBGTruthCov):,}')
+        logger.info(f'Start cutoff on absolute bg-truth, take times')
+        # This is the smallest sites we use for evaluation
+        absoluteBGTruthCov = {key: absoluteBGTruth[key] for key in absoluteBGTruth if absoluteBGTruth[key][1] >= cutoffBGTruth}
+        logger.info(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(absoluteBGTruthCov):,}')
 
-    # Load all coordinate file list (full path) in this runs
-    relateCoord = list(narrowCoordFileList)  # copy the basic coordinate
+        # Load all coordinate file list (full path) in this runs
+        relateCoord = list(narrowCoordFileList)  # copy the basic coordinate
 
-    ## add additional two region files based on bgtruth (Concordant, Discordant):
-    ## file name is like: K562_WGBS_2Reps.hg38_nonsingletons.concordant.bed
-    nonsingletonsFilePrefix = nonsingletonsFile.replace(singletonFileExtStr, '')
-    fn_concordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed"
-    fn_discordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed"
+        ## add additional two region files based on bgtruth (Concordant, Discordant):
+        ## file name is like: K562_WGBS_2Reps.hg38_nonsingletons.concordant.bed
+        nonsingletonsFilePrefix = nonsingletonsFile.replace(singletonFileExtStr, '')
+        fn_concordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed"
+        fn_discordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed"
 
-    relateCoord.append(fn_concordant)
-    relateCoord.append(fn_discordant)
+        relateCoord.append(fn_concordant)
+        relateCoord.append(fn_discordant)
 
-    # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth) with cov>=1
-    # Classify concordant and discordant based on cov>=1 bgtruth
-    # TODO: if we use cov>= 5 BS-seq define them, please update absoluteBGTruth with absoluteBGTruthCov
-    nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=False)
+        # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth) with cov>=1
+        # Classify concordant and discordant based on cov>=1 bgtruth
+        # TODO: if we use cov>= 5 BS-seq define them, please update absoluteBGTruth with absoluteBGTruthCov
+        nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=False)
 
-    # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
-    outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov1.csv')
-    report_singleton_nonsingleton_table(absoluteBGTruth, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
+        # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
+        outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov1.csv')
+        report_singleton_nonsingleton_table(absoluteBGTruth, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
 
-    # Report singletons vs non-singletons of bgtruth with cov cutoff >= 5
-    outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov{cutoffBGTruth}.csv')
-    report_singleton_nonsingleton_table(absoluteBGTruthCov, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
+        # Report singletons vs non-singletons of bgtruth with cov cutoff >= 5
+        outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov{cutoffBGTruth}.csv')
+        report_singleton_nonsingleton_table(absoluteBGTruthCov, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
 
-    logger.info("\n\n########################\n\n")
+        logger.info("\n\n########################\n\n")
+    else:
+        absoluteBGTruth = None
+        absoluteBGTruthCov = None
 
     # Load methlation callings by tools
+    if "ecoli" in args.analysis:
+        filterChr = ecoliChrSet
+    else:  # default is human
+        filterChr = humanChrSet
+
     callfn_dict = defaultdict()  # callname -> filename
+
+    ## Narrow down to BG-Truth if there BG-Truth is available
     ontCallWithinBGTruthDict = defaultdict()  # name->call
     loaded_callname_list = []  # [DeepSignal, DeepMod, etc.]
 
@@ -334,11 +430,14 @@ if __name__ == '__main__':
             raise Exception(f'{call_encode} is not allowed for read level evaluation, please use DeepMod.C file here')
 
         ## MUST import read-level results, and include score for plot ROC curve and PR curve
-        call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache)
-        # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
-        logger.info(f'Filter out CpG sites not in bgtruth for {call_name}')
-        ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(call0, absoluteBGTruth)  # TODO:using absoluteBGTruthCov for even fewer sites
-        logger.info(f'{call_name} left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
+        call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache, filterChr=filterChr)
+
+        if absoluteBGTruth:  # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
+            logger.info(f'Filter out CpG sites not in bgtruth for {call_name}')
+            ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(call0, absoluteBGTruth)  # TODO:using absoluteBGTruthCov for even fewer sites
+            logger.info(f'{call_name} left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
+        else:
+            ontCallWithinBGTruthDict[call_name] = call0
 
     logger.debug(loaded_callname_list)
 
@@ -347,14 +446,32 @@ if __name__ == '__main__':
     # this file is the all tool joined together sites BED file, for evaluation on joined sites
     bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}.Tools_BGTruth_cov{cutoffBGTruth}_Joined.bed"
 
-    # Study the joined CpG sites by all tools with BG-Truth
-    joinedCPG = set(absoluteBGTruthCov.keys())
+    # Study the joined CpG sites by all tools with BG-Truth,evaluation on joined CpG by default
+    if absoluteBGTruthCov:
+        joinedCPG = set(absoluteBGTruthCov.keys())
+    else:
+        joinedCPG = None
+
     for toolname in ontCallWithinBGTruthDict:
+        if not joinedCPG:
+            joinedCPG = set(ontCallWithinBGTruthDict[toolname].keys())
+            continue
         joinedCPG = joinedCPG.intersection(set(ontCallWithinBGTruthDict[toolname].keys()))
+        logger.info(f'After joined with {toolname}, cpgs={len(joinedCPG)}')
 
     save_keys_to_single_site_bed(joinedCPG, outfn=bedfn_tool_join_bgtruth, callBaseFormat=baseFormat, outBaseFormat=1)
 
-    logger.info(f"Data points for joined all tools with bg-truth (cov>={cutoffBGTruth}) sites={len(joinedCPG):,}\n\n")
+    ## Note all tools using cov>=1 for evaluation read-leval performance
+    logger.info(f"Data points for joined all tools with bg-truth (if any, cov>={cutoffBGTruth}) sites={len(joinedCPG):,}\n\n")
+
+    if "ecoli_metropaper_sanity" in args.analysis:
+        report_ecoli_metro_paper_evaluations(ontCallWithinBGTruthDict, joinedCPG)
+        logger.info(f'Analysis:[{args.analysis}] DONE')
+
+        report_ecoli_metro_paper_evaluations(ontCallWithinBGTruthDict, None)
+        logger.info(f'Analysis:[{args.analysis}] DONE')
+
+        sys.exit(0)
 
     # Next extract sites in joined set only
     certainJoinedBGTruth = {}  # all joined bg-truth

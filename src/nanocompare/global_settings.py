@@ -18,15 +18,22 @@ fully_meth_level = 1.0
 
 # chr 1-22 X and Y
 humanChrSet = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
+ecoliChrSet = ['NC_000913.3']
 
 ToolNameList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon']
+# TODO: check all consistent, now just for plot figure
+ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo', 'DeepMod']
+
+# TODO: change to nanopolish, megalodon and deepsignal order later
 Top3ToolNameList = ['DeepSignal', 'Nanopolish', 'Megalodon']
 
 ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod.C', 'DeepMod.Cluster', 'Megalodon', 'Megalodon.ZW']
 BGTruthEncodeList = ['bismark', 'encode']  # 'bed',
 # ToolsColorList = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal'])
 
+
 ToolsColorList = ["#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442"]
+ToolsColorList = ["#56B4E9", "#CC79A7", "#999999", "#E69F00", "#009E73"]
 
 referenceGenomeFile = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
 

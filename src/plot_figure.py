@@ -64,6 +64,9 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
     df = df[sel_col]
     df = df.rename(columns=rename_dict)
 
+    # rename DeepMod column here
+    df = df.drop("DeepMod", axis=1)
+
     num_col = len(df.columns)
 
     df = df.iloc[:, list(range(1, num_col)) + [0]]
@@ -86,6 +89,12 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
     ## Plot correlation grid figure
     basefn = os.path.basename(infn)
     outfileName = "{}.jpg".format(basefn.replace(".csv", ""))
+
+    if args.o:
+        outdir=args.o
+    else:
+        outdir=pic_base_dir
+
     outfn = os.path.join(outdir, outfileName)
 
     plt.clf()
@@ -115,7 +124,10 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
                         'legend.borderaxespad': 0}
                 plt.rcParams.update(params)
                 ax = sns.kdeplot(df.iloc[:, xcol - 1], shade=False, color="black", legend=True)
-                leg = ax.legend(labels=[str(df.columns[xcol - 1])], fontsize=10)
+
+                tool_fontsize=10
+                tool_fontsize = 14
+                leg = ax.legend(labels=[str(df.columns[xcol - 1])], fontsize=tool_fontsize)
                 for item in leg.legendHandles:
                     item.set_visible(False)
 
@@ -187,18 +199,19 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
                 #                     pass
                 #                 else:
                 #                     plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
-
+                tick_label_fontsize=10
+                tick_label_fontsize = 14
                 if yrow == num_col:  # last row scatter plot shows x ticks
-                    plt.xticks([0, 1], fontsize=10)
-                    ax3.set_xticklabels(["0%", "100%"], fontsize=10)
+                    plt.xticks([0, 1], fontsize=tick_label_fontsize)
+                    ax3.set_xticklabels(["0%", "100%"], fontsize=tick_label_fontsize)
                     for label, alnType in zip(ax3.get_xticklabels(), ['left', 'right']):
                         label.set_horizontalalignment(alnType)
                 else:
                     plt.xticks([], fontsize=10)
 
                 if xcol == 1:  # first column scatter plot shows y ticks
-                    plt.yticks([0, 1], fontsize=10)
-                    ax3.set_yticklabels(["0%", "100%"], fontsize=10)
+                    plt.yticks([0, 1], fontsize=tick_label_fontsize)
+                    ax3.set_yticklabels(["0%", "100%"], fontsize=tick_label_fontsize)
                     for label, alnType in zip(ax3.get_yticklabels(), ['bottom', 'top']):
                         label.set_verticalalignment(alnType)
                 #
@@ -240,6 +253,8 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname"):
     plt.clf()
     plt.figure(figsize=figure_size)
     for toolname, toolcolor in zip(ToolNameList, ToolsColorList):
+        if toolname == 'DeepMod':
+            continue
         ytrue = ret[f'{toolname}_true']
         ypred = ret[f'{toolname}_pred']
         yscore = ret[f'{toolname}_score']
@@ -265,6 +280,8 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname"):
     plt.clf()
     plt.figure(figsize=figure_size)
     for toolname, toolcolor in zip(ToolNameList, ToolsColorList):
+        if toolname == 'DeepMod':
+            continue
         ytrue = ret[f'{toolname}_true']
         yscore = ret[f'{toolname}_score']
 
@@ -471,6 +488,9 @@ if __name__ == '__main__':
             logger.info(f'For runPrefix={runPrefix} at dir={bdir}, total files={cnt}')
     elif args.cmd == 'plot-curve-data':
         ## find /projects/li-lab/Nanopore_compare/result/plot-curve-data -name '*.pkl' -exec python plot_figure.py plot-curve-data -i {} \;
+        if not args.o:
+            args.o = pic_base_dir
+
         outdir = os.path.join(args.o, f'curves-figures{f"-{args.tagname}" if args.tagname else ""}')
         os.makedirs(outdir, exist_ok=True)
         for fn in args.i:
@@ -479,7 +499,7 @@ if __name__ == '__main__':
                 basename = os.path.basename(fn)
                 bn = os.path.splitext(basename)[0]
                 ret = pickle.load(infn)
-                # logger.debug(ret.keys())
+                logger.debug(ret.keys())
                 plot_ROC_PR_curves(ret, outdir, tagname=bn)
     elif args.cmd == 'guppy-qos':
         ## collect basecall output for summary results, used for qos

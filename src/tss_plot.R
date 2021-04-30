@@ -31,7 +31,7 @@ binSize = opt$`bin-size`
 numBins = 2 * flank / binSize
 
 width = 8
-height = 4
+height = 6
 
 dsname = opt$dsname
 infn = opt$input
@@ -86,16 +86,16 @@ plotdf = as_tibble(plotdf)
 plotdf = transform(plotdf, x = as.numeric(x))
 # plotdf = plotdf[1:90000, ]
 
-if (bslabel=="WGBS") {
-    tools_bsseq = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon', bslabel)
+if (bslabel == "WGBS") {
+    tools_bsseq = c('Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo', bslabel)
 } else {
-    tools_bsseq = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon')
+    tools_bsseq = c('Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo')
 }
 
 
 plotdf <- plotdf %>%
   mutate(tool = recode(tool, 'BS-seq' = bslabel)) %>%
-  mutate(tool = factor(tool, levels = tools_bsseq))  %>%
+  mutate(tool = factor(tool, levels = tools_bsseq)) %>%
   drop_na()
 
 head(plotdf)
@@ -106,6 +106,9 @@ dim(plotdf)
 print("Start plotting")
 
 color_Pal <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "black", "#0072B2", "#D55E00", "#F0E442")
+## New color order based on top performer oders
+color_Pal <- c("#56B4E9", "#CC79A7", "#999999", "#E69F00", "#009E73", "black")
+color_Pal <- c("#56B4E9", "#CC79A7", "#999999", "#E69F00",  "black")
 
 
 p1 <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool)) +
@@ -124,22 +127,25 @@ p1 <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool))
   ylab("% methylated") +
   xlab(sprintf("Binned distance to %s (bp)", regionLabel))
 
-p1
+global_size=24
 
 p2 <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool)) +
-  geom_point(size = 0.5) +
-  geom_line() +
+  geom_point(size = 1.5) +
+  geom_line(size=1) +
   theme_bw() +
   theme(axis.line = element_line(colour = "black"),
         panel.border = element_blank(),
         panel.background = element_blank()) +
+  theme(text = element_text(size=global_size)) +
   # geom_smooth(method = "loess", size = 1, se = FALSE, aes(color = tool)) +
   scale_color_manual(values = color_Pal) +
   # scale_fill_brewer(palette = "Set1") +
   xlim(-2000, 2000) +
   ylim(0, 1) +
   ylab("% methylated") +
-  xlab(sprintf("Binned distance to %s (bp)", regionLabel))
+  xlab(sprintf("Binned distance to %s (bp)", regionLabel)) +
+  theme(legend.title = element_blank())
+
 
 
 print("Start saving")
@@ -147,12 +153,12 @@ print("Start saving")
 out_dir = opt$`output dir`
 dir.create(out_dir, showWarnings = FALSE)
 
-outfn = sprintf("%s/%s.%s.binsize%d.smoothed.curves.jpg", out_dir, regionLabel, dsname, binSize)
-ggsave(p1, filename = outfn, width = width, height = height, dpi = 600)
+# outfn = sprintf("%s/%s.%s.binsize%d.smoothed.curves.jpg", out_dir, regionLabel, dsname, binSize)
+# ggsave(p1, filename = outfn, width = width, height = height, dpi = 600)
 
 outfn2 = sprintf("%s/%s.%s.binsize%d.lines.curves.jpg", out_dir, regionLabel, dsname, binSize)
 ggsave(p2, filename = outfn2, width = width, height = height, dpi = 600)
 
-print(sprintf("save to %s.", outfn))
+print(sprintf("save to %s.", outfn2))
 
 

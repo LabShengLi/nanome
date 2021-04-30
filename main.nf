@@ -165,28 +165,29 @@ process EnvCheck {
 	label 'with_gpus'
 
 	when:
-	! params.online
+	params.online
 
 	"""
 	set -x
 
-	which tombo
+	#which tombo
     tombo -v
 
-    which nanopolish
+    #which nanopolish
     nanopolish --version
 
-    which megalodon
+    #which megalodon
     megalodon -v
 
-    which deepsignal
+    #which deepsignal
     deepsignal
 
-    which DeepMod.py
+    #which DeepMod.py
     DeepMod.py
 
-	which guppy_basecaller
+	#which guppy_basecaller
     guppy_basecaller -v
+
     """
 }
 
@@ -261,8 +262,8 @@ process Basecall {
 	cache  'lenient'
 	label 'with_gpus'
 
-	input:
-    file x from basecall_input_ch1.flatten()
+	input: // input here is not passed
+    file x from basecall_input_ch1.flatten()  // we are going to solve this input failed passing problems
 
     output:
     file "basecall_dir/${x}_basecalled" into basecall_out_ch  // try to fix the christina proposed problems
@@ -557,7 +558,7 @@ process DeepMod {
 			--wrkBase \${x}/workspace --Ref \${refGenome} \
 			--Base C --modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
 			--FileID batch_\${x}_num \
-			--threads ${params.processors} --move
+			--threads ${params.processors} ${params.DeepModMoveOptions}  #--move
     """
 }
 
@@ -783,8 +784,9 @@ process DpmodCombine {
     done
 
     python ${workflow.projectDir}/model_params/sum_chr_mod.py \
-        indir/ C ${params.dsname}.deepmod
+        indir/ C ${params.dsname}.deepmod ${params.DeepModSumChrSet}
 
+	## Only apply to human genome
 	python ${workflow.projectDir}/model_params/hm_cluster_predict.py \
 		indir/${params.dsname}.deepmod \
 		\${DeepMod_Cluster_CDir} \
@@ -792,20 +794,23 @@ process DpmodCombine {
 
 	> ${params.dsname}.DeepModC.combine.tsv
 
-	for f in \$(ls -1 indir/${params.dsname}.deepmod.chr*.C.bed)
+	## Note: for ecoli data, no chr*, but N*
+	for f in \$(ls -1 indir/${params.dsname}.deepmod.*.C.bed)
 	do
 	  cat \$f >> ${params.dsname}.DeepModC.combine.tsv
 	done
 
 	> ${params.dsname}.DeepModC_clusterCpG.combine.tsv
 
-	for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.chr*.C.bed)
+	for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
 	do
 	  cat \$f >> ${params.dsname}.DeepModC_clusterCpG.combine.tsv
 	done
 
 	gzip ${params.dsname}.DeepModC.combine.tsv
 	gzip ${params.dsname}.DeepModC_clusterCpG.combine.tsv
+
+	echo "###DeepMod combine DONE###"
     """
 }
 
