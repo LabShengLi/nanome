@@ -8,7 +8,9 @@
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
+# revert master
 set -x
+
 
 pythonFile=plot_figure.py
 
