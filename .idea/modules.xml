@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/nano-compare.iml" filepath="$PROJECT_DIR$/.idea/nano-compare.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/nanome.iml" filepath="$PROJECT_DIR$/.idea/nanome.iml" />
     </modules>
   </component>
 </project>
