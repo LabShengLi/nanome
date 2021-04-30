@@ -31,7 +31,7 @@ binSize = opt$`bin-size`
 numBins = 2 * flank / binSize
 
 width = 8
-height = 4
+height = 6
 
 dsname = opt$dsname
 infn = opt$input
@@ -127,22 +127,25 @@ p1 <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool))
   ylab("% methylated") +
   xlab(sprintf("Binned distance to %s (bp)", regionLabel))
 
-p1
+global_size=24
 
 p2 <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool)) +
-  geom_point(size = 0.5) +
-  geom_line() +
+  geom_point(size = 1.5) +
+  geom_line(size=1) +
   theme_bw() +
   theme(axis.line = element_line(colour = "black"),
         panel.border = element_blank(),
         panel.background = element_blank()) +
+  theme(text = element_text(size=global_size)) +
   # geom_smooth(method = "loess", size = 1, se = FALSE, aes(color = tool)) +
   scale_color_manual(values = color_Pal) +
   # scale_fill_brewer(palette = "Set1") +
   xlim(-2000, 2000) +
   ylim(0, 1) +
   ylab("% methylated") +
-  xlab(sprintf("Binned distance to %s (bp)", regionLabel))
+  xlab(sprintf("Binned distance to %s (bp)", regionLabel)) +
+  theme(legend.title = element_blank())
+
 
 
 print("Start saving")
@@ -150,12 +153,12 @@ print("Start saving")
 out_dir = opt$`output dir`
 dir.create(out_dir, showWarnings = FALSE)
 
-outfn = sprintf("%s/%s.%s.binsize%d.smoothed.curves.jpg", out_dir, regionLabel, dsname, binSize)
-ggsave(p1, filename = outfn, width = width, height = height, dpi = 600)
+# outfn = sprintf("%s/%s.%s.binsize%d.smoothed.curves.jpg", out_dir, regionLabel, dsname, binSize)
+# ggsave(p1, filename = outfn, width = width, height = height, dpi = 600)
 
 outfn2 = sprintf("%s/%s.%s.binsize%d.lines.curves.jpg", out_dir, regionLabel, dsname, binSize)
 ggsave(p2, filename = outfn2, width = width, height = height, dpi = 600)
 
-print(sprintf("save to %s.", outfn))
+print(sprintf("save to %s.", outfn2))
 
 

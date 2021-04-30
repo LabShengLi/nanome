@@ -64,6 +64,9 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
     df = df[sel_col]
     df = df.rename(columns=rename_dict)
 
+    # rename DeepMod column here
+    df = df.drop("DeepMod", axis=1)
+
     num_col = len(df.columns)
 
     df = df.iloc[:, list(range(1, num_col)) + [0]]
@@ -240,7 +243,7 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname"):
     plt.clf()
     plt.figure(figsize=figure_size)
     for toolname, toolcolor in zip(ToolNameList, ToolsColorList):
-        if toolname=='DeepMod':
+        if toolname == 'DeepMod':
             continue
         ytrue = ret[f'{toolname}_true']
         ypred = ret[f'{toolname}_pred']
@@ -267,7 +270,7 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname"):
     plt.clf()
     plt.figure(figsize=figure_size)
     for toolname, toolcolor in zip(ToolNameList, ToolsColorList):
-        if toolname=='DeepMod':
+        if toolname == 'DeepMod':
             continue
         ytrue = ret[f'{toolname}_true']
         yscore = ret[f'{toolname}_score']
