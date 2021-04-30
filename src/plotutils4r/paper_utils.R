@@ -212,7 +212,7 @@ fig.34a.box.location.performance <- function(perf.measure, locations, bdir, scal
       labs(y = out.y.label)
     
     outfn = sprintf("%s/fig.34a.box.perfmeasure.%s.%s.jpg", bdir, perf.measure, locations[2])
-    ggsave(p, filename = outfn, width = 7.5, height = 2.5, dpi = 600)
+    ggsave(p, filename = outfn, width = 7.5, height = 4, dpi = 600)
     printf("save to %s\n", outfn)
     
 }
