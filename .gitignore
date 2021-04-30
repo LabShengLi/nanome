@@ -14,3 +14,11 @@ work
 .nextflow*
 nextflow
 .ipynb_checkpoints
+src/nanocompare/bedtools
+src/nanocompare/meth_stats
+src/nanocompare/methcall
+src/nanocompare/nanopolish
+src/nanocompare/legacy
+src/nanocompare/bgtruth
+src/nanocompare/script
+
