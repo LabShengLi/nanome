@@ -31,6 +31,7 @@
   <component name="ChangeListManager">
     <list default="true" id="f4d2fa2b-f69c-4755-aa4b-226cd9e88b96" name="Default Changelist" comment="script and plots cleanup">
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -482,14 +483,7 @@
       <workItem from="1619889143200" duration="39000" />
       <workItem from="1619889187536" duration="104000" />
       <workItem from="1619889323773" duration="2781000" />
-      <workItem from="1619903876678" duration="3146000" />
-    </task>
-    <task id="LOCAL-00220" summary="TSS plot initial done">
-      <created>1619216448900</created>
-      <option name="number" value="00220" />
-      <option name="presentableId" value="LOCAL-00220" />
-      <option name="project" value="LOCAL" />
-      <updated>1619216448900</updated>
+      <workItem from="1619903876678" duration="3248000" />
     </task>
     <task id="LOCAL-00221" summary="remove non-gpu task labels;&#10;export compress outputs">
       <created>1619224962688</created>
@@ -827,7 +821,14 @@
       <option name="project" value="LOCAL" />
       <updated>1619906910605</updated>
     </task>
-    <option name="localTasksCounter" value="269" />
+    <task id="LOCAL-00269" summary="script and plots cleanup">
+      <created>1619907047764</created>
+      <option name="number" value="00269" />
+      <option name="presentableId" value="LOCAL-00269" />
+      <option name="project" value="LOCAL" />
+      <updated>1619907047764</updated>
+    </task>
+    <option name="localTasksCounter" value="270" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
