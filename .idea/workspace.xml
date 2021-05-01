@@ -29,9 +29,7 @@
     </select>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f4d2fa2b-f69c-4755-aa4b-226cd9e88b96" name="Default Changelist" comment="add .idea to .gitignore">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/nanome.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/nanome.iml" afterDir="false" />
+    <list default="true" id="f4d2fa2b-f69c-4755-aa4b-226cd9e88b96" name="Default Changelist" comment="ide settings done">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -485,14 +483,7 @@
       <workItem from="1619889187536" duration="104000" />
       <workItem from="1619889323773" duration="2781000" />
       <workItem from="1619903876678" duration="4782000" />
-      <workItem from="1619908874447" duration="115000" />
-    </task>
-    <task id="LOCAL-00222" summary="Rename fig5a for BS-seq name">
-      <created>1619234592514</created>
-      <option name="number" value="00222" />
-      <option name="presentableId" value="LOCAL-00222" />
-      <option name="project" value="LOCAL" />
-      <updated>1619234592514</updated>
+      <workItem from="1619908874447" duration="620000" />
     </task>
     <task id="LOCAL-00223" summary="support import both tsv and gz input">
       <created>1619307584540</created>
@@ -830,7 +821,14 @@
       <option name="project" value="LOCAL" />
       <updated>1619907210830</updated>
     </task>
-    <option name="localTasksCounter" value="271" />
+    <task id="LOCAL-00271" summary="ide settings done">
+      <created>1619909038667</created>
+      <option name="number" value="00271" />
+      <option name="presentableId" value="LOCAL-00271" />
+      <option name="project" value="LOCAL" />
+      <updated>1619909038667</updated>
+    </task>
+    <option name="localTasksCounter" value="272" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -891,7 +889,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="concordant and discordant BED file include meth_states and coverage info" />
     <MESSAGE value="update upsetplot and TSS, CTCF plot" />
     <MESSAGE value="add support for ecoli data" />
     <MESSAGE value="try to solve // problem for Basecall" />
@@ -916,7 +913,8 @@
     <MESSAGE value="utils cleanup" />
     <MESSAGE value="script and plots cleanup" />
     <MESSAGE value="add .idea to .gitignore" />
-    <option name="LAST_COMMIT_MESSAGE" value="add .idea to .gitignore" />
+    <MESSAGE value="ide settings done" />
+    <option name="LAST_COMMIT_MESSAGE" value="ide settings done" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1012,17 +1010,18 @@
     </watches-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/nano_compare$computeRawReadsCoverage.coverage" NAME="computeRawReadsCoverage Coverage Results" MODIFIED="1617631483368" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare/bedtools" />
     <SUITE FILE_PATH="coverage/nano_compare$meth_stats_tool.coverage" NAME="meth_stats_tool Coverage Results" MODIFIED="1610054450625" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare/meth_stats" />
     <SUITE FILE_PATH="coverage/nano_compare$plot_figure.coverage" NAME="plot_figure Coverage Results" MODIFIED="1619115319017" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
-    <SUITE FILE_PATH="coverage/nanome$plot_figure.coverage" NAME="plot_figure Coverage Results" MODIFIED="1619786607916" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/nano_compare$test_multiprocs.coverage" NAME="test_multiprocs Coverage Results" MODIFIED="1617296913593" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/nano_compare$test.coverage" NAME="test Coverage Results" MODIFIED="1605919754321" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/nano_compare$benchmarkingDataConstruct.coverage" NAME="benchmarkingDataConstruct Coverage Results" MODIFIED="1618706391309" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare" />
+    <SUITE FILE_PATH="coverage/nano_compare$computeRawReadsCoverage.coverage" NAME="computeRawReadsCoverage Coverage Results" MODIFIED="1617631483368" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare/bedtools" />
+    <SUITE FILE_PATH="coverage/nanome$eval_common.coverage" NAME="eval_common Coverage Results" MODIFIED="1619909005649" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare" />
+    <SUITE FILE_PATH="coverage/nanome$plot_figure.coverage" NAME="plot_figure Coverage Results" MODIFIED="1619786607916" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/nano_compare$test_script.coverage" NAME="test_script Coverage Results" MODIFIED="1617402916437" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare" />
     <SUITE FILE_PATH="coverage/nano_compare$density_plot.coverage" NAME="density_plot Coverage Results" MODIFIED="1606338917598" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare/bedtools" />
     <SUITE FILE_PATH="coverage/nano_compare$resource_summary.coverage" NAME="resource_summary Coverage Results" MODIFIED="1618709311792" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare/res_sum" />
     <SUITE FILE_PATH="coverage/nano_compare$tss_curve_plot.coverage" NAME="tss_curve_plot Coverage Results" MODIFIED="1619398660616" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/nano_compare$meth_stats_common.coverage" NAME="meth_stats_common Coverage Results" MODIFIED="1617897927551" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare/meth_stats" />
-    <SUITE FILE_PATH="coverage/nano_compare$test.coverage" NAME="test Coverage Results" MODIFIED="1605919754321" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/nano_compare$benchmarkingDataConstruct.coverage" NAME="benchmarkingDataConstruct Coverage Results" MODIFIED="1618706391309" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare" />
   </component>
 </project>
