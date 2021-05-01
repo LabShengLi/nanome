@@ -31,8 +31,12 @@
   <component name="ChangeListManager">
     <list default="true" id="f4d2fa2b-f69c-4755-aa4b-226cd9e88b96" name="Default Changelist" comment="finish merge to master">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/plot_figure.sh" beforeDir="false" afterPath="$PROJECT_DIR$/src/plot_figure.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NA19240_R_9_4_1.flist.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.singularity.sh" beforeDir="false" afterPath="$PROJECT_DIR$/script/build.singularity.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/create_env.sh" beforeDir="false" afterPath="$PROJECT_DIR$/script/create_env.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/guppy_apl.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/startr.sh" beforeDir="false" afterPath="$PROJECT_DIR$/script/startr.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testsh.sh" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -484,14 +488,8 @@
       <workItem from="1619878527263" duration="5315000" />
       <workItem from="1619889143200" duration="39000" />
       <workItem from="1619889187536" duration="104000" />
-      <workItem from="1619889323773" duration="2008000" />
-    </task>
-    <task id="LOCAL-00214" summary="debug run on cloud">
-      <created>1619145097249</created>
-      <option name="number" value="00214" />
-      <option name="presentableId" value="LOCAL-00214" />
-      <option name="project" value="LOCAL" />
-      <updated>1619145097249</updated>
+      <workItem from="1619889323773" duration="2781000" />
+      <workItem from="1619903876678" duration="354000" />
     </task>
     <task id="LOCAL-00215" summary="Merge remote-tracking branch 'origin/master'">
       <created>1619145739432</created>
@@ -829,7 +827,14 @@
       <option name="project" value="LOCAL" />
       <updated>1619890266329</updated>
     </task>
-    <option name="localTasksCounter" value="263" />
+    <task id="LOCAL-00263" summary="finish merge to master">
+      <created>1619891374814</created>
+      <option name="number" value="00263" />
+      <option name="presentableId" value="LOCAL-00263" />
+      <option name="project" value="LOCAL" />
+      <updated>1619891374814</updated>
+    </task>
+    <option name="localTasksCounter" value="264" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

@@ -1,5 +1,0 @@
-ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR304/ERR3046934/20180413_NA19240_run0.tar.gz
-ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR304/ERR3046935/20180504_NA19240_run_1.tar.gz
-ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR304/ERR3046936/20180504_NA19240_run_2_NF.tar.gz
-ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR304/ERR3046937/20180508_NA19240_run_3.tar.gz
-ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR304/ERR3046938/20180517_NA19240_run_4.tar.gz
