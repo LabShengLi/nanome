@@ -49,10 +49,16 @@ date;hostname;pwd
 
 #rm -rf /fastscratch/liuya/nanocompare/work
 
-## Running E coli for METROPAPER
-./nextflow run main.nf -profile winter \
+## Running guppy on APL
+./nextflow run main.nf -profile winter -resume \
     -work-dir /fastscratch/liuya/nanocompare/work \
-    -config conf/Ecoli_METROPAPER.config -resume
+    --input /projects/li-lab/Nanopore_compare/nanopore_fast5/APL-N50-sept
+
+
+## Running E coli for METROPAPER
+#./nextflow run main.nf -profile winter \
+#    -work-dir /fastscratch/liuya/nanocompare/work \
+#    -config conf/Ecoli_METROPAPER.config -resume
 
 ## Running test data
 #./nextflow run main.nf -profile winter \

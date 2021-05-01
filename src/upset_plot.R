@@ -6,7 +6,7 @@ library(ComplexHeatmap)
 library("optparse")
 
 option_list <- list(
-  make_option(c("-i", "--input"), type = "character", default = "../result/venn-data",
+  make_option(c("-i", "--input"), type = "character", default = "result/venn-data",
               help = "Input dir"),
   make_option(c("-o", "--output"), type = "character", default = getwd(),
               help = "Output dir"),

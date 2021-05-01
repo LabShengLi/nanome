@@ -49,7 +49,7 @@ if [ "${run_methcall}" = true ] ; then
 		meth_arrayjob_ret=$(sbatch --job-name=mgldn.mcal.${analysisPrefix} --ntasks=${processors} --output=${out_param} --error=${err_param} --array=85,87,88 --export=ALL,${exp_param} ${depend_param} nanocompare.methcall.megalodon.sh)
 	else
 		echo "Tool=${Tool} is not support now"
-		exit -1
+		exit 1
 	fi
 
 	# Get the job id as :123_1:123_2, etc.

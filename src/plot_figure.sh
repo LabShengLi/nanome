@@ -8,15 +8,17 @@
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
+# revert master
 set -x
+
 
 pythonFile=plot_figure.py
 
 mkdir -p log
 
 
-## Plot figure 5a
-find /projects/li-lab/Nanopore_compare/result/meth-exp/MethCorr-cut5-tool3 -name "Meth_corr_plot_data_joined-*.csv" -exec python ${pythonFile} fig5a -i {} -o . \;
+### Plot figure 5a
+#find /projects/li-lab/Nanopore_compare/result/meth-exp/MethCorr-cut5-tool3 -name "Meth_corr_plot_data_joined-*.csv" -exec python ${pythonFile} fig5a -i {} -o . \;
 
 
 
@@ -35,3 +37,5 @@ find /projects/li-lab/Nanopore_compare/result/meth-exp/MethCorr-cut5-tool3 -name
 
 # Step 3: Figure 3B Plot curves data
 #find /projects/li-lab/yang/results/2021-04-13/plot-curve-data -name '*.pkl' -exec python plot_figure.py plot-curve-data -i {} \;
+
+find /projects/li-lab/yang/results/2021-04-13/plot-curve-data -name 'MethPerf-NA19240*.pkl' -exec python plot_figure.py plot-curve-data -i {} \;

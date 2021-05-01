@@ -3,8 +3,8 @@
 ### Example user template
 
 # IntelliJ project files
-.idea
-*.iml
+#.idea
+#*.iml
 out
 gen
 src/nanocompare/.DS_Store
@@ -14,3 +14,6 @@ work
 .nextflow*
 nextflow
 .ipynb_checkpoints
+src/nanocompare/meth_stats
+src/nanocompare/methcall
+
