@@ -1,5 +1,6 @@
 """
 Plots all Nanocompare paper out
+
 """
 import argparse
 import glob
