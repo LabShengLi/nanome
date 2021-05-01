@@ -29,10 +29,8 @@
     </select>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f4d2fa2b-f69c-4755-aa4b-226cd9e88b96" name="Default Changelist" comment="finish merge to master">
+    <list default="true" id="f4d2fa2b-f69c-4755-aa4b-226cd9e88b96" name="Default Changelist" comment="ide settings done">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/plot_figure.sh" beforeDir="false" afterPath="$PROJECT_DIR$/src/plot_figure.sh" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -114,7 +112,6 @@
     <property name="ASKED_MARK_IGNORED_FILES_AS_EXCLUDED" value="true" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="TERMINAL_CUSTOM_COMMANDS_GOT_IT" value="true" />
     <property name="WebServerToolWindowFactoryState" value="true" />
     <property name="WebServerToolWindowPanel.toolwindow.highlight.mappings" value="true" />
@@ -129,7 +126,7 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$/src" />
     <property name="nodejs_package_manager_path" value="npm" />
     <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
-    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.R" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="PyConsoleOptionsProvider">
     <option name="myPythonConsoleState">
@@ -147,28 +144,28 @@
       <recent name="$PROJECT_DIR$/src/nanocompare/bedtools" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/plots" />
+      <recent name="$PROJECT_DIR$/script" />
+      <recent name="$PROJECT_DIR$/" />
+      <recent name="$PROJECT_DIR$/src/script" />
       <recent name="$PROJECT_DIR$/model_params" />
-      <recent name="$PROJECT_DIR$/src/nanocompare/legacy" />
-      <recent name="$PROJECT_DIR$/src/nanocompare" />
-      <recent name="$PROJECT_DIR$/src/plotutils4r" />
-      <recent name="$PROJECT_DIR$/src/nanocompare/script" />
     </key>
   </component>
   <component name="RunManager">
-    <configuration name="plot_figure" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="nano-compare" />
+    <configuration name="eval_common" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="nanome" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/nanocompare" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/plot_figure.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/nanocompare/eval_common.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -179,7 +176,7 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.plot_figure" />
+        <item itemvalue="Python.eval_common" />
       </list>
     </recent_temporary>
   </component>
@@ -484,77 +481,9 @@
       <workItem from="1619878527263" duration="5315000" />
       <workItem from="1619889143200" duration="39000" />
       <workItem from="1619889187536" duration="104000" />
-      <workItem from="1619889323773" duration="2008000" />
-    </task>
-    <task id="LOCAL-00214" summary="debug run on cloud">
-      <created>1619145097249</created>
-      <option name="number" value="00214" />
-      <option name="presentableId" value="LOCAL-00214" />
-      <option name="project" value="LOCAL" />
-      <updated>1619145097249</updated>
-    </task>
-    <task id="LOCAL-00215" summary="Merge remote-tracking branch 'origin/master'">
-      <created>1619145739432</created>
-      <option name="number" value="00215" />
-      <option name="presentableId" value="LOCAL-00215" />
-      <option name="project" value="LOCAL" />
-      <updated>1619145739432</updated>
-    </task>
-    <task id="LOCAL-00216" summary="using container">
-      <created>1619149868699</created>
-      <option name="number" value="00216" />
-      <option name="presentableId" value="LOCAL-00216" />
-      <option name="project" value="LOCAL" />
-      <updated>1619149868699</updated>
-    </task>
-    <task id="LOCAL-00217" summary="using container">
-      <created>1619151255395</created>
-      <option name="number" value="00217" />
-      <option name="presentableId" value="LOCAL-00217" />
-      <option name="project" value="LOCAL" />
-      <updated>1619151255395</updated>
-    </task>
-    <task id="LOCAL-00218" summary="using container">
-      <created>1619155026503</created>
-      <option name="number" value="00218" />
-      <option name="presentableId" value="LOCAL-00218" />
-      <option name="project" value="LOCAL" />
-      <updated>1619155026504</updated>
-    </task>
-    <task id="LOCAL-00219" summary="using container">
-      <created>1619179128941</created>
-      <option name="number" value="00219" />
-      <option name="presentableId" value="LOCAL-00219" />
-      <option name="project" value="LOCAL" />
-      <updated>1619179128942</updated>
-    </task>
-    <task id="LOCAL-00220" summary="TSS plot initial done">
-      <created>1619216448900</created>
-      <option name="number" value="00220" />
-      <option name="presentableId" value="LOCAL-00220" />
-      <option name="project" value="LOCAL" />
-      <updated>1619216448900</updated>
-    </task>
-    <task id="LOCAL-00221" summary="remove non-gpu task labels;&#10;export compress outputs">
-      <created>1619224962688</created>
-      <option name="number" value="00221" />
-      <option name="presentableId" value="LOCAL-00221" />
-      <option name="project" value="LOCAL" />
-      <updated>1619224962689</updated>
-    </task>
-    <task id="LOCAL-00222" summary="Rename fig5a for BS-seq name">
-      <created>1619234592514</created>
-      <option name="number" value="00222" />
-      <option name="presentableId" value="LOCAL-00222" />
-      <option name="project" value="LOCAL" />
-      <updated>1619234592514</updated>
-    </task>
-    <task id="LOCAL-00223" summary="support import both tsv and gz input">
-      <created>1619307584540</created>
-      <option name="number" value="00223" />
-      <option name="presentableId" value="LOCAL-00223" />
-      <option name="project" value="LOCAL" />
-      <updated>1619307584540</updated>
+      <workItem from="1619889323773" duration="2781000" />
+      <workItem from="1619903876678" duration="4782000" />
+      <workItem from="1619908874447" duration="729000" />
     </task>
     <task id="LOCAL-00224" summary="integrate convert from BED to BigWig">
       <created>1619314310650</created>
@@ -829,7 +758,77 @@
       <option name="project" value="LOCAL" />
       <updated>1619890266329</updated>
     </task>
-    <option name="localTasksCounter" value="263" />
+    <task id="LOCAL-00263" summary="finish merge to master">
+      <created>1619891374814</created>
+      <option name="number" value="00263" />
+      <option name="presentableId" value="LOCAL-00263" />
+      <option name="project" value="LOCAL" />
+      <updated>1619891374814</updated>
+    </task>
+    <task id="LOCAL-00264" summary="main folder cleanup">
+      <created>1619904382197</created>
+      <option name="number" value="00264" />
+      <option name="presentableId" value="LOCAL-00264" />
+      <option name="project" value="LOCAL" />
+      <updated>1619904382198</updated>
+    </task>
+    <task id="LOCAL-00265" summary="main folder cleanup">
+      <created>1619904501280</created>
+      <option name="number" value="00265" />
+      <option name="presentableId" value="LOCAL-00265" />
+      <option name="project" value="LOCAL" />
+      <updated>1619904501281</updated>
+    </task>
+    <task id="LOCAL-00266" summary="conf cleanup">
+      <created>1619904846181</created>
+      <option name="number" value="00266" />
+      <option name="presentableId" value="LOCAL-00266" />
+      <option name="project" value="LOCAL" />
+      <updated>1619904846181</updated>
+    </task>
+    <task id="LOCAL-00267" summary="utils cleanup">
+      <created>1619905072576</created>
+      <option name="number" value="00267" />
+      <option name="presentableId" value="LOCAL-00267" />
+      <option name="project" value="LOCAL" />
+      <updated>1619905072576</updated>
+    </task>
+    <task id="LOCAL-00268" summary="script and plots cleanup">
+      <created>1619906910605</created>
+      <option name="number" value="00268" />
+      <option name="presentableId" value="LOCAL-00268" />
+      <option name="project" value="LOCAL" />
+      <updated>1619906910605</updated>
+    </task>
+    <task id="LOCAL-00269" summary="script and plots cleanup">
+      <created>1619907047764</created>
+      <option name="number" value="00269" />
+      <option name="presentableId" value="LOCAL-00269" />
+      <option name="project" value="LOCAL" />
+      <updated>1619907047764</updated>
+    </task>
+    <task id="LOCAL-00270" summary="add .idea to .gitignore">
+      <created>1619907210830</created>
+      <option name="number" value="00270" />
+      <option name="presentableId" value="LOCAL-00270" />
+      <option name="project" value="LOCAL" />
+      <updated>1619907210830</updated>
+    </task>
+    <task id="LOCAL-00271" summary="ide settings done">
+      <created>1619909038667</created>
+      <option name="number" value="00271" />
+      <option name="presentableId" value="LOCAL-00271" />
+      <option name="project" value="LOCAL" />
+      <updated>1619909038667</updated>
+    </task>
+    <task id="LOCAL-00272" summary="ide settings done">
+      <created>1619909526119</created>
+      <option name="number" value="00272" />
+      <option name="presentableId" value="LOCAL-00272" />
+      <option name="project" value="LOCAL" />
+      <updated>1619909526119</updated>
+    </task>
+    <option name="localTasksCounter" value="273" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -890,12 +889,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="add NA19240 file list for Nextflow input" />
-    <MESSAGE value="NA19240 channel test ok" />
-    <MESSAGE value="TSS plot finished" />
-    <MESSAGE value="Add CpG shore and shelf for plotting" />
-    <MESSAGE value="Upset plot initial ok" />
-    <MESSAGE value="concordant and discordant BED file include meth_states and coverage info" />
     <MESSAGE value="update upsetplot and TSS, CTCF plot" />
     <MESSAGE value="add support for ecoli data" />
     <MESSAGE value="try to solve // problem for Basecall" />
@@ -915,7 +908,13 @@
     <MESSAGE value="version for submission paper" />
     <MESSAGE value="try markersize for ROC AUC" />
     <MESSAGE value="finish merge to master" />
-    <option name="LAST_COMMIT_MESSAGE" value="finish merge to master" />
+    <MESSAGE value="main folder cleanup" />
+    <MESSAGE value="conf cleanup" />
+    <MESSAGE value="utils cleanup" />
+    <MESSAGE value="script and plots cleanup" />
+    <MESSAGE value="add .idea to .gitignore" />
+    <MESSAGE value="ide settings done" />
+    <option name="LAST_COMMIT_MESSAGE" value="ide settings done" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -932,17 +931,17 @@
           <option name="timeStamp" value="9" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/nanocompare/res_sum/resource_summary.py</url>
+          <url>file://$PROJECT_DIR$/src/nanocompare/resource/resource_summary.py</url>
           <line>481</line>
           <option name="timeStamp" value="13" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/nanocompare/res_sum/resource_summary.py</url>
+          <url>file://$PROJECT_DIR$/src/nanocompare/resource/resource_summary.py</url>
           <line>482</line>
           <option name="timeStamp" value="14" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/nanocompare/res_sum/resource_summary.py</url>
+          <url>file://$PROJECT_DIR$/src/nanocompare/resource/resource_summary.py</url>
           <line>490</line>
           <option name="timeStamp" value="15" />
         </line-breakpoint>
@@ -957,7 +956,7 @@
           <option name="timeStamp" value="18" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/nanocompare/res_sum/resource_summary.py</url>
+          <url>file://$PROJECT_DIR$/src/nanocompare/resource/resource_summary.py</url>
           <line>591</line>
           <option name="timeStamp" value="23" />
         </line-breakpoint>
@@ -974,7 +973,7 @@
           <option name="timeStamp" value="27" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/nanocompare/res_sum/resource_summary.py</url>
+          <url>file://$PROJECT_DIR$/src/nanocompare/resource/resource_summary.py</url>
           <line>598</line>
           <option name="timeStamp" value="28" />
         </line-breakpoint>
@@ -989,32 +988,12 @@
           <option name="timeStamp" value="30" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/tss_curve_plot_deprecated.py</url>
-          <line>918</line>
-          <option name="timeStamp" value="31" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/tss_curve_plot_deprecated.py</url>
-          <line>962</line>
-          <option name="timeStamp" value="32" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/tss_curve_plot_deprecated.py</url>
-          <line>957</line>
-          <option name="timeStamp" value="33" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/tss_curve_plot_deprecated.py</url>
-          <line>667</line>
-          <option name="timeStamp" value="34" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$USER_HOME$/Library/Caches/JetBrains/PyCharm2021.1/remote_sources/647764419/-226307031/deeptools/heatmapper_utilities.py</url>
           <line>65</line>
           <option name="timeStamp" value="35" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="the-r-line">
-          <url>file://$PROJECT_DIR$/src/tss_plot.R</url>
+          <url>file://$PROJECT_DIR$/plots/tss_plot.R</url>
           <line>81</line>
           <option name="timeStamp" value="38" />
         </line-breakpoint>
@@ -1031,17 +1010,18 @@
     </watches-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/nano_compare$computeRawReadsCoverage.coverage" NAME="computeRawReadsCoverage Coverage Results" MODIFIED="1617631483368" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare/bedtools" />
     <SUITE FILE_PATH="coverage/nano_compare$meth_stats_tool.coverage" NAME="meth_stats_tool Coverage Results" MODIFIED="1610054450625" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare/meth_stats" />
     <SUITE FILE_PATH="coverage/nano_compare$plot_figure.coverage" NAME="plot_figure Coverage Results" MODIFIED="1619115319017" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
-    <SUITE FILE_PATH="coverage/nanome$plot_figure.coverage" NAME="plot_figure Coverage Results" MODIFIED="1619786607916" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/nano_compare$test_multiprocs.coverage" NAME="test_multiprocs Coverage Results" MODIFIED="1617296913593" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/nano_compare$test.coverage" NAME="test Coverage Results" MODIFIED="1605919754321" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/nano_compare$benchmarkingDataConstruct.coverage" NAME="benchmarkingDataConstruct Coverage Results" MODIFIED="1618706391309" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare" />
+    <SUITE FILE_PATH="coverage/nano_compare$computeRawReadsCoverage.coverage" NAME="computeRawReadsCoverage Coverage Results" MODIFIED="1617631483368" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare/bedtools" />
+    <SUITE FILE_PATH="coverage/nanome$eval_common.coverage" NAME="eval_common Coverage Results" MODIFIED="1619909005649" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare" />
+    <SUITE FILE_PATH="coverage/nanome$plot_figure.coverage" NAME="plot_figure Coverage Results" MODIFIED="1619786607916" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/nano_compare$test_script.coverage" NAME="test_script Coverage Results" MODIFIED="1617402916437" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare" />
     <SUITE FILE_PATH="coverage/nano_compare$density_plot.coverage" NAME="density_plot Coverage Results" MODIFIED="1606338917598" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare/bedtools" />
     <SUITE FILE_PATH="coverage/nano_compare$resource_summary.coverage" NAME="resource_summary Coverage Results" MODIFIED="1618709311792" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare/res_sum" />
     <SUITE FILE_PATH="coverage/nano_compare$tss_curve_plot.coverage" NAME="tss_curve_plot Coverage Results" MODIFIED="1619398660616" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/nano_compare$meth_stats_common.coverage" NAME="meth_stats_common Coverage Results" MODIFIED="1617897927551" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare/meth_stats" />
-    <SUITE FILE_PATH="coverage/nano_compare$test.coverage" NAME="test Coverage Results" MODIFIED="1605919754321" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/nano_compare$benchmarkingDataConstruct.coverage" NAME="benchmarkingDataConstruct Coverage Results" MODIFIED="1618706391309" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nanocompare" />
   </component>
 </project>
