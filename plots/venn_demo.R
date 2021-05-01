@@ -4,9 +4,9 @@ library(here)
 library(eulerr)
 
 
-source(here('src', 'rplot_func', 'paper_utils.R'))
+source(here('../src', 'rplot_func', 'paper_utils.R'))
 
-outdir = here('figures')
+outdir = here('../figures')
 
 
 fit1 <- euler(c("Day 1" = 69, "Day 2" = 109, "Day 3" = 152,
@@ -28,7 +28,7 @@ plot(fit1,
 
 # Venn diagram plot
 for (fn in venn_flist) {
-  infn = here('result', fn)
+  infn = here('../result', fn)
   dt <- read.table(infn)
 
   base_infn = basename(infn)

@@ -29,22 +29,81 @@
     </select>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f4d2fa2b-f69c-4755-aa4b-226cd9e88b96" name="Default Changelist" comment="conf cleanup">
-      <change beforePath="$PROJECT_DIR$/main.nf" beforeDir="false" afterPath="$PROJECT_DIR$/main.nf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_params/FilesSeparatorNew.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/FilesSeparatorNew.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_params/Tombo_extract_per_read_stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/Tombo_extract_per_read_stats.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_params/hg38.chrom.sizes" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_params/hm_cluster_predict.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/hm_cluster_predict.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_params/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25.data-00000-of-00001" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_params/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25.index" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_params/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_params/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/checkpoint" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_params/nanopore_nanopolish_preindexing_checkDups.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/nanopore_nanopolish_preindexing_checkDups.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_params/rnn_conmodC_P100wd21_f7ne1u0_4/checkpoint" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_params/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0.data-00000-of-00001" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_params/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0.index" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_params/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_params/sum_chr_mod.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/sum_chr_mod.py" afterDir="false" />
+    <list default="true" id="f4d2fa2b-f69c-4755-aa4b-226cd9e88b96" name="Default Changelist" comment="utils cleanup">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/script/create_env.sh" beforeDir="false" afterPath="$PROJECT_DIR$/script/create_env.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/HeamapUpset.R" beforeDir="false" afterPath="$PROJECT_DIR$/plots/HeamapUpset.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Rplots.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bed_to_wig.sh" beforeDir="false" afterPath="$PROJECT_DIR$/plots/bed_to_wig.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/deeptools_CTCF_plot.sh" beforeDir="false" afterPath="$PROJECT_DIR$/plots/deeptools_CTCF_plot.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/deeptools_CTCF_plot_submit.sh" beforeDir="false" afterPath="$PROJECT_DIR$/plots/deeptools_CTCF_plot_submit.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/deeptools_tss_plot.sh" beforeDir="false" afterPath="$PROJECT_DIR$/plots/deeptools_tss_plot.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/deeptools_tss_plot_submit.sh" beforeDir="false" afterPath="$PROJECT_DIR$/plots/deeptools_tss_plot_submit.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bedtools/Makefile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bedtools/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bedtools/closest_bedtools.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bedtools/density_plot.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bedtools/density_plot.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bedtools/install-methykit.R" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bedtools/install-methykit.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bedtools/methykit-plot.R" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bedtools/methykit-plot.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bedtools/pipe-density-plot.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bgtruth/BS_Seq_Pipeline.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bgtruth/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bgtruth/bismark_methylation_extractor.help.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bgtruth/configFile-HL60.tsv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bgtruth/configFile-NA19240.tsv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bgtruth/pipeline-hl60.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/bgtruth/pipeline-na19240.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/legacy/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/legacy/box_plot.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/legacy/collect_data.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/legacy/cor_plot.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/legacy/join_tombo_results.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/legacy/load_data.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/legacy/performance_plots.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/legacy/running_time_plots.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/legacy/scatter_plots_generation.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/legacy/universalMethStatsEvaluation.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/Makefile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/Tombo_extract_per_read_stats.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/deepmod_sum_chr_mod.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/jobarray-test.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/nanocompare.basecall.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/nanocompare.clean.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/nanocompare.combine.results.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/nanocompare.methcall.deepmod.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/nanocompare.methcall.deepsignal.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/nanocompare.methcall.guppy.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/nanocompare.methcall.megalodon.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/nanocompare.methcall.nanopolish.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/nanocompare.methcall.tombo.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/nanocompare.pipeline.eachtool.submit.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/nanocompare.pipeline.submit.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/nanocompare.preprocessing.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/nanocompare.resquiggle.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/rmscript.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/test-script.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/methcall/test-script2.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/nanopolish/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/nanopolish/calculate_methylation_frequency.NA19240.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/nanopolish/calculate_methylation_frequency.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/nanopolish/calculate_methylation_frequency.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nanocompare/nanopolish/read_utils.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/plot_figure.sh" beforeDir="false" afterPath="$PROJECT_DIR$/src/plot_figure.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/plotutils4r/.Rhistory" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/plotutils4r/na19240.euler.plot.test.R" beforeDir="false" afterPath="$PROJECT_DIR$/plots/na19240.euler.plot.test.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/plotutils4r/paper_utils.R" beforeDir="false" afterPath="$PROJECT_DIR$/plots/paper_utils.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/plotutils4r/venn_demo.R" beforeDir="false" afterPath="$PROJECT_DIR$/plots/venn_demo.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tss_analysis_submit.sh" beforeDir="false" afterPath="$PROJECT_DIR$/src/tss_sites_analysis_submit.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tss_curve_plot_deprecated.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tss_plot.R" beforeDir="false" afterPath="$PROJECT_DIR$/plots/tss_plot.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tss_plot_submit.sh" beforeDir="false" afterPath="$PROJECT_DIR$/plots/tss_plot_submit.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/upset_plot.R" beforeDir="false" afterPath="$PROJECT_DIR$/plots/upset_plot.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/upset_plot_submit.sh" beforeDir="false" afterPath="$PROJECT_DIR$/plots/upset_plot_submit.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils.common.sh" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -126,7 +185,6 @@
     <property name="ASKED_MARK_IGNORED_FILES_AS_EXCLUDED" value="true" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="TERMINAL_CUSTOM_COMMANDS_GOT_IT" value="true" />
     <property name="WebServerToolWindowFactoryState" value="true" />
     <property name="WebServerToolWindowPanel.toolwindow.highlight.mappings" value="true" />
@@ -141,7 +199,7 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$/src" />
     <property name="nodejs_package_manager_path" value="npm" />
     <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
-    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.R" />
+    <property name="settings.editor.selected.configurable" value="ssh.settings" />
   </component>
   <component name="PyConsoleOptionsProvider">
     <option name="myPythonConsoleState">
@@ -159,11 +217,11 @@
       <recent name="$PROJECT_DIR$/src/nanocompare/bedtools" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/plots" />
+      <recent name="$PROJECT_DIR$/script" />
       <recent name="$PROJECT_DIR$/" />
       <recent name="$PROJECT_DIR$/src/script" />
       <recent name="$PROJECT_DIR$/model_params" />
-      <recent name="$PROJECT_DIR$/src/nanocompare/legacy" />
-      <recent name="$PROJECT_DIR$/src/nanocompare" />
     </key>
   </component>
   <component name="RunManager">
@@ -497,14 +555,7 @@
       <workItem from="1619889143200" duration="39000" />
       <workItem from="1619889187536" duration="104000" />
       <workItem from="1619889323773" duration="2781000" />
-      <workItem from="1619903876678" duration="1141000" />
-    </task>
-    <task id="LOCAL-00218" summary="using container">
-      <created>1619155026503</created>
-      <option name="number" value="00218" />
-      <option name="presentableId" value="LOCAL-00218" />
-      <option name="project" value="LOCAL" />
-      <updated>1619155026504</updated>
+      <workItem from="1619903876678" duration="2815000" />
     </task>
     <task id="LOCAL-00219" summary="using container">
       <created>1619179128941</created>
@@ -842,7 +893,14 @@
       <option name="project" value="LOCAL" />
       <updated>1619904846181</updated>
     </task>
-    <option name="localTasksCounter" value="267" />
+    <task id="LOCAL-00267" summary="utils cleanup">
+      <created>1619905072576</created>
+      <option name="number" value="00267" />
+      <option name="presentableId" value="LOCAL-00267" />
+      <option name="project" value="LOCAL" />
+      <updated>1619905072576</updated>
+    </task>
+    <option name="localTasksCounter" value="268" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -903,7 +961,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="TSS plot finished" />
     <MESSAGE value="Add CpG shore and shelf for plotting" />
     <MESSAGE value="Upset plot initial ok" />
     <MESSAGE value="concordant and discordant BED file include meth_states and coverage info" />
@@ -928,7 +985,8 @@
     <MESSAGE value="finish merge to master" />
     <MESSAGE value="main folder cleanup" />
     <MESSAGE value="conf cleanup" />
-    <option name="LAST_COMMIT_MESSAGE" value="conf cleanup" />
+    <MESSAGE value="utils cleanup" />
+    <option name="LAST_COMMIT_MESSAGE" value="utils cleanup" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1002,32 +1060,12 @@
           <option name="timeStamp" value="30" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/tss_curve_plot_deprecated.py</url>
-          <line>918</line>
-          <option name="timeStamp" value="31" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/tss_curve_plot_deprecated.py</url>
-          <line>962</line>
-          <option name="timeStamp" value="32" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/tss_curve_plot_deprecated.py</url>
-          <line>957</line>
-          <option name="timeStamp" value="33" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/tss_curve_plot_deprecated.py</url>
-          <line>667</line>
-          <option name="timeStamp" value="34" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$USER_HOME$/Library/Caches/JetBrains/PyCharm2021.1/remote_sources/647764419/-226307031/deeptools/heatmapper_utilities.py</url>
           <line>65</line>
           <option name="timeStamp" value="35" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="the-r-line">
-          <url>file://$PROJECT_DIR$/src/tss_plot.R</url>
+          <url>file://$PROJECT_DIR$/plots/tss_plot.R</url>
           <line>81</line>
           <option name="timeStamp" value="38" />
         </line-breakpoint>

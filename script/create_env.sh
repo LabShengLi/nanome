@@ -11,7 +11,7 @@
 #SBATCH -e log/%x.%j.err # STDERR
 
 #conda create -n nanocompare python=3.6.8
-
+###
 #conda activate nanocompare
 
 #conda info --envs

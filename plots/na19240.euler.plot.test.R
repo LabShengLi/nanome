@@ -3,7 +3,7 @@ rm(list = ls())
 library(here)
 library(eulerr)
 
-source(here('src', 'plotutils4r', 'paper_utils.R'))
+source(here('../src', 'plotutils4r', 'paper_utils.R'))
 # a-DeepSignal b-Nanopolish c-Megalodon
 center.red = 1
 reduce = 1
@@ -77,6 +77,6 @@ p1 <- plot(fit1,
 
 p1
 
-out_dir = here('figures', 'venn-plot')
+out_dir = here('../figures', 'venn-plot')
 outfn = sprintf("%s/euller.plot.na19240.new.jpg", out_dir)
 ggsave(p1, file = outfn, dpi = 600, width = 2, height = 2)

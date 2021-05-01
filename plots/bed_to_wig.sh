@@ -8,6 +8,7 @@
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
+
 #### Convert bed file into bigwig file format
 set -x
 

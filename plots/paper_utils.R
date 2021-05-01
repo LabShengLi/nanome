@@ -6,8 +6,8 @@ library(tidyverse)
 library(here)
 library(ggpubr)
 
-infn.perf = here('result', 'performance-results.csv')
-infn.corr = here('result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
+infn.perf = here('../result', 'performance-results.csv')
+infn.corr = here('../result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
 
 locations.Singletons = c("Genome-wide", "Singletons", "Non-singletons", "Concordant", "Discordant")
 locations.Regions = c("Promoters", "Exons", "Introns", "Intergenic", "CpG island", "CpG shore", "CpG shelf")
@@ -58,7 +58,7 @@ export.table.s3.xlsx <- function() {
     
     library(readxl)
     library(tidyverse)
-    out_dir = here('figures')
+    out_dir = here('../figures')
     df <- read_csv(infn.perf)
     
     selected.columns = c('referenceCpGs', 'mCsites', 'Csites')
@@ -71,7 +71,7 @@ export.table.s3.xlsx <- function() {
       select(seq(2, 10), selected.columns) %>%
       drop_na()
     
-    outfn = here("figures", "Table.S3.csv")
+    outfn = here("../figures", "Table.S3.csv")
     write_csv(outdf, outfn)
     print(sprintf("save to %s", outfn))
     
@@ -96,7 +96,7 @@ export.table.s4.xlsx <- function() {
       drop_na() %>%
       select(2:ncol(df))
     
-    outfn = here("figures", "Table.S4.csv")
+    outfn = here("../figures", "Table.S4.csv")
     write_csv(outdf, outfn)
 }
 
@@ -385,14 +385,14 @@ fig.5cd.euller.plot.set3 <- function(ret, outfn) {
 
 
 fig.6a.bar.plot.tools.sites.all.datasets <- function() {
-    data_dir = here('result')
-    out_dir = here('figures', 'bar-plot')
+    data_dir = here('../result')
+    out_dir = here('../figures', 'bar-plot')
     dir.create(out_dir, showWarnings = FALSE)
     pattern.str = '*-summary-bgtruth-tools-bsCov5-minCov3.csv'
     
     totaldt = tibble()
     for (fn in list.files(data_dir, pattern = pattern.str)) {
-        infn = here('result', fn)
+        infn = here('../result', fn)
         basename_infn = basename(infn)
         
         pos = str_locate(basename_infn, "_")[1]
@@ -456,14 +456,14 @@ fig.6a.bar.plot.tools.sites.all.datasets <- function() {
 
 
 fig.6.running.resource.bar.plot <- function() {
-    outdir = here('figures')
-    infn1 = here('result', 'recalculate.running.summary.csv')
+    outdir = here('../figures')
+    infn1 = here('../result', 'recalculate.running.summary.csv')
     run.table1 <- read_csv(infn1)
     
-    infn2 = here('result', 'recalculate.running.summary.Megalodon.csv')
+    infn2 = here('../result', 'recalculate.running.summary.Megalodon.csv')
     run.table2 <- read_csv(infn2)
     
-    infn3 = here('result', 'recalculate.running.summary.na19240.csv')
+    infn3 = here('../result', 'recalculate.running.summary.na19240.csv')
     run.table3 <- read_csv(infn3)
     
     run.table = bind_rows(run.table1, run.table2, run.table3)
@@ -480,7 +480,7 @@ fig.6.running.resource.bar.plot <- function() {
       drop_na(tool) %>%
       arrange(dsname, tool)
     
-    outfn = here('result', 'total.runnning.summary.csv')
+    outfn = here('../result', 'total.runnning.summary.csv')
     write_csv(run.table, outfn)
     
     g1 <- run.table %>%
@@ -527,8 +527,8 @@ fig.7b1.running.resource.bar.plot <- function() {
     library(readxl)
     library(tidyverse)
     
-    outdir = here('figures')
-    infn = here('result', 'running.logs.total.resource.usage.five.tools.xlsx')
+    outdir = here('../figures')
+    infn = here('../result', 'running.logs.total.resource.usage.five.tools.xlsx')
     run.table <- read_excel(infn)
     
     outdf <- run.table %>%
@@ -538,7 +538,7 @@ fig.7b1.running.resource.bar.plot <- function() {
       ) %>%
       arrange(dsname, `Job Wall-clock Time`)
     
-    outfn = here('figures', 'table.s6.total.runnning.summary.new.sorted.csv')
+    outfn = here('../figures', 'table.s6.total.runnning.summary.new.sorted.csv')
     write_csv(outdf, outfn)
     
     colnames(outdf) = c('dsname', 'tool', 'cpu.time', 'wall.time', 'mem.usage')
@@ -590,8 +590,8 @@ fig.7b2.running.resource.bar.plot <- function() {
     library(readxl)
     library(tidyverse)
     
-    outdir = here('figures')
-    infn = here('result', 'benchmarking.log.formated.table.step2.all.tools.csv')
+    outdir = here('../figures')
+    infn = here('../result', 'benchmarking.log.formated.table.step2.all.tools.csv')
     df <- read_csv(infn)
     
     outdf <- df %>%
@@ -647,7 +647,7 @@ fig.7b2.running.resource.bar.plot <- function() {
 fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
     library(readxl)
     library(tidyverse)
-    out_dir = here('figures', 'bar-plot')
+    out_dir = here('../figures', 'bar-plot')
     #infn = here('result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
     df = read_excel(infn.corr)
     
@@ -698,7 +698,7 @@ fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
 fig.s1.pie.plot.singletons.nonsingletons.raw.fast5 <- function() {
     library(readxl)
     library(tidyverse)
-    infn = here('result', 'raw.fast5.reads.cpg.coverage.across.regions.cutoff3.xlsx')
+    infn = here('../result', 'raw.fast5.reads.cpg.coverage.across.regions.cutoff3.xlsx')
     df = read_excel(infn)
     
     meltdf = df[, c(2, 6, 7)]
@@ -756,7 +756,7 @@ fig.s1.pie.plot.singletons.nonsingletons.raw.fast5 <- function() {
       scale_fill_brewer(palette = "Dark2")
     
     p1
-    out_dir = here('figures')
+    out_dir = here('../figures')
     outfn = sprintf("%s/pie.chart.singleton.nonsingleton.raw.fast5.read.cov3.jpg", out_dir)
     ggsave(p1, filename = outfn, width = 3, height = 4, dpi = 600)
     printf("save to %s\n", outfn)
@@ -768,10 +768,10 @@ pie.plot.supf1 <- function() {
     library(RColorBrewer)
     myPalette <- brewer.pal(5, "Set1")
     
-    piedatafn = here('result', 'dataset.singleton.vs.non-singleton.csv')
+    piedatafn = here('../result', 'dataset.singleton.vs.non-singleton.csv')
     piedata <- read.csv(file = piedatafn)
     
-    out_dir = here('figures', 'pie-plot')
+    out_dir = here('../figures', 'pie-plot')
     dir.create(out_dir, showWarnings = FALSE)
     
     for (i in 1:nrow(piedata)) {
