@@ -98,6 +98,10 @@ process GetOnlineFast5{
 	"""
 	set -x
 
+	mv ${x} M_${x}_dir
+
+	exit 0
+
 	mkdir -p untar_${x}
 
 	##tar -xf ${x} -C untar_${x}

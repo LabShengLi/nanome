@@ -260,7 +260,8 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname"):
         yscore = ret[f'{toolname}_score']
 
         # logger.debug(f'ytrue={len(ytrue)}, ypred={len(ypred)}, yscore={len(yscore)}')
-        fpr, tpr, threshold = metrics.roc_curve(ytrue, yscore)
+        # TODO: plot points in curves
+        fpr, tpr, threshold = metrics.roc_curve(ytrue, yscore, drop_intermediate=False)
         roc_auc = metrics.auc(fpr, tpr)
         plt.plot(fpr, tpr, toolcolor, label=f'{toolname}={roc_auc:.2f}')
     plt.legend(loc='lower right')
