@@ -3,8 +3,8 @@
 
 log.info """\
 	NANOME - NF PIPELINE (v1.0)
-	by The Jackon Laboratory
-	Sheng Li Lab http://nanome.jax.org
+	by Li Lab at The Jackon Laboratory
+	http://nanome.jax.org
 	=================================
 	dsname              :${params.dsname}
 	input               :${params.input}
