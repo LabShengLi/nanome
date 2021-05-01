@@ -243,7 +243,7 @@ process Preprocess {
     echo "### Untar input done. ###"
 
     mkdir -p sept_dir
-    python ${workflow.projectDir}/model_params/FilesSeparatorNew.py untar_dir ${params.ntask} sept_dir
+    python ${workflow.projectDir}/utils/FilesSeparatorNew.py untar_dir ${params.ntask} sept_dir
     echo "### Seperation fast5 files done. ###"
     """
 }
@@ -444,7 +444,7 @@ process Tombo {
 		--processes ${params.processors} \
 		--corrected-group ${params.correctedGroup}
 
-	python ${workflow.projectDir}/model_params/Tombo_extract_per_read_stats.py ${params.chromSizesFile} \
+	python ${workflow.projectDir}/utils/Tombo_extract_per_read_stats.py ${params.chromSizesFile} \
 				"${params.dsname}.batch_\${x}.CpG.tombo.per_read_stats" \
 				"${params.dsname}.batch_\${x}.CpG.tombo.per_read_stats.bed"
     """
@@ -613,7 +613,7 @@ process Nanopolish {
 		# echo "cat \$f >> \$fastqFile - COMPLETED"
 	done
 
-	python ${workflow.projectDir}/model_params/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
+	python ${workflow.projectDir}/utils/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
 
 	# Index the raw read with fastq
 	nanopolish index -d \${x}/workspace \${fastqNoDupFile}
@@ -787,11 +787,11 @@ process DpmodCombine {
         cp -rf \$dx/* indir/\$dx
     done
 
-    python ${workflow.projectDir}/model_params/sum_chr_mod.py \
+    python ${workflow.projectDir}/utils/sum_chr_mod.py \
         indir/ C ${params.dsname}.deepmod ${params.DeepModSumChrSet}
 
 	## Only apply to human genome
-	python ${workflow.projectDir}/model_params/hm_cluster_predict.py \
+	python ${workflow.projectDir}/utils/hm_cluster_predict.py \
 		indir/${params.dsname}.deepmod \
 		\${DeepMod_Cluster_CDir} \
 		${deepmod_project_dir}/train_deepmod/${params.clusterDeepModModel}  || true
