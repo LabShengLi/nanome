@@ -38,4 +38,5 @@ mkdir -p log
 # Step 3: Figure 3B Plot curves data
 #find /projects/li-lab/yang/results/2021-04-13/plot-curve-data -name '*.pkl' -exec python plot_figure.py plot-curve-data -i {} \;
 
+## Plot figure
 find /projects/li-lab/yang/results/2021-04-13/plot-curve-data -name 'MethPerf-NA19240*.pkl' -exec python plot_figure.py plot-curve-data -i {} \;
