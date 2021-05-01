@@ -483,14 +483,7 @@
       <workItem from="1619889187536" duration="104000" />
       <workItem from="1619889323773" duration="2781000" />
       <workItem from="1619903876678" duration="4782000" />
-      <workItem from="1619908874447" duration="620000" />
-    </task>
-    <task id="LOCAL-00223" summary="support import both tsv and gz input">
-      <created>1619307584540</created>
-      <option name="number" value="00223" />
-      <option name="presentableId" value="LOCAL-00223" />
-      <option name="project" value="LOCAL" />
-      <updated>1619307584540</updated>
+      <workItem from="1619908874447" duration="729000" />
     </task>
     <task id="LOCAL-00224" summary="integrate convert from BED to BigWig">
       <created>1619314310650</created>
@@ -828,7 +821,14 @@
       <option name="project" value="LOCAL" />
       <updated>1619909038667</updated>
     </task>
-    <option name="localTasksCounter" value="272" />
+    <task id="LOCAL-00272" summary="ide settings done">
+      <created>1619909526119</created>
+      <option name="number" value="00272" />
+      <option name="presentableId" value="LOCAL-00272" />
+      <option name="project" value="LOCAL" />
+      <updated>1619909526119</updated>
+    </task>
+    <option name="localTasksCounter" value="273" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
