@@ -1,6 +1,5 @@
 """
-Plots all Nanocompare paper out
-
+Plots and export data for nanome paper
 """
 import argparse
 import glob
