@@ -3,8 +3,8 @@
 ### Example user template
 
 # IntelliJ project files
-.idea
-*.iml
+#.idea
+#*.iml
 out
 gen
 src/nanocompare/.DS_Store
