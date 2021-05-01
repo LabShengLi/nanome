@@ -32,7 +32,6 @@
     <list default="true" id="f4d2fa2b-f69c-4755-aa4b-226cd9e88b96" name="Default Changelist" comment="ide settings done">
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.nf" beforeDir="false" afterPath="$PROJECT_DIR$/main.nf" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -457,20 +456,6 @@
       <workItem from="1619903876678" duration="4782000" />
       <workItem from="1619908874447" duration="729000" />
     </task>
-    <task id="LOCAL-00226" summary="add NA19240 file list for Nextflow input">
-      <created>1619321144095</created>
-      <option name="number" value="00226" />
-      <option name="presentableId" value="LOCAL-00226" />
-      <option name="project" value="LOCAL" />
-      <updated>1619321144096</updated>
-    </task>
-    <task id="LOCAL-00227" summary="NA19240 channel test ok">
-      <created>1619324286108</created>
-      <option name="number" value="00227" />
-      <option name="presentableId" value="LOCAL-00227" />
-      <option name="project" value="LOCAL" />
-      <updated>1619324286109</updated>
-    </task>
     <task id="LOCAL-00228" summary="NA19240 channel test ok">
       <created>1619355777515</created>
       <option name="number" value="00228" />
@@ -800,7 +785,21 @@
       <option name="project" value="LOCAL" />
       <updated>1619910768548</updated>
     </task>
-    <option name="localTasksCounter" value="275" />
+    <task id="LOCAL-00275" summary="ide settings done">
+      <created>1619911110988</created>
+      <option name="number" value="00275" />
+      <option name="presentableId" value="LOCAL-00275" />
+      <option name="project" value="LOCAL" />
+      <updated>1619911110988</updated>
+    </task>
+    <task id="LOCAL-00276" summary="ide settings done">
+      <created>1619911122305</created>
+      <option name="number" value="00276" />
+      <option name="presentableId" value="LOCAL-00276" />
+      <option name="project" value="LOCAL" />
+      <updated>1619911122305</updated>
+    </task>
+    <option name="localTasksCounter" value="277" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
