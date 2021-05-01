@@ -30,8 +30,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f4d2fa2b-f69c-4755-aa4b-226cd9e88b96" name="Default Changelist" comment="main folder cleanup">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/conf/Ecoli_METROPAPER.config" beforeDir="false" afterPath="$PROJECT_DIR$/conf/Ecoli_METROPAPER.config" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/conf/benchmarking.config" beforeDir="false" afterPath="$PROJECT_DIR$/conf/benchmarking.config" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/conf/hpc.config" beforeDir="false" afterPath="$PROJECT_DIR$/conf/hpc.config" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -484,14 +486,7 @@
       <workItem from="1619889143200" duration="39000" />
       <workItem from="1619889187536" duration="104000" />
       <workItem from="1619889323773" duration="2781000" />
-      <workItem from="1619903876678" duration="522000" />
-    </task>
-    <task id="LOCAL-00216" summary="using container">
-      <created>1619149868699</created>
-      <option name="number" value="00216" />
-      <option name="presentableId" value="LOCAL-00216" />
-      <option name="project" value="LOCAL" />
-      <updated>1619149868699</updated>
+      <workItem from="1619903876678" duration="858000" />
     </task>
     <task id="LOCAL-00217" summary="using container">
       <created>1619151255395</created>
@@ -829,7 +824,14 @@
       <option name="project" value="LOCAL" />
       <updated>1619904382198</updated>
     </task>
-    <option name="localTasksCounter" value="265" />
+    <task id="LOCAL-00265" summary="main folder cleanup">
+      <created>1619904501280</created>
+      <option name="number" value="00265" />
+      <option name="presentableId" value="LOCAL-00265" />
+      <option name="project" value="LOCAL" />
+      <updated>1619904501281</updated>
+    </task>
+    <option name="localTasksCounter" value="266" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
