@@ -16,5 +16,4 @@ nextflow
 .ipynb_checkpoints
 src/nanocompare/meth_stats
 src/nanocompare/methcall
-
 /script/
