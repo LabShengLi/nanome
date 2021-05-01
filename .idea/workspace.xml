@@ -29,11 +29,22 @@
     </select>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f4d2fa2b-f69c-4755-aa4b-226cd9e88b96" name="Default Changelist" comment="main folder cleanup">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/conf/Ecoli_METROPAPER.config" beforeDir="false" afterPath="$PROJECT_DIR$/conf/Ecoli_METROPAPER.config" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/conf/benchmarking.config" beforeDir="false" afterPath="$PROJECT_DIR$/conf/benchmarking.config" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/conf/hpc.config" beforeDir="false" afterPath="$PROJECT_DIR$/conf/hpc.config" afterDir="false" />
+    <list default="true" id="f4d2fa2b-f69c-4755-aa4b-226cd9e88b96" name="Default Changelist" comment="conf cleanup">
+      <change beforePath="$PROJECT_DIR$/main.nf" beforeDir="false" afterPath="$PROJECT_DIR$/main.nf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_params/FilesSeparatorNew.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/FilesSeparatorNew.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_params/Tombo_extract_per_read_stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/Tombo_extract_per_read_stats.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_params/hg38.chrom.sizes" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_params/hm_cluster_predict.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/hm_cluster_predict.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_params/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25.data-00000-of-00001" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_params/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25.index" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_params/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/Cg.cov5.nb25.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_params/na12878_cluster_train_mod-keep_prob0.7-nb25-chr1/checkpoint" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_params/nanopore_nanopolish_preindexing_checkDups.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/nanopore_nanopolish_preindexing_checkDups.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_params/rnn_conmodC_P100wd21_f7ne1u0_4/checkpoint" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_params/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0.data-00000-of-00001" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_params/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0.index" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_params/rnn_conmodC_P100wd21_f7ne1u0_4/mod_train_conmodC_P100wd21_f3ne1u0.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_params/sum_chr_mod.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/sum_chr_mod.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -486,14 +497,7 @@
       <workItem from="1619889143200" duration="39000" />
       <workItem from="1619889187536" duration="104000" />
       <workItem from="1619889323773" duration="2781000" />
-      <workItem from="1619903876678" duration="858000" />
-    </task>
-    <task id="LOCAL-00217" summary="using container">
-      <created>1619151255395</created>
-      <option name="number" value="00217" />
-      <option name="presentableId" value="LOCAL-00217" />
-      <option name="project" value="LOCAL" />
-      <updated>1619151255395</updated>
+      <workItem from="1619903876678" duration="1141000" />
     </task>
     <task id="LOCAL-00218" summary="using container">
       <created>1619155026503</created>
@@ -831,7 +835,14 @@
       <option name="project" value="LOCAL" />
       <updated>1619904501281</updated>
     </task>
-    <option name="localTasksCounter" value="266" />
+    <task id="LOCAL-00266" summary="conf cleanup">
+      <created>1619904846181</created>
+      <option name="number" value="00266" />
+      <option name="presentableId" value="LOCAL-00266" />
+      <option name="project" value="LOCAL" />
+      <updated>1619904846181</updated>
+    </task>
+    <option name="localTasksCounter" value="267" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -892,7 +903,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="NA19240 channel test ok" />
     <MESSAGE value="TSS plot finished" />
     <MESSAGE value="Add CpG shore and shelf for plotting" />
     <MESSAGE value="Upset plot initial ok" />
@@ -917,7 +927,8 @@
     <MESSAGE value="try markersize for ROC AUC" />
     <MESSAGE value="finish merge to master" />
     <MESSAGE value="main folder cleanup" />
-    <option name="LAST_COMMIT_MESSAGE" value="main folder cleanup" />
+    <MESSAGE value="conf cleanup" />
+    <option name="LAST_COMMIT_MESSAGE" value="conf cleanup" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
