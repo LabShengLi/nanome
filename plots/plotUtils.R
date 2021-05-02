@@ -4,7 +4,7 @@ library(data.table)
 library(eulerr)
 library(tidyverse)
 library(here)
-library(ggpubr)
+# library(ggpubr)
 
 infn.perf = 'performance-results.csv'
 infn.corr = 'All.corrdata.coe.pvalue.each.regions.xlsx'
@@ -17,7 +17,7 @@ Dataset.Order = c('NA19240', 'APL', 'K562', 'HL-60')
 
 Tool.Order = c('DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon', 'Joined', 'Union')
 Tool.Order = c('Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo', 'DeepMod', 'Joined', 'Union')
-Tool.Order = c('Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo', 'Joined', 'Union')
+Tool.Order = c('Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo','DeepMod', 'Joined', 'Union')
 
 
 Tool.Order.show.SingleRead = c('DeepSignal', 'Tombo', 'Nanopolish*', 'DeepMod', 'Megalodon*', 'Joined', 'Union')
@@ -79,11 +79,11 @@ export.table.s3.xlsx <- function() {
 }
 
 
-export.table.s4.xlsx <- function() {
+export.table.s5.xlsx <- function() {
     library(readxl)
     library(tidyverse)
     
-    infn=here(resultDir, infn.corr)
+    infn = here(resultDir, infn.corr)
     df = read_excel(infn)
     
     locations.Singletons = c("Genome-wide", "Singletons", "Non-singletons", "Concordant", "Discordant")
@@ -98,10 +98,10 @@ export.table.s4.xlsx <- function() {
       drop_na() %>%
       select(2:ncol(df))
     
-    outfn = here(figuresDir, "Table.S4.csv")
+    outfn = here(figuresDir, "Table.S5.csv")
     write_csv(outdf, outfn)
     print(sprintf("save to %s", outfn))
-
+    
 }
 
 
@@ -118,7 +118,7 @@ load.performance.data <- function() {
       mutate(Location = recode(Location, 'CpG Island' = 'CpG island', 'CpG Shores' = 'CpG shore', 'CpG Shelves' = 'CpG shelf')) %>%
       mutate(Dataset = factor(Dataset, levels = Dataset.Order),
              Location = factor(Location, levels = c(locations.Singletons, locations.Regions)),
-             Tool = factor(Tool, levels = Tool.Order)
+             Tool = factor(Tool, levels = Tool.Order[1:4])
       ) %>%
       drop_na()
     
@@ -288,7 +288,7 @@ fig.5newA.upset.plot.set5 <- function(ret, outfn) {
 }
 
 
-fig.5cd.venn.plot.set5 <- function(ret, outfn) {
+fig.6ab.venn.plot.set5 <- function(ret, outfn) {
     graphics.off()
     venn.plot <- draw.quintuple.venn(
       area1 = ret[1],
@@ -339,19 +339,19 @@ fig.5cd.venn.plot.set5 <- function(ret, outfn) {
 }
 
 
-fig.5cd.euller.plot.set3 <- function(ret, outfn) {
-    graphics.off()
-    ## How to reverse numbers: now A=DeepSignal, B=Nanopolish, C=Megalodon; we want change to order: A=Nanopolish, B=Megalodon,C=DeepSigal
-    
+fig.6ab.euller.plot.set3 <- function(ret, outfn) {
+    ## Reverse orders for numbers:
+    ## we want change to order: A=Nanopolish, B=Megalodon,C=DeepSigal,
+    ## from original data order: A=DeepSignal, B=Nanopolish, C=Megalodon
+    print("We define: A-Nanopolish, B-Megalodon, C-DeepSignal")
     comb = c("A" = ret[2], "B" = ret[3], "C" = ret[1],
              "A&B" = ret[6], "A&C" = ret[4], "B&C" = ret[5],
              "A&B&C" = ret[7])
-    
     print(comb)
     
+    graphics.off()
     fit1 <- euler(comb, input = 'union', shape = 'circle')
     #fit1 <- euler(comb, input = 'union', shape = 'ellipse')
-    
     print(fit1)
     
     gp <- plot(fit1,
@@ -362,7 +362,6 @@ fig.5cd.euller.plot.set3 <- function(ret, outfn) {
                alpha = 0.5,
                fill_opacity = 0.5,
                edges = list(lty = 1),
-               #main = basename(outfn),
                counts = TRUE,
                legend = list(labels = Top3.Tool.Order, cex = 0.5,
                              colors = Top3.ToolColorPal, alpha = 1, side = 'bottom', ncol = 3, nrow = 1, hgap = 0),
@@ -400,14 +399,11 @@ fig.6a.bar.plot.tools.sites.all.datasets <- function() {
     
     plot_totaldt <- totaldt %>%
       mutate(dsname = factor(dsname, levels = Dataset.Order[3:4])) %>%
-      mutate(Tool = factor(Tool, levels = Tool.Order)) %>%
+      mutate(Tool = factor(Tool, levels = Tool.Order[1:4])) %>%
       drop_na()
     
-    # totaldt$dsname <- factor(totaldt$dsname, levels = Dataset.Order)
-    # totaldt$Tool <- factor(totaldt$Tool, levels = Tool.Order)
     
     library(scales)
-    
     p1 <- ggplot(data = plot_totaldt, aes(x = Tool, y = Sites, fill = Tool)) +
       geom_bar(stat = 'identity') +
       facet_wrap(~dsname, ncol = 4) +
@@ -493,7 +489,6 @@ fig.6.running.resource.bar.plot <- function() {
       drop_na(tool) %>%
       ggplot(mapping = aes(x = dsname, y = mem, fill = tool)) +
       geom_bar(stat = "summary", fun = mean, width = 0.8, position = position_dodge()) +
-      #scale_x_discrete(limits = levels(Tool.Order)) +
       coord_flip() +
       scale_fill_manual(values = ToolColorPal) +
       theme_classic() +
@@ -555,7 +550,6 @@ fig.7b1.running.resource.bar.plot <- function() {
       drop_na(tool) %>%
       ggplot(mapping = aes(x = dsname, y = mem.usage, fill = tool)) +
       geom_bar(stat = "summary", fun = mean, width = 0.8, position = position_dodge()) +
-      #scale_x_discrete(limits = levels(Tool.Order)) +
       coord_flip() +
       scale_fill_manual(values = colorOrder) +
       theme_classic() +
@@ -577,7 +571,7 @@ fig.7b1.running.resource.bar.plot <- function() {
 }
 
 
-fig.7b2.running.resource.bar.plot <- function() {
+fig.7b2.benchmarking.running.resource.bar.plot <- function() {
     library(readxl)
     library(tidyverse)
     
@@ -598,12 +592,8 @@ fig.7b2.running.resource.bar.plot <- function() {
       theme(text = element_text(size = 12)) +
       ylab("Wall-clock time (seconds)") +
       xlab("Number of reads") #+
-    # scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
-    #              labels = scales::trans_format("log10", scales::math_format(10^.x)))
-    
     
     p1
-    
     
     p2 <- ggplot(data = outdf, aes(x = reads, y = peak_rss, group = tool, colour = tool)) +
       geom_line() +

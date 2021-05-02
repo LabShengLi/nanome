@@ -19,9 +19,9 @@ export.table.s3.xlsx()
 
 ########################################
 ########################################
-# Export Tabls S4 by order
+# Export Tabls S5 by order
 source(here(plotsDir, utilFileName))
-export.table.s4.xlsx()
+export.table.s5.xlsx()
 
 ########################################
 ########################################
@@ -65,12 +65,12 @@ for (venfn in flist) {
     infn = here(resultDir, 'venn-data', venfn)
     dt <- read.table(infn)
     base_infn = basename(infn)
-    if (length(dt$V1) == 31) { next # No Venn plot needed
-        outfn = sprintf("%s/fig.6b.venn.plot.%s.jpg", out_dir, base_infn)
-        fig.5cd.venn.plot.set5(dt$V1, outfn)
+    if (length(dt$V1) == 31) { #next # No Venn plot needed
+        outfn = sprintf("%s/fig.6ab.venn.plot.%s.jpg", out_dir, base_infn)
+        fig.6ab.venn.plot.set5(dt$V1, outfn)
     }else if (length(dt$V1) == 7) { ##next
-        outfn2 = sprintf("%s/fig.6a.euller.plot.%s.jpg", out_dir, base_infn)
-        fig.5cd.euller.plot.set3(dt$V1, outfn2)
+        outfn2 = sprintf("%s/fig.6ab.euller.plot.%s.jpg", out_dir, base_infn)
+        fig.6ab.euller.plot.set3(dt$V1, outfn2)
         #break
     }
     #break
@@ -89,13 +89,15 @@ fig.s6.sorted.bar.plot.coe.in.each.region()
 source(here(plotsDir, utilFileName))
 fig.7b1.running.resource.bar.plot()
 
+print("plotFigure DONE")
+
 quit()
 
 ########################################
 ########################################
 ## Figure 7b2: Benchmarking
 source(here('../src', 'plotutils4r', 'paper_utils.R'))
-fig.7b2.running.resource.bar.plot()
+fig.7b2.benchmarking.running.resource.bar.plot()
 
 ## Figure S6b: bar plot of number of sites, deprecated
 source(here(plotsDir, utilFileName))
