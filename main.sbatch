@@ -31,7 +31,7 @@ workingDir=/fastscratch/liuya/nanocompare/work
 ## Option 1:
 ## Running nanome pipeline on test data (from NA19240) in Human Genome
 #./nextflow run main.nf -profile winter \
-#    -work-dir ${workingDir} \
+#    -work-dir ${workingDir}-test \
 #    -config conf/test.config -resume
 
 
@@ -40,67 +40,37 @@ workingDir=/fastscratch/liuya/nanocompare/work
 ###############################################################
 ## Option 2:
 ## Running nanome pipeline on E. coli data
-./nextflow run main.nf -profile winter \
-    -work-dir /fastscratch/liuya/nanocompare/work \
-    -config conf/ecoli_demo.config -resume
+#./nextflow run main.nf -profile winter \
+#    -work-dir ${workingDir}-ecoli \
+#    -config conf/ecoli_demo.config -resume
 
 
 ###############################################################
 ###############################################################
 ###############################################################
+## Option 3:
+## Run on benchmarking data
+#rm -rf ${workingDir}-benchmark
+#./nextflow run main.nf -profile winter  \
+#	-with-report -with-timeline -with-trace -with-dag \
+#	-work-dir ${workingDir}-benchmark \
+#	-resume -config conf/benchmarking.config
 
-# Test default test datasets on winter HPC
-#./nextflow run main.nf -profile winter,test --ntask 1
+###############################################################
+###############################################################
+###############################################################
+## Option 4:
+## Run on APL
+#./nextflow run main.nf -profile winter --input test/APL.filelist.txt -resume --runMethcall false
 
-#./nextflow run main.nf -profile winter,test -resume -with-dag -bg
+## Run only basecall on APL
+./nextflow run main.nf -profile winter --input test/APL.filelist.txt -resume --runMethcall false
 
-#./nextflow run main.nf -profile winter,test -with-report -with-timeline -with-trace  -with-dag
-
+###############################################################
+###############################################################
+###############################################################
 #./nextflow run main.nf -profile winter,test -with-singularity nanome.sif
 
-
-# Run on benchmarking data
-#rm -rf /fastscratch/liuya/nanocompare/work
-#./nextflow run main.nf -profile winter,benchmarking  \
-#	-with-report -with-timeline -with-trace -with-dag \
-#	-work-dir /fastscratch/liuya/nanocompare/work2
-#
-
-
-#./nextflow run main.nf -profile winter \
-#  --input_fast5_tar http://s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr20.part05.tar \
-#  --online true \
-#  -work-dir /fastscratch/liuya/nanocompare/work \
-#  -resume
-
-
-#rm -rf /fastscratch/liuya/nanocompare/work
-
-## Running guppy on APL
-
-
-
-
-
-
-#./nextflow run main.nf -profile winter,benchmarking
-
-# Test with output report timelines
-#/nextflow run main.nf -profile winter -with-report -with-timeline -with-trace
-
-# Running resource test
-#./nextflow main.nf run --eval false -profile winter \
-#   -with-report -with-timeline -with-trace -work-dir /fastscratch/liuya/nanocompare/work
-
-# Test HL60 as input, $ntask subjobs on winter, output to $workdir
-#indata=/fastscratch/liuya/nanocompare/input/HL60-Nanopore_GT18-07373.fast5.tar
-#ntask=50
-#workdir=/fastscratch/liuya/nanocompare/work-HL60
-
-#./nextflow run main.nf -work-dir ${workdir} \
-#	--indata ${indata} --ntask ${ntask} \
-#	-cache -resume -with-report -with-timeline \
-#	-with-trace
 
 # module load singularity
 # builder="singularity run http://s3-far.jax.org/builder/builder"

@@ -1,6 +1,5 @@
 #!/usr/bin/env nextflow
 
-
 log.info """\
 	NANOME - NF PIPELINE (v1.0)
 	by Li Lab at The Jackon Laboratory
@@ -8,27 +7,44 @@ log.info """\
 	=================================
 	dsname              :${params.dsname}
 	input               :${params.input}
-	benchmarking        :${params.benchmarking}
-	eval                :${params.eval}
-	debug               :${params.debug}
-	online              :${params.online}
 	reference_genome    :${params.referenceGenome}
 	chromSizesFile      :${params.chromSizesFile}
+	runBasecall         :${params.runBasecall}
+	runMethcall         :${params.runMethcall}
+	eval                :${params.eval}
 	=================================
 	"""
 	.stripIndent()
 
+//	benchmarking        :${params.benchmarking}
+//	debug               :${params.debug}
+//	online              :${params.online}
 
 
-// Input for preprocessing (untar, seperate)
-ch_input = params.benchmarking ? Channel.empty() : Channel.fromPath(params.input, checkIfExists: true)
+if (params.input.endsWith("filelist.txt")) { // filelist
+	println("Detect filelist:");
+	Channel.fromPath( params.input )
+	    .splitCsv(header: false)
+	    .map { file(it[0]) }
+	    .toList()
+	    .set{ fast5_tar_ch }
 
-// Benchmarking inputs
-benchmarking_in_ch = params.benchmarking ? Channel
-        .fromPath(params.input, type: 'file', checkIfExists: true) : Channel.empty()
+	fast5_tar_ch.flatten().into{fast5_tar_ch1; fast5_tar_ch2}
+	fast5_tar_ch2.view()
+} else { // single file
+	println("Detect one file:");
+	Channel.fromPath( params.input ).set{fast5_tar_ch1}
+}
 
-fast5_tar_ch = Channel.fromPath(params.input)
-
+//// Input for preprocessing (untar, seperate)
+//ch_input = params.benchmarking ? Channel.empty() : Channel.fromPath(params.input, checkIfExists: true)
+//
+//// Benchmarking inputs
+//benchmarking_in_ch = params.benchmarking ? Channel
+//        .fromPath(params.input, type: 'file', checkIfExists: true) : Channel.empty()
+//
+//fast5_tar_ch = Channel.fromPath(params.input)
+//
 
 // Inputs for methcalling pipelines (such as reference genome, deepsignal model, DeepMod Clustering data, Megalodon model, etc.)
 reference_genome_tar_ch = Channel.fromPath(params.reference_genome_tar)  //reference_genome_tar
@@ -38,8 +54,8 @@ megalodon_model_tar_ch = Channel.fromPath(params.megalodon_model_tar)
 
 
 // Get input (model, reference_genome, etc.) from cloud drive zenodo, then output to channel for each tool
-process GetInputData{
-	tag 'GetInputData'
+process GetRefGenome{
+	tag 'GetRefGenome'
 	cache  'lenient'
 
 	when:
@@ -89,7 +105,12 @@ process GetFast5Files{
 	params.online
 
 	input:
-	file x from fast5_tar_ch
+	/* Note: this channel may have three conditions (containing fast5 files):
+				1. tar.gz
+				2. tar
+				3. folder
+	*/
+	file x from fast5_tar_ch1 // flattened, emit 1 at a time
 
 	output:
 	file "M_*_dir" into online_out_ch
@@ -97,22 +118,20 @@ process GetFast5Files{
 	"""
 	set -x
 
-	#mv ${x} M_${x}_dir
-
-	#exit 0
-
-	mkdir -p untar_${x}
-
-	##tar -xf ${x} -C untar_${x}
-
 	infn=${x}
 
-	if [ "\${infn##*.}" = "tar" ]; then
+	if [ "\${infn##*.}" = "tar" ]; then ### deal with tar
+		mkdir -p untar_${x}
 		tar -xf ${x} -C untar_${x}
-	elif [ "\${infn##*.}" = "gz" ]; then
+	elif [ "\${infn##*.}" = "gz" ]; then ### deal with tar.gz
+		mkdir -p untar_${x}
 		tar -xzf ${x} -C untar_${x}
+	else ### deal with ready folder
+		##mkdir -p M_${x}_dir
+		##cp -rf ${x}/* M_${x}_dir/
+		cp -d ${x} M_${x}_dir
+		exit 0
 	fi
-
 
 	newx=${x}
 	newx=\${newx%".tar.gz"}
@@ -122,41 +141,6 @@ process GetFast5Files{
 	find untar_${x} -name '*.fast5' -exec mv {} M_\${newx}_dir/ \\;
     """
 }
-
-
-// Check all tools work well on the platform
-process UntarBenchmarking {
-	// echo true
-	tag 'UntarBench'
-	cache  'lenient'
-	// teminate all later processes if this process is not passed
-	errorStrategy 'terminate'
-
-	when:
-	params.benchmarking && !params.online
-
-	input:
-	file x from benchmarking_in_ch
-
-	output:
-	file "untar_dir/BenchmarkingData/MB*" into benchmarking_out_ch
-
-	when:
-	! params.online
-
-	"""
-	echo $x
-
-	infn=$x
-	mkdir -p untar_dir
-    if [ "\${infn##*.}" = "tar" ]; then
-		tar -xf ${x} -C untar_dir
-	elif [ "\${infn##*.}" = "gz" ]; then
-		tar -xzf ${x} -C untar_dir
-	fi
-    """
-}
-
 
 
 // Check all tools work well on the platform
@@ -195,69 +179,12 @@ process EnvCheck {
 }
 
 
-// untar file, seperate into N folders named 'M1', ..., 'M10', etc.
-process Preprocess {
-	errorStrategy 'ignore'
-	cache  'lenient'
-
-    input:
-    file fast5_tar from ch_input
-
-	output:
-    file 'sept_dir/M*' into preprocess_out_ch
-
-    when:
-    ! params.benchmarking && ! params.online
-
-    """
-    set -x
-    echo "Input=${fast5_tar}"
-
-    infn=${fast5_tar}
-
-    mkdir -p untar_dir
-    if [ "${params.isfile}" = true ] ; then
-        #mkdir -p untar_dir
-        #tar xzf \${infn} -C untar_dir
-        if [ "\${infn##*.}" = "tar" ]; then
-			tar -xf \${infn} -C untar_dir
-		elif [ "\${infn##*.}" = "gz" ]; then
-			tar -xzf \${infn} -C untar_dir
-		fi
-    else
-        echo "Multiple fast5.tar need to be untared"
-		#filelist=\$(find \${infn}/ -type f \\( -iname \\*.fast5.tar -o -iname \\*.fast5.tar.gz -o -iname \\*.fast5 \\) )
-		filelist=\$( find \${infn}/ -type f -name '*.tar.gz' )
-		for fast5tarfn in \${filelist}; do
-			echo "fn=\${fast5tarfn}"
-			if [ "\${fast5tarfn##*.}" = "tar" ]; then
-				tar -xf \${fast5tarfn} -C untar_dir
-	        elif [ "\${fast5tarfn##*.}" = "gz" ]; then
-				tar -xzf \${fast5tarfn} -C untar_dir
-	        elif [ "\${fast5tarfn##*.}" = "fast5" ]; then
-				cp \${fast5tarfn} untar_dir
-	        fi
-		done
-    fi
-    echo "### Untar input done. ###"
-
-    mkdir -p sept_dir
-    python ${workflow.projectDir}/utils/FilesSeparatorNew.py untar_dir ${params.ntask} sept_dir
-    echo "### Seperation fast5 files done. ###"
-    """
-}
-
-
-
-// We collect all folders of fast5  files, and send into Channels for pipelines
-preprocess_out_ch
-	.mix(benchmarking_out_ch, online_out_ch)
-	.into { basecall_input_ch; megalodon_in_ch }
-
+// We collect all folders of fast5 files, and send into Channels for pipelines
+online_out_ch.into { basecall_input_ch; megalodon_in_ch }
 
 basecall_input_ch.into{ basecall_input_ch1; basecall_input_ch2 }
 
-basecall_input_ch2.view()
+//basecall_input_ch2.view()
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
@@ -273,7 +200,7 @@ process Basecall {
     file "basecall_dir/${x}_basecalled/*-sequencing_summary.txt" into qc_ch
 
     when:
-    ! params.debug
+    params.runBasecall
 
     """
     set -x
@@ -328,17 +255,15 @@ resquiggle_in2_ch = resquiggle_in_ch.flatten().combine(hg38_fa_ch1)
 process Resquiggle {
 	tag "${ttt[0]}"
 	cache  'lenient'
-//	label 'with_gpus'
-
-	//clusterOptions '-q inference -n 8 --gres=gpu:1 --time=06:00:00 --mem=50G'
 
 	input:
-//    file x from resquiggle_in_ch.flatten()
 	file ttt from resquiggle_in2_ch  // TODO: how to pass [basecallDir, refFile] int two vars
-
 
     output:
     file 'resquiggle_dir/M*' into resquiggle_out_ch
+
+    when:
+    params.runMethcall
 
     """
     set -x
@@ -387,6 +312,9 @@ process DeepSignal {
     output:
     file '*.tsv' into deepsignal_out_ch
 
+    when:
+    params.runMethcall
+
     """
     set -x
 
@@ -426,7 +354,7 @@ process Tombo {
     file '*.per_read_stats.bed' into tombo_out_ch
 
     when:
-    true
+    params.runMethcall
 
     """
     x=${ttt[0]}
@@ -462,15 +390,13 @@ process Megalodon {
 	label 'with_gpus'
 
 	input:
-//    file x from megalodon_in_ch.flatten()
-//    file ref from hg38_fa_ch
 	file ttt from megalodon_in2_ch  // TODO: how to pass [basecallDir, refFile] int two vars
 
     output:
     file 'megalodon_results/*.per_read_modified_base_calls.txt' into megalodon_out_ch
 
     when:
-    ! params.debug
+    params.runMethcall
 
 	// TODO: how to specify Megalodon / Guppy model using full path? or put them into folder
     """
@@ -536,13 +462,12 @@ process DeepMod {
 
 	input:
 	file ttt from deepmod_in2_ch  // [basecallDir, refGenome, DeepModPrj]
-//    file x from deepmod_in_ch.flatten()
 
     output:
     file 'mod_output/batch_*_num' into deepmod_out_ch
 
     when:
-    params.runDeepMod
+    params.runDeepMod && params.runMethcall
 
     """
     set -x
@@ -571,14 +496,15 @@ nanopolish_in2_ch =  nanopolish_in_ch.flatten().combine(hg38_fa_ch5)
 process Nanopolish {
 	tag "${ttt[0]}"
 	cache  'lenient'
-//	label 'with_gpus'
 
 	input:
-//    file x from nanopolish_in_ch.flatten()
 	file ttt from nanopolish_in2_ch
 
     output:
     file '*.tsv' into nanopolish_out_ch
+
+    when:
+    params.runMethcall
 
     """
     set -x
