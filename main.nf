@@ -53,8 +53,6 @@ process EnvCheck {
 	"""
 	set -x
 
-	PATH=/opt/conda/envs/nanocompare/bin:$PATH  ##TODO: add conda env dir to docker image
-
 	which guppy_basecaller
     guppy_basecaller -v
 
@@ -133,7 +131,7 @@ process GetFast5Files{
 	file x from fast5_tar_ch1 // flattened, emit 1 at a time
 
 	output:
-	file "M_*_dir" into online_out_ch
+	file "M_*_dir" into fast5_dir_out_ch
 
 	"""
 	set -x
@@ -147,8 +145,6 @@ process GetFast5Files{
 		mkdir -p untar_${x}
 		tar -xzf ${x} -C untar_${x}
 	else ### deal with ready folder
-		##mkdir -p M_${x}_dir
-		##cp -rf ${x}/* M_${x}_dir/
 		cp -d ${x} M_${x}_dir
 		exit 0
 	fi
@@ -164,8 +160,9 @@ process GetFast5Files{
 
 
 // We collect all folders of fast5 files, and send into Channels for pipelines
-online_out_ch.into { basecall_input_ch; megalodon_in_ch }
+fast5_dir_out_ch.into { basecall_input_ch; megalodon_in_ch; fast5_dir_out_ch2 }
 
+println(fast5_dir_out_ch2)
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
