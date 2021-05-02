@@ -3,7 +3,7 @@ rm(list = ls())
 library(here)
 library(eulerr)
 
-source(here('../src', 'plotutils4r', 'paper_utils.R'))
+source(here('../src', 'plotutils4r', 'plotUtils.R'))
 # a-DeepSignal b-Nanopolish c-Megalodon
 center.red = 1
 reduce = 1

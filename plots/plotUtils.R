@@ -698,7 +698,7 @@ fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
 fig.s1.pie.plot.singletons.nonsingletons.raw.fast5 <- function() {
     library(readxl)
     library(tidyverse)
-    infn = here('../result', 'raw.fast5.reads.cpg.coverage.across.regions.cutoff3.xlsx')
+    infn = here(resultDir, 'raw.fast5.reads.cpg.coverage.across.regions.cutoff3.xlsx')
     df = read_excel(infn)
     
     meltdf = df[, c(2, 6, 7)]
@@ -756,7 +756,7 @@ fig.s1.pie.plot.singletons.nonsingletons.raw.fast5 <- function() {
       scale_fill_brewer(palette = "Dark2")
     
     p1
-    out_dir = here('../figures')
+    out_dir = here(figuresDir)
     outfn = sprintf("%s/pie.chart.singleton.nonsingleton.raw.fast5.read.cov3.jpg", out_dir)
     ggsave(p1, filename = outfn, width = 3, height = 4, dpi = 600)
     printf("save to %s\n", outfn)

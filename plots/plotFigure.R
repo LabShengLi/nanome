@@ -1,24 +1,25 @@
 rm(list = ls())
 library(here)
+plotsDir = ""
+resultDir = "../result"
+figuresDir = "../figures"
+utilFileName = "plotUtils.R"
 
-
-
-# test in branch
 # Figure S1: pie plot of singleton and nonsingleton sites
-source(here('src', 'plotutils4r', 'paper_utils.R'))
+source(here(plotsDir, utilFileName))
 fig.s1.pie.plot.singletons.nonsingletons.raw.fast5()
 
 # Export Tabls S3 by order
-source(here('src', 'plotutils4r', 'paper_utils.R'))
+source(here('../src', 'plotutils4r', 'paper_utils.R'))
 export.table.s3.xlsx()
 
 # Export Tabls S4 by order
-source(here('src', 'plotutils4r', 'paper_utils.R'))
+source(here('../src', 'plotutils4r', 'paper_utils.R'))
 export.table.s4.xlsx()
 
 ## Figure S for 3, 4: Line plot
-source(here('src', 'plotutils4r', 'paper_utils.R'))
-out_dir = here('figures', 'line-plot')
+source(here('../src', 'plotutils4r', 'paper_utils.R'))
+out_dir = here('../figures', 'line-plot')
 dir.create(out_dir, showWarnings = FALSE)
 
 for (perf.measure in measure.list) {
@@ -28,8 +29,8 @@ for (perf.measure in measure.list) {
 }
 
 ## Figure 3, 4 a:Box plot
-source(here('src', 'plotutils4r', 'paper_utils.R'))
-out_dir = here('figures', 'box-plot')
+source(here('../src', 'plotutils4r', 'paper_utils.R'))
+out_dir = here('../figures', 'box-plot')
 dir.create(out_dir, showWarnings = FALSE)
 for (perf.measure in measure.list) {
     fig.34a.box.location.performance(perf.measure, bdir = out_dir, locations = locations.Singletons)
@@ -38,24 +39,24 @@ for (perf.measure in measure.list) {
 }
 
 ## Figure 7b1: Resource summary
-source(here('src', 'plotutils4r', 'paper_utils.R'))
+source(here('../src', 'plotutils4r', 'paper_utils.R'))
 fig.7b1.running.resource.bar.plot()
 
 
 ## Figure 7b2: Benchmarking
-source(here('src', 'plotutils4r', 'paper_utils.R'))
+source(here('../src', 'plotutils4r', 'paper_utils.R'))
 fig.7b2.running.resource.bar.plot()
 
 
 ## Figure 5 cd: Set venn and euller plot
-source(here('src', 'plotutils4r', 'paper_utils.R'))
-data_dir = here('result', 'venn-data')
-out_dir = here('figures', 'venn-plot')
+source(here('../src', 'plotutils4r', 'paper_utils.R'))
+data_dir = here('../result', 'venn-data')
+out_dir = here('../figures', 'venn-plot')
 dir.create(out_dir, showWarnings = FALSE)
 pattern.str = 'venn.data.*.dat'
 #pattern.str = 'venn.data.NA19240.*.dat'
 for (venfn in list.files(data_dir, pattern = pattern.str)) {
-    infn = here('result', 'venn-data', venfn)
+    infn = here('../result', 'venn-data', venfn)
     dt <- read.table(infn)
     base_infn = basename(infn)
     
@@ -72,18 +73,18 @@ for (venfn in list.files(data_dir, pattern = pattern.str)) {
 
 
 ## Figure S6A: bar plot of number of sites for each tool, deprecated
-source(here('src', 'plotutils4r', 'paper_utils.R'))
+source(here('../src', 'plotutils4r', 'paper_utils.R'))
 fig.6a.bar.plot.tools.sites.all.datasets()
 
 
 ## Figure S6: each region COE bar plot
-source(here('src', 'plotutils4r', 'paper_utils.R'))
+source(here('../src', 'plotutils4r', 'paper_utils.R'))
 fig.5b.sorted.bar.plot.coe.in.each.region()
 
 quit()
 
 ## Figure 3, 4 a:Bar plot
-source(here('src', 'plotutils4r', 'paper_utils.R'))
+source(here('../src', 'plotutils4r', 'paper_utils.R'))
 for (measure.pair in measure.pair.list) {
     for (dsname in Dataset.Order) {
         fig.34a.bar.dataset.location.performance(df, dsname, measure.pair, outdir)
@@ -94,13 +95,12 @@ for (measure.pair in measure.pair.list) {
 
 quit()
 
-outfn = here('result', 'figure3a.work.RData')
+outfn = here('../result', 'figure3a.work.RData')
 save.image(file = outfn)
 printf("save workspace env to %s", outfn)
 
 
 ## Figure 5d: Violin plot of corr COE
-source(here('src', 'plotutils4r', 'paper_utils.R'))
-outdir = here('figures')
+source(here('../src', 'plotutils4r', 'paper_utils.R'))
+outdir = here('../figures')
 fig.5d.violin.corr.performance(df, outdir)
-
