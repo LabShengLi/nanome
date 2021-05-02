@@ -139,11 +139,11 @@ process GetFast5Files{
 
 	infn=${x}
 
-	if [ "\${infn##*.}" = "tar" ]; then ### deal with tar
+	if [ "\${infn##*.}" == "tar" ]; then ### deal with tar
 		mkdir -p untarDir
 		tar -xf ${x} -C untarDir
-	elif [ "\${infn##*.}" = "gz" ]; then ### deal with tar.gz
-		mkdir -p untar_${x}
+	elif [ "\${infn##*.}" == "gz" ]; then ### deal with tar.gz
+		mkdir -p untarDir
 		tar -xzf ${x} -C untarDir
 	else ### deal with ready folder
 		cp -d ${x} M_${x}_dir
@@ -153,12 +153,10 @@ process GetFast5Files{
 	newx=${x}
 	newx=\${newx%".tar.gz"}
 	newx=\${newx%".tar"}
+	newx="\${newx//./_}"
 
-	###mkdir -p M_\${newx}_dir
-	###find untar_${x} -name '*.fast5' -exec mv {} M_\${newx}_dir/ \\;
-
-	####mv untar_${x} M_\${newx}_dir
-	mv untarDir M_test_dir
+	echo \${newx}
+	mv untarDir M_\${newx}_dir
     """
 }
 
