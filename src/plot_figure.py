@@ -88,12 +88,12 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
 
     ## Plot correlation grid figure
     basefn = os.path.basename(infn)
-    outfileName = "{}.jpg".format(basefn.replace(".csv", ""))
+    outfileName = "{}.jpg".format("fig.5a.s5abc." + basefn.replace(".csv", ""))
 
     if args.o:
-        outdir=args.o
+        outdir = args.o
     else:
-        outdir=pic_base_dir
+        outdir = pic_base_dir
 
     outfn = os.path.join(outdir, outfileName)
 
@@ -125,7 +125,7 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
                 plt.rcParams.update(params)
                 ax = sns.kdeplot(df.iloc[:, xcol - 1], shade=False, color="black", legend=True)
 
-                tool_fontsize=10
+                tool_fontsize = 10
                 tool_fontsize = 14
                 leg = ax.legend(labels=[str(df.columns[xcol - 1])], fontsize=tool_fontsize)
                 for item in leg.legendHandles:
@@ -199,7 +199,7 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
                 #                     pass
                 #                 else:
                 #                     plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
-                tick_label_fontsize=10
+                tick_label_fontsize = 10
                 tick_label_fontsize = 14
                 if yrow == num_col:  # last row scatter plot shows x ticks
                     plt.xticks([0, 1], fontsize=tick_label_fontsize)
@@ -271,7 +271,7 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname"):
     plt.ylabel('True Positive Rate', fontsize=label_font_size)
     plt.xlabel('False Positive Rate', fontsize=label_font_size)
     # plt.title('ROC Curves', fontsize=title_font_size)
-    outfn = os.path.join(outdir, f'{tagname}.roc.curves.jpg')
+    outfn = os.path.join(outdir, f'fig.3b.{tagname}.roc.curves.jpg')
     plt.savefig(outfn, format='png', bbox_inches='tight', dpi=600)
 
     plt.show()
@@ -296,7 +296,7 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname"):
     plt.ylim([0.0, 1.05])
     # plt.title('Precision-Recall Curves', fontsize=title_font_size)
 
-    outfn = os.path.join(outdir, f'{tagname}.pr.curves.jpg')
+    outfn = os.path.join(outdir, f'fig.3b.{tagname}.pr.curves.jpg')
     plt.savefig(outfn, format='png', bbox_inches='tight', dpi=600)
 
     plt.show()
