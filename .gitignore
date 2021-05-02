@@ -19,5 +19,5 @@ nextflow
 src/nanocompare/meth_stats
 src/nanocompare/methcall
 /script/
-
+/test/
 ## maintained by ly

@@ -6,8 +6,8 @@ library(tidyverse)
 library(here)
 library(ggpubr)
 
-infn.perf = here('../result', 'performance-results.csv')
-infn.corr = here('../result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
+infn.perf = 'performance-results.csv'
+infn.corr = 'All.corrdata.coe.pvalue.each.regions.xlsx'
 
 locations.Singletons = c("Genome-wide", "Singletons", "Non-singletons", "Concordant", "Discordant")
 locations.Regions = c("Promoters", "Exons", "Introns", "Intergenic", "CpG island", "CpG shore", "CpG shelf")
@@ -58,8 +58,9 @@ export.table.s3.xlsx <- function() {
     
     library(readxl)
     library(tidyverse)
-    out_dir = here('../figures')
-    df <- read_csv(infn.perf)
+    out_dir = here(figuresDir)
+    infn = here(resultDir, infn.perf)
+    df <- read_csv(infn)
     
     selected.columns = c('referenceCpGs', 'mCsites', 'Csites')
     outdf <- df %>%
@@ -71,7 +72,7 @@ export.table.s3.xlsx <- function() {
       select(seq(2, 10), selected.columns) %>%
       drop_na()
     
-    outfn = here("../figures", "Table.S3.csv")
+    outfn = here(figuresDir, "Table.S3.csv")
     write_csv(outdf, outfn)
     print(sprintf("save to %s", outfn))
     
@@ -82,7 +83,8 @@ export.table.s4.xlsx <- function() {
     library(readxl)
     library(tidyverse)
     
-    df = read_excel(infn.corr)
+    infn=here(resultDir, infn.corr)
+    df = read_excel(infn)
     
     locations.Singletons = c("Genome-wide", "Singletons", "Non-singletons", "Concordant", "Discordant")
     locations.Genome = c("Promoters", "Exons", "Introns", "Intergenic", "CpG island", "CpG shore", "CpG shelf")
@@ -96,8 +98,10 @@ export.table.s4.xlsx <- function() {
       drop_na() %>%
       select(2:ncol(df))
     
-    outfn = here("../figures", "Table.S4.csv")
+    outfn = here(figuresDir, "Table.S4.csv")
     write_csv(outdf, outfn)
+    print(sprintf("save to %s", outfn))
+
 }
 
 
@@ -106,7 +110,8 @@ load.performance.data <- function() {
     library(tidyverse)
     
     # Load data and sort string orders
-    df <- read.csv(infn.perf)
+    infn = here(resultDir, infn.perf)
+    df <- read.csv(infn)
     
     outdf <- df %>%
       mutate(Dataset = recode(Dataset, 'HL60' = 'HL-60')) %>%
@@ -121,7 +126,7 @@ load.performance.data <- function() {
 }
 
 
-fig.s34a.line.plot.performance <- function(perf.measure, locations, bdir, scale = 1) {
+fig.s34a.line.plot.performance <- function(perf.measure, locations, out_dir, scale = 1) {
     df <- load.performance.data()
     
     sel_df = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', perf.measure)]
@@ -146,14 +151,7 @@ fig.s34a.line.plot.performance <- function(perf.measure, locations, bdir, scale 
       theme_bw() +
       theme(
         strip.background = element_blank(),
-        #panel.grid.major = element_blank(),
-        #panel.border = element_blank(),
-        #axis.ticks = element_line(size = 0),
-        #panel.grid.minor.y = element_blank(),
-        #panel.grid.major.y = element_blank(),
         strip.text.x = element_text(size = 8, face = "bold"),
-        #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
-        #legend.position = "none"
       ) +
       scale_shape_manual(values = ToolShapeList) +
       scale_color_manual(values = ToolColorPal) +
@@ -164,13 +162,13 @@ fig.s34a.line.plot.performance <- function(perf.measure, locations, bdir, scale 
       theme(strip.text.x = element_text(size = 12)) +
       labs(y = out.y.label)
     
-    outfn = sprintf("%s/fig.34a.line.%s.%s.jpg", bdir, perf.measure, locations[2])
+    outfn = sprintf("%s/fig.s34ab.line.plot.%s.%s.jpg", out_dir, perf.measure, locations[2])
     ggsave(p, filename = outfn, width = 6.5, height = 4, scale = scale, dpi = 600)
     printf("save to %s\n", outfn)
 }
 
 
-fig.34a.box.location.performance <- function(perf.measure, locations, bdir, scale = 1) {
+fig.34a.box.location.performance <- function(perf.measure, locations, out_dir, scale = 1) {
     df <- load.performance.data()
     
     sel_data = df[df$Location %in% locations, c('Dataset', 'Tool', 'Location', perf.measure)]
@@ -195,23 +193,14 @@ fig.34a.box.location.performance <- function(perf.measure, locations, bdir, scal
       theme_bw() +
       theme(
         strip.background = element_blank(),
-        #panel.grid.major = element_blank(),
-        #panel.border = element_blank(),
-        #axis.ticks = element_line(size = 0),
-        #panel.grid.minor.y = element_blank(),
-        #panel.grid.major.y = element_blank(),
         strip.text.x = element_text(size = 8.5, face = "bold"),
-        #strip.text.x = element_text(size = 10),
-        
         panel.border = element_rect(colour = "black"),
-        #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
-        #legend.position = "none"
       ) +
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 8)) +
       ylim(0, 1) +
       labs(y = out.y.label)
     
-    outfn = sprintf("%s/fig.34a.box.perfmeasure.%s.%s.jpg", bdir, perf.measure, locations[2])
+    outfn = sprintf("%s/fig.34a.s34b.box.plot.perfmeasure.%s.%s.jpg", out_dir, perf.measure, locations[2])
     ggsave(p, filename = outfn, width = 7.5, height = 4, dpi = 600)
     printf("save to %s\n", outfn)
     
@@ -385,14 +374,16 @@ fig.5cd.euller.plot.set3 <- function(ret, outfn) {
 
 
 fig.6a.bar.plot.tools.sites.all.datasets <- function() {
-    data_dir = here('../result')
-    out_dir = here('../figures', 'bar-plot')
+    data_dir = here(resultDir)
+    out_dir = here(figuresDir, 'bar-plot')
     dir.create(out_dir, showWarnings = FALSE)
+    
     pattern.str = '*-summary-bgtruth-tools-bsCov5-minCov3.csv'
+    flist = list.files(data_dir, pattern = glob2rx(pattern.str))
     
     totaldt = tibble()
-    for (fn in list.files(data_dir, pattern = pattern.str)) {
-        infn = here('../result', fn)
+    for (fn in flist) {
+        infn = here(resultDir, fn)
         basename_infn = basename(infn)
         
         pos = str_locate(basename_infn, "_")[1]
@@ -527,8 +518,8 @@ fig.7b1.running.resource.bar.plot <- function() {
     library(readxl)
     library(tidyverse)
     
-    outdir = here('../figures')
-    infn = here('../result', 'running.logs.total.resource.usage.five.tools.xlsx')
+    outdir = here(figuresDir)
+    infn = here(resultDir, 'running.logs.total.resource.usage.five.tools.xlsx')
     run.table <- read_excel(infn)
     
     outdf <- run.table %>%
@@ -538,7 +529,7 @@ fig.7b1.running.resource.bar.plot <- function() {
       ) %>%
       arrange(dsname, `Job Wall-clock Time`)
     
-    outfn = here('../figures', 'table.s6.total.runnning.summary.new.sorted.csv')
+    outfn = here(figuresDir, 'table.s7.total.runnning.summary.new.sorted.csv')
     write_csv(outdf, outfn)
     
     colnames(outdf) = c('dsname', 'tool', 'cpu.time', 'wall.time', 'mem.usage')
@@ -644,12 +635,12 @@ fig.7b2.running.resource.bar.plot <- function() {
 }
 
 
-fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
+fig.s6.sorted.bar.plot.coe.in.each.region <- function() {
     library(readxl)
     library(tidyverse)
-    out_dir = here('../figures', 'bar-plot')
-    #infn = here('result', 'All.corrdata.coe.pvalue.each.regions.xlsx')
-    df = read_excel(infn.corr)
+    out_dir = here(figuresDir, 'bar-plot')
+    infn = here(resultDir, 'All.corrdata.coe.pvalue.each.regions.xlsx')
+    df = read_excel(infn)
     
     outdf <- df %>%
       mutate(dsname = recode(dsname, 'HL60' = 'HL-60')) %>%
@@ -681,15 +672,13 @@ fig.5b.sorted.bar.plot.coe.in.each.region <- function() {
         panel.grid.minor.y = element_blank(),
         panel.grid.major.y = element_blank(),
         strip.text.x = element_text(size = 12, face = "bold"),
-        #axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=1, size=0.8)
-        #legend.position = "none"
       ) +
       ylim(min(df$COE), 1) +
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 8)) +
       theme(axis.text.y = element_text(size = 10)) +
       theme(legend.position = "right", legend.text = element_text(size = 10))
     
-    outfn = sprintf("%s/fig.5b.bar.plot.coe.in.each.regions.jpg", out_dir)
+    outfn = sprintf("%s/fig.s6.bar.plot.coe.in.each.regions.jpg", out_dir)
     ggsave(p1, filename = outfn, width = 9, height = 7.5, dpi = 600)
     printf("save to %s\n", outfn)
 }
