@@ -405,7 +405,7 @@ process DeepSignal {
 		--reference_path \${refGenome} \
 		--corrected_group ${params.correctedGroup} \
 		--nproc ${params.processors} \
-		--is_gpu ${params.isgpu}
+		--is_gpu ${params.DeepMod_isgpu}
     """
 }
 
