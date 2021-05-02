@@ -36,15 +36,6 @@ if (params.input.endsWith("filelist.txt")) { // filelist
 	Channel.fromPath( params.input ).set{fast5_tar_ch1}
 }
 
-//// Input for preprocessing (untar, seperate)
-//ch_input = params.benchmarking ? Channel.empty() : Channel.fromPath(params.input, checkIfExists: true)
-//
-//// Benchmarking inputs
-//benchmarking_in_ch = params.benchmarking ? Channel
-//        .fromPath(params.input, type: 'file', checkIfExists: true) : Channel.empty()
-//
-//fast5_tar_ch = Channel.fromPath(params.input)
-//
 
 // Inputs for methcalling pipelines (such as reference genome, deepsignal model, DeepMod Clustering data, Megalodon model, etc.)
 reference_genome_tar_ch = Channel.fromPath(params.reference_genome_tar)  //reference_genome_tar
@@ -53,13 +44,49 @@ deepsignel_model_tar_ch = Channel.fromPath(params.deepsignel_model_tar)
 megalodon_model_tar_ch = Channel.fromPath(params.megalodon_model_tar)
 
 
+// Check all tools work well on the platform
+process EnvCheck {
+
+	tag 'EnvCheck'
+	// teminate all later processes if this process is not passed
+	errorStrategy 'terminate'
+	label 'with_gpus'
+
+	when:
+	params.online
+
+	"""
+	set -x
+
+	#which tombo
+    tombo -v
+
+    #which nanopolish
+    nanopolish --version
+
+    #which megalodon
+    megalodon -v
+
+    #which deepsignal
+    deepsignal
+
+    #which DeepMod.py
+    DeepMod.py
+
+	#which guppy_basecaller
+    guppy_basecaller -v
+
+    """
+}
+
+
 // Get input (model, reference_genome, etc.) from cloud drive zenodo, then output to channel for each tool
 process GetRefGenome{
 	tag 'GetRefGenome'
 	cache  'lenient'
 
 	when:
-	params.online
+	params.runMethcall
 
 	input:
 	file x2 from deepmod_ctar_ch
@@ -143,48 +170,9 @@ process GetFast5Files{
 }
 
 
-// Check all tools work well on the platform
-process EnvCheck {
-
-	tag 'EnvCheck'
-	// teminate all later processes if this process is not passed
-	errorStrategy 'terminate'
-	label 'with_gpus'
-
-	when:
-	params.online
-
-	"""
-	set -x
-
-	#which tombo
-    tombo -v
-
-    #which nanopolish
-    nanopolish --version
-
-    #which megalodon
-    megalodon -v
-
-    #which deepsignal
-    deepsignal
-
-    #which DeepMod.py
-    DeepMod.py
-
-	#which guppy_basecaller
-    guppy_basecaller -v
-
-    """
-}
-
-
 // We collect all folders of fast5 files, and send into Channels for pipelines
 online_out_ch.into { basecall_input_ch; megalodon_in_ch }
 
-basecall_input_ch.into{ basecall_input_ch1; basecall_input_ch2 }
-
-//basecall_input_ch2.view()
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
@@ -193,7 +181,7 @@ process Basecall {
 	label 'with_gpus'
 
 	input: // input here is not passed
-    file x from basecall_input_ch1.flatten()  // we are going to solve this input failed passing problems
+    file x from basecall_input_ch.flatten()  // we are going to solve this input failed passing problems
 
     output:
     file "basecall_dir/${x}_basecalled" into basecall_out_ch  // try to fix the christina proposed problems
@@ -244,10 +232,12 @@ process QCExport {
 }
 
 
+// Duplicates basecall outputs
 basecall_out_ch
 	.into { resquiggle_in_ch; nanopolish_in_ch; deepmod_in_ch }
 
 
+// Duplicates resquiggle outputs
 resquiggle_in2_ch = resquiggle_in_ch.flatten().combine(hg38_fa_ch1)
 
 

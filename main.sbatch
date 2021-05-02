@@ -50,11 +50,11 @@ workingDir=/fastscratch/liuya/nanocompare/work
 ###############################################################
 ## Option 3:
 ## Run on benchmarking data
-#rm -rf ${workingDir}-benchmark
-#./nextflow run main.nf -profile winter  \
-#	-with-report -with-timeline -with-trace -with-dag \
-#	-work-dir ${workingDir}-benchmark \
-#	-resume -config conf/benchmarking.config
+rm -rf ${workingDir}-benchmark
+./nextflow run main.nf -profile winter  \
+	-with-report -with-timeline -with-trace -with-dag \
+	-work-dir ${workingDir}-benchmark \
+	-resume -config conf/benchmarking.config
 
 ###############################################################
 ###############################################################
@@ -64,7 +64,7 @@ workingDir=/fastscratch/liuya/nanocompare/work
 #./nextflow run main.nf -profile winter --input test/APL.filelist.txt -resume --runMethcall false
 
 ## Run only basecall on APL
-./nextflow run main.nf -profile winter --input test/APL.filelist.txt -resume --runMethcall false
+#./nextflow run main.nf -profile winter --input test/APL.filelist.txt -resume --runMethcall false
 
 ###############################################################
 ###############################################################
