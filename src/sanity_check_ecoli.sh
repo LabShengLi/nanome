@@ -16,8 +16,8 @@ callsDir=${1:-/projects/li-lab/yang/workspace/nano-compare/outputs/ECOLI_METROPA
 DeepSignal_calls=$(find $callsDir -name "*.DeepSignal.combine.tsv.gz")
 Tombo_calls=$(find $callsDir -name "*.Tombo.combine.tsv.gz")
 Nanopolish_calls=$(find $callsDir -name "*.Nanopolish.combine.tsv.gz")
-DeepMod_calls=$(find $callsDir -name "*.DeepModC.combine.tsv.gz")
-Megalodon_calls=$(find $callsDir -name "*.Megalodon.combine.tsv.gz")
+DeepMod_calls=$(find $callsDir -name "*.DeepModC.combine.bed.gz")
+Megalodon_calls=$(find $callsDir -name "*.Megalodon.combine.bed.gz")
 
 #prjBaseDir=/projects/li-lab/yang/workspace/nano-compare
 pythonFn=nanocompare/read_level_eval.py
@@ -25,4 +25,4 @@ pythonFn=nanocompare/read_level_eval.py
 python ${pythonFn} --calls DeepSignal:${DeepSignal_calls} \
     Tombo:${Tombo_calls} Nanopolish:${Nanopolish_calls} DeepMod.C:${DeepMod_calls} \
     Megalodon:${Megalodon_calls} --runid MethPerf-ECOLI_SANITY \
-    --dsname ECOLI_METROPAPER --analysis "ecoli ecoli_metropaper_sanity"
+    --dsname ECOLI_METROPAPER --chrSet NC_000913.3 --analysis "ecoli ecoli_metropaper_sanity"

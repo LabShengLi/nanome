@@ -31,14 +31,13 @@ fast5_tar_ch = Channel.fromPath(params.input)
 
 
 // Inputs for methcalling pipelines (such as reference genome, deepsignal model, DeepMod Clustering data, Megalodon model, etc.)
-//hg38_tar_ch = Channel.fromPath(params.hg38_tar)
 reference_genome_tar_ch = Channel.fromPath(params.reference_genome_tar)  //reference_genome_tar
 deepmod_ctar_ch = Channel.fromPath(params.deepmod_ctar)
 deepsignel_model_tar_ch = Channel.fromPath(params.deepsignel_model_tar)
 megalodon_model_tar_ch = Channel.fromPath(params.megalodon_model_tar)
 
 
-// Get input (model, reference_genome, etc.) from internet, and output to channel for later usage
+// Get input (model, reference_genome, etc.) from cloud drive zenodo, then output to channel for each tool
 process GetInputData{
 	tag 'GetInputData'
 	cache  'lenient'
@@ -82,8 +81,8 @@ reference_genome_ch.into{hg38_fa_ch1; hg38_fa_ch2;hg38_fa_ch3;hg38_fa_ch4;hg38_f
 
 
 // Get input fast5.tar files from local or online, output to Basecall/Megalodon channel
-process GetOnlineFast5{
-	tag 'GetOnlineFast5'
+process GetFast5Files{
+	tag 'GetFast5Files'
 	cache  'lenient'
 
 	when:
@@ -98,9 +97,9 @@ process GetOnlineFast5{
 	"""
 	set -x
 
-	mv ${x} M_${x}_dir
+	#mv ${x} M_${x}_dir
 
-	exit 0
+	#exit 0
 
 	mkdir -p untar_${x}
 
@@ -284,11 +283,10 @@ process Basecall {
     guppy_basecaller --input_path ${x} \
         --save_path "basecall_dir/${x}_basecalled" \
         --config ${params.GUPPY_BASECALL_MODEL} \
-        --num_callers 3 \
+        --num_callers ${params.GuppyNumCallers} \
         --fast5_out \
         --recursive \
-        --verbose_logs \
-        ${params.GuppyGPUOptions}
+        --verbose_logs ${params.GuppyGPUOptions}
 
     ## After basecall, rename summary file names
 	mv basecall_dir/${x}_basecalled/sequencing_summary.txt basecall_dir/${x}_basecalled/${x}-sequencing_summary.txt
@@ -301,20 +299,20 @@ process Basecall {
 process QCExport {
 	cache  'lenient'
 
-	publishDir "outputs/${params.dsname}-qc-report" //, mode: "copy"
+	publishDir "${params.outputDir}" , mode: "copy"
 
 	input:
     file flist from qc_ch.collect()
 
     output:
-    file "summary/*-sequencing_summary.txt" into qc_out_ch
+    file "${params.dsname}-qc-report/*-sequencing_summary.txt" into qc_out_ch
 
     """
     echo $flist
 
 
-	mkdir -p summary
-    cp -L -f *-sequencing_summary.txt summary/
+	mkdir -p ${params.dsname}-qc-report
+    cp -L -f *-sequencing_summary.txt ${params.dsname}-qc-report/
     """
 }
 
@@ -641,7 +639,7 @@ deepsignal_combine_in_ch = deepsignal_out_ch.toList()
 
 // Combine DeepSignal runs' all results together
 process DpSigCombine {
-	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
 	//label 'with_gpus'
 
 	input:
@@ -666,23 +664,23 @@ process DpSigCombine {
 
 // Combine Tombo runs' all results together
 process TomboCombine {
-	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
 	//label 'with_gpus'
 
 	input:
-    file x from tombo_combine_in_ch
+    file x from tombo_combine_in_ch // list of tombo bed files
 
     output:
-    file '*.combine.tsv.gz' into tombo_combine_out_ch
+    file '*.combine.bed.gz' into tombo_combine_out_ch
 
     when:
     x.size() >= 1
 
     """
-	touch ${params.dsname}.Tombo.combine.tsv
-	cat ${x} > ${params.dsname}.Tombo.combine.tsv
+	touch ${params.dsname}.Tombo.combine.bed
+	cat ${x} > ${params.dsname}.Tombo.combine.bed
 
-	gzip ${params.dsname}.Tombo.combine.tsv
+	gzip ${params.dsname}.Tombo.combine.bed
     """
 }
 
@@ -691,7 +689,7 @@ process TomboCombine {
 process MgldnCombine {
 	//label 'with_gpus'
 
-	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
 
 	input:
     file x from megalodon_combine_in_ch
@@ -723,7 +721,7 @@ process MgldnCombine {
 
 // Combine Nanopolish runs' all results together
 process NplshCombine {
-	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
 	//label 'with_gpus'
 
 	input:
@@ -759,7 +757,7 @@ process NplshCombine {
 
 // Combine DeepMod runs' all results together
 process DpmodCombine {
-	publishDir "outputs/${params.dsname}-methylation-callings" //, mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
 	label 'with_gpus'  // cluster model need gpu
 
 	input:
@@ -768,7 +766,7 @@ process DpmodCombine {
     file deepmodCDir from deepmod_c_ch
 
     output:
-    file '*.combine.tsv.gz' into deepmod_combine_out_ch
+    file '*.combine.bed.gz' into deepmod_combine_out_ch
 
     when:
     x.size() >= 1
@@ -796,23 +794,23 @@ process DpmodCombine {
 		\${DeepMod_Cluster_CDir} \
 		${deepmod_project_dir}/train_deepmod/${params.clusterDeepModModel}  || true
 
-	> ${params.dsname}.DeepModC.combine.tsv
+	> ${params.dsname}.DeepModC.combine.bed
 
 	## Note: for ecoli data, no chr*, but N*
 	for f in \$(ls -1 indir/${params.dsname}.deepmod.*.C.bed)
 	do
-	  cat \$f >> ${params.dsname}.DeepModC.combine.tsv
+	  cat \$f >> ${params.dsname}.DeepModC.combine.bed
 	done
 
-	> ${params.dsname}.DeepModC_clusterCpG.combine.tsv
+	> ${params.dsname}.DeepModC_clusterCpG.combine.bed
 
 	for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
 	do
-	  cat \$f >> ${params.dsname}.DeepModC_clusterCpG.combine.tsv
+	  cat \$f >> ${params.dsname}.DeepModC_clusterCpG.combine.bed
 	done
 
-	gzip ${params.dsname}.DeepModC.combine.tsv
-	gzip ${params.dsname}.DeepModC_clusterCpG.combine.tsv
+	gzip ${params.dsname}.DeepModC.combine.bed
+	gzip ${params.dsname}.DeepModC_clusterCpG.combine.bed
 
 	echo "###DeepMod combine DONE###"
     """
@@ -825,14 +823,9 @@ deepsignal_combine_out_ch.concat(tombo_combine_out_ch,megalodon_combine_out_ch, 
 	.toSortedList()
 	.into { readlevel_in_ch; sitelevel_in_ch }
 
-//println("test_out_ch=" + test_out_ch)
-//test_out_ch.view()
-
-
 // Read level evaluations
 process ReadLevelPerf {
-	publishDir "outputs/${params.dsname}-nanome-analysis" //, mode: "copy"
-//	label 'with_gpus'
+	publishDir "${params.outputDir}/${params.dsname}-nanome-analysis" , mode: "copy"
 
 	input: // TODO: I can not sort fileList by name, seems sorted by date????
     file fileList from readlevel_in_ch
@@ -846,28 +839,18 @@ process ReadLevelPerf {
     """
     set -x
 
-    echo ${fileList}
-
-	# Sort file by my self
-    flist=(\$(ls *.combine.tsv.gz))
+	# Sort files
+    flist=(\$(ls *.combine.{tsv,bed}.gz))
 
     echo \${flist[@]}
 
-    for fn in \${flist[@]}
-    do
-        echo File: \$fn
-        # head -n 3 \$fn
-    done
-
     deepsignalFile=\$(find . -maxdepth 1 -name '*.DeepSignal.combine.tsv.gz')
-    tomboFile=\$(find . -maxdepth 1 -name '*.Tombo.combine.tsv')
+    tomboFile=\$(find . -maxdepth 1 -name '*.Tombo.combine.bed.gz')
     nanopolishFile=\$(find . -maxdepth 1 -name '*.Nanopolish.combine.tsv.gz')
-    deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC.combine.tsv.gz')
+    deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC.combine.bed.gz')
     megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.tsv.gz')
 
     export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}
-
-    ## python ${workflow.projectDir}/src/nanocompare/read_level_eval.py --help
 
 	## Read level evaluations
 	python ${workflow.projectDir}/src/nanocompare/read_level_eval.py \
@@ -880,7 +863,7 @@ process ReadLevelPerf {
 		--runid MethPerf-${params.runid} \
 		--dsname ${params.dsname} \
 		--min-bgtruth-cov ${params.bgtruth_cov} \
-		--report-joined -mpi -o . ###--enable-cache --using-cache
+		--report-joined -mpi -o .
 
 	echo "### Read level analysis DONE"
     """
@@ -889,8 +872,7 @@ process ReadLevelPerf {
 
 // Site level correlation analysis
 process SiteLevelCorr {
-	publishDir "outputs/${params.dsname}-nanome-analysis" //, mode: "copy"
-//	label 'with_gpus'
+	publishDir "${params.outputDir}/${params.dsname}-nanome-analysis" , mode: "copy"
 
 	input:
     file perfDir from readlevel_out_ch
@@ -906,13 +888,13 @@ process SiteLevelCorr {
     set -x
 
 	# Sort file by my self
-    flist=(\$(ls *.combine.tsv.gz))
+    flist=(\$(ls *.combine.{tsv,bed}.gz))
     echo \${flist[@]}
 
     deepsignalFile=\$(find . -maxdepth 1 -name '*.DeepSignal.combine.tsv.gz')
-    tomboFile=\$(find . -maxdepth 1 -name '*.Tombo.combine.tsv.gz')
+    tomboFile=\$(find . -maxdepth 1 -name '*.Tombo.combine.bed.gz')
     nanopolishFile=\$(find . -maxdepth 1 -name '*.Nanopolish.combine.tsv.gz')
-    deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC_clusterCpG.combine.tsv.gz')
+    deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC_clusterCpG.combine.bed.gz')
     megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.tsv.gz')
 
     export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}

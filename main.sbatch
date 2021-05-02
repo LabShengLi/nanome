@@ -14,14 +14,40 @@
 set -x
 
 #cd $SLURM_SUBMIT_DIR
-
-date;hostname;pwd
-
 #module load singularity
 
 # Get nextflow from internet
 #curl -fsSL get.nextflow.io | bash
+date;hostname;pwd
 
+
+workingDir=/fastscratch/liuya/nanocompare/work
+#rm -rf outputs
+#rm -rf $workingDir
+
+###############################################################
+###############################################################
+###############################################################
+## Option 1:
+## Running nanome pipeline on test data (from NA19240) in Human Genome
+./nextflow run main.nf -profile winter \
+    -work-dir ${workingDir} \
+    -config conf/test.config -resume
+
+
+###############################################################
+###############################################################
+###############################################################
+## Option 2:
+## Running nanome pipeline on E. coli data
+#./nextflow run main.nf -profile winter \
+#    -work-dir /fastscratch/liuya/nanocompare/work \
+#    -config conf/Ecoli_METROPAPER.config -resume
+
+
+###############################################################
+###############################################################
+###############################################################
 
 # Test default test datasets on winter HPC
 #./nextflow run main.nf -profile winter,test --ntask 1
@@ -51,20 +77,9 @@ date;hostname;pwd
 #rm -rf /fastscratch/liuya/nanocompare/work
 
 ## Running guppy on APL
-./nextflow run main.nf -profile winter -resume \
-    -work-dir /fastscratch/liuya/nanocompare/work \
-    --input /projects/li-lab/Nanopore_compare/nanopore_fast5/APL-N50-sept
 
 
-## Running E coli for METROPAPER
-#./nextflow run main.nf -profile winter \
-#    -work-dir /fastscratch/liuya/nanocompare/work \
-#    -config conf/Ecoli_METROPAPER.config -resume
 
-## Running test data
-#./nextflow run main.nf -profile winter \
-#    -work-dir /fastscratch/liuya/nanocompare/work \
-#    -config conf/test.config -resume
 
 
 

@@ -205,28 +205,6 @@ def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCo
     return df
 
 
-def parse_arguments():
-    """
-    :return:
-    """
-    parser = argparse.ArgumentParser(description='Read level performance evaluation in Nanocompare paper')
-    parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff", default=5)
-    # parser.add_argument('--min-tool-cov', type=int, help="min tool coverage cutoff", default=3)
-    parser.add_argument('--dsname', type=str, help="dataset name", default='DS')
-    parser.add_argument('--processors', type=int, help="multi-processors", default=8)
-    parser.add_argument('--runid', type=str, help="running prefix", required=True)
-    parser.add_argument('--report-joined', action='store_true', help="True if report on only joined sets")
-    parser.add_argument('--test', action='store_true', help="True if only test for short time running")
-    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by space', required=True)
-    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>;<file-name>", default=None)
-    parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
-    parser.add_argument('--enable-cache', action='store_true')
-    parser.add_argument('--using-cache', action='store_true')
-    parser.add_argument('-mpi', action='store_true')
-    parser.add_argument('--analysis', type=str, help='special analysis specifications', default="")
-    return parser.parse_args()
-
-
 def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet, threshold=0.2):
     """
     We now simply check results performance on positive data
@@ -281,7 +259,7 @@ def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet, threshold=0.2)
         per_base_dataset['dsname'].append(callname)
         per_base_dataset['#Base'].append(nsites)
         per_base_dataset[f'Methylated base >= {threshold:.2f}'].append(sum(ypred))
-        per_base_dataset[f'Unmethylated base'].append(len(ypred)-sum(ypred))
+        per_base_dataset[f'Unmethylated base'].append(len(ypred) - sum(ypred))
         per_base_dataset['Precision'].append(precision)
         per_base_dataset['Recall'].append(recall)
 
@@ -305,8 +283,30 @@ def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet, threshold=0.2)
     outfn = os.path.join(out_dir, f'report_ecoli_metro_paper_evaluations_on_{tag}.base.level.xlsx')
     df.to_excel(outfn)
 
-
     pass
+
+
+def parse_arguments():
+    """
+    :return:
+    """
+    parser = argparse.ArgumentParser(description='Read level performance evaluation in Nanocompare paper')
+    parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff", default=5)
+    # parser.add_argument('--min-tool-cov', type=int, help="min tool coverage cutoff", default=3)
+    parser.add_argument('--dsname', type=str, help="dataset name", default='DS')
+    parser.add_argument('--processors', type=int, help="multi-processors", default=8)
+    parser.add_argument('--runid', type=str, help="running prefix", required=True)
+    parser.add_argument('--report-joined', action='store_true', help="True if report on only joined sets")
+    parser.add_argument('--test', action='store_true', help="True if only test for short time running")
+    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by space', required=True)
+    parser.add_argument('--chrSet', nargs='+', help='chromosome list', default=humanChrSet)
+    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>;<file-name>", default=None)
+    parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
+    parser.add_argument('--enable-cache', action='store_true')
+    parser.add_argument('--using-cache', action='store_true')
+    parser.add_argument('-mpi', action='store_true')
+    parser.add_argument('--analysis', type=str, help='special analysis specifications', default="")
+    return parser.parse_args()
 
 
 if __name__ == '__main__':
@@ -403,10 +403,12 @@ if __name__ == '__main__':
         absoluteBGTruthCov = None
 
     # Load methlation callings by tools
-    if "ecoli" in args.analysis:
-        filterChr = ecoliChrSet
-    else:  # default is human
-        filterChr = humanChrSet
+    # if "ecoli" in args.analysis:
+    #     filterChrSet = ecoliChrSet
+    # else:  # default is human
+    #     filterChrSet = humanChrSet
+
+    filterChrSet = args.chrSet
 
     callfn_dict = defaultdict()  # callname -> filename
 
@@ -430,7 +432,7 @@ if __name__ == '__main__':
             raise Exception(f'{call_encode} is not allowed for read level evaluation, please use DeepMod.C file here')
 
         ## MUST import read-level results, and include score for plot ROC curve and PR curve
-        call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache, filterChr=filterChr)
+        call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, deepmod_cluster_freq_cov_format=False, using_cache=using_cache, enable_cache=enable_cache, filterChr=filterChrSet)
 
         if absoluteBGTruth:  # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
             logger.info(f'Filter out CpG sites not in bgtruth for {call_name}')
