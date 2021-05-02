@@ -131,7 +131,8 @@ process GetFast5Files{
 	file x from fast5_tar_ch1 // flattened, emit 1 at a time
 
 	output:
-	file "M_*_dir" into fast5_dir_out_ch
+//	file "M_*_dir" into fast5_dir_out_ch
+	file "M_test_dir" into fast5_dir_out_ch
 
 	"""
 	set -x
@@ -153,8 +154,11 @@ process GetFast5Files{
 	newx=\${newx%".tar.gz"}
 	newx=\${newx%".tar"}
 
-	mkdir -p M_\${newx}_dir
-	find untar_${x} -name '*.fast5' -exec mv {} M_\${newx}_dir/ \\;
+	###mkdir -p M_\${newx}_dir
+	###find untar_${x} -name '*.fast5' -exec mv {} M_\${newx}_dir/ \\;
+
+	####mv untar_${x} M_\${newx}_dir
+	mv untar_${x} M_test_dir
     """
 }
 
