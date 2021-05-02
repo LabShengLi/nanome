@@ -401,7 +401,7 @@ process DeepSignal {
 
 	deepsignal call_mods --input_path \${x}/workspace \
 	    --model_path \${deepsignalModelDir}/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+/bn_17.sn_360.epoch_9.ckpt \
-		--result_file "${params.dsname}-N${params.ntask}-DeepSignal.batch_\${x}.CpG.deepsignal.call_mods.tsv" \
+		--result_file "${params.dsname}-DeepSignal.batch_\${x}.CpG.deepsignal.call_mods.tsv" \
 		--reference_path \${refGenome} \
 		--corrected_group ${params.correctedGroup} \
 		--nproc ${params.processors} \
@@ -426,7 +426,7 @@ process Tombo {
     file '*.per_read_stats.bed' into tombo_out_ch
 
     when:
-    ! params.top3
+    true
 
     """
     x=${ttt[0]}
@@ -542,7 +542,7 @@ process DeepMod {
     file 'mod_output/batch_*_num' into deepmod_out_ch
 
     when:
-    ! params.top3 && params.runDeepMod
+    params.runDeepMod
 
     """
     set -x
