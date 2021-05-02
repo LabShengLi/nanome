@@ -130,8 +130,8 @@ process GetFast5Files{
 	*/
 	file x from fast5_tar_ch1 // flattened, emit 1 at a time
 
-	output:
-	file "M_*_dir" into fast5_dir_out_ch
+	output: //TODO: why M_test_dir is ok in cloud, but M_*_dir is not ok ('// problem')? We want send multiple file to output here????
+	path "M_*_dir" into fast5_dir_out_ch
 //	file "M_test_dir" into fast5_dir_out_ch
 
 	"""
@@ -156,7 +156,9 @@ process GetFast5Files{
 	newx="\${newx//./_}"
 
 	echo \${newx}
+
 	mv untarDir M_\${newx}_dir
+
     """
 }
 
