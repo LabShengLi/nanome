@@ -53,6 +53,8 @@ process EnvCheck {
 	"""
 	set -x
 
+	PATH=/opt/conda/envs/nanocompare/bin:$PATH  ##TODO: add conda env dir to docker image
+
 	which guppy_basecaller
     guppy_basecaller -v
 
