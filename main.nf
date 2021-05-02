@@ -18,8 +18,6 @@ log.info """\
 
 //	benchmarking        :${params.benchmarking}
 //	debug               :${params.debug}
-//	online              :${params.online}
-
 
 if (params.input.endsWith("filelist.txt")) { // filelist
 	println("Detect filelist:");
@@ -52,30 +50,26 @@ process EnvCheck {
 	errorStrategy 'terminate'
 	label 'with_gpus'
 
-	when:
-	params.online
-
 	"""
 	set -x
 
-	#which tombo
-    tombo -v
-
-    #which nanopolish
-    nanopolish --version
-
-    #which megalodon
-    megalodon -v
-
-    #which deepsignal
-    deepsignal
-
-    #which DeepMod.py
-    DeepMod.py
-
-	#which guppy_basecaller
+	which guppy_basecaller
     guppy_basecaller -v
 
+	which tombo
+    tombo -v
+
+    which nanopolish
+    nanopolish --version
+
+    which megalodon
+    megalodon -v
+
+    which deepsignal
+    deepsignal
+
+    which DeepMod.py
+    DeepMod.py
     """
 }
 
@@ -127,9 +121,6 @@ reference_genome_ch.into{hg38_fa_ch1; hg38_fa_ch2;hg38_fa_ch3;hg38_fa_ch4;hg38_f
 process GetFast5Files{
 	tag 'GetFast5Files'
 	cache  'lenient'
-
-	when:
-	params.online
 
 	input:
 	/* Note: this channel may have three conditions (containing fast5 files):
