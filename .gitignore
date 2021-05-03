@@ -23,5 +23,6 @@ src/nanocompare/meth_stats
 src/nanocompare/methcall
 /script/
 /test/
+.Rhistory
 
 ## maintained by ly
