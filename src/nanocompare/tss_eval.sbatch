@@ -32,13 +32,11 @@ set -x
 
 echo ${NanoCompareDir}
 
-prjBaseDir=/projects/li-lab/yang/workspace/nano-compare
 
-pythonFn=${prjBaseDir}/src/nanocompare/tss_eval.py
+pythonFn=nanocompare/tss_eval.py
 
-PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:${DeepSignal_calls} \
+PYTHONPATH=. python ${pythonFn} --calls DeepSignal:${DeepSignal_calls} \
 	Tombo:${Tombo_calls} Nanopolish:${Nanopolish_calls} DeepMod.Cluster:${DeepMod_calls} \
 	Megalodon.ZW:${Megalodon_calls} --bgtruth ${parser}:${bgTruth} \
 	--runid TSS-${RunPrefix} --dsname ${Dataset} \
-	--baseFormat 1 \
-	$otherOptions #--toolcov-cutoff 3 --min-bgtruth-cov 5  --enable-cache --using-cache #--enable-cache --using-cache # cutoff=3 is reasonable now
+	--baseFormat 1 $otherOptions #--toolcov-cutoff 3 --min-bgtruth-cov 5  --enable-cache --using-cache #--enable-cache --using-cache # cutoff=3 is reasonable now

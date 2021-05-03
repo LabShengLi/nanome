@@ -108,6 +108,8 @@ process GetRefGenome{
 
 	tar xzf ${x5} -C .
 
+	## TODO: The Docker container do not have git,
+	## how about not use container for this process????
 	git clone https://github.com/WGLab/DeepMod.git
     """
 }
@@ -131,9 +133,9 @@ process GetFast5Files{
 	file x from fast5_tar_ch1 // flattened, emit 1 at a time
 
 	//TODO: why M_test_dir is ok in cloud, but M_*_dir is not ok ('// problem')? We want send multiple file to output here????
-	//I checked file or path is not working in cloud
+	//I checked file or path still not working in cloud, if I using *, failed, if I using M_${x}_dir, still failed.
 	output:
-//	path "M_*_dir" into fast5_dir_out_ch
+	//file "M_*_dir" into fast5_dir_out_ch
 	file "M_test_dir" into fast5_dir_out_ch
 
 	"""
@@ -152,6 +154,8 @@ process GetFast5Files{
 		exit 0
 	fi
 
+	## convert file name, replace . with _, no tar.gz suffix now,
+	## example: demo.fast5.tar.gz -> demo_fast5
 	newx=${x}
 	newx=\${newx%".tar.gz"}
 	newx=\${newx%".tar"}
