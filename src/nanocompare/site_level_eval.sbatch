@@ -32,11 +32,9 @@ set -x
 
 echo ${NanoCompareDir}
 
-prjBaseDir=/projects/li-lab/yang/workspace/nano-compare
+pythonFn=nanocompare/site_level_eval.py
 
-pythonFn=${prjBaseDir}/src/nanocompare/site_level_eval.py
-
-PYTHONPATH=${prjBaseDir}/src python ${pythonFn} --calls DeepSignal:${DeepSignal_calls} \
+PYTHONPATH=. python ${pythonFn} --calls DeepSignal:${DeepSignal_calls} \
 	Tombo:${Tombo_calls} Nanopolish:${Nanopolish_calls} DeepMod.Cluster:${DeepMod_calls} \
 	Megalodon.ZW:${Megalodon_calls} --bgtruth ${parser}:${bgTruth} \
 	--runid MethCorr-${RunPrefix} --dsname ${Dataset} \
