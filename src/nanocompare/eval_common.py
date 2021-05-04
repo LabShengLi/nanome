@@ -54,12 +54,7 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
     infile = open_file_gz_or_txt(infileName)
 
     for row in infile:
-        if isinstance(row, str):
-            row1 = row
-        else:  # byte array need decode firstly
-            row1 = row.decode()
-
-        tmp = row1.strip().split("\t")
+        tmp = row.strip().split("\t")
 
         if tmp[chr_col] != "chromosome":
             if output_first:
@@ -181,12 +176,7 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     unmeth_cnt = 0
 
     for row in infile:
-        if isinstance(row, str):
-            row1 = row
-        else:  # byte array need decode firstly
-            row1 = row.decode()
-
-        tmp = row1.strip().split("\t")
+        tmp = row.strip().split("\t")
 
         if tmp[chr_col] not in filterChr:
             continue
@@ -253,12 +243,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     unmeth_cnt = 0
 
     for row in infile:
-        if isinstance(row, str):
-            row1 = row
-        else:  # byte array need decode firstly
-            row1 = row.decode()
-
-        tmp = row1.strip().split("\t")
+        tmp = row.strip().split("\t")
 
         if tmp[chr_col] not in filterChr:
             continue
@@ -369,11 +354,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     first_row_checked = False
 
     for row in infile:
-        if isinstance(row, str):
-            row1 = row
-        else:  # byte array need decode firstly
-            row1 = row.decode()
-        tmp = row1.strip().split(sep)
+        tmp = row.strip().split(sep)
 
         if len(tmp) != total_cols:
             raise Exception(f"DeepMod RNN output format error: tmp={tmp}")
@@ -458,11 +439,7 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     unmeth_cnt = 0
 
     for row in infile:
-        if isinstance(row, str):
-            row1 = row
-        else:  # byte array need decode firstly
-            row1 = row.decode()
-        tmp = row1.strip().split(sep)
+        tmp = row.strip().split(sep)
 
         if len(tmp) != total_cols:
             raise Exception(f"DeepMod RNN+clustered output format error: tmp={tmp}")
@@ -542,12 +519,7 @@ def importPredictions_Megalodon(infileName, chr_col=1, start_col=3, strand_col=2
     unmeth_cnt = 0
 
     for row in infile:
-        if isinstance(row, str):
-            row1 = row
-        else:  # byte array need decode firstly
-            row1 = row.decode()
-
-        tmp = row1.strip().split(sep)
+        tmp = row.strip().split(sep)
 
         if tmp[chr_col] not in filterChr:
             continue
@@ -634,7 +606,7 @@ def readLevelToSiteLevelWithCov(ontDict, minCov=1, toolname="Tool"):
             if ontDict[cpg][1] >= minCov:  # no change for site level format, e.g., DeepModCluster
                 result[cpg] = ontDict[cpg]
         else:
-            raise Exception('Not support type of value of dict')
+            raise Exception(f'Not support type of value, type(ontDict[cpg])={type(ontDict[cpg])} for toolname={toolname}')
 
     logger.info(f"###\treadLevelToSiteLevelWithCov: completed filtering with minCov={minCov}, {len(result):,} CpG sites left for {toolname}")
     return result
@@ -648,7 +620,7 @@ def open_file_gz_or_txt(infn):
     """
     logger.info(f"open file: {infn}")
     if infn.endswith('.gz'):
-        infile = gzip.open(infn, 'rb')
+        infile = gzip.open(infn, 'rt') # using rt option, no need to convert bytearray
     else:
         infile = open(infn, 'r')
     return infile
@@ -702,12 +674,7 @@ def importGroundTruth_from_Encode(infileName, chr_col=0, start_col=1, methfreq_c
     for row in infile:
         nrow += 1
 
-        if isinstance(row, str):
-            row1 = row
-        else:  # byte array need decode firstly
-            row1 = row.decode()
-
-        tmp = row1.strip().split("\t")
+        tmp = row.strip().split("\t")
 
         if tmp[chr_col] not in humanChrSet:  # Filter out non-human chrs
             continue

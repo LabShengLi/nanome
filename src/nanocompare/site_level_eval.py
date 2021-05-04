@@ -156,7 +156,7 @@ def parse_arguments():
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
     parser.add_argument('--enable-cache', action='store_true')
     parser.add_argument('--using-cache', action='store_true')
-
+    parser.add_argument('--plot', help="plot the correlation figure",action='store_true')
     return parser.parse_args()
 
 
@@ -304,11 +304,12 @@ if __name__ == '__main__':
 
     logger.info(f'\n\n####################\n\n')
 
-    # plot fig5a of correlation plot
-    command = f"set -x; PYTHONPATH=$NanoCompareDir/src python $NanoCompareDir/src/plot_figure.py fig5a -i {outfn_joined} -o {out_dir}"
-    subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
+    if args.plot:
+        # plot fig5a of correlation plot
+        command = f"set -x; python plot_figure.py fig5a -i {outfn_joined} -o {out_dir}"
+        subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
 
-    logger.info(f'\n\n####################\n\n')
+        logger.info(f'\n\n####################\n\n')
 
     summary_cpgs_stats_results_table()
 
