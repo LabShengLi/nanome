@@ -273,7 +273,7 @@ if __name__ == '__main__':
         # Do not filter bgtruth, because we use later for overlapping (without bg-truth)
 
         ontCall = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, deepmod_cluster_freq_cov_format=True)
-        ontCallWithCov = coverageFilteringConverting(ontCall, minCov=minToolCovCutt, toolname=callname)
+        ontCallWithCov = readLevelToSiteLevelWithCov(ontCall, minCov=minToolCovCutt, toolname=callname)
         callresult_dict[callname] = ontCallWithCov
         outfn = os.path.join(out_dir, f'{RunPrefix}.tss.{callname}.cov{minToolCovCutt}.bed')
         output_dict_to_bed(ontCallWithCov, outfn)

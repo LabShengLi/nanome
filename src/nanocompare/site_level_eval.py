@@ -256,7 +256,7 @@ if __name__ == '__main__':
 
     # Cutoff of read cov >= 1 or 3, 5 for nanopore tools
     for callname in loaded_callname_list:
-        callresult_dict[callname].append(coverageFilteringConverting(callresult_dict[callname][0], minCov=minToolCovCutt, toolname=callname))
+        callresult_dict[callname].append(readLevelToSiteLevelWithCov(callresult_dict[callname][0], minCov=minToolCovCutt, toolname=callname))
 
     logger.info(f'\n\n####################\n\n')
 

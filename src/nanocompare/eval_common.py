@@ -302,10 +302,10 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
             continue
 
         meth_score = -methCall
-        if methCall < cutoff[0]: # below -1.5 is methylated by default
+        if methCall < cutoff[0]:  # below -1.5 is methylated by default
             meth_indicator = 1
             meth_cnt += 1
-        elif methCall > cutoff[1]: # above 2.5 is methylated by default
+        elif methCall > cutoff[1]:  # above 2.5 is methylated by default
             meth_indicator = 0
             unmeth_cnt += 1
         else:
@@ -323,8 +323,9 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     return cpgDict
 
 
-def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-3, meth_freq_col=-2, meth_cov_col=-1, baseFormat=1, sep=' ', output_first=False, include_score=False, filterChr=humanChrSet):
+def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-3, meth_freq_col=-2, meth_cov_col=-1, baseFormat=1, sep=' ', output_first=False, include_score=False, filterChr=humanChrSet, total_cols=13):
     """
+    DeepMod RNN results format
     We treate input as 0-based format for start col.
     Return dict of key='chr1  123  +', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
     Note that DeepMod only generate genome-level stats, we use meth cov and total coverage columns for read level evaluation.
@@ -373,6 +374,9 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
         else:  # byte array need decode firstly
             row1 = row.decode()
         tmp = row1.strip().split(sep)
+
+        if len(tmp) != total_cols:
+            raise Exception(f"DeepMod RNN output format error: tmp={tmp}")
 
         if tmp[chr_col] not in filterChr:
             continue
@@ -430,16 +434,19 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     return cpgDict
 
 
-def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4, meth_cov_col=-2, clustered_meth_freq_col=-1, baseFormat=1, sep=' ', output_first=False, as_freq_cov_format=True, include_score=False, filterChr=humanChrSet):
+def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4, meth_cov_col=-2, clustered_meth_freq_col=-1, baseFormat=1, sep=' ', output_first=False, siteLevel=True, include_score=False, filterChr=humanChrSet, total_cols=14):
     """
+    DeepMod RNN+Cluster results format for human genome
     Note that DeepMod only outputs site level stats, we use DeepMod clustered results for site level evaluation only.
-    Results can be both as Nanopolish or [methFrequency, coverage] such as key -> values [50 (freq 0-100), 10 (cov)]
+    This function have three outputs:
+    1. read level ouput of [0 0 1 1 1 ]
+    2. read level output of [(0, 0.0), (1, 1.0)]
+    3. site level output of [(0.25, 25), (0.8, 12)], i.e.,  [methFrequency, coverage] such as key -> values [50 (freq 0-100), 10 (cov)]
 
     ### Example input format from DeepMod (clustered - following Step 4 from "Example 3: Detect 5mC on Na12878" section; https://github.com/WGLab/DeepMod/blob/master/docs/Reproducibility.md):
     chr2 241991445 241991446 C 3 -  241991445 241991446 0,0,0 3 100 3 69
     chr2 241991475 241991476 C 3 -  241991475 241991476 0,0,0 3 33 1 75
     chr2 241991481 241991482 C 2 -  241991481 241991482 0,0,0 2 50 1 76
-
     Note: it is white space separated, not tab-separated file
     ============
     """
@@ -456,6 +463,9 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
         else:  # byte array need decode firstly
             row1 = row.decode()
         tmp = row1.strip().split(sep)
+
+        if len(tmp) != total_cols:
+            raise Exception(f"DeepMod RNN+clustered output format error: tmp={tmp}")
 
         if tmp[chr_col] not in filterChr:
             continue
@@ -486,11 +496,11 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
         if key in cpgDict:
             raise Exception(f'In DeepMod_Cluster results, we found duplicate key={key}, this is not correct')
 
-        if as_freq_cov_format:  # in dict
-            cpgDict[key] = {'freq': meth_freq, 'cov': coverage}
-        elif include_score:  # For site-level evaluation
+        if siteLevel:  # in dict
+            cpgDict[key] = (meth_freq, coverage)  # {'freq': meth_freq, 'cov': coverage}
+        elif include_score:  # For read-level include scores
             cpgDict[key] = [(1, 1.0)] * meth_cov + [(0, 0.0)] * (coverage - meth_cov)
-        else:  # For read-level evaluation
+        else:  # For read-level no scores
             cpgDict[key] = [1] * meth_cov + [0] * (coverage - meth_cov)
 
         count_calls += coverage
@@ -596,8 +606,10 @@ def importPredictions_Megalodon(infileName, chr_col=1, start_col=3, strand_col=2
     return cpgDict
 
 
-def coverageFilteringConverting(calls_dict, minCov=4, toolname="Tool"):
+def readLevelToSiteLevelWithCov(ontDict, minCov=1, toolname="Tool"):
     """
+    Convert read level dict into site level dict.
+
     Filtering low coverage CpG sites in ONT call dict object, keep only sites with cov >= minCov. Convert to unified format of [[freq, cov], ......]
     1. input is key-value, value like [000011100] or like [{'freq':0.7, 'cov':8}, ...]
     2. output will be converted to [[freq, cov], ......]
@@ -606,25 +618,25 @@ def coverageFilteringConverting(calls_dict, minCov=4, toolname="Tool"):
 
     meth_freq   in [0.0,1.0]
     cov_num     in int
-    Read-level -> Genome-level
+    Read-level -> Site-level
 
-    :param calls_dict:
+    :param ontDict:
     :param minCov:
     :param byLength: if False, will deal with DeepMod_cluster results
     :return:
     """
     result = defaultdict()
-    for cpg in calls_dict:
-        if type(calls_dict[cpg]) == list:  # value is [0 0 1 1 0 ...]
-            if len(calls_dict[cpg]) >= minCov:
-                result[cpg] = [sum(calls_dict[cpg]) / float(len(calls_dict[cpg])), len(calls_dict[cpg])]
-        elif type(calls_dict[cpg]) == dict:  # Used by DeepMod_cluster results, value is {'freq':0.72, 'cov':18}
-            if calls_dict[cpg]['cov'] >= minCov:
-                result[cpg] = [calls_dict[cpg]['freq'], calls_dict[cpg]['cov']]
+    for cpg in ontDict:
+        if type(ontDict[cpg]) == list:  # value is [0 0 1 1 0 ...]
+            if len(ontDict[cpg]) >= minCov:
+                result[cpg] = [sum(ontDict[cpg]) / float(len(ontDict[cpg])), len(ontDict[cpg])]
+        elif type(ontDict[cpg]) == tuple:  # Used by DeepMod_cluster results, value is (freq, cov) {'freq':0.72, 'cov':18}
+            if ontDict[cpg][1] >= minCov:  # no change for site level format, e.g., DeepModCluster
+                result[cpg] = ontDict[cpg]
         else:
             raise Exception('Not support type of value of dict')
 
-    logger.info(f"###\tcoverageFiltering: completed filtering with minCov={minCov}, {len(result):,} CpG sites left for {toolname}")
+    logger.info(f"###\treadLevelToSiteLevelWithCov: completed filtering with minCov={minCov}, {len(result):,} CpG sites left for {toolname}")
     return result
 
 
@@ -1129,7 +1141,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, deepmod_cluster
     elif encode == 'Megalodon.ZW':  # Here, ziwei preprocess the raw file to this format: chr_col=0, start_col=1, strand_col=3
         calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score, chr_col=0, start_col=1, strand_col=3, filterChr=filterChr)
     elif encode == 'DeepMod.Cluster':  # import DeepMod Clustered output for site level, itself tool reports by cluster, key->value={'freq':68, 'cov':10}
-        calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat, as_freq_cov_format=deepmod_cluster_freq_cov_format, include_score=include_score, filterChr=filterChr)
+        calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat, siteLevel=deepmod_cluster_freq_cov_format, include_score=include_score, filterChr=filterChr)
     elif encode == 'DeepMod.C':  # import DeepMod itself tool for read level
         calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, include_score=include_score, filterChr=filterChr)
     else:
