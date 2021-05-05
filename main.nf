@@ -73,110 +73,11 @@ process EnvCheck {
 }
 
 
-// Get input (model, reference_genome, etc.) from cloud drive zenodo, then output to channel for each tool
-//process GetRefGenome{
-//	tag 'GetRefGenome'
-//	cache  'lenient'
-//
-//	when:
-//	params.runMethcall
-//
-//	input:
-//	file x2 from deepmod_ctar_ch
-//	file x3 from deepsignel_model_tar_ch
-//	file x4 from megalodon_model_tar_ch
-//	file x5 from reference_genome_tar_ch
-//
-//	output:
-//	file "reference_genome" into reference_genome_ch //hg38_fa_ch
-//	file "deepmod_c" into deepmod_c_ch
-//	file "DeepMod" into deepmod_prj_ch //all model online
-//	file "deepsignal_model" into deepsignal_model_ch
-//	file "megalodon_model" into megalodon_model_ch
-//
-//	when:
-//	false
-//
-//	"""
-//	set -x
-//
-//	mkdir -p deepmod_c
-//	tar xzf ${x2} -C deepmod_c
-//
-//	mkdir -p deepsignal_model
-//	tar xzf ${x3} -C deepsignal_model
-//
-//	tar xzf ${x4} -C .
-//
-//	tar xzf ${x5} -C .
-//
-//	## TODO: The Docker container do not have git,
-//	## how about not use container for this process????
-//	### git clone https://github.com/WGLab/DeepMod.git
-//    """
-//}
-//
-
 // The reference genome will be used later for: Resquiggle, Nanopolish, Megalodon, etc.
 reference_genome_tar_ch.into{hg38_fa_ch1; hg38_fa_ch2;hg38_fa_ch3;hg38_fa_ch4;hg38_fa_ch5;hg38_fa_ch6}
 
 
-// Get input fast5.tar files from local or online, output to Basecall/Megalodon channel
-//process GetFast5Files{
-//	tag 'GetFast5Files'
-//	cache  'lenient'
-//
-//	input:
-//	/* Note: this channel may have three conditions (containing fast5 files):
-//				1. tar.gz
-//				2. tar
-//				3. folder
-//	*/
-////	file x from fast5_tar_ch1 // flattened, emit 1 at a time
-//
-//	//TODO: why M_test_dir is ok in cloud, but M_*_dir is not ok ('// problem')? We want send multiple file to output here????
-//	//I checked file or path still not working in cloud, if I using *, failed, if I using M_${x}_dir, still failed.
-//	output:
-//	//file "M_*_dir" into fast5_dir_out_ch
-//	file "M_test_dir" into fast5_dir_out_ch
-//
-//	when:
-//	false
-//
-//	"""
-//	set -x
-//
-//	infn=${x}
-//
-//	if [ "\${infn##*.}" == "tar" ]; then ### deal with tar
-//		mkdir -p untarDir
-//		tar -xf ${x} -C untarDir
-//	elif [ "\${infn##*.}" == "gz" ]; then ### deal with tar.gz
-//		mkdir -p untarDir
-//		tar -xzf ${x} -C untarDir
-//	else ### deal with ready folder
-//		cp -d ${x} M_${x}_dir
-//		exit 0
-//	fi
-//
-//	## convert file name, replace . with _, no tar.gz suffix now,
-//	## example: demo.fast5.tar.gz -> demo_fast5
-//	newx=${x}
-//	newx=\${newx%".tar.gz"}
-//	newx=\${newx%".tar"}
-//	newx="\${newx//./_}"
-//
-//	echo \${newx}
-//
-//	mv untarDir M_test_dir
-//    """
-//}
-
-
 // We collect all folders of fast5 files, and send into Channels for pipelines
-//fast5_dir_out_ch.into { basecall_input_ch; megalodon_in_ch; fast5_dir_out_ch2 }
-
-//println(fast5_dir_out_ch2)
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
@@ -211,9 +112,13 @@ process Basecall {
 		mv  ${fast5_tar} untarDir
 	fi
 
+	# move fast5 files in tree folders into a single folder
+	mkdir -p untarDir1
+    find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
+
     mkdir -p ${fast5_tar.simpleName}_basecalled
 
-    guppy_basecaller --input_path untarDir \
+    guppy_basecaller --input_path untarDir1 \
         --save_path "${fast5_tar.simpleName}_basecalled" \
         --config ${params.GUPPY_BASECALL_MODEL} \
         --num_callers ${params.GuppyNumCallers} \
@@ -225,7 +130,7 @@ process Basecall {
 	mv ${fast5_tar.simpleName}_basecalled/sequencing_summary.txt ${fast5_tar.simpleName}_basecalled/${fast5_tar.simpleName}-sequencing_summary.txt
 
 	## Clean
-	rm -rf untarDir
+	## rm -rf untarDir untarDir1
     """
 }
 
@@ -273,7 +178,7 @@ process Resquiggle {
 	file reference_genome_tar from hg38_fa_ch1
 
     output:
-    file '${basecallIndir.simpleName}_resquiggle_dir' into resquiggle_out_ch
+    file "${basecallIndir.simpleName}_resquiggle_dir" into resquiggle_out_ch
 
     when:
     params.runMethcall
@@ -283,9 +188,7 @@ process Resquiggle {
 
     ## untar reference_genome
     tar -xzf ${reference_genome_tar}
-
 	refGenome=${params.referenceGenome}
-
 
 	### only copy workspace files, due to nanpolish modify base folder at x
 	mkdir -p ${basecallIndir.simpleName}_resquiggle_dir
@@ -407,7 +310,7 @@ process Megalodon {
 //	file ttt from megalodon_in2_ch  // TODO: how to pass [basecallDir, refFile] int two vars
 
     output:
-    file 'megalodon_results/${params.dsname}.batch_${fast5_tar.simpleName}.per_read_modified_base_calls.txt' into megalodon_out_ch
+    file "batch_${fast5_tar.simpleName}.per_read_modified_base_calls.txt" into megalodon_out_ch
 
     when:
     params.runMethcall
@@ -455,7 +358,7 @@ process Megalodon {
 	    --devices 0 \
 	    --processes ${params.processors}
 
-	mv megalodon_results/per_read_modified_base_calls.txt megalodon_results/${params.dsname}.batch_${fast5_tar.simpleName}.per_read_modified_base_calls.txt
+	mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_tar.simpleName}.per_read_modified_base_calls.txt
     """
 }
 
@@ -504,15 +407,17 @@ process DeepMod {
 }
 
 
-nanopolish_in2_ch =  nanopolish_in_ch.flatten().combine(hg38_fa_ch5)
+//nanopolish_in2_ch =  nanopolish_in_ch.flatten().combine(hg38_fa_ch5)
 
 // Nanopolish runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Nanopolish {
-	tag "${ttt[0]}"
+	tag "${basecallDir.simpleName}"
 	cache  'lenient'
 
 	input:
-	file ttt from nanopolish_in2_ch
+//	file ttt from nanopolish_in2_ch
+	file basecallDir from nanopolish_in_ch
+	file reference_genome_tar from hg38_fa_ch5
 
     output:
     file '*.tsv' into nanopolish_out_ch
@@ -523,29 +428,22 @@ process Nanopolish {
     """
     set -x
 
-    filepair=(${ttt})
-	x=\${filepair[0]}
-	ref=\${filepair[1]}
-	refGenome=\${ref}/hg38.fasta
+	tar -xzf ${reference_genome_tar}
 	refGenome=${params.referenceGenome}
 
+	echo ${basecallDir}
 
     ### We put all fq and bam files into working dir, DO NOT affect the basecall dir
-	##fastqFile=\${x}/reads.fq
-	fastqFile=\${x}.reads.fq
+	fastqFile=reads.fq
 	fastqNoDupFile="\${fastqFile}.noDups.fq"
-	bamFileName="${params.dsname}.batch_\${x}.sorted.bam"
-
+	bamFileName="${params.dsname}.batch_${basecallDir.simpleName}.sorted.bam"
 
 	echo \${fastqFile}
 	echo \${fastqNoDupFile}
 
-	##rm -rf \${fastqFile} \${fastqNoDupFile}
-	##rm -rf \${x}/\${bamFileName} \${fastqNoDupFile}
-
 	## Do alignment firstly
 	touch \${fastqFile}
-	for f in \$(ls -1 \${x}/*.fastq)
+	for f in \$(ls -1 ${basecallDir}/*.fastq)
 	do
 		cat \$f >> \$fastqFile
 		# echo "cat \$f >> \$fastqFile - COMPLETED"
@@ -554,17 +452,20 @@ process Nanopolish {
 	python ${workflow.projectDir}/utils/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
 
 	# Index the raw read with fastq
-	nanopolish index -d \${x}/workspace \${fastqNoDupFile}
+	nanopolish index -d ${basecallDir}/workspace \${fastqNoDupFile}
 
 	minimap2 -t ${params.processors} -a -x map-ont \${refGenome} \${fastqNoDupFile} | samtools sort -T tmp -o \${bamFileName}
 	echo "### minimap2 finished"
 
 	samtools index -@ threads \${bamFileName}
 	echo "### samtools finished"
-
 	echo "### Alignment step DONE"
 
-	nanopolish call-methylation -t ${params.processors} -r \${fastqNoDupFile} -b \${bamFileName} -g \${refGenome} > ${params.dsname}.batch_\${x}.nanopolish.methylation_calls.tsv
+	nanopolish call-methylation -t ${params.processors} -r \
+		\${fastqNoDupFile} -b \${bamFileName} -g \${refGenome} \
+		 > ${params.dsname}.batch_${basecallDir}.nanopolish.methylation_calls.tsv
+
+	echo "### Nanopolish methylation calling DONE"
     """
 }
 
