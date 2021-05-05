@@ -252,17 +252,19 @@ process DeepSignal {
 }
 
 
-tombo_in_ch.flatten().combine(hg38_fa_ch6).set{tombo_in_ch1}
+//tombo_in_ch.flatten().combine(hg38_fa_ch6).set{tombo_in_ch1}
 
 
 // Tombo runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Tombo {
-	tag "${ttt[0]}"
+	tag "${resquiggleDir.simpleName}"
 	cache  'lenient'
 //	label 'with_gpus'
 
 	input:
-    file ttt from tombo_in_ch1 // [resquiggleDir, reference_genome]
+//    file ttt from tombo_in_ch1 // [resquiggleDir, reference_genome]
+	file reference_genome_tar from hg38_fa_ch6
+	file resquiggleDir from tombo_in_ch
 
     output:
     file '*.per_read_stats.bed' into tombo_out_ch
@@ -271,22 +273,23 @@ process Tombo {
     params.runMethcall
 
     """
-    x=${ttt[0]}
-    reference_genome_dir=${ttt[1]}
+    set -x
+    tar -xzf ${reference_genome_tar}
 
 	tombo detect_modifications alternative_model \
-		--fast5-basedirs \${x}/workspace \
+		--fast5-basedirs ${resquiggleDir.simpleName} \
 		--dna --standard-log-likelihood-ratio \
 		--statistics-file-basename \
-		${params.dsname}.batch_\${x} \
-		--per-read-statistics-basename ${params.dsname}.batch_\${x} \
+		batch_${resquiggleDir.simpleName} \
+		--per-read-statistics-basename batch_${resquiggleDir.simpleName} \
 		--alternate-bases CpG \
 		--processes ${params.processors} \
 		--corrected-group ${params.correctedGroup}
 
-	python ${workflow.projectDir}/utils/Tombo_extract_per_read_stats.py ${params.chromSizesFile} \
-				"${params.dsname}.batch_\${x}.CpG.tombo.per_read_stats" \
-				"${params.dsname}.batch_\${x}.CpG.tombo.per_read_stats.bed"
+	python ${workflow.projectDir}/utils/tombo_extract_per_read_stats.py \
+		${params.chromSizesFile} \
+		"batch_${resquiggleDir.simpleName}.CpG.tombo.per_read_stats" \
+		"batch_${resquiggleDir.simpleName}.CpG.tombo.per_read_stats.bed"
     """
 }
 
