@@ -611,7 +611,7 @@ process MgldnCombine {
     file x from megalodon_combine_in_ch
 
     output:
-    file '*.combine.tsv.gz' into megalodon_combine_out_ch
+    file '*.combine.bed.gz' into megalodon_combine_out_ch
 
     when:
     x.size() >= 1
@@ -623,14 +623,14 @@ process MgldnCombine {
 	do
 		break
 	done
-	#sed -n '1p' \${fn} > ${params.dsname}.Megalodon.combine.tsv
+	#sed -n '1p' \${fn} > ${params.dsname}.Megalodon.combine.bed
 
     for fn in $x
 	do
-		sed '1d' \${fn} >> ${params.dsname}.Megalodon.combine.tsv
+		sed '1d' \${fn} >> ${params.dsname}.Megalodon.combine.bed
 	done
 
-	gzip ${params.dsname}.Megalodon.combine.tsv
+	gzip ${params.dsname}.Megalodon.combine.bed
     """
 }
 
@@ -764,7 +764,7 @@ process ReadLevelPerf {
     tomboFile=\$(find . -maxdepth 1 -name '*.Tombo.combine.bed.gz')
     nanopolishFile=\$(find . -maxdepth 1 -name '*.Nanopolish.combine.tsv.gz')
     deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC.combine.bed.gz')
-    megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.tsv.gz')
+    megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.bed.gz')
 
     export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}
 
@@ -811,7 +811,7 @@ process SiteLevelCorr {
     tomboFile=\$(find . -maxdepth 1 -name '*.Tombo.combine.bed.gz')
     nanopolishFile=\$(find . -maxdepth 1 -name '*.Nanopolish.combine.tsv.gz')
     deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC_clusterCpG.combine.bed.gz')
-    megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.tsv.gz')
+    megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.bed.gz')
 
     export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}
 
