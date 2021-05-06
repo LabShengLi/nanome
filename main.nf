@@ -16,9 +16,8 @@ log.info """\
 	"""
 	.stripIndent()
 
-//	benchmarking        :${params.benchmarking}
-//	debug               :${params.debug}
 
+// We collect all folders of fast5 files, and send into Channels for pipelines
 if (params.input.endsWith(".filelist.txt")) { // filelist
 	Channel.fromPath( params.input )
 	    .splitCsv(header: false)
@@ -35,8 +34,6 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 
 // Inputs for methcalling pipelines (such as reference genome, deepsignal model, DeepMod Clustering data, Megalodon model, etc.)
 reference_genome_tar_ch = Channel.fromPath(params.reference_genome_tar)  //reference_genome_tar
-//deepmod_ctar_ch = Channel.fromPath(params.deepmod_ctar)
-deepmod_ctar_ch = Channel.fromPath(params.input)  // TODO: use for skip large deepmodC tar
 deepsignel_model_tar_ch = Channel.fromPath(params.deepsignel_model_tar)
 megalodon_model_tar_ch = Channel.fromPath(params.megalodon_model_tar)
 
@@ -72,12 +69,6 @@ process EnvCheck {
     """
 }
 
-
-// The reference genome will be used later for: Resquiggle, Nanopolish, Megalodon, etc.
-reference_genome_tar_ch.into{hg38_fa_ch1; hg38_fa_ch2;hg38_fa_ch3;hg38_fa_ch4;hg38_fa_ch5;hg38_fa_ch6}
-
-
-// We collect all folders of fast5 files, and send into Channels for pipelines
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
@@ -162,10 +153,6 @@ basecall_out_ch
 	.into { resquiggle_in_ch; nanopolish_in_ch; deepmod_in_ch }
 
 
-// Duplicates resquiggle outputs
-//resquiggle_in2_ch = resquiggle_in_ch.flatten().combine(hg38_fa_ch1)
-
-
 // resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
 process Resquiggle {
 	tag "${basecallIndir.simpleName}"
@@ -175,7 +162,7 @@ process Resquiggle {
 //	file ttt from resquiggle_in2_ch  // TODO: how to pass [basecallDir, refFile] int two vars
 
 	file basecallIndir from resquiggle_in_ch
-	file reference_genome_tar from hg38_fa_ch1
+	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
 
     output:
     file "${basecallIndir.simpleName}_resquiggle_dir" into resquiggle_out_ch
@@ -192,12 +179,14 @@ process Resquiggle {
 
 	### only copy workspace files, due to nanpolish modify base folder at x
 	mkdir -p ${basecallIndir.simpleName}_resquiggle_dir
-	cp ${basecallIndir}/workspace/*.fast5 ${basecallIndir.simpleName}_resquiggle_dir/
+	cp -rf ${basecallIndir}/* ${basecallIndir.simpleName}_resquiggle_dir/
 
     tombo resquiggle --dna --processes ${params.processors} \
         --corrected-group ${params.correctedGroup} \
 		--basecall-group Basecall_1D_000 --overwrite \
-		${basecallIndir.simpleName}_resquiggle_dir/ \${refGenome}
+		${basecallIndir.simpleName}_resquiggle_dir/workspace \${refGenome}
+
+	echo "### Tombo methylation calling DONE"
     """
 }
 
@@ -207,24 +196,22 @@ resquiggle_out_ch.into { deepsignal_in_ch; tombo_in_ch }
 
 
 deepsignal_in2_ch =
-	deepsignal_in_ch.flatten().combine(hg38_fa_ch3).combine(deepsignel_model_tar_ch)
-
+	deepsignal_in_ch.flatten().combine(Channel.fromPath(params.reference_genome_tar))
 
 
 // DeepSignal runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepSignal {
-	tag "${ttt[0]}"
+	tag "${ttt[0].simpleName}"
 
 	cache  'lenient'
 	label 'with_gpus'
 
 	input:
-//    file x from deepsignal_in_ch.flatten()
-// TODO: how to add more than two pair files [bdir, refGenome, DeepSignalModel]
-	file ttt from deepsignal_in2_ch
+	file ttt from deepsignal_in2_ch //[basecallDir, reference_genome]
+	file deepsignal_model_tar from deepsignel_model_tar_ch
 
     output:
-    file '*.tsv' into deepsignal_out_ch
+    file "DeepSignal.batch_${ttt[0].simpleName}.CpG.deepsignal.call_mods.tsv" into deepsignal_out_ch
 
     when:
     params.runMethcall
@@ -232,27 +219,20 @@ process DeepSignal {
     """
     set -x
 
-    filepair=(${ttt})
-	x=\${filepair[0]}
-	ref=\${filepair[1]}
-	refGenome=\${ref}/hg38.fasta
-	refGenome=${params.referenceGenome}
+    tar -xzf ${ttt[1]}
+    refGenome=${params.referenceGenome}
 
-	deepsignalModelDir=\${filepair[2]}
+    tar -xzf ${deepsignal_model_tar}
 
-
-	deepsignal call_mods --input_path \${x}/workspace \
-	    --model_path \${deepsignalModelDir}/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+/bn_17.sn_360.epoch_9.ckpt \
-		--result_file "${params.dsname}-DeepSignal.batch_\${x}.CpG.deepsignal.call_mods.tsv" \
+	deepsignal call_mods --input_path ${ttt[0].simpleName}/workspace \
+	    --model_path ./model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+/bn_17.sn_360.epoch_9.ckpt \
+		--result_file "DeepSignal.batch_${ttt[0].simpleName}.CpG.deepsignal.call_mods.tsv" \
 		--reference_path \${refGenome} \
 		--corrected_group ${params.correctedGroup} \
 		--nproc ${params.processors} \
-		--is_gpu ${params.DeepMod_isgpu}
+		--is_gpu ${params.DeepSignal_isgpu}
     """
 }
-
-
-//tombo_in_ch.flatten().combine(hg38_fa_ch6).set{tombo_in_ch1}
 
 
 // Tombo runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
@@ -263,11 +243,11 @@ process Tombo {
 
 	input:
 //    file ttt from tombo_in_ch1 // [resquiggleDir, reference_genome]
-	file reference_genome_tar from hg38_fa_ch6
+	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
 	file resquiggleDir from tombo_in_ch
 
     output:
-    file '*.per_read_stats.bed' into tombo_out_ch
+    file "batch_${resquiggleDir.simpleName}.CpG.tombo.per_read_stats.bed" into tombo_out_ch
 
     when:
     params.runMethcall
@@ -277,7 +257,7 @@ process Tombo {
     tar -xzf ${reference_genome_tar}
 
 	tombo detect_modifications alternative_model \
-		--fast5-basedirs ${resquiggleDir.simpleName} \
+		--fast5-basedirs ${resquiggleDir}/workspace \
 		--dna --standard-log-likelihood-ratio \
 		--statistics-file-basename \
 		batch_${resquiggleDir.simpleName} \
@@ -307,7 +287,7 @@ process Megalodon {
 
 	input:
 	file fast5_tar from fast5_tar_ch2
-	file reference_genome_tar from hg38_fa_ch2
+	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
 	file megalodonModelTar from megalodon_model_tar_ch
 
 //	file ttt from megalodon_in2_ch  // TODO: how to pass [basecallDir, refFile] int two vars
@@ -366,13 +346,9 @@ process Megalodon {
 }
 
 
-//deepmod_prj_ch.into{deepmod_prj_ch1; deepmod_prj_ch2}
-
-//deepmod_in2_ch = deepmod_in_ch.flatten().combine(hg38_fa_ch4).combine(deepmod_prj_ch1)
-
 // DeepMod runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepMod {
-	tag "${ttt[0]}"
+	tag "${basecallDir.simpleName}"
 
 	cache  'lenient'
 
@@ -380,37 +356,34 @@ process DeepMod {
 	label 'with_gpus'
 
 	input:
+	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
+	file basecallDir from deepmod_in_ch
 //	file ttt from deepmod_in2_ch  // [basecallDir, refGenome, DeepModPrj]
 
     output:
-    file 'mod_output/batch_*_num' into deepmod_out_ch
+    file "mod_output/batch_${basecallDir.simpleName}_num" into deepmod_out_ch
 
     when:
-    false
-//    params.runDeepMod && params.runMethcall
+    true
 
     """
     set -x
 
-    echo $ttt
-	filepair=(${ttt})
-	x=\${filepair[0]}
-	ref=\${filepair[1]}
-	refGenome=\${ref}/hg38.fasta
+    wget ${params.DeepModGithub} --no-verbose
+    tar -xzf v0.1.3.tar.gz
+    DeepModProjectDir="DeepMod-0.1.3"
+
+    tar -xzf ${reference_genome_tar}
 	refGenome=${params.referenceGenome}
 
-	DeepModProjectDir=${ttt[2]}
-
     DeepMod.py detect \
-			--wrkBase \${x}/workspace --Ref \${refGenome} \
+			--wrkBase ${basecallDir}/workspace --Ref \${refGenome} \
 			--Base C --modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
-			--FileID batch_\${x}_num \
+			--FileID batch_${basecallDir.simpleName}_num \
 			--threads ${params.processors} ${params.DeepModMoveOptions}  #--move
     """
 }
 
-
-//nanopolish_in2_ch =  nanopolish_in_ch.flatten().combine(hg38_fa_ch5)
 
 // Nanopolish runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Nanopolish {
@@ -420,10 +393,10 @@ process Nanopolish {
 	input:
 //	file ttt from nanopolish_in2_ch
 	file basecallDir from nanopolish_in_ch
-	file reference_genome_tar from hg38_fa_ch5
+	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
 
     output:
-    file '*.tsv' into nanopolish_out_ch
+    file "batch_${basecallDir.simpleName}.nanopolish.methylation_calls.tsv" into nanopolish_out_ch
 
     when:
     params.runMethcall
@@ -466,7 +439,7 @@ process Nanopolish {
 
 	nanopolish call-methylation -t ${params.processors} -r \
 		\${fastqNoDupFile} -b \${bamFileName} -g \${refGenome} \
-		 > ${params.dsname}.batch_${basecallDir}.nanopolish.methylation_calls.tsv
+		 > batch_${basecallDir.simpleName}.nanopolish.methylation_calls.tsv
 
 	echo "### Nanopolish methylation calling DONE"
     """
@@ -482,15 +455,14 @@ deepsignal_combine_in_ch = deepsignal_out_ch.toList()
 
 
 // Combine DeepSignal runs' all results together
-process DpSigCombine {
+process DpSigComb {
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
-	//label 'with_gpus'
 
 	input:
     file x from deepsignal_combine_in_ch
 
     output:
-    file '*.combine.tsv.gz' into deepsignal_combine_out_ch
+    file "${params.dsname}.DeepSignal.combine.tsv.gz" into deepsignal_combine_out_ch
 
     when:
     x.size() >= 1
@@ -507,15 +479,14 @@ process DpSigCombine {
 
 
 // Combine Tombo runs' all results together
-process TomboCombine {
+process TomboComb {
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
-	//label 'with_gpus'
 
 	input:
     file x from tombo_combine_in_ch // list of tombo bed files
 
     output:
-    file '*.combine.bed.gz' into tombo_combine_out_ch
+    file "${params.dsname}.Tombo.combine.bed.gz" into tombo_combine_out_ch
 
     when:
     x.size() >= 1
@@ -530,16 +501,14 @@ process TomboCombine {
 
 
 // Combine Megalodon runs' all results together
-process MgldnCombine {
-	//label 'with_gpus'
-
+process MgldnComb {
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
 
 	input:
     file x from megalodon_combine_in_ch
 
     output:
-    file '*.combine.bed.gz' into megalodon_combine_out_ch
+    file "${params.dsname}.Megalodon.combine.bed.gz" into megalodon_combine_out_ch
 
     when:
     x.size() >= 1
@@ -564,15 +533,14 @@ process MgldnCombine {
 
 
 // Combine Nanopolish runs' all results together
-process NplshCombine {
+process NplshComb {
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
-	//label 'with_gpus'
 
 	input:
     file x from nanopolish_combine_in_ch
 
     output:
-    file '*.combine.tsv.gz' into nanopolish_combine_out_ch
+    file "${params.dsname}.Nanopolish.combine.tsv.gz" into nanopolish_combine_out_ch
 
     when:
     x.size() >= 1
@@ -598,16 +566,14 @@ process NplshCombine {
 }
 
 
-
 // Combine DeepMod runs' all results together
-process DpmodCombine {
+process DpmodComb {
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
 	label 'with_gpus'  // cluster model need gpu
 
 	input:
     file x from deepmod_combine_in_ch
-//	file deepmod_project_dir from deepmod_prj_ch2
-    file deepmod_c_tar_file from deepmod_ctar_ch
+    file deepmod_c_tar_file from Channel.fromPath(params.deepmod_ctar)
 
     output:
     file '*.combine.bed.gz' into deepmod_combine_out_ch
@@ -618,15 +584,17 @@ process DpmodCombine {
     """
     set -x
 
-    echo ${deepmodCDir}/C
+    wget ${params.DeepModGithub} --no-verbose
+    tar -xzf v0.1.3.tar.gz
+    DeepModProjectDir="DeepMod-0.1.3"
 
-    DeepMod_Cluster_CDir=${deepmodCDir}/C
+    tar -xzf ${deepmod_c_tar_file}
 
 	mkdir -p indir
     for dx in $x
     do
         mkdir -p indir/\$dx
-        cp -rf \$dx/* indir/\$dx
+        cp -rf \$dx/* indir/\$dx/
     done
 
     python ${workflow.projectDir}/utils/sum_chr_mod.py \
@@ -636,8 +604,8 @@ process DpmodCombine {
 	## Only apply to human genome
 	python ${workflow.projectDir}/utils/hm_cluster_predict.py \
 		indir/${params.dsname}.deepmod \
-		\${DeepMod_Cluster_CDir} \
-		\${deepmod_project_dir}/train_deepmod/${params.clusterDeepModModel}  || true
+		./C \
+		\${DeepModProjectDir}/train_deepmod/${params.clusterDeepModModel}  || true
 
 	> ${params.dsname}.DeepModC.combine.bed
 
