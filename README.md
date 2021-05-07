@@ -61,7 +61,7 @@ ont-pyguppy-client-lib>=4.2.2
 Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https://nanoporetech.com)
 
 
-##Benchmarking reports using [Nextflow](https://www.nextflow.io/)
+### Benchmarking reports on our HPC using [Nextflow](https://www.nextflow.io/)
 
 We construct a benchmarking data contains reads from 800 to 8,000 reads for NA19240, and monitoring job running timeline and resource usage on our HPC, reports generated nextflow are: [Report](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/reports.pdf)  and [Timeline](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/timeline.pdf). 
 
