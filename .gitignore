@@ -9,7 +9,6 @@
 .idea/workspace.xml
 Rplots.pdf
 plots/*.png
-*.pdf
 out
 gen
 src/nanocompare/.DS_Store
