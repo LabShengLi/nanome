@@ -32,12 +32,6 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 }
 
 
-// Inputs for methcalling pipelines (such as reference genome, deepsignal model, DeepMod Clustering data, Megalodon model, etc.)
-reference_genome_tar_ch = Channel.fromPath(params.reference_genome_tar)  //reference_genome_tar
-deepsignel_model_tar_ch = Channel.fromPath(params.deepsignel_model_tar)
-megalodon_model_tar_ch = Channel.fromPath(params.megalodon_model_tar)
-
-
 // Check all tools work well on the platform
 process EnvCheck {
 
@@ -159,8 +153,6 @@ process Resquiggle {
 	cache  'lenient'
 
 	input:
-//	file ttt from resquiggle_in2_ch  // TODO: how to pass [basecallDir, refFile] int two vars
-
 	file basecallIndir from resquiggle_in_ch
 	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
 
@@ -208,7 +200,7 @@ process DeepSignal {
 
 	input:
 	file ttt from deepsignal_in2_ch //[basecallDir, reference_genome]
-	file deepsignal_model_tar from deepsignel_model_tar_ch
+	file deepsignal_model_tar from Channel.fromPath(params.deepsignel_model_tar)
 
     output:
     file "DeepSignal.batch_${ttt[0].simpleName}.CpG.deepsignal.call_mods.tsv" into deepsignal_out_ch
@@ -239,10 +231,8 @@ process DeepSignal {
 process Tombo {
 	tag "${resquiggleDir.simpleName}"
 	cache  'lenient'
-//	label 'with_gpus'
 
 	input:
-//    file ttt from tombo_in_ch1 // [resquiggleDir, reference_genome]
 	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
 	file resquiggleDir from tombo_in_ch
 
@@ -274,10 +264,6 @@ process Tombo {
 }
 
 
-// Megalodon will need 3 input together for each emit: [fast5Dir, hg38ReferenceGenome, ModelDir]
-//megalodon_in2_ch = megalodon_in_ch.flatten().combine(hg38_fa_ch2).combine(megalodon_model_ch)
-
-
 // Megalodon runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Megalodon {
 	tag "${fast5_tar.simpleName}"
@@ -288,15 +274,13 @@ process Megalodon {
 	input:
 	file fast5_tar from fast5_tar_ch2
 	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
-	file megalodonModelTar from megalodon_model_tar_ch
-
-//	file ttt from megalodon_in2_ch  // TODO: how to pass [basecallDir, refFile] int two vars
+	file megalodonModelTar from Channel.fromPath(params.megalodon_model_tar)
 
     output:
     file "batch_${fast5_tar.simpleName}.per_read_modified_base_calls.txt" into megalodon_out_ch
 
     when:
-    params.runMethcall
+    params.runMethcall && (params.runon == "gpu")
 
     """
     set -x
@@ -358,13 +342,12 @@ process DeepMod {
 	input:
 	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
 	file basecallDir from deepmod_in_ch
-//	file ttt from deepmod_in2_ch  // [basecallDir, refGenome, DeepModPrj]
 
     output:
     file "mod_output/batch_${basecallDir.simpleName}_num" into deepmod_out_ch
 
     when:
-    true
+    params.runDeepMod
 
     """
     set -x
@@ -391,7 +374,6 @@ process Nanopolish {
 	cache  'lenient'
 
 	input:
-//	file ttt from nanopolish_in2_ch
 	file basecallDir from nanopolish_in_ch
 	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
 
@@ -630,11 +612,11 @@ process DpmodComb {
 }
 
 
-//TODO: how sort the list???
 deepsignal_combine_out_ch.concat(tombo_combine_out_ch,megalodon_combine_out_ch, \
 	nanopolish_combine_out_ch,deepmod_combine_out_ch.flatten())
 	.toSortedList()
 	.into { readlevel_in_ch; sitelevel_in_ch }
+
 
 // Read level evaluations
 process ReadLevelPerf {
