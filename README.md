@@ -7,7 +7,7 @@
 
 
 ![Figure1](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig1.jpg)
-**Fig 1.**  **(A)** Timeline of publication and technological developments of Oxford Nanopore Technologies (ONT) methylation calling tools to detect DNA cytosine modifications. **(B)** Performance evaluation on 5mC/5C prediction of methylation calling tools with Nanopore sequencing.
+**Fig 1. Survey of methylation calling tools and proposed evaluation flowchart.**  **(A)** Timeline of publication and technological developments of Oxford Nanopore Technologies (ONT) methylation calling tools to detect DNA cytosine modifications. **(B)** Performance evaluation on 5mC/5C prediction of methylation calling tools with Nanopore sequencing.
 
 
 ![FigureS1](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/fig.s2.workflow.jpg)
@@ -18,11 +18,11 @@
 
 
 ![Figure4](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig4.jpg)
-**Fig 4. Comparison of Nanopore methylation calling tools for the detection of CpG methylation on four real world data sets in biologically relevant genomic contexts.**
+**Fig 4. Accuracy (A) and F1 score (B) comparison of Nanopore methylation calling tools for the detection of CpG methylation on four real world data sets in biologically relevant genomic contexts.**
 
 
 ![Figure5](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig5.jpg)
-**Fig 5. Comparison of Pearson correlation of methylation call tools across all CpG sites.** **(A)** Correlation plot showing Pearson correlation of each methylation calling tool with BS- Seq on NA19240. **(B-C)** Relationship between CpG methylation percentage and distance to annotated TSS in (B) NA19240 and (C) APL. **(D)** Relationship between CpG methylation percentage and distance to annotated CTCF binding peaks in NA19240. Distances are binned into (B, C) 50-bp, and (D) 100-bp windows. Negative distances are upstream and positive distances are downstream of the (B-C) TSS and CTCF binding peaks (D). 
+**Fig 5. Comparison of methylation percentage for NA19240 and APL.** **(A)** Correlation plot showing Pearson correlation of each methylation calling tool with BS- Seq on NA19240. **(B-C)** Relationship between CpG methylation percentage and distance to annotated TSS in (B) NA19240 and (C) APL. **(D)** Relationship between CpG methylation percentage and distance to annotated CTCF binding peaks in NA19240. Distances are binned into (B, C) 50-bp, and (D) 100-bp windows. Negative distances are upstream and positive distances are downstream of the (B-C) TSS and CTCF binding peaks (D). 
 
 
 ![Figure6](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig6.jpg)
@@ -37,6 +37,15 @@
 We construct a benchmarking data contains reads from 800 to 8,000 reads for NA19240, and monitoring job running timeline and resource usage on our HPC, reports generated nextflow are: [Report](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/reports.pdf)  and [Timeline](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/timeline.pdf). 
 
 **Conclusions:** Our study is the first benchmark of computational methods for mammalian whole genome DNA-modification detection in Nanopore sequencing. We provide a broad foundation for cross-platform standardization, and an evaluation of analytical tools designed for genome-scale modified-base detection using Nanopore sequencing.
+
+## System Requirements
+
+We will update within a short time.
+
+
+## Usage
+
+We will update within a short time.
 
 
 ## Revision History
