@@ -65,6 +65,11 @@ Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https:
 
 We construct a benchmarking data contains reads from 800 to 8,000 reads for NA19240, and monitoring job running timeline and resource usage on our HPC, reports generated nextflow are: [Report](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/reports.pdf)  and [Timeline](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/timeline.pdf). 
 
+Our HPC hardware specifications are as follows:
+* CPU: Intel(R) Xeon(R) Gold 6136 CPU @ 3.00GHz
+* GPU: Tesla V100-SXM2-32GB 
+* RAM: 300 GB
+* Slurm manager version: 19.05.5
 
 ## Installation
 
