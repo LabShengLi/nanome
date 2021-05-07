@@ -7,6 +7,7 @@
 
 
 ![Figure1](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig1.jpg)
+
 **Fig 1. Survey of methylation calling tools and proposed evaluation flowchart.**  **(A)** Timeline of publication and technological developments of Oxford Nanopore Technologies (ONT) methylation calling tools to detect DNA cytosine modifications. **(B)** Performance evaluation on 5mC/5C prediction of methylation calling tools with Nanopore sequencing.
 
 
@@ -17,24 +18,25 @@
 **Results:** We compare five analytic frameworks for detecting DNA modification from Nanopore long-read sequencing data. We evaluate the association between genomic context, CpG methylation-detection accuracy, CpG sites coverage, and running time using Nanopore sequencing data from natural human DNA. Furthermore, we provide an online DNA methylation database (https://nanome.jax.org) with which to display genomic regions that exhibit differences in DNA-modification detection power among different methylation calling algorithms for nanopore sequencing data.
 
 
-![Figure4](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig4.jpg)
-**Fig 4. Accuracy (A) and F1 score (B) comparison of Nanopore methylation calling tools for the detection of CpG methylation on four real world data sets in biologically relevant genomic contexts.**
+[comment]: <> (![Figure4]&#40;https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig4.jpg&#41;)
+
+[comment]: <> (**Fig 4. Accuracy &#40;A&#41; and F1 score &#40;B&#41; comparison of Nanopore methylation calling tools for the detection of CpG methylation on four real world data sets in biologically relevant genomic contexts.**)
 
 
-![Figure5](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig5.jpg)
-**Fig 5. Comparison of methylation percentage for NA19240 and APL.** **(A)** Correlation plot showing Pearson correlation of each methylation calling tool with BS- Seq on NA19240. **(B-C)** Relationship between CpG methylation percentage and distance to annotated TSS in (B) NA19240 and (C) APL. **(D)** Relationship between CpG methylation percentage and distance to annotated CTCF binding peaks in NA19240. Distances are binned into (B, C) 50-bp, and (D) 100-bp windows. Negative distances are upstream and positive distances are downstream of the (B-C) TSS and CTCF binding peaks (D). 
+[comment]: <> (![Figure5]&#40;https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig5.jpg&#41;)
+
+[comment]: <> (**Fig 5. Comparison of methylation percentage for NA19240 and APL.** **&#40;A&#41;** Correlation plot showing Pearson correlation of each methylation calling tool with BS- Seq on NA19240. **&#40;B-C&#41;** Relationship between CpG methylation percentage and distance to annotated TSS in &#40;B&#41; NA19240 and &#40;C&#41; APL. **&#40;D&#41;** Relationship between CpG methylation percentage and distance to annotated CTCF binding peaks in NA19240. Distances are binned into &#40;B, C&#41; 50-bp, and &#40;D&#41; 100-bp windows. Negative distances are upstream and positive distances are downstream of the &#40;B-C&#41; TSS and CTCF binding peaks &#40;D&#41;. )
 
 
-![Figure6](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig6.jpg)
-**Fig 6. CpG sites detected by methylation calling tools using NA19240.** UpSet diagram shown at the lower left is for CpG sites detected by all methylation calling tools. Venn diagram shown at the upper right is for CpG sites detected by Top3 performance methylation calling tools (Nanopolish, Megalodon and DeepSignal). For each methylation calling tool, only CpG sites covered >= 3 reads are considered.
+[comment]: <> (![Figure6]&#40;https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig6.jpg&#41;)
+
+[comment]: <> (**Fig 6. CpG sites detected by methylation calling tools using NA19240.** UpSet diagram shown at the lower left is for CpG sites detected by all methylation calling tools. Venn diagram shown at the upper right is for CpG sites detected by Top3 performance methylation calling tools &#40;Nanopolish, Megalodon and DeepSignal&#41;. For each methylation calling tool, only CpG sites covered >= 3 reads are considered.)
 
 
-![Figure7](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig7.jpg)
-**Fig 7. CPU utilized time and memory usage for each methylation calling tool on each dataset.** All tools were compared on the same computer clusters: 32 cores, 2.6GHz HP Proliant SL Series CPU, 300 GB RAM, NVIDIA Tesla P100 Data Center and 1 TB Data Direct Networks Gridscalar GS7k GPFS storage appliance. The HPC platform software and hardware specifications are: slurm manager version: 19.05.5, CPU: Intel(R) Xeon(R) Gold 6136 CPU @ 3.00GHz, GPU: Tesla V100-SXM2-32GB.
+[comment]: <> (![Figure7]&#40;https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig7.jpg&#41;)
 
-**Benchmarking reports using [Nextflow](https://www.nextflow.io/)**
+[comment]: <> (**Fig 7. CPU utilized time and memory usage for each methylation calling tool on each dataset.** All tools were compared on the same computer clusters: 32 cores, 2.6GHz HP Proliant SL Series CPU, 300 GB RAM, NVIDIA Tesla P100 Data Center and 1 TB Data Direct Networks Gridscalar GS7k GPFS storage appliance. The HPC platform software and hardware specifications are: slurm manager version: 19.05.5, CPU: Intel&#40;R&#41; Xeon&#40;R&#41; Gold 6136 CPU @ 3.00GHz, GPU: Tesla V100-SXM2-32GB.)
 
-We construct a benchmarking data contains reads from 800 to 8,000 reads for NA19240, and monitoring job running timeline and resource usage on our HPC, reports generated nextflow are: [Report](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/reports.pdf)  and [Timeline](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/timeline.pdf). 
 
 **Conclusions:** Our study is the first benchmark of computational methods for mammalian whole genome DNA-modification detection in Nanopore sequencing. We provide a broad foundation for cross-platform standardization, and an evaluation of analytical tools designed for genome-scale modified-base detection using Nanopore sequencing.
 
@@ -57,6 +59,18 @@ megalodon>=2.2.9
 ont-pyguppy-client-lib>=4.2.2  
 
 Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https://nanoporetech.com)
+
+
+### Benchmarking reports on our HPC using [Nextflow](https://www.nextflow.io/)
+
+We construct a benchmarking data contains reads from 800 to 8,000 reads for NA19240, and monitoring job running timeline and resource usage on our HPC, reports generated nextflow are: [Report](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/reports.pdf)  and [Timeline](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/timeline.pdf). 
+
+Our HPC hardware specifications are as follows:
+* CPU: Intel(R) Xeon(R) Gold 6136 CPU @ 3.00GHz
+* GPU: Tesla V100-SXM2-32GB 
+* RAM: 300 GB
+* Slurm manager version: 19.05.5
+
 
 ## Installation
 
