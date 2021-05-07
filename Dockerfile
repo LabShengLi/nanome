@@ -2,7 +2,7 @@ FROM genomicpariscentre/guppy-gpu:4.2.2
 LABEL description="Nanocompare project" \
       author="yang.liu@jax.org"
 RUN apt-get update -y \
-  && apt-get install procps -y \
+  && apt-get install procps git -y \
   && rm -rf /var/lib/apt/lists/*
  
 #Install miniconda
