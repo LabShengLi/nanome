@@ -18,6 +18,7 @@ All tools's methlation calling and evaluation results will be output to `outputs
 
 ```angular2html
 tree outputs/TestData-methylation-callings
+
 outputs/TestData-methylation-callings
 ├── TestData.DeepModC_clusterCpG.combine.bed.gz
 ├── TestData.DeepSignal.combine.tsv.gz
@@ -26,6 +27,7 @@ outputs/TestData-methylation-callings
 └── TestData.Tombo.combine.bed.gz
 
 tree -L 3  outputs/TestData-nanome-analysis/
+
 outputs/TestData-nanome-analysis/
 ├── MethCorr-TestData_RRBS
 │   ├── Meth_corr_plot_data_bgtruth-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv
@@ -48,8 +50,33 @@ outputs/TestData-nanome-analysis/
     ├── TestData_RRBS.summary.bsseq.singleton.nonsingleton.cov1.csv
     └── TestData_RRBS.Tools_BGTruth_cov1_Joined.bed
 ```
+# 2. Experiments on E. coli data
+The 'nanome' pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--referenceGenome` need to be set as E. coli reference genome such as 'reference_genome/ecoli/Ecoli_k12_mg1655.fasta'. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline `-config` params [conf/ecoli_demo.config](https://github.com/liuyangzzu/nanome/blob/master/conf/ecoli_demo.config)
 
-# 2. Benchmarking experiments
+```angular2html
+git clone https://github.com/liuyangzzu/nanome.git
+cd nanome
+curl -fsSL get.nextflow.io | bash
+
+./nextflow run main.nf -profile winter \
+    -config conf/ecoli_demo.config
+```
+
+The outputs of pipeline on E. coli data is results by all tools methylation calling below.
+
+```angular2html
+tree outputs/EcoliDemo-methylation-callings
+
+outputs/EcoliDemo-methylation-callings
+├── EcoliDemo.DeepModC.combine.bed.gz
+├── EcoliDemo.DeepSignal.combine.tsv.gz
+├── EcoliDemo.Megalodon.combine.tsv.gz
+├── EcoliDemo.Nanopolish.combine.tsv.gz
+└── EcoliDemo.Tombo.combine.bed.gz
+```
+
+
+# 3. Benchmarking experiments
 We constructed a list of benchmarking datasets contain Fast5 reads from 800 to 8,000  for NA19240. The datasets can be used upon request. Following command is running 'nanome' pipeline on our benchmarking datasets, reports runing time and memory usage by [Nextflow](https://www.nextflow.io/) utilities. Please refer to the [reports](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/reports.pdf) and [timeline](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/timeline.pdf) of benchmarking results on our HPC.
 
 ```angular2html
