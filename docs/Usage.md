@@ -70,7 +70,7 @@ tree outputs/EcoliDemo-methylation-callings
 outputs/EcoliDemo-methylation-callings
 ├── EcoliDemo.DeepModC.combine.bed.gz
 ├── EcoliDemo.DeepSignal.combine.tsv.gz
-├── EcoliDemo.Megalodon.combine.tsv.gz
+├── EcoliDemo.Megalodon.combine.bed.gz
 ├── EcoliDemo.Nanopolish.combine.tsv.gz
 └── EcoliDemo.Tombo.combine.bed.gz
 ```
