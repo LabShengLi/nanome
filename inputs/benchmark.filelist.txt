@@ -1,0 +1,10 @@
+/projects/li-lab/yang/results/2021-04-17-resource-usage/BenchmarkingData/MB1600K.tar.gz
+/projects/li-lab/yang/results/2021-04-17-resource-usage/BenchmarkingData/MB5600K.tar.gz
+/projects/li-lab/yang/results/2021-04-17-resource-usage/BenchmarkingData/MB8000K.tar.gz
+/projects/li-lab/yang/results/2021-04-17-resource-usage/BenchmarkingData/MB3200K.tar.gz
+/projects/li-lab/yang/results/2021-04-17-resource-usage/BenchmarkingData/MB7200K.tar.gz
+/projects/li-lab/yang/results/2021-04-17-resource-usage/BenchmarkingData/MB6400K.tar.gz
+/projects/li-lab/yang/results/2021-04-17-resource-usage/BenchmarkingData/MB800K.tar.gz
+/projects/li-lab/yang/results/2021-04-17-resource-usage/BenchmarkingData/MB4800K.tar.gz
+/projects/li-lab/yang/results/2021-04-17-resource-usage/BenchmarkingData/MB4000K.tar.gz
+/projects/li-lab/yang/results/2021-04-17-resource-usage/BenchmarkingData/MB2400K.tar.gz

@@ -78,8 +78,7 @@ We will update within a short time.
 
 ## Usage
 
-We will update within a short time.
-
+Please refer to [Usage](https://github.com/liuyangzzu/nanome/blob/master/docs/Usage.md) for how to use 'nanome' pipeline.
 
 ## Revision History
 
