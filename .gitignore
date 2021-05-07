@@ -7,6 +7,8 @@
 /.idea/
 *.iml
 .idea/workspace.xml
+Rplots.pdf
+plots/*.png
 out
 gen
 src/nanocompare/.DS_Store
@@ -19,5 +21,7 @@ nextflow
 src/nanocompare/meth_stats
 src/nanocompare/methcall
 /script/
+/test/
+.Rhistory
 
 ## maintained by ly

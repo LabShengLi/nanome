@@ -6,5 +6,8 @@
 
 #singularity run --app Rscript singularity-r.simg test.R
 
-singularity run -w singularity-r.simg
+module load singularity
+
+baseDir=/projects/li-lab/yang/
+singularity run -w ${baseDir}/singularity-r.simg
 

@@ -26,19 +26,18 @@ data_dir = indir #here('result', 'venn-data')
 out_dir = outdir # here('figures', 'venn-plot')
 dir.create(out_dir, showWarnings = FALSE)
 
-pattern.str = 'venn.data.*.dat'
-print(list.files(data_dir, pattern = pattern.str))
+pattern.str = 'venn.data.*.five.tools.cov3.dat'
+flist = list.files(data_dir, pattern = glob2rx(pattern.str))
+print(flist)
 
 venndata_list <- list()
 vennfn_list <- list()
 i = 1
-for (venfn in list.files(data_dir, pattern = pattern.str)) {
+for (venfn in flist) {
     infn = here('result', 'venn-data', venfn)
     print(infn)
     dt <- read.table(infn)
     base_infn = basename(infn)
-    
-    if (length(dt$V1) == 7) next
     
     ret = dt$V1
     comb = c("DeepSignal" = ret[1], "Tombo" = ret[2], "Nanopolish" = ret[3],
@@ -68,6 +67,7 @@ for (venfn in list.files(data_dir, pattern = pattern.str)) {
 ## TODO: why can not put plot in for loop????
 
 
+
 if (dsname == 'NA19240') {
     printi = 4 #NA19240
 }
@@ -84,8 +84,12 @@ if (dsname == 'K562') {
     printi = 3
 }
 
-outfn = here('figures', 'venn-plot', sprintf('upset.%s.pdf', vennfn_list[[printi]]))
-outfn = here('figures', 'venn-plot', sprintf('upset.%s.jpg', vennfn_list[[printi]]))
+print(flist)
+print(dsname)
+print(printi)
+
+outfn = here('figures', 'venn-plot', sprintf('fig.6ab.s8abc.upset.plot.%s.pdf', vennfn_list[[printi]]))
+# outfn = here('figures', 'venn-plot', sprintf('upset.%s.jpg', vennfn_list[[printi]]))
 
 print(outfn)
 
@@ -96,9 +100,9 @@ upsetTable = fromExpression(venndata_list[[printi]])
 
 dev.new()
 dev.list()
-# pdf(file = outfn, onefile = FALSE) # or other device
+pdf(file = outfn, onefile = FALSE) # or other device
 
-jpg(file = outfn)
+# jpg(file = outfn)
 
 upset(upsetTable, scale.intersections = "identity",
       sets.x.label = "Total CpGs", mainbar.y.label = "Intersection CpGs",

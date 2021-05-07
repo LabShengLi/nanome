@@ -1,22 +1,7 @@
 #!/home/liuya/anaconda3/envs/nmf/bin/python
-
 """
-Submit evaluation jobs based on tsv of all tools results file name
-
-python Universal_meth_stats_evaluation_submit.py /projects/liuya/workspace/tcgajax/nanocompare/meth_stats/NanoComarePerformance_NA19240.tsv
-
-
-modify tombo results as
-
-/projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/automated_Tombo_runs/NA19240_perChr/bk/NA19240_allChr.bed.CpGs.bed
+Submit read level evaluation jobs for each line input of tsv.
 """
-
-# example run command: python UniversalMethStatsEvaluation.standalone_01.submit.py <config file>
-
-# python /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/UniversalMethStatsEvaluation.standalone_02.submit.py NanoComarePerformance_configFile_4programs.tsv
-# python /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/UniversalMethStatsEvaluation.standalone_03.submit.py /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/NanoComarePerformance_03.joined_files.tsv
-# python /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/UniversalMethStatsEvaluation.standalone_03.submit.py /projects/li-lab/NanoporeData/WR_ONT_analyses/NanoCompare/NanoComarePerformance_03.joined_files.03.tsv
-
 import csv
 import os
 import subprocess
@@ -24,10 +9,9 @@ from sys import argv
 
 from nanocompare.global_config import src_base_dir
 
-sbatchFile = os.path.join(src_base_dir, 'nanocompare', "read_level_eval.sbatch")
+sbatchFile = os.path.join('nanocompare', "read_level_eval.sbatch")
 
 if __name__ == '__main__':
-
     infile = open(argv[1], 'r')
 
     others = ' '.join(argv[2:])

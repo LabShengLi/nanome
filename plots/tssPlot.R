@@ -7,9 +7,9 @@ library(ggplot2)
 library("optparse")
 
 option_list <- list(
-  make_option(c("-i", "--input"), type = "character", default = "/Users/liuya/PycharmProjects/nano-compare/result/NA19240.bin50.outMatrix.for.R.csv.gz",
+  make_option(c("-i", "--input"), type = "character", default = "result/tss.CTCF.data/NA19240.bin50.TSS.outMatrix.tsv.gz",
               help = "Input file"),
-  make_option(c("-o", "--output dir"), type = "character", default = getwd(),
+  make_option(c("-o", "--output dir"), type = "character", default = "figures/tss-plot",
               help = "Print little output"),
   make_option(c("--dsname"), type = "character", default = "NA19240",
               help = "Dataset name"),
@@ -37,9 +37,6 @@ dsname = opt$dsname
 infn = opt$input
 regionLabel = opt$regionLabel
 
-# infn = '/Users/liuya/PycharmProjects/nano-compare/result/APL.bin50.outMatrix.tsv.gz'
-# dsname='APL'
-
 col_types_str = paste0('ciicdc',
                        paste(replicate(numBins * 6, "d"), collapse = ""),
                        collapse = "")
@@ -53,7 +50,6 @@ dim(ndf)
 
 avg_df <- ndf %>%
   summarise_all(mean, na.rm = TRUE)
-
 dim(avg_df)
 
 bsdata = avg_df[, 1:numBins]
@@ -65,10 +61,10 @@ megalodon = avg_df[, (1 + numBins * 5):(numBins * 6)]
 
 xvector = seq(-flank, flank - 1, by = binSize)
 xlist = xvector
-# xlist = rep(xvector, nrow(bsdata))
 
 bslabel = opt$bslabel
 
+## Load the data from deepTools in same order we generate
 list_data <- list("BS-seq" = bsdata, 'DeepSignal' = deepsignal,
                   'Tombo' = tombo, 'Nanopolish' = nanopolish,
                   'DeepMod' = deepmod, 'Megalodon' = megalodon)
@@ -84,14 +80,12 @@ for (name in names(list_data)) {
 
 plotdf = as_tibble(plotdf)
 plotdf = transform(plotdf, x = as.numeric(x))
-# plotdf = plotdf[1:90000, ]
 
-if (bslabel == "WGBS") {
+if (bslabel == "WGBS") { # plot WGBS lines, NO DeepMod needed
     tools_bsseq = c('Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo', bslabel)
-} else {
+} else { # DO NOT plot RRBS lines
     tools_bsseq = c('Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo')
 }
-
 
 plotdf <- plotdf %>%
   mutate(tool = recode(tool, 'BS-seq' = bslabel)) %>%
@@ -99,29 +93,23 @@ plotdf <- plotdf %>%
   drop_na()
 
 head(plotdf)
-
 dim(plotdf)
-
 
 print("Start plotting")
 
-color_Pal <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "black", "#0072B2", "#D55E00", "#F0E442")
+# color_Pal <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "black", "#0072B2", "#D55E00", "#F0E442")
+# color_Pal <- c("#56B4E9", "#CC79A7", "#999999", "#E69F00", "#009E73", "black")
 ## New color order based on top performer oders
-color_Pal <- c("#56B4E9", "#CC79A7", "#999999", "#E69F00", "#009E73", "black")
 color_Pal <- c("#56B4E9", "#CC79A7", "#999999", "#E69F00",  "black")
 
 
-p1 <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool)) +
-  # p1 <- ggplot(plotdf, aes(x, y)) +
-  # geom_point(size = 0.5) +
-  # geom_line() +
+p1_smooth <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool)) +
   geom_smooth(method = "loess", size = 0.5, se = FALSE, aes(color = tool)) +
   scale_color_manual(values = color_Pal) +
   theme_bw() +
   theme(axis.line = element_line(colour = "black"),
         panel.border = element_blank(),
         panel.background = element_blank()) +
-  # scale_fill_brewer(palette = "Set1") +
   xlim(-2000, 2000) +
   ylim(0, 1) +
   ylab("% methylated") +
@@ -129,7 +117,7 @@ p1 <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool))
 
 global_size=24
 
-p2 <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool)) +
+p2_line <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool)) +
   geom_point(size = 1.5) +
   geom_line(size=1) +
   theme_bw() +
@@ -137,16 +125,12 @@ p2 <- ggplot(plotdf, aes(x = x, y = y, fill = tool, group = tool, color = tool))
         panel.border = element_blank(),
         panel.background = element_blank()) +
   theme(text = element_text(size=global_size)) +
-  # geom_smooth(method = "loess", size = 1, se = FALSE, aes(color = tool)) +
   scale_color_manual(values = color_Pal) +
-  # scale_fill_brewer(palette = "Set1") +
   xlim(-2000, 2000) +
   ylim(0, 1) +
   ylab("% methylated") +
   xlab(sprintf("Binned distance to %s (bp)", regionLabel)) +
   theme(legend.title = element_blank())
-
-
 
 print("Start saving")
 
@@ -156,8 +140,8 @@ dir.create(out_dir, showWarnings = FALSE)
 # outfn = sprintf("%s/%s.%s.binsize%d.smoothed.curves.jpg", out_dir, regionLabel, dsname, binSize)
 # ggsave(p1, filename = outfn, width = width, height = height, dpi = 600)
 
-outfn2 = sprintf("%s/%s.%s.binsize%d.lines.curves.jpg", out_dir, regionLabel, dsname, binSize)
-ggsave(p2, filename = outfn2, width = width, height = height, dpi = 600)
+outfn2 = sprintf("%s/fig.5bcd.figs7abcd.%s.%s.binsize%d.lines.curves.jpg", out_dir, regionLabel, dsname, binSize)
+ggsave(p2_line, filename = outfn2, width = width, height = height, dpi = 600)
 
 print(sprintf("save to %s.", outfn2))
 
