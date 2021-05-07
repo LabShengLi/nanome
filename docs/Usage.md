@@ -4,11 +4,13 @@ The inputs of 'nanome' pipeline is a folder/tar/tar.gz or txt file list containi
 
 # 1. Running 'nanome' on Fast5 files
 
-The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nano-compare`. `--input` is a compressed file contains Fast5 input file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `-profile` is the name of execution platform configuration, an example of how to use it is given below.
+The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome`. `--input` is a compressed file contains Fast5 input file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `-profile` is the name of execution platform configuration, an example of how to use it is given below.
 
 ```angular2html
-./nextflow run https://github.com/liuyangzzu/nano-compare \
-   --input 'https://github.com/liuyangzzu/nano-compare/raw/6684b71587c19d191ccf87832f25536be10e372f/test_data/demo.fast5.reads.tar.gz' \
+curl -fsSL get.nextflow.io | bash
+
+./nextflow run https://github.com/liuyangzzu/nanome \
+   --input 'https://github.com/liuyangzzu/nanome/raw/master/test_data/demo.fast5.reads.tar.gz' \
    --dsname TestData -profile winter
 ```
 
