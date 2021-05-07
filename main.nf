@@ -154,7 +154,7 @@ process Resquiggle {
 
 	input:
 	file basecallIndir from resquiggle_in_ch
-	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
+	each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
 
     output:
     file "${basecallIndir.simpleName}_resquiggle_dir" into resquiggle_out_ch
@@ -200,7 +200,7 @@ process DeepSignal {
 
 	input:
 	file ttt from deepsignal_in2_ch //[basecallDir, reference_genome]
-	file deepsignal_model_tar from Channel.fromPath(params.deepsignel_model_tar)
+	each file(deepsignal_model_tar) from Channel.fromPath(params.deepsignel_model_tar)
 
     output:
     file "DeepSignal.batch_${ttt[0].simpleName}.CpG.deepsignal.call_mods.tsv" into deepsignal_out_ch
@@ -233,7 +233,7 @@ process Tombo {
 	cache  'lenient'
 
 	input:
-	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
+	each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
 	file resquiggleDir from tombo_in_ch
 
     output:
@@ -273,8 +273,8 @@ process Megalodon {
 
 	input:
 	file fast5_tar from fast5_tar_ch2
-	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
-	file megalodonModelTar from Channel.fromPath(params.megalodon_model_tar)
+	each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	each file (megalodonModelTar) from Channel.fromPath(params.megalodon_model_tar)
 
     output:
     file "batch_${fast5_tar.simpleName}.per_read_modified_base_calls.txt" into megalodon_out_ch
@@ -340,7 +340,7 @@ process DeepMod {
 	label 'with_gpus'
 
 	input:
-	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
+	each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
 	file basecallDir from deepmod_in_ch
 
     output:
@@ -375,7 +375,7 @@ process Nanopolish {
 
 	input:
 	file basecallDir from nanopolish_in_ch
-	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
+	each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
 
     output:
     file "batch_${basecallDir.simpleName}.nanopolish.methylation_calls.tsv" into nanopolish_out_ch
