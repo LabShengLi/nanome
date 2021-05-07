@@ -6,9 +6,9 @@
 **Background:** Nanopore long-read sequencing technology greatly expands the capacity of long-range single-molecule DNA-modification detection. A growing number of analytical tools have been actively developed to detect DNA methylation from Nanopore sequencing reads. Here, we examine the performance of different methylation calling tools to provide a systematic evaluation to guide practitioners for human epigenome-wide research.
 
 
-[comment]: <> (![Figure1]&#40;https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig1.jpg&#41;)
+![Figure1](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig1.jpg)
 
-[comment]: <> (**Fig 1. Survey of methylation calling tools and proposed evaluation flowchart.**  **&#40;A&#41;** Timeline of publication and technological developments of Oxford Nanopore Technologies &#40;ONT&#41; methylation calling tools to detect DNA cytosine modifications. **&#40;B&#41;** Performance evaluation on 5mC/5C prediction of methylation calling tools with Nanopore sequencing.)
+**Fig 1. Survey of methylation calling tools and proposed evaluation flowchart.**  **(A)** Timeline of publication and technological developments of Oxford Nanopore Technologies (ONT) methylation calling tools to detect DNA cytosine modifications. **(B)** Performance evaluation on 5mC/5C prediction of methylation calling tools with Nanopore sequencing.
 
 
 ![FigureS1](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/fig.s2.workflow.jpg)
