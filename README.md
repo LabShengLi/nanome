@@ -40,8 +40,27 @@ We construct a benchmarking data contains reads from 800 to 8,000 reads for NA19
 
 ## System Requirements
 
-We will update within a short time.
+### Hardware requirements
 
+The 'nanome' is based on Nextflow pipeline framework, and start with raw fast5 Nanopore sequencing input data with a reference genome. The pipeline can be configured with different RAM, number of processors, GPU resources schema to parallel run all methylation calling tools. For optimal usage, we recommend using 'nanome' pipeline on HPC:
+* GPU or CPU with 8+ cores 
+* RAM: 50+ GB per cpu
+* Storage using HDD or SSD. Please ensure your storage before running the pipeline.
+
+
+### Software requirements
+nanopolish>=0.13.2  
+ont-tombo>=1.5.1  
+deepsignal>=0.1.8  
+deepmod>=0.1.3  
+megalodon>=2.2.9  
+ont-pyguppy-client-lib>=4.2.2  
+
+Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https://nanoporetech.com)
+
+## Installation
+
+We will update within a short time.
 
 ## Usage
 
