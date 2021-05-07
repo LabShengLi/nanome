@@ -2,9 +2,9 @@
 
 The inputs of 'nanome' pipeline is a folder/tar/tar.gz or txt file list containing raw signal Fast5 files and a reference genome. We recommend allocate GPU resources to softwares such as Guppy, DeepSignal, DeepMod and Megalodon, in order to optimal running times.
 
-# 1. Running 'nanome' on a compressed file contains Fast5 files
+# 1. Running 'nanome' on Fast5 files
 
-The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nano-compare`. `--input` is the Fast5 input file locations, `--dsname` is output dataset name, `-profile` is the name of execution platform configuration, an example of how to use it is given below.
+The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nano-compare`. `--input` is a compressed file contains Fast5 input file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `-profile` is the name of execution platform configuration, an example of how to use it is given below.
 
 ```angular2html
 ./nextflow run https://github.com/liuyangzzu/nano-compare \
@@ -12,7 +12,7 @@ The command for running 'nanome' pipeline is to run `./nextflow run https://gith
    --dsname TestData -profile winter
 ```
 
-All tools's methlation calling and evaluation results will be output to `outputs` folder below.
+All tools's methlation calling and evaluation results will be output to `outputs` folder by default below.
 
 ```angular2html
 tree outputs/TestData-methylation-callings
@@ -23,7 +23,7 @@ outputs/TestData-methylation-callings
 ├── TestData.Nanopolish.combine.tsv.gz
 └── TestData.Tombo.combine.bed.gz
 
-tree -L 2  outputs/TestData-nanome-analysis/
+tree -L 3  outputs/TestData-nanome-analysis/
 outputs/TestData-nanome-analysis/
 ├── MethCorr-TestData_RRBS
 │   ├── Meth_corr_plot_data_bgtruth-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv
@@ -35,6 +35,11 @@ outputs/TestData-nanome-analysis/
 │   └── venn.data.TestData_RRBS.TestData.top3.cov1.dat
 └── MethPerf-TestData_RRBS
     ├── performance-results
+    │   ├── curve_data
+    │   ├── TestData_RRBS.DeepMod.performance.report.csv
+    │   ├── TestData_RRBS.DeepSignal.performance.report.csv
+    │   ├── TestData_RRBS.Megalodon.performance.report.csv
+    │   └── TestData_RRBS.Nanopolish.performance.report.csv
     ├── run-results.log
     ├── TestData_RRBS.hg38_nonsingletons.concordant.bed
     ├── TestData_RRBS.hg38_nonsingletons.discordant.bed
