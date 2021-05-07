@@ -37,9 +37,6 @@
 
 [comment]: <> (**Fig 7. CPU utilized time and memory usage for each methylation calling tool on each dataset.** All tools were compared on the same computer clusters: 32 cores, 2.6GHz HP Proliant SL Series CPU, 300 GB RAM, NVIDIA Tesla P100 Data Center and 1 TB Data Direct Networks Gridscalar GS7k GPFS storage appliance. The HPC platform software and hardware specifications are: slurm manager version: 19.05.5, CPU: Intel&#40;R&#41; Xeon&#40;R&#41; Gold 6136 CPU @ 3.00GHz, GPU: Tesla V100-SXM2-32GB.)
 
-**Benchmarking reports using [Nextflow](https://www.nextflow.io/)**
-
-We construct a benchmarking data contains reads from 800 to 8,000 reads for NA19240, and monitoring job running timeline and resource usage on our HPC, reports generated nextflow are: [Report](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/reports.pdf)  and [Timeline](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/timeline.pdf). 
 
 **Conclusions:** Our study is the first benchmark of computational methods for mammalian whole genome DNA-modification detection in Nanopore sequencing. We provide a broad foundation for cross-platform standardization, and an evaluation of analytical tools designed for genome-scale modified-base detection using Nanopore sequencing.
 
@@ -62,6 +59,12 @@ megalodon>=2.2.9
 ont-pyguppy-client-lib>=4.2.2  
 
 Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https://nanoporetech.com)
+
+
+##Benchmarking reports using [Nextflow](https://www.nextflow.io/)
+
+We construct a benchmarking data contains reads from 800 to 8,000 reads for NA19240, and monitoring job running timeline and resource usage on our HPC, reports generated nextflow are: [Report](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/reports.pdf)  and [Timeline](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/timeline.pdf). 
+
 
 ## Installation
 
