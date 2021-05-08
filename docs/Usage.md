@@ -15,6 +15,46 @@ curl -fsSL get.nextflow.io | bash
    --input 'https://github.com/liuyangzzu/nanome/raw/master/test_data/demo.fast5.reads.tar.gz' \
    --dsname TestData -profile winter
 ```
+Command running results is below.
+
+```angular2html
+/projects/li-lab/yang/workspace/nano-compare
+N E X T F L O W  ~  version 20.10.0
+Launching `main.nf` [cranky_mclean] - revision: 39f38efca0
+NANOME - NF PIPELINE (v1.0)
+by Li Lab at The Jackon Laboratory
+http://nanome.jax.org
+=================================
+dsname              :TestData
+input               :https://github.com/liuyangzzu/nano-compare/raw/master/test_data/demo.fast5.reads.tar.gz
+reference_genome    :reference_genome/hg38/hg38.fasta
+chromSizesFile      :reference_genome/hg38/hg38.chrom.sizes
+runBasecall         :true
+runMethcall         :true
+eval                :true
+=================================
+[48/3e3907] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
+[17/90a391] process > Basecall (demo)                [100%] 1 of 1 ✔
+[d6/69e78c] process > QCExport                       [100%] 1 of 1 ✔
+[c5/cf14e8] process > Resquiggle (demo_basecalled)   [100%] 1 of 1 ✔
+[a3/999899] process > DeepSignal (demo_basecalled... [100%] 1 of 1 ✔
+[07/b1b4ee] process > Tombo (demo_basecalled_resq... [100%] 1 of 1 ✔
+[23/67a831] process > Megalodon (demo)               [100%] 1 of 1 ✔
+[ad/d1711a] process > DeepMod (demo_basecalled)      [100%] 1 of 1 ✔
+[11/16ec4f] process > Nanopolish (demo_basecalled)   [100%] 1 of 1 ✔
+[ff/cbc8eb] process > DpSigComb                      [100%] 1 of 1 ✔
+[8e/b03fa7] process > TomboComb                      [100%] 1 of 1 ✔
+[03/53d299] process > MgldnComb                      [100%] 1 of 1 ✔
+[28/c1e9ce] process > NplshComb                      [100%] 1 of 1 ✔
+[48/d6a003] process > DpmodComb                      [100%] 1 of 1 ✔
+[de/77fc3b] process > ReadLevelPerf                  [100%] 1 of 1 ✔
+[b5/be8fb0] process > SiteLevelCorr                  [100%] 1 of 1 ✔
+Completed at: 06-May-2021 18:31:41
+Duration    : 39m 18s
+CPU hours   : 0.9
+Succeeded   : 16
+```
+
 
 All tools's methlation calling and evaluation results will be output to `outputs` folder by default below.
 
@@ -63,8 +103,45 @@ curl -fsSL get.nextflow.io | bash
 ./nextflow run main.nf -profile winter \
     -config conf/ecoli_demo.config
 ```
+Command running results is below.
 
-The outputs of pipeline on E. coli data is results by all tools methylation calling below.
+```angular2html
+N E X T F L O W  ~  version 20.10.0
+Launching `main.nf` [friendly_leakey] - revision: eafc216253
+NANOME - NF PIPELINE (v1.0)
+by Li Lab at The Jackon Laboratory
+http://nanome.jax.org
+=================================
+dsname              :EcoliDemo
+input               :/projects/li-lab/Nanopore_compare/suppdata/ecoli-sanity-check/ecoli_meteore.tar.gz
+reference_genome    :reference_genome/ecoli/Ecoli_k12_mg1655.fasta
+chromSizesFile      :reference_genome/ecoli/Ecoli_k12_mg1655.fasta.genome.sizes
+runBasecall         :true
+runMethcall         :true
+eval                :false
+=================================
+executor >  slurm (14)
+[3f/f6f1d7] process > EnvCheck (EnvCheck)                                  [100%] 1 of 1 ✔
+[f8/ce877c] process > Basecall (ecoli_meteore)                             [100%] 1 of 1 ✔
+[d5/f84584] process > QCExport                                             [100%] 1 of 1 ✔
+[21/74324c] process > Resquiggle (ecoli_meteore_basecalled)                [100%] 1 of 1 ✔
+[2f/f36517] process > DeepSignal (ecoli_meteore_basecalled_resquiggle_dir) [100%] 1 of 1 ✔
+[ba/166a6f] process > Tombo (ecoli_meteore_basecalled_resquiggle_dir)      [100%] 1 of 1 ✔
+[5b/c3613f] process > Megalodon (ecoli_meteore)                            [100%] 1 of 1 ✔
+[2a/f80bc3] process > DeepMod (ecoli_meteore_basecalled)                   [100%] 1 of 1 ✔
+[29/d9b126] process > Nanopolish (ecoli_meteore_basecalled)                [100%] 1 of 1 ✔
+[2b/18376c] process > DpSigComb                                            [100%] 1 of 1 ✔
+[20/ca5232] process > TomboComb                                            [100%] 1 of 1 ✔
+[c7/4c2e8d] process > MgldnComb                                            [100%] 1 of 1 ✔
+[4c/50e8a1] process > NplshComb                                            [100%] 1 of 1 ✔
+[c5/ad8ca7] process > DpmodComb                                            [100%] 1 of 1 ✔
+Completed at: 08-May-2021 16:53:56
+Duration    : 7m 35s
+CPU hours   : 0.4
+Succeeded   : 14
+```
+
+The output files of pipeline on E. coli data by all tools are below.
 
 ```angular2html
 tree outputs/EcoliDemo-methylation-callings

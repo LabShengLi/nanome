@@ -31,9 +31,9 @@ workingDir=/fastscratch/liuya/nanocompare/work
 ## Option 1:
 # Running nanome pipeline on test data (from NA19240) in Human Genome
 #rm -rf ${workingDir}-test
-#./nextflow run main.nf -profile winter \
-#    -work-dir ${workingDir}-test3 \
-#    -config conf/test.config #-resume
+./nextflow run main.nf -profile winter \
+    -work-dir ${workingDir}-test3 \
+    -config conf/test.config
 
 
 ###############################################################
@@ -51,11 +51,11 @@ workingDir=/fastscratch/liuya/nanocompare/work
 ###############################################################
 ## Option 3:
 ## Run on benchmarking data
-rm -rf ${workingDir}-benchmark3
-./nextflow run main.nf -profile winter  \
-	-with-report -with-timeline -with-trace -with-dag \
-	-work-dir ${workingDir}-benchmark3 \
-	-resume -config conf/benchmarking.config
+#rm -rf ${workingDir}-benchmark3
+#./nextflow run main.nf -profile winter  \
+#	-with-report -with-timeline -with-trace -with-dag \
+#	-work-dir ${workingDir}-benchmark3 \
+#	-resume -config conf/benchmarking.config
 
 ###############################################################
 ###############################################################

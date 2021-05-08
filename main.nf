@@ -34,7 +34,6 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 
 // Check all tools work well on the platform
 process EnvCheck {
-
 	tag 'EnvCheck'
 	// teminate all later processes if this process is not passed
 	errorStrategy 'terminate'
@@ -99,6 +98,11 @@ process Basecall {
 	mkdir -p untarDir1
     find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
 
+    ## Clean old analyses in input fast5 files
+    if [[ "${params.cleanAnalyses}" = true ]] ; then
+        python ${workflow.projectDir}/utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir
+    fi
+
     mkdir -p ${fast5_tar.simpleName}_basecalled
     guppy_basecaller --input_path untarDir1 \
         --save_path "${fast5_tar.simpleName}_basecalled" \
@@ -111,8 +115,8 @@ process Basecall {
     ## After basecall, rename and publishe summary file names
 	mv ${fast5_tar.simpleName}_basecalled/sequencing_summary.txt ${fast5_tar.simpleName}_basecalled/${fast5_tar.simpleName}-sequencing_summary.txt
 
-	## Clean
-	## rm -rf untarDir untarDir1
+	## Clean unused files
+	rm -rf untarDir untarDir1
     """
 }
 
@@ -165,8 +169,8 @@ process Resquiggle {
 	cp -rf ${basecallIndir}/* ${basecallIndir.simpleName}_resquiggle_dir/
 
     tombo resquiggle --dna --processes ${params.processors} \
-        --corrected-group ${params.correctedGroup} \
-		--basecall-group Basecall_1D_000 --overwrite \
+        --corrected-group ${params.resquiggleCorrectedGroup} \
+		--basecall-group ${params.BasecallGroupName} --overwrite \
 		${basecallIndir.simpleName}_resquiggle_dir/workspace \${refGenome}
 
 	echo "### Tombo methylation calling DONE"
@@ -210,7 +214,7 @@ process DeepSignal {
 	    --model_path ./model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+/bn_17.sn_360.epoch_9.ckpt \
 		--result_file "DeepSignal.batch_${ttt[0].simpleName}.CpG.deepsignal.call_mods.tsv" \
 		--reference_path \${refGenome} \
-		--corrected_group ${params.correctedGroup} \
+		--corrected_group ${params.resquiggleCorrectedGroup} \
 		--nproc ${params.processors} \
 		--is_gpu ${params.DeepSignal_isgpu}
     """
@@ -243,7 +247,7 @@ process Tombo {
 		--per-read-statistics-basename batch_${resquiggleDir.simpleName} \
 		--alternate-bases CpG \
 		--processes ${params.processors} \
-		--corrected-group ${params.correctedGroup}
+		--corrected-group ${params.resquiggleCorrectedGroup}
 
 	python ${workflow.projectDir}/utils/tombo_extract_per_read_stats.py \
 		${params.chromSizesFile} \
@@ -345,11 +349,19 @@ process DeepMod {
     tar -xzf ${reference_genome_tar}
 	refGenome=${params.referenceGenome}
 
+
+	if [[ "${params.dataType}" = "human" ]] ; then
+		mod_cluster=1 ## Human will use cluster model
+	else
+		mod_cluster=0 ## Not human will skip cluser model
+	fi
+
     DeepMod.py detect \
 			--wrkBase ${basecallDir}/workspace --Ref \${refGenome} \
 			--Base C --modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
 			--FileID batch_${basecallDir.simpleName}_num \
-			--threads ${params.processors} ${params.DeepModMoveOptions}  #--move
+			--threads ${params.processors} ${params.DeepModMoveOptions}  \
+			--basecall_1d ${params.BasecallGroupName} ###	--mod_cluster \${mod_cluster}
     """
 }
 
@@ -543,7 +555,7 @@ process DpmodComb {
     file deepmod_c_tar_file from Channel.fromPath(params.deepmod_ctar)
 
     output:
-    file '*.combine.bed.gz' into deepmod_combine_out_ch
+    file "${params.dsname}.*.combine.bed.gz" into deepmod_combine_out_ch
 
     when:
     x.size() >= 1
@@ -567,31 +579,31 @@ process DpmodComb {
     python ${workflow.projectDir}/utils/sum_chr_mod.py \
         indir/ C ${params.dsname}.deepmod ${params.DeepModSumChrSet}
 
-	## TODO: deepmod_project_dir is not correct now
-	## Only apply to human genome
-	python ${workflow.projectDir}/utils/hm_cluster_predict.py \
-		indir/${params.dsname}.deepmod \
-		./C \
-		\${DeepModProjectDir}/train_deepmod/${params.clusterDeepModModel}  || true
-
-	> ${params.dsname}.DeepModC.combine.bed
+    > ${params.dsname}.DeepModC.combine.bed
 
 	## Note: for ecoli data, no chr*, but N*
 	for f in \$(ls -1 indir/${params.dsname}.deepmod.*.C.bed)
 	do
 	  cat \$f >> ${params.dsname}.DeepModC.combine.bed
 	done
-
-	> ${params.dsname}.DeepModC_clusterCpG.combine.bed
-
-	for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
-	do
-	  cat \$f >> ${params.dsname}.DeepModC_clusterCpG.combine.bed
-	done
-
 	gzip ${params.dsname}.DeepModC.combine.bed
-	gzip ${params.dsname}.DeepModC_clusterCpG.combine.bed
 
+	if [[ "${params.dataType}" = "human" ]] ; then
+		## Only apply to human genome
+		echo "### For human, apply cluster model of DeepMod"
+		python ${workflow.projectDir}/utils/hm_cluster_predict.py \
+			indir/${params.dsname}.deepmod \
+			./C \
+			\${DeepModProjectDir}/train_deepmod/${params.clusterDeepModModel}  || true
+		> ${params.dsname}.DeepModC_clusterCpG.combine.bed
+
+		for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
+		do
+		  cat \$f >> ${params.dsname}.DeepModC_clusterCpG.combine.bed
+		done
+
+		gzip ${params.dsname}.DeepModC_clusterCpG.combine.bed
+	fi
 	echo "###DeepMod combine DONE###"
     """
 }
