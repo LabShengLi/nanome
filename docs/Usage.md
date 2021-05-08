@@ -63,8 +63,45 @@ curl -fsSL get.nextflow.io | bash
 ./nextflow run main.nf -profile winter \
     -config conf/ecoli_demo.config
 ```
+Command running results is below.
 
-The outputs of pipeline on E. coli data is results by all tools methylation calling below.
+```angular2html
+N E X T F L O W  ~  version 20.10.0
+Launching `main.nf` [friendly_leakey] - revision: eafc216253
+NANOME - NF PIPELINE (v1.0)
+by Li Lab at The Jackon Laboratory
+http://nanome.jax.org
+=================================
+dsname              :EcoliDemo
+input               :/projects/li-lab/Nanopore_compare/suppdata/ecoli-sanity-check/ecoli_meteore.tar.gz
+reference_genome    :reference_genome/ecoli/Ecoli_k12_mg1655.fasta
+chromSizesFile      :reference_genome/ecoli/Ecoli_k12_mg1655.fasta.genome.sizes
+runBasecall         :true
+runMethcall         :true
+eval                :false
+=================================
+executor >  slurm (14)
+[3f/f6f1d7] process > EnvCheck (EnvCheck)                                  [100%] 1 of 1 ✔
+[f8/ce877c] process > Basecall (ecoli_meteore)                             [100%] 1 of 1 ✔
+[d5/f84584] process > QCExport                                             [100%] 1 of 1 ✔
+[21/74324c] process > Resquiggle (ecoli_meteore_basecalled)                [100%] 1 of 1 ✔
+[2f/f36517] process > DeepSignal (ecoli_meteore_basecalled_resquiggle_dir) [100%] 1 of 1 ✔
+[ba/166a6f] process > Tombo (ecoli_meteore_basecalled_resquiggle_dir)      [100%] 1 of 1 ✔
+[5b/c3613f] process > Megalodon (ecoli_meteore)                            [100%] 1 of 1 ✔
+[2a/f80bc3] process > DeepMod (ecoli_meteore_basecalled)                   [100%] 1 of 1 ✔
+[29/d9b126] process > Nanopolish (ecoli_meteore_basecalled)                [100%] 1 of 1 ✔
+[2b/18376c] process > DpSigComb                                            [100%] 1 of 1 ✔
+[20/ca5232] process > TomboComb                                            [100%] 1 of 1 ✔
+[c7/4c2e8d] process > MgldnComb                                            [100%] 1 of 1 ✔
+[4c/50e8a1] process > NplshComb                                            [100%] 1 of 1 ✔
+[c5/ad8ca7] process > DpmodComb                                            [100%] 1 of 1 ✔
+Completed at: 08-May-2021 16:53:56
+Duration    : 7m 35s
+CPU hours   : 0.4
+Succeeded   : 14
+```
+
+The output files of pipeline on E. coli data by all tools are below.
 
 ```angular2html
 tree outputs/EcoliDemo-methylation-callings

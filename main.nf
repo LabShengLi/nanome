@@ -98,6 +98,11 @@ process Basecall {
 	mkdir -p untarDir1
     find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
 
+    ## Clean old analyses in input fast5 files
+    if [[ "${params.cleanAnalyses}" = true ]] ; then
+        python ${workflow.projectDir}/utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir
+    fi
+
     mkdir -p ${fast5_tar.simpleName}_basecalled
     guppy_basecaller --input_path untarDir1 \
         --save_path "${fast5_tar.simpleName}_basecalled" \
@@ -110,8 +115,8 @@ process Basecall {
     ## After basecall, rename and publishe summary file names
 	mv ${fast5_tar.simpleName}_basecalled/sequencing_summary.txt ${fast5_tar.simpleName}_basecalled/${fast5_tar.simpleName}-sequencing_summary.txt
 
-	## Clean
-	## rm -rf untarDir untarDir1
+	## Clean unused files
+	rm -rf untarDir untarDir1
     """
 }
 
@@ -164,8 +169,8 @@ process Resquiggle {
 	cp -rf ${basecallIndir}/* ${basecallIndir.simpleName}_resquiggle_dir/
 
     tombo resquiggle --dna --processes ${params.processors} \
-        --corrected-group ${params.correctedGroup} \
-		--basecall-group Basecall_1D_000 --overwrite \
+        --corrected-group ${params.resquiggleCorrectedGroup} \
+		--basecall-group ${params.BasecallGroupName} --overwrite \
 		${basecallIndir.simpleName}_resquiggle_dir/workspace \${refGenome}
 
 	echo "### Tombo methylation calling DONE"
@@ -209,7 +214,7 @@ process DeepSignal {
 	    --model_path ./model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+/bn_17.sn_360.epoch_9.ckpt \
 		--result_file "DeepSignal.batch_${ttt[0].simpleName}.CpG.deepsignal.call_mods.tsv" \
 		--reference_path \${refGenome} \
-		--corrected_group ${params.correctedGroup} \
+		--corrected_group ${params.resquiggleCorrectedGroup} \
 		--nproc ${params.processors} \
 		--is_gpu ${params.DeepSignal_isgpu}
     """
@@ -242,7 +247,7 @@ process Tombo {
 		--per-read-statistics-basename batch_${resquiggleDir.simpleName} \
 		--alternate-bases CpG \
 		--processes ${params.processors} \
-		--corrected-group ${params.correctedGroup}
+		--corrected-group ${params.resquiggleCorrectedGroup}
 
 	python ${workflow.projectDir}/utils/tombo_extract_per_read_stats.py \
 		${params.chromSizesFile} \
@@ -348,7 +353,7 @@ process DeepMod {
 			--wrkBase ${basecallDir}/workspace --Ref \${refGenome} \
 			--Base C --modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
 			--FileID batch_${basecallDir.simpleName}_num \
-			--threads ${params.processors} ${params.DeepModMoveOptions}  #--move
+			--threads ${params.processors} ${params.DeepModMoveOptions}  #--move  --mod_cluster {0,1} --basecall_1d ${params.BasecallGroupName}
     """
 }
 
