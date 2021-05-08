@@ -34,7 +34,6 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 
 // Check all tools work well on the platform
 process EnvCheck {
-
 	tag 'EnvCheck'
 	// teminate all later processes if this process is not passed
 	errorStrategy 'terminate'
