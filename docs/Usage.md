@@ -4,7 +4,7 @@ The inputs of 'nanome' pipeline is a folder/tar/tar.gz or txt file list containi
 
 # 1. Running 'nanome' for human Nanopore sequencing data
 
-The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome`. `--input` is a compressed file contains Fast5 input file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `-profile` is the name of execution platform configuration. 
+The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome`. `--input` is a compressed file contains Fast5 input file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `-profile` is the name of execution platform configuration, an example of our HPC configuration is the server named as [winter](https://github.com/liuyangzzu/nanome/blob/master/nextflow.config#L109), which will include the HPC config file [conf/hpc.config](https://github.com/liuyangzzu/nanome/blob/master/conf/hpc.config). 
 
 By default, we are using hg38 human reference genome, and you can specify reference genome using parameter `--referenceGenome="reference_genome/hg38/hg38.fasta"`. An example of how to use 'nanome' pipeline is given below.
 
@@ -13,8 +13,9 @@ curl -fsSL get.nextflow.io | bash
 
 ./nextflow run https://github.com/liuyangzzu/nanome \
    --input 'https://github.com/liuyangzzu/nanome/raw/master/test_data/demo.fast5.reads.tar.gz' \
-   --dsname TestData -profile winter
+   --dsname TestData --eval true -profile winter
 ```
+
 Command running results is below.
 
 ```angular2html
