@@ -63,7 +63,7 @@ Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https:
 
 ### Benchmarking reports on our HPC using [Nextflow](https://www.nextflow.io/)
 
-We construct a benchmarking data contains reads from 800 to 8,000 reads for NA19240, and monitoring job running timeline and resource usage on our HPC, reports generated nextflow are: [trace file](https://github.com/liuyangzzu/nanome/blob/master/docs/nanome.pipeline_trace.txt), [Report](https://github.com/liuyangzzu/nanome/blob/master/docs/reports.pdf)  and [Timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/timeline.pdf). 
+We construct a benchmarking data contains reads from 800 to 8,000 reads for NA19240, and monitoring job running timeline and resource usage on our HPC, reports generated nextflow are: [trace file](https://github.com/liuyangzzu/nanome/blob/master/docs/nanome.pipeline_trace.txt), [Report](https://github.com/liuyangzzu/nanome/blob/master/docs/reports2.pdf)  and [Timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/timeline.pdf). 
 
 Our HPC hardware specifications are as follows:
 * CPU: Intel(R) Xeon(R) Gold 6136 CPU @ 3.00GHz
