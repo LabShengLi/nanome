@@ -68,11 +68,9 @@ process EnvCheck {
 process Basecall {
 	tag "${fast5_tar.simpleName}"
 
-	cache  'lenient'
 	label 'with_gpus'
 
 	input: // input here is not passed
-//    file x from basecall_input_ch.flatten()  // we are going to solve this input failed passing problems
     file fast5_tar from fast5_tar_ch1
 
     output:
@@ -102,7 +100,6 @@ process Basecall {
     find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
 
     mkdir -p ${fast5_tar.simpleName}_basecalled
-
     guppy_basecaller --input_path untarDir1 \
         --save_path "${fast5_tar.simpleName}_basecalled" \
         --config ${params.GUPPY_BASECALL_MODEL} \
@@ -111,7 +108,7 @@ process Basecall {
         --recursive \
         --verbose_logs ${params.GuppyGPUOptions}
 
-    ## After basecall, rename summary file names
+    ## After basecall, rename and publishe summary file names
 	mv ${fast5_tar.simpleName}_basecalled/sequencing_summary.txt ${fast5_tar.simpleName}_basecalled/${fast5_tar.simpleName}-sequencing_summary.txt
 
 	## Clean
@@ -122,8 +119,6 @@ process Basecall {
 
 // Collect and output QC results for basecall
 process QCExport {
-	cache  'lenient'
-
 	publishDir "${params.outputDir}" , mode: "copy"
 
 	input:
@@ -133,9 +128,6 @@ process QCExport {
     file "${params.dsname}-qc-report/*-sequencing_summary.txt" into qc_out_ch
 
     """
-    echo $flist
-
-
 	mkdir -p ${params.dsname}-qc-report
     cp -L -f *-sequencing_summary.txt ${params.dsname}-qc-report/
     """
@@ -150,7 +142,6 @@ basecall_out_ch
 // resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
 process Resquiggle {
 	tag "${basecallIndir.simpleName}"
-	cache  'lenient'
 
 	input:
 	file basecallIndir from resquiggle_in_ch
@@ -169,7 +160,7 @@ process Resquiggle {
     tar -xzf ${reference_genome_tar}
 	refGenome=${params.referenceGenome}
 
-	### only copy workspace files, due to nanpolish modify base folder at x
+	### copy basecall workspace files, due to tombo resquiggle modify base folder
 	mkdir -p ${basecallIndir.simpleName}_resquiggle_dir
 	cp -rf ${basecallIndir}/* ${basecallIndir.simpleName}_resquiggle_dir/
 
@@ -195,7 +186,6 @@ deepsignal_in2_ch =
 process DeepSignal {
 	tag "${ttt[0].simpleName}"
 
-	cache  'lenient'
 	label 'with_gpus'
 
 	input:
@@ -230,7 +220,6 @@ process DeepSignal {
 // Tombo runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Tombo {
 	tag "${resquiggleDir.simpleName}"
-	cache  'lenient'
 
 	input:
 	each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
@@ -267,7 +256,6 @@ process Tombo {
 // Megalodon runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Megalodon {
 	tag "${fast5_tar.simpleName}"
-	cache  'lenient'
 
 	label 'with_gpus'
 
@@ -334,8 +322,6 @@ process Megalodon {
 process DeepMod {
 	tag "${basecallDir.simpleName}"
 
-	cache  'lenient'
-
 	errorStrategy 'ignore'
 	label 'with_gpus'
 
@@ -371,7 +357,6 @@ process DeepMod {
 // Nanopolish runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Nanopolish {
 	tag "${basecallDir.simpleName}"
-	cache  'lenient'
 
 	input:
 	file basecallDir from nanopolish_in_ch
