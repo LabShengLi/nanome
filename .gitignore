@@ -14,6 +14,7 @@ gen
 src/nanocompare/.DS_Store
 /figures/
 /result/
+/plots/
 work
 .nextflow*
 nextflow
