@@ -6,12 +6,12 @@
 **Background:** Nanopore long-read sequencing technology greatly expands the capacity of long-range single-molecule DNA-modification detection. A growing number of analytical tools have been actively developed to detect DNA methylation from Nanopore sequencing reads. Here, we examine the performance of different methylation calling tools to provide a systematic evaluation to guide practitioners for human epigenome-wide research.
 
 
-![Figure1](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig1.jpg)
+![Figure1](https://github.com/liuyangzzu/nanome/blob/master/docs/Fig1.jpg)
 
 **Fig 1. Survey of methylation calling tools and proposed evaluation flowchart.**  **(A)** Timeline of publication and technological developments of Oxford Nanopore Technologies (ONT) methylation calling tools to detect DNA cytosine modifications. **(B)** Performance evaluation on 5mC/5C prediction of methylation calling tools with Nanopore sequencing.
 
 
-![FigureS1](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/fig.s2.workflow.jpg)
+![FigureS1](https://github.com/liuyangzzu/nanome/blob/master/docs/fig.s2.workflow.jpg)
 **Fig S1. Workflow for 5-methylcytosine (5mC) detection for Nanopore sequencing.** The pipeline has four steps: (1) Nanopore sequencing. (2) Base calling, which requires raw signals and reference genome as input to perform base calling by Albacore or Guppy. (3) Alignment to the genome by direct mapping with miniMap2 and re-squiggle with Tombo (optional). (4) Methylation calling. Here we compare five methylation calling tools: Nanopolish, Megalodon, DeepSignal, Tombo, and DeepMod to detect cytosine status in CpG context.
 
 
@@ -45,8 +45,8 @@
 ### Hardware requirements
 
 The 'nanome' is based on Nextflow pipeline framework, and start with raw fast5 Nanopore sequencing input data with a reference genome. The pipeline can be configured with different RAM, number of processors, GPU resources schema to parallel run all methylation calling tools. For optimal usage, we recommend using 'nanome' pipeline on HPC:
-* GPU or CPU with 8+ cores 
-* RAM: 50+ GB per cpu
+* GPU or CPU with 8+ cores. 
+* RAM: 50+ GB per cpu.
 * Storage using HDD or SSD. Please ensure your storage before running the pipeline.
 
 
@@ -63,7 +63,7 @@ Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https:
 
 ### Benchmarking reports on our HPC using [Nextflow](https://www.nextflow.io/)
 
-We construct a benchmarking data contains reads from 800 to 8,000 reads for NA19240, and monitoring job running timeline and resource usage on our HPC, reports generated nextflow are: [Report](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/reports.pdf)  and [Timeline](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/timeline.pdf). 
+We construct a benchmarking data contains reads from 800 to 8,000 reads for NA19240, and monitoring job running timeline and resource usage on our HPC, reports generated nextflow are: [Report](https://github.com/liuyangzzu/nanome/blob/master/docs/reports.pdf)  and [Timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/timeline.pdf). 
 
 Our HPC hardware specifications are as follows:
 * CPU: Intel(R) Xeon(R) Gold 6136 CPU @ 3.00GHz
@@ -82,14 +82,14 @@ Please refer to [Usage](https://github.com/liuyangzzu/nanome/blob/master/docs/Us
 
 ## Revision History
 
-For release history, please visit [here](https://github.com/liuyangzzu/nanome/releases). For details, please go [here](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/README.md).
+For release history, please visit [here](https://github.com/liuyangzzu/nanome/releases). For details, please go [here](https://github.com/liuyangzzu/nanome/blob/master/README.md).
 
 ## Contact
 
 If you have any questions/issues/bugs, please post them on [GitHub](https://github.com/liuyangzzu/nanome/issues). We will regularly update the Github to support more methylation calling tools.
 
 ## Reference
-**Detailed results can be found in our preprint. Please cite our preprint below if you are interested in our pipeline:**
+Detailed results can be found in our preprint. Please cite our preprint below if you are interested in our pipeline:
 
-Yang Liu, Wojciech Rosikiewicz, Ziwei Pan, Nathaniel Jillette, Aziz Taghbalout, Jonathan Foox, Christopher Mason, Martin Carroll, Albert Cheng, Sheng Li. DNA methylation calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation. bioRxiv, 2020. Online at https://doi.org/10.1101/2021.05.05.442849.
+Yang Liu, Wojciech Rosikiewicz, Ziwei Pan, Nathaniel Jillette, Aziz Taghbalout, Jonathan Foox, Christopher Mason, Martin Carroll, Albert Cheng, Sheng Li. **DNA methylation calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation.** bioRxiv, 2020. Online at https://doi.org/10.1101/2021.05.05.442849.
 
