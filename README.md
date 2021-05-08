@@ -45,8 +45,8 @@
 ### Hardware requirements
 
 The 'nanome' is based on Nextflow pipeline framework, and start with raw fast5 Nanopore sequencing input data with a reference genome. The pipeline can be configured with different RAM, number of processors, GPU resources schema to parallel run all methylation calling tools. For optimal usage, we recommend using 'nanome' pipeline on HPC:
-* GPU or CPU with 8+ cores 
-* RAM: 50+ GB per cpu
+* GPU or CPU with 8+ cores. 
+* RAM: 50+ GB per cpu.
 * Storage using HDD or SSD. Please ensure your storage before running the pipeline.
 
 
@@ -89,7 +89,7 @@ For release history, please visit [here](https://github.com/liuyangzzu/nanome/re
 If you have any questions/issues/bugs, please post them on [GitHub](https://github.com/liuyangzzu/nanome/issues). We will regularly update the Github to support more methylation calling tools.
 
 ## Reference
-**Detailed results can be found in our preprint. Please cite our preprint below if you are interested in our pipeline:**
+Detailed results can be found in our preprint. Please cite our preprint below if you are interested in our pipeline:
 
-Yang Liu, Wojciech Rosikiewicz, Ziwei Pan, Nathaniel Jillette, Aziz Taghbalout, Jonathan Foox, Christopher Mason, Martin Carroll, Albert Cheng, Sheng Li. DNA methylation calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation. bioRxiv, 2020. Online at https://doi.org/10.1101/2021.05.05.442849.
+Yang Liu, Wojciech Rosikiewicz, Ziwei Pan, Nathaniel Jillette, Aziz Taghbalout, Jonathan Foox, Christopher Mason, Martin Carroll, Albert Cheng, Sheng Li. **DNA methylation calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation.** bioRxiv, 2020. Online at https://doi.org/10.1101/2021.05.05.442849.
 
