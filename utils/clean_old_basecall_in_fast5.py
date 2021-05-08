@@ -35,7 +35,7 @@ if __name__ == '__main__':
     else:
         fnlist = args.i
 
-    if args.verbose:
+    if args.verbose or args.is_indir:
         print(f"Total fast5 files: {len(fnlist)}")
 
     for fn in fnlist:
