@@ -90,6 +90,6 @@ nextflow run main.nf -profile winter  \
 	-config conf/benchmarking.config
 ```
 
-Reports runing time and memory usage by [Nextflow](https://www.nextflow.io/) utilities. Please refer to the [reports](https://github.com/liuyangzzu/nanome/blob/master/docs/reports.pdf) and [timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/timeline.pdf) of benchmarking results on our HPC.
+Reports runing time and memory usage by [Nextflow](https://www.nextflow.io/) utilities. Please refer to the [trace file](https://github.com/liuyangzzu/nanome/blob/master/docs/nanome.pipeline_trace.txt), [reports](https://github.com/liuyangzzu/nanome/blob/master/docs/reports.pdf) and [timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/timeline.pdf) of benchmarking results on our HPC.
 
 We will update more examples here within a short time.
