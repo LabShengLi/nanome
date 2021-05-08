@@ -349,11 +349,19 @@ process DeepMod {
     tar -xzf ${reference_genome_tar}
 	refGenome=${params.referenceGenome}
 
+
+	if [[ "${params.dataType}" = "human" ]] ; then
+		mod_cluster=1 ## Human will use cluster model
+	else
+		mod_cluster=0 ## Not human will skip cluser model
+	fi
+
     DeepMod.py detect \
 			--wrkBase ${basecallDir}/workspace --Ref \${refGenome} \
 			--Base C --modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
 			--FileID batch_${basecallDir.simpleName}_num \
-			--threads ${params.processors} ${params.DeepModMoveOptions}  #--move  --mod_cluster {0,1} --basecall_1d ${params.BasecallGroupName}
+			--threads ${params.processors} ${params.DeepModMoveOptions}  \
+			--basecall_1d ${params.BasecallGroupName} ###	--mod_cluster \${mod_cluster}
     """
 }
 
@@ -547,7 +555,7 @@ process DpmodComb {
     file deepmod_c_tar_file from Channel.fromPath(params.deepmod_ctar)
 
     output:
-    file '*.combine.bed.gz' into deepmod_combine_out_ch
+    file "${params.dsname}.*.combine.bed.gz" into deepmod_combine_out_ch
 
     when:
     x.size() >= 1
@@ -571,31 +579,31 @@ process DpmodComb {
     python ${workflow.projectDir}/utils/sum_chr_mod.py \
         indir/ C ${params.dsname}.deepmod ${params.DeepModSumChrSet}
 
-	## TODO: deepmod_project_dir is not correct now
-	## Only apply to human genome
-	python ${workflow.projectDir}/utils/hm_cluster_predict.py \
-		indir/${params.dsname}.deepmod \
-		./C \
-		\${DeepModProjectDir}/train_deepmod/${params.clusterDeepModModel}  || true
-
-	> ${params.dsname}.DeepModC.combine.bed
+    > ${params.dsname}.DeepModC.combine.bed
 
 	## Note: for ecoli data, no chr*, but N*
 	for f in \$(ls -1 indir/${params.dsname}.deepmod.*.C.bed)
 	do
 	  cat \$f >> ${params.dsname}.DeepModC.combine.bed
 	done
-
-	> ${params.dsname}.DeepModC_clusterCpG.combine.bed
-
-	for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
-	do
-	  cat \$f >> ${params.dsname}.DeepModC_clusterCpG.combine.bed
-	done
-
 	gzip ${params.dsname}.DeepModC.combine.bed
-	gzip ${params.dsname}.DeepModC_clusterCpG.combine.bed
 
+	if [[ "${params.dataType}" = "human" ]] ; then
+		## Only apply to human genome
+		echo "### For human, apply cluster model of DeepMod"
+		python ${workflow.projectDir}/utils/hm_cluster_predict.py \
+			indir/${params.dsname}.deepmod \
+			./C \
+			\${DeepModProjectDir}/train_deepmod/${params.clusterDeepModModel}  || true
+		> ${params.dsname}.DeepModC_clusterCpG.combine.bed
+
+		for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
+		do
+		  cat \$f >> ${params.dsname}.DeepModC_clusterCpG.combine.bed
+		done
+
+		gzip ${params.dsname}.DeepModC_clusterCpG.combine.bed
+	fi
 	echo "###DeepMod combine DONE###"
     """
 }
