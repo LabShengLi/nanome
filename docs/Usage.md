@@ -52,7 +52,7 @@ outputs/TestData-nanome-analysis/
     ├── TestData_RRBS.summary.bsseq.singleton.nonsingleton.cov1.csv
     └── TestData_RRBS.Tools_BGTruth_cov1_Joined.bed
 ```
-# 2. Experiments on E. coli data
+# 2. Experiment for E. coli data
 The 'nanome' pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--referenceGenome` need to be set as E. coli reference genome such as 'reference_genome/ecoli/Ecoli_k12_mg1655.fasta'. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline `-config` params [conf/ecoli_demo.config](https://github.com/liuyangzzu/nanome/blob/master/conf/ecoli_demo.config)
 
 ```angular2html
@@ -78,7 +78,7 @@ outputs/EcoliDemo-methylation-callings
 ```
 
 
-# 3. Benchmarking experiments
+# 3. Benchmarking experiment
 We constructed a list of benchmarking datasets contain Fast5 reads from 800 to 8,000  for NA19240. The datasets can be used upon request. Following command is running 'nanome' pipeline on our benchmarking datasets. 
 
 ```angular2html
@@ -90,6 +90,6 @@ nextflow run main.nf -profile winter  \
 	-config conf/benchmarking.config
 ```
 
-Reports runing time and memory usage by [Nextflow](https://www.nextflow.io/) utilities. Please refer to the [reports](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/reports.pdf) and [timeline](https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/timeline.pdf) of benchmarking results on our HPC.
+Reports runing time and memory usage by [Nextflow](https://www.nextflow.io/) utilities. Please refer to the [reports](https://github.com/liuyangzzu/nanome/blob/master/docs/reports.pdf) and [timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/timeline.pdf) of benchmarking results on our HPC.
 
 We will update more examples here within a short time.
