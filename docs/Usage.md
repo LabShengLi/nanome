@@ -156,7 +156,7 @@ outputs/EcoliDemo-methylation-callings
 
 
 # 3. Benchmarking experiment
-We constructed a list of benchmarking datasets contain Fast5 reads from 800 to 8,000  for NA19240. The datasets can be used upon request. Following command is running 'nanome' pipeline on our benchmarking datasets, please refer to the input parameters for pipeline `-config` params [conf/benchmarking.config](https://github.com/liuyangzzu/nanome/blob/master/conf/benchmarking.config).
+We constructed a list of benchmarking datasets that contain Fast5 reads from 800 to 8,000  for NA19240. The datasets can be got by users upon request. Following command is running 'nanome' pipeline on our benchmarking datasets, please refer to the input parameters for pipeline `-config` params [conf/benchmarking.config](https://github.com/liuyangzzu/nanome/blob/master/conf/benchmarking.config).
 
 ```angular2html
 git clone https://github.com/liuyangzzu/nanome.git
@@ -167,6 +167,6 @@ nextflow run main.nf -profile winter  \
 	-config conf/benchmarking.config
 ```
 
-Reports runing time and memory usage by [Nextflow](https://www.nextflow.io/) utilities. Please refer to the [trace file](https://github.com/liuyangzzu/nanome/blob/master/docs/nanome.pipeline_trace.txt), [reports](https://github.com/liuyangzzu/nanome/blob/master/docs/reports2.pdf) and [timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/timeline.pdf) of benchmarking results on our HPC.
+Resource usage are reported by [Nextflow](https://www.nextflow.io/) workflow reporting utilities. Please refer to the [Trace file](https://github.com/liuyangzzu/nanome/blob/master/docs/nanome.pipeline_trace.txt), [Report](https://github.com/liuyangzzu/nanome/blob/master/docs/reports2.pdf) and [Timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/timeline.pdf) of benchmarking results on our HPC.
 
 We will update more examples here within a short time.
