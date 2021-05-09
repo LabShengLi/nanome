@@ -360,8 +360,8 @@ process DeepMod {
 			--wrkBase ${basecallDir}/workspace --Ref \${refGenome} \
 			--Base C --modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
 			--FileID batch_${basecallDir.simpleName}_num \
-			--threads ${params.processors} ${params.DeepModMoveOptions}  \
-			--basecall_1d ${params.BasecallGroupName} ###	--mod_cluster \${mod_cluster}
+			--threads 16 ${params.DeepModMoveOptions}  \
+			--basecall_1d ${params.BasecallGroupName} ###	--mod_cluster 0 is not work
     """
 }
 
