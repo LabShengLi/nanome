@@ -1,20 +1,20 @@
 #!/usr/bin/env nextflow
 
 log.info """\
-	NANOME - NF PIPELINE (v1.0)
-	by Li Lab at The Jackon Laboratory
-	http://nanome.jax.org
-	=================================
-	dsname				:${params.dsname}
-	input			   	:${params.input}
-	reference_genome	:${params.referenceGenome}
-	chromSizesFile		:${params.chromSizesFile}
-	runBasecall			:${params.runBasecall}
-	runMethcall			:${params.runMethcall}
-	evaluation			:${params.eval}
-	=================================
-	"""
-	.stripIndent()
+NANOME - NF PIPELINE (v1.0)
+by Li Lab at The Jackon Laboratory
+http://nanome.jax.org
+=================================
+dsname			:${params.dsname}
+input			:${params.input}
+reference_genome	:${params.referenceGenome}
+chromSizesFile		:${params.chromSizesFile}
+runBasecall		:${params.runBasecall}
+runMethcall		:${params.runMethcall}
+evaluation		:${params.eval}
+=================================
+"""
+.stripIndent()
 
 
 // We collect all folders of fast5 files, and send into Channels for pipelines
