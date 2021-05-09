@@ -272,7 +272,7 @@ process Megalodon {
 	file "batch_${fast5_tar.simpleName}.per_read_modified_base_calls.txt" into megalodon_out_ch
 
 	when:
-	params.runMethcall && (params.runon == "gpu")
+	params.runMethcall
 
 	"""
 	set -x
@@ -298,12 +298,10 @@ process Megalodon {
 	megalodon \
 		untarDir \
 		--overwrite \
-		--outputs basecalls mod_basecalls mappings \
-		per_read_mods mods mod_mappings \
-		per_read_refs \
+		--outputs per_read_mods mods per_read_refs \
 		--guppy-server-path guppy_basecall_server \
 		--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-		--guppy-params "-d ./megalodon_model/ --num_callers 5 --ipc_threads 80" \
+		--guppy-params "-d ./megalodon_model/ --num_callers 16 --ipc_threads 80" \
 		--reads-per-guppy-batch ${params.READS_PER_GUPPY_BATCH} \
 		--guppy-timeout ${params.GUPPY_TIMEOUT} \
 		--samtools-executable ${params.SAMTOOLS_PATH} \
@@ -314,8 +312,7 @@ process Megalodon {
 		--mod-output-formats bedmethyl wiggle \
 		--write-mods-text \
 		--write-mod-log-probs \
-		--devices 0 \
-		--processes ${params.processors}
+		--processes ${params.processors} ${params.megalodonGPUOptions} ## --devices 0
 
 	mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_tar.simpleName}.per_read_modified_base_calls.txt
 	"""
