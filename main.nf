@@ -168,7 +168,9 @@ process Resquiggle {
 	mkdir -p ${basecallIndir.simpleName}_resquiggle_dir
 	cp -rf ${basecallIndir}/* ${basecallIndir.simpleName}_resquiggle_dir/
 
-	tombo resquiggle --dna --processes ${params.processors} \
+	### Now set processes=1, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
+	### ref: https://github.com/nanoporetech/tombo/issues/139
+	tombo resquiggle --dna --processes 1 \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} --overwrite \
 		${basecallIndir.simpleName}_resquiggle_dir/workspace \${refGenome}
@@ -272,7 +274,7 @@ process Megalodon {
 	file "batch_${fast5_tar.simpleName}.per_read_modified_base_calls.txt" into megalodon_out_ch
 
 	when:
-	params.runMethcall && (params.runon == "gpu")
+	params.runMethcall
 
 	"""
 	set -x
@@ -298,12 +300,10 @@ process Megalodon {
 	megalodon \
 		untarDir \
 		--overwrite \
-		--outputs basecalls mod_basecalls mappings \
-		per_read_mods mods mod_mappings \
-		per_read_refs \
+		--outputs per_read_mods mods per_read_refs \
 		--guppy-server-path guppy_basecall_server \
 		--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-		--guppy-params "-d ./megalodon_model/ --num_callers 5 --ipc_threads 80" \
+		--guppy-params "-d ./megalodon_model/ --num_callers 16 --ipc_threads 80" \
 		--reads-per-guppy-batch ${params.READS_PER_GUPPY_BATCH} \
 		--guppy-timeout ${params.GUPPY_TIMEOUT} \
 		--samtools-executable ${params.SAMTOOLS_PATH} \
@@ -314,8 +314,7 @@ process Megalodon {
 		--mod-output-formats bedmethyl wiggle \
 		--write-mods-text \
 		--write-mod-log-probs \
-		--devices 0 \
-		--processes ${params.processors}
+		--processes ${params.processors} ${params.megalodonGPUOptions} ## --devices 0
 
 	mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_tar.simpleName}.per_read_modified_base_calls.txt
 	"""
@@ -576,7 +575,7 @@ process DpmodComb {
 		cp -rf \$dx/* indir/\$dx/
 	done
 
-	python ${workflow.projectDir}/utils/sum_chr_mod.py \
+	python \${DeepModProjectDir}/DeepMod_tools/sum_chr_mod.py \
 		indir/ C ${params.dsname}.deepmod ${params.DeepModSumChrSet}
 
 	> ${params.dsname}.DeepModC.combine.bed
@@ -591,12 +590,12 @@ process DpmodComb {
 	if [[ "${params.dataType}" = "human" ]] ; then
 		## Only apply to human genome
 		echo "### For human, apply cluster model of DeepMod"
-		python ${workflow.projectDir}/utils/hm_cluster_predict.py \
+		python \${DeepModProjectDir}/DeepMod_tools/hm_cluster_predict.py \
 			indir/${params.dsname}.deepmod \
 			./C \
 			\${DeepModProjectDir}/train_deepmod/${params.clusterDeepModModel}  || true
-		> ${params.dsname}.DeepModC_clusterCpG.combine.bed
 
+		> ${params.dsname}.DeepModC_clusterCpG.combine.bed
 		for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
 		do
 		  cat \$f >> ${params.dsname}.DeepModC_clusterCpG.combine.bed
