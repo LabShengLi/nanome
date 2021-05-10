@@ -168,7 +168,9 @@ process Resquiggle {
 	mkdir -p ${basecallIndir.simpleName}_resquiggle_dir
 	cp -rf ${basecallIndir}/* ${basecallIndir.simpleName}_resquiggle_dir/
 
-	tombo resquiggle --dna --processes ${params.processors} \
+	### Now set processes=1, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
+	### ref: https://github.com/nanoporetech/tombo/issues/139
+	tombo resquiggle --dna --processes 1 \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} --overwrite \
 		${basecallIndir.simpleName}_resquiggle_dir/workspace \${refGenome}
