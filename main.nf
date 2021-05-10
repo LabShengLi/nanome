@@ -575,7 +575,7 @@ process DpmodComb {
 		cp -rf \$dx/* indir/\$dx/
 	done
 
-	python ${workflow.projectDir}/utils/sum_chr_mod.py \
+	python \${DeepModProjectDir}/DeepMod_tools/sum_chr_mod.py \
 		indir/ C ${params.dsname}.deepmod ${params.DeepModSumChrSet}
 
 	> ${params.dsname}.DeepModC.combine.bed
@@ -590,12 +590,12 @@ process DpmodComb {
 	if [[ "${params.dataType}" = "human" ]] ; then
 		## Only apply to human genome
 		echo "### For human, apply cluster model of DeepMod"
-		python ${workflow.projectDir}/utils/hm_cluster_predict.py \
+		python \${DeepModProjectDir}/DeepMod_tools/hm_cluster_predict.py \
 			indir/${params.dsname}.deepmod \
 			./C \
 			\${DeepModProjectDir}/train_deepmod/${params.clusterDeepModModel}  || true
-		> ${params.dsname}.DeepModC_clusterCpG.combine.bed
 
+		> ${params.dsname}.DeepModC_clusterCpG.combine.bed
 		for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
 		do
 		  cat \$f >> ${params.dsname}.DeepModC_clusterCpG.combine.bed
