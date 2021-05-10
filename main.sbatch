@@ -10,7 +10,6 @@
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
-
 set -x
 
 #cd $SLURM_SUBMIT_DIR
