@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Construct the benchmarking data for resource usage evaluation
 """

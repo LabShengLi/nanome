@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Common functions used by read level and site level evaluations in Nanocompare paper.
 

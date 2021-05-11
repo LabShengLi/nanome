@@ -1,4 +1,4 @@
-#!/home/liuya/anaconda3/envs/nmf/bin/python
+#!/usr/bin/env python3
 
 """
 Generate site-level methylation correlation results in Nanocompare paper.

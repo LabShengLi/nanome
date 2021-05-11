@@ -1,4 +1,5 @@
-#!/home/liuya/anaconda3/envs/nmf/bin/python
+#!/usr/bin/env python3
+
 """
 Submit site level evaluation jobs for each line input of tsv.
 """
