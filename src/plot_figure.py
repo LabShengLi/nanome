@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Plots and export data for nanome paper
 """
