@@ -23,4 +23,14 @@ SHELL ["conda", "run", "-n", "nanocompare", "/bin/bash", "-c"]
 ENV PATH /opt/conda/envs/nanocompare/bin:$PATH
 USER root
 WORKDIR /data/
+
+# Copy additonal scripts
+RUN mkdir /opt/bin
+COPY utils/ /opt/bin/
+COPY src/ /opt/bin/
+RUN chmod +x /opt/bin/utils/*
+RUN chmod +x /opt/bin/src/*
+RUN chmod +x /opt/bin/src/nanocompare/*
+ENV PATH="$PATH:/opt/bin/"
+
 CMD ["bash"]
