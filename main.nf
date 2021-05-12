@@ -39,6 +39,9 @@ process EnvCheck {
 	errorStrategy 'terminate'
 	label 'with_gpus'
 
+	output:
+	file nanome into nanome_ch
+
 	"""
 	which guppy_basecaller
 	guppy_basecaller -v
@@ -57,9 +60,12 @@ process EnvCheck {
 
 	which DeepMod.py
 	DeepMod.py
+
+	git clone https://github.com/liuyangzzu/nanome.git
 	"""
 }
 
+nanome_ch.into{nanome_ch1; nanome_ch2; nanome_ch3; nanome_ch4}
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
@@ -227,6 +233,7 @@ process Tombo {
 
 	input:
 	each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	each file (nanomeDir) from nanome_ch1
 	file resquiggleDir from tombo_in_ch
 
 	output:
@@ -249,7 +256,9 @@ process Tombo {
 		--processes ${params.processors} \
 		--corrected-group ${params.resquiggleCorrectedGroup}
 
-	python ${workflow.projectDir}/utils/tombo_extract_per_read_stats.py \
+
+	### python ${workflow.projectDir}/utils/tombo_extract_per_read_stats.py \
+	python ${nanomeDir}/utils/tombo_extract_per_read_stats.py \
 		${params.chromSizesFile} \
 		"batch_${resquiggleDir.simpleName}.CpG.tombo.per_read_stats" \
 		"batch_${resquiggleDir.simpleName}.CpG.tombo.per_read_stats.bed"
@@ -370,6 +379,7 @@ process Nanopolish {
 	input:
 	file basecallDir from nanopolish_in_ch
 	each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	each file (nanomeDir) from nanome_ch2
 
 	output:
 	file "batch_${basecallDir.simpleName}.nanopolish.methylation_calls.tsv" into nanopolish_out_ch
@@ -401,7 +411,8 @@ process Nanopolish {
 		# echo "cat \$f >> \$fastqFile - COMPLETED"
 	done
 
-	python ${workflow.projectDir}/utils/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
+	### python ${workflow.projectDir}/utils/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
+	python ${nanomeDir}/utils/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
 
 	# Index the raw read with fastq
 	nanopolish index -d ${basecallDir}/workspace \${fastqNoDupFile}
@@ -618,6 +629,7 @@ process ReadLevelPerf {
 
 	input: // TODO: I can not sort fileList by name, seems sorted by date????
 	file fileList from readlevel_in_ch
+	each file (nanomeDir) from nanome_ch3
 
 	output:
 	file "MethPerf-*" into readlevel_out_ch
@@ -642,7 +654,9 @@ process ReadLevelPerf {
 	export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}
 
 	## Read level evaluations
-	python ${workflow.projectDir}/src/nanocompare/read_level_eval.py \
+	### python ${workflow.projectDir}/src/nanocompare/read_level_eval.py \
+	python ${nanomeDir}/src/nanocompare/read_level_eval.py \
+
 		--calls DeepSignal:\${deepsignalFile} \
 				Tombo:\${tomboFile} \
 				Nanopolish:\${nanopolishFile} \
@@ -666,6 +680,7 @@ process SiteLevelCorr {
 	input:
 	file perfDir from readlevel_out_ch
 	file fileList from sitelevel_in_ch
+	each file (nanomeDir) from nanome_ch4
 
 	output:
 	file "MethCorr-*" into sitelevel_out_ch
@@ -689,7 +704,8 @@ process SiteLevelCorr {
 	export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}
 
 	## Site level evaluations
-	python ${workflow.projectDir}/src/nanocompare/site_level_eval.py \
+	### python ${workflow.projectDir}/src/nanocompare/site_level_eval.py \
+	python ${nanomeDir}/src/nanocompare/site_level_eval.py \
 		--calls DeepSignal:\${deepsignalFile} \
 				Tombo:\${tomboFile} \
 				Nanopolish:\${nanopolishFile} \
