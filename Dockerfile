@@ -2,11 +2,11 @@ FROM genomicpariscentre/guppy-gpu:4.2.2
 LABEL description="Nanocompare project" \
       author="yang.liu@jax.org"
 RUN apt-get update -y \
-  && apt-get install procps git curl -y \
+  && DEBIAN_FRONTEND=noninteractive apt-get install procps git curl -y \
   && rm -rf /var/lib/apt/lists/*
  
 RUN apt-get update -y && \
-    apt-get install -y software-properties-common && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y software-properties-common && \
     curl -O http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-ubuntu1604.pin && \
     mv cuda-ubuntu1604.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
     apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub && \
