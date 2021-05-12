@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Define names and global variables
 

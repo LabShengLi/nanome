@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 remove duplicate reads of $1 fastq file, save it into $2 fastq file
 """

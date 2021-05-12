@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Read-level evaluation on methylation calls of tools, compute the performance results(F1, accuracy, ROC-AUC, etc.) in Nanocompare paper.
 
