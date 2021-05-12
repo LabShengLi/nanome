@@ -162,7 +162,7 @@ process Resquiggle {
 	file "${basecallIndir.simpleName}_resquiggle_dir" into resquiggle_out_ch
 
 	when:
-	params.runMethcall
+	params.runMethcall && false
 
 	"""
 	## untar reference_genome
@@ -175,7 +175,7 @@ process Resquiggle {
 
 	### Now set processes=1, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
 	### ref: https://github.com/nanoporetech/tombo/issues/139
-	tombo resquiggle --dna --processes 8 \
+	tombo resquiggle --dna --processes 1 \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} --overwrite \
 		${basecallIndir.simpleName}_resquiggle_dir/workspace \${refGenome}
