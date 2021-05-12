@@ -65,7 +65,7 @@ process EnvCheck {
 	"""
 }
 
-nanome_ch.into{nanome_ch1; nanome_ch2; nanome_ch3; nanome_ch4}
+nanome_ch.into{nanome_ch0; nanome_ch1; nanome_ch2; nanome_ch3; nanome_ch4}
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
@@ -75,6 +75,7 @@ process Basecall {
 
 	input: // input here is not passed
 	file fast5_tar from fast5_tar_ch1
+	each file (nanomeDir) from nanome_ch0
 
 	output:
 	file "${fast5_tar.simpleName}_basecalled" into basecall_out_ch  // try to fix the christina proposed problems
@@ -104,7 +105,9 @@ process Basecall {
 
 	## Clean old analyses in input fast5 files
 	if [[ "${params.cleanAnalyses}" = true ]] ; then
-		python ${workflow.projectDir}/utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir
+		echo "### Start cleaning old analysis"
+		### python ${workflow.projectDir}/utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir
+		python ${nanomeDir}/utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir
 	fi
 
 	mkdir -p ${fast5_tar.simpleName}_basecalled
