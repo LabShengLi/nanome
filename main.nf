@@ -40,8 +40,6 @@ process EnvCheck {
 	label 'with_gpus'
 
 	"""
-	set -x
-
 	which guppy_basecaller
 	guppy_basecaller -v
 
