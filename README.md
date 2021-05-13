@@ -73,6 +73,10 @@ Our HPC hardware specifications are as follows:
 
 
 ## Installation
+The 'nanome' pipeline support running with various ways:
+* Singularity container
+* Docker container
+* Conda environment
 
 We will update within a short time.
 
