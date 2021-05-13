@@ -2,7 +2,7 @@
 
 log.info """\
 NANOME - NF PIPELINE (v1.0)
-by Li Lab at The Jackon Laboratory
+by Li Lab at The Jackson Laboratory
 http://nanome.jax.org
 =================================
 dsname			:${params.dsname}
