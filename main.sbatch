@@ -6,10 +6,9 @@
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 2 # number of cores
 #SBATCH --mem=70G # memory pool for all cores
-#SBATCH --time=08:00:00 # time
+#SBATCH --time=18:00:00 # time
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
-
 
 set -x
 
@@ -32,9 +31,13 @@ workingDir=/fastscratch/liuya/nanocompare/work
 # Running nanome pipeline on test data (from NA19240) in Human Genome
 #rm -rf ${workingDir}-test
 ./nextflow run main.nf -profile winter \
-    -work-dir ${workingDir}-test3 \
+    -work-dir ${workingDir}-test4 \
     -config conf/test.config
 
+
+#./nextflow run main.nf -profile winter \
+#    -work-dir ${workingDir}-test3 \
+#    -config conf/NA12878.config
 
 ###############################################################
 ###############################################################

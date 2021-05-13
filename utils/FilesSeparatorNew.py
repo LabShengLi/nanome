@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Seperate all fast5 file into many subfolders 1--N
 """

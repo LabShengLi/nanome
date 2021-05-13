@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 This tool is to clean old basecall analyses for NA12878, etc.
 """
