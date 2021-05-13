@@ -16,6 +16,12 @@ evaluation		:${params.eval}
 """
 .stripIndent()
 
+projectDir = workflow.projectDir
+ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
+ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
+
+ch_utils.into{ch_utils1; ch_utils2; ch_utils3}
+ch_src.into{ch_src1; ch_src2}
 
 // We collect all folders of fast5 files, and send into Channels for pipelines
 if (params.input.endsWith(".filelist.txt")) { // filelist
@@ -65,7 +71,7 @@ process EnvCheck {
 	"""
 }
 
-nanome_ch.into{nanome_ch0; nanome_ch1; nanome_ch2; nanome_ch3; nanome_ch4}
+// nanome_ch.into{nanome_ch0; nanome_ch1; nanome_ch2; nanome_ch3; nanome_ch4}
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
@@ -75,7 +81,7 @@ process Basecall {
 
 	input: // input here is not passed
 	file fast5_tar from fast5_tar_ch1
-	each file (nanomeDir) from nanome_ch0
+	each file("*") from ch_utils1
 
 	output:
 	file "${fast5_tar.simpleName}_basecalled" into basecall_out_ch  // try to fix the christina proposed problems
@@ -85,8 +91,6 @@ process Basecall {
 	params.runBasecall
 
 	"""
-	set -x
-
 	mkdir -p untarDir
 
 	infn=${fast5_tar}
@@ -106,8 +110,7 @@ process Basecall {
 	## Clean old analyses in input fast5 files
 	if [[ "${params.cleanAnalyses}" = true ]] ; then
 		echo "### Start cleaning old analysis"
-		### python ${workflow.projectDir}/utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir
-		python ${nanomeDir}/utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir
+		python utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir
 	fi
 
 	mkdir -p ${fast5_tar.simpleName}_basecalled
@@ -150,7 +153,7 @@ basecall_out_ch
 	.into { resquiggle_in_ch; nanopolish_in_ch; deepmod_in_ch }
 
 
-// resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
+// Resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
 process Resquiggle {
 	tag "${basecallIndir.simpleName}"
 
@@ -200,7 +203,7 @@ process DeepSignal {
 	label 'with_gpus'
 
 	input:
-	file ttt from deepsignal_in2_ch //[basecallDir, reference_genome]
+	file ttt from deepsignal_in2_ch // ttt is [basecallDir, reference_genome]
 	each file(deepsignal_model_tar) from Channel.fromPath(params.deepsignel_model_tar)
 
 	output:
@@ -234,7 +237,7 @@ process Tombo {
 
 	input:
 	each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
-	each file (nanomeDir) from nanome_ch1
+	each file("*") from ch_utils2
 	file resquiggleDir from tombo_in_ch
 
 	output:
@@ -244,7 +247,6 @@ process Tombo {
 	params.runMethcall
 
 	"""
-	set -x
 	tar -xzf ${reference_genome_tar}
 
 	tombo detect_modifications alternative_model \
@@ -257,9 +259,7 @@ process Tombo {
 		--processes ${params.processors} \
 		--corrected-group ${params.resquiggleCorrectedGroup}
 
-
-	### python ${workflow.projectDir}/utils/tombo_extract_per_read_stats.py \
-	python ${nanomeDir}/utils/tombo_extract_per_read_stats.py \
+	python utils/tombo_extract_per_read_stats.py \
 		${params.chromSizesFile} \
 		"batch_${resquiggleDir.simpleName}.CpG.tombo.per_read_stats" \
 		"batch_${resquiggleDir.simpleName}.CpG.tombo.per_read_stats.bed"
@@ -285,8 +285,6 @@ process Megalodon {
 	params.runMethcall
 
 	"""
-	set -x
-
 	## Get raw fast5 files
 	mkdir -p untarDir
 	infn=${fast5_tar}
@@ -347,8 +345,6 @@ process DeepMod {
 	params.runDeepMod
 
 	"""
-	set -x
-
 	wget ${params.DeepModGithub} --no-verbose
 	tar -xzf v0.1.3.tar.gz
 	DeepModProjectDir="DeepMod-0.1.3"
@@ -380,7 +376,7 @@ process Nanopolish {
 	input:
 	file basecallDir from nanopolish_in_ch
 	each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
-	each file (nanomeDir) from nanome_ch2
+	each file("*") from ch_utils3
 
 	output:
 	file "batch_${basecallDir.simpleName}.nanopolish.methylation_calls.tsv" into nanopolish_out_ch
@@ -389,8 +385,6 @@ process Nanopolish {
 	params.runMethcall
 
 	"""
-	set -x
-
 	tar -xzf ${reference_genome_tar}
 	refGenome=${params.referenceGenome}
 
@@ -412,8 +406,7 @@ process Nanopolish {
 		# echo "cat \$f >> \$fastqFile - COMPLETED"
 	done
 
-	### python ${workflow.projectDir}/utils/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
-	python ${nanomeDir}/utils/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
+	python utils/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
 
 	# Index the raw read with fastq
 	nanopolish index -d ${basecallDir}/workspace \${fastqNoDupFile}
@@ -534,8 +527,6 @@ process NplshComb {
 	x.size() >= 1
 
 	"""
-	set -x
-
 	> ${params.dsname}.Nanopolish.combine.tsv
 
 	for fn in $x
@@ -570,8 +561,6 @@ process DpmodComb {
 	x.size() >= 1
 
 	"""
-	set -x
-
 	wget ${params.DeepModGithub} --no-verbose
 	tar -xzf v0.1.3.tar.gz
 	DeepModProjectDir="DeepMod-0.1.3"
@@ -630,7 +619,7 @@ process ReadLevelPerf {
 
 	input: // TODO: I can not sort fileList by name, seems sorted by date????
 	file fileList from readlevel_in_ch
-	each file (nanomeDir) from nanome_ch3
+	each file("*") from ch_src1
 
 	output:
 	file "MethPerf-*" into readlevel_out_ch
@@ -639,8 +628,6 @@ process ReadLevelPerf {
 	params.eval && (fileList.size() >= 1)
 
 	"""
-	set -x
-
 	# Sort files
 	flist=(\$(ls *.combine.{tsv,bed}.gz))
 
@@ -656,7 +643,7 @@ process ReadLevelPerf {
 
 	## Read level evaluations
 	### python ${workflow.projectDir}/src/nanocompare/read_level_eval.py \
-	python ${nanomeDir}/src/nanocompare/read_level_eval.py \
+	python src/nanocompare/read_level_eval.py \
 
 		--calls DeepSignal:\${deepsignalFile} \
 				Tombo:\${tomboFile} \
@@ -681,7 +668,7 @@ process SiteLevelCorr {
 	input:
 	file perfDir from readlevel_out_ch
 	file fileList from sitelevel_in_ch
-	each file (nanomeDir) from nanome_ch4
+	each file("*") from ch_src2
 
 	output:
 	file "MethCorr-*" into sitelevel_out_ch
@@ -690,8 +677,6 @@ process SiteLevelCorr {
 	params.eval && (fileList.size() >= 1)
 
 	"""
-	set -x
-
 	# Sort file by my self
 	flist=(\$(ls *.combine.{tsv,bed}.gz))
 	echo \${flist[@]}
@@ -706,7 +691,7 @@ process SiteLevelCorr {
 
 	## Site level evaluations
 	### python ${workflow.projectDir}/src/nanocompare/site_level_eval.py \
-	python ${nanomeDir}/src/nanocompare/site_level_eval.py \
+	python src/nanocompare/site_level_eval.py \
 		--calls DeepSignal:\${deepsignalFile} \
 				Tombo:\${tomboFile} \
 				Nanopolish:\${nanopolishFile} \

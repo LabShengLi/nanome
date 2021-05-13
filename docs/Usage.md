@@ -16,6 +16,14 @@ curl -fsSL get.nextflow.io | bash
    --dsname TestData --eval true -profile winter
 ```
 
+You can also running the pipeline on CloudOS, using following command options.
+```angular2html
+nextflow run https://github.com/liuyangzzu/nanome
+    --config 'conf/google.config'
+    --dsname TestData
+    --input 'https://github.com/liuyangzzu/nanome/raw/master/test_data/demo.fast5.reads.tar.gz'
+```
+
 Command running results is below.
 
 ```angular2html
