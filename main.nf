@@ -165,7 +165,7 @@ process Resquiggle {
 	file "${basecallIndir.simpleName}_resquiggle_dir" into resquiggle_out_ch
 
 	when:
-	params.runMethcall && false
+	params.runMethcall
 
 	"""
 	## untar reference_genome
@@ -174,7 +174,13 @@ process Resquiggle {
 
 	### copy basecall workspace files, due to tombo resquiggle modify base folder
 	mkdir -p ${basecallIndir.simpleName}_resquiggle_dir
+
+	### TODO: check if it is ok? We need to duplicate basecall results,
+	### original basecalled results will be parrallelly used by other processes
 	cp -rf ${basecallIndir}/* ${basecallIndir.simpleName}_resquiggle_dir/
+
+	tombo -v
+	tombo resquiggle --help
 
 	### Now set processes=1, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
 	### ref: https://github.com/nanoporetech/tombo/issues/139
