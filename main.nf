@@ -179,21 +179,12 @@ process Resquiggle {
 	### original basecalled results will be parrallelly used by other processes
 	cp -rf ${basecallIndir}/* ${basecallIndir.simpleName}_resquiggle_dir/
 
-	tombo -v
-	tombo resquiggle --help
-
-	## Try to use basecall original results
+	### Now set processes=1, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
+	### ref: https://github.com/nanoporetech/tombo/issues/139
 	tombo resquiggle --dna --processes 1 \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} --overwrite \
-		${basecallIndir}/workspace \${refGenome}
-
-	### Now set processes=1, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
-	### ref: https://github.com/nanoporetech/tombo/issues/139
-	##tombo resquiggle --dna --processes 1 \
-	##	--corrected-group ${params.resquiggleCorrectedGroup} \
-	##	--basecall-group ${params.BasecallGroupName} --overwrite \
-	##	${basecallIndir.simpleName}_resquiggle_dir/workspace \${refGenome}
+		${basecallIndir.simpleName}_resquiggle_dir/workspace \${refGenome}
 
 	echo "### Tombo methylation calling DONE"
 	"""
