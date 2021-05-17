@@ -32,7 +32,7 @@ workingDir=/fastscratch/liuya/nanocompare/work
 #rm -rf ${workingDir}-test
 ./nextflow run main.nf -profile winter \
     -work-dir ${workingDir}-test4 \
-    -config conf/test.config
+    -config conf/test.config -resume
 
 
 #./nextflow run main.nf -profile winter \
