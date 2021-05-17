@@ -760,10 +760,10 @@ process ReadLevelPerf {
 	deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC.combine.bed.gz')
 	megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.bed.gz')
 
-	export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}
+	export PYTHONPATH=src:\${PYTHONPATH}
 
 	## Read level evaluations
-	### python ${workflow.projectDir}/src/nanocompare/read_level_eval.py \
+	### python ${workflow.projectDir}/src/nanocompare/read_level_eval.py
 	python src/nanocompare/read_level_eval.py \
 		--calls DeepSignal:\${deepsignalFile} \
 				Tombo:\${tomboFile} \
@@ -807,10 +807,10 @@ process SiteLevelCorr {
 	deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC_clusterCpG.combine.bed.gz')
 	megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.bed.gz')
 
-	export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}
+	export PYTHONPATH=src:\${PYTHONPATH}
 
 	## Site level evaluations
-	### python ${workflow.projectDir}/src/nanocompare/site_level_eval.py \
+	### python ${workflow.projectDir}/src/nanocompare/site_level_eval.py
 	python src/nanocompare/site_level_eval.py \
 		--calls DeepSignal:\${deepsignalFile} \
 				Tombo:\${tomboFile} \
