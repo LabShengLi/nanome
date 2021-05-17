@@ -293,7 +293,7 @@ process Resquiggle {
 	file "${basecallIndir.simpleName}_resquiggle_dir" into resquiggle_out_ch
 
 	when:
-	params.runMethcall
+	params.runMethcall && params.runResquiggle
 
 	"""
 	## untar reference_genome
