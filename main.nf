@@ -20,8 +20,9 @@ projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
 
-ch_utils.into{ch_utils1; ch_utils2; ch_utils3}
+ch_utils.into{ch_utils1; ch_utils2; ch_utils3; ch_utils4; ch_utils5}
 ch_src.into{ch_src1; ch_src2}
+
 
 // We collect all folders of fast5 files, and send into Channels for pipelines
 if (params.input.endsWith(".filelist.txt")) { // filelist
@@ -30,11 +31,10 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 		.map { file(it[0]) }
 		.toList()
 		.set{ fast5_tar_ch }
-
 	// emit one time for each fast5.tar file
-	fast5_tar_ch.flatten().into{fast5_tar_ch1; fast5_tar_ch2}
+	fast5_tar_ch.flatten().into{fast5_tar_ch1; fast5_tar_ch2; fast5_tar_ch3; fast5_tar_ch4}
 } else { // single file
-	Channel.fromPath( params.input ).into {fast5_tar_ch1; fast5_tar_ch2}
+	Channel.fromPath( params.input ).into {fast5_tar_ch1; fast5_tar_ch2; fast5_tar_ch3; fast5_tar_ch4}
 }
 
 
@@ -71,41 +71,35 @@ process EnvCheck {
 	"""
 }
 
-// nanome_ch.into{nanome_ch0; nanome_ch1; nanome_ch2; nanome_ch3; nanome_ch4}
 
-// basecall of subfolders named 'M1', ..., 'M10', etc.
-process Basecall {
-	tag "${fast5_tar.simpleName}"
+// Untar of subfolders named 'M1', ..., 'M10', etc.
+process Untar {
+	tag "${fast5_tar.baseName}"
 
-	label 'with_gpus'
-
-	input: // input here is not passed
-	file fast5_tar from fast5_tar_ch1
-	each file("*") from ch_utils1
+	input:
+	file fast5_tar from fast5_tar_ch4
+	each file("*") from ch_utils5
 
 	output:
-	file "${fast5_tar.simpleName}_basecalled" into basecall_out_ch  // try to fix the christina proposed problems
-	file "${fast5_tar.simpleName}_basecalled/${fast5_tar.simpleName}-sequencing_summary.txt" into qc_ch
-
-	when:
-	params.runBasecall
+	file "${fast5_tar.baseName}.untar" into untar_out_ch
 
 	"""
-	mkdir -p untarDir
-
 	infn=${fast5_tar}
 
+	mkdir -p untarDir
 	if [ "\${infn##*.}" == "tar" ]; then ### deal with tar
 		tar -xf ${fast5_tar} -C untarDir
+		## move fast5 files in tree folders into a single folder
+		mkdir -p untarDir1
+		find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
 	elif [ "\${infn##*.}" == "gz" ]; then ### deal with tar.gz
 		tar -xzf ${fast5_tar} -C untarDir
+		## move fast5 files in tree folders into a single folder
+		mkdir -p untarDir1
+		find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
 	else ### deal with ready folder
-		mv  ${fast5_tar} untarDir
+		mv  ${fast5_tar} untarDir1
 	fi
-
-	# move fast5 files in tree folders into a single folder
-	mkdir -p untarDir1
-	find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
 
 	## Clean old analyses in input fast5 files
 	if [[ "${params.cleanAnalyses}" = true ]] ; then
@@ -113,9 +107,39 @@ process Basecall {
 		python utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir
 	fi
 
-	mkdir -p ${fast5_tar.simpleName}_basecalled
-	guppy_basecaller --input_path untarDir1 \
-		--save_path "${fast5_tar.simpleName}_basecalled" \
+	mv untarDir1 ${fast5_tar.baseName}.untar
+
+	## Clean unused files
+	rm -rf untarDir
+	"""
+}
+
+
+// Untar output will be used by basecall, megalodon and guppy
+untar_out_ch.into{ untar_out_ch1; untar_out_ch2; untar_out_ch3 }
+
+
+// basecall of subfolders named 'M1', ..., 'M10', etc.
+process Basecall {
+	tag "${fast5_dir.baseName}"
+
+	label 'with_gpus'
+
+	input:
+	file fast5_dir from untar_out_ch1
+	each file("*") from ch_utils1
+
+	output:
+	file "${fast5_dir.baseName}.basecalled" into basecall_out_ch  // try to fix the christina proposed problems
+	file "${fast5_dir.baseName}.basecalled/${fast5_dir.baseName}-sequencing_summary.txt" into qc_ch
+
+	when:
+	params.runBasecall
+
+	"""
+	mkdir -p ${fast5_dir.baseName}.basecalled
+	guppy_basecaller --input_path ${fast5_dir} \
+		--save_path "${fast5_dir.baseName}.basecalled" \
 		--config ${params.GUPPY_BASECALL_MODEL} \
 		--num_callers ${params.GuppyNumCallers} \
 		--fast5_out \
@@ -123,10 +147,9 @@ process Basecall {
 		--verbose_logs ${params.GuppyGPUOptions}
 
 	## After basecall, rename and publishe summary file names
-	mv ${fast5_tar.simpleName}_basecalled/sequencing_summary.txt ${fast5_tar.simpleName}_basecalled/${fast5_tar.simpleName}-sequencing_summary.txt
+	mv ${fast5_dir.baseName}.basecalled/sequencing_summary.txt ${fast5_dir.baseName}.basecalled/${fast5_dir.baseName}-sequencing_summary.txt
 
-	## Clean unused files
-	rm -rf untarDir untarDir1
+	echo "### Basecalled by Guppy DONE"
 	"""
 }
 
@@ -153,19 +176,114 @@ basecall_out_ch
 	.into { resquiggle_in_ch; nanopolish_in_ch; deepmod_in_ch }
 
 
+// methylation calling for Guppy
+process Guppy {
+	tag "${fast5_dir.baseName}"
+
+	label 'with_gpus'
+
+	input:
+	file fast5_dir from untar_out_ch2
+	each file("*") from ch_utils4
+	each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+
+	output:
+	file "meth_${fast5_dir.baseName}.bam*" into guppy_methcall_out_ch  // try to fix the christina proposed problems
+
+	when:
+	params.runMethcall && params.runGuppy
+
+	"""
+	tar -xzf ${reference_genome_tar}
+	refGenome=${params.referenceGenome}
+
+	mkdir -p ${fast5_dir.baseName}_methcalled
+
+	guppy_basecaller --input_path ${fast5_dir} \
+		--save_path ${fast5_dir.baseName}_methcalled \
+		--config dna_r9.4.1_450bps_modbases_dam-dcm-cpg_hac.cfg \
+		--gpu_runners_per_device 32 \
+		--num_callers 16 --fast5_out \
+		--verbose_logs --device auto
+
+	FAST5PATH=${fast5_dir.baseName}_methcalled/workspace
+	OUTBAM=meth_${fast5_dir.baseName}.bam
+	fast5mod guppy2sam \${FAST5PATH} --reference \${refGenome} \
+		--workers 74 --recursive --quiet\
+		| samtools sort -@ 8 | samtools view -b -@ 8 > \${OUTBAM}
+
+	samtools sort \${OUTBAM}
+	samtools index \${OUTBAM}
+
+	## Clean unused files
+	rm -rf ${fast5_dir.baseName}_methcalled
+	echo "###   Guppy methylation calling DONE"
+	"""
+}
+
+
+// Megalodon runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
+process Megalodon {
+	tag "${fast5_dir.baseName}"
+
+	label 'with_gpus'
+
+	input:
+	file fast5_dir from untar_out_ch3
+	each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	each file (megalodonModelTar) from Channel.fromPath(params.megalodon_model_tar)
+
+	output:
+	file "batch_${fast5_dir.baseName}.per_read_modified_base_calls.txt" into megalodon_out_ch
+
+	when:
+	params.runMethcall
+
+	"""
+	## Get reference genome dir
+	tar -xzf ${reference_genome_tar}
+	refGenome=${params.referenceGenome}
+
+	## Get megalodon model dir
+	tar -xzf ${megalodonModelTar}
+
+	megalodon \
+		${fast5_dir} \
+		--overwrite \
+		--outputs per_read_mods mods per_read_refs \
+		--guppy-server-path guppy_basecall_server \
+		--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
+		--guppy-params "-d ./megalodon_model/ --num_callers 16 --ipc_threads 80" \
+		--reads-per-guppy-batch ${params.READS_PER_GUPPY_BATCH} \
+		--guppy-timeout ${params.GUPPY_TIMEOUT} \
+		--samtools-executable ${params.SAMTOOLS_PATH} \
+		--sort-mappings \
+		--mappings-format bam \
+		--reference \${refGenome} \
+		--mod-motif m CG 0 \
+		--mod-output-formats bedmethyl wiggle \
+		--write-mods-text \
+		--write-mod-log-probs \
+		--processes ${params.processors} ${params.megalodonGPUOptions}
+
+	mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_dir.baseName}.per_read_modified_base_calls.txt
+	"""
+}
+
+
 // Resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
 process Resquiggle {
-	tag "${basecallIndir.simpleName}"
+	tag "${basecallIndir.baseName}"
 
 	input:
 	file basecallIndir from resquiggle_in_ch
 	each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
 
 	output:
-	file "${basecallIndir.simpleName}_resquiggle_dir" into resquiggle_out_ch
+	file "${basecallIndir.baseName}_resquiggle_dir" into resquiggle_out_ch
 
 	when:
-	params.runMethcall
+	params.runMethcall && params.runResquiggle
 
 	"""
 	## untar reference_genome
@@ -173,18 +291,18 @@ process Resquiggle {
 	refGenome=${params.referenceGenome}
 
 	### copy basecall workspace files, due to tombo resquiggle modify base folder
-	mkdir -p ${basecallIndir.simpleName}_resquiggle_dir
+	mkdir -p ${basecallIndir.baseName}_resquiggle_dir
 
 	### TODO: check if it is ok? We need to duplicate basecall results,
 	### original basecalled results will be parrallelly used by other processes
-	cp -rf ${basecallIndir}/* ${basecallIndir.simpleName}_resquiggle_dir/
+	cp -rf ${basecallIndir}/* ${basecallIndir.baseName}_resquiggle_dir/
 
 	### Now set processes=1, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
 	### ref: https://github.com/nanoporetech/tombo/issues/139
 	tombo resquiggle --dna --processes 1 \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} --overwrite \
-		${basecallIndir.simpleName}_resquiggle_dir/workspace \${refGenome}
+		${basecallIndir.baseName}_resquiggle_dir/workspace \${refGenome}
 
 	echo "### Tombo methylation calling DONE"
 	"""
@@ -201,7 +319,7 @@ deepsignal_in2_ch =
 
 // DeepSignal runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepSignal {
-	tag "${ttt[0].simpleName}"
+	tag "${ttt[0].baseName}"
 
 	label 'with_gpus'
 
@@ -210,7 +328,7 @@ process DeepSignal {
 	each file(deepsignal_model_tar) from Channel.fromPath(params.deepsignel_model_tar)
 
 	output:
-	file "DeepSignal.batch_${ttt[0].simpleName}.CpG.deepsignal.call_mods.tsv" into deepsignal_out_ch
+	file "DeepSignal.batch_${ttt[0].baseName}.CpG.deepsignal.call_mods.tsv" into deepsignal_out_ch
 
 	when:
 	params.runMethcall
@@ -223,9 +341,9 @@ process DeepSignal {
 
 	tar -xzf ${deepsignal_model_tar}
 
-	deepsignal call_mods --input_path ${ttt[0].simpleName}/workspace \
+	deepsignal call_mods --input_path ${ttt[0].baseName}/workspace \
 		--model_path ./model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+/bn_17.sn_360.epoch_9.ckpt \
-		--result_file "DeepSignal.batch_${ttt[0].simpleName}.CpG.deepsignal.call_mods.tsv" \
+		--result_file "DeepSignal.batch_${ttt[0].baseName}.CpG.deepsignal.call_mods.tsv" \
 		--reference_path \${refGenome} \
 		--corrected_group ${params.resquiggleCorrectedGroup} \
 		--nproc ${params.processors} \
@@ -236,7 +354,7 @@ process DeepSignal {
 
 // Tombo runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Tombo {
-	tag "${resquiggleDir.simpleName}"
+	tag "${resquiggleDir.baseName}"
 
 	input:
 	each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
@@ -244,7 +362,7 @@ process Tombo {
 	file resquiggleDir from tombo_in_ch
 
 	output:
-	file "batch_${resquiggleDir.simpleName}.CpG.tombo.per_read_stats.bed" into tombo_out_ch
+	file "batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed" into tombo_out_ch
 
 	when:
 	params.runMethcall
@@ -256,83 +374,24 @@ process Tombo {
 		--fast5-basedirs ${resquiggleDir}/workspace \
 		--dna --standard-log-likelihood-ratio \
 		--statistics-file-basename \
-		batch_${resquiggleDir.simpleName} \
-		--per-read-statistics-basename batch_${resquiggleDir.simpleName} \
+		batch_${resquiggleDir.baseName} \
+		--per-read-statistics-basename batch_${resquiggleDir.baseName} \
 		--alternate-bases CpG \
 		--processes ${params.processors} \
 		--corrected-group ${params.resquiggleCorrectedGroup}
 
 	python utils/tombo_extract_per_read_stats.py \
 		${params.chromSizesFile} \
-		"batch_${resquiggleDir.simpleName}.CpG.tombo.per_read_stats" \
-		"batch_${resquiggleDir.simpleName}.CpG.tombo.per_read_stats.bed"
+		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats" \
+		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed"
 	"""
 }
 
-
-// Megalodon runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
-process Megalodon {
-	tag "${fast5_tar.simpleName}"
-
-	label 'with_gpus'
-
-	input:
-	file fast5_tar from fast5_tar_ch2
-	each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
-	each file (megalodonModelTar) from Channel.fromPath(params.megalodon_model_tar)
-
-	output:
-	file "batch_${fast5_tar.simpleName}.per_read_modified_base_calls.txt" into megalodon_out_ch
-
-	when:
-	params.runMethcall
-
-	"""
-	## Get raw fast5 files
-	mkdir -p untarDir
-	infn=${fast5_tar}
-	if [ "\${infn##*.}" == "tar" ]; then ### deal with tar
-		tar -xf ${fast5_tar} -C untarDir
-	elif [ "\${infn##*.}" == "gz" ]; then ### deal with tar.gz
-		tar -xzf ${fast5_tar} -C untarDir
-	else ### deal with ready folder
-		mv  ${fast5_tar} untarDir
-	fi
-
-	## Get reference genome dir
-	tar -xzf ${reference_genome_tar}
-	refGenome=${params.referenceGenome}
-
-	## Get megalodon model dir
-	tar -xzf ${megalodonModelTar}
-
-	megalodon \
-		untarDir \
-		--overwrite \
-		--outputs per_read_mods mods per_read_refs \
-		--guppy-server-path guppy_basecall_server \
-		--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-		--guppy-params "-d ./megalodon_model/ --num_callers 16 --ipc_threads 80" \
-		--reads-per-guppy-batch ${params.READS_PER_GUPPY_BATCH} \
-		--guppy-timeout ${params.GUPPY_TIMEOUT} \
-		--samtools-executable ${params.SAMTOOLS_PATH} \
-		--sort-mappings \
-		--mappings-format bam \
-		--reference \${refGenome} \
-		--mod-motif m CG 0 \
-		--mod-output-formats bedmethyl wiggle \
-		--write-mods-text \
-		--write-mod-log-probs \
-		--processes ${params.processors} ${params.megalodonGPUOptions} ## --devices 0
-
-	mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_tar.simpleName}.per_read_modified_base_calls.txt
-	"""
-}
 
 
 // DeepMod runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepMod {
-	tag "${basecallDir.simpleName}"
+	tag "${basecallDir.baseName}"
 
 	errorStrategy 'ignore'
 	label 'with_gpus'
@@ -342,7 +401,7 @@ process DeepMod {
 	file basecallDir from deepmod_in_ch
 
 	output:
-	file "mod_output/batch_${basecallDir.simpleName}_num" into deepmod_out_ch
+	file "mod_output/batch_${basecallDir.baseName}_num" into deepmod_out_ch
 
 	when:
 	params.runDeepMod
@@ -365,7 +424,7 @@ process DeepMod {
 	DeepMod.py detect \
 			--wrkBase ${basecallDir}/workspace --Ref \${refGenome} \
 			--Base C --modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
-			--FileID batch_${basecallDir.simpleName}_num \
+			--FileID batch_${basecallDir.baseName}_num \
 			--threads 16 ${params.DeepModMoveOptions}  \
 			--basecall_1d ${params.BasecallGroupName} ###	--mod_cluster 0 is not work
 	"""
@@ -374,7 +433,7 @@ process DeepMod {
 
 // Nanopolish runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Nanopolish {
-	tag "${basecallDir.simpleName}"
+	tag "${basecallDir.baseName}"
 
 	input:
 	file basecallDir from nanopolish_in_ch
@@ -382,7 +441,7 @@ process Nanopolish {
 	each file("*") from ch_utils3
 
 	output:
-	file "batch_${basecallDir.simpleName}.nanopolish.methylation_calls.tsv" into nanopolish_out_ch
+	file "batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv" into nanopolish_out_ch
 
 	when:
 	params.runMethcall
@@ -396,7 +455,7 @@ process Nanopolish {
 	### We put all fq and bam files into working dir, DO NOT affect the basecall dir
 	fastqFile=reads.fq
 	fastqNoDupFile="\${fastqFile}.noDups.fq"
-	bamFileName="${params.dsname}.batch_${basecallDir.simpleName}.sorted.bam"
+	bamFileName="${params.dsname}.batch_${basecallDir.baseName}.sorted.bam"
 
 	echo \${fastqFile}
 	echo \${fastqNoDupFile}
@@ -423,7 +482,7 @@ process Nanopolish {
 
 	nanopolish call-methylation -t ${params.processors} -r \
 		\${fastqNoDupFile} -b \${bamFileName} -g \${refGenome} \
-		 > batch_${basecallDir.simpleName}.nanopolish.methylation_calls.tsv
+		 > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
 
 	echo "### Nanopolish methylation calling DONE"
 	"""
@@ -436,6 +495,7 @@ deepmod_combine_in_ch=deepmod_out_ch.toList()
 megalodon_combine_in_ch = megalodon_out_ch.toList()
 tombo_combine_in_ch = tombo_out_ch.toList()
 deepsignal_combine_in_ch = deepsignal_out_ch.toList()
+guppy_combine_in_ch = guppy_methcall_out_ch.flatten().toList()
 
 
 // Combine DeepSignal runs' all results together
@@ -484,6 +544,54 @@ process TomboComb {
 }
 
 
+// Combine Guppy runs' all results together
+process GuppyComb {
+	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
+
+	input:
+	file x from guppy_combine_in_ch
+	each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+
+
+	output:
+	file "${params.dsname}.Guppy.combine.tsv.gz" into guppy_combine_out_ch
+
+	when:
+	x.size() >= 1
+
+	"""
+	tar -xzf ${reference_genome_tar}
+	refGenome=${params.referenceGenome}
+
+	find . -name 'meth_*.bam' -maxdepth 1 |
+	  parallel -j8 -N4095 -m --files samtools merge -u - |
+	  parallel --xargs samtools merge -@8 total.meth.bam {}
+
+	samtools sort total.meth.bam
+	samtools index total.meth.bam
+	echo "samtool index is done"
+
+	## Ref: https://github.com/nanoporetech/medaka/issues/177
+	for i in {1..22} X Y
+	do
+		fast5mod call total.meth.bam \${refGenome} \
+			meth.chr\$i.tsv --meth cpg --quiet \
+			--regions chr\$i
+	done
+
+	cat  meth.*.tsv > total.meth.tsv
+	sort -V -k1,1 -k2,2 total.meth.tsv > ${params.dsname}.Guppy.combine.tsv
+
+	gzip ${params.dsname}.Guppy.combine.tsv
+
+	## Clean
+	rm -f meth.chr*.tsv total.meth.tsv
+	rm -f total.meth.bam*
+	echo "### Guppy combine results DONE. ###"
+	"""
+}
+
+
 // Combine Megalodon runs' all results together
 process MgldnComb {
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
@@ -504,7 +612,7 @@ process MgldnComb {
 	do
 		break
 	done
-	#sed -n '1p' \${fn} > ${params.dsname}.Megalodon.combine.bed
+	##sed -n '1p' \${fn} > ${params.dsname}.Megalodon.combine.bed
 
 	for fn in $x
 	do
@@ -611,7 +719,7 @@ process DpmodComb {
 
 
 deepsignal_combine_out_ch.concat(tombo_combine_out_ch,megalodon_combine_out_ch, \
-	nanopolish_combine_out_ch,deepmod_combine_out_ch.flatten())
+	nanopolish_combine_out_ch,deepmod_combine_out_ch.flatten(), guppy_combine_out_ch)
 	.toSortedList()
 	.into { readlevel_in_ch; sitelevel_in_ch }
 
@@ -642,12 +750,11 @@ process ReadLevelPerf {
 	deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC.combine.bed.gz')
 	megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.bed.gz')
 
-	export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}
+	export PYTHONPATH=src:\${PYTHONPATH}
 
 	## Read level evaluations
-	### python ${workflow.projectDir}/src/nanocompare/read_level_eval.py \
+	### python ${workflow.projectDir}/src/nanocompare/read_level_eval.py
 	python src/nanocompare/read_level_eval.py \
-
 		--calls DeepSignal:\${deepsignalFile} \
 				Tombo:\${tomboFile} \
 				Nanopolish:\${nanopolishFile} \
@@ -690,10 +797,10 @@ process SiteLevelCorr {
 	deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC_clusterCpG.combine.bed.gz')
 	megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.bed.gz')
 
-	export PYTHONPATH=${workflow.projectDir}:\${PYTHONPATH}
+	export PYTHONPATH=src:\${PYTHONPATH}
 
 	## Site level evaluations
-	### python ${workflow.projectDir}/src/nanocompare/site_level_eval.py \
+	### python ${workflow.projectDir}/src/nanocompare/site_level_eval.py
 	python src/nanocompare/site_level_eval.py \
 		--calls DeepSignal:\${deepsignalFile} \
 				Tombo:\${tomboFile} \
