@@ -20,8 +20,10 @@ projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
 
-ch_utils.into{ch_utils1; ch_utils2; ch_utils3; ch_utils4}
+ch_utils.into{ch_utils1; ch_utils2; ch_utils3; ch_utils4; ch_utils5}
 ch_src.into{ch_src1; ch_src2}
+
+
 
 // We collect all folders of fast5 files, and send into Channels for pipelines
 if (params.input.endsWith(".filelist.txt")) { // filelist
@@ -32,9 +34,9 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 		.set{ fast5_tar_ch }
 
 	// emit one time for each fast5.tar file
-	fast5_tar_ch.flatten().into{fast5_tar_ch1; fast5_tar_ch2}
+	fast5_tar_ch.flatten().into{fast5_tar_ch1; fast5_tar_ch2; fast5_tar_ch3; fast5_tar_ch4}
 } else { // single file
-	Channel.fromPath( params.input ).into {fast5_tar_ch1; fast5_tar_ch2; fast5_tar_ch3}
+	Channel.fromPath( params.input ).into {fast5_tar_ch1; fast5_tar_ch2; fast5_tar_ch3; fast5_tar_ch4}
 }
 
 
@@ -72,39 +74,34 @@ process EnvCheck {
 }
 
 
-// basecall of subfolders named 'M1', ..., 'M10', etc.
-process Basecall {
-	tag "${fast5_tar.simpleName}"
+// Untar of subfolders named 'M1', ..., 'M10', etc.
+process Untar {
+	tag "${fast5_tar.baseName}"
 
-	label 'with_gpus'
-
-	input: // input here is not passed
-	file fast5_tar from fast5_tar_ch1
-	each file("*") from ch_utils1
+	input:
+	file fast5_tar from fast5_tar_ch4
+	each file("*") from ch_utils5
 
 	output:
-	file "${fast5_tar.simpleName}_basecalled" into basecall_out_ch  // try to fix the christina proposed problems
-	file "${fast5_tar.simpleName}_basecalled/${fast5_tar.simpleName}-sequencing_summary.txt" into qc_ch
-
-	when:
-	params.runBasecall
+	file "${fast5_tar.baseName}.untar" into untar_out_ch
 
 	"""
-	mkdir -p untarDir
-
 	infn=${fast5_tar}
 
+	mkdir -p untarDir
 	if [ "\${infn##*.}" == "tar" ]; then ### deal with tar
 		tar -xf ${fast5_tar} -C untarDir
+		## move fast5 files in tree folders into a single folder
+		mkdir -p untarDir1
+		find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
 	elif [ "\${infn##*.}" == "gz" ]; then ### deal with tar.gz
 		tar -xzf ${fast5_tar} -C untarDir
+		## move fast5 files in tree folders into a single folder
+		mkdir -p untarDir1
+		find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
 	else ### deal with ready folder
-		mv  ${fast5_tar} untarDir
+		mv  ${fast5_tar} untarDir1
 	fi
-
-	# move fast5 files in tree folders into a single folder
-	mkdir -p untarDir1
-	find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
 
 	## Clean old analyses in input fast5 files
 	if [[ "${params.cleanAnalyses}" = true ]] ; then
@@ -112,9 +109,38 @@ process Basecall {
 		python utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir
 	fi
 
-	mkdir -p ${fast5_tar.simpleName}_basecalled
-	guppy_basecaller --input_path untarDir1 \
-		--save_path "${fast5_tar.simpleName}_basecalled" \
+	mv untarDir1 ${fast5_tar.baseName}.untar
+
+	## Clean unused files
+	rm -rf untarDir
+	"""
+}
+
+
+untar_out_ch.into{ untar_out_ch1; untar_out_ch2; untar_out_ch3 }
+
+
+// basecall of subfolders named 'M1', ..., 'M10', etc.
+process Basecall {
+	tag "${fast5_dir.baseName}"
+
+	label 'with_gpus'
+
+	input:
+	file fast5_dir from untar_out_ch1
+	each file("*") from ch_utils1
+
+	output:
+	file "${fast5_dir.baseName}.basecalled" into basecall_out_ch  // try to fix the christina proposed problems
+	file "${fast5_dir.baseName}.basecalled/${fast5_dir.baseName}-sequencing_summary.txt" into qc_ch
+
+	when:
+	params.runBasecall
+
+	"""
+	mkdir -p ${fast5_dir.baseName}.basecalled
+	guppy_basecaller --input_path ${fast5_dir} \
+		--save_path "${fast5_dir.baseName}.basecalled" \
 		--config ${params.GUPPY_BASECALL_MODEL} \
 		--num_callers ${params.GuppyNumCallers} \
 		--fast5_out \
@@ -122,10 +148,9 @@ process Basecall {
 		--verbose_logs ${params.GuppyGPUOptions}
 
 	## After basecall, rename and publishe summary file names
-	mv ${fast5_tar.simpleName}_basecalled/sequencing_summary.txt ${fast5_tar.simpleName}_basecalled/${fast5_tar.simpleName}-sequencing_summary.txt
+	mv ${fast5_dir.baseName}.basecalled/sequencing_summary.txt ${fast5_dir.baseName}.basecalled/${fast5_dir.baseName}-sequencing_summary.txt
 
-	## Clean unused files
-	rm -rf untarDir untarDir1
+	echo "### Basecalled by Guppy DONE"
 	"""
 }
 
