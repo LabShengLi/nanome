@@ -167,7 +167,7 @@ process Guppy {
 	file "meth_${fast5_tar.simpleName}.bam*" into guppy_methcall_out_ch  // try to fix the christina proposed problems
 
 	when:
-	params.runMethcall
+	params.runMethcall && params.runGuppy
 
 	"""
 	tar -xzf ${reference_genome_tar}
