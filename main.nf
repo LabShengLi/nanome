@@ -313,37 +313,36 @@ process Resquiggle {
 resquiggle_out_ch.into { deepsignal_in_ch; tombo_in_ch }
 
 
-deepsignal_in2_ch =
-	deepsignal_in_ch.flatten().combine(Channel.fromPath(params.reference_genome_tar))
+//deepsignal_in2_ch =
+//	deepsignal_in_ch.flatten().combine(Channel.fromPath(params.reference_genome_tar))
 
 
 // DeepSignal runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepSignal {
-	tag "${ttt[0].baseName}"
+	tag "${indir.baseName}"
 
 	label 'with_gpus'
 
 	input:
-	file ttt from deepsignal_in2_ch // ttt is [basecallDir, reference_genome]
+	file indir from deepsignal_in_ch // ttt is [basecallDir, reference_genome]
 	each file(deepsignal_model_tar) from Channel.fromPath(params.deepsignel_model_tar)
+	each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
 
 	output:
-	file "DeepSignal.batch_${ttt[0].baseName}.CpG.deepsignal.call_mods.tsv" into deepsignal_out_ch
+	file "DeepSignal.batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" into deepsignal_out_ch
 
 	when:
 	params.runMethcall
 
 	"""
-	set -x
-
-	tar -xzf ${ttt[1]}
+	tar -xzf ${reference_genome_tar}
 	refGenome=${params.referenceGenome}
 
 	tar -xzf ${deepsignal_model_tar}
 
-	deepsignal call_mods --input_path ${ttt[0].baseName}/workspace \
+	deepsignal call_mods --input_path ${indir}/workspace \
 		--model_path ./model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+/bn_17.sn_360.epoch_9.ckpt \
-		--result_file "DeepSignal.batch_${ttt[0].baseName}.CpG.deepsignal.call_mods.tsv" \
+		--result_file "DeepSignal.batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 		--reference_path \${refGenome} \
 		--corrected_group ${params.resquiggleCorrectedGroup} \
 		--nproc ${params.processors} \
