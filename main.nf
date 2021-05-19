@@ -32,9 +32,9 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 		.toList()
 		.set{ fast5_tar_ch }
 	// emit one time for each fast5.tar file
-	fast5_tar_ch.flatten().into{fast5_tar_ch1; fast5_tar_ch2; fast5_tar_ch3; fast5_tar_ch4}
+	fast5_tar_ch.flatten().into{fast5_tar_ch1; fast5_tar_ch4}
 } else { // single file
-	Channel.fromPath( params.input ).into {fast5_tar_ch1; fast5_tar_ch2; fast5_tar_ch3; fast5_tar_ch4}
+	Channel.fromPath( params.input ).into {fast5_tar_ch1; fast5_tar_ch4}
 }
 
 
@@ -45,8 +45,12 @@ process EnvCheck {
 	errorStrategy 'terminate'
 	label 'with_gpus'
 
+	input:
+	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
+
 	output:
-	file nanome into nanome_ch
+	// file nanome into nanome_ch
+	file "reference_genome" into reference_genome_ch
 
 	"""
 	which guppy_basecaller
@@ -67,9 +71,18 @@ process EnvCheck {
 	which DeepMod.py
 	DeepMod.py
 
-	git clone https://github.com/liuyangzzu/nanome.git
+	## Untar to dir reference_genome
+	tar -xzf ${reference_genome_tar}
+
+	## git clone https://github.com/liuyangzzu/nanome.git
 	"""
 }
+
+
+//duplicate reference_genome dir to all other processes' input
+reference_genome_ch.into{reference_genome_ch1; reference_genome_ch2;
+	reference_genome_ch3; reference_genome_ch4; reference_genome_ch5;
+	reference_genome_ch6; reference_genome_ch7; reference_genome_ch8}
 
 
 // Untar of subfolders named 'M1', ..., 'M10', etc.
@@ -185,16 +198,18 @@ process Guppy {
 	input:
 	file fast5_dir from untar_out_ch2
 	each file("*") from ch_utils4
-	each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	//each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	each file(reference_genome) from reference_genome_ch1
 
 	output:
-	file "meth_${fast5_dir.baseName}.bam*" into guppy_methcall_out_ch  // try to fix the christina proposed problems
+	file "meth_${fast5_dir.baseName}.bam*" into guppy_methcall_out_ch
 
 	when:
 	params.runMethcall && params.runGuppy
 
 	"""
-	tar -xzf ${reference_genome_tar}
+	##tar -xzf \${reference_genome_tar}
+	echo ${reference_genome}
 	refGenome=${params.referenceGenome}
 
 	mkdir -p ${fast5_dir.baseName}_methcalled
@@ -233,7 +248,8 @@ process Megalodon {
 
 	input:
 	file fast5_dir from untar_out_ch3
-	each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	//each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	each file(reference_genome) from reference_genome_ch2
 	each file (megalodonModelTar) from Channel.fromPath(params.megalodon_model_tar)
 
 	output:
@@ -244,7 +260,7 @@ process Megalodon {
 
 	"""
 	## Get reference genome dir
-	tar -xzf ${reference_genome_tar}
+	## tar -xzf \${reference_genome_tar}
 	refGenome=${params.referenceGenome}
 
 	## Get megalodon model dir
@@ -280,7 +296,8 @@ process Resquiggle {
 
 	input:
 	file basecallIndir from resquiggle_in_ch
-	each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	//each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	each file(reference_genome) from reference_genome_ch3
 
 	output:
 	file "${basecallIndir.baseName}_resquiggle_dir" into resquiggle_out_ch
@@ -290,7 +307,7 @@ process Resquiggle {
 
 	"""
 	## untar reference_genome
-	tar -xzf ${reference_genome_tar}
+	## tar -xzf \${reference_genome_tar}
 	refGenome=${params.referenceGenome}
 
 	### copy basecall workspace files, due to tombo resquiggle modify base folder
@@ -329,16 +346,17 @@ process DeepSignal {
 	input:
 	file indir from deepsignal_in_ch // ttt is [basecallDir, reference_genome]
 	each file(deepsignal_model_tar) from Channel.fromPath(params.deepsignel_model_tar)
-	each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	//each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	each file(reference_genome) from reference_genome_ch4
 
 	output:
 	file "DeepSignal.batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" into deepsignal_out_ch
 
 	when:
-	params.runMethcall
+	params.runMethcall && params.runDeepSignal
 
 	"""
-	tar -xzf ${reference_genome_tar}
+	## tar -xzf \${reference_genome_tar}
 	refGenome=${params.referenceGenome}
 
 	tar -xzf ${deepsignal_model_tar}
@@ -359,7 +377,8 @@ process Tombo {
 	tag "${resquiggleDir.baseName}"
 
 	input:
-	each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	//each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	each file(reference_genome) from reference_genome_ch5
 	each file("*") from ch_utils2
 	file resquiggleDir from tombo_in_ch
 
@@ -367,10 +386,10 @@ process Tombo {
 	file "batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed" into tombo_out_ch
 
 	when:
-	params.runMethcall
+	params.runMethcall && params.runTombo
 
 	"""
-	tar -xzf ${reference_genome_tar}
+	## tar -xzf \${reference_genome_tar}
 
 	tombo detect_modifications alternative_model \
 		--fast5-basedirs ${resquiggleDir}/workspace \
@@ -399,7 +418,8 @@ process DeepMod {
 	label 'with_gpus'
 
 	input:
-	each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	//each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	each file(reference_genome) from reference_genome_ch6
 	file basecallDir from deepmod_in_ch
 
 	output:
@@ -413,7 +433,7 @@ process DeepMod {
 	tar -xzf v0.1.3.tar.gz
 	DeepModProjectDir="DeepMod-0.1.3"
 
-	tar -xzf ${reference_genome_tar}
+	## tar -xzf \${reference_genome_tar}
 	refGenome=${params.referenceGenome}
 
 
@@ -439,7 +459,8 @@ process Nanopolish {
 
 	input:
 	file basecallDir from nanopolish_in_ch
-	each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	//each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	each file(reference_genome) from reference_genome_ch7
 	each file("*") from ch_utils3
 
 	output:
@@ -449,7 +470,7 @@ process Nanopolish {
 	params.runMethcall
 
 	"""
-	tar -xzf ${reference_genome_tar}
+	## tar -xzf \${reference_genome_tar}
 	refGenome=${params.referenceGenome}
 
 	echo ${basecallDir}
@@ -552,8 +573,8 @@ process GuppyComb {
 
 	input:
 	file x from guppy_combine_in_ch
-	each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
-
+	//each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
+	each file(reference_genome) from reference_genome_ch8
 
 	output:
 	file "${params.dsname}.Guppy.combine.tsv.gz" into guppy_combine_out_ch
@@ -562,7 +583,7 @@ process GuppyComb {
 	x.size() >= 1
 
 	"""
-	tar -xzf ${reference_genome_tar}
+	## tar -xzf \${reference_genome_tar}
 	refGenome=${params.referenceGenome}
 
 	find . -name 'meth_*.bam' -maxdepth 1 |
