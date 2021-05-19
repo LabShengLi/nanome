@@ -583,7 +583,12 @@ process GuppyComb {
 	x.size() >= 1
 
 	"""
-	## tar -xzf \${reference_genome_tar}
+	## install fast5mod
+	pip install fast5mod
+
+	## install parrallel
+	conda install -c conda-forge parallel
+
 	refGenome=${params.referenceGenome}
 
 	find . -name 'meth_*.bam' -maxdepth 1 |
@@ -593,12 +598,6 @@ process GuppyComb {
 	samtools sort total.meth.bam
 	samtools index total.meth.bam
 	echo "samtool index is done"
-
-	## install fast5mod
-	pip install fast5mod
-
-	## install parrallel
-	conda install -c conda-forge parallel
 
 	## Ref: https://github.com/nanoporetech/medaka/issues/177
 	for i in {1..22} X Y
