@@ -206,6 +206,9 @@ process Guppy {
 		--num_callers 16 --fast5_out \
 		--verbose_logs --device auto
 
+	## install fast5mod
+	pip install fast5mod
+
 	FAST5PATH=${fast5_dir.baseName}_methcalled/workspace
 	OUTBAM=meth_${fast5_dir.baseName}.bam
 	fast5mod guppy2sam \${FAST5PATH} --reference \${refGenome} \
@@ -569,6 +572,12 @@ process GuppyComb {
 	samtools sort total.meth.bam
 	samtools index total.meth.bam
 	echo "samtool index is done"
+
+	## install fast5mod
+	pip install fast5mod
+
+	## install parrallel
+	conda install -c conda-forge parallel
 
 	## Ref: https://github.com/nanoporetech/medaka/issues/177
 	for i in {1..22} X Y
