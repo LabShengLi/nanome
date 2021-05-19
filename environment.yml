@@ -511,7 +511,6 @@ dependencies:
     - nanomath==1.2.0
     - nanoplot==1.36.1
     - numpy==1.18.5
-    - ont-albacore==2.3.4
     - ont-fast5-api==3.0.0
     - ont-pyguppy-client-lib==4.2.2
     - plotly==4.14.3
