@@ -281,7 +281,7 @@ process Resquiggle {
 
 	output:
 	file "${basecallIndir.baseName}_resquiggle_dir" into resquiggle_out_ch
-
+	file "*_resquiggle.log" into resquiggle_logs
 	when:
 	params.runMethcall && params.runResquiggle
 
@@ -302,7 +302,7 @@ process Resquiggle {
 	tombo resquiggle --dna --processes 1 \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} --overwrite \
-		${basecallIndir.baseName}_resquiggle_dir/workspace \${refGenome}
+		${basecallIndir.baseName}_resquiggle_dir/workspace \${refGenome} &>  ${params.BasecallGroupName}_resquiggle.log
 
 	echo "### Tombo methylation calling DONE"
 	"""
