@@ -399,7 +399,7 @@ process Tombo {
 		--per-read-statistics-basename batch_${resquiggleDir.baseName} \
 		--alternate-bases CpG \
 		--processes ${params.processors} \
-		--corrected-group ${params.resquiggleCorrectedGroup}  &> ${resquiggleDir.baseName}_resquiggle.log
+		--corrected-group ${params.resquiggleCorrectedGroup}  &> ${resquiggleDir.baseName}.tombo.run.log
 
 	python utils/tombo_extract_per_read_stats.py \
 		${params.chromSizesFile} \
