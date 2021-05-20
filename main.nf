@@ -42,13 +42,10 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 process EnvCheck {
 	tag 'EnvCheck'
 
-	//accelerator 1, type: 'nvidia-tesla-k80'
-	accelerator 1, type: 'nvidia-tesla-p100'
-
+	accelerator 1, type: 'nvidia-tesla-k80'
+	//accelerator 1, type: 'nvidia-tesla-p100'
 	disk '200 GB'
-
 	errorStrategy 'terminate'
-
 	label 'with_gpus'
 
 	input:

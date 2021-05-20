@@ -17,8 +17,9 @@ set -x
 #cd $SLURM_SUBMIT_DIR
 #module load singularity
 
-# Get nextflow from internet
-#curl -fsSL get.nextflow.io | bash
+# Get nextflow and install it
+curl -s https://get.nextflow.io | bash
+
 date;hostname;pwd
 
 ./nextflow run main.nf -profile gls \
