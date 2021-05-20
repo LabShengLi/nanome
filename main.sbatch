@@ -19,9 +19,9 @@ date;hostname;pwd
 # Get nextflow and install it
 # curl -s https://get.nextflow.io | bash
 
-./nextflow run main.nf -profile gls -resume \
+./nextflow run main.nf -profile gls \
 	-w gs://jax-nanopore-01-project-data/nanome-work-test \
-	--runBasecall true --runMethcall true --runResquiggle false \
+	--runBasecall true --runMethcall false --runResquiggle false \
 	 --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
 
 exit 0

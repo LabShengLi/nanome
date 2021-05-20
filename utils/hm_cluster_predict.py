@@ -154,7 +154,10 @@ with tf.Session() as sess:
          if len(train_data)<10: print('\t{}'.format(cur_x)); sys.stdout.flush()
          train_data.append(cur_x)
 
-      print("format data: data={}; {}".format(len(train_data), len(train_data[0]))); sys.stdout.flush()
+      try:
+         print("format data: data={}; {}".format(len(train_data), len(train_data[0]))); sys.stdout.flush()
+      except:
+         pass
       
       batch_data = np.array_split(train_data, int(len(train_data)/batch_size) if len(train_data)>batch_size else 2)
       m_pred_new_per = []
@@ -165,7 +168,10 @@ with tf.Session() as sess:
                  m_pred_new_per.append(curpd)
       print("new per: {}, {}  {} {}".format(len(pdkeys), len(train_data), len(m_pred_new_per), curpd ))
       for wind in range(10):
-         print("'{}' <{}> {}".format(preddict[pdkeys[wind]][-1], m_pred_new_per[wind], train_data[wind]))
+         try:
+            print("'{}' <{}> {}".format(preddict[pdkeys[wind]][-1], m_pred_new_per[wind], train_data[wind]))
+         except:
+            pass
       with open(save_file % chrofinterest, 'w') as mwriter:
          for wind in range(len(pdkeys)):
             mwriter.write("{} {}\n".format(preddict[pdkeys[wind]][-1], int(m_pred_new_per[wind]*100)))

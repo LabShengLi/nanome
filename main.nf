@@ -20,7 +20,7 @@ projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
 
-ch_utils.into{ch_utils1; ch_utils2; ch_utils3; ch_utils4; ch_utils5; ch_utils6}
+ch_utils.into{ch_utils1; ch_utils2; ch_utils3; ch_utils4; ch_utils5; ch_utils6; ch_utils7}
 ch_src.into{ch_src1; ch_src2}
 
 
@@ -48,6 +48,7 @@ process EnvCheck {
 
 	input:
 	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
+	each file("*") from ch_utils7
 
 	output:
 	file "reference_genome" into reference_genome_ch
@@ -73,6 +74,8 @@ process EnvCheck {
 
 	## Untar to dir reference_genome
 	tar -xzf ${reference_genome_tar}
+
+	ls utils
 
 	echo "### Check env DONE"
 	"""
@@ -453,7 +456,6 @@ process Nanopolish {
 
 	input:
 	file basecallDir from nanopolish_in_ch
-	//each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
 	each file(reference_genome) from reference_genome_ch7
 	each file("*") from ch_utils3
 
@@ -464,9 +466,7 @@ process Nanopolish {
 	params.runMethcall
 
 	"""
-	## tar -xzf \${reference_genome_tar}
 	refGenome=${params.referenceGenome}
-
 	echo ${basecallDir}
 
 	### We put all fq and bam files into working dir, DO NOT affect the basecall dir
@@ -725,7 +725,7 @@ process DpmodComb {
 		python utils/hm_cluster_predict.py \
 			indir/${params.dsname}.deepmod \
 			./C \
-			\${DeepModProjectDir}/train_deepmod/${params.clusterDeepModModel}
+			\${DeepModProjectDir}/train_deepmod/${params.clusterDeepModModel} || true
 
 		> ${params.dsname}.DeepModC_clusterCpG.combine.bed
 		for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)

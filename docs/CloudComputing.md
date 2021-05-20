@@ -1,4 +1,9 @@
-# Build and submit to container registry of google cloud computing
+# Running pipeline on google cloud platform
+
+## Authentication step
+
+
+## Build and submit to container registry of google cloud computing
 1. Configure Docker with the following command:
     
     ```angular2html
@@ -36,7 +41,7 @@
     
     Check the Container Regestry link like https://console.cloud.google.com/gcr/images/jax-nanopore-01?project=jax-nanopore-01&authuser=1 for above pushed Docker container.
 
-# Running pipeline
+## Running pipeline
 
 Note that our project id is `jax-nanopore-01`.
 
