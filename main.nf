@@ -323,17 +323,13 @@ process Resquiggle {
 		--basecall-group ${params.BasecallGroupName} --overwrite \
 		${basecallIndir.baseName}_resquiggle_dir/workspace \${refGenome} &>  ${params.BasecallGroupName}_resquiggle.log
 
-	echo "### Tombo methylation calling DONE"
+	echo "### Resquiggle DONE"
 	"""
 }
 
 
 // duplicate resquiggle results for DeepSignal and Tombo
 resquiggle_out_ch.into { deepsignal_in_ch; tombo_in_ch }
-
-
-//deepsignal_in2_ch =
-//	deepsignal_in_ch.flatten().combine(Channel.fromPath(params.reference_genome_tar))
 
 
 // DeepSignal runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
@@ -388,8 +384,6 @@ process Tombo {
 	params.runMethcall && params.runTombo
 
 	"""
-	## tar -xzf \${reference_genome_tar}
-
 	tombo detect_modifications alternative_model \
 		--fast5-basedirs ${resquiggleDir}/workspace \
 		--dna --standard-log-likelihood-ratio \
@@ -404,6 +398,8 @@ process Tombo {
 		${params.chromSizesFile} \
 		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats" \
 		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed"
+
+	echo "### Tombo methylation calling DONE"
 	"""
 }
 
