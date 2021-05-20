@@ -20,7 +20,7 @@ projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
 
-ch_utils.into{ch_utils1; ch_utils2; ch_utils3; ch_utils4; ch_utils5}
+ch_utils.into{ch_utils1; ch_utils2; ch_utils3; ch_utils4; ch_utils5; ch_utils6}
 ch_src.into{ch_src1; ch_src2}
 
 
@@ -42,9 +42,7 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 process EnvCheck {
 	tag 'EnvCheck'
 
-	accelerator 1, type: 'nvidia-tesla-k80'
-	//accelerator 1, type: 'nvidia-tesla-p100'
-	disk '200 GB'
+	//accelerator 1, type: 'nvidia-tesla-k80'
 	errorStrategy 'terminate'
 	label 'with_gpus'
 
@@ -90,8 +88,6 @@ reference_genome_ch.into{reference_genome_ch1; reference_genome_ch2;
 // Untar of subfolders named 'M1', ..., 'M10', etc.
 process Untar {
 	tag "${fast5_tar.baseName}"
-
-	disk '200 GB'
 
 	input:
 	file fast5_tar from fast5_tar_ch4
@@ -277,7 +273,6 @@ process Megalodon {
 		--guppy-server-path guppy_basecall_server \
 		--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
 		--guppy-params "-d ./megalodon_model/ --num_callers 16 --ipc_threads 80" \
-		--reads-per-guppy-batch ${params.READS_PER_GUPPY_BATCH} \
 		--guppy-timeout ${params.GUPPY_TIMEOUT} \
 		--samtools-executable ${params.SAMTOOLS_PATH} \
 		--sort-mappings \
@@ -422,7 +417,6 @@ process DeepMod {
 	label 'with_gpus'
 
 	input:
-	//each file (reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
 	each file(reference_genome) from reference_genome_ch6
 	file basecallDir from deepmod_in_ch
 
@@ -695,6 +689,7 @@ process DpmodComb {
 	input:
 	file x from deepmod_combine_in_ch
 	file deepmod_c_tar_file from Channel.fromPath(params.deepmod_ctar)
+	each file("*") from ch_utils6
 
 	output:
 	file "${params.dsname}.*.combine.bed.gz" into deepmod_combine_out_ch
@@ -731,10 +726,10 @@ process DpmodComb {
 	if [[ "${params.dataType}" = "human" ]] ; then
 		## Only apply to human genome
 		echo "### For human, apply cluster model of DeepMod"
-		python \${DeepModProjectDir}/DeepMod_tools/hm_cluster_predict.py \
+		python utils/hm_cluster_predict.py \
 			indir/${params.dsname}.deepmod \
 			./C \
-			\${DeepModProjectDir}/train_deepmod/${params.clusterDeepModModel}  || true
+			\${DeepModProjectDir}/train_deepmod/${params.clusterDeepModModel}
 
 		> ${params.dsname}.DeepModC_clusterCpG.combine.bed
 		for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)

@@ -14,17 +14,15 @@
 
 set -x
 
-#cd $SLURM_SUBMIT_DIR
-#module load singularity
-
-# Get nextflow and install it
-curl -s https://get.nextflow.io | bash
-
 date;hostname;pwd
 
-./nextflow run main.nf -profile gls \
+# Get nextflow and install it
+# curl -s https://get.nextflow.io | bash
+
+./nextflow run main.nf -profile gls -resume \
 	-w gs://jax-nanopore-01-project-data/nanome-work-test \
-	--runBasecall false --runMethcall false
+	--runBasecall true --runMethcall true --runResquiggle false \
+	 --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
 
 exit 0
 
