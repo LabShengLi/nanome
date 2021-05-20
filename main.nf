@@ -222,7 +222,7 @@ process Guppy {
 		--verbose_logs --device auto
 
 	## install fast5mod
-	pip install fast5mod
+	## pip install fast5mod
 
 	FAST5PATH=${fast5_dir.baseName}_methcalled/workspace
 	OUTBAM=meth_${fast5_dir.baseName}.bam
@@ -583,10 +583,10 @@ process GuppyComb {
 
 	"""
 	## install fast5mod
-	pip install fast5mod
+	## pip install fast5mod
 
 	## install parrallel
-	conda install -c conda-forge parallel
+	## conda install -c conda-forge parallel
 
 	refGenome=${params.referenceGenome}
 
