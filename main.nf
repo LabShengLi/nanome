@@ -723,7 +723,7 @@ process DpmodComb {
 	done
 	gzip ${params.dsname}.DeepModC.combine.bed
 
-	if [[ "${params.dataType}" = "human" ]] ; then
+	if [[ "${params.dataType}" == "human" ]] ; then
 		## Only apply to human genome
 		echo "### For human, apply cluster model of DeepMod"
 		python utils/hm_cluster_predict.py \
