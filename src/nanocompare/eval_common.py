@@ -580,7 +580,7 @@ def importPredictions_Megalodon(infileName, chr_col=1, start_col=3, strand_col=2
     return cpgDict
 
 
-def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=False, include_score=False, siteLevel=True, filterChr=humanChrSet):
+def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=False, include_score=False, siteLevel=False, filterChr=humanChrSet):
     """
 
     :param infileName:
@@ -626,7 +626,7 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
 
     logger.debug(df_combined)
 
-    cpgDict = defaultdict(list)
+    cpgDict = defaultdict()
     call_cnt = methcall_cnt = unmethcall_cnt = 0
     for index, row in df_combined.iterrows():
         chr = row['chrom']
@@ -637,7 +637,7 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
         strand = row['strand']
 
         methfreq = float(row["meth_freq"])
-        coverage = float(row["coverage"])
+        coverage = int(row["coverage"])
 
         meth_cov = int(row["meth.count"])
         unmeth_cov = int(row["canon.count"])
@@ -659,8 +659,7 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
             cpgDict[key] = [1] * meth_cov + [0] * (coverage - unmeth_cov)
 
     logger.info(f"###\timportPredictions_Guppy SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
-
-    pass
+    return cpgDict
 
 
 def readLevelToSiteLevelWithCov(ontDict, minCov=1, toolname="Tool"):
@@ -1158,7 +1157,7 @@ def importGroundTruth_coverage_output_from_Bismark_BedGraph(infileName, chr_col=
     return cpgDict
 
 
-def import_call(infn, encode, baseFormat=1, include_score=False, deepmod_cluster_freq_cov_format=True, enable_cache=False, using_cache=False, filterChr=humanChrSet):
+def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False, enable_cache=False, using_cache=False, filterChr=humanChrSet):
     """
     General purpose for import any tools methylation calling input files.
 
@@ -1174,7 +1173,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, deepmod_cluster
     logger.debug(f"Start load {encode}")
 
     if enable_cache and using_cache:
-        ret = check_cache_available(infn=infn, encode=encode, baseFormat=baseFormat, include_score=include_score, deepmod_cluster_freq_cov_format=deepmod_cluster_freq_cov_format)
+        ret = check_cache_available(infn=infn, encode=encode, baseFormat=baseFormat, include_score=include_score, deepmod_cluster_freq_cov_format=siteLevel)
         if ret:
             logger.debug(f'Import {encode} finished!\n')
             return ret
@@ -1193,14 +1192,16 @@ def import_call(infn, encode, baseFormat=1, include_score=False, deepmod_cluster
     elif encode == 'Megalodon.ZW':  # Here, ziwei preprocess the raw file to this format: chr_col=0, start_col=1, strand_col=3
         calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score, chr_col=0, start_col=1, strand_col=3, filterChr=filterChr)
     elif encode == 'DeepMod.Cluster':  # import DeepMod Clustered output for site level, itself tool reports by cluster, key->value={'freq':68, 'cov':10}
-        calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat, siteLevel=deepmod_cluster_freq_cov_format, include_score=include_score, filterChr=filterChr)
+        calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat, siteLevel=siteLevel, include_score=include_score, filterChr=filterChr)
     elif encode == 'DeepMod.C':  # import DeepMod itself tool for read level
         calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, include_score=include_score, filterChr=filterChr)
+    elif encode == 'Guppy':  # import Guppy itself tool results
+        calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel, filterChr=filterChr)
     else:
         raise Exception(f'Not support {encode} for file {infn} now')
 
     if enable_cache:
-        save_to_cache(infn, calls0, encode=encode, baseFormat=baseFormat, include_score=include_score, deepmod_cluster_freq_cov_format=deepmod_cluster_freq_cov_format)
+        save_to_cache(infn, calls0, encode=encode, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel)
 
     logger.debug(f'Import {encode} finished!\n')
     return calls0
@@ -2005,7 +2006,7 @@ def get_cache_filename(infn, params):
     if params["encode"] in ToolEncodeList:
         cachefn += f'.inscore.{params["include_score"]}'
         if params["encode"] == 'DeepMod.Cluster':
-            cachefn += f'.deepmod_cluster_cov.{params["deepmod_cluster_freq_cov_format"]}'
+            cachefn += f'.siteLevel.{params["siteLevel"]}'
     elif params["encode"] in BGTruthEncodeList:
         cachefn += f'.cov.{params["cov"]}.incov.{params["includeCov"]}'
     else:

@@ -12,7 +12,7 @@ RUN apt-get update -y && \
     apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub && \
     add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/ /" && \
     apt update && \
-    apt -y install cuda
+    DEBIAN_FRONTEND=noninteractive apt -y install cuda
 
 #Install miniconda
 RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O Miniconda.sh && \
