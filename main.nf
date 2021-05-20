@@ -41,8 +41,13 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 // Check all tools work well on the platform
 process EnvCheck {
 	tag 'EnvCheck'
-	// teminate all later processes if this process is not passed
+
+	accelerator 1, type: 'nvidia-tesla-k80'
+
+	disk '100 GB'
+
 	errorStrategy 'terminate'
+
 	label 'with_gpus'
 
 	input:
@@ -88,6 +93,8 @@ reference_genome_ch.into{reference_genome_ch1; reference_genome_ch2;
 // Untar of subfolders named 'M1', ..., 'M10', etc.
 process Untar {
 	tag "${fast5_tar.baseName}"
+
+	disk '200 GB'
 
 	input:
 	file fast5_tar from fast5_tar_ch4

@@ -38,6 +38,13 @@
 
 # Running pipeline
 
+Note that our project id is `jax-nanopore-01`.
+
+
+
 ```angular2html
+cd nanome
+curl -s https://get.nextflow.io | bash
+
 ./nextflow run main.nf -profile gls -c conf/gcp.config -w gs://jax-nanopore-01-project-data/test-nanome
 ```
