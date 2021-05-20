@@ -540,7 +540,6 @@ process DpSigComb {
 	cat ${x} > ${params.dsname}.DeepSignal.combine.tsv
 
 	gzip ${params.dsname}.DeepSignal.combine.tsv
-
 	"""
 }
 
