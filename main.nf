@@ -42,9 +42,10 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 process EnvCheck {
 	tag 'EnvCheck'
 
-	accelerator 1, type: 'nvidia-tesla-k80'
+	//accelerator 1, type: 'nvidia-tesla-k80'
+	accelerator 1, type: 'nvidia-tesla-p100'
 
-	disk '100 GB'
+	disk '200 GB'
 
 	errorStrategy 'terminate'
 
@@ -54,13 +55,9 @@ process EnvCheck {
 	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
 
 	output:
-	// file nanome into nanome_ch
 	file "reference_genome" into reference_genome_ch
 
 	"""
-	which guppy_basecaller
-	guppy_basecaller -v
-
 	which tombo
 	tombo -v
 
@@ -76,10 +73,13 @@ process EnvCheck {
 	which DeepMod.py
 	DeepMod.py
 
+	which guppy_basecaller
+	guppy_basecaller -v
+
 	## Untar to dir reference_genome
 	tar -xzf ${reference_genome_tar}
 
-	## git clone https://github.com/liuyangzzu/nanome.git
+	echo "### Check env DONE"
 	"""
 }
 

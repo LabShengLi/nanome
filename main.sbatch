@@ -22,7 +22,7 @@ set -x
 date;hostname;pwd
 
 ./nextflow run main.nf -profile gls \
-	-w gs://jax-nanopore-01-project-data/nanome-work-test -resume \
+	-w gs://jax-nanopore-01-project-data/nanome-work-test \
 	--runBasecall false --runMethcall false
 
 exit 0
