@@ -27,7 +27,7 @@ if __name__ == '__main__':
             command = \
                 f"""
 set -x; sbatch --job-name=meth_perf_{row['RunPrefix']} --output=log/%x.%j.out --error=log/%x.%j.err \
- --export=ALL,DeepSignal_calls="{row['DeepSignal_calls']}",Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",DeepMod_calls="{row['DeepMod_calls']}",Megalodon_calls="{row['Megalodon_calls']}",bgTruth="{row['bgTruth']}",\
+ --export=ALL,DeepSignal_calls="{row['DeepSignal_calls']}",Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",DeepMod_calls="{row['DeepMod_calls']}",Megalodon_calls="{row['Megalodon_calls']}",Guppy_calls="{row['Guppy_calls']}",bgTruth="{row['bgTruth']}",\
 RunPrefix="{row['RunPrefix']}",parser="{row['parser']}",minCov="{row['minCov']}",dsname="{row['Dataset']}",otherOptions="{others}" {sbatchFile}
 """
 

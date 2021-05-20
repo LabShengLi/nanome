@@ -154,9 +154,10 @@ def parse_arguments():
     parser.add_argument('--toolcov-cutoff', type=int, help="cutoff of coverage in nanopore calls", default=3)
     parser.add_argument('--baseFormat', type=int, help="base format after imported", default=1)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
+    parser.add_argument('--gen-venn', help="generate venn data", action='store_true')
     parser.add_argument('--enable-cache', action='store_true')
     parser.add_argument('--using-cache', action='store_true')
-    parser.add_argument('--plot', help="plot the correlation figure",action='store_true')
+    parser.add_argument('--plot', help="plot the correlation figure", action='store_true')
     return parser.parse_args()
 
 
@@ -239,7 +240,7 @@ if __name__ == '__main__':
         callname = get_tool_name(callencode)
         callfn_dict[callname] = callfn
 
-        # We do now allow import DeepMod.Cluster for read level evaluation
+        # We do now allow import DeepMod.C for site level evaluation, in current version
         if callencode == 'DeepMod.C':
             raise Exception(f'{callencode} is not allowed for site level evaluation, please use DeepMod.Cluster file here')
 
@@ -248,7 +249,7 @@ if __name__ == '__main__':
         # For site level evaluation, only need (freq, cov) results, no score needed. Especially for DeepMod, we must import as freq and cov format from DeepMod.Cluster encode
         # TODO: cov=1 will lead to too large size of dict objects, do we really report cov=1 results?
         # Do not filter bgtruth, because we use later for overlapping (without bg-truth)
-        callresult_dict[callname] = [import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, deepmod_cluster_freq_cov_format=True)]
+        callresult_dict[callname] = [import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, siteLevel=True)]
 
     logger.debug(loaded_callname_list)
 
@@ -260,24 +261,26 @@ if __name__ == '__main__':
 
     logger.info(f'\n\n####################\n\n')
 
-    logger.info('Overlapping analysis start:')
-    logger.info(f"Start gen venn data for each tool (cov>={minToolCovCutt})")
-
-    # Study five set venn data, no join with bgtruth, tool-cov > tool-cutoff=1 or 3
-    if len(loaded_callname_list) >= 5:
-        cpg_set_dict = defaultdict()
-        for callname in ToolNameList:
-            cpg_set_dict[callname] = set(callresult_dict[callname][1].keys())  # .intersection(set(bgTruth.keys()))
-        gen_venn_data(cpg_set_dict, namelist=ToolNameList, outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.five.tools.cov{minToolCovCutt}')
-
-    logger.info(f"Start gen venn data for TOP3 tools (cov>={minToolCovCutt})")
-    # Study top3 tool's venn data, no join with bgtruth, tool-cov > tool-cutoff=3
     top3_cpg_set_dict = defaultdict()
     for callname in Top3ToolNameList:
         top3_cpg_set_dict[callname] = set(callresult_dict[callname][1].keys())
-    gen_venn_data(top3_cpg_set_dict, namelist=Top3ToolNameList, outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.top3.cov{minToolCovCutt}')
 
-    logger.info(f'\n\n####################\n\n')
+    if args.gen_venn:
+        logger.info('Overlapping analysis start:')
+        logger.info(f"Start gen venn data for each tool (cov>={minToolCovCutt})")
+
+        # Study five set venn data, no join with bgtruth, tool-cov > tool-cutoff=1 or 3
+        if len(loaded_callname_list) >= 5:
+            cpg_set_dict = defaultdict()
+            for callname in ToolNameList:
+                cpg_set_dict[callname] = set(callresult_dict[callname][1].keys())  # .intersection(set(bgTruth.keys()))
+            gen_venn_data(cpg_set_dict, namelist=ToolNameList, outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.five.tools.cov{minToolCovCutt}')
+
+        logger.info(f"Start gen venn data for TOP3 tools (cov>={minToolCovCutt})")
+        # Study top3 tool's venn data, no join with bgtruth, tool-cov > tool-cutoff=3
+        gen_venn_data(top3_cpg_set_dict, namelist=Top3ToolNameList, outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.top3.cov{minToolCovCutt}')
+
+        logger.info(f'\n\n####################\n\n')
 
     logger.info(f"Start getting intersection (all joined) sites by tools and bgtruth")
     coveredCpGs = set(list(bgTruth.keys()))
