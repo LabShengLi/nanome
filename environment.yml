@@ -46,7 +46,7 @@ dependencies:
   - gstreamer=1.14.0
   - gxx_impl_linux-64=7.3.0
   - gxx_linux-64=7.3.0
-  - h5py=2.7.1
+  - h5py=2.9.0
   - harfbuzz=2.8.0
   - hdf5=1.8.18
   - html5lib=0.9999999
