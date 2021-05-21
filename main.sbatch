@@ -22,7 +22,7 @@ date;hostname;pwd
 ./nextflow run main.nf -profile gls \
 	-w gs://jax-nanopore-01-project-data/nanome-work-test \
 	--runBasecall true --runMethcall true --runResquiggle true \
-	--runGuppy false --runMegalodon true --runNanopolish true \
+	--runGuppy true --runMegalodon true --runNanopolish true \
 	--outputDir gs://jax-nanopore-01-project-data/nanome-outputs
 
 exit 0
@@ -86,32 +86,4 @@ workingDir=/fastscratch/liuya/nanocompare/work
 # module load singularity
 # builder="singularity run http://s3-far.jax.org/builder/builder"
 # $builder nanocompare.def nanocompare.sif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
