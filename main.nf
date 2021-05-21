@@ -41,14 +41,11 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 // Check all tools work well on the platform
 process EnvCheck {
 	tag 'EnvCheck'
-
-	//accelerator 1, type: 'nvidia-tesla-k80'
 	errorStrategy 'terminate'
 	label 'with_gpus'
 
 	input:
 	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
-	each file("*") from ch_utils7
 
 	output:
 	file "reference_genome" into reference_genome_ch
@@ -75,7 +72,8 @@ process EnvCheck {
 	## Untar to dir reference_genome
 	tar -xzf ${reference_genome_tar}
 
-	ls utils
+	minimap2 --version
+	samtools --version
 
 	echo "### Check env DONE"
 	"""
@@ -201,7 +199,6 @@ process Guppy {
 	input:
 	file fast5_dir from untar_out_ch2
 	each file("*") from ch_utils4
-	//each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
 	each file(reference_genome) from reference_genome_ch1
 
 	output:
@@ -211,8 +208,6 @@ process Guppy {
 	params.runMethcall && params.runGuppy
 
 	"""
-	##tar -xzf \${reference_genome_tar}
-	echo ${reference_genome}
 	refGenome=${params.referenceGenome}
 
 	mkdir -p ${fast5_dir.baseName}_methcalled
@@ -259,7 +254,7 @@ process Megalodon {
 	file "batch_${fast5_dir.baseName}.per_read_modified_base_calls.txt" into megalodon_out_ch
 
 	when:
-	params.runMethcall
+	params.runMethcall && params.runMegalodon
 
 	"""
 	## Get reference genome dir
@@ -375,7 +370,6 @@ process Tombo {
 	tag "${resquiggleDir.baseName}"
 
 	input:
-	//each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
 	each file(reference_genome) from reference_genome_ch5
 	each file("*") from ch_utils2
 	file resquiggleDir from tombo_in_ch
@@ -407,7 +401,6 @@ process Tombo {
 }
 
 
-
 // DeepMod runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepMod {
 	tag "${basecallDir.baseName}"
@@ -423,7 +416,7 @@ process DeepMod {
 	file "mod_output/batch_${basecallDir.baseName}_num" into deepmod_out_ch
 
 	when:
-	params.runDeepMod
+	params.runMethcall && params.runDeepMod
 
 	"""
 	wget ${params.DeepModGithub} --no-verbose
@@ -468,6 +461,7 @@ process Nanopolish {
 	"""
 	refGenome=${params.referenceGenome}
 	echo ${basecallDir}
+	ls ${basecallDir}
 
 	### We put all fq and bam files into working dir, DO NOT affect the basecall dir
 	fastqFile=reads.fq
@@ -497,9 +491,17 @@ process Nanopolish {
 	echo "### samtools finished"
 	echo "### Alignment step DONE"
 
+	ls -lh \${bamFileName}
+	ls -lh \${fastqNoDupFile}
+
 	nanopolish call-methylation -t ${params.processors} -r \
-		\${fastqNoDupFile} -b \${bamFileName} -g \${refGenome} \
-		 > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
+		\${fastqNoDupFile} -b \${bamFileName} -g \${refGenome} > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
+
+	head batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
+
+	wc -l batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
+
+	samtools --version
 
 	echo "### Nanopolish methylation calling DONE"
 	"""
