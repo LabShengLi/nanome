@@ -3,8 +3,8 @@
 #SBATCH --partition=compute
 #SBATCH --qos=batch
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 4 # number of cores
-#SBATCH --mem=150g
+#SBATCH -n 8 # number of cores
+#SBATCH --mem=300g
 #SBATCH --time=72:00:00
 #SBATCH -o log/%x.%j.out
 #SBATCH -e log/%x.%j.err
