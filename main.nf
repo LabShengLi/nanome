@@ -456,7 +456,7 @@ process Nanopolish {
 	file "batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv" into nanopolish_out_ch
 
 	when:
-	params.runMethcall
+	params.runMethcall && params.runNanopolish
 
 	"""
 	refGenome=${params.referenceGenome}
@@ -484,6 +484,8 @@ process Nanopolish {
 	# Index the raw read with fastq
 	nanopolish index -d ${basecallDir}/workspace \${fastqNoDupFile}
 
+	ls -lh
+
 	minimap2 -t ${params.processors} -a -x map-ont \${refGenome} \${fastqNoDupFile} | samtools sort -T tmp -o \${bamFileName}
 	echo "### minimap2 finished"
 
@@ -492,10 +494,9 @@ process Nanopolish {
 	echo "### Alignment step DONE"
 
 	ls -lh \${bamFileName}
-	ls -lh \${fastqNoDupFile}
 
-	nanopolish call-methylation -t ${params.processors} -r \
-		\${fastqNoDupFile} -b \${bamFileName} -g \${refGenome} > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
+	nanopolish call-methylation -t ${params.processors} -r \${fastqNoDupFile} \
+		-b \${bamFileName} -g \${refGenome} > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
 
 	head batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
 
