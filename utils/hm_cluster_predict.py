@@ -9,7 +9,7 @@ import numpy as np
 from scipy import stats
 
 import locale
-locale.setlocale(locale.LC_ALL, 'en_US')
+##locale.setlocale(locale.LC_ALL, 'en_US') ## failed in google cloud
 
 import tensorflow as tf
 

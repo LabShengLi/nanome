@@ -384,6 +384,8 @@ process Tombo {
 	params.runMethcall && params.runTombo
 
 	"""
+	## using --processes 1 due to tombo bug for BrokenPipeError: [Errno 32] Broken pipe
+	## Note 1 is still fast for tombo
 	tombo detect_modifications alternative_model \
 		--fast5-basedirs ${resquiggleDir}/workspace \
 		--dna --standard-log-likelihood-ratio \
@@ -391,7 +393,7 @@ process Tombo {
 		batch_${resquiggleDir.baseName} \
 		--per-read-statistics-basename batch_${resquiggleDir.baseName} \
 		--alternate-bases CpG \
-		--processes ${params.processors} \
+		--processes 1 \
 		--corrected-group ${params.resquiggleCorrectedGroup}  &> ${resquiggleDir.baseName}.tombo.run.log
 
 	python utils/tombo_extract_per_read_stats.py \
@@ -410,7 +412,9 @@ process DeepMod {
 	tag "${basecallDir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod" , mode: "copy"
 	errorStrategy 'ignore'
-	label 'with_gpus'
+
+	// using cpu save costs
+	//label 'with_gpus'
 
 	input:
 	each file(reference_genome) from reference_genome_ch6
@@ -665,7 +669,8 @@ process NplshComb {
 // Combine DeepMod runs' all results together
 process DpmodComb {
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
-	label 'with_gpus'  // cluster model need gpu
+	//save costs, DeepMod running slow even in gpu
+	//label 'with_gpus'  // cluster model need gpu
 
 	input:
 	file x from deepmod_combine_in_ch

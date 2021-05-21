@@ -13,16 +13,17 @@ set -x
 
 date;hostname;pwd
 
-## Run test demo
-./nextflow run main.nf -profile gls \
-	-w gs://jax-nanopore-01-project-data/nanome-work-test \
-	--outputDir gs://jax-nanopore-01-project-data/nanome-outputs
-
-exit 0
 
 ## Run NA12878 datasets
 ./nextflow run main.nf -profile gls -config conf/NA12878.config -resume \
 	-w gs://jax-nanopore-01-project-data/nanome-work-NA12878 \
 	--outputDir gs://jax-nanopore-01-project-data/nanome-outputs-NA12878
+
+exit 0
+
+## Run test demo
+#./nextflow run main.nf -profile gls -resume \
+#	-w gs://jax-nanopore-01-project-data/nanome-work-test \
+#	--outputDir gs://jax-nanopore-01-project-data/nanome-outputs
 
 exit 0
