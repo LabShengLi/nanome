@@ -79,8 +79,11 @@ The 'nanome' pipeline support running with various ways:
 * Singularity
     1. pull image from docker: `singularity pull quay.io/liuyangzzu/nanome:v1.3`
 * Conda environment
+    1. create conda enviroment: `conda env create -f environment.yml`
 
-We will update within a short time.
+For running on CloudOS platform (such as google cloud), our Nextflow pipeline supports using an Docker image (i.e., `quay.io/liuyangzzu/nanome:v1.3`), details please check [Usage](https://github.com/liuyangzzu/nanome/blob/master/docs/Usage.md). 
+
+We will update more information within a short time.
 
 ## Usage
 

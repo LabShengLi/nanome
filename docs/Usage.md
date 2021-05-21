@@ -178,4 +178,20 @@ nextflow run main.nf -profile winter  \
 
 Resource usage are reported by [Nextflow](https://www.nextflow.io/) workflow reporting utilities. Please refer to the [Trace file](https://github.com/liuyangzzu/nanome/blob/master/docs/nanome.pipeline_trace.tsv), [Report](https://github.com/liuyangzzu/nanome/blob/master/docs/reports2.pdf) and [Timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/timeline.pdf) of benchmarking results on our HPC.
 
+# 4. Running pipeline on cloud computing platform
+
+Our Nextflow pipeline can running on CloudOS. The CloudOS will use a default Docker image. Below is an example.
+
+```angular2html
+git clone https://github.com/liuyangzzu/nanome.git
+cd nanome
+curl -s https://get.nextflow.io | bash
+
+./nextflow run main.nf -profile gls -w gs://jax-nanopore-01-project-data/nanome-work-test --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
+```
+
+The `jax-nanopore-01-project-data` is a sample of **Data Bucket** name that you can access on google cloud. `-w` is pipeline output working directory, `--outputDir` is methylation calling and evaluation results directory.
+
+For more detail of using cloud computing, please check [Cloud computing usage](https://github.com/liuyangzzu/nanome/blob/master/docs/CloudComputing.md)
+
 We will update more examples here within a short time.

@@ -22,8 +22,8 @@ date;hostname;pwd
 exit 0
 
 ## Run test demo
-#./nextflow run main.nf -profile gls -resume \
-#	-w gs://jax-nanopore-01-project-data/nanome-work-test \
-#	--outputDir gs://jax-nanopore-01-project-data/nanome-outputs
+./nextflow run main.nf -profile gls -resume \
+	-w gs://jax-nanopore-01-project-data/nanome-work-test \
+	--outputDir gs://jax-nanopore-01-project-data/nanome-outputs
 
 exit 0
