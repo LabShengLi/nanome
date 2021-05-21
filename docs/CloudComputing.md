@@ -77,11 +77,21 @@
 
 Note that our project id is `jax-nanopore-01`.
 
-
-
 ```angular2html
 cd nanome
 curl -s https://get.nextflow.io | bash
 
 ./nextflow run main.nf -profile gls -c conf/gcp.config -w gs://jax-nanopore-01-project-data/test-nanome
 ```
+
+
+## Troubleshooting
+Make sure the network and subnet is 'default' with 'auto' mode
+Enable 'Private Google access' for the network/subnet
+
+## References
+* Google cloud for Nextflow: https://cloud.google.com/life-sciences/docs/tutorials/nextflow  
+* Nextflow on GCP: https://www.nextflow.io/docs/latest/google.html
+* Sandeep sample codes: https://github.com/snamburi3/nextflow-starter-cloud
+
+
