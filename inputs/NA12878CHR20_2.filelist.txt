@@ -1,0 +1,2 @@
+http://s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr20.part01.tar
+http://s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr20.part05.tar
