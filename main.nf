@@ -687,6 +687,7 @@ process DpmodComb {
 	## Untar deepmod cluster-model inputs
 	tar -xzf ${deepmod_c_tar_file}
 
+	## Copy all batch results, then summarize site level outputs by chromosome
 	mkdir -p indir
 	for dx in $x
 	do
