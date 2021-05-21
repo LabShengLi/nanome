@@ -89,6 +89,7 @@ curl -s https://get.nextflow.io | bash
 Make sure the network and subnet is 'default' with 'auto' mode
 Enable 'Private Google access' for the network/subnet
 
+
 ## References
 * Google cloud for Nextflow: https://cloud.google.com/life-sciences/docs/tutorials/nextflow  
 * Nextflow on GCP: https://www.nextflow.io/docs/latest/google.html

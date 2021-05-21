@@ -74,8 +74,10 @@ Our HPC hardware specifications are as follows:
 
 ## Installation
 The 'nanome' pipeline support running with various ways:
-* Singularity container
-* Docker container
+* Docker
+    1. Docker container name: `quay.io/liuyangzzu/nanome:v1.3`
+* Singularity
+    1. pull image from docker: `singularity pull quay.io/liuyangzzu/nanome:v1.3`
 * Conda environment
 
 We will update within a short time.
