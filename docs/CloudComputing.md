@@ -1,7 +1,39 @@
 # Running pipeline on google cloud platform
 
-## Authentication step
+## Authentication step (only need once configuration)
+1. Install google API from https://anaconda.org/conda-forge/google-cloud-sdk.
+   ```angular2html
+   conda install -c conda-forge google-cloud-sdk
+   ```
 
+1. Authenticate
+   ```angular2html
+   gcloud auth login --no-launch-browser
+   gcloud auth application-default login
+   ```
+1. Add Project Name to the config file ~/.config/gcloud/application_default_credentials.json
+   ```angular2html
+   "project_id": "PROJECT-ID",
+   ```
+
+1. Set project
+   ```
+   gcloud config set project [PROJECT_ID]
+   ```
+
+1. Export environment variables (can be put in ~/.bashrc)
+   ```
+   export NXF_VER="20.10.0"
+   export NXF_MODE=google
+   export NXF_DEBUG=3
+   export PROJECT="PROJECT_ID"
+   export GOOGLE_APPLICATION_CREDENTIALS=~/.config/gcloud/application_default_credentials.json
+   ```
+
+1. Run GCP nextflow a. Make sure the below staging bucket exists b. Make sure the service account (Compute Engine default service account) used by nextflow can write to the bucket c. replace PROJECT_ID in gcp/gcp.config with your GCP Project ID
+   ```angular2html
+   ./nextflow run main.nf -profile gls -w gs://jax-nanopore-01-project-data/nanome-work-test --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
+   ```
 
 ## Build and submit to container registry of google cloud computing
 1. Configure Docker with the following command:
