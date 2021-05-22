@@ -29,10 +29,9 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 	Channel.fromPath( params.input )
 		.splitCsv(header: false)
 		.map { file(it[0]) }
-		.toList()
-		.set{ fast5_tar_ch }
+		.into{ fast5_tar_ch1; fast5_tar_ch4 }
 	// emit one time for each fast5.tar file
-	fast5_tar_ch.flatten().into{fast5_tar_ch1; fast5_tar_ch4}
+	//fast5_tar_ch.flatten().into{fast5_tar_ch1; fast5_tar_ch4}
 } else { // single file
 	Channel.fromPath( params.input ).into {fast5_tar_ch1; fast5_tar_ch4}
 }
