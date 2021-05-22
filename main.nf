@@ -42,7 +42,7 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 process EnvCheck {
 	tag 'EnvCheck'
 	errorStrategy 'terminate'
-	label 'EnvCheck'
+	label 'with_gpus'
 
 	input:
 	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
