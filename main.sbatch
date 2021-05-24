@@ -19,7 +19,6 @@ date;hostname;pwd
 # Get nextflow and install it
 # curl -s https://get.nextflow.io | bash
 
-
 workingDir=/fastscratch/liuya/nanocompare/work
 #rm -rf outputs
 #rm -rf $workingDir
@@ -30,7 +29,7 @@ workingDir=/fastscratch/liuya/nanocompare/work
 ## Option 1:
 # Running nanome pipeline on test data (from NA19240) in Human Genome
 #rm -rf ${workingDir}-test4
-#./nextflow run main.nf -profile winter \
+./nextflow run main.nf -profile winter
 #    -work-dir ${workingDir}-test4 \
 #    -config conf/test.config
 
