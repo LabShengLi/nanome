@@ -41,20 +41,24 @@ def evaluate_roc_pr_values(call_fn):
             continue
         num_cpgs += 1
         num_methcpgs += label_bgtruth_cpg
-        for eachPred in guppyCall[cpg]:
-            if eachPred == 1:
+        for pred_cpg in guppyCall[cpg]:
+            if pred_cpg == 1:
                 num_methcalls += 1
             else:
                 num_unmethcalls += 1
 
             y_label.append(label_bgtruth_cpg)
-            y_pred.append(eachPred)
+            y_pred.append(pred_cpg)
     num_unmethcpgs = num_cpgs - num_methcpgs
+
+    logger.info(f'len ylabel={len(y_label)}, ylabel={sum(y_label)}, len y_pred={len(y_pred)}, ypred={sum(y_pred)}')
     ## Calculate precision, recall, tpr, fpr, etc.
     precision = precision_score(y_label, y_pred)
     recall = recall_score(y_label, y_pred)
 
     tn, fp, fn, tp = confusion_matrix(y_label, y_pred).ravel()
+
+    logger.debug(f'Confusion matrix={confusion_matrix(y_label, y_pred, labels=[0, 1])}')
 
     tpr = tp / (tp + fn)
     fpr = fp / (tn + fp)
@@ -94,8 +98,8 @@ def parse_arguments():
 
 
 if __name__ == '__main__':
-    # set_log_debug_level()
-    set_log_info_level()
+    set_log_debug_level()
+    # set_log_info_level()
 
     args = parse_arguments()
 
@@ -190,7 +194,7 @@ if __name__ == '__main__':
 
     processors = args.processors
     with Pool(processes=processors) as pool:
-        retList = pool.map(evaluate_roc_pr_values, fnlist)
+        retList = pool.map(evaluate_roc_pr_values, fnlist[:1])
     df = pd.DataFrame(retList)
 
     df = df.sort_values(by=['cutoff1'])

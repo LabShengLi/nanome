@@ -16,7 +16,7 @@ callsDir=("/projects/li-lab/Nanopore_compare/data/HL60" \
 			"/projects/li-lab/Nanopore_compare/data/NA19240" )
 
 i=0
-while [ $i -ne 4 ]
+while [ $i -ne 1 ]
 do
 	echo sbatch --job-name roc.pr.data."${dsname[$i]}" exp_read_level_roc_pr_curve_for_guppy.sbatch \
 		"${dsname[$i]}" "${runid[$i]}" "${joinedSetFn[$i]}" "${bgtruthParams[$i]}" "${callsDir[$i]}"

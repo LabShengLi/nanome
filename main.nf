@@ -245,7 +245,7 @@ process Guppy {
 process Megalodon {
 	tag "${fast5_dir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/megalodon" , mode: "copy"
-	label 'with_gpus'
+	//label 'with_gpus'
 
 	input:
 	file fast5_dir from untar_out_ch3

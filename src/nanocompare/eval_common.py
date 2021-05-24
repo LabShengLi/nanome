@@ -623,7 +623,7 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
     else:  # our preprocessed results by Ziwei
         df_combined = pd.read_csv(infileName, sep=sep, header=None,
                                   names=["chrom", "position", "strand", "motif", "meth.count", "canon.count", "coverage", "meth_freq"])
-    # logger.debug(df_combined)
+    logger.debug(df_combined)
 
     ## extract cpg into dict return object
     cpgDict = defaultdict()
@@ -656,7 +656,11 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
         elif include_score:  # For read-level include scores
             cpgDict[key] = [(1, 1.0)] * meth_cov + [(0, 0.0)] * unmeth_cov
         else:  # For read-level no scores
-            cpgDict[key] = [1] * meth_cov + [0] * (coverage - unmeth_cov)
+            cpgDict[key] = [1] * meth_cov + [0] * unmeth_cov
+
+        if output_first:
+            logger.info(f'line={row}, key={key}, cpgDict[key]={cpgDict[key]}')
+        output_first=False
 
     logger.info(f"###\timportPredictions_Guppy SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
     return cpgDict
@@ -2316,5 +2320,5 @@ if __name__ == '__main__':
     import os
 
     infn = os.path.join("/projects/li-lab/Nanopore_compare/data/K562", "K562.Guppy.per_site.52.140.sorted.bed")
-    ret = importPredictions_Guppy(infn, formatSource="ziwei")
+    ret = importPredictions_Guppy(infn, formatSource="ziwei", output_first=True)
     logger.info("DONE")
