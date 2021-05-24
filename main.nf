@@ -384,9 +384,10 @@ process Tombo {
 
 	"""
 	## Install tombo from pip may solve the incomplete tombo detect command problems
-	pip install ont-tombo==1.5.1
+	## pip install ont-tombo==1.5.1
 
 	## using --processes 1 due to tombo bug for BrokenPipeError: [Errno 32] Broken pipe
+	## Ref: https://github.com/nanoporetech/tombo/issues/183
 	## Note 1 is still fast for tombo
 	tombo detect_modifications alternative_model \
 		--fast5-basedirs ${resquiggleDir}/workspace \
@@ -395,8 +396,8 @@ process Tombo {
 		batch_${resquiggleDir.baseName} \
 		--per-read-statistics-basename batch_${resquiggleDir.baseName} \
 		--alternate-bases CpG \
-		--processes 1 \
-		--corrected-group ${params.resquiggleCorrectedGroup}  &> ${resquiggleDir.baseName}.tombo.run.log
+		--processes 8 \
+		--corrected-group ${params.resquiggleCorrectedGroup} --multiprocess-region-size 1000 &> ${resquiggleDir.baseName}.tombo.run.log
 
 	python utils/tombo_extract_per_read_stats.py \
 		${params.chromSizesFile} \
