@@ -101,6 +101,12 @@ outputs/TestData-nanome-analysis/
     ├── TestData_RRBS.summary.bsseq.singleton.nonsingleton.cov1.csv
     └── TestData_RRBS.Tools_BGTruth_cov1_Joined.bed
 ```
+
+We also support input as a file list if input is suffix like `.filelist.txt`, an example input is [inputs/test.demo.filelist.txt](https://github.com/liuyangzzu/nanome/blob/master/inputs/test.demo.filelist.txt).
+```angular2html
+./nextflow run main.nf -profile winter --input inputs/test.demo.filelist.txt
+```
+
 # 2. Experiment for E. coli data
 The 'nanome' pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--referenceGenome` need to be set as E. coli reference genome such as 'reference_genome/ecoli/Ecoli_k12_mg1655.fasta'. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline `-config` params [conf/ecoli_demo.config](https://github.com/liuyangzzu/nanome/blob/master/conf/ecoli_demo.config).
 

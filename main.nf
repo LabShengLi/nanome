@@ -29,10 +29,9 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 	Channel.fromPath( params.input )
 		.splitCsv(header: false)
 		.map { file(it[0]) }
-		.toList()
-		.set{ fast5_tar_ch }
+		.into{ fast5_tar_ch1; fast5_tar_ch4 }
 	// emit one time for each fast5.tar file
-	fast5_tar_ch.flatten().into{fast5_tar_ch1; fast5_tar_ch4}
+	//fast5_tar_ch.flatten().into{fast5_tar_ch1; fast5_tar_ch4}
 } else { // single file
 	Channel.fromPath( params.input ).into {fast5_tar_ch1; fast5_tar_ch4}
 }
@@ -42,7 +41,7 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 process EnvCheck {
 	tag 'EnvCheck'
 	errorStrategy 'terminate'
-	label 'EnvCheck'
+	label 'with_gpus'
 
 	input:
 	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
@@ -194,7 +193,7 @@ basecall_out_ch
 // methylation calling for Guppy
 process Guppy {
 	tag "${fast5_dir.baseName}"
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy" , mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy" , mode: "copy", pattern: "outbatch_${fast5_dir.baseName}.bam.tar.gz"
 	label 'with_gpus'
 
 	input:
@@ -204,7 +203,7 @@ process Guppy {
 
 	output:
 	file "batch_${fast5_dir.baseName}.bam*" into guppy_methcall_out_ch
-	file "batch_${fast5_dir.baseName}.bam.tar.gz" into guppy_methcall_gz_out_ch
+	file "outbatch_${fast5_dir.baseName}.bam.tar.gz" into guppy_methcall_gz_out_ch
 
 	when:
 	params.runMethcall && params.runGuppy
@@ -233,7 +232,7 @@ process Guppy {
 	samtools sort \${OUTBAM}
 	samtools index \${OUTBAM}
 
-	tar -czf batch_${fast5_dir.baseName}.bam.tar.gz batch_${fast5_dir.baseName}.bam*
+	tar -czf outbatch_${fast5_dir.baseName}.bam.tar.gz batch_${fast5_dir.baseName}.bam*
 
 	## Clean unused files
 	rm -rf ${fast5_dir.baseName}_methcalled
@@ -246,7 +245,7 @@ process Guppy {
 process Megalodon {
 	tag "${fast5_dir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/megalodon" , mode: "copy"
-	label 'with_gpus'
+	//label 'with_gpus'
 
 	input:
 	file fast5_dir from untar_out_ch3
@@ -293,10 +292,10 @@ process Megalodon {
 // Resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
 process Resquiggle {
 	tag "${basecallIndir.baseName}"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle" , mode: "copy", pattern: "${basecallIndir.baseName}.resquiggle.run.log"
 
 	input:
 	file basecallIndir from resquiggle_in_ch
-	//each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
 	each file(reference_genome) from reference_genome_ch3
 
 	output:
@@ -315,8 +314,9 @@ process Resquiggle {
 	### original basecalled results will be parrallelly used by other processes
 	cp -rf ${basecallIndir}/* ${basecallIndir.baseName}_resquiggle_dir/
 
-	### Now set processes=1, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
+	### Now set processes=1 or 4, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
 	### ref: https://github.com/nanoporetech/tombo/issues/139
+	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
 	tombo resquiggle --dna --processes 1 \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} --overwrite \
@@ -384,7 +384,11 @@ process Tombo {
 	params.runMethcall && params.runTombo
 
 	"""
+	## Install tombo from pip may solve the incomplete tombo detect command problems
+	## pip install ont-tombo==1.5.1
+
 	## using --processes 1 due to tombo bug for BrokenPipeError: [Errno 32] Broken pipe
+	## Ref: https://github.com/nanoporetech/tombo/issues/183
 	## Note 1 is still fast for tombo
 	tombo detect_modifications alternative_model \
 		--fast5-basedirs ${resquiggleDir}/workspace \
@@ -393,8 +397,8 @@ process Tombo {
 		batch_${resquiggleDir.baseName} \
 		--per-read-statistics-basename batch_${resquiggleDir.baseName} \
 		--alternate-bases CpG \
-		--processes 1 \
-		--corrected-group ${params.resquiggleCorrectedGroup}  &> ${resquiggleDir.baseName}.tombo.run.log
+		--processes 8 \
+		--corrected-group ${params.resquiggleCorrectedGroup} --multiprocess-region-size 1000 &> ${resquiggleDir.baseName}.tombo.run.log
 
 	python utils/tombo_extract_per_read_stats.py \
 		${params.chromSizesFile} \
@@ -410,10 +414,9 @@ process Tombo {
 // DeepMod runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepMod {
 	tag "${basecallDir.baseName}"
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod" , mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod" , mode: "copy", pattern: "batch_${basecallDir.baseName}_num.tar.gz"
 	errorStrategy 'ignore'
-
-	// using cpu save costs
+	// using cpu save costs, DeepMod running slower on gpu machine
 	//label 'with_gpus'
 
 	input:
@@ -571,7 +574,7 @@ process GuppyComb {
 
 	output:
 	file "${params.dsname}.Guppy.combine.tsv.gz" into guppy_combine_out_ch
-	file "guppy.total.meth.bam.tar.gz" into guppy_combine_raw_out_ch
+	file "${params.dsname}.guppy.combined.bam.tar.gz" into guppy_combine_raw_out_ch
 
 	when:
 	x.size() >= 1
@@ -587,7 +590,7 @@ process GuppyComb {
 	samtools index total.meth.bam
 	echo "samtool index is done"
 
-	tar -czf guppy.total.meth.bam.tar.gz total.meth.bam*
+	tar -czf ${params.dsname}.guppy.combined.bam.tar.gz total.meth.bam*
 
 	## Ref: https://github.com/nanoporetech/medaka/issues/177
 	for i in {1..22} X Y
