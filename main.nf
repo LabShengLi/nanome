@@ -414,10 +414,9 @@ process Tombo {
 // DeepMod runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepMod {
 	tag "${basecallDir.baseName}"
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod" , mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod" , mode: "copy", pattern: "batch_${basecallDir.baseName}_num.tar.gz"
 	errorStrategy 'ignore'
-
-	// using cpu save costs
+	// using cpu save costs, DeepMod running slower on gpu machine
 	//label 'with_gpus'
 
 	input:
@@ -575,7 +574,7 @@ process GuppyComb {
 
 	output:
 	file "${params.dsname}.Guppy.combine.tsv.gz" into guppy_combine_out_ch
-	file "guppy.total.meth.bam.tar.gz" into guppy_combine_raw_out_ch
+	file "${params.dsname}.guppy.combined.bam.tar.gz" into guppy_combine_raw_out_ch
 
 	when:
 	x.size() >= 1
@@ -591,7 +590,7 @@ process GuppyComb {
 	samtools index total.meth.bam
 	echo "samtool index is done"
 
-	tar -czf guppy.total.meth.bam.tar.gz total.meth.bam*
+	tar -czf ${params.dsname}.guppy.combined.bam.tar.gz total.meth.bam*
 
 	## Ref: https://github.com/nanoporetech/medaka/issues/177
 	for i in {1..22} X Y
