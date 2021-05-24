@@ -621,6 +621,8 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
         df_combined = pd.concat([fwd_methdata, rev_methdata], ignore_index=True, axis=0)
         df_combined = df_combined[["chrom", "position", "strand", "motif", "meth.count", "canon.count", "coverage", "meth_freq"]]
     else:  # our preprocessed results by Ziwei
+        if baseFormat != 1:
+            raise Exception(f"formatSource={formatSource} is not finished for base=0")
         df_combined = pd.read_csv(infileName, sep=sep, header=None,
                                   names=["chrom", "position", "strand", "motif", "meth.count", "canon.count", "coverage", "meth_freq"])
     logger.debug(df_combined)
@@ -660,7 +662,7 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
 
         if output_first:
             logger.info(f'line={row}, key={key}, cpgDict[key]={cpgDict[key]}')
-        output_first=False
+        output_first = False
 
     logger.info(f"###\timportPredictions_Guppy SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
     return cpgDict

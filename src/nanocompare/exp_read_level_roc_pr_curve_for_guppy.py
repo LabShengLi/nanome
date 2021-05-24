@@ -194,7 +194,7 @@ if __name__ == '__main__':
 
     processors = args.processors
     with Pool(processes=processors) as pool:
-        retList = pool.map(evaluate_roc_pr_values, fnlist[:1])
+        retList = pool.map(evaluate_roc_pr_values, fnlist[:])
     df = pd.DataFrame(retList)
 
     df = df.sort_values(by=['cutoff1'])
