@@ -193,7 +193,7 @@ basecall_out_ch
 // methylation calling for Guppy
 process Guppy {
 	tag "${fast5_dir.baseName}"
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy" , mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy" , mode: "copy", pattern: "outbatch_${fast5_dir.baseName}.bam.tar.gz"
 	label 'with_gpus'
 
 	input:
@@ -203,7 +203,7 @@ process Guppy {
 
 	output:
 	file "batch_${fast5_dir.baseName}.bam*" into guppy_methcall_out_ch
-	file "batch_${fast5_dir.baseName}.bam.tar.gz" into guppy_methcall_gz_out_ch
+	file "outbatch_${fast5_dir.baseName}.bam.tar.gz" into guppy_methcall_gz_out_ch
 
 	when:
 	params.runMethcall && params.runGuppy
@@ -232,7 +232,7 @@ process Guppy {
 	samtools sort \${OUTBAM}
 	samtools index \${OUTBAM}
 
-	tar -czf batch_${fast5_dir.baseName}.bam.tar.gz batch_${fast5_dir.baseName}.bam*
+	tar -czf outbatch_${fast5_dir.baseName}.bam.tar.gz batch_${fast5_dir.baseName}.bam*
 
 	## Clean unused files
 	rm -rf ${fast5_dir.baseName}_methcalled
@@ -292,6 +292,7 @@ process Megalodon {
 // Resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
 process Resquiggle {
 	tag "${basecallIndir.baseName}"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle" , mode: "copy", pattern: "${basecallIndir.baseName}.resquiggle.run.log"
 
 	input:
 	file basecallIndir from resquiggle_in_ch
