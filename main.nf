@@ -295,7 +295,6 @@ process Resquiggle {
 
 	input:
 	file basecallIndir from resquiggle_in_ch
-	//each file(reference_genome_tar) from Channel.fromPath(params.reference_genome_tar)
 	each file(reference_genome) from reference_genome_ch3
 
 	output:
@@ -314,8 +313,9 @@ process Resquiggle {
 	### original basecalled results will be parrallelly used by other processes
 	cp -rf ${basecallIndir}/* ${basecallIndir.baseName}_resquiggle_dir/
 
-	### Now set processes=1, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
+	### Now set processes=1 or 4, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
 	### ref: https://github.com/nanoporetech/tombo/issues/139
+	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
 	tombo resquiggle --dna --processes 1 \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} --overwrite \
