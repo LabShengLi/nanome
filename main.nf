@@ -383,6 +383,9 @@ process Tombo {
 	params.runMethcall && params.runTombo
 
 	"""
+	## Install tombo from pip may solve the incomplete tombo detect command problems
+	pip install ont-tombo==1.5.1
+
 	## using --processes 1 due to tombo bug for BrokenPipeError: [Errno 32] Broken pipe
 	## Note 1 is still fast for tombo
 	tombo detect_modifications alternative_model \

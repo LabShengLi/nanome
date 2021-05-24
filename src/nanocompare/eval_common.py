@@ -580,7 +580,7 @@ def importPredictions_Megalodon(infileName, chr_col=1, start_col=3, strand_col=2
     return cpgDict
 
 
-def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=False, include_score=False, siteLevel=False, filterChr=humanChrSet):
+def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=False, include_score=False, siteLevel=False, filterChr=humanChrSet, formatSource="raw"):
     """
 
     :param infileName:
@@ -590,42 +590,42 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
     :param filterChr:
     :return:
     """
-    # if infileName.endswith('.gz'):
-    #     compression = 'gzip'
-    # else:
-    #     compression = None
-    methdata = pd.read_csv(infileName, sep=sep,
-                           names=["chrom", "position", "motif",
-                                   "fwd.meth.count", "rev.meth.count",
-                                   "fwd.canon.count", "rev.canon.count"])
+    if formatSource == 'raw':  # raw results of fast5mod
+        methdata = pd.read_csv(infileName, sep=sep, header=None,
+                               names=["chrom", "position", "motif",
+                                       "fwd.meth.count", "rev.meth.count",
+                                       "fwd.canon.count", "rev.canon.count"])
 
-    # Forward strand
-    fwd_methdata = methdata[["chrom", "position", "motif", "fwd.meth.count", "fwd.canon.count"]].copy()
-    # Convert 0-based into 1-based
-    fwd_methdata['position'] = fwd_methdata['position'] + baseFormat
-    fwd_methdata['fwd.coverage'] = fwd_methdata['fwd.meth.count'] + fwd_methdata['fwd.canon.count']
-    # Keep >0 coverage
-    fwd_methdata = fwd_methdata[fwd_methdata['fwd.coverage'] > 0]
-    fwd_methdata['fwd.methfreq'] = fwd_methdata['fwd.meth.count'] / fwd_methdata['fwd.coverage']
-    fwd_methdata['strand'] = ['+'] * fwd_methdata.shape[0]
+        # Forward strand
+        fwd_methdata = methdata[["chrom", "position", "motif", "fwd.meth.count", "fwd.canon.count"]].copy()
+        # Convert 0-based into 1-based
+        fwd_methdata['position'] = fwd_methdata['position'] + baseFormat
+        fwd_methdata['fwd.coverage'] = fwd_methdata['fwd.meth.count'] + fwd_methdata['fwd.canon.count']
+        # Keep >0 coverage
+        fwd_methdata = fwd_methdata[fwd_methdata['fwd.coverage'] > 0]
+        fwd_methdata['fwd.methfreq'] = fwd_methdata['fwd.meth.count'] / fwd_methdata['fwd.coverage']
+        fwd_methdata['strand'] = ['+'] * fwd_methdata.shape[0]
 
-    # Reversed strand
-    rev_methdata = methdata[["chrom", "position", "motif", "rev.meth.count", "rev.canon.count"]].copy()
-    # Convert 0-based into 1-based, indicate G position
-    rev_methdata['position'] = rev_methdata['position'] + 1 + baseFormat
-    ## Keep >0 coverage
-    rev_methdata['rev.coverage'] = rev_methdata['rev.meth.count'] + rev_methdata['rev.canon.count']
-    rev_methdata = rev_methdata[rev_methdata['rev.coverage'] > 0]
-    rev_methdata['rev.methfreq'] = rev_methdata['rev.meth.count'] / rev_methdata['rev.coverage']
-    rev_methdata['strand'] = ['-'] * rev_methdata.shape[0]
+        # Reversed strand
+        rev_methdata = methdata[["chrom", "position", "motif", "rev.meth.count", "rev.canon.count"]].copy()
+        # Convert 0-based into 1-based, indicate G position
+        rev_methdata['position'] = rev_methdata['position'] + 1 + baseFormat
+        ## Keep >0 coverage
+        rev_methdata['rev.coverage'] = rev_methdata['rev.meth.count'] + rev_methdata['rev.canon.count']
+        rev_methdata = rev_methdata[rev_methdata['rev.coverage'] > 0]
+        rev_methdata['rev.methfreq'] = rev_methdata['rev.meth.count'] / rev_methdata['rev.coverage']
+        rev_methdata['strand'] = ['-'] * rev_methdata.shape[0]
 
-    # Merge result
-    fwd_methdata.columns = rev_methdata.columns = ["chrom", "position", "motif", "meth.count", "canon.count", "coverage", "meth_freq", "strand"]
-    df_combined = pd.concat([fwd_methdata, rev_methdata], ignore_index=True, axis=0)
-    df_combined = df_combined[["chrom", "position", "strand", "motif", "meth.count", "canon.count", "coverage", "meth_freq"]]
+        # Merge result
+        fwd_methdata.columns = rev_methdata.columns = ["chrom", "position", "motif", "meth.count", "canon.count", "coverage", "meth_freq", "strand"]
+        df_combined = pd.concat([fwd_methdata, rev_methdata], ignore_index=True, axis=0)
+        df_combined = df_combined[["chrom", "position", "strand", "motif", "meth.count", "canon.count", "coverage", "meth_freq"]]
+    else:  # our preprocessed results by Ziwei
+        df_combined = pd.read_csv(infileName, sep=sep, header=None,
+                                  names=["chrom", "position", "strand", "motif", "meth.count", "canon.count", "coverage", "meth_freq"])
+    # logger.debug(df_combined)
 
-    logger.debug(df_combined)
-
+    ## extract cpg into dict return object
     cpgDict = defaultdict()
     call_cnt = methcall_cnt = unmethcall_cnt = 0
     for index, row in df_combined.iterrows():
@@ -1170,7 +1170,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     :return:
     """
     logger.debug("\n\n####################\n\n")
-    logger.debug(f"Start load {encode}")
+    logger.debug(f"Start load encode={encode}, infn={infn}")
 
     if enable_cache and using_cache:
         ret = check_cache_available(infn=infn, encode=encode, baseFormat=baseFormat, include_score=include_score, deepmod_cluster_freq_cov_format=siteLevel)
@@ -1197,6 +1197,8 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
         calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, include_score=include_score, filterChr=filterChr)
     elif encode == 'Guppy':  # import Guppy itself tool results
         calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel, filterChr=filterChr)
+    elif encode == 'Guppy.ZW':  # import Guppy itself tool results
+        calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel, filterChr=filterChr, formatSource="Guppy.ZW")
     else:
         raise Exception(f'Not support {encode} for file {infn} now')
 
@@ -2311,17 +2313,8 @@ def correlation_report_on_regions(corr_infn, beddir=None, dsname=None, outdir=pi
 
 if __name__ == '__main__':
     set_log_debug_level()
-    ## check branch only
-
-    # outs = os.path.join(pic_base_dir, 'hg38_singletons_5bp.bed')
-    # outns = os.path.join(pic_base_dir, 'hg38_nonsingletons_5bp.bed')
-    # SingletonsAndNonSingletonsScanner(referenceGenomeFile=referenceGenomeFile, outfileName_s=outs, outfileName_ns=outns, kbp=5)
-    #
-    # outs = os.path.join(pic_base_dir, 'hg38_singletons_10bp.bed')
-    # outns = os.path.join(pic_base_dir, 'hg38_nonsingletons_10bp.bed')
-    # SingletonsAndNonSingletonsScanner(referenceGenomeFile=referenceGenomeFile, outfileName_s=outs, outfileName_ns=outns, kbp=10)
     import os
 
-    infn = os.path.join("/fastscratch/liuya/nanocompare/NA12878CHR20-Runs/NA12878CHR20-Guppy-N5-methcall", "NA12878CHR20.guppy.site_level.combine.tsv.gz")
-    importPredictions_Guppy(infn)
+    infn = os.path.join("/projects/li-lab/Nanopore_compare/data/K562", "K562.Guppy.per_site.52.140.sorted.bed")
+    ret = importPredictions_Guppy(infn, formatSource="ziwei")
     logger.info("DONE")
