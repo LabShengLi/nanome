@@ -299,7 +299,7 @@ process Resquiggle {
 	each file(reference_genome) from reference_genome_ch3
 
 	output:
-	file "${basecallIndir.baseName}_resquiggle.dir" into resquiggle_out_ch
+	file "${basecallIndir.baseName}.resquiggle" into resquiggle_out_ch
 	file "${basecallIndir.baseName}.resquiggle.run.log" into resquiggle_logs
 
 	when:
@@ -309,10 +309,10 @@ process Resquiggle {
 	refGenome=${params.referenceGenome}
 
 	### copy basecall workspace files, due to tombo resquiggle modify base folder
-	mkdir -p ${basecallIndir.baseName}_resquiggle.dir
+	mkdir -p ${basecallIndir.baseName}.resquiggle
 
 	### original basecalled results will be parrallelly used by other processes
-	cp -rf ${basecallIndir}/* ${basecallIndir.baseName}_resquiggle.dir/
+	cp -rf ${basecallIndir}/* ${basecallIndir.baseName}.resquiggle/
 
 	### Now set processes=1 or 4, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
 	### ref: https://github.com/nanoporetech/tombo/issues/139
@@ -320,7 +320,7 @@ process Resquiggle {
 	tombo resquiggle --dna --processes 1 \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} --overwrite \
-		${basecallIndir.baseName}_resquiggle.dir/workspace \${refGenome} &>  ${basecallIndir.baseName}.resquiggle.run.log
+		${basecallIndir.baseName}.resquiggle/workspace \${refGenome} &>  ${basecallIndir.baseName}.resquiggle.run.log
 
 	echo "### Resquiggle DONE"
 	"""
