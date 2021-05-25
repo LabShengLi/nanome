@@ -315,7 +315,7 @@ process Resquiggle {
 	### Now set processes=1 or 4, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
 	### ref: https://github.com/nanoporetech/tombo/issues/139
 	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
-	tombo resquiggle --dna --processes 1 \
+	tombo resquiggle --dna --processes 8 \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} --overwrite \
 		${basecallIndir.baseName}.resquiggle/workspace \${refGenome} &>  ${basecallIndir.baseName}.resquiggle.run.log
@@ -397,6 +397,14 @@ process Tombo {
 		--alternate-bases CpG \
 		--processes 4 \
 		--corrected-group ${params.resquiggleCorrectedGroup} --multiprocess-region-size 1000 &> ${resquiggleDir.baseName}.tombo.run.log
+
+	if grep -q "BrokenPipeError: \[Errno 32\] Broken pipe" ${resquiggleDir.baseName}.tombo.run.log; then
+		## Grep the broken pipeline bug for Tombo
+		echo "### Tombo bug occur, may need retry to solve it"
+		exit 32
+	else  ## Tombo was ok
+		echo "### Tombo log passed"
+	fi
 
 	python utils/tombo_extract_per_read_stats.py \
 		${params.chromSizesFile} \
