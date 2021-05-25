@@ -398,7 +398,7 @@ process Tombo {
 		--processes 4 \
 		--corrected-group ${params.resquiggleCorrectedGroup} --multiprocess-region-size 1000 &> ${resquiggleDir.baseName}.tombo.run.log
 
-	if grep -q "BrokenPipeError: \[Errno 32\] Broken pipe" ${resquiggleDir.baseName}.tombo.run.log; then
+	if grep -q "BrokenPipeError: \\[Errno 32\\] Broken pipe" ${resquiggleDir.baseName}.tombo.run.log; then
 		## Grep the broken pipeline bug for Tombo
 		echo "### Tombo bug occur, may need retry to solve it"
 		exit 32
