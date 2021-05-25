@@ -225,7 +225,7 @@ process Guppy {
 	OUTBAM=batch_${fast5_dir.baseName}.bam
 	fast5mod guppy2sam \${FAST5PATH} --reference \${refGenome} \
 		--workers 74 --recursive --quiet\
-		| samtools sort -@ 8 | samtools view -b -@ 8 > \${OUTBAM}
+		| samtools sort -@ ${params.processors} | samtools view -b -@ ${params.processors} > \${OUTBAM}
 
 	samtools sort \${OUTBAM}
 	samtools index \${OUTBAM}
@@ -316,7 +316,7 @@ process Resquiggle {
 	### Now set processes=1 or 4, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
 	### ref: https://github.com/nanoporetech/tombo/issues/139
 	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
-	tombo resquiggle --dna --processes 8 \
+	tombo resquiggle --dna --processes ${params.processors} \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} --overwrite \
 		${basecallIndir.baseName}.resquiggle/workspace \${refGenome} &>  ${basecallIndir.baseName}.resquiggle.run.log
@@ -396,7 +396,7 @@ process Tombo {
 		batch_${resquiggleDir.baseName} \
 		--per-read-statistics-basename batch_${resquiggleDir.baseName} \
 		--alternate-bases CpG \
-		--processes 4 \
+		--processes ${params.processors} \
 		--corrected-group ${params.resquiggleCorrectedGroup} --multiprocess-region-size 1000 &> ${resquiggleDir.baseName}.tombo.run.log
 
 	if grep -q "BrokenPipeError: \\[Errno 32\\] Broken pipe" ${resquiggleDir.baseName}.tombo.run.log; then
@@ -454,7 +454,7 @@ process DeepMod {
 			--wrkBase ${basecallDir}/workspace --Ref \${refGenome} \
 			--Base C --modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
 			--FileID batch_${basecallDir.baseName}_num \
-			--threads 16 ${params.DeepModMoveOptions}  \
+			--threads 60 ${params.DeepModMoveOptions}  \
 			--basecall_1d ${params.BasecallGroupName} ###	--mod_cluster 0 is not work
 
 	tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/

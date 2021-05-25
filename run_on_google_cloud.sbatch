@@ -21,11 +21,12 @@ date;hostname;pwd
 ########################################################################
 ### Run NA12878 pipeline on google cloud
 ## working and outputs dir
-WORK_DIR_BUCKET=gs://jax-nanopore-01-project-data/NA12878-work
-OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/NA12878-ouputs
+WORK_DIR_BUCKET=gs://jax-nanopore-01-project-data/NA12878CHR20-work
+OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/NA12878CHR20-ouputs
+resumeOptions="" ##"-resume"
 
 ## Run NA12878 datasets
-./nextflow run main.nf -profile gls -config conf/NA12878.config -resume \
+./nextflow run main.nf -profile gls -config conf/NA12878.config ${resumeOptions} \
 	-w ${WORK_DIR_BUCKET} \
 	--outputDir ${OUTPUT_DIR_BUCKET}
 
@@ -44,6 +45,6 @@ OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/TestData-ouputs
 	-w ${WORK_DIR_BUCKET} \
 	--input inputs/test.demo.filelist.txt \
 	--outputDir ${OUTPUT_DIR_BUCKET} \
-	--midDiskSize "50 GB" --highDiskSize "50 GB"
+	--midDiskSize "100 GB" --highDiskSize "120 GB"
 
 exit 0
