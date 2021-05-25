@@ -4,7 +4,7 @@
 #SBATCH -q long
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 2 # number of cores
-#SBATCH --mem=50G # memory pool for all cores
+#SBATCH --mem=30G # memory pool for all cores
 #SBATCH --time=14-00:00:00 # time
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
@@ -23,7 +23,7 @@ date;hostname;pwd
 ## working and outputs dir
 WORK_DIR_BUCKET=gs://jax-nanopore-01-project-data/NA12878CHR20-work
 OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/NA12878CHR20-ouputs
-resumeOptions="" ##"-resume"
+resumeOptions="-resume"
 
 ## Run NA12878 datasets
 ./nextflow run main.nf -profile gls -config conf/NA12878.config ${resumeOptions} \
