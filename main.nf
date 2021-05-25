@@ -216,7 +216,7 @@ process Guppy {
 		--save_path ${fast5_dir.baseName}_methcalled \
 		--config dna_r9.4.1_450bps_modbases_dam-dcm-cpg_hac.cfg \
 		--num_callers 16 --fast5_out \
-		--verbose_logs ${GuppyGPUOptions}
+		--verbose_logs ${params.GuppyGPUOptions}
 
 	## install fast5mod
 	## pip install fast5mod
