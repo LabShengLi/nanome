@@ -155,8 +155,7 @@ process Basecall {
 		--save_path "${fast5_dir.baseName}.basecalled" \
 		--config ${params.GUPPY_BASECALL_MODEL} \
 		--num_callers ${params.GuppyNumCallers} \
-		--fast5_out \
-		--recursive \
+		--fast5_out --recursive \
 		--verbose_logs ${params.GuppyGPUOptions}
 
 	## After basecall, rename and publishe summary file names
@@ -216,9 +215,8 @@ process Guppy {
 	guppy_basecaller --input_path ${fast5_dir} \
 		--save_path ${fast5_dir.baseName}_methcalled \
 		--config dna_r9.4.1_450bps_modbases_dam-dcm-cpg_hac.cfg \
-		--gpu_runners_per_device 32 \
 		--num_callers 16 --fast5_out \
-		--verbose_logs --device auto
+		--verbose_logs ${GuppyGPUOptions}
 
 	## install fast5mod
 	## pip install fast5mod
