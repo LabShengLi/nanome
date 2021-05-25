@@ -43,6 +43,7 @@ OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/TestData-ouputs
 ./nextflow run main.nf -profile gls -resume \
 	-w ${WORK_DIR_BUCKET} \
 	--input inputs/test.demo.filelist.txt \
-	--outputDir ${OUTPUT_DIR_BUCKET}
+	--outputDir ${OUTPUT_DIR_BUCKET} \
+	--midDiskSize "50 GB" --highDiskSize "50 GB"
 
 exit 0
