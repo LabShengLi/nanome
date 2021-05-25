@@ -13,17 +13,36 @@ set -x
 
 date;hostname;pwd
 
+# Get nextflow and install
+# curl -s https://get.nextflow.io | bash
+
+########################################################################
+########################################################################
+########################################################################
+### Run NA12878 pipeline on google cloud
+## working and outputs dir
+WORK_DIR_BUCKET=gs://jax-nanopore-01-project-data/NA12878-work
+OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/NA12878-ouputs
 
 ## Run NA12878 datasets
 ./nextflow run main.nf -profile gls -config conf/NA12878.config -resume \
-	-w gs://jax-nanopore-01-project-data/nanome-work-NA12878 \
-	--outputDir gs://jax-nanopore-01-project-data/nanome-outputs-NA12878
+	-w ${WORK_DIR_BUCKET} \
+	--outputDir ${OUTPUT_DIR_BUCKET}
 
 exit 0
 
+########################################################################
+########################################################################
+########################################################################
+### Run Test pipeline on google cloud
+## working and outputs dir
+WORK_DIR_BUCKET=gs://jax-nanopore-01-project-data/TestData-work
+OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/TestData-ouputs
+
 ## Run test demo
 ./nextflow run main.nf -profile gls -resume \
-	-w gs://jax-nanopore-01-project-data/nanome-work-test \
-	--outputDir gs://jax-nanopore-01-project-data/nanome-outputs
+	-w ${WORK_DIR_BUCKET} \
+	--input inputs/test.demo.filelist.txt \
+	--outputDir ${OUTPUT_DIR_BUCKET}
 
 exit 0
