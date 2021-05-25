@@ -334,7 +334,7 @@ resquiggle_out_ch.into { deepsignal_in_ch; tombo_in_ch }
 process DeepSignal {
 	tag "${indir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepsignal" , mode: "copy"
-	label 'with_gpus'
+	//label 'with_gpus'
 
 	input:
 	file indir from deepsignal_in_ch // ttt is [basecallDir, reference_genome]
