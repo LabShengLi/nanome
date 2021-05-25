@@ -215,7 +215,7 @@ process Guppy {
 	guppy_basecaller --input_path ${fast5_dir} \
 		--save_path ${fast5_dir.baseName}_methcalled \
 		--config dna_r9.4.1_450bps_modbases_dam-dcm-cpg_hac.cfg \
-		--num_callers 16 --fast5_out \
+		--num_callers ${params.GuppyNumCallers} --fast5_out \
 		--verbose_logs ${params.GuppyGPUOptions}
 
 	## install fast5mod
@@ -262,13 +262,14 @@ process Megalodon {
 	## Get megalodon model dir
 	tar -xzf ${megalodonModelTar}
 
+	## Ref: https://github.com/nanoporetech/megalodon
 	megalodon \
 		${fast5_dir} \
 		--overwrite \
 		--outputs per_read_mods mods per_read_refs \
 		--guppy-server-path guppy_basecall_server \
 		--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-		--guppy-params "-d ./megalodon_model/ --num_callers 16 --ipc_threads 80" \
+		--guppy-params "-d ./megalodon_model/ --num_callers ${params.GuppyNumCallers} --ipc_threads 80" \
 		--guppy-timeout ${params.GUPPY_TIMEOUT} \
 		--samtools-executable ${params.SAMTOOLS_PATH} \
 		--sort-mappings \
@@ -278,7 +279,7 @@ process Megalodon {
 		--mod-output-formats bedmethyl wiggle \
 		--write-mods-text \
 		--write-mod-log-probs \
-		--processes ${params.processors} ${params.megalodonGPUOptions}
+		--processes 40 ${params.megalodonGPUOptions}
 
 	### mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_dir.baseName}.per_read_modified_base_calls.txt
 	sed '1d' megalodon_results/per_read_modified_base_calls.txt > batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt
