@@ -17,6 +17,7 @@ src/nanocompare/.DS_Store
 /plots/
 work
 /outputs/
+hello.nf
 .nextflow*
 nextflow
 .ipynb_checkpoints
