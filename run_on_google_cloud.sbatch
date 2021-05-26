@@ -4,7 +4,7 @@
 #SBATCH -q long
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 2 # number of cores
-#SBATCH --mem=30G # memory pool for all cores
+#SBATCH --mem=20G # memory pool for all cores
 #SBATCH --time=14-00:00:00 # time
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
