@@ -28,12 +28,12 @@ ch_src.into{ch_src1; ch_src2}
 if (params.input.endsWith(".filelist.txt")) { // filelist
 	Channel.fromPath( params.input )
 		.splitCsv(header: false)
-		.map { file(it[0]) }
+		.map { it[0] }
 		.into{ fast5_tar_ch1; fast5_tar_ch4 }
 	// emit one time for each fast5.tar file
 	//fast5_tar_ch.flatten().into{fast5_tar_ch1; fast5_tar_ch4}
 } else { // single file
-	Channel.fromPath( params.input ).into {fast5_tar_ch1; fast5_tar_ch4}
+	Channel.from( params.input ).into {fast5_tar_ch1; fast5_tar_ch4}
 }
 
 
@@ -87,31 +87,45 @@ reference_genome_ch.into{reference_genome_ch1; reference_genome_ch2;
 
 // Untar of subfolders named 'M1', ..., 'M10', etc.
 process Untar {
-	tag "${fast5_tar.baseName}"
+	tag "${fast5_tar.lastIndexOf('/').with {it != -1 ? fast5_tar.substring(it+1) : fast5_tar}}"
 
 	input:
-	file fast5_tar from fast5_tar_ch4
+	val fast5_tar from fast5_tar_ch4
 	each file("*") from ch_utils5
 
 	output:
-	file "${fast5_tar.baseName}.untar" into untar_out_ch
+	file "${fast5_tar.lastIndexOf('/').with {it != -1 ? fast5_tar.substring(it+1) : fast5_tar}}_untar" into untar_out_ch
 
 	"""
-	infn=${fast5_tar}
+	echo "### File: ${fast5_tar}"
+	if  [[ ${fast5_tar} == http:* ]] || [[ ${fast5_tar} == https* ]] ; then ## download
+		if [ "${params.downloadMethod}" == "wget" ]; then
+			wget ${fast5_tar} --no-verbose
+		elif [ "${params.downloadMethod}" == "aws" ]; then
+			echo "### using AWS download"
+		else
+			echo "### not support download method: ${params.downloadMethod}"
+			exit 1
+		fi
+	else
+		echo "### local file"
+		ln -s ${fast5_tar} ${fast5_tar.lastIndexOf('/').with {it != -1 ? fast5_tar.substring(it+1) : fast5_tar}}
+	fi
 
 	mkdir -p untarDir
+	infn="${fast5_tar.lastIndexOf('/').with {it != -1 ? fast5_tar.substring(it+1) : fast5_tar}}"
 	if [ "\${infn##*.}" == "tar" ]; then ### deal with tar
-		tar -xf ${fast5_tar} -C untarDir
+		tar -xf \${infn} -C untarDir
 		## move fast5 files in tree folders into a single folder
 		mkdir -p untarDir1
 		find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
 	elif [ "\${infn##*.}" == "gz" ]; then ### deal with tar.gz
-		tar -xzf ${fast5_tar} -C untarDir
+		tar -xzf \${infn} -C untarDir
 		## move fast5 files in tree folders into a single folder
 		mkdir -p untarDir1
 		find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
 	else ### deal with ready folder
-		mv  ${fast5_tar} untarDir1
+		mv  \${infn} untarDir1
 	fi
 
 	## Clean old analyses in input fast5 files
@@ -120,10 +134,16 @@ process Untar {
 		python utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir
 	fi
 
-	mv untarDir1 ${fast5_tar.baseName}.untar
+	mv untarDir1 "${fast5_tar.lastIndexOf('/').with {it != -1 ? fast5_tar.substring(it+1) : fast5_tar}}"_untar
 
 	## Clean unused files
 	rm -rf untarDir
+	rm -rf "${fast5_tar.lastIndexOf('/').with {it != -1 ? fast5_tar.substring(it+1) : fast5_tar}}"
+
+	echo "Total fast5 files:"
+	find "${fast5_tar.lastIndexOf('/').with {it != -1 ? fast5_tar.substring(it+1) : fast5_tar}}"_untar \
+		-name "*.fast5" | wc -l
+	echo "### Untar DONE"
 	"""
 }
 
@@ -214,7 +234,7 @@ process Guppy {
 
 	guppy_basecaller --input_path ${fast5_dir} \
 		--save_path ${fast5_dir.baseName}_methcalled \
-		--config ${GUPPY_METHCALL_MODEL} \
+		--config ${params.GUPPY_METHCALL_MODEL} \
 		--num_callers ${params.GuppyNumCallers} --fast5_out \
 		--verbose_logs ${params.GuppyGPUOptions}
 
