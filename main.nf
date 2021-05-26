@@ -214,7 +214,7 @@ process Guppy {
 
 	guppy_basecaller --input_path ${fast5_dir} \
 		--save_path ${fast5_dir.baseName}_methcalled \
-		--config dna_r9.4.1_450bps_modbases_dam-dcm-cpg_hac.cfg \
+		--config ${GUPPY_METHCALL_MODEL} \
 		--num_callers ${params.GuppyNumCallers} --fast5_out \
 		--verbose_logs ${params.GuppyGPUOptions}
 
