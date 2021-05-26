@@ -19,6 +19,23 @@ date;hostname;pwd
 ########################################################################
 ########################################################################
 ########################################################################
+### Run Test pipeline on google cloud
+## working and outputs dir
+WORK_DIR_BUCKET=gs://jax-nanopore-01-project-data/TestData-work
+OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/TestData-ouputs
+
+## Run test demo
+nextflow run main.nf -profile gls -resume \
+	-w ${WORK_DIR_BUCKET} \
+	--input inputs/test.demo.filelist.txt \
+	--outputDir ${OUTPUT_DIR_BUCKET} \
+	--midDiskSize "100 GB" --highDiskSize "120 GB"
+
+exit 0
+
+########################################################################
+########################################################################
+########################################################################
 ### Run NA12878 pipeline on google cloud
 ## working and outputs dir
 WORK_DIR_BUCKET=gs://jax-nanopore-01-project-data/NA12878CHR20-work
@@ -32,19 +49,4 @@ resumeOptions="-resume"
 
 exit 0
 
-########################################################################
-########################################################################
-########################################################################
-### Run Test pipeline on google cloud
-## working and outputs dir
-WORK_DIR_BUCKET=gs://jax-nanopore-01-project-data/TestData-work
-OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/TestData-ouputs
 
-## Run test demo
-./nextflow run main.nf -profile gls -resume \
-	-w ${WORK_DIR_BUCKET} \
-	--input inputs/test.demo.filelist.txt \
-	--outputDir ${OUTPUT_DIR_BUCKET} \
-	--midDiskSize "100 GB" --highDiskSize "120 GB"
-
-exit 0
