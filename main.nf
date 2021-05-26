@@ -93,6 +93,9 @@ process Untar {
 	val fast5_tar from fast5_tar_ch4
 	each file("*") from ch_utils5
 
+	//get disk size for val fast5_tar, not file object
+	// disk size  * task attempt  700GB -- 230GM
+
 	output:
 	file "${fast5_tar.lastIndexOf('/').with {it != -1 ? fast5_tar.substring(it+1) : fast5_tar}}_untar" into untar_out_ch
 
