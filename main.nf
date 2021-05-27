@@ -88,7 +88,8 @@ process Untar {
 	tag "${fast5_tar.baseName}"
 
 	// Disk size is determined by input size, if failed, increase the size
-	disk { ((fast5_tar.size()*1.1 as long) >> 30).GB   +   150.GB* (task.attempt) }
+	// base size=50.GB, plus 1.2 times of input, plus attempts increase 150.GB each time
+	disk { 50.GB+ ((fast5_tar.size()*1.2 as long) >> 30).GB   +   150.GB* (task.attempt-1) }
 
 	input:
 	file fast5_tar from fast5_tar_ch4 // using staging, large file suggest firstly using data transfer
@@ -99,7 +100,7 @@ process Untar {
 
 	"""
 	echo "### File: ${fast5_tar}"
-	echo "Disk size is set to: ${ ((fast5_tar.size()*1.1 as long) >> 30).GB   +   150.GB* (task.attempt) }"
+	echo "Disk size is set to: ${ 50.GB+ ((fast5_tar.size()*1.2 as long) >> 30).GB   +   150.GB* (task.attempt-1) }"
 
 	mkdir -p untarDir
 	infn="${fast5_tar}"
