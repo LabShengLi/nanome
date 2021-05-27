@@ -2264,6 +2264,14 @@ def filter_corrdata_df_by_bedfile(df, df_bed, coord_fn):
 
 
 def correlation_report_on_regions(corr_infn, beddir=None, dsname=None, outdir=pic_base_dir):
+    """
+    Calculate Pearson's correlation coefficient at different regions.
+    :param corr_infn:
+    :param beddir:
+    :param dsname:
+    :param outdir:
+    :return:
+    """
     df = pd.read_csv(corr_infn)
     logger.info(df)
 
