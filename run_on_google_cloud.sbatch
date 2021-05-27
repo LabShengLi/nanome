@@ -16,6 +16,27 @@ date;hostname;pwd
 # Get nextflow and install
 # curl -s https://get.nextflow.io | bash
 
+chrName=${1:-"CHR1_3"}
+inputFileListName=${2:-"inputs/na12878.google_cloud.chr1-3.filelist.txt"}
+
+########################################################################
+########################################################################
+########################################################################
+### Run NA12878 chr1-3 pipeline on google cloud
+## working and outputs dir
+WORK_DIR_BUCKET=gs://jax-nanopore-01-project-data/NA12878-${chrName}-work
+OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/NA12878-${chrName}-ouputs
+resumeOptions="-resume"
+
+## Run NA12878 datasets
+./nextflow run main.nf -profile gls -config conf/NA12878.config ${resumeOptions} \
+	-w ${WORK_DIR_BUCKET} \
+	--outputDir ${OUTPUT_DIR_BUCKET} \
+	--input ${inputFileListName} \
+	-with-report -with-timeline -with-trace -with-dag
+
+exit 0
+
 ########################################################################
 ########################################################################
 ########################################################################
@@ -25,7 +46,7 @@ WORK_DIR_BUCKET=gs://jax-nanopore-01-project-data/TestData-work
 OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/TestData-ouputs
 
 ## Run test demo
-nextflow run main.nf -profile gls -resume \
+nextflow run main.nf -profile gls -resume\
 	-w ${WORK_DIR_BUCKET} \
 	--input inputs/test.demo.filelist.txt \
 	--outputDir ${OUTPUT_DIR_BUCKET} \
@@ -48,5 +69,4 @@ resumeOptions="-resume"
 	--outputDir ${OUTPUT_DIR_BUCKET}
 
 exit 0
-
 

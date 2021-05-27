@@ -28,12 +28,10 @@ ch_src.into{ch_src1; ch_src2}
 if (params.input.endsWith(".filelist.txt")) { // filelist
 	Channel.fromPath( params.input )
 		.splitCsv(header: false)
-		.map { it[0] }
-		.into{ fast5_tar_ch1; fast5_tar_ch4 }
-	// emit one time for each fast5.tar file
-	//fast5_tar_ch.flatten().into{fast5_tar_ch1; fast5_tar_ch4}
+		.map { file(it[0]) }
+		.set{ fast5_tar_ch4 }
 } else { // single file
-	Channel.from( params.input ).into {fast5_tar_ch1; fast5_tar_ch4}
+	Channel.fromPath( params.input ).set {fast5_tar_ch4}
 }
 
 
@@ -87,36 +85,20 @@ reference_genome_ch.into{reference_genome_ch1; reference_genome_ch2;
 
 // Untar of subfolders named 'M1', ..., 'M10', etc.
 process Untar {
-	tag "${fast5_tar.lastIndexOf('/').with {it != -1 ? fast5_tar.substring(it+1) : fast5_tar}}"
+	tag "${fast5_tar.baseName}"
 
 	input:
-	val fast5_tar from fast5_tar_ch4
+	file fast5_tar from fast5_tar_ch4 // using staging, large file suggest firstly using data transfer
 	each file("*") from ch_utils5
 
-	//get disk size for val fast5_tar, not file object
-	// disk size  * task attempt  700GB -- 230GM
-
 	output:
-	file "${fast5_tar.lastIndexOf('/').with {it != -1 ? fast5_tar.substring(it+1) : fast5_tar}}_untar" into untar_out_ch
+	file "${fast5_tar.baseName}.untar" into untar_out_ch
 
 	"""
 	echo "### File: ${fast5_tar}"
-	if  [[ ${fast5_tar} == http:* ]] || [[ ${fast5_tar} == https* ]] ; then ## download
-		if [ "${params.downloadMethod}" == "wget" ]; then
-			wget ${fast5_tar} --no-verbose
-		elif [ "${params.downloadMethod}" == "aws" ]; then
-			echo "### using AWS download"
-		else
-			echo "### not support download method: ${params.downloadMethod}"
-			exit 1
-		fi
-	else
-		echo "### local file"
-		ln -s ${fast5_tar} ${fast5_tar.lastIndexOf('/').with {it != -1 ? fast5_tar.substring(it+1) : fast5_tar}}
-	fi
 
 	mkdir -p untarDir
-	infn="${fast5_tar.lastIndexOf('/').with {it != -1 ? fast5_tar.substring(it+1) : fast5_tar}}"
+	infn="${fast5_tar}"
 	if [ "\${infn##*.}" == "tar" ]; then ### deal with tar
 		tar -xf \${infn} -C untarDir
 		## move fast5 files in tree folders into a single folder
@@ -137,14 +119,13 @@ process Untar {
 		python utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir
 	fi
 
-	mv untarDir1 "${fast5_tar.lastIndexOf('/').with {it != -1 ? fast5_tar.substring(it+1) : fast5_tar}}"_untar
+	mv untarDir1 "${fast5_tar.baseName}".untar
 
 	## Clean unused files
 	rm -rf untarDir
-	rm -rf "${fast5_tar.lastIndexOf('/').with {it != -1 ? fast5_tar.substring(it+1) : fast5_tar}}"
 
 	echo "Total fast5 files:"
-	find "${fast5_tar.lastIndexOf('/').with {it != -1 ? fast5_tar.substring(it+1) : fast5_tar}}"_untar \
+	find "${fast5_tar.baseName}".untar \
 		-name "*.fast5" | wc -l
 	echo "### Untar DONE"
 	"""

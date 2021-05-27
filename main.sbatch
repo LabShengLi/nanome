@@ -29,8 +29,8 @@ date;hostname;pwd
 ## Option 1:
 # Running nanome pipeline on test data (from NA19240) in Human Genome
 #rm -rf ${workingDir}-test4
-nextflow run main.nf -profile winter --input inputs/test.demo.filelist.txt
-#    -work-dir ${workingDir}-test4 \
+nextflow run main.nf -profile sumner --input inputs/test.demo.filelist.txt \
+    -work-dir ${workingDir}-test6
 #    -config conf/test.config
 
 
