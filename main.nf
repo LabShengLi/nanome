@@ -87,6 +87,9 @@ reference_genome_ch.into{reference_genome_ch1; reference_genome_ch2;
 process Untar {
 	tag "${fast5_tar.baseName}"
 
+	// Disk size is determined by input size, if failed, increase the size
+	disk { ((fast5_tar.size()*1.1 as long) >> 30).GB   +   150.GB* (task.attempt) }
+
 	input:
 	file fast5_tar from fast5_tar_ch4 // using staging, large file suggest firstly using data transfer
 	each file("*") from ch_utils5
@@ -96,6 +99,7 @@ process Untar {
 
 	"""
 	echo "### File: ${fast5_tar}"
+	echo "Disk size is set to: ${ ((fast5_tar.size()*1.1 as long) >> 30).GB   +   150.GB* (task.attempt) }"
 
 	mkdir -p untarDir
 	infn="${fast5_tar}"
