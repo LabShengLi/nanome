@@ -47,7 +47,7 @@ if __name__ == '__main__':
                 if groupName in list(handle.keys()):  # clean if found any group named 'Analyses'
                     del handle[groupName]
                     cntClean += 1
-        except:
+        except: ## avoid corrupted fast5 files
             pass
 
     if args.verbose or args.is_indir:
