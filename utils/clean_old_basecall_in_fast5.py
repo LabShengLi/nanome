@@ -41,10 +41,14 @@ if __name__ == '__main__':
         print(f"Total fast5 files: {len(fnlist)}")
 
     for fn in fnlist:
-        with h5py.File(fn, 'r+') as handle:  # ref: https://docs.h5py.org/en/stable/high/file.html?highlight=h5py.File#h5py.File
-            # print(f"Detect old {groupName}, we clean it.")
-            if groupName in list(handle.keys()):  # clean if found any group named 'Analyses'
-                del handle[groupName]
-                cntClean += 1
+        try:
+            with h5py.File(fn, 'r+') as handle:  # ref: https://docs.h5py.org/en/stable/high/file.html?highlight=h5py.File#h5py.File
+                # print(f"Detect old {groupName}, we clean it.")
+                if groupName in list(handle.keys()):  # clean if found any group named 'Analyses'
+                    del handle[groupName]
+                    cntClean += 1
+        except:
+            pass
+
     if args.verbose or args.is_indir:
         print(f"Total cleaned files: {cntClean}")

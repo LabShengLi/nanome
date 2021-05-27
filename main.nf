@@ -116,6 +116,8 @@ process Untar {
 	## Clean old analyses in input fast5 files
 	if [[ "${params.cleanAnalyses}" = true ]] ; then
 		echo "### Start cleaning old analysis"
+		python -c 'import h5py; print(h5py.version.info)'
+
 		python utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir
 	fi
 
