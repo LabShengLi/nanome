@@ -88,8 +88,8 @@ process Untar {
 	tag "${fast5_tar.baseName}"
 
 	// Disk size is determined by input size, if failed, increase the size
-	// base size=50.GB, plus 1.2 times of input, plus attempts increase 150.GB each time
-	disk { 50.GB+ ((fast5_tar.size()*1.2 as long) >> 30).GB   +   150.GB* (task.attempt-1) }
+	// base size=50.GB, plus 1.2 times of input, plus attempts increase 150.GB each time even due to 14-prempted
+	disk { 50.GB+ ((fast5_tar.size()*1.3 as long) >> 30).GB   +   50.GB* (task.attempt-1) }
 
 	input:
 	file fast5_tar from fast5_tar_ch4 // using staging, large file suggest firstly using data transfer
@@ -117,6 +117,7 @@ process Untar {
 	else ### deal with ready folder
 		mv  \${infn} untarDir1
 	fi
+
 
 	## Clean old analyses in input fast5 files
 	if [[ "${params.cleanAnalyses}" = true ]] ; then
