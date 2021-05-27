@@ -123,7 +123,7 @@ process Untar {
 		echo "### Start cleaning old analysis"
 		python -c 'import h5py; print(h5py.version.info)'
 
-		python utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir
+		python utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir --processor 32
 	fi
 
 	mv untarDir1 "${fast5_tar.baseName}".untar
