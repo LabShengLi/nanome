@@ -369,7 +369,7 @@ process DeepSignal {
 		--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 		--reference_path \${refGenome} \
 		--corrected_group ${params.resquiggleCorrectedGroup} \
-		--nproc ${params.processors} \
+		--nproc 40 \
 		--is_gpu ${params.DeepSignal_isgpu}
 
 	gzip batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv
@@ -466,7 +466,7 @@ process DeepMod {
 			--wrkBase ${basecallDir}/workspace --Ref \${refGenome} \
 			--Base C --modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
 			--FileID batch_${basecallDir.baseName}_num \
-			--threads 60 ${params.DeepModMoveOptions}  \
+			--threads 128 ${params.DeepModMoveOptions}  \
 			--basecall_1d ${params.BasecallGroupName} ###	--mod_cluster 0 is not work
 
 	tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
