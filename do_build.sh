@@ -13,4 +13,25 @@
 
 set -x
 
+
+exit 0
+
+## Build docker image for public usage
+git clone https://github.com/liuyangzzu/nanome.git
+cd nanome
+
+docker build -t quay.io/liuyangzzu/nanome:v1.4 .
+
+docker login quay.io
+## Enter user name and password
+
+docker push quay.io/liuyangzzu/nanome:v1.4
+
+## docker run -v $PWD:$PWD -w $PWD -it  quay.io/liuyangzzu/nanome
+
+exit 0
+
+## Build docker image on google cloud platform
 gcloud builds submit --tag us.gcr.io/jax-nanopore-01/nanome:v1.4 --timeout=4000s
+
+exit 0
