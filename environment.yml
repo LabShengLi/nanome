@@ -194,7 +194,6 @@ dependencies:
   - rocksdb
   - python-rocksdb
   - cython
-  - git
   - pip:
     - deepsignal==0.1.8
     - fast5mod==1.0.5
