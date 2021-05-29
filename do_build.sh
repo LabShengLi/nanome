@@ -9,6 +9,8 @@
 #SBATCH -o %x.%j.out
 #SBATCH -e %x.%j.err
 
+## Build Docker for pipeline on google cloud
+
 set -x
 
 gcloud builds submit --tag us.gcr.io/jax-nanopore-01/nanome:v1.4 --timeout=4000s
