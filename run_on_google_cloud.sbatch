@@ -70,7 +70,8 @@ resumeOptions="-resume"
 ## Run NA12878 datasets
 ./nextflow run main.nf -profile gls -config conf/NA12878.config ${resumeOptions} \
 	-w ${WORK_DIR_BUCKET} \
-	--outputDir ${OUTPUT_DIR_BUCKET}
+	--outputDir ${OUTPUT_DIR_BUCKET} \
+	-with-report -with-timeline -with-trace -with-dag
 
 exit 0
 
