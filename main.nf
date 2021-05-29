@@ -344,7 +344,7 @@ process Megalodon {
 		--mod-output-formats bedmethyl wiggle \
 		--write-mods-text \
 		--write-mod-log-probs \
-		--processes ${params.processors * 8} ${params.megalodonGPUOptions}
+		--processes ${params.processors * 3} ${params.megalodonGPUOptions}
 
 	### mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_dir.baseName}.per_read_modified_base_calls.txt
 	sed '1d' megalodon_results/per_read_modified_base_calls.txt > batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt
@@ -487,7 +487,6 @@ process Tombo {
 process DeepMod {
 	tag "${basecallDir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod" , mode: "copy", pattern: "batch_${basecallDir.baseName}_num.tar.gz"
-	errorStrategy 'ignore'
 	// using cpu save costs, DeepMod running slower on gpu machine
 	//label 'with_gpus'
 
