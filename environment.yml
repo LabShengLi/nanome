@@ -191,6 +191,10 @@ dependencies:
   - statsmodels==0.12.2
   - ont-fast5-api==3.0.0
   - pybedtools=0.7.10
+  - rocksdb
+  - python-rocksdb
+  - cython
+  - git
   - pip:
     - deepsignal==0.1.8
     - fast5mod==1.0.5

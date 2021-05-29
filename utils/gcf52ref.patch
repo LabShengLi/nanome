@@ -1,0 +1,8 @@
+127c127,131
+<         
+---
+>        
+> 	    ## Fix error bugs by Yang Liu
+>         if not read.infer_read_length():
+>             return None
+> 

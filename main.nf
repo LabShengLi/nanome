@@ -43,9 +43,11 @@ process EnvCheck {
 
 	input:
 	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
+	each file("*") from ch_utils7
 
 	output:
 	file "reference_genome" into reference_genome_ch
+	file "gcf52ref" into gcf52ref_code_ch
 
 	"""
 	which tombo
@@ -69,8 +71,10 @@ process EnvCheck {
 	## Untar to dir reference_genome
 	tar -xzf ${reference_genome_tar}
 
-	minimap2 --version
-	samtools --version
+	## gcf52ref ways
+	###git clone https://github.com/kpalin/gcf52ref.git
+	tar xzf utils/gcf52ref.tar.gz -C .
+	patch gcf52ref/scripts/extract_methylation_from_rocks.py < utils/gcf52ref.patch
 
 	echo "### Check env DONE"
 	"""
@@ -80,7 +84,7 @@ process EnvCheck {
 //duplicate reference_genome dir to all other processes' input
 reference_genome_ch.into{reference_genome_ch1; reference_genome_ch2;
 	reference_genome_ch3; reference_genome_ch4; reference_genome_ch5;
-	reference_genome_ch6; reference_genome_ch7; reference_genome_ch8}
+	reference_genome_ch6; reference_genome_ch7; reference_genome_ch8; reference_genome_ch9}
 
 
 // Untar of subfolders named 'M1', ..., 'M10', etc.
@@ -100,7 +104,7 @@ process Untar {
 
 	"""
 	echo "### File: ${fast5_tar}"
-	echo "Disk size is set to: ${ 50.GB+ ((fast5_tar.size()*1.2 as long) >> 30).GB   +   150.GB* (task.attempt-1) }"
+	echo "Disk size is set to: ${  50.GB + ((fast5_tar.size()*1.5 as long) >> 30).GB   +   150.GB * task.attempt }"
 
 	mkdir -p untarDir
 	infn="${fast5_tar}"
@@ -124,7 +128,7 @@ process Untar {
 		echo "### Start cleaning old analysis"
 		python -c 'import h5py; print(h5py.version.info)'
 
-		python utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir --processor 32
+		python utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir --processor ${params.processors * 8}
 	fi
 
 	mv untarDir1 "${fast5_tar.baseName}".untar
@@ -204,17 +208,14 @@ basecall_out_ch
 // methylation calling for Guppy
 process Guppy {
 	tag "${fast5_dir.baseName}"
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy" , mode: "copy", pattern: "outbatch_${fast5_dir.baseName}.bam.tar.gz"
 	label 'with_gpus'
 
 	input:
 	file fast5_dir from untar_out_ch2
-	each file("*") from ch_utils4
 	each file(reference_genome) from reference_genome_ch1
 
 	output:
-	file "batch_${fast5_dir.baseName}.bam*" into guppy_methcall_out_ch
-	file "outbatch_${fast5_dir.baseName}.bam.tar.gz" into guppy_methcall_gz_out_ch
+	file "${fast5_dir.baseName}.methcalled" into guppy_methdir_out_ch
 
 	when:
 	params.runMethcall && params.runGuppy
@@ -222,33 +223,85 @@ process Guppy {
 	"""
 	refGenome=${params.referenceGenome}
 
-	mkdir -p ${fast5_dir.baseName}_methcalled
+	mkdir -p ${fast5_dir.baseName}.methcalled
 
 	guppy_basecaller --input_path ${fast5_dir} \
-		--save_path ${fast5_dir.baseName}_methcalled \
+		--save_path ${fast5_dir.baseName}.methcalled \
 		--config ${params.GUPPY_METHCALL_MODEL} \
 		--num_callers ${params.GuppyNumCallers} --fast5_out \
 		--verbose_logs ${params.GuppyGPUOptions}
-
-	## install fast5mod
-	## pip install fast5mod
-
-	FAST5PATH=${fast5_dir.baseName}_methcalled/workspace
-	OUTBAM=batch_${fast5_dir.baseName}.bam
-	fast5mod guppy2sam \${FAST5PATH} --reference \${refGenome} \
-		--workers 74 --recursive --quiet\
-		| samtools sort -@ ${params.processors} | samtools view -b -@ ${params.processors} > \${OUTBAM}
-
-	samtools sort \${OUTBAM}
-	samtools index \${OUTBAM}
-
-	tar -czf outbatch_${fast5_dir.baseName}.bam.tar.gz batch_${fast5_dir.baseName}.bam*
-
-	## Clean unused files
-	rm -rf ${fast5_dir.baseName}_methcalled
 	echo "###   Guppy methylation calling DONE"
 	"""
 }
+
+
+// Extract methylation calling for Guppy with out GPU on cloud
+process GuppyExtract {
+	tag "${guppy_meth_dir.baseName}"
+
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy" , mode: "copy", pattern: "outbatch_${guppy_meth_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy" , mode: "copy", pattern: "batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz"
+
+	input:
+	file guppy_meth_dir from guppy_methdir_out_ch
+	each file("*") from ch_utils4
+	each file("*") from gcf52ref_code_ch
+	each file(reference_genome) from reference_genome_ch9
+
+	output:
+	file "outbatch_${guppy_meth_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz" into guppy_methcall_gz_out_ch
+	file "batch_${guppy_meth_dir.baseName}.guppy.fast5mod_guppy2sam.bam*" into guppy_methcall_out_ch
+	file "batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz" into guppy_gcf52ref_out_ch
+
+	when:
+	params.runMethcall && params.runGuppy
+
+	"""
+	refGenome=${params.referenceGenome}
+
+	## gcf52ref ways
+	minimap2 -t ${params.processors*8} -a -x map-ont \${refGenome} \
+		${guppy_meth_dir}/*.fastq | \
+		samtools sort -@ ${params.processors * 8} \
+		-T tmp -o gcf52ref.batch.${guppy_meth_dir.baseName}.bam
+
+	samtools index -@ ${params.processors * 8} \
+		gcf52ref.batch.${guppy_meth_dir.baseName}.bam
+
+	echo "### gcf52ref minimap2 alignment is done!"
+
+	python gcf52ref/scripts/extract_methylation_fast5.py \
+		-p ${params.processors * 8} ${guppy_meth_dir}/workspace/*.fast5
+
+	python gcf52ref/scripts/extract_methylation_from_rocks.py \
+		-d base_mods.rocksdb \
+		-a gcf52ref.batch.${guppy_meth_dir.baseName}.bam \
+		-r \${refGenome} \
+		-o batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
+
+	sed -i '1d' batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
+	gzip batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
+	echo "### gcf52ref DONE"
+
+	## fast5mod ways
+	FAST5PATH=${guppy_meth_dir}/workspace
+	OUTBAM=batch_${guppy_meth_dir.baseName}.guppy.fast5mod_guppy2sam.bam
+
+	fast5mod guppy2sam \${FAST5PATH} --reference \${refGenome} \
+		--workers 74 --recursive --quiet \
+		| samtools sort -@ ${params.processors * 8} | \
+		samtools view -b -@ ${params.processors * 8} > \${OUTBAM}
+
+	### samtools sort -@ ${params.processors * 8}  \${OUTBAM}
+	samtools index -@ ${params.processors * 8}  \${OUTBAM}
+
+	tar -czf outbatch_${guppy_meth_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz \
+		batch_${guppy_meth_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
+
+	echo "###   GuppyExtract methylation calling DONE"
+	"""
+}
+
 
 
 // Megalodon runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
@@ -291,7 +344,7 @@ process Megalodon {
 		--mod-output-formats bedmethyl wiggle \
 		--write-mods-text \
 		--write-mod-log-probs \
-		--processes 40 ${params.megalodonGPUOptions}
+		--processes ${params.processors * 8} ${params.megalodonGPUOptions}
 
 	### mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_dir.baseName}.per_read_modified_base_calls.txt
 	sed '1d' megalodon_results/per_read_modified_base_calls.txt > batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt
@@ -328,7 +381,7 @@ process Resquiggle {
 	### Now set processes=1 or 4, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
 	### ref: https://github.com/nanoporetech/tombo/issues/139
 	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
-	tombo resquiggle --dna --processes ${params.processors} \
+	tombo resquiggle --dna --processes ${params.processors * 8} \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} --overwrite \
 		${basecallIndir.baseName}.resquiggle/workspace \${refGenome} &>  ${basecallIndir.baseName}.resquiggle.run.log
@@ -369,7 +422,7 @@ process DeepSignal {
 		--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 		--reference_path \${refGenome} \
 		--corrected_group ${params.resquiggleCorrectedGroup} \
-		--nproc 40 \
+		--nproc ${params.processors  * 8} \
 		--is_gpu ${params.DeepSignal_isgpu}
 
 	gzip batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv
@@ -408,7 +461,7 @@ process Tombo {
 		batch_${resquiggleDir.baseName} \
 		--per-read-statistics-basename batch_${resquiggleDir.baseName} \
 		--alternate-bases CpG \
-		--processes ${params.processors} \
+		--processes ${params.processors * 8} \
 		--corrected-group ${params.resquiggleCorrectedGroup} --multiprocess-region-size 1000 &> ${resquiggleDir.baseName}.tombo.run.log
 
 	if grep -q "BrokenPipeError: \\[Errno 32\\] Broken pipe" ${resquiggleDir.baseName}.tombo.run.log; then
@@ -498,9 +551,6 @@ process Nanopolish {
 	fastqNoDupFile="\${fastqFile}.noDups.fq"
 	bamFileName="${params.dsname}.batch_${basecallDir.baseName}.sorted.bam"
 
-	echo \${fastqFile}
-	echo \${fastqNoDupFile}
-
 	## Do alignment firstly
 	touch \${fastqFile}
 	for f in \$(ls -1 ${basecallDir}/*.fastq)
@@ -513,14 +563,15 @@ process Nanopolish {
 	# Index the raw read with fastq
 	nanopolish index -d ${basecallDir}/workspace \${fastqNoDupFile}
 
-	minimap2 -t ${params.processors} -a -x map-ont \${refGenome} \${fastqNoDupFile} | samtools sort -T tmp -o \${bamFileName}
+	minimap2 -t ${params.processors*8} -a -x map-ont \${refGenome} \${fastqNoDupFile} | \
+		samtools sort -@ ${params.processors * 8} -T tmp -o \${bamFileName}
 	echo "### minimap2 finished"
 
-	samtools index -@ threads \${bamFileName}
+	samtools index -@ ${params.processors * 8}  \${bamFileName}
 	echo "### samtools finished"
 	echo "### Alignment step DONE"
 
-	nanopolish call-methylation -t ${params.processors} -r \${fastqNoDupFile} \
+	nanopolish call-methylation -t ${params.processors * 8} -r \${fastqNoDupFile} \
 		-b \${bamFileName} -g \${refGenome} > tmp.tsv
 
 	sed '1d' tmp.tsv > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
@@ -589,11 +640,13 @@ process GuppyComb {
 
 	input:
 	file x from guppy_combine_in_ch
+	file y from guppy_gcf52ref_out_ch.toList()
 	each file(reference_genome) from reference_genome_ch8
 
 	output:
-	file "${params.dsname}.Guppy.combine.tsv.gz" into guppy_combine_out_ch
-	file "${params.dsname}.guppy.combined.bam.tar.gz" into guppy_combine_raw_out_ch
+	file "${params.dsname}.Guppy_fast5mod.combine.tsv.gz" into guppy_fast5mod_combine_out_ch
+	file "${params.dsname}.Guppy_gcf52ref.combine.tsv.gz" into guppy_gcf52ref_combine_out_ch
+	file "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz" into guppy_combine_raw_out_ch
 
 	when:
 	x.size() >= 1
@@ -601,15 +654,22 @@ process GuppyComb {
 	"""
 	refGenome=${params.referenceGenome}
 
-	find . -name 'batch_*.bam' -maxdepth 1 |
+	## gcf52ref ways
+	cat batch_*.guppy.gcf52ref_per_read.tsv.gz > ${params.dsname}.Guppy_gcf52ref.combined.tsv.gz
+	echo "### gcf52ref combine DONE"
+
+	## fast5mod ways combine
+	## find name like batch_\${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
+	find . -name 'batch_*.guppy.fast5mod_guppy2sam.bam' -maxdepth 1 |
 	  parallel -j8 -N4095 -m --files samtools merge -u - |
 	  parallel --xargs samtools merge -@8 total.meth.bam {}
 
-	samtools sort total.meth.bam
-	samtools index total.meth.bam
+	### sort is not used
+	### samtools sort -@ ${params.processors * 8} total.meth.bam
+	samtools index -@ ${params.processors * 8} total.meth.bam
 	echo "samtool index is done"
 
-	tar -czf ${params.dsname}.guppy.combined.bam.tar.gz total.meth.bam*
+	tar -czf ${params.dsname}.guppy_fast5mod.combined.bam.tar.gz total.meth.bam*
 
 	## Ref: https://github.com/nanoporetech/medaka/issues/177
 	for i in {1..22} X Y
@@ -619,10 +679,10 @@ process GuppyComb {
 			--regions chr\$i
 	done
 
-	cat  meth.*.tsv > total.meth.tsv
-	sort -V -k1,1 -k2,2 total.meth.tsv > ${params.dsname}.Guppy.combine.tsv
+	cat  meth.*.tsv > ${params.dsname}.Guppy_fast5mod.combine.tsv
+	## sort -V -k1,1 -k2,2 total.meth.tsv > ${params.dsname}.Guppy.combine.tsv
 
-	gzip ${params.dsname}.Guppy.combine.tsv
+	gzip ${params.dsname}.Guppy_fast5mod.combine.tsv
 
 	## Clean
 	rm -f meth.chr*.tsv total.meth.tsv
@@ -758,7 +818,7 @@ process DpmodComb {
 
 
 deepsignal_combine_out_ch.concat(tombo_combine_out_ch,megalodon_combine_out_ch, \
-	nanopolish_combine_out_ch,deepmod_combine_out_ch.flatten(), guppy_combine_out_ch)
+	nanopolish_combine_out_ch,deepmod_combine_out_ch.flatten(), guppy_fast5mod_combine_out_ch, guppy_gcf52ref_combine_out_ch)
 	.toSortedList()
 	.into { readlevel_in_ch; sitelevel_in_ch }
 

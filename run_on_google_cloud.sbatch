@@ -16,6 +16,24 @@ date;hostname;pwd
 # Get nextflow and install
 # curl -s https://get.nextflow.io | bash
 
+########################################################################
+########################################################################
+########################################################################
+### Run Test pipeline on google cloud
+## working and outputs dir
+WORK_DIR_BUCKET=gs://jax-nanopore-01-project-data/TestData-work
+OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/TestData-ouputs
+
+## Run test demo
+nextflow run main.nf -profile gls -resume\
+	-w ${WORK_DIR_BUCKET} \
+	--input inputs/test.demo.filelist.txt \
+	--outputDir ${OUTPUT_DIR_BUCKET} \
+	--midDiskSize "100 GB" --highDiskSize "120 GB"
+
+exit 0
+
+
 chrName=${1:-"CHR1_3"}
 inputFileListName=${2:-"inputs/na12878.google_cloud.chr1-3.filelist.txt"}
 
@@ -37,22 +55,7 @@ resumeOptions="-resume"
 
 exit 0
 
-########################################################################
-########################################################################
-########################################################################
-### Run Test pipeline on google cloud
-## working and outputs dir
-WORK_DIR_BUCKET=gs://jax-nanopore-01-project-data/TestData-work
-OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/TestData-ouputs
 
-## Run test demo
-nextflow run main.nf -profile gls -resume\
-	-w ${WORK_DIR_BUCKET} \
-	--input inputs/test.demo.filelist.txt \
-	--outputDir ${OUTPUT_DIR_BUCKET} \
-	--midDiskSize "100 GB" --highDiskSize "120 GB"
-
-exit 0
 
 ########################################################################
 ########################################################################

@@ -4,7 +4,7 @@ LABEL description="Nanocompare project" \
 RUN apt-get update -y \
   && DEBIAN_FRONTEND=noninteractive apt-get install procps git curl -y \
   && rm -rf /var/lib/apt/lists/*
- 
+
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y software-properties-common && \
     curl -O http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-ubuntu1604.pin && \
