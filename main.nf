@@ -655,7 +655,7 @@ process GuppyComb {
 	refGenome=${params.referenceGenome}
 
 	## gcf52ref ways
-	cat batch_*.guppy.gcf52ref_per_read.tsv.gz > ${params.dsname}.Guppy_gcf52ref.combined.tsv.gz
+	cat batch_*.guppy.gcf52ref_per_read.tsv.gz > ${params.dsname}.Guppy_gcf52ref.combine.tsv.gz
 	echo "### gcf52ref combine DONE"
 
 	## fast5mod ways combine
