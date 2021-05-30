@@ -214,7 +214,7 @@ basecall_out_ch
 process Guppy {
 	tag "${fast5_dir.baseName}"
 	label 'with_gpus'
-	disk { (((fast5_tar_size as long)*2.5 as long) >> 30).GB    +   150.GB * task.attempt }
+	disk { (((fast5_tar_size as long)*2.2 as long) >> 30).GB    +   150.GB * task.attempt }
 
 	input:
 	file fast5_dir from untar_out_ch2
@@ -319,7 +319,7 @@ process GuppyExtract {
 process Megalodon {
 	tag "${fast5_dir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/megalodon" , mode: "copy"
-	disk { (((fast5_tar_size as long)*2.5 as long) >> 30).GB    +   150.GB * task.attempt }
+	disk { (((fast5_tar_size as long)*2.2 as long) >> 30).GB    +   150.GB * task.attempt }
 	//label 'with_gpus'
 
 	input:
@@ -371,7 +371,7 @@ process Megalodon {
 process Resquiggle {
 	tag "${basecallIndir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle" , mode: "copy", pattern: "${basecallIndir.baseName}.resquiggle.run.log"
-	disk { (((file_size as long)*2.7 as long) >> 30).GB    +   150.GB * task.attempt }
+	disk { (((file_size as long)*2.2 as long) >> 30).GB    +   150.GB * task.attempt }
 
 	input:
 	file basecallIndir from resquiggle_in_ch
