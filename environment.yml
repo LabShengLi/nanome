@@ -1,4 +1,4 @@
-name: nanocompare
+name: nanome
 channels:
   - bioconda
   - r

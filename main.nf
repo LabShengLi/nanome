@@ -210,6 +210,8 @@ process Guppy {
 	tag "${fast5_dir.baseName}"
 	label 'with_gpus'
 
+	disk { 900.GB   +   150.GB * task.attempt }
+
 	input:
 	file fast5_dir from untar_out_ch2
 	each file(reference_genome) from reference_genome_ch1
@@ -272,6 +274,7 @@ process GuppyExtract {
 
 	python gcf52ref/scripts/extract_methylation_fast5.py \
 		-p ${params.processors * 8} ${guppy_meth_dir}/workspace/*.fast5
+
 
 	python gcf52ref/scripts/extract_methylation_from_rocks.py \
 		-d base_mods.rocksdb \

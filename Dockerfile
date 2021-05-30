@@ -1,5 +1,5 @@
 FROM genomicpariscentre/guppy-gpu:4.2.2
-LABEL description="Nanocompare project" \
+LABEL description="Nanome project by Li Lab at JAX" \
       author="yang.liu@jax.org"
 RUN apt-get update -y \
   && DEBIAN_FRONTEND=noninteractive apt-get install procps git curl -y \
@@ -27,9 +27,9 @@ COPY environment.yml /
 RUN conda env create -f environment.yml && conda clean -a
 
 # Make RUN commands use the new environment:
-SHELL ["conda", "run", "-n", "nanocompare", "/bin/bash", "-c"]
+SHELL ["conda", "run", "-n", "nanome", "/bin/bash", "-c"]
 
-ENV PATH /opt/conda/envs/nanocompare/bin:$PATH
+ENV PATH /opt/conda/envs/nanome/bin:$PATH
 USER root
 WORKDIR /data/
 
