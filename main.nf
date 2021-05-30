@@ -152,7 +152,7 @@ tar_filesize_ch.into{ tar_filesize_ch1; tar_filesize_ch2; tar_filesize_ch3}
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
 	tag "${fast5_dir.baseName}"
-	disk { ((fast5_tar_size*2 as long) >> 30).GB   +   150.GB * task.attempt }
+	disk { (((fast5_tar_size as long)*2.2 as long)>>30).GB   +   150.GB * task.attempt }
 	label 'with_gpus'
 
 	input:
@@ -169,7 +169,7 @@ process Basecall {
 	params.runBasecall
 
 	"""
-	echo ${fast5_tar_size}
+	echo "Disk size is set to: ${  (((fast5_tar_size as long)*2.2 as long) >> 30).GB   +   150.GB * task.attempt }"
 
 	mkdir -p ${fast5_dir.baseName}.basecalled
 	guppy_basecaller --input_path ${fast5_dir} \
@@ -214,7 +214,7 @@ basecall_out_ch
 process Guppy {
 	tag "${fast5_dir.baseName}"
 	label 'with_gpus'
-	disk { ((fast5_tar_size*2.4 as long) >> 30).GB   +   150.GB * task.attempt }
+	disk { (((fast5_tar_size as long)*2.5 as long) >> 30).GB    +   150.GB * task.attempt }
 
 	input:
 	file fast5_dir from untar_out_ch2
@@ -229,6 +229,8 @@ process Guppy {
 	params.runMethcall && params.runGuppy
 
 	"""
+	echo "Disk size is set to: ${  (((fast5_tar_size as long)*2.5 as long)>>30).GB    +   150.GB * task.attempt }"
+
 	refGenome=${params.referenceGenome}
 
 	mkdir -p ${fast5_dir.baseName}.methcalled
@@ -317,7 +319,7 @@ process GuppyExtract {
 process Megalodon {
 	tag "${fast5_dir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/megalodon" , mode: "copy"
-	disk { ((fast5_tar_size*2.4 as long) >> 30).GB   +   150.GB * task.attempt }
+	disk { (((fast5_tar_size as long)*2.5 as long) >> 30).GB    +   150.GB * task.attempt }
 	//label 'with_gpus'
 
 	input:
@@ -333,6 +335,7 @@ process Megalodon {
 	params.runMethcall && params.runMegalodon
 
 	"""
+	echo "Disk size is set to: ${ (((fast5_tar_size as long)*2.5 as long) >> 30).GB    +   150.GB * task.attempt }"
 	refGenome=${params.referenceGenome}
 
 	## Get megalodon model dir
@@ -368,7 +371,7 @@ process Megalodon {
 process Resquiggle {
 	tag "${basecallIndir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle" , mode: "copy", pattern: "${basecallIndir.baseName}.resquiggle.run.log"
-	disk { ((file_size * 2.4 as long) >> 30).GB   +   150.GB * task.attempt }
+	disk { (((file_size as long)*2.7 as long) >> 30).GB    +   150.GB * task.attempt }
 
 	input:
 	file basecallIndir from resquiggle_in_ch
@@ -383,6 +386,8 @@ process Resquiggle {
 	params.runMethcall && params.runResquiggle
 
 	"""
+	echo "Disk size is set to: ${  (((file_size as long)*2.7 as long) >> 30).GB    +   150.GB * task.attempt }"
+
 	refGenome=${params.referenceGenome}
 
 	### copy basecall workspace files, due to tombo resquiggle modify base folder
