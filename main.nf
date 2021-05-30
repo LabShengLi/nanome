@@ -101,6 +101,7 @@ process Untar {
 
 	output:
 	file "${fast5_tar.baseName}.untar" into untar_out_ch
+	val "${fast5_tar.size()}" into tar_filesize_ch
 
 	"""
 	echo "### File: ${fast5_tar}"
@@ -146,26 +147,30 @@ process Untar {
 
 // Untar output will be used by basecall, megalodon and guppy
 untar_out_ch.into{ untar_out_ch1; untar_out_ch2; untar_out_ch3 }
-
+tar_filesize_ch.into{ tar_filesize_ch1; tar_filesize_ch2; tar_filesize_ch3}
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
 	tag "${fast5_dir.baseName}"
-	disk { params.highDiskSize   +   150.GB * task.attempt }
+	disk { ((fast5_tar_size*2 as long) >> 30).GB   +   150.GB * task.attempt }
 	label 'with_gpus'
 
 	input:
 	file fast5_dir from untar_out_ch1
 	each file("*") from ch_utils1
+	val fast5_tar_size from tar_filesize_ch1
 
 	output:
 	file "${fast5_dir.baseName}.basecalled" into basecall_out_ch  // try to fix the christina proposed problems
 	file "${fast5_dir.baseName}.basecalled/${fast5_dir.baseName}-sequencing_summary.txt" into qc_ch
+	val fast5_tar_size into basecall_filesize_ch
 
 	when:
 	params.runBasecall
 
 	"""
+	echo ${fast5_tar_size}
+
 	mkdir -p ${fast5_dir.baseName}.basecalled
 	guppy_basecaller --input_path ${fast5_dir} \
 		--save_path "${fast5_dir.baseName}.basecalled" \
@@ -209,11 +214,13 @@ basecall_out_ch
 process Guppy {
 	tag "${fast5_dir.baseName}"
 	label 'with_gpus'
-	disk { params.highDiskSize   +   150.GB * task.attempt }
+	disk { ((fast5_tar_size*2.4 as long) >> 30).GB   +   150.GB * task.attempt }
 
 	input:
 	file fast5_dir from untar_out_ch2
 	each file(reference_genome) from reference_genome_ch1
+	val fast5_tar_size from tar_filesize_ch2
+
 
 	output:
 	file "${fast5_dir.baseName}.methcalled" into guppy_methdir_out_ch
@@ -310,10 +317,12 @@ process GuppyExtract {
 process Megalodon {
 	tag "${fast5_dir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/megalodon" , mode: "copy"
+	disk { ((fast5_tar_size*2.4 as long) >> 30).GB   +   150.GB * task.attempt }
 	//label 'with_gpus'
 
 	input:
 	file fast5_dir from untar_out_ch3
+	val fast5_tar_size from tar_filesize_ch3
 	each file(reference_genome) from reference_genome_ch2
 	each file (megalodonModelTar) from Channel.fromPath(params.megalodon_model_tar)
 
@@ -359,11 +368,12 @@ process Megalodon {
 process Resquiggle {
 	tag "${basecallIndir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle" , mode: "copy", pattern: "${basecallIndir.baseName}.resquiggle.run.log"
-	disk { params.highDiskSize   +   150.GB * task.attempt }
+	disk { ((file_size * 2.4 as long) >> 30).GB   +   150.GB * task.attempt }
 
 	input:
 	file basecallIndir from resquiggle_in_ch
 	each file(reference_genome) from reference_genome_ch3
+	val file_size from basecall_filesize_ch
 
 	output:
 	file "${basecallIndir.baseName}.resquiggle" into resquiggle_out_ch
