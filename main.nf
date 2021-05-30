@@ -151,7 +151,7 @@ untar_out_ch.into{ untar_out_ch1; untar_out_ch2; untar_out_ch3 }
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
 	tag "${fast5_dir.baseName}"
-
+	disk { params.highDiskSize   +   150.GB * task.attempt }
 	label 'with_gpus'
 
 	input:
@@ -209,8 +209,7 @@ basecall_out_ch
 process Guppy {
 	tag "${fast5_dir.baseName}"
 	label 'with_gpus'
-
-	disk { 900.GB   +   150.GB * task.attempt }
+	disk { params.highDiskSize   +   150.GB * task.attempt }
 
 	input:
 	file fast5_dir from untar_out_ch2
@@ -360,6 +359,7 @@ process Megalodon {
 process Resquiggle {
 	tag "${basecallIndir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle" , mode: "copy", pattern: "${basecallIndir.baseName}.resquiggle.run.log"
+	disk { params.highDiskSize   +   150.GB * task.attempt }
 
 	input:
 	file basecallIndir from resquiggle_in_ch
