@@ -93,7 +93,7 @@ process Untar {
 
 	// Disk size is determined by input size, if failed, increase the size
 	// base size=50.GB, plus 1.2 times of input, plus attempts increase 150.GB each time even due to 14-prempted
-	disk { 50.GB + ((fast5_tar.size()*1.5 as long) >> 30).GB   +   150.GB * task.attempt }
+	disk { 150.GB + ((fast5_tar.size()*1.5 as long) >> 30).GB   +   20.GB * task.attempt }
 
 	input:
 	file fast5_tar from fast5_tar_ch4 // using staging, large file suggest firstly using data transfer
@@ -152,7 +152,7 @@ tar_filesize_ch.into{ tar_filesize_ch1; tar_filesize_ch2; tar_filesize_ch3}
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
 	tag "${fast5_dir.baseName}"
-	disk { (((fast5_tar_size as long)*2.2 as long)>>30).GB   +   150.GB * task.attempt }
+	disk { (((fast5_tar_size as long)*2.2 as long)>>30).GB   + 100.GB +  20.GB * task.attempt }
 	label 'with_gpus'
 
 	input:
@@ -214,7 +214,7 @@ basecall_out_ch
 process Guppy {
 	tag "${fast5_dir.baseName}"
 	label 'with_gpus'
-	disk { (((fast5_tar_size as long)*2.2 as long) >> 30).GB    +   150.GB * task.attempt }
+	disk { (((fast5_tar_size as long)*2.2 as long) >> 30).GB    + 100.GB +   20.GB * task.attempt }
 
 	input:
 	file fast5_dir from untar_out_ch2
@@ -319,7 +319,7 @@ process GuppyExtract {
 process Megalodon {
 	tag "${fast5_dir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/megalodon" , mode: "copy"
-	disk { (((fast5_tar_size as long)*2.2 as long) >> 30).GB    +   150.GB * task.attempt }
+	disk { (((fast5_tar_size as long)*2.2 as long) >> 30).GB    + 100.GB +   20.GB * task.attempt }
 	//label 'with_gpus'
 
 	input:
@@ -371,7 +371,7 @@ process Megalodon {
 process Resquiggle {
 	tag "${basecallIndir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle" , mode: "copy", pattern: "${basecallIndir.baseName}.resquiggle.run.log"
-	disk { (((file_size as long)*2.2 as long) >> 30).GB    +   150.GB * task.attempt }
+	disk { (((file_size as long)*2.2 as long) >> 30).GB    + 100.GB +   20.GB * task.attempt }
 
 	input:
 	file basecallIndir from resquiggle_in_ch
