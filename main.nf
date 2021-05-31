@@ -39,7 +39,7 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 process EnvCheck {
 	tag 'EnvCheck'
 	errorStrategy 'terminate'
-	label 'with_gpus'
+//	label 'with_gpus'
 
 	input:
 	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
@@ -153,7 +153,7 @@ tar_filesize_ch.into{ tar_filesize_ch1; tar_filesize_ch2; tar_filesize_ch3}
 process Basecall {
 	tag "${fast5_dir.baseName}"
 	disk { (((fast5_tar_size as long)*2.2 as long)>>30).GB   + 100.GB +  20.GB * task.attempt }
-	label 'with_gpus'
+//	label 'with_gpus'
 
 	input:
 	file fast5_dir from untar_out_ch1
@@ -213,7 +213,7 @@ basecall_out_ch
 // methylation calling for Guppy
 process Guppy {
 	tag "${fast5_dir.baseName}"
-	label 'with_gpus'
+//	label 'with_gpus'
 	disk { (((fast5_tar_size as long)*2.2 as long) >> 30).GB    + 100.GB +   20.GB * task.attempt }
 
 	input:
