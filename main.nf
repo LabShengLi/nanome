@@ -169,7 +169,7 @@ process Basecall {
 	params.runBasecall
 
 	"""
-	echo "Disk size is set to: ${  (((fast5_tar_size as long)*2.2 as long) >> 30).GB   +   + 100.GB +  20.GB * task.attempt }"
+	echo "Disk size is set to: ${  (((fast5_tar_size as long)*2.2 as long) >> 30).GB   + 100.GB +  20.GB * task.attempt }"
 
 	mkdir -p ${fast5_dir.baseName}.basecalled
 	guppy_basecaller --input_path ${fast5_dir} \
@@ -335,7 +335,7 @@ process Megalodon {
 	params.runMethcall && params.runMegalodon
 
 	"""
-	echo "Disk size is set to: ${ (((fast5_tar_size as long)*2.5 as long) >> 30).GB    +   150.GB * task.attempt }"
+	echo "Disk size is set to: ${ (((fast5_tar_size as long)*2.5 as long) >> 30).GB   + 100.GB +   20.GB * task.attempt }"
 	refGenome=${params.referenceGenome}
 
 	## Get megalodon model dir
@@ -387,7 +387,7 @@ process Resquiggle {
 	params.runMethcall && params.runResquiggle
 
 	"""
-	echo "Disk size is set to: ${  (((file_size as long)*2.7 as long) >> 30).GB    +   150.GB * task.attempt }"
+	echo "Disk size is set to: ${  (((file_size as long)*2.7 as long) >> 30).GB      + 100.GB +   20.GB * task.attempt }"
 
 	refGenome=${params.referenceGenome}
 
