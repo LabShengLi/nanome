@@ -132,13 +132,13 @@ process Untar {
 		python utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir --processor ${params.processors * 8}
 	fi
 
-	mv untarDir1 "${fast5_tar.baseName}".untar
+	mv untarDir1 ${fast5_tar.baseName}.untar
 
 	## Clean unused files
 	rm -rf untarDir
 
 	echo "Total fast5 files:"
-	find "${fast5_tar.baseName}".untar \
+	find ${fast5_tar.baseName}.untar \
 		-name "*.fast5" | wc -l
 	echo "### Untar DONE"
 	"""
@@ -441,7 +441,7 @@ process DeepSignal {
 		--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 		--reference_path \${refGenome} \
 		--corrected_group ${params.resquiggleCorrectedGroup} \
-		--nproc ${params.processors  * 8} \
+		--nproc ${params.processors  * 4} \
 		--is_gpu ${params.DeepSignal_isgpu}
 
 	gzip batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv
