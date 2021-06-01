@@ -363,6 +363,7 @@ process Megalodon {
 	### mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_dir.baseName}.per_read_modified_base_calls.txt
 	sed '1d' megalodon_results/per_read_modified_base_calls.txt > batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt
 	gzip batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt
+	echo "### Megalodon DONE"
 	"""
 }
 
@@ -444,6 +445,8 @@ process DeepSignal {
 		--is_gpu ${params.DeepSignal_isgpu}
 
 	gzip batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv
+
+	echo "### DeepSignal methylation DONE"
 	"""
 }
 
@@ -540,6 +543,8 @@ process DeepMod {
 			--basecall_1d ${params.BasecallGroupName} ###	--mod_cluster 0 is not work
 
 	tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
+
+	echo "### DeepMod methylation DONE"
 	"""
 }
 
