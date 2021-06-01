@@ -93,7 +93,7 @@ process Untar {
 
 	// Disk size is determined by input size, if failed, increase the size
 	// base size=50.GB, plus 1.2 times of input, plus attempts increase 150.GB each time even due to 14-prempted
-	disk { 150.GB + ((fast5_tar.size()*1.5 as long) >> 30).GB   +   20.GB * task.attempt }
+	disk {((fast5_tar.size() * 2.0 as long) >> 30).GB   +  150.GB +   20.GB * task.attempt }
 
 	input:
 	file fast5_tar from fast5_tar_ch4 // using staging, large file suggest firstly using data transfer
@@ -105,7 +105,7 @@ process Untar {
 
 	"""
 	echo "### File: ${fast5_tar}"
-	echo "Disk size is set to: ${  50.GB + ((fast5_tar.size()*1.5 as long) >> 30).GB   +   150.GB * task.attempt }"
+	echo "Disk size is set to: ${  ((fast5_tar.size() * 2.0 as long) >> 30).GB   +   150.GB +   20.GB * task.attempt }"
 
 	mkdir -p untarDir
 	infn="${fast5_tar}"
@@ -169,7 +169,7 @@ process Basecall {
 	params.runBasecall
 
 	"""
-	echo "Disk size is set to: ${  (((fast5_tar_size as long)*2.2 as long) >> 30).GB   +   150.GB * task.attempt }"
+	echo "Disk size is set to: ${  (((fast5_tar_size as long)*2.2 as long) >> 30).GB   +   + 100.GB +  20.GB * task.attempt }"
 
 	mkdir -p ${fast5_dir.baseName}.basecalled
 	guppy_basecaller --input_path ${fast5_dir} \
@@ -229,7 +229,7 @@ process Guppy {
 	params.runMethcall && params.runGuppy
 
 	"""
-	echo "Disk size is set to: ${  (((fast5_tar_size as long)*2.5 as long)>>30).GB    +   150.GB * task.attempt }"
+	echo "Disk size is set to: ${  (((fast5_tar_size as long)*2.5 as long)>>30).GB    +   100.GB +   20.GB * task.attempt  }"
 
 	refGenome=${params.referenceGenome}
 
