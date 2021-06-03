@@ -30,6 +30,7 @@ nextflow run main.nf -profile gls -resume \
 	--input inputs/test.demo.filelist.txt \
 	--outputDir ${OUTPUT_DIR_BUCKET} \
 	--midDiskSize "150 GB" --highDiskSize "180 GB" \
+	--runCombine false \
 	-with-report -with-timeline -with-trace -with-dag
 
 exit 0

@@ -280,19 +280,24 @@ process GuppyExtract {
 
 	echo "### gcf52ref minimap2 alignment is done!"
 
-	python gcf52ref/scripts/extract_methylation_fast5.py \
-		-p ${params.processors * 8} ${guppy_meth_dir}/workspace/*.fast5
+	##python gcf52ref/scripts/extract_methylation_fast5.py \
+	##	-p ${params.processors * 8} ${guppy_meth_dir}/workspace/*.fast5
 
+	## Modified version, support dir input, not all fast5 files (too long arguments)
+	python utils/extract_methylation_fast5_support_dir.py \
+		-p ${params.processors * 8} ${guppy_meth_dir}/workspace
+	echo "### gcf52ref extract to db DONE"
 
 	python gcf52ref/scripts/extract_methylation_from_rocks.py \
 		-d base_mods.rocksdb \
 		-a gcf52ref.batch.${guppy_meth_dir.baseName}.bam \
 		-r \${refGenome} \
 		-o batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
+	echo "### gcf52ref extract to tsv DONE"
 
 	sed -i '1d' batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
 	gzip batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
-	echo "### gcf52ref DONE"
+	echo "### gcf52ref all DONE"
 
 	## fast5mod ways
 	FAST5PATH=${guppy_meth_dir}/workspace
@@ -303,7 +308,6 @@ process GuppyExtract {
 		| samtools sort -@ ${params.processors * 8} | \
 		samtools view -b -@ ${params.processors * 8} > \${OUTBAM}
 
-	### samtools sort -@ ${params.processors * 8}  \${OUTBAM}
 	samtools index -@ ${params.processors * 8}  \${OUTBAM}
 
 	tar -czf outbatch_${guppy_meth_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz \
@@ -623,7 +627,7 @@ process DpSigComb {
 	file "${params.dsname}.DeepSignal.combine.tsv.gz" into deepsignal_combine_out_ch
 
 	when:
-	x.size() >= 1
+	x.size() >= 1 && params.runCombine
 
 	"""
 	touch ${params.dsname}.DeepSignal.combine.tsv.gz
@@ -645,7 +649,7 @@ process TomboComb {
 	file "${params.dsname}.Tombo.combine.bed.gz" into tombo_combine_out_ch
 
 	when:
-	x.size() >= 1
+	x.size() >= 1 && params.runCombine
 
 	"""
 	touch ${params.dsname}.Tombo.combine.bed.gz
@@ -671,7 +675,7 @@ process GuppyComb {
 	file "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz" into guppy_combine_raw_out_ch
 
 	when:
-	x.size() >= 1
+	x.size() >= 1 && params.runCombine
 
 	"""
 	refGenome=${params.referenceGenome}
@@ -725,7 +729,7 @@ process MgldnComb {
 	file "${params.dsname}.Megalodon.combine.bed.gz" into megalodon_combine_out_ch
 
 	when:
-	x.size() >= 1
+	x.size() >= 1  && params.runCombine
 
 	"""
 	> ${params.dsname}.Megalodon.combine.bed.gz
@@ -753,7 +757,7 @@ process NplshComb {
 	file "${params.dsname}.Nanopolish.combine.tsv.gz" into nanopolish_combine_out_ch
 
 	when:
-	x.size() >= 1
+	x.size() >= 1 && params.runCombine
 
 	"""
 	> ${params.dsname}.Nanopolish.combine.tsv.gz
@@ -786,7 +790,7 @@ process DpmodComb {
 	file "${params.dsname}.DeepMod.modoutputs.combined.tar.gz" into deepmod_modoutput_combine_ch
 
 	when:
-	x.size() >= 1
+	x.size() >= 1 && params.runCombine
 
 	"""
 	wget ${params.DeepModGithub} --no-verbose
