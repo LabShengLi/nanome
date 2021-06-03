@@ -597,7 +597,7 @@ process Nanopolish {
 	echo "### samtools finished"
 	echo "### Alignment step DONE"
 
-	nanopolish call-methylation -t ${params.processors * 8} -r \${fastqNoDupFile} \
+	nanopolish call-methylation -t ${params.processors * 2} -r \${fastqNoDupFile} \
 		-b \${bamFileName} -g \${refGenome} > tmp.tsv
 
 	sed '1d' tmp.tsv > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
