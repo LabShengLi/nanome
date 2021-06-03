@@ -710,8 +710,12 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
         if strand not in ['+', '-']:
             raise Exception(f"gcf52ref format strand parse error, row={row}")
 
-        start = row.iloc[start_col]
-        ## TODO: if start point to 0-based CG at +, and CG's G at - strand
+        start = int(row.iloc[start_col])
+        # Correct the coordinates into 1-based
+        if strand == "+":
+            start = start + baseFormat
+        elif strand == "-":
+            start = start + baseFormat + 1
 
         log_lik_methylated = float(row.iloc[log_lik_methylated_col])
         prob_methylated = 10 ** log_lik_methylated
