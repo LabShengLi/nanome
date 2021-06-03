@@ -29,10 +29,9 @@ ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo', 'DeepMod']
 # TODO: change to nanopolish, megalodon and deepsignal order later
 Top3ToolNameList = ['DeepSignal', 'Nanopolish', 'Megalodon']
 
-ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod.C', 'DeepMod.Cluster', 'Megalodon', 'Megalodon.ZW', 'Guppy', 'Guppy.ZW']
-BGTruthEncodeList = ['bismark', 'encode']  # 'bed',
-# ToolsColorList = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal'])
+ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod.C', 'DeepMod.Cluster', 'Megalodon', 'Megalodon.ZW', 'Guppy', 'Guppy.ZW', 'Guppy.gcf52ref']
 
+BGTruthEncodeList = ['bismark', 'encode']  # 'bed',
 
 ToolsColorList = ["#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442"]
 ToolsColorList = ["#56B4E9", "#CC79A7", "#999999", "#E69F00", "#009E73"]

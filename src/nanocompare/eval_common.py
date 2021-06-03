@@ -668,6 +668,77 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
     return cpgDict
 
 
+def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand_col=1, start_col=2, log_lik_methylated_col=6, cutoff=(0.25, 0.5), header=None, sep='\t', output_first=False, include_score=False, filterChr=humanChrSet):
+    """
+    Parse gcf52ref format
+    Sample file:
+    #chromosome     strand  start   end     read_name       log_lik_ratio   log_lik_methylated      log_lik_unmethylated    num_calling_strands     num_motifs      sequence
+    chr1    -       11343976        11343977        9d47a371-d2af-4104-8097-c5c159035f1e    0.847   -0.0561 -0.903  1       1
+           CG
+    chr1    -       11343987        11343988        9d47a371-d2af-4104-8097-c5c159035f1e    -1.8    -1.81   -0.00512        1
+           1       CG
+    chr1    -       11344167        11344168        9d47a371-d2af-4104-8097-c5c159035f1e    2.41    0.0     -2.41   1       1
+           CG
+    chr1    -       11344218        11344219        9d47a371-d2af-4104-8097-c5c159035f1e    1.8     -0.00512        -1.81   1
+           1       CG
+    :param infileName:
+    :param baseFormat:
+    :param chr_col:
+    :param strand_col:
+    :param start_col:
+    :param log_lik_methylated_col:
+    :param cutoff:
+    :param sep:
+    :param output_first:
+    :param include_score:
+    :param siteLevel:
+    :param filterChr:
+    :return:
+    """
+    df = pd.read_csv(infileName, sep=sep, header=header)
+    logger.info(df)
+
+    ## extract cpg into dict return object
+    cpgDict = defaultdict(list)
+    call_cnt = methcall_cnt = 0
+    for index, row in df.iterrows():
+        chr = row.iloc[chr_col]
+        if chr not in filterChr:  # Filter out interested chrs
+            continue
+
+        strand = row.iloc[strand_col]
+        if strand not in ['+', '-']:
+            raise Exception(f"gcf52ref format strand parse error, row={row}")
+
+        start = row.iloc[start_col]
+        ## TODO: if start point to 0-based CG at +, and CG's G at - strand
+
+        log_lik_methylated = float(row.iloc[log_lik_methylated_col])
+        prob_methylated = 10 ** log_lik_methylated
+
+        if (prob_methylated > cutoff[0]) and (prob_methylated < cutoff[1]):
+            continue
+
+        if prob_methylated <= cutoff[0]:
+            meth_indicator = 0
+        else:
+            meth_indicator = 1
+
+        call_cnt += 1
+        methcall_cnt += meth_indicator
+
+        key = (chr, int(start), strand)
+
+        if include_score:  # For read-level include scores
+            cpgDict[key].append((meth_indicator, prob_methylated))
+        else:  # For read-level no scores
+            cpgDict[key].append(meth_indicator)
+
+    unmethcall_cnt = call_cnt - methcall_cnt
+    logger.info(f"###\timportPredictions_Guppy SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
+    return cpgDict
+
+
 def readLevelToSiteLevelWithCov(ontDict, minCov=1, toolname="Tool"):
     """
     Convert read level dict into site level dict.
@@ -1205,6 +1276,8 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
         calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel, filterChr=filterChr)
     elif encode == 'Guppy.ZW':  # import Guppy itself tool results
         calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel, filterChr=filterChr, formatSource="Guppy.ZW")
+    elif encode == 'Guppy.gcf52ref':  # import Guppy gcf52ref read level results
+        calls0 = importPredictions_Guppy_gcf52ref(infn, baseFormat=baseFormat, include_score=include_score, filterChr=filterChr, header=None)
     else:
         raise Exception(f'Not support {encode} for file {infn} now')
 
@@ -2015,6 +2088,8 @@ def get_cache_filename(infn, params):
         cachefn += f'.inscore.{params["include_score"]}'
         if params["encode"] == 'DeepMod.Cluster':
             cachefn += f'.siteLevel.{params["siteLevel"]}'
+        elif params["encode"] in ['Guppy', 'Guppy.ZW']:
+            cachefn += f'.siteLevel.{params["siteLevel"]}'
     elif params["encode"] in BGTruthEncodeList:
         cachefn += f'.cov.{params["cov"]}.incov.{params["includeCov"]}'
     else:
@@ -2329,6 +2404,6 @@ if __name__ == '__main__':
     set_log_debug_level()
     import os
 
-    infn = os.path.join("/projects/li-lab/Nanopore_compare/data/K562", "K562.Guppy.per_site.52.140.sorted.bed")
-    ret = importPredictions_Guppy(infn, formatSource="ziwei", output_first=True)
+    infn = os.path.join("/projects/li-lab/yang/workspace/nano-compare/work/57/1025320ba288135e68cef72cd582c8", "batch_demo2.fast5.reads.tar.guppy.gcf52ref_per_read.tsv.gz")
+    ret = importPredictions_Guppy_gcf52ref(infn, header=0)
     logger.info("DONE")
