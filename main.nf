@@ -104,9 +104,6 @@ process Untar {
 	val "${fast5_tar.size()}" into tar_filesize_ch
 
 	"""
-	echo "### File: ${fast5_tar}"
-	echo "Disk size is set to: ${  ((fast5_tar.size() * 2.0 as long) >> 30).GB   +   150.GB +   20.GB * task.attempt }"
-
 	mkdir -p untarDir
 	infn="${fast5_tar}"
 	if [ "\${infn##*.}" == "tar" ]; then ### deal with tar
@@ -169,8 +166,6 @@ process Basecall {
 	params.runBasecall
 
 	"""
-	echo "Disk size is set to: ${  (((fast5_tar_size as long)*2.2 as long) >> 30).GB   + 100.GB +  20.GB * task.attempt }"
-
 	mkdir -p ${fast5_dir.baseName}.basecalled
 	guppy_basecaller --input_path ${fast5_dir} \
 		--save_path "${fast5_dir.baseName}.basecalled" \
@@ -229,8 +224,6 @@ process Guppy {
 	params.runMethcall && params.runGuppy
 
 	"""
-	echo "Disk size is set to: ${  (((fast5_tar_size as long)*2.5 as long)>>30).GB    +   100.GB +   20.GB * task.attempt  }"
-
 	refGenome=${params.referenceGenome}
 
 	mkdir -p ${fast5_dir.baseName}.methcalled
@@ -339,7 +332,6 @@ process Megalodon {
 	params.runMethcall && params.runMegalodon
 
 	"""
-	echo "Disk size is set to: ${ (((fast5_tar_size as long)*2.5 as long) >> 30).GB   + 100.GB +   20.GB * task.attempt }"
 	refGenome=${params.referenceGenome}
 
 	## Get megalodon model dir
@@ -391,8 +383,6 @@ process Resquiggle {
 	params.runMethcall && params.runResquiggle
 
 	"""
-	echo "Disk size is set to: ${  (((file_size as long)*2.7 as long) >> 30).GB      + 100.GB +   20.GB * task.attempt }"
-
 	refGenome=${params.referenceGenome}
 
 	### copy basecall workspace files, due to tombo resquiggle modify base folder
@@ -404,7 +394,7 @@ process Resquiggle {
 	### Now set processes=1 or 4, to avoid Tombo bug of BrokenPipeError, it is very fast even set to 1.
 	### ref: https://github.com/nanoporetech/tombo/issues/139
 	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
-	tombo resquiggle --dna --processes ${params.processors * 8} \
+	tombo resquiggle --dna --processes ${params.processors * 2} \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} --overwrite \
 		${basecallIndir.baseName}.resquiggle/workspace \${refGenome} &>  ${basecallIndir.baseName}.resquiggle.run.log
@@ -486,7 +476,7 @@ process Tombo {
 		batch_${resquiggleDir.baseName} \
 		--per-read-statistics-basename batch_${resquiggleDir.baseName} \
 		--alternate-bases CpG \
-		--processes ${params.processors * 8} \
+		--processes ${params.processors * 2} \
 		--corrected-group ${params.resquiggleCorrectedGroup} --multiprocess-region-size 1000 &> ${resquiggleDir.baseName}.tombo.run.log
 
 	if grep -q "BrokenPipeError: \\[Errno 32\\] Broken pipe" ${resquiggleDir.baseName}.tombo.run.log; then
