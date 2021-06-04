@@ -15,6 +15,7 @@ src/nanocompare/.DS_Store
 /figures/
 /result/
 /plots/
+/log/
 work
 /outputs/
 hello.nf
@@ -26,5 +27,8 @@ src/nanocompare/methcall
 /script/
 /test/
 .Rhistory
-
+dag.dot*
+report.html*
+timeline.html*
+trace.txt*
 ## maintained by ly
