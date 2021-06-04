@@ -150,7 +150,6 @@ tar_filesize_ch.into{ tar_filesize_ch1; tar_filesize_ch2; tar_filesize_ch3}
 process Basecall {
 	tag "${fast5_dir.baseName}"
 	disk { (((fast5_tar_size as long)*2.2 as long)>>30).GB   + 100.GB +  20.GB * task.attempt }
-//	label 'with_gpus'
 
 	input:
 	file fast5_dir from untar_out_ch1
@@ -208,14 +207,12 @@ basecall_out_ch
 // methylation calling for Guppy
 process Guppy {
 	tag "${fast5_dir.baseName}"
-//	label 'with_gpus'
 	disk { (((fast5_tar_size as long)*2.2 as long) >> 30).GB    + 100.GB +   20.GB * task.attempt }
 
 	input:
 	file fast5_dir from untar_out_ch2
 	each file(reference_genome) from reference_genome_ch1
 	val fast5_tar_size from tar_filesize_ch2
-
 
 	output:
 	file "${fast5_dir.baseName}.methcalled" into guppy_methdir_out_ch
@@ -263,22 +260,19 @@ process GuppyExtract {
 	refGenome=${params.referenceGenome}
 
 	## gcf52ref ways
-	minimap2 -t ${params.processors*8} -a -x map-ont \${refGenome} \
+	minimap2 -t ${params.processors*2} -a -x map-ont \${refGenome} \
 		${guppy_meth_dir}/*.fastq | \
-		samtools sort -@ ${params.processors * 8} \
+		samtools sort -@ ${params.processors * 2} \
 		-T tmp -o gcf52ref.batch.${guppy_meth_dir.baseName}.bam
 
-	samtools index -@ ${params.processors * 8} \
+	samtools index -@ ${params.processors * 2} \
 		gcf52ref.batch.${guppy_meth_dir.baseName}.bam
 
 	echo "### gcf52ref minimap2 alignment is done!"
 
-	##python gcf52ref/scripts/extract_methylation_fast5.py \
-	##	-p ${params.processors * 8} ${guppy_meth_dir}/workspace/*.fast5
-
 	## Modified version, support dir input, not all fast5 files (too long arguments)
 	python utils/extract_methylation_fast5_support_dir.py \
-		-p ${params.processors * 8} ${guppy_meth_dir}/workspace
+		-p ${params.processors * 2} ${guppy_meth_dir}/workspace
 	echo "### gcf52ref extract to db DONE"
 
 	python gcf52ref/scripts/extract_methylation_from_rocks.py \
@@ -298,10 +292,10 @@ process GuppyExtract {
 
 	fast5mod guppy2sam \${FAST5PATH} --reference \${refGenome} \
 		--workers 74 --recursive --quiet \
-		| samtools sort -@ ${params.processors * 8} | \
-		samtools view -b -@ ${params.processors * 8} > \${OUTBAM}
+		| samtools sort -@ ${params.processors * 2} | \
+		samtools view -b -@ ${params.processors * 2} > \${OUTBAM}
 
-	samtools index -@ ${params.processors * 8}  \${OUTBAM}
+	samtools index -@ ${params.processors * 2}  \${OUTBAM}
 
 	tar -czf outbatch_${guppy_meth_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz \
 		batch_${guppy_meth_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
@@ -354,7 +348,7 @@ process Megalodon {
 		--mod-output-formats bedmethyl wiggle \
 		--write-mods-text \
 		--write-mod-log-probs \
-		--processes ${params.processors * 3} ${params.megalodonGPUOptions}
+		--processes ${params.processors * 2} ${params.megalodonGPUOptions}
 
 	### mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_dir.baseName}.per_read_modified_base_calls.txt
 	sed '1d' megalodon_results/per_read_modified_base_calls.txt > batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt
@@ -533,8 +527,8 @@ process DeepMod {
 			--wrkBase ${basecallDir}/workspace --Ref \${refGenome} \
 			--Base C --modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
 			--FileID batch_${basecallDir.baseName}_num \
-			--threads 128 ${params.DeepModMoveOptions}  \
-			--basecall_1d ${params.BasecallGroupName} ###	--mod_cluster 0 is not work
+			--threads ${params.processors * 4} ${params.DeepModMoveOptions}  \
+			--basecall_1d ${params.BasecallGroupName}
 
 	tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
 
@@ -579,11 +573,11 @@ process Nanopolish {
 	# Index the raw read with fastq
 	nanopolish index -d ${basecallDir}/workspace \${fastqNoDupFile}
 
-	minimap2 -t ${params.processors*8} -a -x map-ont \${refGenome} \${fastqNoDupFile} | \
-		samtools sort -@ ${params.processors * 8} -T tmp -o \${bamFileName}
+	minimap2 -t ${params.processors*2} -a -x map-ont \${refGenome} \${fastqNoDupFile} | \
+		samtools sort -@ ${params.processors * 2} -T tmp -o \${bamFileName}
 	echo "### minimap2 finished"
 
-	samtools index -@ ${params.processors * 8}  \${bamFileName}
+	samtools index -@ ${params.processors * 2}  \${bamFileName}
 	echo "### samtools finished"
 	echo "### Alignment step DONE"
 
