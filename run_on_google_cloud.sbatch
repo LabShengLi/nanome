@@ -53,7 +53,8 @@ resumeOptions="-resume"
 	-w ${WORK_DIR_BUCKET} \
 	--outputDir ${OUTPUT_DIR_BUCKET} \
 	--input ${inputFileListName} \
-	-with-report -with-timeline -with-trace -with-dag
+	-with-report -with-timeline -with-trace -with-dag \
+	--runGuppy false --runResquiggle false --runDeepMod false
 
 exit 0
 

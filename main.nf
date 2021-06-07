@@ -279,11 +279,12 @@ process GuppyExtract {
 		-d base_mods.rocksdb \
 		-a gcf52ref.batch.${guppy_meth_dir.baseName}.bam \
 		-r \${refGenome} \
-		-o batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
+		-o tmp.batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
 	echo "### gcf52ref extract to tsv DONE"
 
-	sed -i '1d' batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
-	gzip batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
+	sed '1d' tmp.batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv > \
+		batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
+	gzip -f batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
 	echo "### gcf52ref all DONE"
 
 	## fast5mod ways
@@ -573,19 +574,19 @@ process Nanopolish {
 	# Index the raw read with fastq
 	nanopolish index -d ${basecallDir}/workspace \${fastqNoDupFile}
 
-	minimap2 -t ${params.processors*2} -a -x map-ont \${refGenome} \${fastqNoDupFile} | \
-		samtools sort -@ ${params.processors * 2} -T tmp -o \${bamFileName}
+	minimap2 -t ${params.processors} -a -x map-ont \${refGenome} \${fastqNoDupFile} | \
+		samtools sort -@ ${params.processors} -T tmp -o \${bamFileName}
 	echo "### minimap2 finished"
 
-	samtools index -@ ${params.processors * 2}  \${bamFileName}
+	samtools index -@ ${params.processors}  \${bamFileName}
 	echo "### samtools finished"
 	echo "### Alignment step DONE"
 
-	nanopolish call-methylation -t ${params.processors * 2} -r \${fastqNoDupFile} \
+	nanopolish call-methylation -t ${params.processors} -r \${fastqNoDupFile} \
 		-b \${bamFileName} -g \${refGenome} > tmp.tsv
 
 	sed '1d' tmp.tsv > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
-	gzip batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
+	gzip -f batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
 	echo "### Nanopolish methylation calling DONE"
 	"""
 }

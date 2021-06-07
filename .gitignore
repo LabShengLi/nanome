@@ -16,6 +16,7 @@ src/nanocompare/.DS_Store
 /result/
 /plots/
 /log/
+/debug/
 work
 /outputs/
 hello.nf

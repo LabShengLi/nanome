@@ -9,14 +9,14 @@
 #SBATCH -o %x.%j.out
 #SBATCH -e %x.%j.err
 
-## Build Docker for pipeline on google cloud
+## Build Docker for pipeline on google cloud or quay.io
 
 set -x
 
-
 exit 0
 
-## Build docker image for public usage
+## Build docker image for public usage on quay.io
+
 git clone https://github.com/liuyangzzu/nanome.git
 cd nanome
 
