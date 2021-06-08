@@ -772,7 +772,6 @@ process DpmodComb {
 
 	output:
 	file "${params.dsname}.*.combine.bed.gz" into deepmod_combine_out_ch
-	//file "${params.dsname}.DeepMod.modoutputs.combined.tar.gz" into deepmod_modoutput_combine_ch
 	file "${params.dsname}.deepmod.all-chrs.C.bed.tar.gz" into deepmod_combine_c_all_chrs_ch
 	file "${params.dsname}.deepmod_clusterCpG.all-chrs.C.bed.tar.gz" into deepmod_combine_c_cluster_all_chrs_ch
 
