@@ -282,9 +282,8 @@ process GuppyExtract {
 		-o tmp.batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
 	echo "### gcf52ref extract to tsv DONE"
 
-	sed '1d' tmp.batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv > \
-		batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
-	gzip -f batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
+	tail -n +2 tmp.batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv | gzip > \
+		batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz
 	echo "### gcf52ref all DONE"
 
 	## fast5mod ways
@@ -352,8 +351,9 @@ process Megalodon {
 		--processes ${params.processors * 2} ${params.megalodonGPUOptions}
 
 	### mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_dir.baseName}.per_read_modified_base_calls.txt
-	sed '1d' megalodon_results/per_read_modified_base_calls.txt > batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt
-	gzip batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt
+	tail -n +2 megalodon_results/per_read_modified_base_calls.txt | gzip > \
+		batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt.gz
+	### gzip batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt
 	echo "### Megalodon DONE"
 	"""
 }
@@ -585,8 +585,8 @@ process Nanopolish {
 	nanopolish call-methylation -t ${params.processors} -r \${fastqNoDupFile} \
 		-b \${bamFileName} -g \${refGenome} > tmp.tsv
 
-	sed '1d' tmp.tsv > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
-	gzip -f batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
+	tail -n +2 tmp.tsv | gzip > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
+	### gzip -f batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
 	echo "### Nanopolish methylation calling DONE"
 	"""
 }
@@ -772,7 +772,9 @@ process DpmodComb {
 
 	output:
 	file "${params.dsname}.*.combine.bed.gz" into deepmod_combine_out_ch
-	file "${params.dsname}.DeepMod.modoutputs.combined.tar.gz" into deepmod_modoutput_combine_ch
+	//file "${params.dsname}.DeepMod.modoutputs.combined.tar.gz" into deepmod_modoutput_combine_ch
+	file "${params.dsname}.deepmod.all-chrs.C.bed.tar.gz" into deepmod_combine_c_all_chrs_ch
+	file "${params.dsname}.deepmod_clusterCpG.all-chrs.C.bed.tar.gz" into deepmod_combine_c_cluster_all_chrs_ch
 
 	when:
 	x.size() >= 1 && params.runCombine
@@ -822,7 +824,10 @@ process DpmodComb {
 		gzip ${params.dsname}.DeepModC_clusterCpG.combine.bed
 	fi
 
-	tar -czf ${params.dsname}.DeepMod.modoutputs.combined.tar.gz indir/
+	tar -czf ${params.dsname}.deepmod.all-chrs.C.bed.tar.gz indir/${params.dsname}.deepmod.chr*.C.bed
+	tar -czf ${params.dsname}.deepmod_clusterCpG.all-chrs.C.bed.tar.gz indir/${params.dsname}.deepmod_clusterCpG.chr*.C.bed
+
+	### tar -czf ${params.dsname}.DeepMod.modoutputs.combined.tar.gz indir/
 	echo "###DeepMod combine DONE###"
 	"""
 }
