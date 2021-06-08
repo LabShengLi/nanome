@@ -92,7 +92,6 @@ process Untar {
 	tag "${fast5_tar.baseName}"
 
 	// Disk size is determined by input size, if failed, increase the size
-	// base size=50.GB, plus 1.2 times of input, plus attempts increase 150.GB each time even due to 14-prempted
 	disk {((fast5_tar.size() * 2.0 as long) >> 30).GB   +  150.GB +   20.GB * task.attempt }
 
 	input:
@@ -311,7 +310,6 @@ process Megalodon {
 	tag "${fast5_dir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/megalodon" , mode: "copy"
 	disk { (((fast5_tar_size as long)*2.2 as long) >> 30).GB    + 100.GB +   20.GB * task.attempt }
-	//label 'with_gpus'
 
 	input:
 	file fast5_dir from untar_out_ch3
@@ -407,7 +405,6 @@ resquiggle_out_ch.into { deepsignal_in_ch; tombo_in_ch }
 process DeepSignal {
 	tag "${indir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepsignal" , mode: "copy"
-	//label 'with_gpus'
 
 	input:
 	file indir from deepsignal_in_ch // ttt is [basecallDir, reference_genome]
@@ -497,8 +494,6 @@ process Tombo {
 process DeepMod {
 	tag "${basecallDir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod" , mode: "copy", pattern: "batch_${basecallDir.baseName}_num.tar.gz"
-	// using cpu save costs, DeepMod running slower on gpu machine
-	//label 'with_gpus'
 
 	input:
 	each file(reference_genome) from reference_genome_ch6
