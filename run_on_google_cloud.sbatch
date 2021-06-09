@@ -48,14 +48,13 @@ WORK_DIR_BUCKET=gs://jax-nanopore-01-project-data/NA12878-${chrName}-work
 OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/NA12878-${chrName}-ouputs
 resumeOptions="-resume"
 
-## Run NA12878 datasets
+## Run NA12878 datasets, only DeepMod, save time
 ./nextflow run main.nf -profile gls -config conf/NA12878.config ${resumeOptions} \
 	-w ${WORK_DIR_BUCKET} \
 	--outputDir ${OUTPUT_DIR_BUCKET} \
 	--input ${inputFileListName} \
-	-with-report -with-timeline -with-trace -with-dag
-	###--runGuppy false --runResquiggle false --runDeepMod false
-
+	-with-report -with-timeline -with-trace -with-dag \
+	--runGuppy false --runResquiggle false --runMegalodon false --runNanopolish false
 exit 0
 
 
