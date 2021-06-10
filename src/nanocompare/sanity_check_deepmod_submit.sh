@@ -15,6 +15,15 @@ bgTruth="/projects/li-lab/Nanopore_compare/data/NA12878/ENCFF279HCL.bed.gz;/proj
 parser="encode"
 otherOptions="--enable-cache --using-cache"
 
+
+Dataset="NA12878-CHR4"
+chrName="chr4"
+DeepMod_calls="DeepMod.C:/projects/li-lab/Nanopore_compare/data/NA12878/CHR4/NA12878-CHR4.deepmod.C.combine.bed.gz DeepMod.Cluster:/projects/li-lab/Nanopore_compare/data/NA12878/CHR4/NA12878-CHR4.deepmod.C_clusterCpG.combine.bed.gz"
+
+sbatch sanity_check_deepmod.sbatch ${Dataset} ${chrName} "${DeepMod_calls}" ${bgTruth} ${parser} 0.5 "${otherOptions}"
+
+exit 0
+
 #sbatch sanity_check_deepmod.sbatch ${Dataset} ${chrName} "${DeepMod_calls}" ${bgTruth} ${parser} 0.5 "--is-report --enable-cache --using-cache"
 
 sbatch sanity_check_deepmod.sbatch ${Dataset} ${chrName} "${DeepMod_calls}" ${bgTruth} ${parser} 0.5 "${otherOptions}"

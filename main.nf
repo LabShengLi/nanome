@@ -581,7 +581,6 @@ process Nanopolish {
 		-b \${bamFileName} -g \${refGenome} > tmp.tsv
 
 	tail -n +2 tmp.tsv | gzip > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
-	### gzip -f batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv
 	echo "### Nanopolish methylation calling DONE"
 	"""
 }
@@ -604,16 +603,14 @@ process DpSigComb {
 	file x from deepsignal_combine_in_ch
 
 	output:
-	file "${params.dsname}.DeepSignal.combine.tsv.gz" into deepsignal_combine_out_ch
+	file "${params.dsname}.deepsignal.call_mods.combine.tsv.gz" into deepsignal_combine_out_ch
 
 	when:
 	x.size() >= 1 && params.runCombine
 
 	"""
-	touch ${params.dsname}.DeepSignal.combine.tsv.gz
-	cat ${x} > ${params.dsname}.DeepSignal.combine.tsv.gz
-
-	## gzip ${params.dsname}.DeepSignal.combine.tsv
+	touch ${params.dsname}.deepsignal.call_mods.combine.tsv.gz
+	cat ${x} > ${params.dsname}.deepsignal.call_mods.combine.tsv.gz
 	"""
 }
 
@@ -626,16 +623,14 @@ process TomboComb {
 	file x from tombo_combine_in_ch // list of tombo bed files
 
 	output:
-	file "${params.dsname}.Tombo.combine.bed.gz" into tombo_combine_out_ch
+	file "${params.dsname}.tombo.perReadsStats.combined.bed.gz" into tombo_combine_out_ch
 
 	when:
 	x.size() >= 1 && params.runCombine
 
 	"""
-	touch ${params.dsname}.Tombo.combine.bed.gz
-	cat ${x} > ${params.dsname}.Tombo.combine.bed.gz
-
-	## gzip ${params.dsname}.Tombo.combine.bed
+	touch ${params.dsname}.tombo.perReadsStats.combined.bed.gz
+	cat ${x} > ${params.dsname}.tombo.perReadsStats.combined.bed.gz
 	"""
 }
 
@@ -650,8 +645,8 @@ process GuppyComb {
 	each file(reference_genome) from reference_genome_ch8
 
 	output:
-	file "${params.dsname}.Guppy_fast5mod.combine.tsv.gz" into guppy_fast5mod_combine_out_ch
-	file "${params.dsname}.Guppy_gcf52ref.combine.tsv.gz" into guppy_gcf52ref_combine_out_ch
+	file "${params.dsname}.guppy.fast5mod_site_level.combine.tsv.gz" into guppy_fast5mod_combine_out_ch
+	file "${params.dsname}.guppy.gcf52ref_read_level.combine.tsv.gz" into guppy_gcf52ref_combine_out_ch
 	file "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz" into guppy_combine_raw_out_ch
 
 	when:
@@ -661,7 +656,7 @@ process GuppyComb {
 	refGenome=${params.referenceGenome}
 
 	## gcf52ref ways
-	cat batch_*.guppy.gcf52ref_per_read.tsv.gz > ${params.dsname}.Guppy_gcf52ref.combine.tsv.gz
+	cat batch_*.guppy.gcf52ref_per_read.tsv.gz > ${params.dsname}.guppy.gcf52ref_read_level.combine.tsv.gz
 	echo "### gcf52ref combine DONE"
 
 	## fast5mod ways combine
@@ -685,9 +680,7 @@ process GuppyComb {
 			--regions chr\$i
 	done
 
-	cat  meth.*.tsv > ${params.dsname}.Guppy_fast5mod.combine.tsv
-	## sort -V -k1,1 -k2,2 total.meth.tsv > ${params.dsname}.Guppy.combine.tsv
-
+	cat  meth.*.tsv > ${params.dsname}.guppy.fast5mod_site_level.combine.tsv.gz
 	gzip ${params.dsname}.Guppy_fast5mod.combine.tsv
 
 	## Clean
@@ -706,22 +699,18 @@ process MgldnComb {
 	file x from megalodon_combine_in_ch
 
 	output:
-	file "${params.dsname}.Megalodon.combine.bed.gz" into megalodon_combine_out_ch
+	file "${params.dsname}.megalodon.per_read.combine.bed.gz" into megalodon_combine_out_ch
 
 	when:
 	x.size() >= 1  && params.runCombine
 
 	"""
-	> ${params.dsname}.Megalodon.combine.bed.gz
-
-	##sed -n '1p' \${fn} > ${params.dsname}.Megalodon.combine.bed
+	> ${params.dsname}.megalodon.per_read.combine.bed.gz
 
 	for fn in $x
 	do
-		cat \${fn} >> ${params.dsname}.Megalodon.combine.bed.gz
+		cat \${fn} >> ${params.dsname}.megalodon.per_read.combine.bed.gz
 	done
-
-	##gzip ${params.dsname}.Megalodon.combine.bed
 	"""
 }
 
@@ -734,22 +723,18 @@ process NplshComb {
 	file x from nanopolish_combine_in_ch
 
 	output:
-	file "${params.dsname}.Nanopolish.combine.tsv.gz" into nanopolish_combine_out_ch
+	file "${params.dsname}.nanopolish.methylation_calls.combine.tsv.gz" into nanopolish_combine_out_ch
 
 	when:
 	x.size() >= 1 && params.runCombine
 
 	"""
-	> ${params.dsname}.Nanopolish.combine.tsv.gz
-
-	## sed -n '1p' \${fn} > ${params.dsname}.Nanopolish.combine.tsv
+	> ${params.dsname}.nanopolish.methylation_calls.combine.tsv.gz
 
 	for fn in $x
 	do
-		sed '1d' \${fn} >> ${params.dsname}.Nanopolish.combine.tsv.gz
+		cat \${fn} >> ${params.dsname}.nanopolish.methylation_calls.combine.tsv.gz
 	done
-
-	## gzip ${params.dsname}.Nanopolish.combine.tsv
 	"""
 }
 
@@ -757,8 +742,6 @@ process NplshComb {
 // Combine DeepMod runs' all results together
 process DpmodComb {
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
-	//save costs, DeepMod running slow even in gpu
-	//label 'with_gpus'  // cluster model need gpu
 
 	input:
 	file x from deepmod_combine_in_ch
@@ -766,7 +749,7 @@ process DpmodComb {
 	each file("*") from ch_utils6
 
 	output:
-	file "${params.dsname}.*.combine.bed.gz" into deepmod_combine_out_ch
+	file "${params.dsname}.deepmod.*.combine.bed.gz" into deepmod_combine_out_ch
 	file "${params.dsname}.deepmod.all-chrs.C.bed.tar.gz" into deepmod_combine_c_all_chrs_ch
 	file "${params.dsname}.deepmod_clusterCpG.all-chrs.C.bed.tar.gz" into deepmod_combine_c_cluster_all_chrs_ch
 
@@ -792,14 +775,14 @@ process DpmodComb {
 	python \${DeepModProjectDir}/DeepMod_tools/sum_chr_mod.py \
 		indir/ C ${params.dsname}.deepmod ${params.DeepModSumChrSet}
 
-	> ${params.dsname}.DeepModC.combine.bed
+	> ${params.dsname}.deepmod.C.combine.bed
 
 	## Note: for ecoli data, no chr*, but N*
 	for f in \$(ls -1 indir/${params.dsname}.deepmod.*.C.bed)
 	do
-	  cat \$f >> ${params.dsname}.DeepModC.combine.bed
+	  cat \$f >> ${params.dsname}.deepmod.C.combine.bed
 	done
-	gzip ${params.dsname}.DeepModC.combine.bed
+	gzip ${params.dsname}.deepmod.C.combine.bed
 
 	if [[ "${params.dataType}" == "human" ]] ; then
 		## Only apply to human genome
@@ -809,19 +792,17 @@ process DpmodComb {
 			./C \
 			\${DeepModProjectDir}/train_deepmod/${params.clusterDeepModModel} || true
 
-		> ${params.dsname}.DeepModC_clusterCpG.combine.bed
+		> ${params.dsname}.deepmod.C_clusterCpG.combine.bed
 		for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
 		do
-		  cat \$f >> ${params.dsname}.DeepModC_clusterCpG.combine.bed
+		  cat \$f >> ${params.dsname}.deepmod.C_clusterCpG.combine.bed
 		done
 
-		gzip ${params.dsname}.DeepModC_clusterCpG.combine.bed
+		gzip ${params.dsname}.deepmod.C_clusterCpG.combine.bed
 	fi
 
 	tar -czf ${params.dsname}.deepmod.all-chrs.C.bed.tar.gz indir/${params.dsname}.deepmod.chr*.C.bed
 	tar -czf ${params.dsname}.deepmod_clusterCpG.all-chrs.C.bed.tar.gz indir/${params.dsname}.deepmod_clusterCpG.chr*.C.bed
-
-	### tar -czf ${params.dsname}.DeepMod.modoutputs.combined.tar.gz indir/
 	echo "###DeepMod combine DONE###"
 	"""
 }
