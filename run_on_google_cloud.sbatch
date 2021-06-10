@@ -19,6 +19,8 @@ date;hostname;pwd
 chrName=${1:-"CHR1_3"}
 inputFileListName=${2:-"inputs/na12878.google_cloud.chr1-3.filelist.txt"}
 
+dsname=NA12878-${chrName}
+
 ########################################################################
 ########################################################################
 ########################################################################
@@ -31,6 +33,7 @@ resumeOptions="-resume"
 ## Run NA12878 datasets, only DeepMod, save time
 ./nextflow run main.nf -profile gls -config conf/NA12878.config ${resumeOptions} \
 	-w ${WORK_DIR_BUCKET} \
+	--dsname ${dsname} \
 	--outputDir ${OUTPUT_DIR_BUCKET} \
 	--input ${inputFileListName} \
 	-with-report -with-timeline -with-trace -with-dag \
