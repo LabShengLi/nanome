@@ -310,7 +310,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, strand_col=5, me
     return cpgDict
 
 
-def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-3, meth_freq_col=-2, meth_cov_col=-1, baseFormat=1, sep=' ', output_first=False, include_score=False, filterChr=humanChrSet, total_cols=13):
+def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-3, meth_freq_col=-2, meth_cov_col=-1, baseFormat=1, sep=' ', output_first=False, include_score=False, siteLevel=False, filterChr=humanChrSet, total_cols=13):
     """
     DeepMod RNN results format
     We treate input as 0-based format for start col.
@@ -397,9 +397,11 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
 
         meth_freq = methReads / coverage
 
-        if include_score:
+        if siteLevel:  ## Site level return
+            methCallsList = (methReads / coverage, coverage)
+        elif include_score:  ## Read level return with score
             methCallsList = [(1, 1.0)] * methReads + [(0, 0.0)] * (coverage - methReads)
-        else:
+        else:  ## Read level return only class predictions
             methCallsList = [1] * methReads + [0] * (coverage - methReads)
 
         if key in cpgDict:
@@ -829,8 +831,12 @@ def importGroundTruth_from_Encode(infileName, chr_col=0, start_col=1, methfreq_c
     chr1    9943228 9943229 K562_Rep3_RRBS  168     -       10003286        10003287        0,255,0 168     1
     chr1    9943239 9943240 K562_Rep3_RRBS  1       +       10003297        10003298        0,255,0 1       0
     chr1    9943240 9943241 K562_Rep3_RRBS  168     -       10003298        10003299        0,255,0 168     4
-    """
 
+    Return:
+        key -> [meth_freq, meth_cov] in which,
+                key:    (chr, start, strand)
+                value:  meth_frep in [0,1], meth_cov is int
+    """
     cpgDict = {}
 
     infile = open_file_gz_or_txt(infileName)
@@ -1254,7 +1260,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     logger.debug(f"Start load encode={encode}, infn={infn}")
 
     if enable_cache and using_cache:
-        ret = check_cache_available(infn=infn, encode=encode, baseFormat=baseFormat, include_score=include_score, deepmod_cluster_freq_cov_format=siteLevel)
+        ret = check_cache_available(infn=infn, encode=encode, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel)
         if ret:
             logger.debug(f'Import {encode} finished!\n')
             return ret
@@ -1275,7 +1281,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     elif encode == 'DeepMod.Cluster':  # import DeepMod Clustered output for site level, itself tool reports by cluster, key->value={'freq':68, 'cov':10}
         calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat, siteLevel=siteLevel, include_score=include_score, filterChr=filterChr)
     elif encode == 'DeepMod.C':  # import DeepMod itself tool for read level
-        calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, include_score=include_score, filterChr=filterChr)
+        calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, siteLevel=siteLevel, include_score=include_score, filterChr=filterChr)
     elif encode == 'Guppy':  # import Guppy itself tool results
         calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel, filterChr=filterChr)
     elif encode == 'Guppy.ZW':  # import Guppy itself tool results
@@ -2090,7 +2096,7 @@ def get_cache_filename(infn, params):
 
     if params["encode"] in ToolEncodeList:
         cachefn += f'.inscore.{params["include_score"]}'
-        if params["encode"] == 'DeepMod.Cluster':
+        if params["encode"] in ['DeepMod.Cluster', 'DeepMod.C']:
             cachefn += f'.siteLevel.{params["siteLevel"]}'
         elif params["encode"] in ['Guppy', 'Guppy.ZW']:
             cachefn += f'.siteLevel.{params["siteLevel"]}'
@@ -2256,6 +2262,55 @@ def combineBGTruthList(bgTruthList, covCutoff=1):
         raise Exception(f'len={len(bgTruthList)}, is not support now.')
 
     return unionBGTruth
+
+
+def combineBGTruthListUsingDeepMod(bgTruthList, freqCutoff=0.9, covCutoff=1, filterChrs=humanChrSet):
+    """
+    Combine two replicates by DeepMod, >90% in both as methylated, =0% in both as unmethylated, remove others
+    :param bgTruthList:
+    :return:
+    """
+    jointBGTruth = {}  # intersection of CpG sites
+    if len(bgTruthList) == 2:  # sites must in both replicates, and
+        unionSet = set(bgTruthList[0].keys()).union(set(bgTruthList[1].keys()))
+        jointSet = set(bgTruthList[0].keys()).intersection(set(bgTruthList[1].keys()))
+        logger.debug(f'unionSet={len(unionSet):,}, jointSet={len(jointSet):,}, cov_cutoff={covCutoff}, for chr={filterChrs}')
+        methCnt = unmethCnt = 0
+
+        totalCnt = 0
+
+        for key in jointSet:
+            if key[0] not in filterChrs:
+                continue
+            totalCnt += 1
+            cov1 = bgTruthList[0][key][1]
+            methfreq1 = bgTruthList[0][key][0]
+
+            cov2 = bgTruthList[1][key][1]
+            methfreq2 = bgTruthList[1][key][0]
+
+            if cov1 < covCutoff or cov2 < covCutoff:
+                continue  # ensure both >= cov_cutoff
+
+            if 1e-5 <= methfreq1 < freqCutoff or 1e-5 <= methfreq2 < freqCutoff:
+                continue  # ensure both >90% or =0%
+
+            if methfreq1 < 1e-5 and methfreq2 < 1e-5:
+                meth_indicator = 0
+                unmethCnt += 1
+            elif methfreq1 >= freqCutoff and methfreq2 >= freqCutoff:
+                meth_indicator = 1
+                methCnt += 1
+            else:
+                continue
+
+            jointBGTruth[key] = (meth_indicator, min(cov1, cov2))
+        logger.debug(f'chrSet={filterChrs} with cov-cutoff={covCutoff}, jointBGTruth={len(jointBGTruth):,}, unmethCnt={unmethCnt:,}, methCnt={methCnt:,}, not-used={totalCnt - methCnt - unmethCnt:,}')
+    else:
+        raise Exception(f'len={len(bgTruthList)}, is not support now.')
+
+    ret = (methCnt, unmethCnt, totalCnt - methCnt - unmethCnt)
+    return jointBGTruth, ret
 
 
 def filter_cpgkeys_using_bedfile(cpgKeys, bedFileName):
