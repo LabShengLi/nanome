@@ -750,8 +750,9 @@ process DpmodComb {
 
 	output:
 	file "${params.dsname}.deepmod.*.combine.bed.gz" into deepmod_combine_out_ch
-	file "${params.dsname}.deepmod.all-chrs.C.bed.tar.gz" into deepmod_combine_c_all_chrs_ch
-	file "${params.dsname}.deepmod_clusterCpG.all-chrs.C.bed.tar.gz" into deepmod_combine_c_cluster_all_chrs_ch
+	file "${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz" into deepmod_combine_sum_chrs_mod_ch
+	file "${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz" into deepmod_combine_c_cluster_all_chrs_ch
+	file "${params.dsname}.deepmod.all_batch.C.bed.tar.gz" into deepmod_combine_all_batch_c_ch
 
 	when:
 	x.size() >= 1 && params.runCombine
@@ -801,8 +802,10 @@ process DpmodComb {
 		gzip ${params.dsname}.deepmod.C_clusterCpG.combine.bed
 	fi
 
-	tar -czf ${params.dsname}.deepmod.all-chrs.C.bed.tar.gz indir/${params.dsname}.deepmod.chr*.C.bed
-	tar -czf ${params.dsname}.deepmod_clusterCpG.all-chrs.C.bed.tar.gz indir/${params.dsname}.deepmod_clusterCpG.chr*.C.bed
+	tar -czf ${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz indir/${params.dsname}.deepmod.chr*.C.bed
+	tar -czf ${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz indir/${params.dsname}.deepmod_clusterCpG.chr*.C.bed
+	tar -czf ${params.dsname}.deepmod.all_batch.C.bed.tar.gz indir/batch_*_num/mod_pos.chr*.C.bed
+
 	echo "###DeepMod combine DONE###"
 	"""
 }
