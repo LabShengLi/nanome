@@ -18,7 +18,7 @@ echo ${NanoCompareDir}
 
 Dataset=${1:-"NA12878-CHR20"}
 chrName=${2:-"chr20"}
-DeepMod_calls=${3:-"/projects/li-lab/Nanopore_compare/data/NA12878/CHR20/NA12878CHR20.deepmod.C.combine.bed.gz"}
+callList=${3:-"/projects/li-lab/Nanopore_compare/data/NA12878/CHR20/NA12878CHR20.deepmod.C.combine.bed.gz"}
 bgTruth=${4:-"/projects/li-lab/Nanopore_compare/data/NA12878/ENCFF279HCL.bed.gz;/projects/li-lab/Nanopore_compare/data/NA12878/ENCFF835NTC.bed.gz"}
 parser=${5:-"encode"}
 predThreshold=${6:-"0.5"}
@@ -26,7 +26,7 @@ otherOptions=${7:-"--enable-cache --using-cache"}
 
 pythonFn=sanity_check_deepmod.py
 
-PYTHONPATH=${NanoCompareDir}/src python ${pythonFn} --calls ${DeepMod_calls} \
+PYTHONPATH=${NanoCompareDir}/src python ${pythonFn} --calls ${callList} \
 	--chr ${chrName} --bgtruth ${parser}:${bgTruth} \
-	--runid SanityCheck-${Dataset}-DeepMod --dsname ${Dataset} \
+	--runid SanityCheck-${Dataset} --dsname ${Dataset} \
 	--baseFormat 1 ${otherOptions} --processors 10 --pred-threshold ${predThreshold} #--toolcov-cutoff 3 --min-bgtruth-cov 5  --enable-cache --using-cache #--enable-cache --using-cache # cutoff=3 is reasonable now

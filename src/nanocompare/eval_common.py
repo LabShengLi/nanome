@@ -672,7 +672,7 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
 
 def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand_col=1, start_col=2, log_lik_methylated_col=6, cutoff=(0.25, 0.5), header=None, sep='\t', output_first=False, include_score=False, filterChr=humanChrSet):
     """
-    Parse gcf52ref format
+    Parse read level gcf52ref format
     Sample file:
     #chromosome     strand  start   end     read_name       log_lik_ratio   log_lik_methylated      log_lik_unmethylated    num_calling_strands     num_motifs      sequence
     chr1    -       11343976        11343977        9d47a371-d2af-4104-8097-c5c159035f1e    0.847   -0.0561 -0.903  1       1
@@ -768,8 +768,8 @@ def readLevelToSiteLevelWithCov(ontDict, minCov=1, toolname="Tool"):
     for cpg in ontDict:
         if type(ontDict[cpg]) == list:  # value is [0 0 1 1 0 ...]
             if len(ontDict[cpg]) >= minCov:
-                result[cpg] = [sum(ontDict[cpg]) / float(len(ontDict[cpg])), len(ontDict[cpg])]
-        elif type(ontDict[cpg]) == tuple:  # Used by DeepMod_cluster results, value is (freq, cov) {'freq':0.72, 'cov':18}
+                result[cpg] = (sum(ontDict[cpg]) / float(len(ontDict[cpg])), len(ontDict[cpg]))
+        elif type(ontDict[cpg]) == tuple:  # Used by DeepMod_cluster results, value is (freq, cov)
             if ontDict[cpg][1] >= minCov:  # no change for site level format, e.g., DeepModCluster
                 result[cpg] = ontDict[cpg]
         else:

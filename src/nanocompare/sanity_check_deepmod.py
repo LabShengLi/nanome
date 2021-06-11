@@ -216,7 +216,11 @@ if __name__ == '__main__':
         callencode, callfn = callstr.split(':')
         if len(callfn) == 0:
             continue
-        ontCall = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, siteLevel=True)
+        if callencode in ['DeepMod.C', 'DeepMod.Cluster', 'Guppy']:
+            ontCall = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, siteLevel=True)
+        else:
+            ontCall_ReadLevel = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, siteLevel=False)
+            ontCall = readLevelToSiteLevelWithCov(ontCall_ReadLevel, minCov=1, toolname=callencode)
 
         ret = report_performance_deepmod(ontCall, bgTruth5, threshold=args.pred_threshold)
         logger.info(f'ret={ret}')
@@ -226,7 +230,7 @@ if __name__ == '__main__':
     df = pd.DataFrame(dataset)
     logger.info(df)
 
-    outfn = os.path.join(out_dir, f'DeepMod.performance.chr_{args.chr}.threshold_{args.pred_threshold:.2f}.csv')
+    outfn = os.path.join(out_dir, f'sanity.check.using.DeepMod.paper.performance.chr_{args.chr}.threshold_{args.pred_threshold:.2f}.csv')
     df.to_csv(outfn)
     logger.info(f'save to {outfn}')
 
