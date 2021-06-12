@@ -5,6 +5,7 @@ Sanity check NA12878 for DeepMod.
 """
 import argparse
 from multiprocessing import Pool
+
 from nanocompare.eval_common import *
 
 
@@ -194,7 +195,7 @@ if __name__ == '__main__':
 
         ret = report_performance_deepmod(ontCall, bgTruth5, threshold=args.pred_threshold)
         logger.info(f'ret={ret}')
-        ret.update({"chr": args.chr, "tool": callencode})
+        ret.update({"coverage": 5, "chr": args.chr, "tool": callencode})
         dataset.append(ret)
 
     df = pd.DataFrame(dataset)

@@ -19,6 +19,7 @@ parser="encode"
 baseDir="/projects/li-lab/Nanopore_compare/data/NA12878"
 
 DeepModFileName=$(find ${baseDir} -type f -name "*${chrTagname}.deepmod.C.combine*gz")
+## DeepModFileName=
 DeepModClusterFileName=$(find ${baseDir} -type f -name "*${chrTagname}.deepmod.C_clusterCpG.combine.*.gz")
 NanopolishFileName=$(find ${baseDir} -type f -name "*${chrTagname}.nanopolish.*.combine.*.gz")
 DeepSignalFileName=$(find ${baseDir} -type f -name "*${chrTagname}.deepsignal.*.combine.*.gz")
