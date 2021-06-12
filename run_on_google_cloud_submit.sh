@@ -3,8 +3,11 @@
 set -x
 date;hostname;pwd
 
+chrName=${1:-"chr1"}
+chrUpperName=${chrName^^}
+sbatch --job-name=NA12878.${chrName}.nxf.gcloud run_on_google_cloud.sbatch ${chrUpperName} inputs/na12878.google_cloud.${chrName}.filelist.txt
 
-sbatch --job-name=NA12878.chr6.nxf.gcloud run_on_google_cloud.sbatch CHR6 inputs/na12878.google_cloud.chr6.filelist.txt
+exit 0
 
 #sbatch --job-name=NA12878.chr1-3_f3.nxf.gcloud run_on_google_cloud.sbatch CHR1_3_f3 inputs/na12878.google_cloud.chr1-3_f3.filelist.txt
 
