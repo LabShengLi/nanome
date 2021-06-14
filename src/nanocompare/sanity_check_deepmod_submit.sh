@@ -28,6 +28,16 @@ MegalodonFileName=$(find ${baseDir} -type f -name "*${chrTagname}.megalodon.*.co
 GuppyFast5modFileName=$(find ${baseDir} -type f -name "*${chrTagname}.guppy.fast5mod*.combine.*.gz")
 GuppyGcf52refFileName=$(find ${baseDir} -type f -name "*${chrTagname}.guppy.gcf52ref*.combine.*.gz")
 
+echo "########################################"
+echo DeepModClusterFileName=${DeepModClusterFileName}
+echo NanopolishFileName=${NanopolishFileName}
+echo DeepSignalFileName=${DeepSignalFileName}
+echo TomboFileName=${TomboFileName}
+echo MegalodonFileName=${MegalodonFileName}
+echo GuppyFast5modFileName=${GuppyFast5modFileName}
+echo GuppyGcf52refFileName=${GuppyGcf52refFileName}
+echo "########################################"
+
 callList="DeepMod.C:${DeepModFileName} DeepMod.Cluster:${DeepModClusterFileName} Nanopolish:${NanopolishFileName} DeepSignal:${DeepSignalFileName} Tombo:${TomboFileName} Megalodon:${MegalodonFileName} Guppy:${GuppyFast5modFileName} Guppy.gcf52ref:${GuppyGcf52refFileName}"
 
 sbatch --job-name=sanity_check.${chrTagname} sanity_check_deepmod.sbatch ${Dataset} ${chrName} "${callList}" ${bgTruth} ${parser} ${predThreshold} "${otherOptions}"
