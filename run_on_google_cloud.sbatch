@@ -19,6 +19,7 @@ date;hostname;pwd
 chrName=${1:-"CHR1_3"}
 inputFileListName=${2:-"inputs/na12878.google_cloud.chr1-3.filelist.txt"}
 
+emailAddress="yang.liu@jax.org"
 dsname=NA12878-${chrName}
 
 ########################################################################
@@ -37,7 +38,8 @@ resumeOptions="-resume"
 	--outputDir ${OUTPUT_DIR_BUCKET} \
 	--input ${inputFileListName} \
 	-with-report -with-timeline -with-trace -with-dag \
-	--runGuppy false --runResquiggle false --runMegalodon false --runNanopolish false
+	--runGuppy false --runResquiggle false --runMegalodon false --runNanopolish false \
+	-N ${emailAddress}
 
 exit 0
 
