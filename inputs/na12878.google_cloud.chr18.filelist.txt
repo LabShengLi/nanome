@@ -1,5 +1,5 @@
-gs://jax-nanopore-01-project-data/raw-input-na12878-7-12/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr18.part01.tar
-gs://jax-nanopore-01-project-data/raw-input-na12878-7-12/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr18.part02.tar
-gs://jax-nanopore-01-project-data/raw-input-na12878-7-12/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr18.part03.tar
-gs://jax-nanopore-01-project-data/raw-input-na12878-7-12/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr18.part04.tar
-gs://jax-nanopore-01-project-data/raw-input-na12878-7-12/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr18.part05.tar
+gs://jax-nanopore-01-project-data/raw-input-na12878-13-19/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr18.part01.tar
+gs://jax-nanopore-01-project-data/raw-input-na12878-13-19/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr18.part02.tar
+gs://jax-nanopore-01-project-data/raw-input-na12878-13-19/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr18.part03.tar
+gs://jax-nanopore-01-project-data/raw-input-na12878-13-19/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr18.part04.tar
+gs://jax-nanopore-01-project-data/raw-input-na12878-13-19/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr18.part05.tar
