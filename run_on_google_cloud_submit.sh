@@ -3,6 +3,8 @@
 set -x
 date;hostname;pwd
 
+## bash run_on_google_cloud_submit.sh chr17
+
 chrName=${1:-"chr1"}
 chrUpperName=${chrName^^}
 sbatch --job-name=NA12878.${chrName}.nxf.gcloud run_on_google_cloud.sbatch ${chrUpperName} inputs/na12878.google_cloud.${chrName}.filelist.txt
