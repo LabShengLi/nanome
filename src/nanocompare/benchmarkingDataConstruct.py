@@ -145,7 +145,7 @@ def analyse_trace():
     for index, row in df.iterrows():
         if row['tool'] in ['DeepSignal', 'Tombo', 'DeepMod', 'Nanopolish']:
             # Get basecalled row
-            basecallRow = df.loc[(df.tool == 'Basecall') & (df.dsname == row['dsname']), :].iloc[0, :]
+            basecallRow = df.loc[(df.toolName == 'Basecall') & (df.dsname == row['dsname']), :].iloc[0, :]
             df.at[index, 'duration'] = df.at[index, 'duration'] + basecallRow['duration']
             df.at[index, 'realtime'] = df.at[index, 'realtime'] + basecallRow['realtime']
 
@@ -155,7 +155,7 @@ def analyse_trace():
             df.at[index, 'wchar'] = max(df.at[index, 'wchar'], basecallRow['wchar'])
         if row['tool'] in ['DeepSignal', 'Tombo']:
             # Get resquiggle row
-            resquiggleRow = df.loc[(df.tool == 'Resquiggle') & (df.dsname == row['dsname']), :].iloc[0, :]
+            resquiggleRow = df.loc[(df.toolName == 'Resquiggle') & (df.dsname == row['dsname']), :].iloc[0, :]
             df.at[index, 'duration'] = df.at[index, 'duration'] + resquiggleRow['duration']
             df.at[index, 'realtime'] = df.at[index, 'realtime'] + resquiggleRow['realtime']
 
@@ -165,7 +165,7 @@ def analyse_trace():
             df.at[index, 'wchar'] = max(df.at[index, 'wchar'], resquiggleRow['wchar'])
 
     ## Filter out non-tool rows
-    df = df[df.tool.isin(['DeepSignal', 'Tombo', 'DeepMod', 'Nanopolish', 'Megalodon'])]
+    df = df[df.toolName.isin(['DeepSignal', 'Tombo', 'DeepMod', 'Nanopolish', 'Megalodon'])]
 
     df = df.sort_values(by=['tool', 'reads'])
     outfn = os.path.join(pic_base_dir, 'benchmarking.log.formated.table.step2.all.tools.csv')
