@@ -30,7 +30,8 @@ pythonFn=nanocompare/site_level_eval.py
 
 PYTHONPATH=. python ${pythonFn} --calls DeepSignal:${DeepSignal_calls} \
 	Tombo:${Tombo_calls} Nanopolish:${Nanopolish_calls} DeepMod.Cluster:${DeepMod_calls} \
-	Megalodon.ZW:${Megalodon_calls} Guppy:${Guppy_calls} --bgtruth ${parser}:${bgTruth} \
+	Megalodon.ZW:${Megalodon_calls} Guppy:${Guppy_calls} \
+	--bgtruth ${parser}:${bgTruth} \
 	--runid MethCorr-${RunPrefix} --dsname ${Dataset} \
 	--toolcov-cutoff 3 --min-bgtruth-cov 5  \
 	--baseFormat 1 $otherOptions #--enable-cache --using-cache #--enable-cache --using-cache # cutoff=3 is reasonable now

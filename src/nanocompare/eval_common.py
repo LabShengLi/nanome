@@ -700,26 +700,29 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
     df = pd.read_csv(infileName, sep=sep, header=header)
     logger.info(df)
 
+    ## Reduce memory usage
+    df = df.iloc[:, [chr_col, strand_col, start_col, log_lik_methylated_col]]
+
     ## extract cpg into dict return object
     cpgDict = defaultdict(list)
     call_cnt = methcall_cnt = 0
     for index, row in df.iterrows():
-        chr = row.iloc[chr_col]
+        chr = row.iloc[0]
         if chr not in filterChr:  # Filter out interested chrs
             continue
 
-        strand = row.iloc[strand_col]
+        strand = row.iloc[1]
         if strand not in ['+', '-']:
             raise Exception(f"gcf52ref format strand parse error, row={row}")
 
-        start = int(row.iloc[start_col])
+        start = int(row.iloc[2])
         # Correct the coordinates into 1-based
         if strand == "+":
             start = start + baseFormat
         elif strand == "-":
             start = start + baseFormat + 1
 
-        log_lik_methylated = float(row.iloc[log_lik_methylated_col])
+        log_lik_methylated = float(row.iloc[3])
         prob_methylated = 10 ** log_lik_methylated
 
         if (prob_methylated > cutoff[0]) and (prob_methylated < cutoff[1]):
@@ -2463,6 +2466,7 @@ if __name__ == '__main__':
     set_log_debug_level()
     import os
 
-    infn = os.path.join("/projects/li-lab/yang/workspace/nano-compare/work/57/1025320ba288135e68cef72cd582c8", "batch_demo2.fast5.reads.tar.guppy.gcf52ref_per_read.tsv.gz")
-    ret = importPredictions_Guppy_gcf52ref(infn, header=0)
+    # infn = os.path.join("/projects/li-lab/yang/workspace/nano-compare/work/57/1025320ba288135e68cef72cd582c8", "batch_demo2.fast5.reads.tar.guppy.gcf52ref_per_read.tsv.gz")
+    infn = "/projects/li-lab/Nanopore_compare/data/NA12878/combine_allchrs/NA12878.guppy.gcf52ref_read_level.combine_allchrs.tsv.gz"
+    ret = importPredictions_Guppy_gcf52ref(infn, header=None)
     logger.info("DONE")

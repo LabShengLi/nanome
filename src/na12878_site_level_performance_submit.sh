@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=meth.perf.NA12878_WGBS_2Reps
+#SBATCH --job-name=meth.corr.NA12878_WGBS_2Reps
 #SBATCH --partition=compute
 #SBATCH --qos=batch
 #SBATCH -N 1 # number of nodes
@@ -36,24 +36,15 @@ echo GuppyGcf52refFileName=${GuppyGcf52refFileName}
 echo "########################################"
 
 dsname=NA12878
-RunPrefix="NA12878_WGBS_2Reps_Guppy_both"
+RunPrefix="NA12878_WGBS_2Reps"
 minCov=5
 otherOptions="--enable-cache --using-cache"
 
-pythonFn=nanocompare/read_level_eval.py
-#PYTHONPATH=. python ${pythonFn} --calls DeepSignal:${DeepSignalFileName} \
-#	Tombo:${TomboFileName} Nanopolish:${NanopolishFileName} \
-#	Megalodon:${MegalodonFileName} Guppy:${GuppyFast5modFileName} \
-#	--bgtruth ${parser}:${bgTruth} \
-#	--runid MethPerf-${RunPrefix} \
-#	--dsname ${dsname} --min-bgtruth-cov ${minCov} \
-#	--report-joined $otherOptions
-
-python ${pythonFn} --calls DeepSignal:${DeepSignalFileName} \
+pythonFn=nanocompare/site_level_eval.py
+PYTHONPATH=. python ${pythonFn} --calls DeepSignal:${DeepSignalFileName} \
 	Tombo:${TomboFileName} Nanopolish:${NanopolishFileName} \
-	Megalodon:${MegalodonFileName} Guppy.gcf52ref:${GuppyGcf52refFileName} \
-	Guppy:${GuppyFast5modFileName} \
+	Megalodon:${MegalodonFileName} Guppy:${GuppyFast5modFileName} \
 	--bgtruth ${parser}:${bgTruth} \
-	--runid MethPerf-${RunPrefix} \
-	--dsname ${dsname} --min-bgtruth-cov ${minCov} \
-	--report-joined $otherOptions
+	--runid MethCorr-${RunPrefix} --dsname ${dsname} \
+	--beddir /projects/li-lab/yang/results/2021-06-19/MethPerf-NA12878_WGBS_2Reps \
+	--min-bgtruth-cov ${minCov} --toolcov-cutoff 3 $otherOptions

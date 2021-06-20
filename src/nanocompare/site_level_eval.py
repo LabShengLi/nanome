@@ -23,18 +23,18 @@ def summary_cpgs_stats_results_table():
     for toolname in loaded_callname_list:
         ## CpG sites set with cov >= cutoff(3)
         logger.info(f'Study tool={toolname}')
-        callSet = set(list(callresult_dict[toolname][1].keys()))
+        callSet = set(list(callresult_dict_cov3[toolname].keys()))
         if not joinedSet:
             joinedSet = set(callSet)
         else:
             joinedSet = joinedSet.intersection(callSet)
         unionSet = unionSet.union(callSet)
-        toolOverlapBGTruthCpGs = bgtruthCpGs.intersection(set(list(callresult_dict[toolname][1].keys())))
-        ret = {f'CpG sites in BG-Truth cov>={bgtruthCutt}': len(bgtruthCpGs), 'Total CpG sites by Nanopore tool': len(callresult_dict[toolname][0]), f'Total CpG sites by tool cov>={minToolCovCutt}': len(callresult_dict[toolname][1]), 'Joined CpG sites with BG-Truth': len(toolOverlapBGTruthCpGs)}
+        toolOverlapBGTruthCpGs = bgtruthCpGs.intersection(set(list(callresult_dict_cov3[toolname].keys())))
+        ret = {f'CpG sites in BG-Truth cov>={bgtruthCutt}': len(bgtruthCpGs), 'Total CpG sites by Nanopore tool': len(callresult_dict_cov1[toolname]), f'Total CpG sites by tool cov>={minToolCovCutt}': len(callresult_dict_cov3[toolname]), 'Joined CpG sites with BG-Truth': len(toolOverlapBGTruthCpGs)}
 
         cnt_calls = 0
-        for cpg in callresult_dict[toolname][0]:
-            cnt_calls += len(callresult_dict[toolname][0][cpg])
+        for cpg in callresult_dict_cov1[toolname]:
+            cnt_calls += len(callresult_dict_cov1[toolname][cpg])
         ret.update({'Total calls by Nanopore reads': cnt_calls})
 
         # Add coverage of every regions by each tool here
@@ -128,8 +128,8 @@ def save_meth_corr_data(callresult_dict, bgTruth, reportCpGSet, outfn):
 
         # Output each tool results
         for name in loaded_callname_list:
-            if cpg in callresult_dict[name][1]:  # if cpg is in tool results
-                row_list.extend([f'{callresult_dict[name][1][cpg][0]:.3f}', f'{callresult_dict[name][1][cpg][1]}'])
+            if cpg in callresult_dict[name]:  # if cpg is in tool results
+                row_list.extend([f'{callresult_dict[name][cpg][0]:.3f}', f'{callresult_dict[name][cpg][1]}'])
             else:  # if cpg key is not exist, we use NA as ''
                 row_list.extend(['', ''])
         outfile.write(sep.join(row_list))
@@ -228,7 +228,8 @@ if __name__ == '__main__':
     callfn_dict = defaultdict()  # callname -> filename
 
     # callname -> [call0, call1], call0 is no-filter results, call1 is filter by cutoff, and convert to [meth-freq, meth-cov] results.
-    callresult_dict = defaultdict()
+    callresult_dict_cov1 = defaultdict()
+    callresult_dict_cov3 = defaultdict()
     loaded_callname_list = []
 
     for callstr in args.calls:
@@ -249,7 +250,7 @@ if __name__ == '__main__':
         # For site level evaluation, only need (freq, cov) results, no score needed. Especially for DeepMod, we must import as freq and cov format from DeepMod.Cluster encode
         # TODO: cov=1 will lead to too large size of dict objects, do we really report cov=1 results?
         # Do not filter bgtruth, because we use later for overlapping (without bg-truth)
-        callresult_dict[callname] = [import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, siteLevel=True)]
+        callresult_dict_cov1[callname] = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, siteLevel=True)
 
     logger.debug(loaded_callname_list)
 
@@ -257,13 +258,13 @@ if __name__ == '__main__':
 
     # Cutoff of read cov >= 1 or 3, 5 for nanopore tools
     for callname in loaded_callname_list:
-        callresult_dict[callname].append(readLevelToSiteLevelWithCov(callresult_dict[callname][0], minCov=minToolCovCutt, toolname=callname))
+        callresult_dict_cov3[callname]=readLevelToSiteLevelWithCov(callresult_dict_cov1[callname], minCov=minToolCovCutt, toolname=callname)
 
     logger.info(f'\n\n####################\n\n')
 
     top3_cpg_set_dict = defaultdict()
     for callname in Top3ToolNameList:
-        top3_cpg_set_dict[callname] = set(callresult_dict[callname][1].keys())
+        top3_cpg_set_dict[callname] = set(callresult_dict_cov3[callname].keys())
 
     if args.gen_venn:
         logger.info('Overlapping analysis start:')
@@ -273,7 +274,7 @@ if __name__ == '__main__':
         if len(loaded_callname_list) >= 5:
             cpg_set_dict = defaultdict()
             for callname in ToolNameList:
-                cpg_set_dict[callname] = set(callresult_dict[callname][1].keys())  # .intersection(set(bgTruth.keys()))
+                cpg_set_dict[callname] = set(callresult_dict_cov3[callname].keys())  # .intersection(set(bgTruth.keys()))
             gen_venn_data(cpg_set_dict, namelist=ToolNameList, outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.five.tools.cov{minToolCovCutt}')
 
         logger.info(f"Start gen venn data for TOP3 tools (cov>={minToolCovCutt})")
@@ -285,17 +286,17 @@ if __name__ == '__main__':
     logger.info(f"Start getting intersection (all joined) sites by tools and bgtruth")
     coveredCpGs = set(list(bgTruth.keys()))
     for name in loaded_callname_list:
-        coveredCpGs = coveredCpGs.intersection(set(list(callresult_dict[name][1].keys())))
+        coveredCpGs = coveredCpGs.intersection(set(list(callresult_dict_cov3[name].keys())))
         logger.info(f'Join {name} get {len(coveredCpGs)} CpGs')
     logger.info(f"Reporting {len(coveredCpGs)} CpGs are covered by all tools and bgtruth")
 
     logger.info('Output data of coverage and meth-freq on joined CpG sites for correlation analysis')
 
     outfn_joined = os.path.join(out_dir, f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv")
-    save_meth_corr_data(callresult_dict, bgTruth, coveredCpGs, outfn_joined)
+    save_meth_corr_data(callresult_dict_cov3, bgTruth, coveredCpGs, outfn_joined)
 
     outfn_bgtruth = os.path.join(out_dir, f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv")
-    save_meth_corr_data(callresult_dict, bgTruth, set(list(bgTruth.keys())), outfn_bgtruth)
+    save_meth_corr_data(callresult_dict_cov3, bgTruth, set(list(bgTruth.keys())), outfn_bgtruth)
 
     # Report correlation matrix here
     df = pd.read_csv(outfn_joined, sep=sep)
