@@ -12,8 +12,8 @@ from multiprocessing import Manager, Pool
 from sklearn.metrics import confusion_matrix
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import nonsingletonsFile, ecoliChrSet
-from nanocompare.global_settings import rename_location_from_coordinate_name, perf_report_columns, get_tool_name, singletonFileExtStr
+from nanocompare.global_settings import nonsingletonsFile
+from nanocompare.global_settings import rename_location_from_coordinate_name, perf_report_columns, singletonFileExtStr
 
 
 def calculate_meth_unmeth(bgTruth, keySet):
@@ -154,7 +154,6 @@ def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCo
     ret_list = []
 
     with Manager() as manager:
-
         ontCalls = manager.dict(ontCalls)
         bgTruth = manager.dict(bgTruth)
 
@@ -305,7 +304,7 @@ def parse_arguments():
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
     parser.add_argument('--enable-cache', action='store_true')
     parser.add_argument('--using-cache', action='store_true')
-    parser.add_argument('-mpi', action='store_true')
+    parser.add_argument('--mpi', action='store_true')
     parser.add_argument('--analysis', type=str, help='special analysis specifications', default="")
     return parser.parse_args()
 
@@ -424,7 +423,8 @@ if __name__ == '__main__':
             continue
 
         # Only DeepMod.C/DeepMod.Cluster will always named as DeepMod
-        call_name = get_tool_name(call_encode)
+        # call_name = get_tool_name(call_encode)
+        call_name = call_encode.replace('.', '_')
         loaded_callname_list.append(call_name)
         callfn_dict[call_name] = callfn
 
@@ -460,7 +460,7 @@ if __name__ == '__main__':
             joinedCPG = set(ontCallWithinBGTruthDict[toolname].keys())
             continue
         joinedCPG = joinedCPG.intersection(set(ontCallWithinBGTruthDict[toolname].keys()))
-        logger.info(f'After joined with {toolname}, cpgs={len(joinedCPG)}')
+        logger.info(f'After joined with {toolname}, cpgs={len(joinedCPG):,}')
 
     save_keys_to_single_site_bed(joinedCPG, outfn=bedfn_tool_join_bgtruth, callBaseFormat=baseFormat, outBaseFormat=1)
 
@@ -541,7 +541,7 @@ if __name__ == '__main__':
         # Select columns to save
         df = df[perf_report_columns]
 
-        outfn = os.path.join(perf_dir, f"{RunPrefix}.{tool}.performance.report.csv")
+        outfn = os.path.join(perf_dir, f"{RunPrefix}.{tool.replace('.', '_')}.performance.report.csv")
         df.to_csv(outfn)
         logger.info(f"save to {outfn}")
 

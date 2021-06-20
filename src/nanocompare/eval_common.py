@@ -1763,7 +1763,7 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
             logger.info(f'regionDict[regionKey]={regionDict[regionKey]}, regionKey={regionKey}')
         is_print_first = False
 
-    logger.info(f'cntBedLines={cntBedLines}')
+    logger.info(f'cntBedLines={cntBedLines:,}')
 
     is_print_first = print_first
     concordantList = {}  # list of (chr, start)
