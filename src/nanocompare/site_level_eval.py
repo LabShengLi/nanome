@@ -273,9 +273,9 @@ if __name__ == '__main__':
         # Study five set venn data, no join with bgtruth, tool-cov > tool-cutoff=1 or 3
         if len(loaded_callname_list) >= 5:
             cpg_set_dict = defaultdict()
-            for callname in ToolNameList:
+            for callname in ToolNameList[:5]:
                 cpg_set_dict[callname] = set(callresult_dict_cov3[callname].keys())  # .intersection(set(bgTruth.keys()))
-            gen_venn_data(cpg_set_dict, namelist=ToolNameList, outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.five.tools.cov{minToolCovCutt}')
+            gen_venn_data(cpg_set_dict, namelist=ToolNameList[:5], outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.five.tools.cov{minToolCovCutt}')
 
         logger.info(f"Start gen venn data for TOP3 tools (cov>={minToolCovCutt})")
         # Study top3 tool's venn data, no join with bgtruth, tool-cov > tool-cutoff=3

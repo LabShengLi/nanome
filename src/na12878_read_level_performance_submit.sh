@@ -49,11 +49,14 @@ pythonFn=nanocompare/read_level_eval.py
 #	--dsname ${dsname} --min-bgtruth-cov ${minCov} \
 #	--report-joined $otherOptions
 
-python ${pythonFn} --calls DeepSignal:${DeepSignalFileName} \
-	Tombo:${TomboFileName} Nanopolish:${NanopolishFileName} \
-	Megalodon:${MegalodonFileName} Guppy.gcf52ref:${GuppyGcf52refFileName} \
-	Guppy:${GuppyFast5modFileName} \
+python ${pythonFn} \
+	--calls Guppy.gcf52ref:${GuppyGcf52refFileName} \
+			DeepSignal:${DeepSignalFileName} \
+			Tombo:${TomboFileName} \
+			Nanopolish:${NanopolishFileName} \
+			Megalodon:${MegalodonFileName} \
+			Guppy:${GuppyFast5modFileName} \
 	--bgtruth ${parser}:${bgTruth} \
-	--runid MethPerf-${RunPrefix} \
-	--dsname ${dsname} --min-bgtruth-cov ${minCov} \
+	--runid MethPerf-${RunPrefix} --dsname ${dsname} \
+	--min-bgtruth-cov ${minCov} \
 	--report-joined $otherOptions

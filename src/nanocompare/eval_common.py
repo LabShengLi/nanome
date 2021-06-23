@@ -25,7 +25,7 @@ from sklearn.metrics import roc_curve, auc, average_precision_score, f1_score, p
 from tqdm import tqdm
 
 from nanocompare.global_config import *
-from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEncodeList, narrowCoordFileList, narrowCoordFileTag
+from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEncodeList, narrowCoordFileList, narrowCoordFileTag, referenceGenomeFile
 
 
 def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, log_lik_ratio_col=5, sequence_col=-1, num_motifs_col=-2, baseFormat=1, llr_cutoff=2.0, output_first=False, include_score=False, filterChr=humanChrSet):
@@ -593,7 +593,72 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
     :return:
     """
     if formatSource == 'raw':  # raw results of fast5mod
-        methdata = pd.read_csv(infileName, sep=sep, header=None,
+        chr_col = 0
+        start_col = 1
+        fw_meth_col = 3
+        rv_meth_col = 4
+        fw_unmeth_col = 5
+        rv_unmeth_col = 6
+
+        cpgDict = defaultdict(list)
+        call_cnt = methcall_cnt = unmethcall_cnt = 0
+        infile = open_file_gz_or_txt(infileName)
+
+        for row in infile:
+            tmp = row.strip().split(sep)
+            if tmp[chr_col] not in filterChr:
+                continue
+
+            try:
+                start = int(tmp[start_col])
+                fw_meth = int(tmp[fw_meth_col])
+                rv_meth = int(tmp[rv_meth_col])
+                fw_unmeth = int(tmp[fw_unmeth_col])
+                rv_unmeth = int(tmp[rv_unmeth_col])
+
+                fw_key = (tmp[chr_col], start + baseFormat, '+')
+                rv_key = (tmp[chr_col], start + 1 + baseFormat, '-')
+
+                if fw_meth + fw_unmeth > 0:
+                    coverage = fw_meth + fw_unmeth
+                    methfreq = fw_meth / coverage
+
+                    call_cnt += coverage
+                    methcall_cnt += fw_meth
+                    unmethcall_cnt += fw_unmeth
+
+                    if siteLevel:  # in dict
+                        cpgDict[fw_key] = (methfreq, coverage)  # {'freq': meth_freq, 'cov': coverage}
+                    elif include_score:  # For read-level include scores
+                        cpgDict[fw_key] = [(1, 1.0)] * fw_meth + [(0, 0.0)] * fw_unmeth
+                    else:  # For read-level no scores
+                        cpgDict[fw_key] = [1] * fw_meth + [0] * fw_unmeth
+                if rv_meth + rv_unmeth > 0:
+                    coverage = rv_meth + rv_unmeth
+                    methfreq = rv_meth / coverage
+
+                    call_cnt += coverage
+                    methcall_cnt += rv_meth
+                    unmethcall_cnt += rv_unmeth
+
+                    if siteLevel:  # in dict
+                        cpgDict[rv_key] = (methfreq, coverage)  # {'freq': meth_freq, 'cov': coverage}
+                    elif include_score:  # For read-level include scores
+                        cpgDict[rv_key] = [(1, 1.0)] * rv_meth + [(0, 0.0)] * rv_unmeth
+                    else:  # For read-level no scores
+                        cpgDict[rv_key] = [1] * rv_meth + [0] * rv_unmeth
+            except:
+                logger.error(f"Parse Guppy fast5mod raw line failed: [{row}]")
+                continue
+
+        logger.info(f"###\timportPredictions_Guppy SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
+
+        return cpgDict
+    elif formatSource == 'raw-correct':  # raw results of fast5mod
+        the_dtype = {"chrom"     : str, "position": int, "motif": str,
+                "fwd.meth.count" : int, "rev.meth.count": int,
+                "fwd.canon.count": int, "rev.canon.count": int}
+        methdata = pd.read_csv(infileName, sep=sep, header=None, dtype=the_dtype, error_bad_lines=False, warn_bad_lines=False, engine='c',
                                names=["chrom", "position", "motif",
                                        "fwd.meth.count", "rev.meth.count",
                                        "fwd.canon.count", "rev.canon.count"])
@@ -706,7 +771,7 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
     ## extract cpg into dict return object
     cpgDict = defaultdict(list)
     call_cnt = methcall_cnt = 0
-    for index, row in df.iterrows():
+    for index, row in tqdm(df.iterrows()):
         chr = row.iloc[0]
         if chr not in filterChr:  # Filter out interested chrs
             continue
@@ -2011,86 +2076,22 @@ def get_dna_seq_from_reference(chr, start, end, ref_fasta=None):
     return short_seq
 
 
-def get_ref_fasta(ref_fn='/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'):
+def get_ref_fasta(ref_fn=referenceGenomeFile):
     ref_fasta = SeqIO.to_dict(SeqIO.parse(open(ref_fn), 'fasta'))
     logger.debug(f'load ref file from {ref_fn}')
     return ref_fasta
 
 
-def sanity_check_sequence(tlist):
-    ret = get_ref_fasta()
-    for site in tlist:
-        ret_seq = get_dna_base_from_reference('chr8', site, ref_fasta=ret)
-        logger.info(f'{site}:{ret_seq}')
+def sanity_check_sequence(chr='chr10', start=10493):
+    """
+    start is a 0-based position
+    :param chr:
+    :param start:
+    :return:
+    """
+    ret_seq = get_dna_base_from_reference(chr, start, ref_fasta=refGenome)
+    logger.info(f'\n{chr}:{start}\n{ret_seq}\n-----^-----\n\n')
 
-
-#
-# def scatter_plot_x_y(xx, yy, tagname='', outdir=None):
-#     """
-#     :param xx:
-#     :param yy:
-#     :return:
-#     """
-#     if outdir is None:
-#         outdir = pic_base_dir
-#
-#     import seaborn as sns
-#     import matplotlib.pyplot as plt
-#
-#     plt.figure(figsize=(4, 4))
-#
-#     ax = sns.scatterplot(x=xx, y=yy)
-#     ax.set_title(f"Scatter of {len(xx):,} CpG sites")
-#
-#     plt.tight_layout()
-#     outfn = os.path.join(outdir, f'scatter-plot-{tagname}.jpg')
-#     plt.savefig(outfn, dpi=600, bbox_inches='tight')
-#     plt.show()
-#     plt.close()
-#     logger.info(f"save to {outfn}")
-#
-#     pass
-#
-#
-# def scatter_plot_cov_compare_df(infn=None, df=None, outdir=None):
-#     if df is None:
-#         if infn is None:
-#             raise Exception("No data source specified.")
-#
-#         if os.path.splitext(infn)[1] == '.csv':
-#             df = pd.read_csv(infn)
-#         elif os.path.splitext(infn)[1] == '.pkl':
-#             df = pd.read_pickle(infn)
-#
-#     if outdir is None:
-#         outdir = pic_base_dir
-#
-#     xx = df.iloc[:, 0]
-#     yy = df.iloc[:, 1]
-#
-#     tagname = f'cov-of-{xx.name}-vs-{yy.name}'
-#     scatter_plot_x_y(xx, yy, tagname=tagname, outdir=outdir)
-#
-#
-# def scatter_analysis_cov(Tombo_calls1, Nanopolish_calls1, outdir, RunPrefix, tool1_name='Tombo', tool2_name='nanopolish'):
-#     tomboCpGs = set(Tombo_calls1.keys())
-#     intersectCpGs = tomboCpGs.intersection(Nanopolish_calls1.keys())
-#     key_list = []
-#     tombo_list = []
-#     tool_list = []
-#     for cpg in intersectCpGs:
-#         key_list.append(cpg[:-1])
-#         tombo_list.append(len(Tombo_calls1[cpg]))
-#         tool_list.append(len(Nanopolish_calls1[cpg]))
-#
-#     scatterDf = pd.DataFrame(data={f'{tool1_name}-cov': tombo_list, f'{tool2_name}-cov': tool_list}, index=key_list)
-#     outfn = os.path.join(outdir, f'{RunPrefix}-{tool1_name}-{tool2_name}-scatter.csv')
-#     scatterDf.to_csv(outfn)
-#
-#     outfn = os.path.join(outdir, f'{RunPrefix}-{tool1_name}-{tool2_name}-scatter.pkl')
-#     scatterDf.to_pickle(outfn)
-#
-#     scatter_plot_cov_compare_df(df=scatterDf, outdir=outdir)
 
 
 def get_cache_filename(infn, params):
@@ -2464,9 +2465,24 @@ def correlation_report_on_regions(corr_infn, beddir=None, dsname=None, outdir=pi
 
 if __name__ == '__main__':
     set_log_debug_level()
-    import os
 
-    # infn = os.path.join("/projects/li-lab/yang/workspace/nano-compare/work/57/1025320ba288135e68cef72cd582c8", "batch_demo2.fast5.reads.tar.guppy.gcf52ref_per_read.tsv.gz")
-    infn = "/projects/li-lab/Nanopore_compare/data/NA12878/combine_allchrs/NA12878.guppy.gcf52ref_read_level.combine_allchrs.tsv.gz"
-    ret = importPredictions_Guppy_gcf52ref(infn, header=None)
+    refGenome = get_ref_fasta()
+    sanity_check_sequence('chr10', 10522)
+    sanity_check_sequence('chr10', 10534)
+    sanity_check_sequence('chr10', 10557)
+
+    logger.info("DeepMod check")
+    sanity_check_sequence('chr10', 74169)
+    sanity_check_sequence('chr10', 74424)
+    sanity_check_sequence('chr10', 376851)
+    sanity_check_sequence('chr10', 376949)
+
+
+
+
+    # import os
+    #
+    # # infn = os.path.join("/projects/li-lab/yang/workspace/nano-compare/work/57/1025320ba288135e68cef72cd582c8", "batch_demo2.fast5.reads.tar.guppy.gcf52ref_per_read.tsv.gz")
+    # infn = "/projects/li-lab/Nanopore_compare/data/HL60/HL60.Guppy.fast5mod.persite.raw.tsv.gz"
+    # ret = importPredictions_Guppy(infn)
     logger.info("DONE")

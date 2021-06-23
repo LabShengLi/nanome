@@ -362,6 +362,10 @@ def save_wide_format_performance_results(runPrefix, outdir, tagname):
     :return:
     """
     df = load_wide_format_performance_results(runPrefix)
+
+    ## Rename Tool name to starndard name
+    df["Tool"].replace({"Megalodon_ZW": "Megalodon", "DeepMod_C": "DeepMod"}, inplace=True)
+
     outfn = os.path.join(outdir, f'performance-results{f"-{tagname}" if tagname else ""}.csv')
     df.to_csv(outfn)
     logger.info(f'save to {outfn}')
@@ -397,11 +401,13 @@ if __name__ == '__main__':
             gen_figure_5a(fn)
     elif args.cmd == 'export-corr-data':
         # python plot_figure.py export-corr-data -i /projects/li-lab/yang/results/2021-04-02-methcorr/MethCorr-HL60_RRBS_2Reps --beddir /projects/li-lab/yang/results/2021-04-07/MethPerf-cut5
+        if not args.o:
+            args.o = pic_base_dir
         dflist = []
         for indir in args.i:
             fnlist = glob.glob(os.path.join(indir, 'Meth_corr_plot_data_joined-*.csv'))
             if len(fnlist) != 1:
-                raise Exception(f'Found more fnlist={fnlist}')
+                raise Exception(f'Found more or none fnlist={fnlist}')
             logger.info(f'Find file: {fnlist[0]}')
 
             basefn = os.path.basename(fnlist[0])
@@ -445,6 +451,8 @@ if __name__ == '__main__':
         ## python plot_figure.py export-curve-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS
 
         ## python plot_figure.py export-curve-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-APL_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS_CPG --tagname CPG
+        if not args.o:
+            args.o = pic_base_dir
         outdir = os.path.join(args.o, f'plot-curve-data{f"-{args.tagname}" if args.tagname else ""}')
         os.makedirs(outdir, exist_ok=True)
 
@@ -457,7 +465,7 @@ if __name__ == '__main__':
             for coordinate_bed_name in location_filename_to_abbvname.keys():
                 curve_data = defaultdict(list)
                 for toolname in ToolNameList:
-                    pattern_str = os.path.join(bdir, 'performance?results', 'curve_data', f'*.{toolname}.*{coordinate_bed_name}.curve_data.pkl')
+                    pattern_str = os.path.join(bdir, 'performance?results', 'curve_data', f'*.{toolname}*.*{coordinate_bed_name}.curve_data.pkl')
                     fnlist = glob.glob(pattern_str)
                     if len(fnlist) != 1:
                         raise Exception(f'Can not locate curve_data for Tool={toolname}, at Coord={coordinate_bed_name}, with pattern={pattern_str}, find results={fnlist}. Please check if MethPerf results folder={bdir} specified is correct.')
@@ -548,8 +556,6 @@ if __name__ == '__main__':
         outfn2 = outfn.replace('.bedGraph', '.sorted.bedGraph')
         bed1.saveas(outfn2)
         logger.info(f'after sort bed, save to {outfn2}')
-
-        pass
     elif args.cmd == 'view-outmatrix':  # View the out marix for TSS, such as /projects/li-lab/yang/results/2021-04-25/tss-plots/
         ### python plot_figure.py view-outmatrix -i /projects/li-lab/yang/results/2021-04-25/tss-plots/NA19240.bin50.outMatrix.tsv
         infn = args.i[0]

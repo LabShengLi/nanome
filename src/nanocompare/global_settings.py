@@ -24,20 +24,20 @@ ecoliChrSet = ['NC_000913.3']
 
 ToolNameList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon']
 # TODO: check all consistent, now just for plot figure
-ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal', 'Tombo', 'DeepMod']
+ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo', 'DeepMod']
 
 # TODO: change to nanopolish, megalodon and deepsignal order later
-Top3ToolNameList = ['DeepSignal', 'Nanopolish', 'Megalodon']
+Top3ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal']
 
 ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod.C', 'DeepMod.Cluster', 'Megalodon', 'Megalodon.ZW', 'Guppy', 'Guppy.ZW', 'Guppy.gcf52ref']
 
 BGTruthEncodeList = ['bismark', 'encode']  # 'bed',
 
 ToolsColorList = ["#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442"]
-ToolsColorList = ["#56B4E9", "#CC79A7", "#999999", "#E69F00", "#009E73"]
+ToolsColorList = ["#56B4E9", "#CC79A7", "#999999", "#009E73", "#E69F00"]
 
 referenceGenomeFile = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
-
+referenceGenomeFile = "/projects/li-lab/Nanopore_compare/nf_input/reference_genome/hg38/hg38.fasta"
 # These two files are defined from Reference Genome
 # Singletons:       XXXXXCGXXXXX            >=k bp distance CpGs
 # Nonsingletons:    XXXXXCGXXXCGXXXXCGXX    <k bp for pair of neighbors of CpGs
