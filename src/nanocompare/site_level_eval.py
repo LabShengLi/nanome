@@ -258,7 +258,7 @@ if __name__ == '__main__':
 
     # Cutoff of read cov >= 1 or 3, 5 for nanopore tools
     for callname in loaded_callname_list:
-        callresult_dict_cov3[callname]=readLevelToSiteLevelWithCov(callresult_dict_cov1[callname], minCov=minToolCovCutt, toolname=callname)
+        callresult_dict_cov3[callname] = readLevelToSiteLevelWithCov(callresult_dict_cov1[callname], minCov=minToolCovCutt, toolname=callname)
 
     logger.info(f'\n\n####################\n\n')
 
@@ -272,13 +272,22 @@ if __name__ == '__main__':
 
         # Study five set venn data, no join with bgtruth, tool-cov > tool-cutoff=1 or 3
         if len(loaded_callname_list) >= 5:
+            ## Exclude DeepMod, leave only 5 tools
+            logger.info(f"Start gen venn data for 5 tools (exclude DeepMod)")
             cpg_set_dict = defaultdict()
             for callname in ToolNameList[:5]:
                 cpg_set_dict[callname] = set(callresult_dict_cov3[callname].keys())  # .intersection(set(bgTruth.keys()))
             gen_venn_data(cpg_set_dict, namelist=ToolNameList[:5], outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.five.tools.cov{minToolCovCutt}')
 
-        logger.info(f"Start gen venn data for TOP3 tools (cov>={minToolCovCutt})")
+            ## Include Deepmod, 6 tools
+            logger.info(f"Start gen venn data for 6 tools (include DeepMod)")
+            cpg_set_dict = defaultdict()
+            for callname in ToolNameList[:6]:
+                cpg_set_dict[callname] = set(callresult_dict_cov3[callname].keys())  # .intersection(set(bgTruth.keys()))
+            gen_venn_data(cpg_set_dict, namelist=ToolNameList[:6], outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.six.tools.cov{minToolCovCutt}')
+
         # Study top3 tool's venn data, no join with bgtruth, tool-cov > tool-cutoff=3
+        logger.info(f"Start gen venn data for TOP3 tools (cov>={minToolCovCutt})")
         gen_venn_data(top3_cpg_set_dict, namelist=Top3ToolNameList, outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.top3.cov{minToolCovCutt}')
 
         logger.info(f'\n\n####################\n\n')

@@ -37,7 +37,8 @@ echo ${NanoCompareDir}
 pythonFn=nanocompare/tss_eval.py
 
 PYTHONPATH=. python ${pythonFn} \
-	--calls Nanopolish:${Nanopolish_calls} \
+	--calls \
+			Nanopolish:${Nanopolish_calls} \
 			Megalodon.ZW:${Megalodon_calls} \
 			DeepSignal:${DeepSignal_calls} \
 			Guppy:${Guppy_calls} \

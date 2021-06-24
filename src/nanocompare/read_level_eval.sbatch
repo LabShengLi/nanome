@@ -28,9 +28,11 @@ echo ${NanoCompareDir}
 pythonFn=nanocompare/read_level_eval.py
 
 PYTHONPATH=. python ${pythonFn} \
-	--calls DeepSignal:${DeepSignal_calls} \
-		Tombo:${Tombo_calls} Nanopolish:${Nanopolish_calls} \
-		Megalodon.ZW:${Megalodon_calls} Guppy:${Guppy_calls} \
+	--calls Nanopolish:${Nanopolish_calls} \
+		Megalodon.ZW:${Megalodon_calls} \
+		DeepSignal:${DeepSignal_calls} \
+		Guppy:${Guppy_calls} \
+		Tombo:${Tombo_calls}  \
 		DeepMod.C:${DeepMod_calls} \
 	--bgtruth ${parser}:${bgTruth} \
 	--runid MethPerf-${RunPrefix} --dsname ${dsname} \
