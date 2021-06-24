@@ -223,12 +223,12 @@ process Guppy {
 	refGenome=${params.referenceGenome}
 
 	mkdir -p ${fast5_dir.baseName}.methcalled
-
 	guppy_basecaller --input_path ${fast5_dir} \
 		--save_path ${fast5_dir.baseName}.methcalled \
 		--config ${params.GUPPY_METHCALL_MODEL} \
 		--num_callers ${params.GuppyNumCallers} --fast5_out \
 		--verbose_logs ${params.GuppyGPUOptions}
+
 	echo "###   Guppy methylation calling DONE"
 	"""
 }
@@ -672,19 +672,28 @@ process GuppyComb {
 
 	tar -czf ${params.dsname}.guppy_fast5mod.combined.bam.tar.gz total.meth.bam*
 
-	## Ref: https://github.com/nanoporetech/medaka/issues/177
-	for i in {1..22} X Y
-	do
+	if [[ "${params.dataType}" == "human" ]] ; then
+		echo "### For human, extract chr1-22, X and Y"
+		## Ref: https://github.com/nanoporetech/medaka/issues/177
+		for i in {1..22} X Y
+		do
+			fast5mod call total.meth.bam \${refGenome} \
+				meth.chr\$i.tsv --meth cpg --quiet \
+				--regions chr\$i
+		done
+	elif [[ "${params.dataType}" == "ecoli" ]] ; then
+		echo "### For ecoli, chr=${params.DeepModSumChrSet}"
 		fast5mod call total.meth.bam \${refGenome} \
-			meth.chr\$i.tsv --meth cpg --quiet \
-			--regions chr\$i
-	done
+			meth.chr_${params.DeepModSumChrSet}.tsv \
+			--meth cpg --quiet \
+			--regions ${params.DeepModSumChrSet}
+	fi
 
-	cat  meth.*.tsv > ${params.dsname}.guppy.fast5mod_site_level.combine.tsv.gz
-	gzip ${params.dsname}.Guppy_fast5mod.combine.tsv
+	cat  meth.chr*.tsv > ${params.dsname}.guppy.fast5mod_site_level.combine.tsv
+	gzip ${params.dsname}.guppy.fast5mod_site_level.combine.tsv
 
 	## Clean
-	rm -f meth.chr*.tsv total.meth.tsv
+	rm -f meth.chr*.tsv
 	rm -f total.meth.bam*
 	echo "### Guppy combine results DONE. ###"
 	"""
@@ -800,11 +809,13 @@ process DpmodComb {
 		done
 
 		gzip ${params.dsname}.deepmod.C_clusterCpG.combine.bed
+		tar -czf ${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz indir/${params.dsname}.deepmod_clusterCpG.chr*.C.bed
+	else
+		touch ${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz
 	fi
 
-	tar -czf ${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz indir/${params.dsname}.deepmod.chr*.C.bed
-	tar -czf ${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz indir/${params.dsname}.deepmod_clusterCpG.chr*.C.bed
-	tar -czf ${params.dsname}.deepmod.all_batch.C.bed.tar.gz indir/batch_*_num/mod_pos.chr*.C.bed
+	tar -czf ${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz indir/${params.dsname}.deepmod.*.C.bed
+	tar -czf ${params.dsname}.deepmod.all_batch.C.bed.tar.gz indir/batch_*_num/mod_pos.*.C.bed
 
 	echo "###DeepMod combine DONE###"
 	"""

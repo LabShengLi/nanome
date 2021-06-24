@@ -1350,9 +1350,9 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
         calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat, siteLevel=siteLevel, include_score=include_score, filterChr=filterChr)
     elif encode == 'DeepMod.C':  # import DeepMod itself tool for read level
         calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, siteLevel=siteLevel, include_score=include_score, filterChr=filterChr)
-    elif encode == 'Guppy':  # import Guppy itself tool results
+    elif encode == 'Guppy':  # import Guppy itself tool results by fast5mod raw results
         calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel, filterChr=filterChr)
-    elif encode == 'Guppy.ZW':  # import Guppy itself tool results
+    elif encode == 'Guppy.ZW':  # import Guppy itself tool results by fast5mod processed by Ziwei
         calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel, filterChr=filterChr, formatSource="Guppy.ZW")
     elif encode == 'Guppy.gcf52ref':  # import Guppy gcf52ref read level results
         calls0 = importPredictions_Guppy_gcf52ref(infn, baseFormat=baseFormat, include_score=include_score, filterChr=filterChr, header=None)
