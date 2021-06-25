@@ -2353,6 +2353,7 @@ def find_bed_filename(basedir, pattern):
 def gen_venn_data(set_dict, namelist, outdir, tagname='tagname'):
     """
     Generate 7 data for three set or 31 data for five set joining Venn Diagram plotting
+    Return 2^n-1 of set intersections
     :param set_dict:
     :param outdir:
     :param tagname:
