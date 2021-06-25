@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=tss-eval
+#SBATCH --job-name=meteore.output
 #SBATCH --partition=compute
 #SBATCH --qos=batch
 #SBATCH -N 1 # number of nodes
@@ -8,11 +8,6 @@
 #SBATCH --time=72:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
-
-##SBATCH --mem 290g # memory pool for all cores
-##SBATCH -p gpu
-##SBATCH --gres=gpu:1             # number of gpus per node
-##SBATCH -q inference
 
 ## Pass all following vars to py script
 set -x
@@ -43,4 +38,4 @@ PYTHONPATH=. python ${pythonFn} \
 			DeepMod.Cluster:${DeepMod_calls} \
 	--bgtruth ${parser}:${bgTruth} \
 	--runid TSS-${RunPrefix} --dsname ${dsname} \
-	--baseFormat 1 $otherOptions #--toolcov-cutoff 3 --min-bgtruth-cov 5  --enable-cache --using-cache #--enable-cache --using-cache # cutoff=3 is reasonable now
+	--baseFormat 1 $otherOptions

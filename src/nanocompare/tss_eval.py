@@ -27,7 +27,7 @@ def parse_arguments():
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
     parser.add_argument('--enable-cache', action='store_true')
     parser.add_argument('--using-cache', action='store_true')
-
+    parser.add_argument('--output-meteore', action='store_true')
     return parser.parse_args()
 
 
@@ -55,12 +55,15 @@ if __name__ == '__main__':
 
     args = parse_arguments()
 
-    # cache function same with read level
-    enable_cache = args.enable_cache
-    using_cache = args.using_cache
-
-    # if enable_cache:
-    #     os.makedirs(cache_dir, exist_ok=True)
+    if args.output_meteore:
+        enable_cache = False
+        using_cache = False
+        output_meteore= True
+    else:
+        # cache function same with read level
+        enable_cache = args.enable_cache
+        using_cache = args.using_cache
+        output_meteore = False
 
     # runid is always like 'MethCorr-K562_WGBS_2Reps', remove first word as RunPrefix like K562_WGBS_2Reps
     RunPrefix = args.runid.replace('TSS-', '')
@@ -87,37 +90,38 @@ if __name__ == '__main__':
     logger.info(f'Output to dir:{out_dir}')
 
     # Add logging files also to result output dir
-    add_logging_file(os.path.join(out_dir, 'run-results.log'))
+    # add_logging_file(os.path.join(out_dir, 'run-results.log'))
 
     logger.debug(args)
 
     logger.info(f'\n\n####################\n\n')
 
-    # we import multiple (1 or 2) replicates and join them
-    encode, fnlist = args.bgtruth.split(':')
-    fnlist = fnlist.split(';')
+    if not output_meteore:
+        # we import multiple (1 or 2) replicates and join them
+        encode, fnlist = args.bgtruth.split(':')
+        fnlist = fnlist.split(';')
 
-    if len(fnlist) > 2:
-        raise Exception(f'Currently only support bgtruth with upto two, but found more: {fnlist}')
+        if len(fnlist) > 2:
+            raise Exception(f'Currently only support bgtruth with upto two, but found more: {fnlist}')
 
-    logger.debug(f'BGTruth fnlist={fnlist}, encode={encode}')
+        logger.debug(f'BGTruth fnlist={fnlist}, encode={encode}')
 
-    bgTruthList = []
-    for fn in fnlist:
-        if len(fn) == 0:  # incase of input like 'bismark:/a/b/c;'
-            continue
-        # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
-        bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True, using_cache=using_cache, enable_cache=enable_cache)
-        bgTruthList.append(bgTruth1)
+        bgTruthList = []
+        for fn in fnlist:
+            if len(fn) == 0:  # incase of input like 'bismark:/a/b/c;'
+                continue
+            # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
+            bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True, using_cache=using_cache, enable_cache=enable_cache)
+            bgTruthList.append(bgTruth1)
 
-    # Combine one/two replicates, using cutoff=1 or 5
-    bgTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruthCutt)
+        # Combine one/two replicates, using cutoff=1 or 5
+        bgTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruthCutt)
 
-    outfn = os.path.join(out_dir, f'{RunPrefix}.tss.bgtruth.cov{bgtruthCutt}.bed')
+        outfn = os.path.join(out_dir, f'{RunPrefix}.tss.bgtruth.cov{bgtruthCutt}.bed')
 
-    logger.info(f'Combined BS-seq data (cov>={bgtruthCutt}), all methylation level sites={len(bgTruth):,}')
+        logger.info(f'Combined BS-seq data (cov>={bgtruthCutt}), all methylation level sites={len(bgTruth):,}')
 
-    output_dict_to_bed(bgTruth, outfn)
+        output_dict_to_bed(bgTruth, outfn)
 
     logger.info(f'\n\n####################\n\n')
 
@@ -142,15 +146,18 @@ if __name__ == '__main__':
 
         loaded_callname_list.append(callname)
 
-        # For site level evaluation, only need (freq, cov) results, no score needed. Especially for DeepMod, we must import as freq and cov format from DeepMod.Cluster encode
-        # TODO: cov=1 will lead to too large size of dict objects, do we really report cov=1 results?
-        # Do not filter bgtruth, because we use later for overlapping (without bg-truth)
+        if output_meteore:
+            outfn = os.path.join(out_dir, f"{args.dsname}_{callname}-METEORE-perRead-score.tsv.gz")
+        else:
+            outfn = None
 
-        ontCall = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, siteLevel=True)
-        ontCallWithCov = readLevelToSiteLevelWithCov(ontCall, minCov=minToolCovCutt, toolname=callname)
-        callresult_dict[callname] = ontCallWithCov
-        outfn = os.path.join(out_dir, f'{RunPrefix}.tss.{callname}.cov{minToolCovCutt}.bed')
-        output_dict_to_bed(ontCallWithCov, outfn)
+        ontCall = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, siteLevel=True, saveMeteore=output_meteore, outfn=outfn)
+
+        if not output_meteore:
+            ontCallWithCov = readLevelToSiteLevelWithCov(ontCall, minCov=minToolCovCutt, toolname=callname)
+            callresult_dict[callname] = ontCallWithCov
+            outfn = os.path.join(out_dir, f'{RunPrefix}.tss.{callname}.cov{minToolCovCutt}.bed')
+            output_dict_to_bed(ontCallWithCov, outfn)
 
     logger.info(f'\n\n####################\n\n')
     logger.info("TSS DONE")
