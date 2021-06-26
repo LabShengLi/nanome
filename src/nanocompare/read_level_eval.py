@@ -9,7 +9,6 @@ This script will generate all per-read performance results, with regard to BED f
 import argparse
 from multiprocessing import Manager, Pool
 
-import pandas as pd
 from sklearn.metrics import confusion_matrix
 
 from nanocompare.eval_common import *
@@ -517,7 +516,7 @@ if __name__ == '__main__':
         secondBedFileName = None
 
     logger.info("Report singletons/non-singletons in each genomic regions in Fig.3 and 4")
-    logger.info(f"relateCoord={relateCoord}")
+    logger.debug(f"relateCoord={relateCoord}")
 
     bgTruth_bed = BedTool(calldict2txt(bgTruth.keys()), from_string=True)
     bgTruth_bed = bgTruth_bed.sort()
@@ -532,13 +531,17 @@ if __name__ == '__main__':
     concordant_bed = BedTool(concordantFilename).sort()
     discordant_bed = BedTool(discordantFilename).sort()
 
-    datasets=defaultdict(list)
-    for coordFn in relateCoord[3:-2]:
-        logger.info(f"Start study coordFn={coordFn}")
-        coordBed = BedTool(coordFn)
-        coordBed = coordBed.sort()
+    datasets = defaultdict(list)
+    for coordFn in [None] + relateCoord[3:-2]:
+        tagname = os.path.basename(coordFn) if coordFn else 'x.x.Genome-wide'
+        logger.debug(f"Start study coordFn={coordFn}, tagname={tagname}")
+        if coordFn:  # get genomic region results
+            coordBed = BedTool(coordFn)
+            coordBed = coordBed.sort()
+            intersect_coord_bed = bgTruth_bed.intersect(coordBed, u=True, wa=True)
+        else:  # Genome-wide results
+            intersect_coord_bed = bgTruth_bed
 
-        intersect_coord_bed = bgTruth_bed.intersect(coordBed, u=True, wa=True)
         num_total = len(set(txt2dict(intersect_coord_bed).keys()))
 
         intersect_singleton_bed = intersect_coord_bed.intersect(singleton_bed, u=True, wa=True)
@@ -553,7 +556,7 @@ if __name__ == '__main__':
         intersect_discordant_bed = intersect_coord_bed.intersect(discordant_bed, u=True, wa=True)
         num_discordant = len(set(txt2dict(intersect_discordant_bed).keys()))
 
-        datasets['Coord'].append(location_filename_to_abbvname[os.path.basename(coordFn)])
+        datasets['Coord'].append(location_filename_to_abbvname[tagname])
         datasets['Total'].append(num_total)
         datasets['Singletons'].append(num_singleton)
         datasets['Non-singletons'].append(num_nonsingleton)
@@ -563,10 +566,7 @@ if __name__ == '__main__':
     df = pd.DataFrame.from_dict(datasets)
     outfn = os.path.join(out_dir, f'bgtruth.certain.sites.distribution.singletons.nonsingletons.each.genomic.cov{cutoffBGTruth}.xlsx')
     df.to_excel(outfn)
-
-    # testtest = True
-    # if testtest:
-    #     sys.exit(0)
+    logger.info(f"save to {outfn}")
 
     if args.mpi:  # Using mpi may cause error, not fixed, but fast running
         logger.info('Using multi-processor function for evaluations:')
