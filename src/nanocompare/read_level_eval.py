@@ -556,12 +556,18 @@ if __name__ == '__main__':
         intersect_discordant_bed = intersect_coord_bed.intersect(discordant_bed, u=True, wa=True)
         num_discordant = len(set(txt2dict(intersect_discordant_bed).keys()))
 
+        datasets['Dataset'].append(dsname)
         datasets['Coord'].append(location_filename_to_abbvname[tagname])
         datasets['Total'].append(num_total)
         datasets['Singletons'].append(num_singleton)
         datasets['Non-singletons'].append(num_nonsingleton)
         datasets['Concordant'].append(num_concordant)
         datasets['Discordant'].append(num_discordant)
+
+        if num_total != num_singleton + num_nonsingleton:
+            logger.error(f"Found incorrect sums at {tagname}: for num_total != num_singleton + num_nonsingleton")
+        if num_nonsingleton != num_concordant+ num_discordant:
+            logger.error(f"Found incorrect sums at {tagname}: for num_nonsingleton != num_concordant+ num_discordant")
 
     df = pd.DataFrame.from_dict(datasets)
     outfn = os.path.join(out_dir, f'bgtruth.certain.sites.distribution.singletons.nonsingletons.each.genomic.cov{cutoffBGTruth}.xlsx')
