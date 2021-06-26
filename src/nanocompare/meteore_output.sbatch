@@ -4,7 +4,7 @@
 #SBATCH --qos=batch
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 4 # number of cores
-#SBATCH --mem=290g
+#SBATCH --mem=300G
 #SBATCH --time=72:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
@@ -27,6 +27,15 @@ echo "otherOptions:" $otherOptions
 set -x
 
 pythonFn=nanocompare/tss_eval.py
+
+PYTHONPATH=. python ${pythonFn} \
+	--calls \
+			Guppy.gcf52ref:${Guppy_calls} \
+	--bgtruth ${parser}:${bgTruth} \
+	--runid TSS-${RunPrefix} --dsname ${dsname} \
+	--baseFormat 1 $otherOptions
+
+exit 0
 
 PYTHONPATH=. python ${pythonFn} \
 	--calls \

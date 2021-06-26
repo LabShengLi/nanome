@@ -205,7 +205,8 @@ if __name__ == '__main__':
                     data = q.get(timeout=1)
                 except Empty:
                     if read_result.ready():
-                        log.info("Fast5 processing is ready. Got {}".format(read_result.get()))
+                        # log.info("Fast5 processing is ready. Got {}".format(read_result.get()))
+                        log.info("Fast5 processing is ready.")
                         break
                     else:
                         log.info("Stalling... Fast5 processing takes time.")

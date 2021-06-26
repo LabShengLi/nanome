@@ -890,6 +890,68 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
     return cpgDict
 
 
+def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, meth_indicator_col=3, meth_prob_col=4, baseFormat=1, include_score=False, filterChr=humanChrSet):
+    """
+    We checked input as 1-based format for start col.
+    Return dict of key='chr1\t123\t123\t+', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
+    Note that the function requires per read stats, not frequencies of methylation.
+    ### Example input format from DeepSignal:
+    zcat HL60.METEORE.megalodon_deepsignal-default-model-perRead.combine.tsv.gz | head
+    ID	Chr	Pos	Prediction	Prob_methylation
+    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37613422	0	0.0
+    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37613804	0	0.1
+    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37614304	0	0.0
+    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37614608	0	0.0
+    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37614773	0	0.0
+    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37615139	0	0.0
+    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37616119	0	0.0
+    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37616394	0	0.0
+    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37616741	0	0.0
+    """
+    infile = open_file_gz_or_txt(infileName)
+
+    cpgDict = defaultdict(list)
+    row_count = 0
+    meth_cnt = 0
+    unmeth_cnt = 0
+
+    for row in infile:
+        if row.startswith("ID\tChr"):  # skim header
+            continue
+        tmp = row.strip().split("\t")
+
+        if tmp[chr_col] not in filterChr:
+            continue
+
+        start_1_base = int(tmp[start_col])
+        meth_indicator = int(tmp[meth_indicator_col])
+        meth_prob = int(tmp[meth_prob_col])
+        ## Since METEORE only report chr pos, assume strand is combined in both + and -
+        ## We use results in both + and - for evaluation
+        key = (tmp[chr_col], start_1_base - (1 - baseFormat), '+')
+        if include_score:
+            cpgDict[key].append((meth_indicator, meth_prob))
+        else:
+            cpgDict[key].append(meth_indicator)
+
+        key = (tmp[chr_col], start_1_base - (1 - baseFormat) + 1, '-')
+        if include_score:
+            cpgDict[key].append((meth_indicator, meth_prob))
+        else:
+            cpgDict[key].append(meth_indicator)
+
+        row_count += 1
+        if meth_indicator == 1:
+            meth_cnt += 1
+        else:
+            unmeth_cnt += 1
+
+    infile.close()
+
+    logger.info(f"###\timportPredictions_METEORE SUCCESS: combined rows={row_count:,} methylation calls combined (+ and -) (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs (include + and -) from {infileName} file")
+    return cpgDict
+
+
 def readLevelToSiteLevelWithCov(ontDict, minCov=1, toolname="Tool"):
     """
     Convert read level dict into site level dict.
@@ -1431,6 +1493,8 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
         calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel, filterChr=filterChr, formatSource="Guppy.ZW")
     elif encode == 'Guppy.gcf52ref':  # import Guppy gcf52ref read level results
         calls0 = importPredictions_Guppy_gcf52ref(infn, baseFormat=baseFormat, include_score=include_score, filterChr=filterChr, header=None, saveMeteore=saveMeteore, outfn=outfn)
+    elif encode == 'METEORE':  # import Guppy gcf52ref read level results
+        calls0 = importPredictions_METEORE(infn, baseFormat=baseFormat, include_score=include_score, filterChr=filterChr)
     else:
         raise Exception(f'Not support {encode} for file {infn} now')
 
