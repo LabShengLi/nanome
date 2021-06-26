@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-
+"""
+Calculate Nanopore raw reads coverage at each CpG sites based on raw fast5 files
+"""
 import glob
 import os
 import re
@@ -9,9 +11,9 @@ import pandas as pd
 from pybedtools import BedTool
 from tqdm import tqdm
 
+from nanocompare.eval_common import get_dna_seq_from_reference, open_file_gz_or_txt, find_bed_filename
 from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir
 from nanocompare.global_settings import humanChrSet, narrowCoordFileList, location_filename_to_abbvname
-from nanocompare.eval_common import get_dna_seq_from_reference, open_file_gz_or_txt, find_bed_filename
 
 # used for convert region bed cov to base level cov
 rawReadDir = '/pod/2/li-lab/Nanopore_compare/data/Nanopore_cov'

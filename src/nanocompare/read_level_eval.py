@@ -9,10 +9,11 @@ This script will generate all per-read performance results, with regard to BED f
 import argparse
 from multiprocessing import Manager, Pool
 
+import pandas as pd
 from sklearn.metrics import confusion_matrix
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import nonsingletonsFile
+from nanocompare.global_settings import nonsingletonsFile, location_filename_to_abbvname
 from nanocompare.global_settings import rename_location_from_coordinate_name, perf_report_columns, singletonFileExtStr
 
 
@@ -514,6 +515,58 @@ if __name__ == '__main__':
         os.makedirs(perf_dir, exist_ok=True)
         bgTruth = certainBGTruth
         secondBedFileName = None
+
+    logger.info("Report singletons/non-singletons in each genomic regions in Fig.3 and 4")
+    logger.info(f"relateCoord={relateCoord}")
+
+    bgTruth_bed = BedTool(calldict2txt(bgTruth.keys()), from_string=True)
+    bgTruth_bed = bgTruth_bed.sort()
+
+    singletonFilename = relateCoord[1]
+    nonsingletonFilename = relateCoord[2]
+    concordantFilename = relateCoord[-2]
+    discordantFilename = relateCoord[-1]
+
+    singleton_bed = BedTool(singletonFilename).sort()
+    nonsingleton_bed = BedTool(nonsingletonFilename).sort()
+    concordant_bed = BedTool(concordantFilename).sort()
+    discordant_bed = BedTool(discordantFilename).sort()
+
+    datasets=defaultdict(list)
+    for coordFn in relateCoord[3:-2]:
+        logger.info(f"Start study coordFn={coordFn}")
+        coordBed = BedTool(coordFn)
+        coordBed = coordBed.sort()
+
+        intersect_coord_bed = bgTruth_bed.intersect(coordBed, u=True, wa=True)
+        num_total = len(set(txt2dict(intersect_coord_bed).keys()))
+
+        intersect_singleton_bed = intersect_coord_bed.intersect(singleton_bed, u=True, wa=True)
+        num_singleton = len(set(txt2dict(intersect_singleton_bed).keys()))
+
+        intersect_nonsingleton_bed = intersect_coord_bed.intersect(nonsingleton_bed, u=True, wa=True)
+        num_nonsingleton = len(set(txt2dict(intersect_nonsingleton_bed).keys()))
+
+        intersect_concordant_bed = intersect_coord_bed.intersect(concordant_bed, u=True, wa=True)
+        num_concordant = len(set(txt2dict(intersect_concordant_bed).keys()))
+
+        intersect_discordant_bed = intersect_coord_bed.intersect(discordant_bed, u=True, wa=True)
+        num_discordant = len(set(txt2dict(intersect_discordant_bed).keys()))
+
+        datasets['Coord'].append(location_filename_to_abbvname[os.path.basename(coordFn)])
+        datasets['Total'].append(num_total)
+        datasets['Singletons'].append(num_singleton)
+        datasets['Non-singletons'].append(num_nonsingleton)
+        datasets['Concordant'].append(num_concordant)
+        datasets['Discordant'].append(num_discordant)
+
+    df = pd.DataFrame.from_dict(datasets)
+    outfn = os.path.join(out_dir, f'bgtruth.certain.sites.distribution.singletons.nonsingletons.each.genomic.cov{cutoffBGTruth}.xlsx')
+    df.to_excel(outfn)
+
+    # testtest = True
+    # if testtest:
+    #     sys.exit(0)
 
     if args.mpi:  # Using mpi may cause error, not fixed, but fast running
         logger.info('Using multi-processor function for evaluations:')
