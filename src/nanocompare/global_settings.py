@@ -34,7 +34,7 @@ ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod.C', 'DeepMod.Clu
 BGTruthEncodeList = ['bismark', 'encode']  # 'bed',
 
 ToolsColorList = ["#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442"]
-ToolsColorList = ["#56B4E9", "#CC79A7", "#999999", "#009E73", "#E69F00"]
+ToolsColorList = ["#56B4E9", "#CC79A7", "#999999", "#009E73", "#E69F00", "#0072B2", "#D55E00"]
 
 referenceGenomeFile = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
 referenceGenomeFile = "/projects/li-lab/Nanopore_compare/nf_input/reference_genome/hg38/hg38.fasta"

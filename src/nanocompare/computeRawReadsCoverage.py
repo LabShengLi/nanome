@@ -149,11 +149,12 @@ def get_len_of_bedtool(bed_obj, cov_col=3, cutoff=1):
     :param cutoff:
     :return:
     """
-    covList = []
-    for row in bed_obj:
-        covList.append(int(row[cov_col]))
-    covSeries = pd.Series(covList)
-    return (covSeries >= cutoff).sum()
+    # covList = []
+    # for row in bed_obj:
+    #     covList.append(int(row[cov_col]))
+    # covSeries = pd.Series(covList)
+    df = bed_obj.to_dataframe()
+    return (df.iloc[:, cov_col] >= cutoff).sum()
 
 
 def report_table():
@@ -161,13 +162,8 @@ def report_table():
     Generate Figure 2 C and D data
     :return:
     """
-    dsname_list = ['HL60', 'K562', 'APL', 'NA19240']
-    # dsname_list = ['HL60', 'K562', 'APL']
-    # dsname_list = ['NA19240']
-    # dsname_list = ['HL60']
-
     # Nanopore reads coverage cutoff
-    cutoff_list = [1, 3]
+    cutoff_list = [1, cov_cutoff]
 
     dataset = []
     distribution_dataset = defaultdict(list)
@@ -222,19 +218,19 @@ def report_table():
             tagname = os.path.basename(coordFilename)
             coord_bed = BedTool(coordFilename).sort()
             intersect_coord_bed = rawReadBed.intersect(coord_bed, u=True, wa=True)
-            num_total = get_len_of_bedtool(intersect_coord_bed, 3)
+            num_total = get_len_of_bedtool(intersect_coord_bed, cutoff=cov_cutoff)
 
             intersect_singleton_bed = intersect_coord_bed.intersect(singleton_bed, u=True, wa=True)
-            num_singleton = get_len_of_bedtool(intersect_singleton_bed, 3)
+            num_singleton = get_len_of_bedtool(intersect_singleton_bed, cutoff=cov_cutoff)
 
             intersect_nonsingleton_bed = intersect_coord_bed.intersect(nonsingleton_bed, u=True, wa=True)
-            num_nonsingleton = get_len_of_bedtool(intersect_nonsingleton_bed, 3)
+            num_nonsingleton = get_len_of_bedtool(intersect_nonsingleton_bed, cutoff=cov_cutoff)
 
             intersect_concordant_bed = intersect_coord_bed.intersect(concordant_bed, u=True, wa=True)
-            num_concordant = get_len_of_bedtool(intersect_concordant_bed, 3)
+            num_concordant = get_len_of_bedtool(intersect_concordant_bed, cutoff=cov_cutoff)
 
             intersect_discordant_bed = intersect_coord_bed.intersect(discordant_bed, u=True, wa=True)
-            num_discordant = get_len_of_bedtool(intersect_discordant_bed, 3)
+            num_discordant = get_len_of_bedtool(intersect_discordant_bed, cutoff=cov_cutoff)
 
             distribution_dataset['Dataset'].append(dsname)
             distribution_dataset['Coord'].append(location_filename_to_abbvname[tagname])
@@ -246,7 +242,7 @@ def report_table():
 
     ## dataframe for distribution of singleton and non-singletons
     dist_df = pd.DataFrame.from_dict(distribution_dataset)
-    outfn = os.path.join(pic_base_dir, 'nanopore.raw.fast5.distribution.at.each.genomic.region.xlsx')
+    outfn = os.path.join(pic_base_dir, f'nanopore.raw.fast5.distribution.at.each.genomic.region.cov{cov_cutoff}.xlsx')
     dist_df.to_excel(outfn)
 
     ## dataframe for raw reads at each genomic regions
@@ -262,6 +258,9 @@ def report_table():
 
 if __name__ == '__main__':
     set_log_debug_level()
+
+    dsname_list = ['HL60', 'K562', 'APL', 'NA19240']
+    cov_cutoff=3
 
     refFasta = None
     # refFasta = get_ref_fasta()

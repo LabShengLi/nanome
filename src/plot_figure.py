@@ -239,7 +239,7 @@ def gen_figure_5a(infn):
     pass
 
 
-def plot_ROC_PR_curves(ret, outdir, tagname="tagname"):
+def plot_ROC_PR_curves(ret, outdir, tagname="tagname", removeDeepMod=False):
     """
     Plot ROC AUC and PR curves
     :param ret:
@@ -255,7 +255,7 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname"):
     plt.clf()
     plt.figure(figsize=figure_size)
     for toolname, toolcolor in zip(ToolNameList, ToolsColorList):
-        if toolname == 'DeepMod':
+        if toolname == 'DeepMod' and removeDeepMod:
             continue
         ytrue = ret[f'{toolname}_true']
         ypred = ret[f'{toolname}_pred']
@@ -283,7 +283,7 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname"):
     plt.clf()
     plt.figure(figsize=figure_size)
     for toolname, toolcolor in zip(ToolNameList, ToolsColorList):
-        if toolname == 'DeepMod':
+        if toolname == 'DeepMod' and removeDeepMod:
             continue
         ytrue = ret[f'{toolname}_true']
         yscore = ret[f'{toolname}_score']
@@ -319,6 +319,22 @@ def collect_singleton_vs_nonsingleton_df(runPrefix, pattern="*.summary.bsseq.sin
         dflist.append(df)
     retdf = pd.concat(dflist)
     retdf.index.name = 'Dataset'
+    return retdf
+
+
+def collect_distribution_genomic_df(runPrefix, pattern=None):
+    dflist = []
+    # logger.debug(runPrefix)
+    for run1 in runPrefix:
+        filepat = os.path.join(runPrefix[run1], pattern)
+        # logger.debug(run1)
+        flist = glob.glob(filepat)
+        if len(flist) != 1:
+            raise Exception(f"Too much/No summary of singleton vs non-singleton for {run1} in folder {runPrefix[run1]} with pattern={pattern}, len={len(flist)}")
+        # logger.debug(f'Get file:{flist[0]}')
+        df = pd.read_excel(flist[0], index_col=0, engine='openpyxl')  #
+        dflist.append(df)
+    retdf = pd.concat(dflist)
     return retdf
 
 
@@ -407,7 +423,7 @@ if __name__ == '__main__':
         for indir in args.i:
             fnlist = glob.glob(os.path.join(indir, 'Meth_corr_plot_data_joined-*.csv'))
             if len(fnlist) != 1:
-                raise Exception(f'Found more or none fnlist={fnlist}')
+                raise Exception(f'Found more or none fnlist={fnlist}, for indir={indir}')
             logger.info(f'Find file: {fnlist[0]}')
 
             basefn = os.path.basename(fnlist[0])
@@ -416,7 +432,7 @@ if __name__ == '__main__':
             df = correlation_report_on_regions(fnlist[0], beddir=args.beddir, dsname=dsname, outdir=args.o)
             dflist.append(df)
         outdf = pd.concat(dflist)
-        outfn = os.path.join(args.o, 'All.corrdata.coe.pvalue.each.regions.xlsx')
+        outfn = os.path.join(args.o, f'All.corrdata.coe.pvalue.each.regions{f".{args.tagname}" if args.tagname else ""}.xlsx')
         outdf.to_excel(outfn)
         logger.info(f'save to {outfn}')
     elif args.cmd == 'export-data':
@@ -438,15 +454,22 @@ if __name__ == '__main__':
 
         pattern1 = "*.summary.bsseq.singleton.nonsingleton.cov1.csv"
         df = collect_singleton_vs_nonsingleton_df(run_prefix, pattern=pattern1)
-        outfn = os.path.join(args.o, f'dataset.singleton.vs.non-singleton{f"-{args.tagname}" if args.tagname else ""}.cov1.csv')
+        outfn = os.path.join(args.o, f'dataset.singleton.vs.non-singleton{f".{args.tagname}" if args.tagname else ""}.cov1.csv')
         df.to_csv(outfn)
 
         pattern2 = "*.summary.bsseq.singleton.nonsingleton.cov5.csv"
         df = collect_singleton_vs_nonsingleton_df(run_prefix, pattern=pattern2)
-        outfn = os.path.join(args.o, f'dataset.singleton.vs.non-singleton{f"-{args.tagname}" if args.tagname else ""}.cov5.csv')
+        outfn = os.path.join(args.o, f'dataset.singleton.vs.non-singleton{f".{args.tagname}" if args.tagname else ""}.cov5.csv')
+        df.to_csv(outfn)
+        logger.info(f'save stats of singleton and non-singleton to {outfn}')
+
+        ## concat all singleton/nonsingleton for each datasets
+        pattern3 = "bgtruth.certain.sites.distribution.singletons.nonsingletons.each.genomic.cov5.xlsx"
+        df = collect_distribution_genomic_df(run_prefix, pattern=pattern3)
+        outfn = os.path.join(args.o, f'all.certain.sites.distribution.each.genomic.region{f".{args.tagname}" if args.tagname else ""}.cov5.csv')
         df.to_csv(outfn)
 
-        logger.info(f'save stats of singleton and non-singleton to {outfn}')
+        logger.info(f'save distribution of each genomic region to {outfn}')
     elif args.cmd == 'export-curve-data':
         ## python plot_figure.py export-curve-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS
 
@@ -513,7 +536,7 @@ if __name__ == '__main__':
                 basename = os.path.basename(fn)
                 bn = os.path.splitext(basename)[0]
                 ret = pickle.load(infn)
-                logger.debug(ret.keys())
+                # logger.debug(ret.keys())
                 plot_ROC_PR_curves(ret, outdir, tagname=bn)
     elif args.cmd == 'guppy-qos':
         ## collect basecall output for summary results, used for qos

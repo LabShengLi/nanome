@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=meth.corr.paper
+#SBATCH --job-name=meth.corr
 #SBATCH --partition=compute
 #SBATCH --qos=batch
 #SBATCH -N 1 # number of nodes
@@ -74,7 +74,7 @@ if [ "${command}" == "six" ] ; then
 		--dsname ${dsname} \
 		--toolcov-cutoff 3 --min-bgtruth-cov 5  \
 		--beddir ${bedDir} \
-		--enable-cache --using-cache
+		--enable-cache --using-cache --gen-venn
 elif [ "${command}" == "METEORE" ] ; then
 	## include METEORE
 	python ${pythonFile} \
@@ -91,7 +91,7 @@ elif [ "${command}" == "METEORE" ] ; then
 		--dsname ${dsname} \
 		--toolcov-cutoff 3 --min-bgtruth-cov 5  \
 		--beddir ${bedDir} \
-		--enable-cache --using-cache
+		--enable-cache --using-cache --gen-venn
 else
 	echo "Not support command"
 	exit 19
