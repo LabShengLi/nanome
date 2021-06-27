@@ -925,7 +925,7 @@ def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, 
 
         start_1_base = int(tmp[start_col])
         meth_indicator = int(tmp[meth_indicator_col])
-        meth_prob = int(tmp[meth_prob_col])
+        meth_prob = float(tmp[meth_prob_col])
         ## Since METEORE only report chr pos, assume strand is combined in both + and -
         ## We use results in both + and - for evaluation
         key = (tmp[chr_col], start_1_base - (1 - baseFormat), '+')
