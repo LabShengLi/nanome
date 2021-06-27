@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=meth.perf.paper
+#SBATCH --job-name=meth.corr.paper
 #SBATCH --partition=compute
 #SBATCH --qos=batch
 #SBATCH -N 1 # number of nodes
@@ -11,7 +11,7 @@
 
 dsname=${1:-HL60}
 runidSuffix=${2:-""} # "_RRBS_2Reps
-otherOptions=${3:-"--mpi"}
+bedDir=${3:-"/projects/li-lab/yang/results/2021-06-26"} # "_RRBS_2Reps
 
 if [ ! -z "$runidSuffix" ]; then
 	runidSuffix="_${runidSuffix}"
@@ -25,8 +25,7 @@ MegalodonCalls=$(find $baseDir/$dsname -name "$dsname.megalodon.per_read.sorted.
 DeepSignalCalls=$(find $baseDir/$dsname -name "$dsname.deepsignal.call_mods.combine.*.gz")
 GuppyCalls=$(find /projects/li-lab/Nanopore_compare/suppdata/guppy_methcall_yang/ -name "$dsname.guppy.fast5mod_site_level.combine.*.gz")
 TomboCalls=$(find $baseDir/$dsname -name "$dsname.tombo.*.combine.*.gz")
-DeepModCalls=$(find $baseDir/$dsname -name "$dsname.deepmod.C.combine.*.gz")
-METEORECalls=$(find /projects/li-lab/Nanopore_compare/suppdata/METEORE_results -name "$dsname.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
+DeepModCalls=$(find $baseDir/$dsname -name "$dsname.deepmod.C_clusterCpG.combine.*.gz")
 
 ## Automatically get the input files for each tool
 declare -A bgtruthEncodeDict
@@ -51,11 +50,9 @@ echo "DeepSignalCalls=$DeepSignalCalls"
 echo "GuppyCalls=$GuppyCalls"
 echo "TomboCalls=$TomboCalls"
 echo "DeepModCalls=$DeepModCalls"
-echo "METEORECalls=$METEORECalls"
-
 
 echo "####################"
-pythonFile=nanocompare/read_level_eval.py
+pythonFile=nanocompare/site_level_eval.py
 
 set -x
 python ${pythonFile} \
@@ -65,26 +62,10 @@ python ${pythonFile} \
 		DeepSignal:${DeepSignalCalls} \
 		Guppy:${GuppyCalls} \
 		Tombo:${TomboCalls} \
-		DeepMod.C:${DeepModCalls} \
-		METEORE:${METEORECalls} \
+		DeepMod.Cluster:${DeepModCalls} \
 	--bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
-	--runid MethPerf-${dsname}${runidSuffix} \
+	--runid MethCorr-${dsname}${runidSuffix} \
 	--dsname ${dsname} \
-	--min-bgtruth-cov 5 \
-	--report-joined --enable-cache --using-cache ${otherOptions} ### --mpi
-
-exit 0
-
-python ${pythonFile} \
-	--calls \
-		Nanopolish:${NanopolishCalls} \
-		Megalodon.ZW:${MegalodonCalls} \
-		DeepSignal:${DeepSignalCalls} \
-		Guppy:${GuppyCalls} \
-		Tombo:${TomboCalls} \
-		DeepMod.C:${DeepModCalls} \
-	--bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
-	--runid MethPerf-${dsname}${runidSuffix} \
-	--dsname ${dsname} \
-	--min-bgtruth-cov 5 \
-	--report-joined --enable-cache --using-cache ${otherOptions} ### --mpi
+	--toolcov-cutoff 3 --min-bgtruth-cov 5  \
+	--beddir ${bedDir} \
+	--enable-cache --using-cache

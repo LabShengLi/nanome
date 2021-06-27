@@ -5,6 +5,7 @@ Calculate Nanopore raw reads coverage at each CpG sites based on raw fast5 files
 import glob
 import os
 import re
+from collections import defaultdict
 from multiprocessing import Pool
 
 import pandas as pd
@@ -21,9 +22,11 @@ rawReadDir = '/pod/2/li-lab/Nanopore_compare/data/Nanopore_cov'
 
 # base level cov bed files (combined + - strand)
 baseReadCovDir = '/projects/li-lab/yang/results/2021-04-05'
+baseReadCovDir = '/projects/li-lab/Nanopore_compare/suppdata/raw.fast5.reads.coverage'
 
 # modify this dir to newly concordant and discordant perf results base dir
 datasetBedDir = '/projects/li-lab/yang/results/2021-04-12'
+datasetBedDir = '/projects/li-lab/yang/results/2021-06-26'
 
 
 def convert_region_to_cpg_base(dsname):
@@ -115,6 +118,8 @@ def count_sites_in_coord(readBed, coordfn, tagname, cutoff_list):
     """
     ret = {}
     covList = []
+
+    ##TODO: we can use to_dataframe() for BedTool
     for row in readBed:
         covList.append(int(row[3]))
     covSeries = pd.Series(covList)
@@ -137,6 +142,20 @@ def count_sites_in_coord(readBed, coordfn, tagname, cutoff_list):
     return ret
 
 
+def get_len_of_bedtool(bed_obj, cov_col=3, cutoff=1):
+    """
+    Get the number of rows (sites) of BedTool object
+    :param bed_obj:
+    :param cutoff:
+    :return:
+    """
+    covList = []
+    for row in bed_obj:
+        covList.append(int(row[cov_col]))
+    covSeries = pd.Series(covList)
+    return (covSeries >= cutoff).sum()
+
+
 def report_table():
     """
     Generate Figure 2 C and D data
@@ -147,11 +166,13 @@ def report_table():
     # dsname_list = ['NA19240']
     # dsname_list = ['HL60']
 
+    # Nanopore reads coverage cutoff
     cutoff_list = [1, 3]
 
     dataset = []
+    distribution_dataset = defaultdict(list)
     for dsname in dsname_list:
-        fnlist = glob.glob(os.path.join(baseReadCovDir, f'{dsname}*.base.bed'))
+        fnlist = glob.glob(os.path.join(baseReadCovDir, f'{dsname}.rawfast5.coverage.base.bed'))
         fn = fnlist[0]
         logger.info(fn)
 
@@ -182,6 +203,53 @@ def report_table():
 
         dataset.append(dataDict)
         logger.debug(dataDict)
+
+        ## Report singleton/nonsingleton at each genomic regions
+        # rawReadBed - raw fast5 BedTool
+        singletonFilename = narrowCoordFileList[1]
+        singleton_bed = BedTool(singletonFilename).sort()
+
+        nonsingletonFilename = narrowCoordFileList[2]
+        nonsingleton_bed = BedTool(nonsingletonFilename).sort()
+
+        concordantFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{dsname}*hg38_nonsingletons.concordant.bed')
+        concordant_bed = BedTool(concordantFileName).sort()
+
+        discordantFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{dsname}*hg38_nonsingletons.discordant.bed')
+        discordant_bed = BedTool(discordantFileName).sort()
+
+        for coordFilename in narrowCoordFileList[3:]:
+            tagname = os.path.basename(coordFilename)
+            coord_bed = BedTool(coordFilename).sort()
+            intersect_coord_bed = rawReadBed.intersect(coord_bed, u=True, wa=True)
+            num_total = get_len_of_bedtool(intersect_coord_bed, 3)
+
+            intersect_singleton_bed = intersect_coord_bed.intersect(singleton_bed, u=True, wa=True)
+            num_singleton = get_len_of_bedtool(intersect_singleton_bed, 3)
+
+            intersect_nonsingleton_bed = intersect_coord_bed.intersect(nonsingleton_bed, u=True, wa=True)
+            num_nonsingleton = get_len_of_bedtool(intersect_nonsingleton_bed, 3)
+
+            intersect_concordant_bed = intersect_coord_bed.intersect(concordant_bed, u=True, wa=True)
+            num_concordant = get_len_of_bedtool(intersect_concordant_bed, 3)
+
+            intersect_discordant_bed = intersect_coord_bed.intersect(discordant_bed, u=True, wa=True)
+            num_discordant = get_len_of_bedtool(intersect_discordant_bed, 3)
+
+            distribution_dataset['Dataset'].append(dsname)
+            distribution_dataset['Coord'].append(location_filename_to_abbvname[tagname])
+            distribution_dataset['Total'].append(num_total)
+            distribution_dataset['Singletons'].append(num_singleton)
+            distribution_dataset['Non-singletons'].append(num_nonsingleton)
+            distribution_dataset['Concordant'].append(num_concordant)
+            distribution_dataset['Discordant'].append(num_discordant)
+
+    ## dataframe for distribution of singleton and non-singletons
+    dist_df = pd.DataFrame.from_dict(distribution_dataset)
+    outfn = os.path.join(pic_base_dir, 'nanopore.raw.fast5.distribution.at.each.genomic.region.xlsx')
+    dist_df.to_excel(outfn)
+
+    ## dataframe for raw reads at each genomic regions
     df = pd.DataFrame(dataset)
     logger.info(df)
 
