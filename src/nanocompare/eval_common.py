@@ -890,7 +890,7 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
     return cpgDict
 
 
-def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, meth_indicator_col=3, meth_prob_col=4, baseFormat=1, include_score=False, filterChr=humanChrSet):
+def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, meth_indicator_col=3, meth_prob_col=4, strand_col=5, baseFormat=1, include_score=False, filterChr=humanChrSet):
     """
     We checked input as 1-based format for start col.
     Return dict of key='chr1\t123\t123\t+', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
@@ -898,15 +898,12 @@ def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, 
     ### Example input format from DeepSignal:
     zcat HL60.METEORE.megalodon_deepsignal-default-model-perRead.combine.tsv.gz | head
     ID	Chr	Pos	Prediction	Prob_methylation
-    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37613422	0	0.0
-    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37613804	0	0.1
-    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37614304	0	0.0
-    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37614608	0	0.0
-    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37614773	0	0.0
-    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37615139	0	0.0
-    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37616119	0	0.0
-    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37616394	0	0.0
-    4bb8fdb2-ff53-46f4-9b18-cbf6cd736862	chr15	37616741	0	0.0
+    ID	Chr	Pos	Prediction	Prob_methylation	Strand
+    abcc33b7-2895-4e0e-830c-3d0ed441760d	chr1	103867	0	0.331208615558345	-
+    abcc33b7-2895-4e0e-830c-3d0ed441760d	chr1	103984	0	0.331208615558345	-
+    abcc33b7-2895-4e0e-830c-3d0ed441760d	chr1	103989	0	0.331208615558345	-
+    abcc33b7-2895-4e0e-830c-3d0ed441760d	chr1	104048	0	0.331208615558345	-
+    abcc33b7-2895-4e0e-830c-3d0ed441760d	chr1	104243	0	0.3042032634832675	-
     """
     infile = open_file_gz_or_txt(infileName)
 
@@ -926,15 +923,11 @@ def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, 
         start_1_base = int(tmp[start_col])
         meth_indicator = int(tmp[meth_indicator_col])
         meth_prob = float(tmp[meth_prob_col])
-        ## Since METEORE only report chr pos, assume strand is combined in both + and -
-        ## We use results in both + and - for evaluation
-        key = (tmp[chr_col], start_1_base - (1 - baseFormat), '+')
-        if include_score:
-            cpgDict[key].append((meth_indicator, meth_prob))
-        else:
-            cpgDict[key].append(meth_indicator)
+        strand = tmp[strand_col]
 
-        key = (tmp[chr_col], start_1_base - (1 - baseFormat) + 1, '-')
+        ## Since METEORE report chr pos (1-based), strand
+        ## pos is point to CG' C in +, and CG's G in -
+        key = (tmp[chr_col], start_1_base - (1 - baseFormat), strand)
         if include_score:
             cpgDict[key].append((meth_indicator, meth_prob))
         else:
@@ -945,10 +938,8 @@ def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, 
             meth_cnt += 1
         else:
             unmeth_cnt += 1
-
     infile.close()
-
-    logger.info(f"###\timportPredictions_METEORE SUCCESS: combined rows={row_count:,} methylation calls combined (+ and -) (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs (include + and -) from {infileName} file")
+    logger.info(f"###\timportPredictions_METEORE SUCCESS: rows={row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs (include + and -) from {infileName} file")
     return cpgDict
 
 
