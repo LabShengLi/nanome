@@ -43,7 +43,9 @@ def output_dict_to_bed(dictCalls, outfn, sep='\t'):
     :param outfn:
     :return:
     """
-    with open(outfn, 'w') as outf:
+    ## Change to gzip output
+    # with open(outfn, 'w') as outf:
+    with gzip.open(outfn, 'wt') as outf:
         for key in dictCalls:
             strlist = [key[0], str(key[1] - 1), str(key[1]), '.', '.', key[2], str(dictCalls[key][0]), str(dictCalls[key][1])]
             outf.write(sep.join(strlist) + '\n')
@@ -58,7 +60,7 @@ if __name__ == '__main__':
     if args.output_meteore:
         enable_cache = False
         using_cache = False
-        output_meteore= True
+        output_meteore = True
     else:
         # cache function same with read level
         enable_cache = args.enable_cache
@@ -117,7 +119,7 @@ if __name__ == '__main__':
         # Combine one/two replicates, using cutoff=1 or 5
         bgTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruthCutt)
 
-        outfn = os.path.join(out_dir, f'{RunPrefix}.tss.bgtruth.cov{bgtruthCutt}.bed')
+        outfn = os.path.join(out_dir, f'{RunPrefix}.tss.bgtruth.cov{bgtruthCutt}.bed.gz')
 
         logger.info(f'Combined BS-seq data (cov>={bgtruthCutt}), all methylation level sites={len(bgTruth):,}')
 

@@ -45,7 +45,7 @@ def set_style(font_scale=1.2):
     sns.set_style("white")
 
 
-def grid_plot_correlation_matrix_for_fig5a(infn):
+def grid_plot_correlation_matrix_for_fig5a(infn, removeDeepMod=False):
     """
     Plot the grid of corr COE, distribution and scatter plot based on input files
     :return:
@@ -66,8 +66,9 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
     df = df[sel_col]
     df = df.rename(columns=rename_dict)
 
-    # rename DeepMod column here
-    df = df.drop("DeepMod", axis=1)
+    if removeDeepMod:
+        # rename DeepMod column here
+        df = df.drop("DeepMod", axis=1)
 
     num_col = len(df.columns)
 

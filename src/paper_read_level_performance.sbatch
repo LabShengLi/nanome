@@ -11,7 +11,8 @@
 
 dsname=${1:-HL60}
 runidSuffix=${2:-""} # "_RRBS_2Reps
-otherOptions=${3:-"--mpi"}
+command=${3:-"six"} # six - six tools, METEORE - include METEORE
+otherOptions=${4:-"--mpi"}
 
 if [ ! -z "$runidSuffix" ]; then
 	runidSuffix="_${runidSuffix}"
@@ -58,37 +59,41 @@ pythonFile=nanocompare/read_level_eval.py
 
 set -x
 
-## include METEORE
-python ${pythonFile} \
-	--calls \
-		Nanopolish:${NanopolishCalls} \
-		Megalodon.ZW:${MegalodonCalls} \
-		DeepSignal:${DeepSignalCalls} \
-		Guppy:${GuppyCalls} \
-		Tombo:${TomboCalls} \
-		DeepMod.C:${DeepModCalls} \
-		METEORE:${METEORECalls} \
-	--bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
-	--runid MethPerf-${dsname}${runidSuffix} \
-	--dsname ${dsname} \
-	--min-bgtruth-cov 5 \
-	--report-joined --enable-cache --using-cache ${otherOptions} ### --mpi
+if [ "${command}" == "six" ] ; then
+	## six tool
+	python ${pythonFile} \
+		--calls \
+			Nanopolish:${NanopolishCalls} \
+			Megalodon.ZW:${MegalodonCalls} \
+			DeepSignal:${DeepSignalCalls} \
+			Guppy:${GuppyCalls} \
+			Tombo:${TomboCalls} \
+			DeepMod.C:${DeepModCalls} \
+		--bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
+		--runid MethPerf-${dsname}${runidSuffix} \
+		--dsname ${dsname} \
+		--min-bgtruth-cov 5 \
+		--report-joined --enable-cache --using-cache ${otherOptions} ### --mpi
+elif [ "${command}" == "METEORE" ] ; then
+	## include METEORE
+	python ${pythonFile} \
+		--calls \
+			Nanopolish:${NanopolishCalls} \
+			Megalodon.ZW:${MegalodonCalls} \
+			DeepSignal:${DeepSignalCalls} \
+			Guppy:${GuppyCalls} \
+			Tombo:${TomboCalls} \
+			DeepMod.C:${DeepModCalls} \
+			METEORE:${METEORECalls} \
+		--bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
+		--runid MethPerf-${dsname}${runidSuffix} \
+		--dsname ${dsname} \
+		--min-bgtruth-cov 5 \
+		--report-joined --enable-cache --using-cache ${otherOptions} ### --mpi
 
-exit 0
-
-## six tool
-python ${pythonFile} \
-	--calls \
-		Nanopolish:${NanopolishCalls} \
-		Megalodon.ZW:${MegalodonCalls} \
-		DeepSignal:${DeepSignalCalls} \
-		Guppy:${GuppyCalls} \
-		Tombo:${TomboCalls} \
-		DeepMod.C:${DeepModCalls} \
-	--bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
-	--runid MethPerf-${dsname}${runidSuffix} \
-	--dsname ${dsname} \
-	--min-bgtruth-cov 5 \
-	--report-joined --enable-cache --using-cache ${otherOptions} ### --mpi
+else
+	echo "Not support command"
+	exit 19
+fi
 
 exit 0
