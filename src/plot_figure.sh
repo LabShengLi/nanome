@@ -11,50 +11,62 @@
 ## Script used for generate data and plot figures
 ## Parameters:
 ## 				command
-## 				outputDir
-
-#set -x
+## 				resultsDir
 
 pythonFile=plot_figure.py
 
 command=${1:-"Step1"}
-outputDir=${2:-"/projects/li-lab/yang/results/2021-06-27"}
+type=${2:-"six"}
+resultsDir=${3:-"/projects/li-lab/yang/results/2021-06-28"}
 
 bedDir="/projects/li-lab/yang/results/2021-06-26"
 
+
+if [ "$type" == "six" ]; then
+	HL60_Result_dir=${resultsDir}/MethPerf-HL60_RRBS_2Reps
+	K562_Result_dir=${resultsDir}/MethPerf-K562_WGBS_2Reps
+	APL_Result_dir=${resultsDir}/MethPerf-APL_WGBS
+	NA19240_Result_dir=${resultsDir}/MethPerf-NA19240_RRBS_2Reps
+	tagOptions=""
+	plotCurveDataDir="plot-curve-data"
+elif [ "$type" == "METEORE" ]; then
+	HL60_Result_dir=${resultsDir}/MethPerf-HL60_RRBS_2Reps_METEORE
+	K562_Result_dir=${resultsDir}/MethPerf-K562_WGBS_2Reps_METEORE
+	APL_Result_dir=${resultsDir}/MethPerf-APL_WGBS_METEORE
+	NA19240_Result_dir=${resultsDir}/MethPerf-NA19240_RRBS_2Reps_METEORE
+	tagOptions="--tagname METEORE"
+	plotCurveDataDir="plot-curve-data-METEORE"
+else
+	echo "### Unsupported type=$type"
+	exit 156
+fi
+
 if [ $command == "Step1" ]; then
 	# Step 1: Table S2,S3
+	# bash plot_figure.sh Step1
 	python plot_figure.py export-data -i \
-		${outputDir}/MethPerf-HL60_RRBS_2Reps \
-		${outputDir}/MethPerf-K562_WGBS_2Reps \
-		${outputDir}/MethPerf-APL_WGBS \
-		${outputDir}/MethPerf-NA19240_RRBS_2Reps
-
-elif [ $command == "Step1_METEORE" ]; then
-	# bash plot_figure.sh Step1_METEORE
-	python plot_figure.py export-data \
-		-i 	${outputDir}/MethPerf-HL60_RRBS_2Reps_METEORE \
-			${outputDir}/MethPerf-K562_WGBS_2Reps_METEORE \
-			${outputDir}/MethPerf-APL_WGBS_METEORE \
-			${outputDir}/MethPerf-NA19240_RRBS_2Reps_METEORE \
-		--tagname METEORE
+		${HL60_Result_dir} \
+		${K562_Result_dir} \
+		${APL_Result_dir} \
+		${NA19240_Result_dir} ${tagOptions}
 
 elif [ $command == "Step2" ]; then
 	# Step 2.1: Export curve data for Figure 3B
-	# sbatch plot_figure.sh Step2
+	# sbatch plot_figure.sh Step2 six/METEORE
 	python plot_figure.py export-curve-data -i \
-	 		${outputDir}/MethPerf-HL60_RRBS_2Reps \
-	 		${outputDir}/MethPerf-K562_WGBS_2Reps \
-	 		${outputDir}/MethPerf-APL_WGBS \
-	 		${outputDir}/MethPerf-NA19240_RRBS_2Reps
+	 			${HL60_Result_dir} \
+				${K562_Result_dir} \
+				${APL_Result_dir} \
+				${NA19240_Result_dir} ${tagOptions}
 
 	# Step 2.2: Figure 3B Plot curves data
-	find /projects/li-lab/yang/results/$(date +%F)/plot-curve-data -name '*.pkl' -exec python plot_figure.py plot-curve-data -i {} \;
+	find /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} -name '*.pkl' \
+		-exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
 
 elif [ $command == "Fig5a" ]; then
 	### Plot figure 5a
 	# sbatch plot_figure.sh Fig5a
-	fileList=$(find ${outputDir} -name "Meth_corr_plot_data_joined-*.csv")
+	fileList=$(find ${resultsDir} -name "Meth_corr_plot_data_joined-*.csv")
 	for fn in $fileList; do
 	 	python ${pythonFile} fig5a -i $fn &
 	done
@@ -64,20 +76,10 @@ elif [ $command == "Fig5b-data" ]; then
 	### Figure 5B data: COE on each region data for bar plot
 	# sbatch plot_figure.sh Fig5b-data
 	python ${pythonFile} export-corr-data  --beddir ${bedDir} \
-		-i	${outputDir}/MethCorr-HL60_RRBS_2Reps \
-			${outputDir}/MethCorr-K562_WGBS_2Reps \
-			${outputDir}/MethCorr-APL_WGBS \
-			${outputDir}/MethCorr-NA19240_RRBS_2Reps
-
-elif [ $command == "Fig5b-data-METEORE" ]; then
-	### Figure 5B data: COE on each region data for bar plot
-	# sbatch plot_figure.sh Fig5b-data-METEORE
-	python ${pythonFile} export-corr-data  --beddir ${bedDir} \
-		-i 	${outputDir}/MethCorr-HL60_RRBS_2Reps_METEORE \
-			${outputDir}/MethCorr-K562_WGBS_2Reps_METEORE \
-			${outputDir}/MethCorr-APL_WGBS_METEORE \
-			${outputDir}/MethCorr-NA19240_RRBS_2Reps_METEORE \
-		--tagname METEORE
+		-i	${HL60_Result_dir} \
+			${K562_Result_dir} \
+			${APL_Result_dir} \
+			${NA19240_Result_dir}  ${tagOptions}
 else
 	echo "### Unsupported command=${command}"
 	exit 3
