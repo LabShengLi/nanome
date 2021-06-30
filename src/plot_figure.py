@@ -5,6 +5,7 @@ Plots and export data for nanome paper
 """
 import argparse
 import glob
+import gzip
 import os.path
 import pickle
 from collections import defaultdict
@@ -259,12 +260,17 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname", removeDeepMod=False):
     # plt.rcParams['font.sans-serif'] = ['Arial']
 
     plt.figure(figsize=figure_size)
+    conf_matrix = {}
     for toolname, toolcolor in zip(ToolNameList, ToolsColorList):
         if toolname == 'DeepMod' and removeDeepMod:
             continue
         ytrue = ret[f'{toolname}_true']
         ypred = ret[f'{toolname}_pred']
         yscore = ret[f'{toolname}_score']
+
+        ## Construct comfusion matrix
+        from sklearn.metrics import confusion_matrix
+        conf_matrix[toolname] = confusion_matrix(ytrue, ypred, labels=[0, 1])
 
         # logger.debug(f'ytrue={len(ytrue)}, ypred={len(ypred)}, yscore={len(yscore)}')
         # TODO: plot points in curves
@@ -291,6 +297,17 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname", removeDeepMod=False):
     plt.show()
     plt.close()
 
+    outfn = os.path.join(outdir, f'confusion.matrix.{tagname}.each.tool.csv.gz')
+    outf = gzip.open(outfn, 'wt')
+    for toolname in ToolNameList:
+        if toolname not in conf_matrix:
+            continue
+        logger.info(f"{toolname} = {conf_matrix[toolname]}")
+        outf.write(f"{toolname}\n")
+        mat = conf_matrix[toolname]
+        outf.write(f"{mat[0, 0]},{mat[0, 1]}\n")
+        outf.write(f"{mat[1, 0]},{mat[1, 1]}\n")
+    outf.close()
     return
 
     ## PR curves

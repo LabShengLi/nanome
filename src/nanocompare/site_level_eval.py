@@ -107,7 +107,8 @@ def save_meth_corr_data(callresult_dict, bgTruth, reportCpGSet, outfn):
     :param outfn:
     :return:
     """
-    outfile = open(outfn, 'w')
+    # outfile = open(outfn, 'w')
+    outfile = gzip.open(outfn, 'wt')
 
     header_list = ['chr', 'start', 'end', 'BGTruth_freq', 'BGTruth_cov', 'strand']
 
@@ -313,10 +314,10 @@ if __name__ == '__main__':
 
     logger.info('Output data of coverage and meth-freq on joined CpG sites for correlation analysis')
 
-    outfn_joined = os.path.join(out_dir, f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv")
+    outfn_joined = os.path.join(out_dir, f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv.gz")
     save_meth_corr_data(callresult_dict_cov3, bgTruth, coveredCpGs, outfn_joined)
 
-    outfn_bgtruth = os.path.join(out_dir, f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv")
+    outfn_bgtruth = os.path.join(out_dir, f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv.gz")
     save_meth_corr_data(callresult_dict_cov3, bgTruth, set(list(bgTruth.keys())), outfn_bgtruth)
 
     # Report correlation matrix here

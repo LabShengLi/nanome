@@ -2609,8 +2609,47 @@ def correlation_report_on_regions(corr_infn, beddir=None, dsname=None, outdir=pi
     return outdf
 
 
+def get_meteore_format_set(infn, read_level=True):
+
+    df = pd.read_csv(infn, sep='\t')
+    ret = set()
+    for index, row in df.iterrows():
+        id = row['ID']
+        chr=row['Chr']
+        pos = int(row['Pos'])
+        strand = row['Strand']
+        if read_level:
+            key = (id, chr, pos, strand)
+        else:
+            key = (chr, pos, strand)
+
+        if key not in ret:
+            ret.add(key)
+    return ret
+
+
 if __name__ == '__main__':
     set_log_debug_level()
+
+    bdir="/projects/li-lab/Nanopore_compare/suppdata/METEORE_results/METEORE_raw_input"
+
+    apl_deepsignal="APL_DeepSignal-METEORE-perRead-score.tsv.gz"
+    apl_megalodon="APL_Megalodon-METEORE-perRead-score.tsv.gz"
+
+    apl_meteore_comb="/projects/li-lab/Nanopore_compare/suppdata/METEORE_results/APL.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz"
+
+    apl_deepsignal_set = get_meteore_format_set(os.path.join(bdir, apl_deepsignal))
+    apl_megalodon_set = get_meteore_format_set(os.path.join(bdir, apl_megalodon))
+    apl_meteore_set = get_meteore_format_set(apl_meteore_comb)
+
+    logger.info(f"Read level: deepsignal={len(apl_deepsignal_set):,}, megalodon={len(apl_megalodon_set):,}, meteore={len(apl_meteore_set):,}")
+
+    apl_deepsignal_set = get_meteore_format_set(os.path.join(bdir, apl_deepsignal), read_level=False)
+    apl_megalodon_set = get_meteore_format_set(os.path.join(bdir, apl_megalodon), read_level=False)
+    apl_meteore_set = get_meteore_format_set(apl_meteore_comb, read_level=False)
+    logger.info(f"Site level: deepsignal={len(apl_deepsignal_set):,}, megalodon={len(apl_megalodon_set):,}, meteore={len(apl_meteore_set):,}")
+
+    sys.exit(0)
 
     refGenome = get_ref_fasta()
     sanity_check_sequence('chr10', 10522)
