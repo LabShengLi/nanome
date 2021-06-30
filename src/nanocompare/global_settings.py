@@ -24,7 +24,7 @@ ecoliChrSet = ['NC_000913.3']
 
 ToolNameList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon']
 # TODO: check all consistent, now just for plot figure
-ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo', 'DeepMod']
+ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo', 'METEORE', 'DeepMod']
 
 # TODO: change to nanopolish, megalodon and deepsignal order later
 Top3ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal']

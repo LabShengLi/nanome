@@ -161,6 +161,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
+
 if __name__ == '__main__':
     set_log_debug_level()
 
@@ -290,6 +291,17 @@ if __name__ == '__main__':
         logger.info(f"Start gen venn data for TOP3 tools (cov>={minToolCovCutt})")
         gen_venn_data(top3_cpg_set_dict, namelist=Top3ToolNameList, outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.top3.cov{minToolCovCutt}')
 
+        logger.info("We generate sets file for each tool and bg-truth")
+
+        bg_cpgs = bgTruth.keys()
+        outfn = os.path.join(out_dir, f'{args.dsname}.bgtruth.cpg.sites.cov{args.min_bgtruth_cov}.setsfile.txt.gz')
+        output_keys_to_setsfile_txt_gz(bg_cpgs, outfn)
+        for callname in ToolNameList:
+            if callname not in callresult_dict_cov3:
+                continue
+            call_keys = callresult_dict_cov3[callname].keys()
+            outfn = os.path.join(out_dir, f'{args.dsname}.{callname}.cpg.sites.cov{args.toolcov_cutoff}.setsfile.txt.gz')
+            output_keys_to_setsfile_txt_gz(call_keys, outfn)
         logger.info(f'\n\n####################\n\n')
 
     logger.info(f"Start getting intersection (all joined) sites by tools and bgtruth")

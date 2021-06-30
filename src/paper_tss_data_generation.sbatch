@@ -52,7 +52,7 @@ pythonFile=nanocompare/tss_eval.py
 
 set -x
 
-## include METEORE
+## Generate tools results as METEORE format
 python ${pythonFile} \
 	--calls \
 		Nanopolish:${NanopolishCalls} \

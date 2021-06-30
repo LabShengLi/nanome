@@ -15,7 +15,7 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(description='Site level correlation analysis')
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces', required=True)
-    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name1>", required=True)
+    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name1>", default=None)
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--beddir', type=str, help="base dir for bed files", default=None)  # need perform performance evaluation before, then get concordant, etc. bed files, like '/projects/li-lab/yang/results/2021-04-01'
@@ -60,12 +60,10 @@ if __name__ == '__main__':
     if args.output_meteore:
         enable_cache = False
         using_cache = False
-        output_meteore = True
     else:
         # cache function same with read level
         enable_cache = args.enable_cache
         using_cache = args.using_cache
-        output_meteore = False
 
     # runid is always like 'MethCorr-K562_WGBS_2Reps', remove first word as RunPrefix like K562_WGBS_2Reps
     RunPrefix = args.runid.replace('TSS-', '')
@@ -91,14 +89,24 @@ if __name__ == '__main__':
     os.makedirs(out_dir, exist_ok=True)
     logger.info(f'Output to dir:{out_dir}')
 
-    # Add logging files also to result output dir
-    # add_logging_file(os.path.join(out_dir, 'run-results.log'))
-
     logger.debug(args)
-
     logger.info(f'\n\n####################\n\n')
 
-    if not output_meteore:
+    if args.output_meteore:
+        logger.info(f"We are outputing each tool's results as METEORE format")
+        for callstr in args.calls:
+            callencode, callfn = callstr.split(':')
+            if len(callfn) == 0:
+                continue
+            callname = get_tool_name(callencode)
+
+            outfn = os.path.join(out_dir, f"{args.dsname}_{callname}-METEORE-perRead-score.tsv.gz")
+            import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=False, using_cache=False, include_score=False, siteLevel=False, saveMeteore=args.output_meteore, outfn=outfn)
+        logger.info("### METEORE format output DONE")
+        sys.exit(0)
+
+    if args.bgtruth:
+        logger.info("We are generating bed CpG results for BG-Truth")
         # we import multiple (1 or 2) replicates and join them
         encode, fnlist = args.bgtruth.split(':')
         fnlist = fnlist.split(';')
@@ -118,48 +126,33 @@ if __name__ == '__main__':
 
         # Combine one/two replicates, using cutoff=1 or 5
         bgTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruthCutt)
-
         outfn = os.path.join(out_dir, f'{RunPrefix}.tss.bgtruth.cov{bgtruthCutt}.bed.gz')
-
         logger.info(f'Combined BS-seq data (cov>={bgtruthCutt}), all methylation level sites={len(bgTruth):,}')
-
         output_dict_to_bed(bgTruth, outfn)
+        logger.info(f'\n\n####################\n\n')
 
-    logger.info(f'\n\n####################\n\n')
-
+    logger.info("We are outputing bed CpG results for each tool")
     callfn_dict = defaultdict()  # callname -> filename
-
-    # callname -> [call0, call1], call0 is no-filter results, call1 is filter by cutoff, and convert to [meth-freq, meth-cov] results.
     callresult_dict = defaultdict()
     loaded_callname_list = []
 
     for callstr in args.calls:
+        logger.info(f'\n\n####################\n\n')
         callencode, callfn = callstr.split(':')
-
         if len(callfn) == 0:
             continue
-
         callname = get_tool_name(callencode)
         callfn_dict[callname] = callfn
 
-        # We do now allow import DeepMod.Cluster for read level evaluation
+        # We do now allow import DeepMod.C for site level evaluation
         if callencode == 'DeepMod.C':
             raise Exception(f'{callencode} is not allowed for site level evaluation, please use DeepMod.Cluster file here')
 
         loaded_callname_list.append(callname)
+        ontCall = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, siteLevel=True)
 
-        if output_meteore:
-            outfn = os.path.join(out_dir, f"{args.dsname}_{callname}-METEORE-perRead-score.tsv.gz")
-        else:
-            outfn = None
-
-        ontCall = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, siteLevel=True, saveMeteore=output_meteore, outfn=outfn)
-
-        if not output_meteore:
-            ontCallWithCov = readLevelToSiteLevelWithCov(ontCall, minCov=minToolCovCutt, toolname=callname)
-            callresult_dict[callname] = ontCallWithCov
-            outfn = os.path.join(out_dir, f'{RunPrefix}.tss.{callname}.cov{minToolCovCutt}.bed')
-            output_dict_to_bed(ontCallWithCov, outfn)
-
-    logger.info(f'\n\n####################\n\n')
-    logger.info("TSS DONE")
+        ontCallWithCov = readLevelToSiteLevelWithCov(ontCall, minCov=minToolCovCutt, toolname=callname)
+        callresult_dict[callname] = ontCallWithCov
+        outfn = os.path.join(out_dir, f'{RunPrefix}.tss.{callname}.cov{minToolCovCutt}.bed')
+        output_dict_to_bed(ontCallWithCov, outfn)
+    logger.info("TSS bed file generation DONE")

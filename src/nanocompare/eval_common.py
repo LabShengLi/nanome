@@ -2506,6 +2506,22 @@ def gen_venn_data(set_dict, namelist, outdir, tagname='tagname'):
     logger.info(f'save {len(retlist)} points venn data for {tagname} to {outfn}')
 
 
+def output_keys_to_setsfile_txt_gz(call_keys, outfn):
+    """
+    Ouput keys into a sets file for venn analysis later.
+    key is (chr, pos, strand), output as chr1_1234_+
+    :param call_keys:
+    :param outfn:
+    :return:
+    """
+
+    outf = gzip.open(outfn, 'wt')
+    for key in call_keys:
+        outf.write(f"{key[0]}_{key[1]}_{key[2]}\n")
+    outf.close()
+    logger.info(f"save to {outfn}")
+
+
 def filter_corrdata_df_by_bedfile(df, df_bed, coord_fn):
     """
     Filter lines in correlation data, within coordinate BED file

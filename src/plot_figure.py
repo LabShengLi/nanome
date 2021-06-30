@@ -104,7 +104,7 @@ def grid_plot_correlation_matrix_for_fig5a(infn, removeDeepMod=False):
 
     fig, ax = plt.subplots()
 
-    fig.set_size_inches(10, 10)
+    fig.set_size_inches(12, 12)
 
     left, width = .25, .5
     bottom, height = .25, .5
@@ -203,11 +203,11 @@ def grid_plot_correlation_matrix_for_fig5a(infn, removeDeepMod=False):
                 #                 else:
                 #                     plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
                 tick_label_fontsize = 10
-                tick_label_fontsize = 14
+                tick_label_fontsize = 12
                 if yrow == num_col:  # last row scatter plot shows x ticks
                     plt.xticks([0, 1], fontsize=tick_label_fontsize)
                     ax3.set_xticklabels(["0%", "100%"], fontsize=tick_label_fontsize)
-                    for label, alnType in zip(ax3.get_xticklabels(), ['left', 'right']):
+                    for label, alnType in zip(ax3.get_xticklabels(), ['left', 'center']):
                         label.set_horizontalalignment(alnType)
                 else:
                     plt.xticks([], fontsize=10)
@@ -251,9 +251,13 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname", removeDeepMod=False):
     figure_size = (4, 4)
 
     # title_font_size = 18
-    label_font_size = 16
+    label_font_size = 14
 
+    ## Plot ROC curve
     plt.clf()
+    # import matplotlib.font_manager as font_manager
+    # plt.rcParams['font.sans-serif'] = ['Arial']
+
     plt.figure(figsize=figure_size)
     for toolname, toolcolor in zip(ToolNameList, ToolsColorList):
         if toolname == 'DeepMod' and removeDeepMod:
@@ -268,17 +272,26 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname", removeDeepMod=False):
         roc_auc = metrics.auc(fpr, tpr)
         plt.plot(fpr, tpr, toolcolor, label=f'{toolname}={roc_auc:.2f}')
     plt.legend(loc='lower right')
-    plt.plot([0, 1], [0, 1], 'r--')
+    # plt.plot([0, 1], [0, 1], 'r--')
     plt.xlim([0, 1])
     plt.ylim([0, 1])
+
+    # plt.ylabel('True Positive Rate', fontsize=label_font_size)
+    # plt.rcParams['font.sans-serif'] = ['Arial']
     plt.ylabel('True Positive Rate', fontsize=label_font_size)
     plt.xlabel('False Positive Rate', fontsize=label_font_size)
+
+    # plt.ylabel('True Positive Rate', fontsize=label_font_size)
+    # plt.xlabel('False Positive Rate', fontsize=label_font_size)
+
     # plt.title('ROC Curves', fontsize=title_font_size)
     outfn = os.path.join(outdir, f'fig.3b.{tagname}.roc.curves.jpg')
     plt.savefig(outfn, format='png', bbox_inches='tight', dpi=600)
 
     plt.show()
     plt.close()
+
+    return
 
     ## PR curves
     plt.clf()
