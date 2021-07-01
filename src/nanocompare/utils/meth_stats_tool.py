@@ -5,7 +5,6 @@ Tool for pre-processing results
 import argparse
 import glob
 import gzip
-import os
 from collections import defaultdict
 from multiprocessing import Pool
 
@@ -534,15 +533,18 @@ def parse_arguments():
 
 
 def output_bed_by_bin(bin_id):
-    logger.info(f"start with bin_id={bin_id}")
     num_bins = 5
     density_col = 4
     output_cols = [0, 1, 2]
+    bin_value = int(bin_id / num_bins * 100 + 1e-5)
 
-    cutoff = int(bin_id / num_bins * 100 + 1e-5)
-    ndf = df[df[density_col] == cutoff]
+    logger.info(f"start with bin_id={bin_id}, bin_value={bin_value}")
+
+    ndf = df[df[density_col] == bin_value]
     ndf = ndf.iloc[:, output_cols]
-    outfn = os.path.join(args.o, f"hg38.gc5Base.bin{cutoff}.bed.gz")
+
+    logger.info(f"start to save, df={len(df):,}, ndf={len(ndf):,}, for bin_value={bin_value}")
+    outfn = os.path.join(args.o, f"hg38.gc5Base.bin{bin_value}.bed.gz")
     ndf.to_csv(outfn, sep='\t', header=False, index=False)
     logger.info(f"save to {outfn}")
 

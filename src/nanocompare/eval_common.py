@@ -2610,12 +2610,11 @@ def correlation_report_on_regions(corr_infn, beddir=None, dsname=None, outdir=pi
 
 
 def get_meteore_format_set(infn, read_level=True):
-
     df = pd.read_csv(infn, sep='\t')
     ret = set()
     for index, row in df.iterrows():
         id = row['ID']
-        chr=row['Chr']
+        chr = row['Chr']
         pos = int(row['Pos'])
         strand = row['Strand']
         if read_level:
@@ -2628,15 +2627,13 @@ def get_meteore_format_set(infn, read_level=True):
     return ret
 
 
-if __name__ == '__main__':
-    set_log_debug_level()
+def sanity_check_meteore_combine_sites():
+    bdir = "/projects/li-lab/Nanopore_compare/suppdata/METEORE_results/METEORE_raw_input"
 
-    bdir="/projects/li-lab/Nanopore_compare/suppdata/METEORE_results/METEORE_raw_input"
+    apl_deepsignal = "APL_DeepSignal-METEORE-perRead-score.tsv.gz"
+    apl_megalodon = "APL_Megalodon-METEORE-perRead-score.tsv.gz"
 
-    apl_deepsignal="APL_DeepSignal-METEORE-perRead-score.tsv.gz"
-    apl_megalodon="APL_Megalodon-METEORE-perRead-score.tsv.gz"
-
-    apl_meteore_comb="/projects/li-lab/Nanopore_compare/suppdata/METEORE_results/APL.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz"
+    apl_meteore_comb = "/projects/li-lab/Nanopore_compare/suppdata/METEORE_results/APL.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz"
 
     apl_deepsignal_set = get_meteore_format_set(os.path.join(bdir, apl_deepsignal))
     apl_megalodon_set = get_meteore_format_set(os.path.join(bdir, apl_megalodon))
@@ -2648,6 +2645,21 @@ if __name__ == '__main__':
     apl_megalodon_set = get_meteore_format_set(os.path.join(bdir, apl_megalodon), read_level=False)
     apl_meteore_set = get_meteore_format_set(apl_meteore_comb, read_level=False)
     logger.info(f"Site level: deepsignal={len(apl_deepsignal_set):,}, megalodon={len(apl_megalodon_set):,}, meteore={len(apl_meteore_set):,}")
+
+
+if __name__ == '__main__':
+    set_log_debug_level()
+    infn = "/projects/li-lab/yang/results/2021-06-30/bed-bk/hg38.gc5Base.bin100.bed.gz"
+    bin100_bed = BedTool(infn).sort().merge()
+    logger.info(f"bin100_bed={len(bin100_bed)}")
+
+
+    infn = "/projects/li-lab/yang/results/2021-06-30/bed-bk/hg38.gc5Base.bin20.bed.gz"
+    bin20_bed = BedTool(infn).sort().merge()
+    logger.info(f"bin20_bed={len(bin20_bed)}")
+
+    merge_bin_100_20 = bin100_bed.cat(bin20_bed)
+    logger.info(f"merge_bin_100_20={len(merge_bin_100_20)}")
 
     sys.exit(0)
 

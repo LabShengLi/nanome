@@ -56,6 +56,12 @@ narrowCoordNameList = ['x.x.Genome-wide', singletonsFile, nonsingletonsFile, "ON
 # None means no coordinate used, i.e. Genome-wide
 narrowCoordFileList = [None] + [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in narrowCoordNameList[1:]]
 
+# CG density bed regions file basename
+cg_density_coord_name_list = ["hg38.gc5Base_merged.cg_bin20.bed.gz", "hg38.gc5Base_merged.cg_bin40.bed.gz", "hg38.gc5Base_merged.cg_bin60.bed.gz", "hg38.gc5Base_merged.cg_bin80.bed.gz", "hg38.gc5Base_merged.cg_bin100.bed.gz"]
+
+# CG density bed regions file full path
+cg_density_file_list=[os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in cg_density_coord_name_list]
+
 # Map each bed file name to a standard name, used by curve data plotting
 location_filename_to_abbvname = {
         'x.x.Genome-wide'                        : 'Genome-wide',

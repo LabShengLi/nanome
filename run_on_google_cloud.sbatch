@@ -68,7 +68,7 @@ exit 0
 ########################################################################
 ### Run Test pipeline on google cloud
 ## working and outputs dir
-WORK_DIR_BUCKET=gs://jax-nanopore-01-project-data/TestData-work
+WORK_DIR_BUCKET=gs://jax-nanopore-01-project-data/TestData-work1
 OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/TestData-ouputs
 
 ## Run test demo
