@@ -1624,7 +1624,6 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
         else:
             ontCalls_intersect = ontCalls_bed.intersect(coordBed, u=True, wa=True)
         ontCalls_narrow_set = set(txt2dict(ontCalls_intersect).keys())
-        logger.debug(f"ontCalls_narrow_set={len(ontCalls_narrow_set)}")
 
     ontCalls_narrow_second_set = None  # if using joined sites of all tools, or None for not using joined sites
     if secondFilterBedFileName:
@@ -1660,17 +1659,12 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
     ##          - set: need to intersect
     ##          - None: no need to intersect
     if ontCalls_narrow_set is not None:
-        logger.debug(f"Enter in intersection, ontCalls_narrow_set={len(ontCalls_narrow_set)}, targetedSet={len(targetedSet)}")
         targetedSet = targetedSet.intersection(ontCalls_narrow_set)
-        logger.debug(f"After intersection, targetedSet={len(targetedSet)}")
     if len(targetedSet) == 0:  # no cpg sites for evaluation
         return tuple([None] * 20)
 
-    logger.debug(f"targetedSet={len(targetedSet)}")
-
     if ontCalls_narrow_second_set is not None:
         targetedSet = targetedSet.intersection(ontCalls_narrow_second_set)
-    logger.debug(f"targetedSet={len(targetedSet)}")
     if len(targetedSet) == 0:  # no cpg sites for evaluation
         return tuple([None] * 20)
 
