@@ -26,7 +26,7 @@ from sklearn.metrics import roc_curve, auc, average_precision_score, f1_score, p
 from tqdm import tqdm
 
 from nanocompare.global_config import *
-from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEncodeList, narrowCoordFileList, narrowCoordFileTag, referenceGenomeFile
+from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEncodeList, narrowCoordFileList, narrowCoordFileTag, referenceGenomeFile, cgCoordFileTag, cg_density_file_list, rep_file_list, repCoordFileTag
 
 
 def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, readid_col=4, log_lik_ratio_col=5, sequence_col=-1, num_motifs_col=-2, baseFormat=1, llr_cutoff=2.0, output_first=False, include_score=False, filterChr=humanChrSet, saveMeteore=False, outfn=None):
@@ -1539,18 +1539,18 @@ def import_bgtruth(infn, encode, covCutoff=5, baseFormat=1, includeCov=True, ena
 def calldict2txt(inputDict):
     """
     Convert all keys in dict to a string txt, txt file is:
-    chr1  123  123  +
+    chr1  123  123 . .  +
 
     :param inputDict:
     :return:
     """
     text = ""
     for key in inputDict:
-        text += f'{key[0]}\t{key[1]}\t{key[1]}\t{key[2]}\n'
+        text += f'{key[0]}\t{key[1]}\t{key[1]}\t.\t.\t{key[2]}\n'
     return text
 
 
-def txt2dict(pybed, strand_col=3):
+def txt2dict(pybed, strand_col=5):
     """
     convert bed txt to a dict with keys in bed file
 
@@ -1609,30 +1609,23 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
     bedFile - BED file which will be used to narrow down the list of CpGs for example to those inside CGIs or promoters etc.. By default "False" - which means no restrictions are done (i.e. genome wide)
     secondFilterBed - these should be CpGs covered in some reference list. Format: BED
     """
-
     # Firstly reduce ontCalls with in bgTruth keys
     ontCallsKeySet = set(ontCalls.keys()).intersection(set(bgTruth.keys()))
-    # newOntCalls = {}
-    # for key in bgTruth:
-    #     if key in ontCalls:
-    #         newOntCalls[key] = ontCalls[key]
 
-    # switch = 0  # 1 if genome-wide
     ontCalls_narrow_set = None  # Intersection of ontCall with coord, or None if genome-wide
     if coordBedFileName:
         # Try ontCall intersect with coord (Genomewide, Singletons, etc.)
-        ontCalls_bed = BedTool(calldict2txt(ontCallsKeySet), from_string=True)
-        ontCalls_bed = ontCalls_bed.sort()
+        ontCalls_bed = BedTool(calldict2txt(ontCallsKeySet), from_string=True).sort()
+        coordBed = BedTool(coordBedFileName).sort()
 
-        coordBed = BedTool(coordBedFileName)
-        coordBed = coordBed.sort()
-        ontCalls_intersect = ontCalls_bed.intersect(coordBed, u=True, wa=True)
+        if os.path.basename(coordBedFileName).startswith("hg38.repetitive.rep"):
+            # For repetitive regions, we consider strand info when intersect
+            ontCalls_intersect = ontCalls_bed.intersect(coordBed, u=True, wa=True, s=True)
+        else:
+            ontCalls_intersect = ontCalls_bed.intersect(coordBed, u=True, wa=True)
         ontCalls_narrow_set = set(txt2dict(ontCalls_intersect).keys())
-    # else:
-    #     switch = 1
+        logger.debug(f"ontCalls_narrow_set={len(ontCalls_narrow_set)}")
 
-    ## Second optional filter, organized in the same fashion as the first one. Designed to accomodate for example list of CpGs covered by second program
-    # secondSwitch = 0
     ontCalls_narrow_second_set = None  # if using joined sites of all tools, or None for not using joined sites
     if secondFilterBedFileName:
         joined_set = load_single_sites_bed_as_set(secondFilterBedFileName)
@@ -1641,11 +1634,9 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
         for row in infile:  # each row: chr123  123   123  .  .  +
             rowsplit = row[:-1].split('\t')
             key = (rowsplit[0], int(rowsplit[1]), rowsplit[5])
-            secondFilterDict[key] = 0
+            secondFilterDict[key] = 1
         infile.close()
         ontCalls_narrow_second_set = set(ontCalls.keys()).intersection(joined_set)
-    # else:
-    #     secondSwitch = 1
 
     # Initial evaluation vars
     TP_5mC = FP_5mC = FN_5mC = TN_5mC = TP_5C = FP_5C = FN_5C = TN_5C = 0
@@ -1664,16 +1655,28 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
 
     # We find the narrowed CpG set to evaluate, try to reduce running time
     targetedSet = ontCallsKeySet
-    if ontCalls_narrow_set:
-        targetedSet = targetedSet.intersection(ontCalls_narrow_set)
 
-    if ontCalls_narrow_second_set:
+    ## ontCalls_narrow_set
+    ##          - set: need to intersect
+    ##          - None: no need to intersect
+    if ontCalls_narrow_set is not None:
+        logger.debug(f"Enter in intersection, ontCalls_narrow_set={len(ontCalls_narrow_set)}, targetedSet={len(targetedSet)}")
+        targetedSet = targetedSet.intersection(ontCalls_narrow_set)
+        logger.debug(f"After intersection, targetedSet={len(targetedSet)}")
+    if len(targetedSet) == 0:  # no cpg sites for evaluation
+        return tuple([None] * 20)
+
+    logger.debug(f"targetedSet={len(targetedSet)}")
+
+    if ontCalls_narrow_second_set is not None:
         targetedSet = targetedSet.intersection(ontCalls_narrow_second_set)
+    logger.debug(f"targetedSet={len(targetedSet)}")
+    if len(targetedSet) == 0:  # no cpg sites for evaluation
+        return tuple([None] * 20)
 
     for cpgKey in targetedSet:  # key = (chr, start, strand)
         ##### for each sites, we perform per read stats:
         if satisfy_fully_meth_or_unmeth(bgTruth[cpgKey][0]):
-            # if bgTruth[cpgKey][0] >= (cutoff_fully_meth - 1e-6) or bgTruth[cpgKey][0] <= 1e-5:  # we only consider absolute states here, 0, or 1 in bgtruth
             referenceCpGs += 1
 
             if is_fully_meth(bgTruth[cpgKey][0]):
@@ -1690,7 +1693,6 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
                     cCalls += 1
                 else:
                     raise Exception(f'Pred_class is only 0 or 1, but is {perCall}')
-                # totalCalls += 1
 
                 ### variables needed to compute precission, recall etc.:
                 if perCall[0] == 1 and is_fully_meth(bgTruth[cpgKey][0]):  # true positive
@@ -1723,7 +1725,6 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
             raise Exception(f'We must see all certain sites here, but see meth_freq={bgTruth[cpgKey][0]}')
 
     ### compute all per read stats:
-    #     Accuracy:
     try:
         accuracy = (TP_5mC + TN_5mC) / float(TP_5mC + FP_5mC + FN_5mC + TN_5mC)
     except ZeroDivisionError:
@@ -1754,7 +1755,6 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
         recall_5C = 0
 
     #     F1 score:
-
     f1_micro = f1_score(y_of_bgtruth, ypred_of_ont_tool, average='micro')
     f1_macro = f1_score(y_of_bgtruth, ypred_of_ont_tool, average='macro')
 
@@ -1773,9 +1773,6 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
         F1_5C = 2 * ((precision_5C * recall_5C) / (precision_5C + recall_5C))
     except ZeroDivisionError:
         F1_5C = 0
-
-    ## plot AUC curve:
-    # fig = plt.figure(figsize=(5, 5), dpi=300)
 
     fprSwitch = 1
     try:
@@ -1921,14 +1918,12 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
     chr1  123   124   1             16
     """
     logger.debug(f"nonSingletonsPostprocessing, based on file={nsRegionsBedFileName}, kbp={kbp}")
-    bedBGTruth = BedTool(calldict2txt(absoluteBGTruth), from_string=True)
-    bedBGTruth = bedBGTruth.sort()
+    bedBGTruth = BedTool(calldict2txt(absoluteBGTruth), from_string=True).sort()
 
     infn = os.path.join(data_base_dir, 'genome-annotation', nsRegionsBedFileName)
-    regionNonsingletons = BedTool(infn)
-    regionNonsingletons = regionNonsingletons.sort()
+    regionNonsingletons = BedTool(infn).sort()
 
-    regionWithBGTruth = regionNonsingletons.intersect(bedBGTruth, wa=True, wb=True)  # chr start end   chr start end strand
+    regionWithBGTruth = regionNonsingletons.intersect(bedBGTruth, wa=True, wb=True)  # chr start end   chr start end .  .  strand
 
     regionDict = defaultdict(list)  # key->value, key=region of (chr, start, end), value=list of [f1,f2,etc.] , suche as {regionCoords : [methylation percentage list]}
 
@@ -1941,10 +1936,10 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
             logger.debug(f'ovr={ovr}')
 
         regionKey = (ovr[0], int(ovr[1]), int(ovr[2]))  # chr  start  end
-        methKey = (ovr[3], int(ovr[4]), ovr[6])  # chr, start, strand
+        methKey = (ovr[3], int(ovr[4]), ovr[8])  # chr, start, strand
 
         tmpStart = int(ovr[4])
-        tmpStrand = ovr[6]
+        tmpStrand = ovr[8]
 
         if tmpStrand == '-':  # group + - strand CpG together, for simplicity
             tmpStart -= 1
@@ -2529,22 +2524,24 @@ def filter_corrdata_df_by_bedfile(df, df_bed, coord_fn):
     :param coord_fn:
     :return:
     """
-    if not coord_fn:  # None means genome wide
+    if not coord_fn:  # No need to filter for genome wide
         return df
 
-    coordBed = BedTool(coord_fn)
-    coordBed = coordBed.sort()
-    df_bed_intersect = df_bed.intersect(coordBed, u=True, wa=True)
+    coordBed = BedTool(coord_fn).sort()
+
+    # df_bed is chr  start  end . . strand
+    if os.path.basename(coord_fn).startswith("hg38.repetitive.rep"):
+        df_bed_intersect = df_bed.intersect(coordBed, u=True, wa=True, s=True)
+    else:
+        df_bed_intersect = df_bed.intersect(coordBed, u=True, wa=True)
 
     select_lines = []
     for line in df_bed_intersect:
-        select_lines.append(str(line)[:-1])
+        select_lines.append(str(line)[:-1])  # remove \n last character
         # logger.info(select_lines)
     df = df[df['bedline'].isin(select_lines)]
     # logger.info(df)
     return df
-
-    pass
 
 
 def correlation_report_on_regions(corr_infn, beddir=None, dsname=None, outdir=pic_base_dir):
@@ -2559,8 +2556,8 @@ def correlation_report_on_regions(corr_infn, beddir=None, dsname=None, outdir=pi
     df = pd.read_csv(corr_infn)
     logger.info(df)
 
-    location_flist = list(narrowCoordFileList)
-    location_ftag = list(narrowCoordFileTag)
+    location_flist = list(narrowCoordFileList) + list(cg_density_file_list) + list(rep_file_list)
+    location_ftag = list(narrowCoordFileTag) + list(cgCoordFileTag) + list(repCoordFileTag)
 
     if beddir:
         concordantFileName = find_bed_filename(basedir=beddir, pattern=f'{dsname}*hg38_nonsingletons.concordant.bed')
@@ -2571,10 +2568,10 @@ def correlation_report_on_regions(corr_infn, beddir=None, dsname=None, outdir=pi
     # logger.info(location_ftag)
     # logger.info(location_flist)
 
-    df['bedline'] = df["chr"] + '\t' + df["start"].astype(str) + '\t' + df["end"].astype(str) + '\t' + df["strand"]  # df[['chr', 'start', 'end']].agg('\t'.join, axis=1)
+    ## df is the dataframe for all joined csv, df_bed is the bed object used to intersect with coord file
+    df['bedline'] = df["chr"] + '\t' + df["start"].astype(str) + '\t' + df["end"].astype(str) + '\t.\t.\t' + df["strand"]  # df[['chr', 'start', 'end']].agg('\t'.join, axis=1)
     bedline_str = '\n'.join(df['bedline'].tolist())
-    df_bed = BedTool(bedline_str, from_string=True)
-    df_bed = df_bed.sort()
+    df_bed = BedTool(bedline_str, from_string=True).sort()
 
     dataset = defaultdict(list)
     for tagname, coord_fn in zip(location_ftag[:], location_flist[:]):
@@ -2647,12 +2644,10 @@ def sanity_check_meteore_combine_sites():
     logger.info(f"Site level: deepsignal={len(apl_deepsignal_set):,}, megalodon={len(apl_megalodon_set):,}, meteore={len(apl_meteore_set):,}")
 
 
-if __name__ == '__main__':
-    set_log_debug_level()
+def sanity_check_merge_bedtools():
     infn = "/projects/li-lab/yang/results/2021-06-30/bed-bk/hg38.gc5Base.bin100.bed.gz"
     bin100_bed = BedTool(infn).sort().merge()
     logger.info(f"bin100_bed={len(bin100_bed)}")
-
 
     infn = "/projects/li-lab/yang/results/2021-06-30/bed-bk/hg38.gc5Base.bin20.bed.gz"
     bin20_bed = BedTool(infn).sort().merge()
@@ -2661,8 +2656,8 @@ if __name__ == '__main__':
     merge_bin_100_20 = bin100_bed.cat(bin20_bed)
     logger.info(f"merge_bin_100_20={len(merge_bin_100_20)}")
 
-    sys.exit(0)
 
+def sanity_check_get_dna_seq():
     refGenome = get_ref_fasta()
     sanity_check_sequence('chr10', 10522)
     sanity_check_sequence('chr10', 10534)
@@ -2674,9 +2669,15 @@ if __name__ == '__main__':
     sanity_check_sequence('chr10', 376851)
     sanity_check_sequence('chr10', 376949)
 
-    # import os
-    #
-    # # infn = os.path.join("/projects/li-lab/yang/workspace/nano-compare/work/57/1025320ba288135e68cef72cd582c8", "batch_demo2.fast5.reads.tar.guppy.gcf52ref_per_read.tsv.gz")
-    # infn = "/projects/li-lab/Nanopore_compare/data/HL60/HL60.Guppy.fast5mod.persite.raw.tsv.gz"
-    # ret = importPredictions_Guppy(infn)
+
+if __name__ == '__main__':
+    set_log_debug_level()
+    refGenome = None
+
+    #  refGenome = get_ref_fasta()
+
+    infn = "/projects/li-lab/yang/results/2021-07-01/hg38.repetitive.bed.gz"
+    df = pd.read_csv(infn, sep='\t')
+    logger.info(df)
+
     logger.info("DONE")

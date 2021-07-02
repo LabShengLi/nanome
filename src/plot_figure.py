@@ -390,7 +390,7 @@ def collect_performance_report_as_df(runPrefix):
     return combdf
 
 
-def load_wide_format_performance_results(runPrefix, sel_locations=locations_category + locations_singleton):
+def load_wide_format_performance_results(runPrefix, sel_locations=locations_category + locations_singleton + locations_new):
     """
     Collect the currently new performance of exp results for paper
     :return:
@@ -398,7 +398,7 @@ def load_wide_format_performance_results(runPrefix, sel_locations=locations_cate
     df = collect_performance_report_as_df(runPrefix)
     retdf = df[df['Location'].isin(sel_locations)]
 
-    logger.debug(f"collect_newly_exp_data, wide-format seldf={len(retdf)} using locations={sel_locations}")
+    logger.debug(f"load_wide_format_performance_results, wide-format retdf={len(retdf)} using locations={sel_locations}")
 
     return retdf
 
@@ -412,6 +412,12 @@ def save_wide_format_performance_results(runPrefix, outdir, tagname):
 
     ## Rename Tool name to starndard name
     df["Tool"].replace({"Megalodon_ZW": "Megalodon", "DeepMod_C": "DeepMod"}, inplace=True)
+
+    ## arrange df
+    df['Dataset'] = pd.Categorical(df['Dataset'], datasets_order)
+    df['Tool'] = pd.Categorical(df['Tool'], ToolNameList)
+    df['Location'] = pd.Categorical(df['Location'], locations_order)
+    df = df.sort_values(by=['Dataset', 'Location', 'Accuracy'], ascending=[True, True, False])
 
     outfn = os.path.join(outdir, f'performance-results{f"-{tagname}" if tagname else ""}.csv')
     df.to_csv(outfn)
@@ -485,18 +491,30 @@ if __name__ == '__main__':
 
         pattern1 = "*.summary.bsseq.singleton.nonsingleton.cov1.csv"
         df = collect_singleton_vs_nonsingleton_df(run_prefix, pattern=pattern1)
+        ## arrange df
+        df = df.reindex(datasets_order)
+
         outfn = os.path.join(args.o, f'dataset.singleton.vs.non-singleton{f".{args.tagname}" if args.tagname else ""}.cov1.csv')
         df.to_csv(outfn)
 
         pattern2 = "*.summary.bsseq.singleton.nonsingleton.cov5.csv"
         df = collect_singleton_vs_nonsingleton_df(run_prefix, pattern=pattern2)
+        ## arrange df
+        df = df.reindex(datasets_order)
+
         outfn = os.path.join(args.o, f'dataset.singleton.vs.non-singleton{f".{args.tagname}" if args.tagname else ""}.cov5.csv')
         df.to_csv(outfn)
         logger.info(f'save stats of singleton and non-singleton to {outfn}')
 
         ## concat all singleton/nonsingleton for each datasets
-        pattern3 = "bgtruth.certain.sites.distribution.singletons.nonsingletons.each.genomic.cov5.xlsx"
+        ## sample: HL60.bgtruth.certain.sites.distribution.sing.nonsing.each.genomic.cov5.xlsx
+        pattern3 = "*.bgtruth.certain.sites.distribution.sing.nonsing.each.genomic.cov5.xlsx"
         df = collect_distribution_genomic_df(run_prefix, pattern=pattern3)
+        ## arrange df
+        # df['Dataset'] = pd.Categorical(df['Dataset'], datasets_order)
+        # df['Coord'] = pd.Categorical(df['Coord'], locations_order)
+        # df = df.sort_values(by='Dataset')
+
         outfn = os.path.join(args.o, f'all.certain.sites.distribution.each.genomic.region{f".{args.tagname}" if args.tagname else ""}.cov5.csv')
         df.to_csv(outfn)
 

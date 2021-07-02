@@ -5,6 +5,7 @@ Tool for pre-processing results
 import argparse
 import glob
 import gzip
+import sys
 from collections import defaultdict
 from multiprocessing import Pool
 
@@ -17,6 +18,7 @@ from tqdm import tqdm
 
 from nanocompare.eval_common import load_tombo_df, load_deepmod_df, get_dna_base_from_reference, load_sam_as_strand_info_df, load_nanopolish_df
 from nanocompare.global_config import *
+from nanocompare.global_settings import humanChrSet
 
 
 def add_strand_info_for_nanopolish(nanopolish_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.methylation_calls.tsv', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sam'):
@@ -549,6 +551,27 @@ def output_bed_by_bin(bin_id):
     logger.info(f"save to {outfn}")
 
 
+def output_bed_by_bin2(infn, num_bins):
+    inf = gzip.open(infn, 'rt')
+    outf_list = []
+    for bin_id in range(0, num_bins + 1):
+        bin_value = int(bin_id / num_bins * 100 + 1e-5)
+        outf_list.append(gzip.open(os.path.join(args.o, f"hg38.gc5Base.bin{bin_value}.bed.gz"), 'wt'))
+
+    for row in tqdm(inf):
+        tmp = row.strip().split("\t")
+        density_col = 4
+        bin_value = int(float(tmp[density_col]) + 1e-5)
+        bin_id = bin_value // 20
+        if bin_id not in range(0, num_bins + 1):
+            logger.error(f"Error found: bin_value={bin_value}, bin_id={bin_id}, for row={row}")
+            raise Exception(f"Error found: bin_value={bin_value}, bin_id={bin_id}, for row={row}")
+        outf_list[bin_id].write(f"{tmp[0]}\t{tmp[1]}\t{tmp[2]}\n")
+
+    [outf.close for outf in outf_list]
+    logger.info("Finished bin bed for gc density")
+
+
 if __name__ == '__main__':
     set_log_debug_level()
     args = parse_arguments()
@@ -626,6 +649,10 @@ if __name__ == '__main__':
     elif args.cmd == 'gc-density-bed':
         # sbatch meth_stats_tool.sh gc-density-bed
         infn = "/projects/li-lab/yang/workspace/nano-compare/data/genome-annotation/hg38.gc5Base.bed.gz"
+        output_bed_by_bin2(infn, num_bins=5)
+        if True:
+            sys.exit(0)
+
         df = pd.read_csv(infn, sep='\t', header=None)
         df.iloc[:, 4] = df.iloc[:, 4].astype(int)
         logger.debug(df)
@@ -633,6 +660,48 @@ if __name__ == '__main__':
         os.makedirs(args.o, exist_ok=True)
         with Pool(processes=args.processors) as pool:
             pool.map(output_bed_by_bin, bin_list)
+    elif args.cmd == 'repetitive-bed':
+        # bash meth_stats_tool.sh repetitive-bed
+        infn = "/projects/li-lab/yang/results/2021-07-01/hg38.repetitive.bed.gz"
+        df = pd.read_csv(infn, sep='\t')
+        df = df[df['genoName'].isin(humanChrSet)]
+        df['n1'] = '.'
+        df['n2'] = '.'
+        logger.info(df)
+        outfn = f"hg38.repetitive.rep_All.bed.gz"
+        df[['genoName', 'genoStart', 'genoEnd', 'n1', 'n2', 'strand']].to_csv(os.path.join(args.o, outfn), sep='\t', header=False, index=False)
+
+        region_dict = {
+                "LINE"          : ["LINE"],
+                "SINE"          : ["SINE"],
+                "LTR"           : ["LTR"],
+                "Satellite"     : ["Satellite"],
+                "Simple_repeat" : ["Simple_repeat"],
+                "DNA"           : ["DNA"],
+                "Low_complexity": ["Low_complexity"],
+                "Simple_repeat" : ["Simple_repeat"],
+                "Retroposon"    : ["Retroposon"],
+                }
+        used_list = []
+        for key in region_dict:
+            logger.info(f"seperate {key}")
+            used_list = used_list + region_dict[key]
+            ndf = df[df['repClass'].isin(region_dict[key])]
+            ndf = ndf[['genoName', 'genoStart', 'genoEnd', 'n1', 'n2', 'strand']]
+            # logger.info(ndf)
+            outfn = f"hg38.repetitive.rep_{key}.bed.gz"
+            ndf.to_csv(os.path.join(args.o, outfn), sep='\t', header=False, index=False)
+            logger.info(f"len={len(ndf)}, save to {outfn}")
+
+        ## Output others
+        ndf = df[~df['repClass'].isin(used_list)]
+        ndf = ndf[['genoName', 'genoStart', 'genoEnd', 'n1', 'n2', 'strand']]
+        # logger.info(ndf)
+        outfn = f"hg38.repetitive.rep_Others.bed.gz"
+        ndf.to_csv(os.path.join(args.o, outfn), sep='\t', header=False, index=False)
+        logger.info(f"len={len(ndf)}, save to {outfn}")
+
+
     else:
         raise Exception(f"Not support command={args.cmd}")
 

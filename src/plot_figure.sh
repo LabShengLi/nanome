@@ -16,8 +16,8 @@
 pythonFile=plot_figure.py
 
 command=${1:-"Step1"}
-type=${2:-"six"}
-resultsDir=${3:-"/projects/li-lab/yang/results/2021-06-28"}
+type=${2:-"METEORE"}
+resultsDir=${3:-"/projects/li-lab/yang/results/2021-06-29"}
 
 bedDir="/projects/li-lab/yang/results/2021-06-26"
 
@@ -44,6 +44,7 @@ if [ $command == "Step1" ]; then
 	# Step 1: Table S2,S3
 	# bash plot_figure.sh Step1
 	# bash plot_figure.sh Step1 METEORE
+	# bash plot_figure.sh Step1 METEORE /projects/li-lab/yang/results/2021-06-28
 	python plot_figure.py export-data -i \
 		${HL60_Result_dir} \
 		${K562_Result_dir} \
@@ -53,19 +54,19 @@ if [ $command == "Step1" ]; then
 elif [ $command == "Step2" ]; then
 	# Step 2.1: Export curve data for Figure 3B
 	# sbatch plot_figure.sh Step2 METEORE
-	#	python plot_figure.py export-curve-data -i \
-	#	 			${HL60_Result_dir} \
-	#				${K562_Result_dir} \
-	#				${APL_Result_dir} \
-	#				${NA19240_Result_dir} ${tagOptions}
+	python  plot_figure.py export-curve-data -i \
+		${HL60_Result_dir} \
+		${K562_Result_dir} \
+		${APL_Result_dir} \
+		${NA19240_Result_dir}    ${tagOptions}
 
 	# Step 2.2: Figure 3B Plot curves data
 	## python plot_figure.py plot-curve-data -i  /projects/li-lab/yang/results/2021-06-29/plot-curve-data-METEORE/MethPerf-NA19240_RRBS_2Reps_METEORE.plot.curve.data.ytrue.ypred.yscore.Singletons.pkl
-	#	find /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} -name '*.pkl' \
-	#		-exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
+	find  /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} -name '*.pkl' \
+		-exec  python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
 
-	find /projects/li-lab/yang/results/2021-06-29/${plotCurveDataDir} -name '*.pkl' \
-		-exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
+#	find /projects/li-lab/yang/results/2021-06-29/${plotCurveDataDir} -name '*.pkl' \
+#		-exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
 
 elif [ $command == "Fig5a" ]; then
 	### Plot figure 5a

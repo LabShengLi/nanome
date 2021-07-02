@@ -31,7 +31,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def output_dict_to_bed(dictCalls, outfn, sep='\t'):
+def output_dict_to_bed_as_0base(dictCalls, outfn, sep='\t'):
     """
     Assume dictCalls are key->value, key=(chr, 123, +), value=[(freq, cov), ...], note is 1-based format
     Output is format: 0-based format with tab-sep for analysis
@@ -128,7 +128,7 @@ if __name__ == '__main__':
         bgTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruthCutt)
         outfn = os.path.join(out_dir, f'{RunPrefix}.tss.bgtruth.cov{bgtruthCutt}.bed.gz')
         logger.info(f'Combined BS-seq data (cov>={bgtruthCutt}), all methylation level sites={len(bgTruth):,}')
-        output_dict_to_bed(bgTruth, outfn)
+        output_dict_to_bed_as_0base(bgTruth, outfn)
         logger.info(f'\n\n####################\n\n')
 
     logger.info("We are outputing bed CpG results for each tool")
@@ -154,5 +154,5 @@ if __name__ == '__main__':
         ontCallWithCov = readLevelToSiteLevelWithCov(ontCall, minCov=minToolCovCutt, toolname=callname)
         callresult_dict[callname] = ontCallWithCov
         outfn = os.path.join(out_dir, f'{RunPrefix}.tss.{callname}.cov{minToolCovCutt}.bed')
-        output_dict_to_bed(ontCallWithCov, outfn)
+        output_dict_to_bed_as_0base(ontCallWithCov, outfn)
     logger.info("TSS bed file generation DONE")

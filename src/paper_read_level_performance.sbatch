@@ -8,6 +8,8 @@
 #SBATCH --time=72:00:00
 #SBATCH -o log/%x.%j.out
 #SBATCH -e log/%x.%j.err
+#SBATCH --mail-user=yang.liu@jax.org
+#SBATCH --mail-type=END
 
 dsname=${1:-HL60}
 runidSuffix=${2:-""} # "_RRBS_2Reps
@@ -59,22 +61,22 @@ pythonFile=nanocompare/read_level_eval.py
 
 set -x
 
-if [ "${command}" == "six" ] ; then
+if [ "${command}" == "six" ]; then
 	## six tool
 	python ${pythonFile} \
 		--calls \
-			Nanopolish:${NanopolishCalls} \
-			Megalodon.ZW:${MegalodonCalls} \
-			DeepSignal:${DeepSignalCalls} \
-			Guppy:${GuppyCalls} \
-			Tombo:${TomboCalls} \
-			DeepMod.C:${DeepModCalls} \
+		Nanopolish:${NanopolishCalls} \
+		Megalodon.ZW:${MegalodonCalls} \
+		DeepSignal:${DeepSignalCalls} \
+		Guppy:${GuppyCalls} \
+		Tombo:${TomboCalls} \
+		DeepMod.C:${DeepModCalls} \
 		--bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
 		--runid MethPerf-${dsname}${runidSuffix} \
 		--dsname ${dsname} \
 		--min-bgtruth-cov 5 \
 		--report-joined --enable-cache --using-cache ${otherOptions} ### --mpi
-elif [ "${command}" == "METEORE" ] ; then
+elif [ "${command}" == "METEORE" ]; then
 	## include METEORE
 	python ${pythonFile} \
 		--calls \
@@ -89,7 +91,8 @@ elif [ "${command}" == "METEORE" ] ; then
 		--runid MethPerf-${dsname}${runidSuffix} \
 		--dsname ${dsname} \
 		--min-bgtruth-cov 5 \
-		--report-joined --enable-cache --using-cache ${otherOptions} ### --mpi
+		--distribution \
+		--report-joined --enable-cache --using-cache ${otherOptions}
 
 else
 	echo "Not support command"
