@@ -572,6 +572,27 @@ def output_bed_by_bin2(infn, num_bins):
     logger.info("Finished bin bed for gc density")
 
 
+def save_tss_bed_for_5hmc(infn, outfn):
+    logger.info(f"open infn={infn}")
+    df = pd.read_csv(infn, sep='\t', header=None)
+    logger.debug(df)
+
+    df = df.iloc[:, [0, 1, 2, 4, 7]]
+    df.columns = ['chr', 'start', 'end', '5hmc_level', 'strand']
+    df['n1'] = '.'
+    df['start'] = df['start'].astype(int) - 1
+    df['end'] = df['end'].astype(int) - 1
+    df['5hmc_level'] = df['5hmc_level'].astype(float)
+    df = df[['chr', 'start', 'end', '5hmc_level', 'n1', 'strand']]
+
+    logger.info(f"df['5hmc_level'] = {df['5hmc_level'].describe()}")
+    logger.info(f"len(df['5hmc_level']) = {(df.loc[:, '5hmc_level'] >= 1.0 - 1e-3).sum()}")
+
+    df.to_csv(outfn, sep='\t', header=False, index=False)
+    logger.info(f"save to {outfn}")
+    pass
+
+
 if __name__ == '__main__':
     set_log_debug_level()
     args = parse_arguments()
@@ -700,7 +721,17 @@ if __name__ == '__main__':
         outfn = f"hg38.repetitive.rep_Others.bed.gz"
         ndf.to_csv(os.path.join(args.o, outfn), sep='\t', header=False, index=False)
         logger.info(f"len={len(ndf)}, save to {outfn}")
+    elif args.cmd == 'apl-5hmc-bed':
+        # convert 1-based to 0-based results, output 5hmc level
+        # bash meth_stats_tool.sh apl-5hmc-bed
+        infn = "/pod/2/li-lab/Nanopore_compare/data/APL_5hmC_BSseq/APL.cov5.mlml.addstrand.selected.bed.gz"
+        outfn = os.path.join(args.o, "APL.5hmc.tss.cov5.bed.gz")
+        save_tss_bed_for_5hmc(infn, outfn)
 
+        infn = "/pod/2/li-lab/Nanopore_compare/data/APL_5hmC_BSseq/APL.mlml.addstrand.selected.bed.gz"
+        outfn = os.path.join(args.o, "APL.5hmc.tss.cov1.bed.gz")
+        save_tss_bed_for_5hmc(infn, outfn)
+        pass
 
     else:
         raise Exception(f"Not support command={args.cmd}")

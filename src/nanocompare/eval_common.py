@@ -1236,7 +1236,6 @@ def importGroundTruth_bed_file_format(infileName, chr_col=0, start_col=1, meth_c
     '''
 
     cpgDict = {}
-
     row_cnt = 0
 
     if gzippedInput:
@@ -1442,6 +1441,60 @@ def importGroundTruth_coverage_output_from_Bismark_BedGraph(infileName, chr_col=
     return cpgDict
 
 
+def importGroundTruth_from_5hmc_ziwei(infn, chr_col=0, start_col=1, strand_col=-1, meth_freq_col=3, meth_5hmc_freq_col=4, sep='\t', covCutoff=None, baseFormat=1, includeCov=True, chrFilter=None, cov_col=None, provided_cov=5):
+    """
+    Input format is below, start is 1-based:
+    chr1	10542	10543	1	0	0	0	+
+    chr1	10563	10564	0.75	0	0.25	0	+
+    chr1	10571	10572	1	0	0	0	+
+    chr1	10577	10578	1	0	0	0	+
+    chr1	10579	10580	1	0	0	0	+
+    chr1	10589	10590	1	0	0	0	+
+    chr1	10609	10610	1	0	0	0	+
+    chr1	10617	10618	1	0	0	0	+
+    chr1	10620	10621	1	0	0	0	+
+    chr1	10631	10632	1	0	0	0	+
+
+    The columns are chromosome name, start position, end position, 5-mC level, 5-hmC level, unmethylated level and number of conflicts.
+    """
+    infile = open_file_gz_or_txt(infn)
+
+    cpgDict = {}
+    row_cnt = 0
+    for row in infile:
+        tmp = row.strip().split(sep)
+        row_cnt += 1
+
+        chr = tmp[chr_col]
+        start = int(tmp[start_col])
+        strand = tmp[strand_col]
+        meth_freq = float(tmp[meth_freq_col])
+
+        if chrFilter is not None and chr not in chrFilter:
+            continue
+
+        if covCutoff is not None and cov_col is not None:
+            coverage = int(tmp[cov_col])
+            if coverage < covCutoff:
+                continue
+
+        key = (chr, start - (1 - baseFormat), strand)
+        if key in cpgDict:
+            raise Exception(f"Found duplicate key, in row={row}, key={key}")
+
+        if includeCov:
+            if cov_col is None:
+                cpgDict[key] = (meth_freq, provided_cov)
+            else:
+                cpgDict[key] = (meth_freq, int(tmp[cov_col]))
+        else:
+            cpgDict[key] = meth_freq
+
+    infile.close()
+    logger.info(f"###\timportGroundTruth_5hmc_ziwei: loaded information for {len(cpgDict):,} CpGs with cutoff={covCutoff}, before cutoff={row_cnt:,}")
+    return cpgDict
+
+
 def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False, enable_cache=False, using_cache=False, filterChr=humanChrSet, saveMeteore=False, outfn=None):
     """
     General purpose for import any tools methylation calling input files.
@@ -1517,6 +1570,8 @@ def import_bgtruth(infn, encode, covCutoff=5, baseFormat=1, includeCov=True, ena
         bgTruth = importGroundTruth_from_Encode(infn, covCutoff=covCutoff, baseFormat=baseFormat, includeCov=includeCov)
     elif encode == "bismark":  # for genome-wide Bismark Report ouput format results, such as HL60, etc. 1-based start input
         bgTruth = importGroundTruth_from_Bismark(infn, covCutoff=covCutoff, baseFormat=baseFormat, includeCov=includeCov)
+    elif encode == "5hmc_ziwei": # for sanity check 5hmc
+        bgTruth = importGroundTruth_from_5hmc_ziwei(infn, covCutoff=covCutoff, baseFormat=baseFormat, includeCov=includeCov)
     elif encode == "oxBS_sudo":  # not used now, function need to check if use
         raise Exception(f'Please check this function is ok, encode={encode}')
         bgTruth = importGroundTruth_oxBS_deprecated(infn, covCutt=covCutoff, baseCount=baseFormat)
@@ -2201,15 +2256,15 @@ def get_ref_fasta(ref_fn=referenceGenomeFile):
     return ref_fasta
 
 
-def sanity_check_sequence(chr='chr10', start=10493):
+def sanity_check_sequence(chr='chr10', start_base0=10493):
     """
     start is a 0-based position
     :param chr:
     :param start:
     :return:
     """
-    ret_seq = get_dna_base_from_reference(chr, start, ref_fasta=refGenome)
-    logger.info(f'\n{chr}:{start}\n{ret_seq}\n-----^-----\n\n')
+    ret_seq = get_dna_base_from_reference(chr, start_base0, ref_fasta=refGenome)
+    logger.info(f'\n{chr}:{start_base0}\n{ret_seq}\n-----^-----\n\n')
 
 
 def get_cache_filename(infn, params):
@@ -2652,7 +2707,10 @@ def sanity_check_merge_bedtools():
 
 
 def sanity_check_get_dna_seq():
-    refGenome = get_ref_fasta()
+    # refGenome = get_ref_fasta()
+    sanity_check_sequence('chr1', 10542)
+    sanity_check_sequence('chr1', 10563)
+    return
     sanity_check_sequence('chr10', 10522)
     sanity_check_sequence('chr10', 10534)
     sanity_check_sequence('chr10', 10557)
@@ -2667,6 +2725,11 @@ def sanity_check_get_dna_seq():
 if __name__ == '__main__':
     set_log_debug_level()
     refGenome = None
+
+    refGenome = get_ref_fasta()
+    sanity_check_get_dna_seq()
+
+    sys.exit(0)
 
     #  refGenome = get_ref_fasta()
 

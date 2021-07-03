@@ -34,7 +34,7 @@ def parse_arguments():
 def output_dict_to_bed_as_0base(dictCalls, outfn, sep='\t'):
     """
     Assume dictCalls are key->value, key=(chr, 123, +), value=[(freq, cov), ...], note is 1-based format
-    Output is format: 0-based format with tab-sep for analysis
+    Output is format: 0-based format with tab-sep for TSS analysis
 
     ==============================
     chr start end . . freq  cov

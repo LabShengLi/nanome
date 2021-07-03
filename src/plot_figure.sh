@@ -17,9 +17,9 @@ pythonFile=plot_figure.py
 
 command=${1:-"Step1"}
 type=${2:-"METEORE"}
-resultsDir=${3:-"/projects/li-lab/yang/results/2021-06-29"}
+resultsDir=${3:-"/projects/li-lab/yang/results/2021-07-01"}
 
-bedDir="/projects/li-lab/yang/results/2021-06-26"
+bedDir="/projects/li-lab/yang/results/2021-07-01"
 
 if [ "$type" == "six" ]; then
 	HL60_Result_dir=${resultsDir}/MethPerf-HL60_RRBS_2Reps
@@ -65,8 +65,8 @@ elif [ $command == "Step2" ]; then
 	find  /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} -name '*.pkl' \
 		-exec  python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
 
-#	find /projects/li-lab/yang/results/2021-06-29/${plotCurveDataDir} -name '*.pkl' \
-#		-exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
+	#	find /projects/li-lab/yang/results/2021-06-29/${plotCurveDataDir} -name '*.pkl' \
+	#		-exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
 
 elif [ $command == "Fig5a" ]; then
 	### Plot figure 5a

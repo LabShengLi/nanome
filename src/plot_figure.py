@@ -8,6 +8,7 @@ import glob
 import gzip
 import os.path
 import pickle
+import re
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
@@ -432,6 +433,8 @@ def parse_arguments():
     parser.add_argument('--tagname', type=str, help="tagname of files", default=None)
     parser.add_argument('--beddir', type=str, help="bed file dir used for finding Concordant and Discordant", default=None)
     parser.add_argument('--cutoff', type=int, help="the cutoff used on bed file", default=1)
+    parser.add_argument('--signal-col', type=int, help="the column number of signals extract from bed to bedGraph", default=6)
+    parser.add_argument('--cov-col', type=int, help="the column number of signals extract from bed to bedGraph", default=7)  # -1 means no cov col
 
     args = parser.parse_args()
     return args
@@ -605,19 +608,28 @@ if __name__ == '__main__':
             outfn = os.path.join(pic_base_dir, f'{bfn}.sequencing_summary.txt')
             outdf.to_csv(outfn, index=False, sep='\t')
     elif args.cmd == 'bed-to-bedGraph':
+        # Input is 0-based, output is same 0-based for TSS analysis
+        # python plot_figure.py bed-to-bedGraph -i $fn --cutoff $CUTOFF -o $outdir --cov_col 7  --signal-col 6
+        # python plot_figure.py bed-to-bedGraph -i $fn --cutoff 5 --cov_col -1  --signal-col 3
         infn = args.i[0]
         cutoff = args.cutoff
         df = pd.read_csv(infn, sep='\t', header=None)
         logger.info(len(df))
 
-        df = df[df.iloc[:, 7] >= cutoff]
-        logger.info(f'After cutoff={cutoff}, len(df)={len(df)}')
+        if args.cov_col != -1:  # filter with coverage
+            df = df[df.iloc[:, args.cov_col] >= cutoff]
+            logger.info(f'After cutoff={cutoff}, len(df)={len(df)}')
+
         if not args.o:  # output dir params
             outdir = pic_base_dir
         else:
             outdir = args.o
-        outfn = os.path.join(outdir, f'{os.path.basename(infn).replace(".cov1.bed", "")}.cov{cutoff}.bedGraph')
-        df = df.iloc[:, [0, 1, 2, 6]]
+
+        baseInfn = os.path.basename(infn)
+        baseOutfn = re.sub('cov..bed.gz', '', baseInfn) + f"cov{cutoff}.bedGraph"
+
+        outfn = os.path.join(outdir, baseOutfn)
+        df = df.iloc[:, [0, 1, 2, args.signal_col]]
         df.to_csv(outfn, sep='\t', header=False, index=None)
         logger.info(f'save to {outfn}')
 
