@@ -275,18 +275,18 @@ if __name__ == '__main__':
         # Study five set venn data, no join with bgtruth, tool-cov > tool-cutoff=1 or 3
         if len(loaded_callname_list) >= 5:
             ## Exclude DeepMod, leave only 5 tools
-            logger.info(f"Start gen venn data for 5 tools (exclude DeepMod)")
+            logger.info(f"Start gen venn data for 5 tools ('Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo')")
             cpg_set_dict = defaultdict()
             for callname in ToolNameList[:5]:
                 cpg_set_dict[callname] = set(callresult_dict_cov3[callname].keys())  # .intersection(set(bgTruth.keys()))
             gen_venn_data(cpg_set_dict, namelist=ToolNameList[:5], outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.five.tools.cov{minToolCovCutt}')
 
-            ## Include Deepmod, 6 tools
-            logger.info(f"Start gen venn data for 6 tools (include DeepMod)")
+            ## Top 4 tools
+            logger.info(f"Start gen venn data for 4 tools ('Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy')")
             cpg_set_dict = defaultdict()
-            for callname in ToolNameList[:6]:
+            for callname in ToolNameList[:4]:
                 cpg_set_dict[callname] = set(callresult_dict_cov3[callname].keys())  # .intersection(set(bgTruth.keys()))
-            gen_venn_data(cpg_set_dict, namelist=ToolNameList[:6], outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.six.tools.cov{minToolCovCutt}')
+            gen_venn_data(cpg_set_dict, namelist=ToolNameList[:4], outdir=out_dir, tagname=f'{RunPrefix}.{args.dsname}.four.tools.cov{minToolCovCutt}')
 
         # Study top3 tool's venn data, no join with bgtruth, tool-cov > tool-cutoff=3
         logger.info(f"Start gen venn data for TOP3 tools (cov>={minToolCovCutt})")
