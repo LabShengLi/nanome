@@ -14,7 +14,14 @@ def output_cpg_set_0base(cpg_set, outfn):
     outf = gzip.open(outfn, 'wt')
     for key in cpg_set:
         # key is (chr, start, strand)
-        outf.write(f"{key[0]}\t{key[1] - 1}\t{key[1]}\t.\t.\t{key[2]}\n")
+        if isinstance(call1[key], list) or isinstance(call1[key], tuple):
+            cov = bgtruthDict[key][1]
+        else:
+            cov = None
+        if cov is None:
+            outf.write(f"{key[0]}\t{key[1] - 1}\t{key[1]}\t.\t.\t{key[2]}\n")
+        else:
+            outf.write(f"{key[0]}\t{key[1] - 1}\t{key[1]}\t.\t.\t{key[2]}\t{cov}\n")
     outf.close()
     logger.info(f"save to {outfn}")
 
