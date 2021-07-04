@@ -4,6 +4,8 @@ Tool for pre-processing results
 """
 import gzip
 
+from scipy.stats import pearsonr
+
 from nanocompare.eval_common import import_bgtruth, import_call, readLevelToSiteLevelWithCov
 from nanocompare.global_config import *
 
@@ -17,12 +19,33 @@ def output_cpg_set_0base(cpg_set, outfn):
     logger.info(f"save to {outfn}")
 
 
+def correlation_calls(call1, call2, keySet):
+    v1 = []
+    v2 = []
+    for key in keySet:
+        if isinstance(call1[key], list) or isinstance(call1[key], tuple):
+            vv1 = call1[key][0]
+        else:
+            vv1 = call1[key]
+
+        if isinstance(call2[key], list) or isinstance(call2[key], tuple):
+            vv2 = call2[key][0]
+        else:
+            vv2 = call2[key]
+        v1.append(vv1)
+        v2.append(vv2)
+    coe, pvalue = pearsonr(v1, v2)
+    return coe, pvalue
+
+
 if __name__ == '__main__':
     set_log_debug_level()
 
-    bgtruthFilename = "/pod/2/li-lab/Nanopore_compare/data/APL_5hmC_BSseq/APL.cov5.mlml.addstrand.selected.bed.gz"
+    # bgtruthFilename = "/pod/2/li-lab/Nanopore_compare/data/APL_5hmC_BSseq/APL.cov5.mlml.addstrand.selected.bed.gz"
+    bgtruthFilename = "/projects/li-lab/Nanopore_compare/data/APL/APL-bs_R1_val_1_bismark_bt2_pe.deduplicated.bismark.cov.convert.add.strand.tsv.gz"
     # bgtruthDict is key -> meth_freq
-    bgtruthDict = import_bgtruth(bgtruthFilename, encode="5hmc_ziwei", covCutoff=None, includeCov=False)
+    # bgtruthDict = import_bgtruth(bgtruthFilename, encode="5hmc_ziwei", covCutoff=None, includeCov=False)
+    bgtruthDict = import_bgtruth(bgtruthFilename, encode="bismark", covCutoff=1, includeCov=False)
 
     # megalodonDict: key-> (meth_freq, cov)
     megalodonFilename = "/pod/2/li-lab/Nanopore_compare/data/APL/APL.megalodon.per_read.sorted.bed.gz"
@@ -34,11 +57,21 @@ if __name__ == '__main__':
     nanopolishDict = import_call(nanopolishFilename, encode="Nanopolish")
     nanopolishDict = readLevelToSiteLevelWithCov(nanopolishDict, minCov=3, toolname="Nanopolish")
 
-    logger.info(f"bgtruthDict={type(bgtruthDict)}, megalodonDict={type(megalodonDict)}, nanopolishDict={type(nanopolishDict)}")
-    logger.info(f"bgtruthDict={len(bgtruthDict)}, megalodonDict={len(megalodonDict)}, nanopolishDict={len(nanopolishDict)}")
+    logger.info(
+        f"bgtruthDict={type(bgtruthDict)}, megalodonDict={type(megalodonDict)}, nanopolishDict={type(nanopolishDict)}")
+    logger.info(
+        f"bgtruthDict={len(bgtruthDict)}, megalodonDict={len(megalodonDict)}, nanopolishDict={len(nanopolishDict)}")
+
+    joinSet = set(megalodonDict.keys()).intersection(set(nanopolishDict.keys()))
+    coe, pvalue = correlation_calls(megalodonDict, nanopolishDict, joinSet)
+    logger.info(f"Megalodon vs. Nanopolish COE={coe:.3f}, pvalue={pvalue:e}, CpGs={len(joinSet):,}")
+
     for callDict, callName in zip([megalodonDict, nanopolishDict], ['Megalodon', 'Nanopolish']):
         logger.debug(f"Analyze tool={callName}")
         joinSet = set(bgtruthDict.keys()).intersection(set(callDict.keys()))
+
+        coe, pvalue = correlation_calls(bgtruthDict, callDict, joinSet)
+        logger.info(f"BS-seq vs. {callName} COE={coe:.3f}, pvalue={pvalue:e}, CpGs={len(joinSet):,}")
 
         ret_diff_get_40 = set()
         ret_diff_get_20 = set()
@@ -56,7 +89,8 @@ if __name__ == '__main__':
             if abs(tool_methfreq - bg_methfreq) <= 0.10:
                 ret_cons_let_10.add(key)
 
-        logger.info(f"tool={callName}: ret_diff_get_40={len(ret_diff_get_40)}, ret_diff_get_20={len(ret_diff_get_20)}, ret_cons_let_05={len(ret_cons_let_05)}, ret_cons_let_10={len(ret_cons_let_10)}")
+        logger.info(
+            f"tool={callName}: ret_diff_get_40={len(ret_diff_get_40)}, ret_diff_get_20={len(ret_diff_get_20)}, ret_cons_let_05={len(ret_cons_let_05)}, ret_cons_let_10={len(ret_cons_let_10)}")
         outfn = f"APL.bgtruth.{callName}.regions.diff.get.40.bed.gz"
         output_cpg_set_0base(ret_diff_get_40, os.path.join(pic_base_dir, outfn))
 
