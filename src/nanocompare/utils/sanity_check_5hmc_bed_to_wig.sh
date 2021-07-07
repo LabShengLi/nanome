@@ -10,7 +10,7 @@
 
 set -x
 
-baseDir=/projects/li-lab/yang/results/2021-07-02
+baseDir=/projects/li-lab/yang/results/2021-07-04
 flist=$(find $baseDir -name "APL.5hmc.tss.cov*.bed.gz")
 
 bedGraphToBigWig=/projects/li-lab/yang/scripts/bedGraphToBigWig
@@ -18,8 +18,8 @@ hg38ChromSize=/projects/li-lab/yang/workspace/nano-compare/data/reference/hg38/h
 
 for fn in ${flist}; do
 	s1=${fn%.bed.gz}
-	s2=${s1#*APL.5hmc.tss.cov}
-	python ../../plot_figure.py bed-to-bedGraph -i $fn --cutoff ${s2} --cov-col -1  --signal-col 3
+	cutoff_num=${s1#*APL.5hmc.tss.cov}
+	python ../../plot_figure.py bed-to-bedGraph -i $fn --cutoff ${cutoff_num} --cov-col -1  --signal-col 3
 done
 
 flist=$(find $baseDir -name "*.sorted.bedGraph")

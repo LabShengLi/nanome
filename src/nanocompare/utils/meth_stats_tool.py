@@ -586,7 +586,7 @@ def save_tss_bed_for_5hmc(infn, outfn):
     df = df[['chr', 'start', 'end', '5hmc_level', 'n1', 'strand']]
 
     logger.info(f"df['5hmc_level'] = {df['5hmc_level'].describe()}")
-    logger.info(f"len(df['5hmc_level']) = {(df.loc[:, '5hmc_level'] >= 1.0 - 1e-3).sum()}")
+    logger.info(f"len(df['5hmc_level'] >= 1.0) = {(df.loc[:, '5hmc_level'] >= 1.0 - 1e-3).sum()}")
 
     df.to_csv(outfn, sep='\t', header=False, index=False)
     logger.info(f"save to {outfn}")

@@ -461,7 +461,7 @@ if __name__ == '__main__':
             args.o = pic_base_dir
         dflist = []
         for indir in args.i:
-            fnlist = glob.glob(os.path.join(indir, 'Meth_corr_plot_data_joined-*.csv'))
+            fnlist = glob.glob(os.path.join(indir, 'Meth_corr_plot_data_joined-*.csv.gz'))
             if len(fnlist) != 1:
                 raise Exception(f'Found more or none fnlist={fnlist}, for indir={indir}')
             logger.info(f'Find file: {fnlist[0]}')

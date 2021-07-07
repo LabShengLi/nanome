@@ -1161,7 +1161,7 @@ def importGroundTruth_from_Bismark(infn, chr_col=0, start_col=1, strand_col=2, m
         key = (chr, int(start), strand)
         if key not in cpgDict:
             if includeCov:
-                cpgDict[key] = [row['meth-freq'] / 100.0, row['cov']]
+                cpgDict[key] = (row['meth-freq'] / 100.0, row['cov'])
             else:
                 cpgDict[key] = row['meth-freq'] / 100.0
         else:
@@ -2497,12 +2497,8 @@ def filter_cpgkeys_using_bedfile(cpgKeys, bedFileName):
     :param bedFileName:
     :return:
     """
-    cpgBed = BedTool(calldict2txt(cpgKeys), from_string=True)
-    cpgBed = cpgBed.sort()
-
-    coordBed = BedTool(bedFileName)
-    coordBed = coordBed.sort()
-
+    cpgBed = BedTool(calldict2txt(cpgKeys), from_string=True).sort()
+    coordBed = BedTool(bedFileName).sort()
     intersectBed = cpgBed.intersect(coordBed, u=True, wa=True)
     ret = set(txt2dict(intersectBed).keys())
     return ret

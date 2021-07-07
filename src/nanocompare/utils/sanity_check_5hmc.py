@@ -14,7 +14,7 @@ def output_cpg_set_0base(cpg_set, outfn):
     outf = gzip.open(outfn, 'wt')
     for key in cpg_set:
         # key is (chr, start, strand)
-        if isinstance(call1[key], list) or isinstance(call1[key], tuple):
+        if isinstance(bgtruthDict[key], list) or isinstance(bgtruthDict[key], tuple):
             cov = bgtruthDict[key][1]
         else:
             cov = None
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     bgtruthFilename = "/projects/li-lab/Nanopore_compare/data/APL/APL-bs_R1_val_1_bismark_bt2_pe.deduplicated.bismark.cov.convert.add.strand.tsv.gz"
     # bgtruthDict is key -> meth_freq
     # bgtruthDict = import_bgtruth(bgtruthFilename, encode="5hmc_ziwei", covCutoff=None, includeCov=False)
-    bgtruthDict = import_bgtruth(bgtruthFilename, encode="bismark", covCutoff=1, includeCov=False)
+    bgtruthDict = import_bgtruth(bgtruthFilename, encode="bismark", covCutoff=1, includeCov=True)
 
     # megalodonDict: key-> (meth_freq, cov)
     megalodonFilename = "/pod/2/li-lab/Nanopore_compare/data/APL/APL.megalodon.per_read.sorted.bed.gz"
@@ -85,7 +85,10 @@ if __name__ == '__main__':
         ret_cons_let_05 = set()
         ret_cons_let_10 = set()
         for key in joinSet:
-            bg_methfreq = bgtruthDict[key]
+            if isinstance(bgtruthDict[key], list)  or isinstance(bgtruthDict[key], tuple):
+                bg_methfreq = bgtruthDict[key][0]
+            else:
+                bg_methfreq = bgtruthDict[key]
             tool_methfreq = callDict[key][0]
             if abs(tool_methfreq - bg_methfreq) >= 0.4:
                 ret_diff_get_40.add(key)
