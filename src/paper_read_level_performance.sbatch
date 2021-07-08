@@ -89,6 +89,7 @@ if [ "${command}" == "six" ]; then
     --runid MethPerf-${dsname}${runidSuffix} \
     --dsname ${dsname} \
     --min-bgtruth-cov 5 \
+    --distribution \
     --report-joined --enable-cache --using-cache ${otherOptions} ### --mpi
 elif [ "${command}" == "METEORE" ]; then
   ## include METEORE
@@ -140,7 +141,6 @@ elif [ "${command}" == "NA12878-1" ]; then
     --min-bgtruth-cov 5 \
     --distribution \
     --report-joined --enable-cache --using-cache ${otherOptions}
-
 else
   echo "Not support command"
   exit 19

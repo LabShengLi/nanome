@@ -12,7 +12,8 @@ from multiprocessing import Manager, Pool
 from sklearn.metrics import confusion_matrix
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import nonsingletonsFile, location_filename_to_abbvname, cg_density_file_list, rep_file_list
+from nanocompare.global_settings import nonsingletonsFile, location_filename_to_abbvname, cg_density_file_list, \
+    rep_file_list, save_done_file
 from nanocompare.global_settings import rename_location_from_coordinate_name, perf_report_columns, singletonFileExtStr
 
 
@@ -75,13 +76,16 @@ def report_singleton_nonsingleton_table(bgTruth, outfn, fn_concordant, fn_discor
     df['Concordant.sum'] = df['Concordant.5C'] + df['Concordant.5mC']
     df['Discordant.sum'] = df['Discordant.5C'] + df['Discordant.5mC']
 
-    df = df[['Singletons.5C', 'Singletons.5mC', 'Singletons.sum', 'Non-Singletons.5C', 'Non-Singletons.5mC', 'Non-Singletons.sum', 'Concordant.5C', 'Concordant.5mC', 'Concordant.sum', 'Discordant.5C', 'Discordant.5mC', 'Discordant.sum']]
+    df = df[['Singletons.5C', 'Singletons.5mC', 'Singletons.sum', 'Non-Singletons.5C', 'Non-Singletons.5mC',
+             'Non-Singletons.sum', 'Concordant.5C', 'Concordant.5mC', 'Concordant.sum', 'Discordant.5C',
+             'Discordant.5mC', 'Discordant.sum']]
 
     df.to_csv(outfn)
     logger.info(f'save to {outfn}')
 
 
-def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, secondFilterBedFileName=None, cutoff_meth=1.0, outdir=None, tagname=None, test=False):
+def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None,
+                                secondFilterBedFileName=None, cutoff_meth=1.0, outdir=None, tagname=None, test=False):
     """
     Report performance results
     :param ontCalls: tool's call
@@ -96,7 +100,8 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
 
     for coord_fn in tqdm(narrowedCoordinatesList):
         accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth = \
-            computePerReadPerfStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFileName=secondFilterBedFileName,
+            computePerReadPerfStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn,
+                                    secondFilterBedFileName=secondFilterBedFileName,
                                     cutoff_fully_meth=cutoff_meth, outdir=outdir, tagname=tagname)
 
         coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genome-wide"}')
@@ -134,7 +139,9 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     return df
 
 
-def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None, secondFilterBedFileName=None, cutoff_fully_meth=1.0, outdir=None, tagname=None, processors=10):
+def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None,
+                                   secondFilterBedFileName=None, cutoff_fully_meth=1.0, outdir=None, tagname=None,
+                                   processors=10):
     """
     Multi-processor version of per-read performance evaluation.
 
@@ -164,7 +171,11 @@ def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCo
                 #                         secondFilterBed_4CorrFile=secondFilterBed_4Corr,
                 #                         cutoff_meth=cutoff_meth, outdir=outdir, tagname=tagname)
                 coord = os.path.basename(f'{coord_fn if coord_fn else "x.x.Genome-wide"}')
-                ret = pool.apply_async(computePerReadPerfStats, (ontCalls, bgTruth, analysisPrefix,), kwds={'coordBedFileName': coord_fn, 'secondFilterBedFileName': secondFilterBedFileName, 'cutoff_fully_meth': cutoff_fully_meth, 'outdir': outdir, 'tagname': tagname})
+                ret = pool.apply_async(computePerReadPerfStats, (ontCalls, bgTruth, analysisPrefix,),
+                                       kwds={'coordBedFileName': coord_fn,
+                                             'secondFilterBedFileName': secondFilterBedFileName,
+                                             'cutoff_fully_meth': cutoff_fully_meth, 'outdir': outdir,
+                                             'tagname': tagname})
                 ret_list.append((coord, ret))
 
             pool.close()
@@ -298,9 +309,11 @@ def parse_arguments():
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--report-joined', action='store_true', help="True if report on only joined sets")
     parser.add_argument('--test', action='store_true', help="True if only test for short time running")
-    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by space', required=True)
+    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by space',
+                        required=True)
     parser.add_argument('--chrSet', nargs='+', help='chromosome list', default=humanChrSet)
-    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>;<file-name>", default=None)
+    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>;<file-name>",
+                        default=None)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
     parser.add_argument('--enable-cache', action='store_true')
     parser.add_argument('--using-cache', action='store_true')
@@ -356,7 +369,8 @@ if __name__ == '__main__':
         for fn in fnlist:
             # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
             # bgTruth1 is dict of key->value, key=(chr, start, strand), and value=[meth.freq, cov]
-            bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True, using_cache=using_cache, enable_cache=enable_cache)
+            bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True,
+                                      using_cache=using_cache, enable_cache=enable_cache)
             bgTruthList.append(bgTruth1)
 
         # Combine multiple bgtruth together for analysis
@@ -365,12 +379,15 @@ if __name__ == '__main__':
         logger.info("\n\n########################\n\n")
 
         logger.info(f'Start find absolute state (100% or 0% level), take times')
-        absoluteBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if satisfy_fully_meth_or_unmeth(combineBGTruth[key][0])}
-        logger.info(f'Combined bgtruth sites={len(combineBGTruth):,}, Absolute bgtruth (100% and 0% level) sites={len(absoluteBGTruth):,}')
+        absoluteBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if
+                           satisfy_fully_meth_or_unmeth(combineBGTruth[key][0])}
+        logger.info(
+            f'Combined bgtruth sites={len(combineBGTruth):,}, Absolute bgtruth (100% and 0% level) sites={len(absoluteBGTruth):,}')
 
         logger.info(f'Start cutoff on absolute bg-truth, take times')
         # This is the smallest sites we use for evaluation
-        absoluteBGTruthCov = {key: absoluteBGTruth[key] for key in absoluteBGTruth if absoluteBGTruth[key][1] >= cutoffBGTruth}
+        absoluteBGTruthCov = {key: absoluteBGTruth[key] for key in absoluteBGTruth if
+                              absoluteBGTruth[key][1] >= cutoffBGTruth}
         logger.info(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(absoluteBGTruthCov):,}')
 
         # Load all coordinate file list (full path) in this runs
@@ -388,15 +405,18 @@ if __name__ == '__main__':
         # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth) with cov>=1
         # Classify concordant and discordant based on cov>=1 bgtruth
         # TODO: if we use cov>= 5 BS-seq define them, please update absoluteBGTruth with absoluteBGTruthCov
-        nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant, nsDisCordantFileName=fn_discordant, print_first=False)
+        nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant,
+                                    nsDisCordantFileName=fn_discordant, print_first=False)
 
         # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
         outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov1.csv')
-        report_singleton_nonsingleton_table(absoluteBGTruth, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
+        report_singleton_nonsingleton_table(absoluteBGTruth, outfn, fn_concordant=fn_concordant,
+                                            fn_discordant=fn_discordant)
 
         # Report singletons vs non-singletons of bgtruth with cov cutoff >= 5
         outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov{cutoffBGTruth}.csv')
-        report_singleton_nonsingleton_table(absoluteBGTruthCov, outfn, fn_concordant=fn_concordant, fn_discordant=fn_discordant)
+        report_singleton_nonsingleton_table(absoluteBGTruthCov, outfn, fn_concordant=fn_concordant,
+                                            fn_discordant=fn_discordant)
 
         logger.info("\n\n########################\n\n")
     else:
@@ -434,11 +454,13 @@ if __name__ == '__main__':
             raise Exception(f'{call_encode} is not allowed for read level evaluation, please use DeepMod.C file here')
 
         ## MUST import read-level results, and include score for plot ROC curve and PR curve
-        call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, siteLevel=False, using_cache=using_cache, enable_cache=enable_cache, filterChr=filterChrSet)
+        call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, siteLevel=False,
+                            using_cache=using_cache, enable_cache=enable_cache, filterChr=filterChrSet)
 
         if absoluteBGTruth:  # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
             logger.info(f'Filter out CpG sites not in bgtruth for {call_name}')
-            ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(call0, absoluteBGTruth)  # TODO:using absoluteBGTruthCov for even fewer sites
+            ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(call0,
+                                                                  absoluteBGTruth)  # TODO:using absoluteBGTruthCov for even fewer sites
             logger.info(f'{call_name} left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
         else:
             ontCallWithinBGTruthDict[call_name] = call0
@@ -466,7 +488,8 @@ if __name__ == '__main__':
     save_keys_to_single_site_bed(joinedCPG, outfn=bedfn_tool_join_bgtruth, callBaseFormat=baseFormat, outBaseFormat=1)
 
     ## Note all tools using cov>=1 for evaluation read-leval performance
-    logger.info(f"Data points for joined all tools with bg-truth (if any, cov>={cutoffBGTruth}) sites={len(joinedCPG):,}\n\n")
+    logger.info(
+        f"Data points for joined all tools with bg-truth (if any, cov>={cutoffBGTruth}) sites={len(joinedCPG):,}\n\n")
 
     if "ecoli_metropaper_sanity" in args.analysis:
         report_ecoli_metro_paper_evaluations(ontCallWithinBGTruthDict, joinedCPG)
@@ -490,7 +513,8 @@ if __name__ == '__main__':
             else:
                 cnt5C += 1
 
-    logger.info(f'The fully meth or unmeth sites of Joined BGTruth = {len(certainJoinedBGTruth):,}  (5C={cnt5C:,}, 5mC={cnt5mC:,}) for performance comparison')
+    logger.info(
+        f'The fully meth or unmeth sites of Joined BGTruth = {len(certainJoinedBGTruth):,}  (5C={cnt5C:,}, 5mC={cnt5mC:,}) for performance comparison')
 
     certainBGTruth = dict(absoluteBGTruthCov)  # not used now
     cntNoJoined5C = 0
@@ -501,7 +525,8 @@ if __name__ == '__main__':
         else:
             cntNoJoined5C += 1
 
-    logger.info(f'The fully meth or unmeth sites of No-Joined BGTruth (cov>={cutoffBGTruth}) = {len(certainBGTruth):,}  (5C={cntNoJoined5C:,}, 5mC={cntNoJoined5mC:,}) for performance comparison if No-joined')
+    logger.info(
+        f'The fully meth or unmeth sites of No-Joined BGTruth (cov>={cutoffBGTruth}) = {len(certainBGTruth):,}  (5C={cntNoJoined5C:,}, 5mC={cntNoJoined5mC:,}) for performance comparison if No-joined')
 
     logger.info("\n\n############\n\n")
 
@@ -573,10 +598,12 @@ if __name__ == '__main__':
             if num_total != num_singleton + num_nonsingleton:
                 logger.error(f"Found incorrect sums at {tagname}: for num_total != num_singleton + num_nonsingleton")
             if num_nonsingleton != num_concordant + num_discordant:
-                logger.error(f"Found incorrect sums at {tagname}: for num_nonsingleton != num_concordant+ num_discordant")
+                logger.error(
+                    f"Found incorrect sums at {tagname}: for num_nonsingleton != num_concordant+ num_discordant")
 
         df = pd.DataFrame.from_dict(datasets)
-        outfn = os.path.join(out_dir, f'{dsname}.bgtruth.certain.sites.distribution.sing.nonsing.each.genomic.cov{cutoffBGTruth}.xlsx')
+        outfn = os.path.join(out_dir,
+                             f'{dsname}.bgtruth.certain.sites.distribution.sing.nonsing.each.genomic.cov{cutoffBGTruth}.xlsx')
         df.to_excel(outfn)
         logger.info(f"save to {outfn}")
 
@@ -590,9 +617,15 @@ if __name__ == '__main__':
         if args.mpi:  # Using mpi may cause error, not fixed, but fast running
             # Note: narrowedCoordinatesList - all singleton (absolute and mixed) and non-singleton generated bed. ranges
             #       secondFilterBedFileName - joined sites of four tools and bg-truth. points
-            df = report_per_read_performance_mp(ontCallWithinBGTruthDict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord + cg_density_file_list + rep_file_list, secondFilterBedFileName=secondBedFileName, outdir=perf_dir, tagname=tmpPrefix, processors=args.processors)
+            df = report_per_read_performance_mp(ontCallWithinBGTruthDict[tool], bgTruth, tmpPrefix,
+                                                narrowedCoordinatesList=relateCoord + cg_density_file_list + rep_file_list,
+                                                secondFilterBedFileName=secondBedFileName, outdir=perf_dir,
+                                                tagname=tmpPrefix, processors=args.processors)
         else:
-            df = report_per_read_performance(ontCallWithinBGTruthDict[tool], bgTruth, tmpPrefix, narrowedCoordinatesList=relateCoord + cg_density_file_list + rep_file_list, secondFilterBedFileName=secondBedFileName, outdir=perf_dir, tagname=tmpPrefix)
+            df = report_per_read_performance(ontCallWithinBGTruthDict[tool], bgTruth, tmpPrefix,
+                                             narrowedCoordinatesList=relateCoord + cg_density_file_list + rep_file_list,
+                                             secondFilterBedFileName=secondBedFileName, outdir=perf_dir,
+                                             tagname=tmpPrefix)
             # This file will always report intermediate results
             tmpfn = os.path.join(perf_dir, 'performance.report.tmp.csv')
             os.remove(tmpfn)
@@ -613,4 +646,5 @@ if __name__ == '__main__':
         if args.test:
             logger.info("Only test, so just output one tool's results")
             break
+    save_done_file(out_dir)
     logger.info("### Read level performance analysis DONE.")

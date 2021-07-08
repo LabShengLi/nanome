@@ -7,7 +7,8 @@ import argparse
 import subprocess
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, location_filename_to_abbvname
+from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, location_filename_to_abbvname, \
+    save_done_file
 
 
 def summary_cpgs_stats_results_table():
@@ -36,9 +37,11 @@ def summary_cpgs_stats_results_table():
                'Joined CpG sites with BG-Truth': len(toolOverlapBGTruthCpGs)}
         ret.update({'Total calls by Nanopore reads': call_cov1_calls[toolname]})
 
+        # TODO: out of memory if add cgdensity and rep files
         # Add coverage of every regions by each tool here
-        for bedfn in narrowCoordFileList[
-                     1:] + cg_density_file_list + rep_file_list:  # calculate how overlap with Singletons, Non-Singletons, etc.
+        # for bedfn in narrowCoordFileList[
+        #              1:] + cg_density_file_list + rep_file_list:  # calculate how overlap with Singletons, Non-Singletons, etc.
+        for bedfn in narrowCoordFileList[1:]:  # calculate how overlap with Singletons, Non-Singletons, etc.
             basefn = os.path.basename(bedfn)
             tagname = location_filename_to_abbvname[basefn]
             subset = filter_cpgkeys_using_bedfile(callSet, bedfn)
@@ -337,7 +340,7 @@ if __name__ == '__main__':
     coveredCpGs = set(list(bgTruth.keys()))
     for name in loaded_callname_list:
         coveredCpGs = coveredCpGs.intersection(set(list(callresult_dict_cov3[name].keys())))
-        logger.info(f'Join {name} get {len(coveredCpGs)} CpGs')
+        logger.info(f'Join {name} get {len(coveredCpGs):,} CpGs')
     logger.info(f"Reporting {len(coveredCpGs)} CpGs are covered by all tools and bgtruth")
 
     logger.info('Output data of coverage and meth-freq on joined CpG sites for correlation analysis')
@@ -371,4 +374,5 @@ if __name__ == '__main__':
 
         logger.info(f'\n\n####################\n\n')
 
+    save_done_file(out_dir)
     logger.info("### Site level correlation analysis DONE")

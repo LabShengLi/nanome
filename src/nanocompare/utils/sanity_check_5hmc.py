@@ -4,7 +4,7 @@ Tool for pre-processing results
 """
 import gzip
 
-from scipy.stats import pearsonr
+from scipy.stats import pearsonr, wilcoxon
 
 from nanocompare.eval_common import import_bgtruth, import_call, readLevelToSiteLevelWithCov
 from nanocompare.global_config import *
@@ -45,14 +45,43 @@ def correlation_calls(call1, call2, keySet):
     return coe, pvalue
 
 
+def wilcoxon_test_calls(call1, call2, keySet):
+    v1 = []
+    v2 = []
+    for key in keySet:
+        if isinstance(call1[key], list) or isinstance(call1[key], tuple):
+            vv1 = call1[key][0]
+        else:
+            vv1 = call1[key]
+
+        if isinstance(call2[key], list) or isinstance(call2[key], tuple):
+            vv2 = call2[key][0]
+        else:
+            vv2 = call2[key]
+        v1.append(vv1)
+        v2.append(vv2)
+    stats, pvalue = wilcoxon(v1, v2)
+    return stats, pvalue
+    pass
+
+
 if __name__ == '__main__':
     set_log_debug_level()
 
-    # bgtruthFilename = "/pod/2/li-lab/Nanopore_compare/data/APL_5hmC_BSseq/APL.cov5.mlml.addstrand.selected.bed.gz"
+    mlmlFilename = "/pod/2/li-lab/Nanopore_compare/data/APL_5hmC_BSseq/APL.mlml.addstrand.bscov.oxbscov.selected.bed.gz"
+    mlmlDict = import_bgtruth(mlmlFilename, encode="5hmc_ziwei", covCutoff=1, includeCov=True)
+    logger.info(f"mlmlDict={len(mlmlDict):,}")
+
     bgtruthFilename = "/projects/li-lab/Nanopore_compare/data/APL/APL-bs_R1_val_1_bismark_bt2_pe.deduplicated.bismark.cov.convert.add.strand.tsv.gz"
-    # bgtruthDict is key -> meth_freq
-    # bgtruthDict = import_bgtruth(bgtruthFilename, encode="5hmc_ziwei", covCutoff=None, includeCov=False)
+    # bgtruthDict is key -> (meth_freq, cov)
     bgtruthDict = import_bgtruth(bgtruthFilename, encode="bismark", covCutoff=1, includeCov=True)
+    logger.info(f"bgtruthDict={len(bgtruthDict):,}")
+
+    newBgtruthDict = {}
+    joinKeys = set(bgtruthDict.keys()).intersection(set(mlmlDict.keys()))
+    for key in joinKeys:
+        newBgtruthDict[key] = bgtruthDict[key]
+    logger.info(f"newBgtruthDict={len(newBgtruthDict):,}")
 
     # megalodonDict: key-> (meth_freq, cov)
     megalodonFilename = "/pod/2/li-lab/Nanopore_compare/data/APL/APL.megalodon.per_read.sorted.bed.gz"
@@ -65,19 +94,19 @@ if __name__ == '__main__':
     nanopolishDict = readLevelToSiteLevelWithCov(nanopolishDict, minCov=3, toolname="Nanopolish")
 
     logger.info(
-        f"bgtruthDict={type(bgtruthDict)}, megalodonDict={type(megalodonDict)}, nanopolishDict={type(nanopolishDict)}")
+        f"newBgtruthDict={type(newBgtruthDict)}, megalodonDict={type(megalodonDict)}, nanopolishDict={type(nanopolishDict)}")
     logger.info(
-        f"bgtruthDict={len(bgtruthDict)}, megalodonDict={len(megalodonDict)}, nanopolishDict={len(nanopolishDict)}")
+        f"newBgtruthDict={len(newBgtruthDict)}, megalodonDict={len(megalodonDict)}, nanopolishDict={len(nanopolishDict)}")
 
-    joinSet = set(megalodonDict.keys()).intersection(set(nanopolishDict.keys()))
+    joinSet = set(megalodonDict.keys()).intersection(set(nanopolishDict.keys())).intersection(set(newBgtruthDict.keys()))
     coe, pvalue = correlation_calls(megalodonDict, nanopolishDict, joinSet)
     logger.info(f"Megalodon vs. Nanopolish COE={coe:.3f}, pvalue={pvalue:e}, CpGs={len(joinSet):,}")
 
     for callDict, callName in zip([megalodonDict, nanopolishDict], ['Megalodon', 'Nanopolish']):
         logger.debug(f"Analyze tool={callName}")
-        joinSet = set(bgtruthDict.keys()).intersection(set(callDict.keys()))
+        joinSet = set(newBgtruthDict.keys()).intersection(set(callDict.keys()))
 
-        coe, pvalue = correlation_calls(bgtruthDict, callDict, joinSet)
+        coe, pvalue = correlation_calls(newBgtruthDict, callDict, joinSet)
         logger.info(f"BS-seq vs. {callName} COE={coe:.3f}, pvalue={pvalue:e}, CpGs={len(joinSet):,}")
 
         ret_diff_get_40 = set()
@@ -85,10 +114,10 @@ if __name__ == '__main__':
         ret_cons_let_05 = set()
         ret_cons_let_10 = set()
         for key in joinSet:
-            if isinstance(bgtruthDict[key], list)  or isinstance(bgtruthDict[key], tuple):
-                bg_methfreq = bgtruthDict[key][0]
+            if isinstance(newBgtruthDict[key], list) or isinstance(newBgtruthDict[key], tuple):
+                bg_methfreq = newBgtruthDict[key][0]
             else:
-                bg_methfreq = bgtruthDict[key]
+                bg_methfreq = newBgtruthDict[key]
             tool_methfreq = callDict[key][0]
             if abs(tool_methfreq - bg_methfreq) >= 0.4:
                 ret_diff_get_40.add(key)
@@ -101,6 +130,15 @@ if __name__ == '__main__':
 
         logger.info(
             f"tool={callName}: ret_diff_get_40={len(ret_diff_get_40)}, ret_diff_get_20={len(ret_diff_get_20)}, ret_cons_let_05={len(ret_cons_let_05)}, ret_cons_let_10={len(ret_cons_let_10)}")
+
+        stats_let_05, pv_let05 = wilcoxon_test_calls(newBgtruthDict, callDict, ret_cons_let_05)
+        stats_let_10, pv_let10 = wilcoxon_test_calls(newBgtruthDict, callDict, ret_cons_let_10)
+        stats_get_20, pv_get20 = wilcoxon_test_calls(newBgtruthDict, callDict, ret_diff_get_20)
+        stats_get_40, pv_get40 = wilcoxon_test_calls(newBgtruthDict, callDict, ret_diff_get_40)
+
+        logger.info(
+            f"tool={callName} wilcoxon test:\n <5% = ({stats_let_05}, {pv_let05});\n <10% = ({stats_let_10},{pv_let10});\n >20% = ({stats_get_20}, {pv_get20});\n >40% = ({stats_get_40}, {pv_get40})\n")
+
         outfn = f"APL.bgtruth.{callName}.regions.diff.get.40.bed.gz"
         output_cpg_set_0base(ret_diff_get_40, os.path.join(pic_base_dir, outfn))
 
@@ -112,7 +150,5 @@ if __name__ == '__main__':
 
         outfn = f"APL.bgtruth.{callName}.regions.cons.let.10.bed.gz"
         output_cpg_set_0base(ret_cons_let_10, os.path.join(pic_base_dir, outfn))
-
-        pass
 
     logger.info("sanity_check 5hmc DONE")

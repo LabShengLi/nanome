@@ -8,6 +8,8 @@
 #SBATCH --time=72:00:00
 #SBATCH -o log/%x.%j.out
 #SBATCH -e log/%x.%j.err
+#SBATCH --mail-user=yang.liu@jax.org
+#SBATCH --mail-type=END
 
 dsname=${1:-HL60}
 runidSuffix=${2:-""}                                    # "_RRBS_2Reps

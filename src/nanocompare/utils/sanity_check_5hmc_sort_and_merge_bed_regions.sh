@@ -10,7 +10,7 @@
 
 set -x
 
-baseDir=/projects/li-lab/yang/results/2021-07-04
+baseDir=/projects/li-lab/yang/results/2021-07-07
 
 outDir=$baseDir/regions_sorted_merged
 mkdir -p $outDir
@@ -19,7 +19,7 @@ regionFileList=$(find $baseDir -maxdepth 1 -name "APL.bgtruth.*.regions.*.*.*.be
 
 for regionFile in ${regionFileList} ; do
   basenameRegion=$(basename $regionFile)
-  bedtools sort -i ${regionFile} | bedtools merge -s -i stdin | gzip > $outDir/${basenameRegion/.bed.gz}.sorted.merged.bed.gz &
+  bedtools sort -i ${regionFile} | bedtools merge -s -i stdin  > $outDir/${basenameRegion/.bed.gz}.sorted.merged.bed &
 done
 wait
 echo "### sort and merged DONE"

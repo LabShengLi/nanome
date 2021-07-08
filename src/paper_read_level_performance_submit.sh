@@ -8,8 +8,8 @@ datasetList=${1:-"HL60 K562"}
 if [[ "$datasetList" == *"NA12878"* ]]; then
   echo "Running NA12878"
   ### NA12878
-  sbatch --job-name=meth.perf.NA12878 \
-    paper_read_level_performance.sbatch NA12878 WGBS_2Reps NA12878 "  "
+  #  sbatch --job-name=meth.perf.NA12878 \
+  #    paper_read_level_performance.sbatch NA12878 WGBS_2Reps NA12878 "  "
   sbatch --job-name=meth.perf.NA12878_seven \
     paper_read_level_performance.sbatch NA12878 WGBS_2Reps_seven NA12878-1 "  "
 fi
@@ -38,6 +38,6 @@ fi
 if [[ "$datasetList" == *"NA19240"* ]]; then
   echo "Running NA19240"
   ### METEORE include
-  sbatch --job-name=meth.perf.NA19240 \
-    paper_read_level_performance.sbatch NA19240 RRBS_2Reps six "   "
+  sbatch --job-name=meth.perf.NA19240_METEORE \
+    paper_read_level_performance.sbatch NA19240 RRBS_2Reps_METEORE METEORE "   "
 fi

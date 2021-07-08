@@ -15,14 +15,14 @@ flank=500
 binSize=10
 processors=32
 
-baseDir=/projects/li-lab/yang/results/2021-07-04
+baseDir=/projects/li-lab/yang/results/2021-07-07
 
 # Output dir
 outdir=/projects/li-lab/yang/results/$(date +%F)/sanity-check-5hmc
 mkdir -p $outdir
 
 bw_5hmc=$(find $baseDir -maxdepth 1 -name "APL.5hmc.tss.cov1.bw")
-regionList=$(find /projects/li-lab/yang/results/2021-07-04/regions_sorted_merged -maxdepth 1 -name "APL.bgtruth.*.regions.*.bed")
+regionList=$(find $baseDir/regions_sorted_merged -maxdepth 1 -name "APL.bgtruth.*.regions.*.bed")
 
 for regionFile in ${regionList}; do
   echo "Process regionFile=${regionFile}"

@@ -6,7 +6,7 @@ Generate site-level methylation results for TSS analysis in Nanocompare paper.
 import argparse
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import get_tool_name
+from nanocompare.global_settings import get_tool_name, save_done_file
 
 
 def parse_arguments():
@@ -14,11 +14,14 @@ def parse_arguments():
     :return:
     """
     parser = argparse.ArgumentParser(description='Site level correlation analysis')
-    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces', required=True)
-    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name1>", default=None)
+    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces',
+                        required=True)
+    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name1>",
+                        default=None)
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
-    parser.add_argument('--beddir', type=str, help="base dir for bed files", default=None)  # need perform performance evaluation before, then get concordant, etc. bed files, like '/projects/li-lab/yang/results/2021-04-01'
+    parser.add_argument('--beddir', type=str, help="base dir for bed files",
+                        default=None)  # need perform performance evaluation before, then get concordant, etc. bed files, like '/projects/li-lab/yang/results/2021-04-01'
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=' ')
     parser.add_argument('--processors', type=int, help="running processors", default=8)
     parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff of coverage in bg-truth", default=1)
@@ -47,7 +50,8 @@ def output_dict_to_bed_as_0base(dictCalls, outfn, sep='\t'):
     # with open(outfn, 'w') as outf:
     with gzip.open(outfn, 'wt') as outf:
         for key in dictCalls:
-            strlist = [key[0], str(key[1] - 1), str(key[1]), '.', '.', key[2], str(dictCalls[key][0]), str(dictCalls[key][1])]
+            strlist = [key[0], str(key[1] - 1), str(key[1]), '.', '.', key[2], str(dictCalls[key][0]),
+                       str(dictCalls[key][1])]
             outf.write(sep.join(strlist) + '\n')
     logger.debug(f'Output for TSS analysis: {outfn}')
 
@@ -101,7 +105,8 @@ if __name__ == '__main__':
             callname = get_tool_name(callencode)
 
             outfn = os.path.join(out_dir, f"{args.dsname}_{callname}-METEORE-perRead-score.tsv.gz")
-            import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=False, using_cache=False, include_score=False, siteLevel=False, saveMeteore=args.output_meteore, outfn=outfn)
+            import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=False, using_cache=False,
+                        include_score=False, siteLevel=False, saveMeteore=args.output_meteore, outfn=outfn)
         logger.info("### METEORE format output DONE")
         sys.exit(0)
 
@@ -121,7 +126,8 @@ if __name__ == '__main__':
             if len(fn) == 0:  # incase of input like 'bismark:/a/b/c;'
                 continue
             # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
-            bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True, using_cache=using_cache, enable_cache=enable_cache)
+            bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True,
+                                      using_cache=using_cache, enable_cache=enable_cache)
             bgTruthList.append(bgTruth1)
 
         # Combine one/two replicates, using cutoff=1 or 5
@@ -146,13 +152,16 @@ if __name__ == '__main__':
 
         # We do now allow import DeepMod.C for site level evaluation
         if callencode == 'DeepMod.C':
-            raise Exception(f'{callencode} is not allowed for site level evaluation, please use DeepMod.Cluster file here')
+            raise Exception(
+                f'{callencode} is not allowed for site level evaluation, please use DeepMod.Cluster file here')
 
         loaded_callname_list.append(callname)
-        ontCall = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache, using_cache=using_cache, include_score=False, siteLevel=True)
+        ontCall = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache,
+                              using_cache=using_cache, include_score=False, siteLevel=True)
 
         ontCallWithCov = readLevelToSiteLevelWithCov(ontCall, minCov=minToolCovCutt, toolname=callname)
         callresult_dict[callname] = ontCallWithCov
-        outfn = os.path.join(out_dir, f'{RunPrefix}.tss.{callname}.cov{minToolCovCutt}.bed')
+        outfn = os.path.join(out_dir, f'{RunPrefix}.tss.{callname}.cov{minToolCovCutt}.bed.gz')
         output_dict_to_bed_as_0base(ontCallWithCov, outfn)
+    save_done_file(out_dir)
     logger.info("TSS bed file generation DONE")

@@ -169,6 +169,18 @@ def rename_location_from_coordinate_name(df):
     return df
 
 
+def save_done_file(outdir, filename="DONE.txt"):
+    """
+    Save a done file for finish flag
+    :param outdir:
+    :param filename:
+    :return:
+    """
+    outfn = os.path.join(outdir, filename)
+    with open(outfn, "w") as outf:
+        outf.write("DONE\n")
+
+
 if __name__ == '__main__':
 
     pass

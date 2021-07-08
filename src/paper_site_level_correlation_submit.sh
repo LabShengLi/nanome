@@ -38,8 +38,8 @@ fi
 if [[ "$datasetList" == *"NA12878"* ]]; then
   echo "Running NA12878"
   ## run NA12878
-  sbatch --job-name=meth.corr.NA12878 \
-    paper_site_level_correlation.sbatch NA12878 WGBS_2Reps NA12878 /projects/li-lab/yang/results/2021-07-05
+  #  sbatch --job-name=meth.corr.NA12878 \
+  #    paper_site_level_correlation.sbatch NA12878 WGBS_2Reps NA12878 /projects/li-lab/yang/results/2021-07-05
   sbatch --job-name=meth.corr.NA12878_seven \
     paper_site_level_correlation.sbatch NA12878 WGBS_2Reps_seven NA12878-1 /projects/li-lab/yang/results/2021-07-05
 fi
