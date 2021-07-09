@@ -6,7 +6,6 @@ Common functions used by read level and site level evaluations in Nanocompare pa
 Such as import_DeepSignal, import_BGTruth, etc.
 """
 
-import csv
 import glob
 import gzip
 import pickle
@@ -839,7 +838,6 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
     return cpgDict
 
 
-
 def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand_col=1, start_col=2, readid_col=4,
                                      log_ratio_col=5, log_lik_methylated_col=6, cutoff=(0.25, 0.5), header=None,
                                      sep='\t', output_first=False, include_score=False, filterChr=humanChrSet,
@@ -1188,7 +1186,6 @@ def importGroundTruth_from_Bismark(infn, chr_col=0, start_col=1, strand_col=2, m
     row_cnt = 0
     for row in infile:
         tmp = row.strip().split(sep)
-        row_cnt += 1
 
         chr = tmp[chr_col]
         start = int(tmp[start_col])
@@ -1196,6 +1193,10 @@ def importGroundTruth_from_Bismark(infn, chr_col=0, start_col=1, strand_col=2, m
         meth_cov = int(tmp[meth_col])
         unmeth_cov = int(tmp[unmeth_col])
         coverage = meth_cov + unmeth_cov
+
+        if coverage < 1:  # Filter out all 0 coverage
+            continue
+        row_cnt += 1
         meth_freq = meth_cov / coverage
 
         if strand not in ['+', '-']:

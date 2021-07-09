@@ -16,12 +16,15 @@ from Bio import SeqIO
 from ont_fast5_api.fast5_interface import get_fast5_file
 from tqdm import tqdm
 
-from nanocompare.eval_common import load_tombo_df, load_deepmod_df, get_dna_base_from_reference, load_sam_as_strand_info_df, load_nanopolish_df
+from nanocompare.eval_common import load_tombo_df, load_deepmod_df, get_dna_base_from_reference, \
+    load_sam_as_strand_info_df, load_nanopolish_df
 from nanocompare.global_config import *
 from nanocompare.global_settings import humanChrSet
 
 
-def add_strand_info_for_nanopolish(nanopolish_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.methylation_calls.tsv', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sam'):
+def add_strand_info_for_nanopolish(
+        nanopolish_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.methylation_calls.tsv',
+        sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sam'):
     """
     No need for new nanopolish output
     Combine the nanopolish output tsv results with strand-info from SAM files. This will add last column as strand-info.
@@ -51,11 +54,13 @@ def add_strand_info_for_nanopolish(nanopolish_fn='/projects/li-lab/yang/results/
     logger.info(list(enumerate(df.columns)))
 
     if len(df1) != len(df):
-        raise Exception("We found the read-name of Nanopolish results is not mapped all to SAM/BAM file, please check if the BAM file is used for Nanopolish")
+        raise Exception(
+            "We found the read-name of Nanopolish results is not mapped all to SAM/BAM file, please check if the BAM file is used for Nanopolish")
 
     # df = df.iloc[:, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
 
-    outfn = os.path.join(pic_base_dir, f'{os.path.splitext(os.path.basename(nanopolish_fn))[0]}-nanopolish-strand-info.tsv')
+    outfn = os.path.join(pic_base_dir,
+                         f'{os.path.splitext(os.path.basename(nanopolish_fn))[0]}-nanopolish-strand-info.tsv')
     df.to_csv(outfn, sep='\t', index=False)
     logger.info(f'save to {outfn}')
     return df
@@ -77,7 +82,8 @@ def sanity_check_get_dna_seq(chrstr):
     logger.info(f'chr={chr}, start={start}\nSEQ={ret}\nPOS={show_arrow}')
 
 
-def filter_noncg_sites_ref_seq(df, tagname, ntask=1, ttask=1, num_seq=5, chr_col=0, start_col=1, strand_col=5, toolname='tombo'):
+def filter_noncg_sites_ref_seq(df, tagname, ntask=1, ttask=1, num_seq=5, chr_col=0, start_col=1, strand_col=5,
+                               toolname='tombo'):
     """
     Filter out rows that are non-CG patterns in Tombo results, reference sequence is based on BAM files
 
@@ -153,7 +159,8 @@ def filter_noncg_sites_ref_seq(df, tagname, ntask=1, ttask=1, num_seq=5, chr_col
     logger.info(f"save to {outfn}")
 
 
-def filter_noncg_sites_ref_seq_mpi(df, tagname, ntask=1, ttask=1, num_dna_seq=5, chr_col=0, start_col=1, strand_col=5, toolname='tombo', print_first=False):
+def filter_noncg_sites_ref_seq_mpi(df, tagname, ntask=1, ttask=1, num_dna_seq=5, chr_col=0, start_col=1, strand_col=5,
+                                   toolname='tombo', print_first=False):
     """
     MPI version
     invoke like: res = p.apply_async(testFunc, args=(2, 4), kwds={'calcY': False})
@@ -207,7 +214,9 @@ def filter_noncg_sites_ref_seq_mpi(df, tagname, ntask=1, ttask=1, num_dna_seq=5,
     return df
 
 
-def filter_noncg_sites_for_tombo(tombo_fn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.tombo_perReadsStats.bed', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', ntask=1, ttask=1, num_seq=5):
+def filter_noncg_sites_for_tombo(
+        tombo_fn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.tombo_perReadsStats.bed',
+        sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', ntask=1, ttask=1, num_seq=5):
     if args.i is not None:
         tombo_fn = args.i
 
@@ -283,9 +292,12 @@ def filter_noncg_sites_mpi(df, ntask=300, toolname='tombo'):
             if toolname == 'tombo':
                 df_list.append(pool.apply_async(filter_noncg_sites_ref_seq_mpi, (seldf, basename, ntask, epoch + 1)))
             elif toolname == 'deepmod':
-                df_list.append(pool.apply_async(filter_noncg_sites_ref_seq_mpi, (seldf, basename, ntask, epoch + 1), dict(chr_col=0, start_col=1, strand_col=5, toolname='deepmod')))
+                df_list.append(pool.apply_async(filter_noncg_sites_ref_seq_mpi, (seldf, basename, ntask, epoch + 1),
+                                                dict(chr_col=0, start_col=1, strand_col=5, toolname='deepmod')))
             elif toolname == 'deepmod-read-level':
-                df_list.append(pool.apply_async(filter_noncg_sites_ref_seq_mpi, (seldf, basename, ntask, epoch + 1), dict(chr_col=0, start_col=1, strand_col=5, toolname='deepmod-read-level')))
+                df_list.append(pool.apply_async(filter_noncg_sites_ref_seq_mpi, (seldf, basename, ntask, epoch + 1),
+                                                dict(chr_col=0, start_col=1, strand_col=5,
+                                                     toolname='deepmod-read-level')))
             else:
                 raise Exception(f"{toolname} is no valid.")
         pool.close()
@@ -313,14 +325,17 @@ def filter_noncg_sites_mpi(df, ntask=300, toolname='tombo'):
     logger.debug(f"Save to {outfn}")
 
 
-def filter_noncg_sites_for_deepmod(deepmod_fn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.deepmod_combined.bed', sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', ntask=1, ttask=1, num_seq=5):
+def filter_noncg_sites_for_deepmod(
+        deepmod_fn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.deepmod_combined.bed',
+        sam_fn='/projects/li-lab/yang/results/12-09/K562.nanopolish/K562.sorted.bam', ntask=1, ttask=1, num_seq=5):
     if args.i is not None:
         deepmod_fn = args.i
 
     df = load_deepmod_df(infn=deepmod_fn)
     basefn = os.path.basename(deepmod_fn)
     basename = os.path.splitext(basefn)[0]
-    filter_noncg_sites_ref_seq(df=df, tagname=basename, ntask=ntask, ttask=ttask, num_seq=num_seq, chr_col=0, start_col=1, strand_col=5, toolname='deepmod')
+    filter_noncg_sites_ref_seq(df=df, tagname=basename, ntask=ntask, ttask=ttask, num_seq=num_seq, chr_col=0,
+                               start_col=1, strand_col=5, toolname='deepmod')
 
 
 def subset_of_list(alist, n, t):
@@ -366,7 +381,8 @@ def get_f5_readid_map(flist):
     return f5_readid_map
 
 
-def build_map_fast5_to_readid_mp(basedir='/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-basecall', ntask=300):
+def build_map_fast5_to_readid_mp(
+        basedir='/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-basecall', ntask=300):
     patfn = os.path.join(basedir, '**', '*.fast5')
     fast5_flist = glob.glob(patfn, recursive=True)
 
@@ -420,7 +436,8 @@ def process_pred_detail_f5file(fn, f5_readid_map):
             pred_detail_key = f'{pred_num_key}/predetail'
             # m_pred = mr[pred_detail_key].value
             m_pred = mr[pred_detail_key][()]
-            m_pred = np.array(m_pred, dtype=[('refbase', 'U1'), ('readbase', 'U1'), ('refbasei', np.uint64), ('readbasei', np.uint64), ('mod_pred', np.int)])
+            m_pred = np.array(m_pred, dtype=[('refbase', 'U1'), ('readbase', 'U1'), ('refbasei', np.uint64),
+                                             ('readbasei', np.uint64), ('mod_pred', np.int)])
 
             dataset = []
             for mi in range(len(m_pred)):
@@ -446,7 +463,8 @@ def process_pred_detail_f5file(fn, f5_readid_map):
                 else:
                     meth_indicator = 0
                 # sp_options['4NA'][m_pred['refbase'][mi]][(cur_chr, cur_strand, int(m_pred['refbasei'][mi]) )][0] += 1
-                ret = {'start': int(m_pred['refbasei'][mi]), 'pred': meth_indicator, 'base': m_pred['refbase'][mi], 'sequence': ret}
+                ret = {'start': int(m_pred['refbasei'][mi]), 'pred': meth_indicator, 'base': m_pred['refbase'][mi],
+                       'sequence': ret}
                 dataset.append(ret)
             df = pd.DataFrame(dataset)
 
@@ -466,7 +484,9 @@ def process_pred_detail_f5file(fn, f5_readid_map):
     return sumdf
 
 
-def extract_deepmod_read_level_results_mp(basecallDir='/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-basecall', methcallDir='/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-methcall', ntask=50):
+def extract_deepmod_read_level_results_mp(
+        basecallDir='/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-basecall',
+        methcallDir='/fastscratch/liuya/nanocompare/K562-Runs/K562-DeepMod-N50/K562-DeepMod-N50-methcall', ntask=50):
     f5_readid_map = build_map_fast5_to_readid_mp(basedir=basecallDir, ntask=ntask)
     # logger.debug(f5_readid_map)
 
@@ -504,10 +524,15 @@ def extract_deepmod_read_level_results_mp(basecallDir='/fastscratch/liuya/nanoco
 
     dataset = []
     for site in cpgDict:
-        ret = {'chr': site[0], 'start': site[1], 'end': site[1] + 1, 'base': 'C', 'cap-cov': cpgDict[site][0], 'strand': site[2], 'no-use1': '', 'start1': site[1], 'end1': site[1] + 1, 'no-use2': '0,0,0', 'cov': cpgDict[site][0], 'meth-freq': int(100 * cpgDict[site][1] / cpgDict[site][0]), 'meth-cov': cpgDict[site][1]}
+        ret = {'chr': site[0], 'start': site[1], 'end': site[1] + 1, 'base': 'C', 'cap-cov': cpgDict[site][0],
+               'strand': site[2], 'no-use1': '', 'start1': site[1], 'end1': site[1] + 1, 'no-use2': '0,0,0',
+               'cov': cpgDict[site][0], 'meth-freq': int(100 * cpgDict[site][1] / cpgDict[site][0]),
+               'meth-cov': cpgDict[site][1]}
         dataset.append(ret)
     beddf = pd.DataFrame(dataset)
-    beddf = beddf[['chr', 'start', 'end', 'base', 'cap-cov', 'strand', 'no-use1', 'start1', 'end1', 'no-use2', 'cov', 'meth-freq', 'meth-cov']]
+    beddf = beddf[
+        ['chr', 'start', 'end', 'base', 'cap-cov', 'strand', 'no-use1', 'start1', 'end1', 'no-use2', 'cov', 'meth-freq',
+         'meth-cov']]
     logger.debug('Finish bed df, extract all DONE.')
 
     return sumdf, beddf
@@ -599,7 +624,8 @@ if __name__ == '__main__':
     logger.debug(args)
 
     ref_fasta = None
-    if args.cmd in ['tombo-add-seq', 'deepmod-add-seq', 'deepmod-read-level', 'sanity-check-seq', 'bismark-convert']:  # These command will use reference genome
+    if args.cmd in ['tombo-add-seq', 'deepmod-add-seq', 'deepmod-read-level', 'sanity-check-seq',
+                    'bismark-convert']:  # These command will use reference genome
         ref_fn = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
         ref_fasta = SeqIO.to_dict(SeqIO.parse(open(ref_fn), 'fasta'))
 
@@ -609,7 +635,8 @@ if __name__ == '__main__':
 
             import multiprocessing
 
-            logger.debug("There are %d CPUs on this machine by multiprocessing.cpu_count()" % multiprocessing.cpu_count())
+            logger.debug(
+                "There are %d CPUs on this machine by multiprocessing.cpu_count()" % multiprocessing.cpu_count())
 
             df = load_tombo_df(infn=args.i)
 
@@ -621,7 +648,8 @@ if __name__ == '__main__':
             logger.debug('in mpi mode')
             import multiprocessing
 
-            logger.debug("There are %d CPUs on this machine by multiprocessing.cpu_count()" % multiprocessing.cpu_count())
+            logger.debug(
+                "There are %d CPUs on this machine by multiprocessing.cpu_count()" % multiprocessing.cpu_count())
 
             df = load_deepmod_df(infn=args.i)
             filter_noncg_sites_mpi(df, toolname='deepmod')
@@ -682,6 +710,7 @@ if __name__ == '__main__':
         with Pool(processes=args.processors) as pool:
             pool.map(output_bed_by_bin, bin_list)
     elif args.cmd == 'repetitive-bed':
+        # sbatch meth_stats_tool.sh repetitive-bed
         # bash meth_stats_tool.sh repetitive-bed
         infn = "/projects/li-lab/yang/results/2021-07-01/hg38.repetitive.bed.gz"
         df = pd.read_csv(infn, sep='\t')
@@ -690,23 +719,19 @@ if __name__ == '__main__':
         df['n2'] = '.'
         logger.info(df)
         outfn = f"hg38.repetitive.rep_All.bed.gz"
-        df[['genoName', 'genoStart', 'genoEnd', 'n1', 'n2', 'strand']].to_csv(os.path.join(args.o, outfn), sep='\t', header=False, index=False)
+        df[['genoName', 'genoStart', 'genoEnd', 'n1', 'n2', 'strand']].to_csv(os.path.join(args.o, outfn), sep='\t',
+                                                                              header=False, index=False)
 
         region_dict = {
-                "LINE"          : ["LINE"],
-                "SINE"          : ["SINE"],
-                "LTR"           : ["LTR"],
-                "Satellite"     : ["Satellite"],
-                "Simple_repeat" : ["Simple_repeat"],
-                "DNA"           : ["DNA"],
-                "Low_complexity": ["Low_complexity"],
-                "Simple_repeat" : ["Simple_repeat"],
-                "Retroposon"    : ["Retroposon"],
-                }
+            "LINE": ["LINE"],
+            "SINE": ["SINE"],
+            "LTR": ["LTR"],
+            "DNA": ["DNA"]
+        }
         used_list = []
         for key in region_dict:
             logger.info(f"seperate {key}")
-            used_list = used_list + region_dict[key]
+            used_list += region_dict[key]
             ndf = df[df['repClass'].isin(region_dict[key])]
             ndf = ndf[['genoName', 'genoStart', 'genoEnd', 'n1', 'n2', 'strand']]
             # logger.info(ndf)

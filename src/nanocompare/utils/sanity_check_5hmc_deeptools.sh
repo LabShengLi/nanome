@@ -11,7 +11,7 @@
 set -x
 set -e
 
-flank=500
+flank=100
 binSize=10
 processors=32
 

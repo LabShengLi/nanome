@@ -116,17 +116,18 @@ def grid_plot_correlation_matrix_for_fig5a(infn, removeDeepMod=False):
     position = 1
     for yrow in range(1, num_col + 1):  # row
         for xcol in range(1, num_col + 1):  # column, each tool
-            logger.debug("Please wait, processing column xcol {}, yrow {}.".format(xcol, yrow))  # adding this so that one would be able to estimate how much time one has for a coffe
+            logger.debug("Please wait, processing column xcol {}, yrow {}.".format(xcol,
+                                                                                   yrow))  # adding this so that one would be able to estimate how much time one has for a coffe
             if xcol == yrow:
                 # Diagonal, distribution lines:
                 plt.subplot(num_col, num_col, position)
-                params = {'legend.fontsize'   : 50,
-                        'legend.handlelength' : 0,
-                        'legend.handletextpad': 0,
-                        'legend.fancybox'     : False,
-                        'legend.loc'          : 'upper right',
-                        'legend.framealpha'   : 0,
-                        'legend.borderaxespad': 0}
+                params = {'legend.fontsize': 50,
+                          'legend.handlelength': 0,
+                          'legend.handletextpad': 0,
+                          'legend.fancybox': False,
+                          'legend.loc': 'upper right',
+                          'legend.framealpha': 0,
+                          'legend.borderaxespad': 0}
                 plt.rcParams.update(params)
                 ax = sns.kdeplot(df.iloc[:, xcol - 1], shade=False, color="black", legend=True)
 
@@ -345,7 +346,8 @@ def collect_singleton_vs_nonsingleton_df(runPrefix, pattern="*.summary.bsseq.sin
         # logger.debug(run1)
         flist = glob.glob(filepat)
         if len(flist) != 1:
-            raise Exception(f"Too much/No summary of singleton vs non-singleton for {run1} in folder {runPrefix[run1]} with pattern={pattern}, len={len(flist)}")
+            raise Exception(
+                f"Too much/No summary of singleton vs non-singleton for {run1} in folder {runPrefix[run1]} with pattern={pattern}, len={len(flist)}")
         # logger.debug(f'Get file:{flist[0]}')
         df = pd.read_csv(flist[0], index_col=0)
         dflist.append(df)
@@ -362,7 +364,8 @@ def collect_distribution_genomic_df(runPrefix, pattern=None):
         # logger.debug(run1)
         flist = glob.glob(filepat)
         if len(flist) != 1:
-            raise Exception(f"Too much/No summary of singleton vs non-singleton for {run1} in folder {runPrefix[run1]} with pattern={pattern}, len={len(flist)}")
+            raise Exception(
+                f"Too much/No summary of singleton vs non-singleton for {run1} in folder {runPrefix[run1]} with pattern={pattern}, len={len(flist)}")
         # logger.debug(f'Get file:{flist[0]}')
         df = pd.read_excel(flist[0], index_col=0, engine='openpyxl')  #
         dflist.append(df)
@@ -391,7 +394,8 @@ def collect_performance_report_as_df(runPrefix):
     return combdf
 
 
-def load_wide_format_performance_results(runPrefix, sel_locations=locations_category + locations_singleton + locations_new):
+def load_wide_format_performance_results(runPrefix,
+                                         sel_locations=locations_category + locations_singleton + locations_new):
     """
     Collect the currently new performance of exp results for paper
     :return:
@@ -399,7 +403,8 @@ def load_wide_format_performance_results(runPrefix, sel_locations=locations_cate
     df = collect_performance_report_as_df(runPrefix)
     retdf = df[df['Location'].isin(sel_locations)]
 
-    logger.debug(f"load_wide_format_performance_results, wide-format retdf={len(retdf)} using locations={sel_locations}")
+    logger.debug(
+        f"load_wide_format_performance_results, wide-format retdf={len(retdf)} using locations={sel_locations}")
 
     return retdf
 
@@ -429,12 +434,16 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='Plot and export data for Nanocompare paper.')
     parser.add_argument("cmd", help="name of command, fig5a, export-data, etc.")
     parser.add_argument('-i', nargs='+', help='list of input files', default=[])
-    parser.add_argument('-o', type=str, help="output dir", default=None)  # TODO: check all correct when change this to None
+    parser.add_argument('-o', type=str, help="output dir",
+                        default=None)  # TODO: check all correct when change this to None
     parser.add_argument('--tagname', type=str, help="tagname of files", default=None)
-    parser.add_argument('--beddir', type=str, help="bed file dir used for finding Concordant and Discordant", default=None)
+    parser.add_argument('--beddir', type=str, help="bed file dir used for finding Concordant and Discordant",
+                        default=None)
     parser.add_argument('--cutoff', type=int, help="the cutoff used on bed file", default=1)
-    parser.add_argument('--signal-col', type=int, help="the column number of signals extract from bed to bedGraph", default=6)
-    parser.add_argument('--cov-col', type=int, help="the column number of signals extract from bed to bedGraph", default=7)  # -1 means no cov col
+    parser.add_argument('--signal-col', type=int, help="the column number of signals extract from bed to bedGraph",
+                        default=6)
+    parser.add_argument('--cov-col', type=int, help="the column number of signals extract from bed to bedGraph",
+                        default=7)  # -1 means no cov col
 
     args = parser.parse_args()
     return args
@@ -472,7 +481,8 @@ if __name__ == '__main__':
             df = correlation_report_on_regions(fnlist[0], beddir=args.beddir, dsname=dsname, outdir=args.o)
             dflist.append(df)
         outdf = pd.concat(dflist)
-        outfn = os.path.join(args.o, f'All.corrdata.coe.pvalue.each.regions{f".{args.tagname}" if args.tagname else ""}.xlsx')
+        outfn = os.path.join(args.o,
+                             f'All.corrdata.coe.pvalue.each.regions{f".{args.tagname}" if args.tagname else ""}.xlsx')
         outdf.to_excel(outfn)
         logger.info(f'save to {outfn}')
     elif args.cmd == 'export-data':
@@ -497,7 +507,8 @@ if __name__ == '__main__':
         ## arrange df
         df = df.reindex(datasets_order)
 
-        outfn = os.path.join(args.o, f'dataset.singleton.vs.non-singleton{f".{args.tagname}" if args.tagname else ""}.cov1.csv')
+        outfn = os.path.join(args.o,
+                             f'dataset.singleton.vs.non-singleton{f".{args.tagname}" if args.tagname else ""}.cov1.csv')
         df.to_csv(outfn)
 
         pattern2 = "*.summary.bsseq.singleton.nonsingleton.cov5.csv"
@@ -505,7 +516,8 @@ if __name__ == '__main__':
         ## arrange df
         df = df.reindex(datasets_order)
 
-        outfn = os.path.join(args.o, f'dataset.singleton.vs.non-singleton{f".{args.tagname}" if args.tagname else ""}.cov5.csv')
+        outfn = os.path.join(args.o,
+                             f'dataset.singleton.vs.non-singleton{f".{args.tagname}" if args.tagname else ""}.cov5.csv')
         df.to_csv(outfn)
         logger.info(f'save stats of singleton and non-singleton to {outfn}')
 
@@ -518,7 +530,8 @@ if __name__ == '__main__':
         # df['Coord'] = pd.Categorical(df['Coord'], locations_order)
         # df = df.sort_values(by='Dataset')
 
-        outfn = os.path.join(args.o, f'all.certain.sites.distribution.each.genomic.region{f".{args.tagname}" if args.tagname else ""}.cov5.csv')
+        outfn = os.path.join(args.o,
+                             f'all.certain.sites.distribution.each.genomic.region{f".{args.tagname}" if args.tagname else ""}.cov5.csv')
         df.to_csv(outfn)
 
         logger.info(f'save distribution of each genomic region to {outfn}')
@@ -539,11 +552,16 @@ if __name__ == '__main__':
             cnt = 0
             for coordinate_bed_name in location_filename_to_abbvname.keys():
                 curve_data = defaultdict(list)
+                success = True
                 for toolname in ToolNameList:
-                    pattern_str = os.path.join(bdir, 'performance?results', 'curve_data', f'*.{toolname}*.*{coordinate_bed_name}.curve_data.pkl')
+                    pattern_str = os.path.join(bdir, 'performance?results', 'curve_data',
+                                               f'*.{toolname}*.*{coordinate_bed_name}.curve_data.pkl')
                     fnlist = glob.glob(pattern_str)
                     if len(fnlist) != 1:
-                        raise Exception(f'Can not locate curve_data for Tool={toolname}, at Coord={coordinate_bed_name}, with pattern={pattern_str}, find results={fnlist}. Please check if MethPerf results folder={bdir} specified is correct.')
+                        logger.error(
+                            f'Can not locate curve_data for Tool={toolname}, at Coord={coordinate_bed_name}, with pattern={pattern_str}, find results={fnlist}. Please check if MethPerf results folder={bdir} specified is correct.')
+                        success = False
+                        break
                     cnt += 1
                     with open(fnlist[0], 'rb') as f:
                         ret = pickle.load(f)
@@ -551,29 +569,30 @@ if __name__ == '__main__':
                         curve_data[f'{toolname}_true'] = ret['yTrue']  # Ground truth label
                         curve_data[f'{toolname}_pred'] = ret['yPred']  # Prediction label
                         curve_data[f'{toolname}_score'] = ret['yScore']  # Prediction score, used for roc curve plotting
-                outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{location_filename_to_abbvname[coordinate_bed_name]}.pkl')
-                with open(outfn, 'wb') as f:
-                    pickle.dump(curve_data, f)
-                # logger.info(f'save to {outfn}')
+                if success:
+                    outfn = os.path.join(outdir,
+                                         f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{location_filename_to_abbvname[coordinate_bed_name]}.pkl')
+                    with open(outfn, 'wb') as f:
+                        pickle.dump(curve_data, f)
 
-                outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{location_filename_to_abbvname[coordinate_bed_name]}.dat')
-                with open(outfn, "w") as f:
-                    for toolname in ToolNameList:
-                        f.write(f"{toolname}_true:")
-                        outstr = ','.join([str(value) for value in curve_data[f'{toolname}_true']])
-                        f.write(outstr)
-                        f.write("\n")
+                    outfn = os.path.join(outdir,
+                                         f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{location_filename_to_abbvname[coordinate_bed_name]}.dat')
+                    with open(outfn, "w") as f:
+                        for toolname in ToolNameList:
+                            f.write(f"{toolname}_true:")
+                            outstr = ','.join([str(value) for value in curve_data[f'{toolname}_true']])
+                            f.write(outstr)
+                            f.write("\n")
 
-                        f.write(f"{toolname}_pred:")
-                        outstr = ','.join([str(value) for value in curve_data[f'{toolname}_pred']])
-                        f.write(outstr)
-                        f.write("\n")
+                            f.write(f"{toolname}_pred:")
+                            outstr = ','.join([str(value) for value in curve_data[f'{toolname}_pred']])
+                            f.write(outstr)
+                            f.write("\n")
 
-                        f.write(f"{toolname}_score:")
-                        outstr = ','.join([f'{value:.4f}' for value in curve_data[f'{toolname}_score']])
-                        f.write(outstr)
-                        f.write("\n")
-                # logger.info(f'save to {outfn}')
+                            f.write(f"{toolname}_score:")
+                            outstr = ','.join([f'{value:.4f}' for value in curve_data[f'{toolname}_score']])
+                            f.write(outstr)
+                            f.write("\n")
             logger.info(f'For runPrefix={runPrefix} at dir={bdir}, total files={cnt}')
     elif args.cmd == 'plot-curve-data':
         ## find /projects/li-lab/Nanopore_compare/result/plot-curve-data -name '*.pkl' -exec python plot_figure.py plot-curve-data -i {} \;

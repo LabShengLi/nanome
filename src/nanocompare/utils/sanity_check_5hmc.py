@@ -5,7 +5,7 @@ Tool for pre-processing results
 import gzip
 
 from scipy.stats import pearsonr, wilcoxon
-
+import pandas as pd
 from nanocompare.eval_common import import_bgtruth, import_call, readLevelToSiteLevelWithCov
 from nanocompare.global_config import *
 
@@ -113,6 +113,12 @@ if __name__ == '__main__':
         ret_diff_get_20 = set()
         ret_cons_let_05 = set()
         ret_cons_let_10 = set()
+
+        diff_get_40_5mc_bgtruth_list=[]
+        diff_get_40_5mc_tool_list = []
+        diff_get_20_5mc_bgtruth_list = []
+        diff_get_20_5mc_tool_list = []
+
         for key in joinSet:
             if isinstance(newBgtruthDict[key], list) or isinstance(newBgtruthDict[key], tuple):
                 bg_methfreq = newBgtruthDict[key][0]
@@ -121,23 +127,35 @@ if __name__ == '__main__':
             tool_methfreq = callDict[key][0]
             if abs(tool_methfreq - bg_methfreq) >= 0.4:
                 ret_diff_get_40.add(key)
+                diff_get_40_5mc_bgtruth_list.append(bg_methfreq)
+                diff_get_40_5mc_tool_list.append(tool_methfreq)
             if abs(tool_methfreq - bg_methfreq) >= 0.2:
                 ret_diff_get_20.add(key)
+                diff_get_20_5mc_bgtruth_list.append(bg_methfreq)
+                diff_get_20_5mc_tool_list.append(tool_methfreq)
             if abs(tool_methfreq - bg_methfreq) <= 0.05:
                 ret_cons_let_05.add(key)
             if abs(tool_methfreq - bg_methfreq) <= 0.10:
                 ret_cons_let_10.add(key)
+    
+        df = pd.DataFrame({"BS-seq":diff_get_40_5mc_bgtruth_list, "callName": diff_get_40_5mc_tool_list})
+        outfn = os.path.join(pic_base_dir, f"outcome2.bsseq.{callName}.get40.csv")
+        df.to_csv(outfn, index=False)
+
+        df = pd.DataFrame({"BS-seq": diff_get_20_5mc_bgtruth_list, callName: diff_get_20_5mc_tool_list})
+        outfn = os.path.join(pic_base_dir, f"outcome2.bsseq.{callName}.get20.csv.gz")
+        df.to_csv(outfn, index=False)
 
         logger.info(
             f"tool={callName}: ret_diff_get_40={len(ret_diff_get_40)}, ret_diff_get_20={len(ret_diff_get_20)}, ret_cons_let_05={len(ret_cons_let_05)}, ret_cons_let_10={len(ret_cons_let_10)}")
 
-        stats_let_05, pv_let05 = wilcoxon_test_calls(newBgtruthDict, callDict, ret_cons_let_05)
-        stats_let_10, pv_let10 = wilcoxon_test_calls(newBgtruthDict, callDict, ret_cons_let_10)
-        stats_get_20, pv_get20 = wilcoxon_test_calls(newBgtruthDict, callDict, ret_diff_get_20)
-        stats_get_40, pv_get40 = wilcoxon_test_calls(newBgtruthDict, callDict, ret_diff_get_40)
-
-        logger.info(
-            f"tool={callName} wilcoxon test:\n <5% = ({stats_let_05}, {pv_let05});\n <10% = ({stats_let_10},{pv_let10});\n >20% = ({stats_get_20}, {pv_get20});\n >40% = ({stats_get_40}, {pv_get40})\n")
+        # stats_let_05, pv_let05 = wilcoxon_test_calls(newBgtruthDict, callDict, ret_cons_let_05)
+        # stats_let_10, pv_let10 = wilcoxon_test_calls(newBgtruthDict, callDict, ret_cons_let_10)
+        # stats_get_20, pv_get20 = wilcoxon_test_calls(newBgtruthDict, callDict, ret_diff_get_20)
+        # stats_get_40, pv_get40 = wilcoxon_test_calls(newBgtruthDict, callDict, ret_diff_get_40)
+        #
+        # logger.info(
+        #     f"tool={callName} wilcoxon test:\n <5% = ({stats_let_05}, {pv_let05});\n <10% = ({stats_let_10},{pv_let10});\n >20% = ({stats_get_20}, {pv_get20});\n >40% = ({stats_get_40}, {pv_get40})\n")
 
         outfn = f"APL.bgtruth.{callName}.regions.diff.get.40.bed.gz"
         output_cpg_set_0base(ret_diff_get_40, os.path.join(pic_base_dir, outfn))

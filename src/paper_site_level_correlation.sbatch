@@ -14,7 +14,7 @@
 dsname=${1:-HL60}
 runidSuffix=${2:-""}                                    # "_RRBS_2Reps
 command=${3:-"METEORE"}                                 # six - six tools, METEORE - include METEORE
-bedDir=${4:-"/projects/li-lab/yang/results/2021-07-01"} # "_RRBS_2Reps
+bedDir=${4:-"/projects/li-lab/yang/results/2021-07-07"} # "_RRBS_2Reps
 
 if [ ! -z "$runidSuffix" ]; then
   runidSuffix="_${runidSuffix}"
