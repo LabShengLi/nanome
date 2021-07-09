@@ -227,7 +227,7 @@ def grid_plot_correlation_matrix_for_fig5a(infn, removeDeepMod=False):
             position += 1
 
     fig.savefig(outfn, dpi=300, bbox_inches='tight')
-    fig.savefig(outfn.replace("jpg", ".pdf"), dpi=300, bbox_inches='tight')  # Generate also PDF version
+    fig.savefig(outfn.replace(".jpg", ".pdf"), dpi=300, bbox_inches='tight')  # Generate also PDF version
     plt.show()
     plt.close()
     logger.info(f"save to {outfn}")

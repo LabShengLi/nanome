@@ -17,9 +17,9 @@ pythonFile=plot_figure.py
 
 command=${1:-"Step1"}
 type=${2:-"METEORE"}
-resultsDir=${3:-"/projects/li-lab/yang/results/2021-07-07"}
+resultsDir=${3:-"/projects/li-lab/yang/results/2021-07-08"}
 
-bedDir="/projects/li-lab/yang/results/2021-07-07"
+bedDir="/projects/li-lab/yang/results/2021-07-08"
 
 if [ "$type" == "six" ]; then
     HL60_Result_dir=${resultsDir}/MethPerf-HL60_RRBS_2Reps

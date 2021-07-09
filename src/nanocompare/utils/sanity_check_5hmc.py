@@ -119,6 +119,11 @@ if __name__ == '__main__':
         diff_get_20_5mc_bgtruth_list = []
         diff_get_20_5mc_tool_list = []
 
+        agre_let_10_5mc_bgtruth_list = []
+        agre_let_10_5mc_tool_list = []
+        agre_let_05_5mc_bgtruth_list = []
+        agre_let_05_5mc_tool_list = []
+
         for key in joinSet:
             if isinstance(newBgtruthDict[key], list) or isinstance(newBgtruthDict[key], tuple):
                 bg_methfreq = newBgtruthDict[key][0]
@@ -135,15 +140,27 @@ if __name__ == '__main__':
                 diff_get_20_5mc_tool_list.append(tool_methfreq)
             if abs(tool_methfreq - bg_methfreq) <= 0.05:
                 ret_cons_let_05.add(key)
+                agre_let_10_5mc_bgtruth_list.append(bg_methfreq)
+                agre_let_10_5mc_tool_list.append(tool_methfreq)
             if abs(tool_methfreq - bg_methfreq) <= 0.10:
                 ret_cons_let_10.add(key)
+                agre_let_05_5mc_bgtruth_list.append(bg_methfreq)
+                agre_let_05_5mc_tool_list.append(tool_methfreq)
     
-        df = pd.DataFrame({"BS-seq":diff_get_40_5mc_bgtruth_list, "callName": diff_get_40_5mc_tool_list})
-        outfn = os.path.join(pic_base_dir, f"outcome2.bsseq.{callName}.get40.csv")
+        df = pd.DataFrame({"BS-seq":diff_get_40_5mc_bgtruth_list, callName: diff_get_40_5mc_tool_list})
+        outfn = os.path.join(pic_base_dir, f"outcome2.bsseq.{callName}.get40.discrepency.csv.gz")
         df.to_csv(outfn, index=False)
 
         df = pd.DataFrame({"BS-seq": diff_get_20_5mc_bgtruth_list, callName: diff_get_20_5mc_tool_list})
-        outfn = os.path.join(pic_base_dir, f"outcome2.bsseq.{callName}.get20.csv.gz")
+        outfn = os.path.join(pic_base_dir, f"outcome2.bsseq.{callName}.get20.discrepency.csv.gz")
+        df.to_csv(outfn, index=False)
+
+        df = pd.DataFrame({"BS-seq": agre_let_10_5mc_bgtruth_list, callName: agre_let_10_5mc_tool_list})
+        outfn = os.path.join(pic_base_dir, f"outcome2.bsseq.{callName}.let10.agreement.csv.gz")
+        df.to_csv(outfn, index=False)
+
+        df = pd.DataFrame({"BS-seq": agre_let_05_5mc_bgtruth_list, callName: agre_let_05_5mc_tool_list})
+        outfn = os.path.join(pic_base_dir, f"outcome2.bsseq.{callName}.let05.agreement.csv.gz")
         df.to_csv(outfn, index=False)
 
         logger.info(

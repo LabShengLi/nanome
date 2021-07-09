@@ -6,6 +6,8 @@ Generate site-level methylation correlation results in Nanocompare paper.
 import argparse
 import subprocess
 
+import pybedtools
+
 from nanocompare.eval_common import *
 from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, location_filename_to_abbvname, \
     save_done_file
@@ -176,6 +178,11 @@ if __name__ == '__main__':
     set_log_debug_level()
 
     args = parse_arguments()
+
+    ## Set tmp dir for bedtools
+    bedtool_tmp_dir = "/fastscratch/liuya/nanocompare/bedtools_tmp"
+    os.makedirs(bedtool_tmp_dir, exist_ok=True)
+    pybedtools.helpers.set_tempdir(bedtool_tmp_dir)
 
     # cache function same with read level
     enable_cache = args.enable_cache
