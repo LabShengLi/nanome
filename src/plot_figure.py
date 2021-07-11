@@ -630,6 +630,7 @@ if __name__ == '__main__':
         # Input is 0-based, output is same 0-based for TSS analysis
         # python plot_figure.py bed-to-bedGraph -i $fn --cutoff $CUTOFF -o $outdir --cov_col 7  --signal-col 6
         # python plot_figure.py bed-to-bedGraph -i $fn --cutoff 5 --cov_col -1  --signal-col 3
+        ## Default: cov_col=7, signal_col=6
         infn = args.i[0]
         cutoff = args.cutoff
         df = pd.read_csv(infn, sep='\t', header=None)
