@@ -1,5 +1,0 @@
-2021-07-12 13:13:50,503 - [plot_figure.py:460] - DEBUG: Namespace(beddir=None, cmd='plot-curve-data', cov_col=7, cutoff=1, i=['/Users/liuya/Downloads/pr-data/MethPerf-NA19240_RRBS_2Reps_METEORE.plot.curve.data.ytrue.ypred.yscore.Concordant.pkl'], o=None, signal_col=6, tagname=None)
-2021-07-12 13:13:50,503 - [plot_figure.py:609] - DEBUG: Plot data from fn=/Users/liuya/Downloads/pr-data/MethPerf-NA19240_RRBS_2Reps_METEORE.plot.curve.data.ytrue.ypred.yscore.Concordant.pkl
-2021-07-12 13:29:46,322 - [plot_figure.py:460] - DEBUG: Namespace(beddir=None, cmd='plot-curve-data', cov_col=7, cutoff=1, i=['/Users/liuya/Downloads/pr-data/MethPerf-NA19240_RRBS_2Reps_METEORE.plot.curve.data.ytrue.ypred.yscore.Concordant.pkl'], o=None, signal_col=6, tagname=None)
-2021-07-12 13:29:46,322 - [plot_figure.py:609] - DEBUG: Plot data from fn=/Users/liuya/Downloads/pr-data/MethPerf-NA19240_RRBS_2Reps_METEORE.plot.curve.data.ytrue.ypred.yscore.Concordant.pkl
-2021-07-12 13:30:20,456 - [plot_figure.py:687] - INFO: Plot data script DONE
