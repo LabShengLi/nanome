@@ -52,7 +52,6 @@ def grid_plot_correlation_matrix_for_fig5a(infn, removeDeepMod=False):
     Plot the grid of corr COE, distribution and scatter plot based on input files
     :return:
     """
-
     ## Load data into df
     logger.debug(infn)
     df = pd.read_csv(infn, sep=',')
@@ -144,7 +143,6 @@ def grid_plot_correlation_matrix_for_fig5a(infn, removeDeepMod=False):
                 ax.set_ylabel('')
                 ax.set_xlabel('')
                 ax.tick_params(axis=u'both', which=u'both', length=0)
-
             elif xcol > yrow:
                 # upper triangle, COE number:
                 ax2 = plt.subplot(num_col, num_col, position)
@@ -152,18 +150,20 @@ def grid_plot_correlation_matrix_for_fig5a(infn, removeDeepMod=False):
                 corrValue = pearsonr(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1])
                 corrValueStr = "{0:.3f}".format(corrValue[0])
 
-                #                 print(xcol, yrow)
+                coe_font_size=19
+                coe_font_size=22
+
                 if yrow == 1:
                     ax2.text(0.5 * (left + right), 0.5 * (bottom + top), corrValueStr,
                              horizontalalignment='center',
                              verticalalignment='center',
-                             fontsize=19, color='#7B2323', weight='bold',
+                             fontsize=coe_font_size, color='#7B2323', weight='bold',
                              transform=ax2.transAxes)
                 else:
                     ax2.text(0.5 * (left + right), 0.5 * (bottom + top), corrValueStr,
                              horizontalalignment='center',
                              verticalalignment='center',
-                             fontsize=19, color='black',
+                             fontsize=coe_font_size, color='black',
                              transform=ax2.transAxes)
 
                 ax2.set_yticklabels([])
@@ -220,7 +220,6 @@ def grid_plot_correlation_matrix_for_fig5a(infn, removeDeepMod=False):
                     ax3.set_yticklabels(["0%", "100%"], fontsize=tick_label_fontsize)
                     for label, alnType in zip(ax3.get_yticklabels(), ['bottom', 'top']):
                         label.set_verticalalignment(alnType)
-                #
                 else:
                     plt.yticks([], fontsize=10)
 
@@ -228,7 +227,7 @@ def grid_plot_correlation_matrix_for_fig5a(infn, removeDeepMod=False):
 
     fig.savefig(outfn, dpi=300, bbox_inches='tight')
     fig.savefig(outfn.replace(".jpg", ".pdf"), dpi=300, bbox_inches='tight')  # Generate also PDF version
-    plt.show()
+    # plt.show()
     plt.close()
     logger.info(f"save to {outfn}")
 
@@ -258,10 +257,10 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname", removeDeepMod=False):
 
     ## Plot ROC curve
     plt.clf()
-    # import matplotlib.font_manager as font_manager
-    # plt.rcParams['font.sans-serif'] = ['Arial']
-
     plt.figure(figsize=figure_size)
+
+    csfont = {'fontsize': label_font_size}
+
     conf_matrix = {}
     for toolname, toolcolor in zip(ToolNameList, ToolsColorList):
         if toolname == 'DeepMod' and removeDeepMod:
@@ -284,19 +283,19 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname", removeDeepMod=False):
     plt.xlim([0, 1])
     plt.ylim([0, 1])
 
-    # plt.ylabel('True Positive Rate', fontsize=label_font_size)
-    # plt.rcParams['font.sans-serif'] = ['Arial']
-    plt.ylabel('True Positive Rate', fontsize=label_font_size)
-    plt.xlabel('False Positive Rate', fontsize=label_font_size)
-
-    # plt.ylabel('True Positive Rate', fontsize=label_font_size)
-    # plt.xlabel('False Positive Rate', fontsize=label_font_size)
+    plt.ylabel('True Positive Rate', **csfont)
+    plt.xlabel('False Positive Rate', **csfont)
 
     # plt.title('ROC Curves', fontsize=title_font_size)
     outfn = os.path.join(outdir, f'fig.3b.{tagname}.roc.curves.jpg')
-    plt.savefig(outfn, format='png', bbox_inches='tight', dpi=600)
+    plt.savefig(outfn, format='jpg', bbox_inches='tight', dpi=300)
+    plt.savefig(outfn.replace(".jpg", ".pdf"), dpi=300, bbox_inches='tight')  # Generate also PDF version
 
-    plt.show()
+
+    # print(plt.rcParams["font.family"])
+    # print(plt.rcParams['font.sans-serif'])
+
+    # plt.show()
     plt.close()
 
     outfn = os.path.join(outdir, f'confusion.matrix.{tagname}.each.tool.csv.gz')
@@ -304,7 +303,7 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname", removeDeepMod=False):
     for toolname in ToolNameList:
         if toolname not in conf_matrix:
             continue
-        logger.info(f"{toolname} = {conf_matrix[toolname]}")
+        # logger.info(f"{toolname} = {conf_matrix[toolname]}")
         outf.write(f"{toolname}\n")
         mat = conf_matrix[toolname]
         outf.write(f"{mat[0, 0]},{mat[0, 1]}\n")
@@ -451,6 +450,12 @@ def parse_arguments():
 
 if __name__ == '__main__':
     set_log_debug_level()
+
+    ## Use same font for plotting
+    import matplotlib.font_manager as font_manager
+
+    font_manager._rebuild()
+    plt.rcParams['font.sans-serif'] = ['Arial']
 
     args = parse_arguments()
     logger.debug(args)
