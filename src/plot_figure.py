@@ -369,6 +369,12 @@ def collect_distribution_genomic_df(runPrefix, pattern=None):
         df = pd.read_excel(flist[0], index_col=0, engine='openpyxl')  #
         dflist.append(df)
     retdf = pd.concat(dflist)
+
+    retdf['Dataset'] = pd.Categorical(retdf['Dataset'], datasets_order)
+    retdf['Coord'] = pd.Categorical(retdf['Coord'], locations_order)
+    retdf = retdf.sort_values(by=['Dataset', 'Coord'], ascending=[True, True])
+    retdf = retdf.dropna()
+
     return retdf
 
 

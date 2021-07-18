@@ -757,7 +757,20 @@ if __name__ == '__main__':
         outfn = os.path.join(args.o, "APL.5hmc.tss.cov1.bed.gz")
         save_tss_bed_for_5hmc(infn, outfn)
         pass
-
+    elif args.cmd == 'merge-basecall-summary':
+        ## sbatch meth_stats_tool.sh merge-basecall-summary -i /projects/li-lab/yang/results/2021-07-17/NA12878_basecall_logs_output
+        baseDir = args.i
+        flist = glob.glob(os.path.join(baseDir, '**', '*sequencing_summary.txt'))
+        logger.info(flist)
+        logger.info(len(flist))
+        dflist = []
+        for fn in flist:
+            df = pd.read_csv(fn, sep='\t')
+            dflist.append(df)
+        dfall = pd.concat(dflist)
+        outfn = os.path.join(args.o, 'NA12878-allChrs-basecall.sequencing_summary.txt')
+        dfall.to_csv(outfn, sep='\t', index=False)
+        logger.info(f"save to {outfn}")
     else:
         raise Exception(f"Not support command={args.cmd}")
 

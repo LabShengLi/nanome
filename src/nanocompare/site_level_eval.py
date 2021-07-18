@@ -345,9 +345,24 @@ if __name__ == '__main__':
 
     logger.info(f"Start getting intersection (all joined) sites by tools and bgtruth")
     coveredCpGs = set(list(bgTruth.keys()))
+    coveredCpGs001 = set(list(bgTruth.keys()))
+
+    sitesDataset = defaultdict(list)
+
     for name in loaded_callname_list:
         coveredCpGs = coveredCpGs.intersection(set(list(callresult_dict_cov3[name].keys())))
         logger.info(f'Join {name} get {len(coveredCpGs):,} CpGs')
+
+        joinBSWithEachToolSet = coveredCpGs001.intersection(set(list(callresult_dict_cov3[name].keys())))
+        sitesDataset['Dataset'].append(args.dsname)
+        sitesDataset['Method'].append(name)
+        sitesDataset['Sites-cov3'].append(len(callresult_dict_cov3[name]))
+        sitesDataset['BS-seq-cov5-all'].append(len(coveredCpGs001))
+        sitesDataset['Join-with-BSseq-cov5-all'].append(len(joinBSWithEachToolSet))
+    df = pd.DataFrame.from_dict(sitesDataset)
+    outfn = os.path.join(out_dir, f'{args.dsname}.methods.join.with.bsseq.site.level.report.csv')
+    df.to_csv(outfn)
+
     logger.info(f"Reporting {len(coveredCpGs)} CpGs are covered by all tools and bgtruth")
 
     logger.info('Output data of coverage and meth-freq on joined CpG sites for correlation analysis')

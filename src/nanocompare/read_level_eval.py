@@ -9,6 +9,7 @@ This script will generate all per-read performance results, with regard to BED f
 import argparse
 from multiprocessing import Manager, Pool
 
+import pandas as pd
 from sklearn.metrics import confusion_matrix
 
 from nanocompare.eval_common import *
@@ -245,7 +246,7 @@ def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet, threshold=0.2)
             methcalls += sum(meth_indicator_list)
             unmethcalls += len(meth_indicator_list) - sum(meth_indicator_list)
             numcalls += len(meth_indicator_list)
-        per_read_dataset['dsname'].append(callname)
+        per_read_dataset['Method'].append(callname)
         per_read_dataset['#Base'].append(nsites)
         per_read_dataset['#Call'].append(numcalls)
         per_read_dataset['#Pos'].append(methcalls)
@@ -268,7 +269,7 @@ def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet, threshold=0.2)
 
         # logger.info(f'npmatrix={npmatrix}')
 
-        per_base_dataset['dsname'].append(callname)
+        per_base_dataset['Method'].append(callname)
         per_base_dataset['#Base'].append(nsites)
         per_base_dataset[f'Methylated base >= {threshold:.2f}'].append(sum(ypred))
         per_base_dataset[f'Unmethylated base'].append(len(ypred) - sum(ypred))
@@ -436,6 +437,7 @@ if __name__ == '__main__':
     ## Narrow down to BG-Truth if there BG-Truth is available
     ontCallWithinBGTruthDict = defaultdict()  # name->call
     loaded_callname_list = []  # [DeepSignal, DeepMod, etc.]
+    sitesDataset=defaultdict(list)
 
     for callstr in args.calls:
         call_encode, callfn = callstr.split(':')
@@ -456,14 +458,22 @@ if __name__ == '__main__':
         ## MUST import read-level results, and include score for plot ROC curve and PR curve
         call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, siteLevel=False,
                             using_cache=using_cache, enable_cache=enable_cache, filterChr=filterChrSet)
+        sitesDataset['Dataset'].append(dsname)
+        sitesDataset['Method'].append(call_name)
+        sitesDataset['Sites'].append(len(call0))
+        sitesDataset['BSseq-cov5-certain'].append(len(absoluteBGTruthCov))
 
-        if absoluteBGTruth:  # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
+        if absoluteBGTruthCov:  # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
             logger.info(f'Filter out CpG sites not in bgtruth for {call_name}')
             ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(call0,
-                                                                  absoluteBGTruth)  # TODO:using absoluteBGTruthCov for even fewer sites
+                                                                  absoluteBGTruthCov)  # TODO:using absoluteBGTruthCov for even fewer sites
+            sitesDataset['Join-with-BSseq-cov5-certain'].append(len(ontCallWithinBGTruthDict[call_name]))
             logger.info(f'{call_name} left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
         else:
             ontCallWithinBGTruthDict[call_name] = call0
+    df = pd.DataFrame.from_dict(sitesDataset)
+    outfn = os.path.join(out_dir, f'{dsname}.methods.join.with.bsseq.read.level.report.csv')
+    df.to_csv(outfn)
 
     logger.debug(loaded_callname_list)
 

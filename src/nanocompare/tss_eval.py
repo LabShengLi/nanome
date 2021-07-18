@@ -31,6 +31,8 @@ def parse_arguments():
     parser.add_argument('--enable-cache', action='store_true')
     parser.add_argument('--using-cache', action='store_true')
     parser.add_argument('--output-meteore', action='store_true')
+    parser.add_argument('--chrs', nargs='+', help='filter chr sets',
+                        default=humanChrSet)
     return parser.parse_args()
 
 
@@ -106,7 +108,8 @@ if __name__ == '__main__':
 
             outfn = os.path.join(out_dir, f"{args.dsname}_{callname}-METEORE-perRead-score.tsv.gz")
             import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=False, using_cache=False,
-                        include_score=False, siteLevel=False, saveMeteore=args.output_meteore, outfn=outfn)
+                        include_score=False, siteLevel=False, saveMeteore=args.output_meteore, outfn=outfn,
+                        filterChr=args.chrs)
         logger.info("### METEORE format output DONE")
         sys.exit(0)
 

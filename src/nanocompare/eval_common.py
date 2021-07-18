@@ -2221,41 +2221,6 @@ def filter_cpg_dict(cpgDict, filterDict):
     return retDict
 
 
-# def compare_cpg_key(item1, item2):
-#     """
-#     First compare chr, then start number
-#     usage:
-#     k1 = ('chr1', 123, '+')
-#     k2 = ('chr1', 124, '+')
-#     k3 = ('chr3', 1, '-')
-#     k4 = ('chr1', 124, '-')
-#     k5 = ('chr3', 1, '-')
-#     l = [k3, k1, k2, k4, k5]
-#     import functools
-#     l_sorted = sorted(l, key=functools.cmp_to_key(compare_cpg_key))
-#     logger.info(l_sorted)
-#
-#     output:
-#     [('chr1', 123, '+'), ('chr1', 124, '+'), ('chr1', 124, '-'), ('chr3', 1, '-'), ('chr3', 1, '-')]
-#
-#     :param item1:
-#     :param item2:
-#     :return:
-#     """
-#     chr1 = int(item1[0].replace('chr', '').replace('X', '23').replace('Y', '24'))
-#     chr2 = int(item2[0].replace('chr', '').replace('X', '23').replace('Y', '24'))
-#
-#     # return chr1 < chr2 or (chr1 == chr2 and item1[1] < item2[1])
-#
-#     if chr1 != chr2:
-#         return chr1 - chr2
-#     elif item1[1] != item2[1]:
-#         return item1[1] - item2[1]
-#     elif item1[2][0] != item2[2][0]:
-#         return ord(item1[2][0]) - ord(item2[2][0])
-#     return 0
-
-
 def is_fully_meth(methfreq, eps=1e-5, cutoff_fully_meth=1.0):
     if methfreq > 1.0 + eps or methfreq < 0:
         raise Exception(f'detect non-freq value for freq={methfreq}')
@@ -2412,7 +2377,7 @@ def find_bed_filename(basedir, pattern):
     fnlist = glob.glob(os.path.join(basedir, '**', pattern), recursive=True)
     # logger.info(fnlist)
     if len(fnlist) != 1:
-        raise Exception(f'Find more files: {fnlist}, please check the basedir is correct')
+        raise Exception(f'Find not only one files: {fnlist}, please check the basedir={basedir} is correct')
     logger.debug(f'find bed file:{fnlist[0]}')
     return fnlist[0]
 
@@ -2474,7 +2439,7 @@ def filter_corrdata_df_by_bedfile(df, df_bed, coord_fn):
     coordBed = BedTool(coord_fn).sort()
 
     # df_bed is chr  start  end . . strand
-    if os.path.basename(coord_fn).startswith("hg38.repetitive.rep"):
+    if os.path.basename(coord_fn).startswith("hg38.repetitive.rep") or os.path.basename(coord_fn).endswith("Tools_BGTruth_cov5_Joined.bed"):
         df_bed_intersect = df_bed.intersect(coordBed, u=True, wa=True, s=True)
     else:
         df_bed_intersect = df_bed.intersect(coordBed, u=True, wa=True)
@@ -2505,10 +2470,13 @@ def correlation_report_on_regions(corr_infn, beddir=None, dsname=None, outdir=pi
 
     if beddir:
         concordantFileName = find_bed_filename(basedir=beddir, pattern=f'{dsname}*hg38_nonsingletons.concordant.bed')
-
         discordantFileName = find_bed_filename(basedir=beddir, pattern=f'{dsname}*hg38_nonsingletons.discordant.bed')
-        location_flist.extend([concordantFileName, discordantFileName])
-        location_ftag.extend(['Concordant', 'Discordant'])
+
+        # Name like: HL60_RRBS_2Reps_METEORE.Tools_BGTruth_cov5_Joined.bed
+        readLevelCertainRegion = find_bed_filename(basedir=beddir, pattern=f'{dsname}*Tools_BGTruth_cov5_Joined.bed')
+
+        location_flist.extend([concordantFileName, discordantFileName, readLevelCertainRegion])
+        location_ftag.extend(['Concordant', 'Discordant', 'ReadLevelCertain'])
     # logger.info(location_ftag)
     # logger.info(location_flist)
 

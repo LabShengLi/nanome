@@ -3,8 +3,10 @@
 Calculate Nanopore raw reads coverage at each CpG sites based on raw fast5 files
 """
 import glob
+import gzip
 import os
 import re
+import sys
 from collections import defaultdict
 from multiprocessing import Pool
 
@@ -12,7 +14,7 @@ import pandas as pd
 from pybedtools import BedTool
 from tqdm import tqdm
 
-from nanocompare.eval_common import get_dna_seq_from_reference, open_file_gz_or_txt, find_bed_filename
+from nanocompare.eval_common import get_dna_seq_from_reference, open_file_gz_or_txt, find_bed_filename, get_ref_fasta
 from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir
 from nanocompare.global_settings import humanChrSet, narrowCoordFileList, location_filename_to_abbvname
 
@@ -25,7 +27,6 @@ baseReadCovDir = '/projects/li-lab/yang/results/2021-04-05'
 baseReadCovDir = '/projects/li-lab/Nanopore_compare/suppdata/raw.fast5.reads.coverage'
 
 # modify this dir to newly concordant and discordant perf results base dir
-datasetBedDir = '/projects/li-lab/yang/results/2021-04-12'
 datasetBedDir = '/projects/li-lab/yang/results/2021-06-26'
 
 
@@ -38,13 +39,11 @@ def convert_region_to_cpg_base(dsname):
     :return:
     """
 
-    fnlist = glob.glob(os.path.join(rawReadDir, f'{dsname}*coverage.positivestrand.bed'))
-    fnlist += glob.glob(os.path.join(rawReadDir, f'{dsname}*coverage.negativestrand.bed'))
-
+    fnlist = glob.glob(os.path.join(rawReadDir, f'{dsname}*coverage.*strand.bed.gz'))
     logger.info(f'convert_region_to_cpg_base:{fnlist}')
 
-    outfn = os.path.join(pic_base_dir, f'{dsname}.rawfast5.coverage.base.bed')
-    outfile = open(outfn, 'w')
+    outfn = os.path.join(pic_base_dir, f'{dsname}.rawfast5.coverage.base.bed.gz')
+    outfile = gzip.open(outfn, 'wt')
 
     print_first = True
     for infn in fnlist:
@@ -91,9 +90,7 @@ def convert_region_to_cpg_base(dsname):
 
 def preprocess_bed_to_cgp_base():
     dsname_list = ['HL60', 'K562', 'APL', 'NA19240']
-    # dsname_list = ['HL60', 'K562', 'APL']
-    # fnlist = sorted(glob.glob(os.path.join(rawReadDir, '*.strand.bed')), key=os.path.getsize)
-    # dsname_list = ['NA19240']
+    dsname_list = ['NA12878']
 
     for dsname in dsname_list:
         logger.info(f'dsname={dsname}')
@@ -180,15 +177,20 @@ def report_table():
         with Pool(processes=8) as pool:
             for bedfn in narrowCoordFileList[1:]:
                 tagname = location_filename_to_abbvname[os.path.basename(bedfn)]
-                ret = pool.apply_async(count_sites_in_coord, (rawReadBed, bedfn, tagname,), kwds={'cutoff_list': cutoff_list})
+                ret = pool.apply_async(count_sites_in_coord, (rawReadBed, bedfn, tagname,),
+                                       kwds={'cutoff_list': cutoff_list})
                 retList.append(ret)
 
-            concordantFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{dsname}*hg38_nonsingletons.concordant.bed')
-            ret = pool.apply_async(count_sites_in_coord, (rawReadBed, concordantFileName, 'Concordant',), kwds={'cutoff_list': cutoff_list})
+            concordantFileName = find_bed_filename(basedir=datasetBedDir,
+                                                   pattern=f'{dsname}*hg38_nonsingletons.concordant.bed')
+            ret = pool.apply_async(count_sites_in_coord, (rawReadBed, concordantFileName, 'Concordant',),
+                                   kwds={'cutoff_list': cutoff_list})
             retList.append(ret)
 
-            discordantFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{dsname}*hg38_nonsingletons.discordant.bed')
-            ret = pool.apply_async(count_sites_in_coord, (rawReadBed, discordantFileName, 'Discordant',), kwds={'cutoff_list': cutoff_list})
+            discordantFileName = find_bed_filename(basedir=datasetBedDir,
+                                                   pattern=f'{dsname}*hg38_nonsingletons.discordant.bed')
+            ret = pool.apply_async(count_sites_in_coord, (rawReadBed, discordantFileName, 'Discordant',),
+                                   kwds={'cutoff_list': cutoff_list})
             retList.append(ret)
 
             pool.close()
@@ -208,10 +210,12 @@ def report_table():
         nonsingletonFilename = narrowCoordFileList[2]
         nonsingleton_bed = BedTool(nonsingletonFilename).sort()
 
-        concordantFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{dsname}*hg38_nonsingletons.concordant.bed')
+        concordantFileName = find_bed_filename(basedir=datasetBedDir,
+                                               pattern=f'{dsname}*hg38_nonsingletons.concordant.bed')
         concordant_bed = BedTool(concordantFileName).sort()
 
-        discordantFileName = find_bed_filename(basedir=datasetBedDir, pattern=f'{dsname}*hg38_nonsingletons.discordant.bed')
+        discordantFileName = find_bed_filename(basedir=datasetBedDir,
+                                               pattern=f'{dsname}*hg38_nonsingletons.discordant.bed')
         discordant_bed = BedTool(discordantFileName).sort()
 
         for coordFilename in narrowCoordFileList[3:]:
@@ -250,19 +254,51 @@ def report_table():
     logger.info(df)
 
     for cutoff in cutoff_list:
-        outdf = pd.concat([df.loc[:, ['dsname', 'filename', 'total']], df.filter(regex=f'.cutoff{cutoff}$', axis=1)], axis=1)
+        outdf = pd.concat([df.loc[:, ['dsname', 'filename', 'total']], df.filter(regex=f'.cutoff{cutoff}$', axis=1)],
+                          axis=1)
         outfn = os.path.join(pic_base_dir, f'raw.fast5.reads.cpg.coverage.across.regions.cutoff{cutoff}.xlsx')
         outdf.to_excel(outfn)
         logger.info(f'save to {outfn}')
 
 
+def combine_na12878_coverage_bed():
+    baseDir = "/fastscratch/liuya/nanocompare/NA12878-coverage"
+    outfn = os.path.join(pic_base_dir, "NA12878-allChrs.coverage.bothstrand.bed.gz")
+    outf = gzip.open(outfn, 'wt')
+    for chrName in humanChrSet:
+        logger.info(f"Processing chr={chrName}")
+        flist = glob.glob(os.path.join(baseDir, f"NA12878-{chrName.upper()}.coverage.*.bed.gz"))
+        logger.info(flist)
+
+        for fn in flist:
+            logger.info(fn)
+            with gzip.open(fn, 'rt') as inf:
+                for row in tqdm(inf):
+                    tmp = row.strip().split(" ")
+                    chr = tmp[0]
+                    if chr != chrName:
+                        continue
+                    outf.write(f"{row}")
+
+    outf.close()
+    logger.info(f"save to {outfn}")
+
+
 if __name__ == '__main__':
     set_log_debug_level()
 
-    dsname_list = ['HL60', 'K562', 'APL', 'NA19240']
-    cov_cutoff=3
+    # Combine NA12878 all chrs bed regions
+    if False:
+        combine_na12878_coverage_bed()
 
-    refFasta = None
-    # refFasta = get_ref_fasta()
-    # preprocess_bed_to_cgp_base()
-    report_table()
+    # Generate bed sites file from region file using sequencing string
+    if True:
+        refFasta = get_ref_fasta()
+        preprocess_bed_to_cgp_base()
+    sys.exit(0)
+
+    if True:
+        dsname_list = ['HL60', 'K562', 'APL', 'NA19240']
+        cov_cutoff = 3
+        refFasta = None
+        report_table()
