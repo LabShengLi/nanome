@@ -24,23 +24,23 @@ ecoliChrSet = ['NC_000913.3']
 
 datasets_order = ["NA12878", "NA19240", "APL", "K562", "HL60"]
 
-ToolNameList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon']
-# TODO: check all consistent, now just for plot figure
+# ToolNameList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'Megalodon']
 ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo', 'METEORE', 'DeepMod']
 
-# TODO: change to nanopolish, megalodon and deepsignal order later
 Top3ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal']
 
-ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod.C', 'DeepMod.Cluster', 'Megalodon', 'Megalodon.ZW',
+ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod.C', 'DeepMod.Cluster',
+                  'Megalodon', 'Megalodon.ZW',
                   'Guppy', 'Guppy.ZW', 'Guppy.gcf52ref', 'METEORE']
 
-BGTruthEncodeList = ['bismark', 'encode']  # 'bed',
+BGTruthEncodeList = ['bismark', 'encode']
 
-ToolsColorList = ["#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442"]
+# ToolsColorList = ["#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442"]
 ToolsColorList = ["#56B4E9", "#CC79A7", "#999999", "#009E73", "#E69F00", "#0072B2", "#D55E00"]
 
-referenceGenomeFile = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
+# referenceGenomeFile = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
 referenceGenomeFile = "/projects/li-lab/Nanopore_compare/nf_input/reference_genome/hg38/hg38.fasta"
+
 # These two files are defined from Reference Genome
 # Singletons:       XXXXXCGXXXXX            >=k bp distance CpGs
 # Nonsingletons:    XXXXXCGXXXCGXXXXCGXX    <k bp for pair of neighbors of CpGs
@@ -52,13 +52,18 @@ singletonFileExtStr = "_10bp.bed"
 # nonsingletonsFile = "hg38_nonsingletons.bed"
 # singletonFileExtStr = ".bed"
 
-narrowCoordNameList = ['x.x.Genome-wide', singletonsFile, nonsingletonsFile, "ONT.hg38.cpgIslandExt.bed",
-                       "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed", "ONT.hg38.exonFeature.bed",
-                       "ONT.hg38.geneFeature.bed", "ONT.hg38.intergenic.bed", "ONT.hg38.intronFeature.bed",
-                       "ONT.hg38.promoterFeature.flank_100.bed",
-                       "ONT.hg38.promoterFeature.flank_1000.bed",
-                       "ONT.hg38.promoterFeature.flank_200.bed", "ONT.hg38.promoterFeature.flank_2000.bed",
-                       "ONT.hg38.promoterFeature.flank_500.bed", "ONT.hg38.promoterFeature.flank_750.bed"]
+# narrowCoordNameList = ['x.x.Genome-wide', singletonsFile, nonsingletonsFile, "ONT.hg38.cpgIslandExt.bed",
+#                        "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed", "ONT.hg38.exonFeature.bed",
+#                        "ONT.hg38.geneFeature.bed", "ONT.hg38.intergenic.bed", "ONT.hg38.intronFeature.bed",
+#                        "ONT.hg38.promoterFeature.flank_100.bed",
+#                        "ONT.hg38.promoterFeature.flank_1000.bed",
+#                        "ONT.hg38.promoterFeature.flank_200.bed", "ONT.hg38.promoterFeature.flank_2000.bed",
+#                        "ONT.hg38.promoterFeature.flank_500.bed", "ONT.hg38.promoterFeature.flank_750.bed"]
+
+narrowCoordNameList = ['x.x.Genome-wide', singletonsFile, nonsingletonsFile,
+                       "ONT.hg38.promoterFeature.flank_2000.bed",
+                       "ONT.hg38.exonFeature.bed", "ONT.hg38.intronFeature.bed", "ONT.hg38.intergenic.bed",
+                       "ONT.hg38.cpgIslandExt.bed", "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed"]
 
 # None means no coordinate used, i.e. Genome-wide
 narrowCoordFileList = [None] + [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in
@@ -82,9 +87,9 @@ location_filename_to_abbvname = {
     'x.x.Genome-wide': 'Genome-wide',
     singletonsFile: 'Singletons',
     nonsingletonsFile: 'Non-singletons',
-    "ONT.hg38.cpgIslandExt.bed": "CpG Island",
-    "ONT.hg38.cpgShoresExt.bed": 'CpG Shores',
-    "ONT.hg38.cpgShelvesExt.bed": 'CpG Shelves',
+    "ONT.hg38.cpgIslandExt.bed": "CpG islands",
+    "ONT.hg38.cpgShoresExt.bed": 'CpG shores',
+    "ONT.hg38.cpgShelvesExt.bed": 'CpG shelves',
     "ONT.hg38.exonFeature.bed": 'Exons',
     "ONT.hg38.geneFeature.bed": 'GeneFeature',
     "ONT.hg38.intergenic.bed": 'Intergenic',
@@ -125,11 +130,11 @@ perf_report_columns = ['Dataset', 'Tool', 'Location', 'Accuracy', "Macro-F1", 'R
 
 # Rename raw name of region file (third section of .) to print name, such as 'ONT.hg38.cpgIslandExt.bed'
 location_name_map_raw_to_standard = {
-    'cpgIslandExt': 'CpG Island',
+    'cpgIslandExt': 'CpG islands',
     'discordant': 'Discordant',
     'concordant': 'Concordant',
-    'cpgShoresExt': 'CpG Shores',
-    'cpgShelvesExt': 'CpG Shelves',
+    'cpgShoresExt': 'CpG shores',
+    'cpgShelvesExt': 'CpG shelves',
     'exonFeature': 'Exons',
     'intergenic': 'Intergenic',
     'intronFeature': 'Introns',
@@ -142,22 +147,18 @@ location_name_map_raw_to_standard = {
     'cg_bin100': 'CG_100'
 }
 
-locations_category = ["Genome-wide", "CpG Island", "Promoters", "Exons", "Intergenic", "Introns", "CpG Shores",
-                      "CpG Shelves", "GeneFeature"]
-locations_singleton = ["Singletons", "Non-singletons", "Discordant", "Concordant"]  # TODO: Nonsingletons
+locations_category = ["Promoters", "Exons", "Introns", "Intergenic", "CpG islands", "CpG shores",
+                      "CpG shelves"]
+locations_singleton = ["Genome-wide", "Singletons", "Non-singletons", "Discordant", "Concordant"]
 
 # New introduced regions for CG density and repetitive
-locations_new = ["CG_20", "CG_40", "CG_60", "CG_80", "CG_100"] + ["rep_All", "rep_SINE", "rep_LINE", "rep_LTR",
-                                                                  "rep_Simple_repeat", "rep_DNA", "rep_Low_complexity",
-                                                                  "rep_Satellite", "rep_Retroposon", "rep_Others"]
+locations_new = ["CG_20", "CG_40", "CG_60", "CG_80", "CG_100"] + \
+                ["rep_SINE", "rep_LINE", "rep_LTR", "rep_DNA", "rep_Others"]
 
-locations_order = ["Genome-wide", "Singletons", "Non-singletons", "Discordant", "Concordant", "CpG Island", "Promoters",
-                   "Exons", "Intergenic", "Introns", "CpG Shores", "CpG Shelves", "GeneFeature"] + ["CG_20", "CG_40",
-                                                                                                    "CG_60", "CG_80",
-                                                                                                    "CG_100"] + [
-                      "rep_All", "rep_SINE", "rep_LINE", "rep_LTR", "rep_Simple_repeat", "rep_DNA",
-                      "rep_Low_complexity",
-                      "rep_Satellite", "rep_Retroposon", "rep_Others"]
+locations_order = ["Genome-wide", "Singletons", "Non-singletons", "Discordant", "Concordant",
+                   "Promoters", "Exons", "Introns", "Intergenic", "CpG islands", "CpG shores", "CpG shelves"] + \
+                  ["CG_20", "CG_40", "CG_60", "CG_80", "CG_100"] + \
+                  ["rep_SINE", "rep_LINE", "rep_LTR", "rep_DNA", "rep_Others"]
 
 
 def get_tool_name(encode_name):

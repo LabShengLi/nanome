@@ -8,6 +8,7 @@
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
+# sbatch computeRawReadsCoverage.sh report-raw
 set -x
 
 pythonFile=computeRawReadsCoverage.py
