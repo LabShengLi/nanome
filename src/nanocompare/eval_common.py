@@ -1752,6 +1752,17 @@ def save_keys_to_single_site_bed(keys, outfn, callBaseFormat=1, outBaseFormat=1,
     outfile.close()
 
 
+def do_singleton_nonsingleton_scanner():
+    """
+    Do generate singleton and nonsingleton BED file
+    :return:
+    """
+    kbp = 5
+    singletonFilename = os.path.join(pic_base_dir, f'hg38_singletons_{kbp}bp.bed')
+    nonsingletonFilename = os.path.join(pic_base_dir, f'hg38_nonsingletons_{kbp}bp.bed')
+    SingletonsAndNonSingletonsScanner(referenceGenomeFile, singletonFilename, nonsingletonFilename, kbp=kbp)
+
+
 def SingletonsAndNonSingletonsScanner(referenceGenomeFile, outfileName_s, outfileName_ns, kbp=10):
     """
     Generate singleton and non-singletons BED file, based on Reference Genome and KBP up and down streams.
@@ -2439,7 +2450,8 @@ def filter_corrdata_df_by_bedfile(df, df_bed, coord_fn):
     coordBed = BedTool(coord_fn).sort()
 
     # df_bed is chr  start  end . . strand
-    if os.path.basename(coord_fn).startswith("hg38.repetitive.rep") or os.path.basename(coord_fn).endswith("Tools_BGTruth_cov5_Joined.bed"):
+    if os.path.basename(coord_fn).startswith("hg38.repetitive.rep") or os.path.basename(coord_fn).endswith(
+            "Tools_BGTruth_cov5_Joined.bed"):
         df_bed_intersect = df_bed.intersect(coordBed, u=True, wa=True, s=True)
     else:
         df_bed_intersect = df_bed.intersect(coordBed, u=True, wa=True)
@@ -2591,6 +2603,9 @@ def sanity_check_get_dna_seq():
 if __name__ == '__main__':
     set_log_debug_level()
     refGenome = None
+
+    do_singleton_nonsingleton_scanner()
+    sys.exit(0)
 
     refGenome = get_ref_fasta()
     sanity_check_get_dna_seq()

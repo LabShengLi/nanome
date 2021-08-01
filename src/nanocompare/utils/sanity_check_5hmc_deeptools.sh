@@ -16,6 +16,7 @@ binSize=10
 processors=32
 
 baseDir=/projects/li-lab/yang/results/2021-07-07
+baseDir=/projects/li-lab/Nanopore_compare/suppdata/5hmc-sanity
 
 # Output dir
 outdir=/projects/li-lab/yang/results/$(date +%F)/sanity-check-5hmc

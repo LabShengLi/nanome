@@ -45,7 +45,13 @@ def report_singleton_nonsingleton_table(bgTruth, outfn, fn_concordant, fn_discor
     """
     logger.info('Start report BS seq data, the number of sites in singletons and nonsingltons')
     ret = {}
-    combineBGTruthSet = set(bgTruth.keys())
+
+    if isinstance(bgTruth, dict):
+        combineBGTruthSet = set(bgTruth.keys())
+    elif isinstance(bgTruth, set):
+        combineBGTruthSet = bgTruth
+    else:
+        raise Exception(f"Not support type for bgTruth={type(bgTruth)}")
 
     singletonFileName = narrowCoordFileList[1]  # Singleton file path
     singletonSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, singletonFileName)
@@ -496,6 +502,11 @@ if __name__ == '__main__':
         logger.info(f'After joined with {toolname}, cpgs={len(joinedCPG):,}')
 
     save_keys_to_single_site_bed(joinedCPG, outfn=bedfn_tool_join_bgtruth, callBaseFormat=baseFormat, outBaseFormat=1)
+
+    ## Report joined CpGs in each regions
+    outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.joined.tools.singleton.nonsingleton.cov5.csv')
+    report_singleton_nonsingleton_table(joinedCPG, outfn, fn_concordant=fn_concordant,
+                                        fn_discordant=fn_discordant)
 
     ## Note all tools using cov>=1 for evaluation read-leval performance
     logger.info(

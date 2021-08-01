@@ -11,6 +11,7 @@
 set -x
 
 baseDir=/projects/li-lab/yang/results/2021-07-07
+baseDir=/projects/li-lab/yang/results/2021-07-26
 
 outDir=$baseDir/regions_sorted_merged
 mkdir -p $outDir

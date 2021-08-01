@@ -747,8 +747,10 @@ if __name__ == '__main__':
         ndf.to_csv(os.path.join(args.o, outfn), sep='\t', header=False, index=False)
         logger.info(f"len={len(ndf)}, save to {outfn}")
     elif args.cmd == 'apl-5hmc-bed':
+        # Extract TSS format BED file for 5hmC
         # convert 1-based to 0-based results, output 5hmc level
         # bash meth_stats_tool.sh apl-5hmc-bed
+        # file will be later converted into BW file
         infn = "/pod/2/li-lab/Nanopore_compare/data/APL_5hmC_BSseq/APL.cov5.mlml.addstrand.selected.bed.gz"
         outfn = os.path.join(args.o, "APL.5hmc.tss.cov5.bed.gz")
         save_tss_bed_for_5hmc(infn, outfn)
