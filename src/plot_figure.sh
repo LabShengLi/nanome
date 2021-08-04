@@ -62,11 +62,17 @@ elif [ $command == "Step2" ]; then
         ${K562_Result_dir} \
         ${APL_Result_dir} \
         ${NA19240_Result_dir} \
-        ${NA12878_Result_dir}  ${tagOptions}
+        ${NA12878_Result_dir} ${tagOptions}
 
     # Step 2.2: Figure 3B Plot curves data
-    ## python plot_figure.py plot-curve-data -i  /projects/li-lab/yang/results/2021-06-29/plot-curve-data-METEORE/MethPerf-NA19240_RRBS_2Reps_METEORE.plot.curve.data.ytrue.ypred.yscore.Singletons.pkl
-    find /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} -name '*.pkl' \
+    ## python plot_figure.py plot-curve-data -i  /projects/li-lab/yang/results/2021-08-01/plot-curve-data-METEORE/MethPerf-NA19240_RRBS_2Reps_METEORE.plot.curve.data.ytrue.ypred.yscore.Singletons.pkl
+    #    find /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} -name '*.pkl' \
+    #        -exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
+
+    find /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} \( -name "MethPerf-NA19240*Singletons.pkl" -o -name "MethPerf-NA19240*Non-singletons.pkl" -o -name "MethPerf-NA19240*Concordant.pkl" -o -name "MethPerf-NA19240*Discordant.pkl" \) \
+        -exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
+
+    find /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} -name 'MethPerf-NA19240*.pkl' \
         -exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
 
     #	find /projects/li-lab/yang/results/2021-06-29/${plotCurveDataDir} -name '*.pkl' \

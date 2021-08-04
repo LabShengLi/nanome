@@ -11,15 +11,20 @@ perfInfileName = os.path.join('/projects/li-lab/yang/results/2021-07-09', 'perfo
 distributionInfileName = os.path.join('/projects/li-lab/yang/results/2021-07-09',
                                       'all.certain.sites.distribution.each.genomic.region.METEORE.cov5.csv')
 
-genomic_regions = ["Promoters", "Exons", "Introns", "Intergenic", "CpG Island", "CpG Shores", "CpG Shelves"]
+genomic_regions = \
+    ["Promoters", "Exons", "Introns", "Intergenic", "CpG Island", "CpG Shores", "CpG Shelves"] + \
+    ['CG_20', 'CG_40', 'CG_60', 'CG_80', 'CG_100'] + \
+    ['rep_SINE', 'rep_LINE', 'rep_LTR', 'rep_DNA', 'rep_Others']
 
 perfDf = pd.read_csv(perfInfileName).loc[:, ['Dataset', 'Tool', 'Location', 'Macro-F1']]
 perfDf = perfDf.loc[perfDf['Location'].isin(genomic_regions)]
+perfDf = perfDf[perfDf['Dataset'].isin(['NA12878', 'NA19240', 'APL', 'K562'])]
 print(len(perfDf))
 
 distDf = pd.read_csv(distributionInfileName).loc[:,
          ['Dataset', 'Coord', 'Singletons', 'Non-singletons', 'Concordant', 'Discordant']]
 distDf = distDf.loc[distDf['Coord'].isin(genomic_regions)]
+distDf = distDf[distDf['Dataset'].isin(['NA12878', 'NA19240', 'APL', 'K562'])]
 distDf['%Non-singletons'] = distDf['Non-singletons'] / (distDf['Non-singletons'] + distDf['Singletons'])
 distDf['%Discordant'] = distDf['Discordant'] / (distDf['Discordant'] + distDf['Concordant'])
 

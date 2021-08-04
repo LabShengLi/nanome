@@ -150,8 +150,8 @@ def grid_plot_correlation_matrix_for_fig5a(infn, removeDeepMod=False):
                 corrValue = pearsonr(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1])
                 corrValueStr = "{0:.3f}".format(corrValue[0])
 
-                coe_font_size=19
-                coe_font_size=22
+                coe_font_size = 19
+                coe_font_size = 22
 
                 if yrow == 1:
                     ax2.text(0.5 * (left + right), 0.5 * (bottom + top), corrValueStr,
@@ -278,7 +278,8 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname", removeDeepMod=False):
         fpr, tpr, threshold = metrics.roc_curve(ytrue, yscore, drop_intermediate=False)
         roc_auc = metrics.auc(fpr, tpr)
         plt.plot(fpr, tpr, toolcolor, label=f'{toolname}={roc_auc:.2f}')
-    plt.legend(loc='lower right')
+    leg =plt.legend(loc='lower right', title="AUC")
+    leg._legend_box.align = "left"
     # plt.plot([0, 1], [0, 1], 'r--')
     plt.xlim([0, 1])
     plt.ylim([0, 1])
@@ -290,7 +291,6 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname", removeDeepMod=False):
     outfn = os.path.join(outdir, f'fig.3b.{tagname}.roc.curves.jpg')
     plt.savefig(outfn, format='jpg', bbox_inches='tight', dpi=300)
     plt.savefig(outfn.replace(".jpg", ".pdf"), dpi=300, bbox_inches='tight')  # Generate also PDF version
-
 
     # print(plt.rcParams["font.family"])
     # print(plt.rcParams['font.sans-serif'])
