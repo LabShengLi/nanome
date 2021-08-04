@@ -30,6 +30,10 @@ workingDir=/fastscratch/liuya/nanocompare/work
 # Running nanome pipeline on test data (from NA19240) in Human Genome
 #nextflow run main.nf -profile winter --input inputs/test.demo.filelist.txt \
 #    -work-dir ${workingDir}-test6
+#rm -rf ${workingDir}-test4
+./nextflow run main.nf -profile winter --input inputs/test.demo.filelist.txt
+#    -work-dir ${workingDir}-test4 \
+#    -config conf/test.config
 
 
 #./nextflow run main.nf -profile winter \

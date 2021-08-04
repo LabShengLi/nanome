@@ -263,6 +263,12 @@ process GuppyExtract {
 		${guppy_meth_dir}/*.fastq | \
 		samtools sort -@ ${params.processors * 2} \
 		-T tmp -o gcf52ref.batch.${guppy_meth_dir.baseName}.bam
+=======
+		--save_path ${fast5_dir.baseName}_methcalled \
+		--config dna_r9.4.1_450bps_modbases_dam-dcm-cpg_hac.cfg \
+		--num_callers 16 --fast5_out \
+		--verbose_logs ${params.GuppyGPUOptions}
+>>>>>>> master
 
 	samtools index -@ ${params.processors * 2} \
 		gcf52ref.batch.${guppy_meth_dir.baseName}.bam
