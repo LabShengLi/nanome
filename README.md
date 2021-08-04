@@ -6,12 +6,12 @@
 **Background:** Nanopore long-read sequencing technology greatly expands the capacity of long-range single-molecule DNA-modification detection. A growing number of analytical tools have been actively developed to detect DNA methylation from Nanopore sequencing reads. Here, we examine the performance of different methylation calling tools to provide a systematic evaluation to guide practitioners for human epigenome-wide research.
 
 
-![Figure1](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/Fig1A.jpg)
+![Figure1A](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/Fig1A.jpg)
 
 **Fig. 1A. Survey of methylation calling tools .**  **(A)** Timeline of publication and technological developments of Oxford Nanopore Technologies (ONT) methylation calling tools to detect DNA cytosine modifications. 
 
 
-![FigureS1](https://github.com/liuyangzzu/nanome/blob/master/doc-task/Fig1B.jpg)
+![Figure1B](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/Fig1B.jpg)
 **Fig. 1B. Workflow for 5-methylcytosine (5mC) detection for Nanopore sequencing.** The pipeline has four steps: (1) Nanopore sequencing. (2) Base calling, which requires raw signals and reference genome as input to perform base calling by Albacore or Guppy. (3) Alignment to the genome by direct mapping with miniMap2 and re-squiggle with Tombo (optional). (4) Methylation calling. Here we compare five methylation calling tools: Nanopolish, Megalodon, DeepSignal, Tombo, and DeepMod to detect cytosine status in CpG context.
 
 
