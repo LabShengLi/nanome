@@ -7,12 +7,14 @@ from sys import argv
 
 from nanocompare.global_config import src_base_dir
 
-scriptFileName = os.path.join(src_base_dir, "nanocompare", "tss_eval.sbatch")
 
 if __name__ == '__main__':
 
     infile = open(argv[1], 'r')
-    others = ' '.join(argv[2:])
+    scriptName = argv[2] # "tss_eval.sbatch"
+    scriptFileName = os.path.join(src_base_dir, "nanocompare", scriptName)
+
+    others = ' '.join(argv[3:])
     print(f'Other options={others}')
 
     csvfile = csv.DictReader(infile, delimiter='\t')
@@ -25,9 +27,9 @@ if __name__ == '__main__':
 set -x; 
 
 sbatch --job-name=tss-eval-{row['RunPrefix']} --output=log/%x.%j.out --error=log/%x.%j.err \
---export=ALL,Dataset="{row['Dataset']}",DeepSignal_calls="{row['DeepSignal_calls']}",\
+--export=ALL,dsname="{row['Dataset']}",DeepSignal_calls="{row['DeepSignal_calls']}",\
 Tombo_calls="{row['Tombo_calls']}",Nanopolish_calls="{row['Nanopolish_calls']}",\
-DeepMod_calls="{row['DeepMod_calls']}",Megalodon_calls="{row['Megalodon_calls']}",\
+DeepMod_calls="{row['DeepMod_calls']}",Megalodon_calls="{row['Megalodon_calls']}",Guppy_calls="{row['Guppy_calls']}",\
 bgTruth="{row['bgTruth']}",RunPrefix="{row['RunPrefix']}",parser="{row['parser']}",\
 otherOptions="{others}" {scriptFileName}
 

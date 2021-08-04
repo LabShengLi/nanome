@@ -1,0 +1,3 @@
+gs://jax-nanopore-01-project-data/raw-input-na12878/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr1.part07.tar
+gs://jax-nanopore-01-project-data/raw-input-na12878/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr2.part04.tar
+gs://jax-nanopore-01-project-data/raw-input-na12878/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr3.part07.tar

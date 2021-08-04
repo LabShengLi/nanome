@@ -15,7 +15,11 @@ src/nanocompare/.DS_Store
 /figures/
 /result/
 /plots/
+/log/
+/debug/
 work
+/outputs/
+hello.nf
 .nextflow*
 nextflow
 .ipynb_checkpoints
@@ -24,5 +28,8 @@ src/nanocompare/methcall
 /script/
 /test/
 .Rhistory
-
+dag.dot*
+report.html*
+timeline.html*
+trace.txt*
 ## maintained by ly

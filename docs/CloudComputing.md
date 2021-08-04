@@ -6,22 +6,22 @@
    conda install -c conda-forge google-cloud-sdk
    ```
 
-1. Authenticate
+1. Authenticate.
    ```angular2html
    gcloud auth login --no-launch-browser
    gcloud auth application-default login
    ```
-1. Add Project Name to the config file ~/.config/gcloud/application_default_credentials.json
+1. Add Project Name to the config file ~/.config/gcloud/application_default_credentials.json.
    ```angular2html
    "project_id": "PROJECT-ID",
    ```
 
-1. Set project
+1. Set project.
    ```
    gcloud config set project [PROJECT_ID]
    ```
 
-1. Export environment variables (can be put in ~/.bashrc)
+1. Export environment variables (can be put in ~/.bashrc).
    ```
    export NXF_VER="20.10.0"
    export NXF_MODE=google
@@ -30,7 +30,7 @@
    export GOOGLE_APPLICATION_CREDENTIALS=~/.config/gcloud/application_default_credentials.json
    ```
 
-1. Run GCP nextflow a. Make sure the below staging bucket exists b. Make sure the service account (Compute Engine default service account) used by nextflow can write to the bucket c. replace PROJECT_ID in gcp/gcp.config with your GCP Project ID
+1. Run GCP nextflow a. Make sure the below staging bucket exists b. Make sure the service account (Compute Engine default service account) used by nextflow can write to the bucket c. replace PROJECT_ID in gcp/gcp.config with your GCP Project ID.
    ```angular2html
    ./nextflow run main.nf -profile gls -w gs://jax-nanopore-01-project-data/nanome-work-test --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
    ```
@@ -75,19 +75,19 @@
 
 ## Running pipeline
 
-Note that our project id is `jax-nanopore-01`.
+Note that our project id is `jax-nanopore-01`, used for `[PROJECT_ID]`, **Data Bucket** name used in project is `gs://jax-nanopore-01-project-data`.
 
 ```angular2html
 cd nanome
 curl -s https://get.nextflow.io | bash
 
-./nextflow run main.nf -profile gls -w gs://jax-nanopore-01-project-data/nanome-work-test --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
+nextflow run main.nf -profile gls -w gs://jax-nanopore-01-project-data/nanome-work-test --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
 ```
 
 
 ## Troubleshooting
 Make sure the network and subnet is 'default' with 'auto' mode
-Enable 'Private Google access' for the network/subnet
+Enable 'Private Google access' for the network/subnet.
 
 
 ## References

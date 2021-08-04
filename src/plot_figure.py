@@ -5,8 +5,10 @@ Plots and export data for nanome paper
 """
 import argparse
 import glob
+import gzip
 import os.path
 import pickle
+import re
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
@@ -45,12 +47,11 @@ def set_style(font_scale=1.2):
     sns.set_style("white")
 
 
-def grid_plot_correlation_matrix_for_fig5a(infn):
+def grid_plot_correlation_matrix_for_fig5a(infn, removeDeepMod=False):
     """
     Plot the grid of corr COE, distribution and scatter plot based on input files
     :return:
     """
-
     ## Load data into df
     logger.debug(infn)
     df = pd.read_csv(infn, sep=',')
@@ -66,8 +67,9 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
     df = df[sel_col]
     df = df.rename(columns=rename_dict)
 
-    # rename DeepMod column here
-    df = df.drop("DeepMod", axis=1)
+    if removeDeepMod:
+        # rename DeepMod column here
+        df = df.drop("DeepMod", axis=1)
 
     num_col = len(df.columns)
 
@@ -103,7 +105,7 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
 
     fig, ax = plt.subplots()
 
-    fig.set_size_inches(10, 10)
+    fig.set_size_inches(12, 12)
 
     left, width = .25, .5
     bottom, height = .25, .5
@@ -113,17 +115,18 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
     position = 1
     for yrow in range(1, num_col + 1):  # row
         for xcol in range(1, num_col + 1):  # column, each tool
-            logger.debug("Please wait, processing column xcol {}, yrow {}.".format(xcol, yrow))  # adding this so that one would be able to estimate how much time one has for a coffe
+            logger.debug("Please wait, processing column xcol {}, yrow {}.".format(xcol,
+                                                                                   yrow))  # adding this so that one would be able to estimate how much time one has for a coffe
             if xcol == yrow:
                 # Diagonal, distribution lines:
                 plt.subplot(num_col, num_col, position)
-                params = {'legend.fontsize'   : 50,
-                        'legend.handlelength' : 0,
-                        'legend.handletextpad': 0,
-                        'legend.fancybox'     : False,
-                        'legend.loc'          : 'upper right',
-                        'legend.framealpha'   : 0,
-                        'legend.borderaxespad': 0}
+                params = {'legend.fontsize': 50,
+                          'legend.handlelength': 0,
+                          'legend.handletextpad': 0,
+                          'legend.fancybox': False,
+                          'legend.loc': 'upper right',
+                          'legend.framealpha': 0,
+                          'legend.borderaxespad': 0}
                 plt.rcParams.update(params)
                 ax = sns.kdeplot(df.iloc[:, xcol - 1], shade=False, color="black", legend=True)
 
@@ -140,7 +143,6 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
                 ax.set_ylabel('')
                 ax.set_xlabel('')
                 ax.tick_params(axis=u'both', which=u'both', length=0)
-
             elif xcol > yrow:
                 # upper triangle, COE number:
                 ax2 = plt.subplot(num_col, num_col, position)
@@ -148,18 +150,20 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
                 corrValue = pearsonr(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1])
                 corrValueStr = "{0:.3f}".format(corrValue[0])
 
-                #                 print(xcol, yrow)
+                coe_font_size = 19
+                coe_font_size = 22
+
                 if yrow == 1:
                     ax2.text(0.5 * (left + right), 0.5 * (bottom + top), corrValueStr,
                              horizontalalignment='center',
                              verticalalignment='center',
-                             fontsize=19, color='#7B2323', weight='bold',
+                             fontsize=coe_font_size, color='#7B2323', weight='bold',
                              transform=ax2.transAxes)
                 else:
                     ax2.text(0.5 * (left + right), 0.5 * (bottom + top), corrValueStr,
                              horizontalalignment='center',
                              verticalalignment='center',
-                             fontsize=19, color='black',
+                             fontsize=coe_font_size, color='black',
                              transform=ax2.transAxes)
 
                 ax2.set_yticklabels([])
@@ -202,11 +206,11 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
                 #                 else:
                 #                     plt.hexbin(df.iloc[:, xcol - 1], df.iloc[:, yrow - 1], gridsize=(gridRes, gridRes), cmap='Blues', bins='log', mincnt=mincnt)
                 tick_label_fontsize = 10
-                tick_label_fontsize = 14
+                tick_label_fontsize = 12
                 if yrow == num_col:  # last row scatter plot shows x ticks
                     plt.xticks([0, 1], fontsize=tick_label_fontsize)
                     ax3.set_xticklabels(["0%", "100%"], fontsize=tick_label_fontsize)
-                    for label, alnType in zip(ax3.get_xticklabels(), ['left', 'right']):
+                    for label, alnType in zip(ax3.get_xticklabels(), ['left', 'center']):
                         label.set_horizontalalignment(alnType)
                 else:
                     plt.xticks([], fontsize=10)
@@ -216,15 +220,14 @@ def grid_plot_correlation_matrix_for_fig5a(infn):
                     ax3.set_yticklabels(["0%", "100%"], fontsize=tick_label_fontsize)
                     for label, alnType in zip(ax3.get_yticklabels(), ['bottom', 'top']):
                         label.set_verticalalignment(alnType)
-                #
                 else:
                     plt.yticks([], fontsize=10)
 
             position += 1
 
     fig.savefig(outfn, dpi=300, bbox_inches='tight')
-    fig.savefig(outfn.replace("jpg", ".pdf"), dpi=300, bbox_inches='tight')  # Generate also PDF version
-    plt.show()
+    fig.savefig(outfn.replace(".jpg", ".pdf"), dpi=300, bbox_inches='tight')  # Generate also PDF version
+    # plt.show()
     plt.close()
     logger.info(f"save to {outfn}")
 
@@ -239,7 +242,7 @@ def gen_figure_5a(infn):
     pass
 
 
-def plot_ROC_PR_curves(ret, outdir, tagname="tagname"):
+def plot_ROC_PR_curves(ret, outdir, tagname="tagname", removeDeepMod=False):
     """
     Plot ROC AUC and PR curves
     :param ret:
@@ -250,40 +253,69 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname"):
     figure_size = (4, 4)
 
     # title_font_size = 18
-    label_font_size = 16
+    label_font_size = 14
 
+    ## Plot ROC curve
     plt.clf()
     plt.figure(figsize=figure_size)
+
+    csfont = {'fontsize': label_font_size}
+
+    conf_matrix = {}
     for toolname, toolcolor in zip(ToolNameList, ToolsColorList):
-        if toolname == 'DeepMod':
+        if toolname == 'DeepMod' and removeDeepMod:
             continue
         ytrue = ret[f'{toolname}_true']
         ypred = ret[f'{toolname}_pred']
         yscore = ret[f'{toolname}_score']
+
+        ## Construct comfusion matrix
+        from sklearn.metrics import confusion_matrix
+        conf_matrix[toolname] = confusion_matrix(ytrue, ypred, labels=[0, 1])
 
         # logger.debug(f'ytrue={len(ytrue)}, ypred={len(ypred)}, yscore={len(yscore)}')
         # TODO: plot points in curves
         fpr, tpr, threshold = metrics.roc_curve(ytrue, yscore, drop_intermediate=False)
         roc_auc = metrics.auc(fpr, tpr)
         plt.plot(fpr, tpr, toolcolor, label=f'{toolname}={roc_auc:.2f}')
-    plt.legend(loc='lower right')
-    plt.plot([0, 1], [0, 1], 'r--')
+    leg =plt.legend(loc='lower right', title="AUC")
+    leg._legend_box.align = "left"
+    # plt.plot([0, 1], [0, 1], 'r--')
     plt.xlim([0, 1])
     plt.ylim([0, 1])
-    plt.ylabel('True Positive Rate', fontsize=label_font_size)
-    plt.xlabel('False Positive Rate', fontsize=label_font_size)
+
+    plt.ylabel('True Positive Rate', **csfont)
+    plt.xlabel('False Positive Rate', **csfont)
+
     # plt.title('ROC Curves', fontsize=title_font_size)
     outfn = os.path.join(outdir, f'fig.3b.{tagname}.roc.curves.jpg')
-    plt.savefig(outfn, format='png', bbox_inches='tight', dpi=600)
+    plt.savefig(outfn, format='jpg', bbox_inches='tight', dpi=300)
+    plt.savefig(outfn.replace(".jpg", ".pdf"), dpi=300, bbox_inches='tight')  # Generate also PDF version
 
-    plt.show()
+    # print(plt.rcParams["font.family"])
+    # print(plt.rcParams['font.sans-serif'])
+
+    # plt.show()
     plt.close()
+
+    outfn = os.path.join(outdir, f'confusion.matrix.{tagname}.each.tool.csv.gz')
+    outf = gzip.open(outfn, 'wt')
+    for toolname in ToolNameList:
+        if toolname not in conf_matrix:
+            continue
+        # logger.info(f"{toolname} = {conf_matrix[toolname]}")
+        outf.write(f"{toolname}\n")
+        mat = conf_matrix[toolname]
+        outf.write(f"{mat[0, 0]},{mat[0, 1]}\n")
+        outf.write(f"{mat[1, 0]},{mat[1, 1]}\n")
+    outf.close()
+    return
 
     ## PR curves
     plt.clf()
     plt.figure(figsize=figure_size)
     for toolname, toolcolor in zip(ToolNameList, ToolsColorList):
-        if toolname == 'DeepMod':
+        if toolname == 'DeepMod' and removeDeepMod:
             continue
         ytrue = ret[f'{toolname}_true']
         yscore = ret[f'{toolname}_score']
@@ -313,12 +345,36 @@ def collect_singleton_vs_nonsingleton_df(runPrefix, pattern="*.summary.bsseq.sin
         # logger.debug(run1)
         flist = glob.glob(filepat)
         if len(flist) != 1:
-            raise Exception(f"Too much/No summary of singleton vs non-singleton for {run1} in folder {runPrefix[run1]} with pattern={pattern}, len={len(flist)}")
+            raise Exception(
+                f"Too much/No summary of singleton vs non-singleton for {run1} in folder {runPrefix[run1]} with pattern={pattern}, len={len(flist)}")
         # logger.debug(f'Get file:{flist[0]}')
         df = pd.read_csv(flist[0], index_col=0)
         dflist.append(df)
     retdf = pd.concat(dflist)
     retdf.index.name = 'Dataset'
+    return retdf
+
+
+def collect_distribution_genomic_df(runPrefix, pattern=None):
+    dflist = []
+    # logger.debug(runPrefix)
+    for run1 in runPrefix:
+        filepat = os.path.join(runPrefix[run1], pattern)
+        # logger.debug(run1)
+        flist = glob.glob(filepat)
+        if len(flist) != 1:
+            raise Exception(
+                f"Too much/No summary of singleton vs non-singleton for {run1} in folder {runPrefix[run1]} with pattern={pattern}, len={len(flist)}")
+        # logger.debug(f'Get file:{flist[0]}')
+        df = pd.read_excel(flist[0], index_col=0, engine='openpyxl')  #
+        dflist.append(df)
+    retdf = pd.concat(dflist)
+
+    retdf['Dataset'] = pd.Categorical(retdf['Dataset'], datasets_order)
+    retdf['Coord'] = pd.Categorical(retdf['Coord'], locations_order)
+    retdf = retdf.sort_values(by=['Dataset', 'Coord'], ascending=[True, True])
+    retdf = retdf.dropna()
+
     return retdf
 
 
@@ -343,7 +399,8 @@ def collect_performance_report_as_df(runPrefix):
     return combdf
 
 
-def load_wide_format_performance_results(runPrefix, sel_locations=locations_category + locations_singleton):
+def load_wide_format_performance_results(runPrefix,
+                                         sel_locations=locations_category + locations_singleton + locations_new):
     """
     Collect the currently new performance of exp results for paper
     :return:
@@ -351,7 +408,8 @@ def load_wide_format_performance_results(runPrefix, sel_locations=locations_cate
     df = collect_performance_report_as_df(runPrefix)
     retdf = df[df['Location'].isin(sel_locations)]
 
-    logger.debug(f"collect_newly_exp_data, wide-format seldf={len(retdf)} using locations={sel_locations}")
+    logger.debug(
+        f"load_wide_format_performance_results, wide-format retdf={len(retdf)} using locations={sel_locations}")
 
     return retdf
 
@@ -362,6 +420,16 @@ def save_wide_format_performance_results(runPrefix, outdir, tagname):
     :return:
     """
     df = load_wide_format_performance_results(runPrefix)
+
+    ## Rename Tool name to starndard name
+    df["Tool"].replace({"Megalodon_ZW": "Megalodon", "DeepMod_C": "DeepMod"}, inplace=True)
+
+    ## arrange df
+    df['Dataset'] = pd.Categorical(df['Dataset'], datasets_order)
+    df['Tool'] = pd.Categorical(df['Tool'], ToolNameList)
+    df['Location'] = pd.Categorical(df['Location'], locations_order)
+    df = df.sort_values(by=['Dataset', 'Location', 'Accuracy'], ascending=[True, True, False])
+
     outfn = os.path.join(outdir, f'performance-results{f"-{tagname}" if tagname else ""}.csv')
     df.to_csv(outfn)
     logger.info(f'save to {outfn}')
@@ -371,10 +439,16 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='Plot and export data for Nanocompare paper.')
     parser.add_argument("cmd", help="name of command, fig5a, export-data, etc.")
     parser.add_argument('-i', nargs='+', help='list of input files', default=[])
-    parser.add_argument('-o', type=str, help="output dir", default=None)  # TODO: check all correct when change this to None
+    parser.add_argument('-o', type=str, help="output dir",
+                        default=None)  # TODO: check all correct when change this to None
     parser.add_argument('--tagname', type=str, help="tagname of files", default=None)
-    parser.add_argument('--beddir', type=str, help="bed file dir used for finding Concordant and Discordant", default=None)
+    parser.add_argument('--beddir', type=str, help="bed file dir used for finding Concordant and Discordant",
+                        default=None)
     parser.add_argument('--cutoff', type=int, help="the cutoff used on bed file", default=1)
+    parser.add_argument('--signal-col', type=int, help="the column number of signals extract from bed to bedGraph",
+                        default=6)
+    parser.add_argument('--cov-col', type=int, help="the column number of signals extract from bed to bedGraph",
+                        default=7)  # -1 means no cov col
 
     args = parser.parse_args()
     return args
@@ -382,6 +456,12 @@ def parse_arguments():
 
 if __name__ == '__main__':
     set_log_debug_level()
+
+    ## Use same font for plotting
+    import matplotlib.font_manager as font_manager
+
+    font_manager._rebuild()
+    plt.rcParams['font.sans-serif'] = ['Arial']
 
     args = parse_arguments()
     logger.debug(args)
@@ -397,11 +477,13 @@ if __name__ == '__main__':
             gen_figure_5a(fn)
     elif args.cmd == 'export-corr-data':
         # python plot_figure.py export-corr-data -i /projects/li-lab/yang/results/2021-04-02-methcorr/MethCorr-HL60_RRBS_2Reps --beddir /projects/li-lab/yang/results/2021-04-07/MethPerf-cut5
+        if not args.o:
+            args.o = pic_base_dir
         dflist = []
         for indir in args.i:
-            fnlist = glob.glob(os.path.join(indir, 'Meth_corr_plot_data_joined-*.csv'))
+            fnlist = glob.glob(os.path.join(indir, 'Meth_corr_plot_data_joined-*.csv.gz'))
             if len(fnlist) != 1:
-                raise Exception(f'Found more fnlist={fnlist}')
+                raise Exception(f'Found more or none fnlist={fnlist}, for indir={indir}')
             logger.info(f'Find file: {fnlist[0]}')
 
             basefn = os.path.basename(fnlist[0])
@@ -410,7 +492,8 @@ if __name__ == '__main__':
             df = correlation_report_on_regions(fnlist[0], beddir=args.beddir, dsname=dsname, outdir=args.o)
             dflist.append(df)
         outdf = pd.concat(dflist)
-        outfn = os.path.join(args.o, 'All.corrdata.coe.pvalue.each.regions.xlsx')
+        outfn = os.path.join(args.o,
+                             f'All.corrdata.coe.pvalue.each.regions{f".{args.tagname}" if args.tagname else ""}.xlsx')
         outdf.to_excel(outfn)
         logger.info(f'save to {outfn}')
     elif args.cmd == 'export-data':
@@ -432,19 +515,43 @@ if __name__ == '__main__':
 
         pattern1 = "*.summary.bsseq.singleton.nonsingleton.cov1.csv"
         df = collect_singleton_vs_nonsingleton_df(run_prefix, pattern=pattern1)
-        outfn = os.path.join(args.o, f'dataset.singleton.vs.non-singleton{f"-{args.tagname}" if args.tagname else ""}.cov1.csv')
+        ## arrange df
+        df = df.reindex(datasets_order)
+
+        outfn = os.path.join(args.o,
+                             f'dataset.singleton.vs.non-singleton{f".{args.tagname}" if args.tagname else ""}.cov1.csv')
         df.to_csv(outfn)
 
         pattern2 = "*.summary.bsseq.singleton.nonsingleton.cov5.csv"
         df = collect_singleton_vs_nonsingleton_df(run_prefix, pattern=pattern2)
-        outfn = os.path.join(args.o, f'dataset.singleton.vs.non-singleton{f"-{args.tagname}" if args.tagname else ""}.cov5.csv')
+        ## arrange df
+        df = df.reindex(datasets_order)
+
+        outfn = os.path.join(args.o,
+                             f'dataset.singleton.vs.non-singleton{f".{args.tagname}" if args.tagname else ""}.cov5.csv')
+        df.to_csv(outfn)
+        logger.info(f'save stats of singleton and non-singleton to {outfn}')
+
+        ## concat all singleton/nonsingleton for each datasets
+        ## sample: HL60.bgtruth.certain.sites.distribution.sing.nonsing.each.genomic.cov5.xlsx
+        pattern3 = "*.bgtruth.certain.sites.distribution.sing.nonsing.each.genomic.cov5.xlsx"
+        df = collect_distribution_genomic_df(run_prefix, pattern=pattern3)
+        ## arrange df
+        # df['Dataset'] = pd.Categorical(df['Dataset'], datasets_order)
+        # df['Coord'] = pd.Categorical(df['Coord'], locations_order)
+        # df = df.sort_values(by='Dataset')
+
+        outfn = os.path.join(args.o,
+                             f'all.certain.sites.distribution.each.genomic.region{f".{args.tagname}" if args.tagname else ""}.cov5.csv')
         df.to_csv(outfn)
 
-        logger.info(f'save stats of singleton and non-singleton to {outfn}')
+        logger.info(f'save distribution of each genomic region to {outfn}')
     elif args.cmd == 'export-curve-data':
         ## python plot_figure.py export-curve-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS
 
         ## python plot_figure.py export-curve-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-APL_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS_CPG --tagname CPG
+        if not args.o:
+            args.o = pic_base_dir
         outdir = os.path.join(args.o, f'plot-curve-data{f"-{args.tagname}" if args.tagname else ""}')
         os.makedirs(outdir, exist_ok=True)
 
@@ -456,11 +563,16 @@ if __name__ == '__main__':
             cnt = 0
             for coordinate_bed_name in location_filename_to_abbvname.keys():
                 curve_data = defaultdict(list)
+                success = True
                 for toolname in ToolNameList:
-                    pattern_str = os.path.join(bdir, 'performance?results', 'curve_data', f'*.{toolname}.*{coordinate_bed_name}.curve_data.pkl')
+                    pattern_str = os.path.join(bdir, 'performance?results', 'curve_data',
+                                               f'*.{toolname}*.*{coordinate_bed_name}.curve_data.pkl')
                     fnlist = glob.glob(pattern_str)
                     if len(fnlist) != 1:
-                        raise Exception(f'Can not locate curve_data for Tool={toolname}, at Coord={coordinate_bed_name}, with pattern={pattern_str}, find results={fnlist}. Please check if MethPerf results folder={bdir} specified is correct.')
+                        logger.error(
+                            f'Can not locate curve_data for Tool={toolname}, at Coord={coordinate_bed_name}, with pattern={pattern_str}, find results={fnlist}. Please check if MethPerf results folder={bdir} specified is correct.')
+                        success = False
+                        break
                     cnt += 1
                     with open(fnlist[0], 'rb') as f:
                         ret = pickle.load(f)
@@ -468,29 +580,30 @@ if __name__ == '__main__':
                         curve_data[f'{toolname}_true'] = ret['yTrue']  # Ground truth label
                         curve_data[f'{toolname}_pred'] = ret['yPred']  # Prediction label
                         curve_data[f'{toolname}_score'] = ret['yScore']  # Prediction score, used for roc curve plotting
-                outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{location_filename_to_abbvname[coordinate_bed_name]}.pkl')
-                with open(outfn, 'wb') as f:
-                    pickle.dump(curve_data, f)
-                # logger.info(f'save to {outfn}')
+                if success:
+                    outfn = os.path.join(outdir,
+                                         f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{location_filename_to_abbvname[coordinate_bed_name]}.pkl')
+                    with open(outfn, 'wb') as f:
+                        pickle.dump(curve_data, f)
 
-                outfn = os.path.join(outdir, f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{location_filename_to_abbvname[coordinate_bed_name]}.dat')
-                with open(outfn, "w") as f:
-                    for toolname in ToolNameList:
-                        f.write(f"{toolname}_true:")
-                        outstr = ','.join([str(value) for value in curve_data[f'{toolname}_true']])
-                        f.write(outstr)
-                        f.write("\n")
+                    outfn = os.path.join(outdir,
+                                         f'{runPrefix}.plot.curve.data.ytrue.ypred.yscore.{location_filename_to_abbvname[coordinate_bed_name]}.dat')
+                    with open(outfn, "w") as f:
+                        for toolname in ToolNameList:
+                            f.write(f"{toolname}_true:")
+                            outstr = ','.join([str(value) for value in curve_data[f'{toolname}_true']])
+                            f.write(outstr)
+                            f.write("\n")
 
-                        f.write(f"{toolname}_pred:")
-                        outstr = ','.join([str(value) for value in curve_data[f'{toolname}_pred']])
-                        f.write(outstr)
-                        f.write("\n")
+                            f.write(f"{toolname}_pred:")
+                            outstr = ','.join([str(value) for value in curve_data[f'{toolname}_pred']])
+                            f.write(outstr)
+                            f.write("\n")
 
-                        f.write(f"{toolname}_score:")
-                        outstr = ','.join([f'{value:.4f}' for value in curve_data[f'{toolname}_score']])
-                        f.write(outstr)
-                        f.write("\n")
-                # logger.info(f'save to {outfn}')
+                            f.write(f"{toolname}_score:")
+                            outstr = ','.join([f'{value:.4f}' for value in curve_data[f'{toolname}_score']])
+                            f.write(outstr)
+                            f.write("\n")
             logger.info(f'For runPrefix={runPrefix} at dir={bdir}, total files={cnt}')
     elif args.cmd == 'plot-curve-data':
         ## find /projects/li-lab/Nanopore_compare/result/plot-curve-data -name '*.pkl' -exec python plot_figure.py plot-curve-data -i {} \;
@@ -505,7 +618,7 @@ if __name__ == '__main__':
                 basename = os.path.basename(fn)
                 bn = os.path.splitext(basename)[0]
                 ret = pickle.load(infn)
-                logger.debug(ret.keys())
+                # logger.debug(ret.keys())
                 plot_ROC_PR_curves(ret, outdir, tagname=bn)
     elif args.cmd == 'guppy-qos':
         ## collect basecall output for summary results, used for qos
@@ -525,19 +638,29 @@ if __name__ == '__main__':
             outfn = os.path.join(pic_base_dir, f'{bfn}.sequencing_summary.txt')
             outdf.to_csv(outfn, index=False, sep='\t')
     elif args.cmd == 'bed-to-bedGraph':
+        # Input is 0-based, output is same 0-based for TSS analysis
+        # python plot_figure.py bed-to-bedGraph -i $fn --cutoff $CUTOFF -o $outdir --cov_col 7  --signal-col 6
+        # python plot_figure.py bed-to-bedGraph -i $fn --cutoff 5 --cov_col -1  --signal-col 3
+        ## Default: cov_col=7, signal_col=6
         infn = args.i[0]
         cutoff = args.cutoff
         df = pd.read_csv(infn, sep='\t', header=None)
         logger.info(len(df))
 
-        df = df[df.iloc[:, 7] >= cutoff]
-        logger.info(f'After cutoff={cutoff}, len(df)={len(df)}')
+        if args.cov_col != -1:  # filter with coverage
+            df = df[df.iloc[:, args.cov_col] >= cutoff]
+            logger.info(f'After cutoff={cutoff}, len(df)={len(df)}')
+
         if not args.o:  # output dir params
             outdir = pic_base_dir
         else:
             outdir = args.o
-        outfn = os.path.join(outdir, f'{os.path.basename(infn).replace(".cov1.bed", "")}.cov{cutoff}.bedGraph')
-        df = df.iloc[:, [0, 1, 2, 6]]
+
+        baseInfn = os.path.basename(infn)
+        baseOutfn = re.sub('cov..bed.gz', '', baseInfn) + f"cov{cutoff}.bedGraph"
+
+        outfn = os.path.join(outdir, baseOutfn)
+        df = df.iloc[:, [0, 1, 2, args.signal_col]]
         df.to_csv(outfn, sep='\t', header=False, index=None)
         logger.info(f'save to {outfn}')
 
@@ -548,8 +671,6 @@ if __name__ == '__main__':
         outfn2 = outfn.replace('.bedGraph', '.sorted.bedGraph')
         bed1.saveas(outfn2)
         logger.info(f'after sort bed, save to {outfn2}')
-
-        pass
     elif args.cmd == 'view-outmatrix':  # View the out marix for TSS, such as /projects/li-lab/yang/results/2021-04-25/tss-plots/
         ### python plot_figure.py view-outmatrix -i /projects/li-lab/yang/results/2021-04-25/tss-plots/NA19240.bin50.outMatrix.tsv
         infn = args.i[0]

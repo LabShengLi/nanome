@@ -4,17 +4,13 @@
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 8 # number of cores
 #SBATCH --mem 300G # memory pool for all cores
-#SBATCH -t 1-23:00:00 # time (D-HH:MM:SS)
+#SBATCH -t 72:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
+# sbatch computeRawReadsCoverage.sh report-raw
 set -x
 
-projectDir=/projects/li-lab/yang/workspace/nano-compare
-
-pythonFile=${projectDir}/src/nanocompare/computeRawReadsCoverage.py
-
-mkdir -p log
-
+pythonFile=computeRawReadsCoverage.py
 
 python ${pythonFile} $@

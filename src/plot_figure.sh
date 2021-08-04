@@ -1,38 +1,108 @@
 #!/bin/bash
 #SBATCH --job-name=plot-figure
-#SBATCH -q batch
+#SBATCH -q long
+##SBATCH -q batch
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 4 # number of cores
-#SBATCH --mem 250G # memory pool for all cores
-#SBATCH -t 1-20:00:00 # time (D-HH:MM:SS)
+#SBATCH -n 8 # number of cores
+#SBATCH --mem 300G # memory pool for all cores
+#SBATCH -t 14-00:00:00 # time (D-HH:MM:SS)
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
-# revert master by ly1
-
-
-set -x
+## Script used for generate data and plot figures
+## Parameters:
+## 				command
+## 				resultsDir
 
 pythonFile=plot_figure.py
 
-# Step 1: Table S2,S3
-#python plot_figure.py export-data -i /projects/li-lab/yang/results/2021-05-19/MethPerf-HL60_RRBS_2Reps /projects/li-lab/yang/results/2021-05-19/MethPerf-K562_WGBS_2Reps /projects/li-lab/yang/results/2021-05-19/MethPerf-APL_RRBS /projects/li-lab/yang/results/2021-05-19/MethPerf-NA19240_RRBS_2Reps
+command=${1:-"Step1"}
+type=${2:-"METEORE"}
+resultsDir=${3:-"/projects/li-lab/yang/results/2021-07-08"}
 
-### Plot figure 5a
-#find /projects/li-lab/Nanopore_compare/result/meth-exp/MethCorr-cut5-tool3 -name "Meth_corr_plot_data_joined-*.csv" -exec python ${pythonFile} fig5a -i {} -o . \;
+bedDir="/projects/li-lab/yang/results/2021-07-08"
 
-# Step 4: Figure 5B data
-#python ${pythonFile} export-corr-data  --beddir /projects/li-lab/yang/results/2021-04-12 \
-#	-i /projects/li-lab/yang/results/2021-04-13/MethCorr-HL60_RRBS_2Reps \
-#	 /projects/li-lab/yang/results/2021-04-13/MethCorr-K562_WGBS_2Reps \
-#	 /projects/li-lab/yang/results/2021-04-13/MethCorr-APL_RRBS \
-#	 /projects/li-lab/yang/results/2021-04-13/MethCorr-NA19240_RRBS_2Reps \
+if [ "$type" == "six" ]; then
+    HL60_Result_dir=${resultsDir}/MethPerf-HL60_RRBS_2Reps
+    K562_Result_dir=${resultsDir}/MethPerf-K562_WGBS_2Reps
+    APL_Result_dir=${resultsDir}/MethPerf-APL_WGBS
+    NA19240_Result_dir=${resultsDir}/MethPerf-NA19240_RRBS_2Reps
+    tagOptions=""
+    plotCurveDataDir="plot-curve-data"
+elif [ "$type" == "METEORE" ]; then
+    HL60_Result_dir=${resultsDir}/MethPerf-HL60_RRBS_2Reps_METEORE
+    K562_Result_dir=${resultsDir}/MethPerf-K562_WGBS_2Reps_METEORE
+    APL_Result_dir=${resultsDir}/MethPerf-APL_WGBS_METEORE
+    NA19240_Result_dir=${resultsDir}/MethPerf-NA19240_RRBS_2Reps_METEORE
+    NA12878_Result_dir=${resultsDir}/MethPerf-NA12878_WGBS_2Reps_seven
+    tagOptions="--tagname METEORE"
+    plotCurveDataDir="plot-curve-data-METEORE"
+else
+    echo "### Unsupported type=$type"
+    exit 156
+fi
 
-# Step 2: Export curve data for Figure 3B
-#python plot_figure.py export-curve-data -i /projects/li-lab/yang/results/2021-04-12/MethPerf-HL60_RRBS_2Reps /projects/li-lab/yang/results/2021-04-12/MethPerf-K562_WGBS_2Reps /projects/li-lab/yang/results/2021-04-12/MethPerf-APL_RRBS /projects/li-lab/yang/results/2021-04-12/MethPerf-NA19240_RRBS_2Reps
+if [ $command == "Step1" ]; then
+    # Step 1: Table S2,S3
+    # bash plot_figure.sh Step1
+    # bash plot_figure.sh Step1 METEORE /projects/li-lab/yang/results/2021-06-28
+    python plot_figure.py export-data -i \
+        ${HL60_Result_dir} \
+        ${K562_Result_dir} \
+        ${APL_Result_dir} \
+        ${NA19240_Result_dir} \
+        ${NA12878_Result_dir} ${tagOptions}
 
-# Step 3: Figure 3B Plot curves data
-#find /projects/li-lab/yang/results/2021-04-13/plot-curve-data -name '*.pkl' -exec python plot_figure.py plot-curve-data -i {} \;
+elif [ $command == "Step2" ]; then
+    # Step 2.1: Export curve data for Figure 3B
+    # sbatch plot_figure.sh Step2
+    # sbatch plot_figure.sh Step2 METEORE
+    python plot_figure.py export-curve-data -i \
+        ${HL60_Result_dir} \
+        ${K562_Result_dir} \
+        ${APL_Result_dir} \
+        ${NA19240_Result_dir} \
+        ${NA12878_Result_dir} ${tagOptions}
 
-## Plot figure
-# find /projects/li-lab/yang/results/2021-04-13/plot-curve-data -name 'MethPerf-NA19240*.pkl' -exec python plot_figure.py plot-curve-data -i {} \;
+    # Step 2.2: Figure 3B Plot curves data
+    ## python plot_figure.py plot-curve-data -i  /projects/li-lab/yang/results/2021-08-01/plot-curve-data-METEORE/MethPerf-NA19240_RRBS_2Reps_METEORE.plot.curve.data.ytrue.ypred.yscore.Singletons.pkl
+    #    find /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} -name '*.pkl' \
+    #        -exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
+
+    find /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} \( -name "MethPerf-NA19240*Singletons.pkl" -o -name "MethPerf-NA19240*Non-singletons.pkl" -o -name "MethPerf-NA19240*Concordant.pkl" -o -name "MethPerf-NA19240*Discordant.pkl" \) \
+        -exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
+
+    find /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} -name 'MethPerf-NA19240*.pkl' \
+        -exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
+
+    #	find /projects/li-lab/yang/results/2021-06-29/${plotCurveDataDir} -name '*.pkl' \
+    #		-exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
+
+elif [ $command == "Fig5a" ]; then
+    ### Plot figure 5a
+    # sbatch plot_figure.sh Fig5a
+    ## python plot_figure.py fig5a -i /projects/li-lab/yang/results/2021-06-28/MethCorr-HL60_RRBS_2Reps_METEORE/Meth_corr_plot_data_joined-HL60_RRBS_2Reps_METEORE-bsCov5-minToolCov3-baseFormat1.csv
+
+    set -x
+    fileList=$(find ${resultsDir} -name "Meth_corr_plot_data_joined-*.csv.gz")
+    for fn in $fileList; do
+        python ${pythonFile} fig5a -i $fn &
+    done
+    wait
+
+elif [ $command == "Fig5b-data" ]; then
+    ### Figure 5B data: COE on each region data for bar plot
+    # sbatch plot_figure.sh Fig5b-data
+    # sbatch plot_figure.sh Fig5b-data METEORE
+    python ${pythonFile} export-corr-data --beddir ${bedDir} \
+        -i ${HL60_Result_dir/MethPerf/MethCorr} \
+        ${K562_Result_dir/MethPerf/MethCorr} \
+        ${APL_Result_dir/MethPerf/MethCorr} \
+        ${NA19240_Result_dir/MethPerf/MethCorr} \
+        ${NA12878_Result_dir/MethPerf/MethCorr} ${tagOptions}
+else
+    echo "### Unsupported command=${command}"
+    exit 3
+fi
+
+echo "### DONE"

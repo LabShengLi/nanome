@@ -1,4 +1,4 @@
-name: nanocompare
+name: nanome
 channels:
   - bioconda
   - r
@@ -175,7 +175,7 @@ dependencies:
   - tk=8.6.10
   - tktable=2.10
   - tornado=6.1
-  - tqdm=4.32.1
+  - tqdm=4.60.0
   - typing_extensions=3.7.4.3
   - tzlocal=2.1
   - webencodings=0.5.1
@@ -191,6 +191,9 @@ dependencies:
   - statsmodels==0.12.2
   - ont-fast5-api==3.0.0
   - pybedtools=0.7.10
+  - rocksdb
+  - python-rocksdb
+  - cython
   - pip:
     - deepsignal==0.1.8
     - fast5mod==1.0.5

@@ -1,14 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=nano.nxfl
-#SBATCH -p compute
-#SBATCH -q long
-##SBATCH -p gpu
-##SBATCH --gres=gpu:1
-##SBATCH -q training
+##SBATCH -p compute
+##SBATCH -q long
+#SBATCH -p gpu
+#SBATCH --gres=gpu:1
+#SBATCH -q training
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 2 # number of cores
 #SBATCH --mem=70G # memory pool for all cores
-#SBATCH --time=14-00:00:00 # time
+#SBATCH --time=06:00:00 # time
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
@@ -28,6 +28,8 @@ workingDir=/fastscratch/liuya/nanocompare/work
 ###############################################################
 ## Option 1:
 # Running nanome pipeline on test data (from NA19240) in Human Genome
+#nextflow run main.nf -profile winter --input inputs/test.demo.filelist.txt \
+#    -work-dir ${workingDir}-test6
 #rm -rf ${workingDir}-test4
 ./nextflow run main.nf -profile winter --input inputs/test.demo.filelist.txt
 #    -work-dir ${workingDir}-test4 \
@@ -43,9 +45,9 @@ workingDir=/fastscratch/liuya/nanocompare/work
 ###############################################################
 ## Option 2:
 ## Running nanome pipeline on E. coli data
-#./nextflow run main.nf -profile winter \
-#    -work-dir ${workingDir}-ecoli \
-#    -config conf/ecoli_demo.config -resume
+./nextflow run main.nf -profile winter \
+    -work-dir ${workingDir}-ecoli \
+    -config conf/ecoli_demo.config -resume
 
 
 ###############################################################
