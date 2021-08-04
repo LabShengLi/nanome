@@ -3,42 +3,22 @@
 
 ## Methodology of nanome pipeline
 
-**Background:** Nanopore long-read sequencing technology greatly expands the capacity of long-range single-molecule DNA-modification detection. A growing number of analytical tools have been actively developed to detect DNA methylation from Nanopore sequencing reads. Here, we examine the performance of different methylation calling tools to provide a systematic evaluation to guide practitioners for human epigenome-wide research.
+**Background:** Nanopore long-read sequencing technology greatly expands the capacity of long-range, single-molecule DNA-modification detection. A growing number of analytical tools have been developed to detect DNA methylation from nanopore sequencing reads. Here, we assess the performance of different methylation calling tools to provide a systematic evaluation to guide researchers performing human epigenome-wide studies.
 
 
 ![Figure1A](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/Fig1A.jpg)
 
-**Fig. 1A. Survey of methylation calling tools .**  **(A)** Timeline of publication and technological developments of Oxford Nanopore Technologies (ONT) methylation calling tools to detect DNA cytosine modifications. 
+**Fig. 1A. Survey of methylation calling tools .**  Timeline of publication and technological developments of Oxford Nanopore Technologies (ONT) methylation calling tools to detect DNA cytosine modifications. 
 
 
 ![Figure1B](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/Fig1B.jpg)
-**Fig. 1B. Workflow for 5-methylcytosine (5mC) detection for Nanopore sequencing.** The pipeline has four steps: (1) Nanopore sequencing. (2) Base calling, which requires raw signals and reference genome as input to perform base calling by Albacore or Guppy. (3) Alignment to the genome by direct mapping with miniMap2 and re-squiggle with Tombo (optional). (4) Methylation calling. Here we compare five methylation calling tools: Nanopolish, Megalodon, DeepSignal, Tombo, and DeepMod to detect cytosine status in CpG context.
+**Fig. 1B. Workflow for 5-methylcytosine (5mC) detection for Nanopore sequencing.** 
 
 
-**Results:** We compare seven analytic frameworks for detecting DNA modification from Nanopore long-read sequencing data. We evaluate the association between genomic context, CpG methylation-detection accuracy, CpG sites coverage, and running time using Nanopore sequencing data from natural human DNA. Furthermore, we provide an online DNA methylation database (https://nanome.jax.org) with which to display genomic regions that exhibit differences in DNA-modification detection power among different methylation calling algorithms for nanopore sequencing data.
+**Results:** We compared seven analytic tools for detecting DNA modifications from nanopore long-read sequencing data. We evaluated the CpG methylation-detection accuracy, CpG site coverage, and running time using Nanopore sequencing data across different genomic contexts, using natural human DNA. Furthermore, we provide an online DNA methylation database (https://nanome.jax.org) with which to display the DNA methylation levels detected by nanopore sequencing and bisulfite sequencing data across different genomic contexts.
 
 
-[comment]: <> (![Figure4]&#40;https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig4.jpg&#41;)
-
-[comment]: <> (**Fig 4. Accuracy &#40;A&#41; and F1 score &#40;B&#41; comparison of Nanopore methylation calling tools for the detection of CpG methylation on four real world data sets in biologically relevant genomic contexts.**)
-
-
-[comment]: <> (![Figure5]&#40;https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig5.jpg&#41;)
-
-[comment]: <> (**Fig 5. Comparison of methylation percentage for NA19240 and APL.** **&#40;A&#41;** Correlation plot showing Pearson correlation of each methylation calling tool with BS- Seq on NA19240. **&#40;B-C&#41;** Relationship between CpG methylation percentage and distance to annotated TSS in &#40;B&#41; NA19240 and &#40;C&#41; APL. **&#40;D&#41;** Relationship between CpG methylation percentage and distance to annotated CTCF binding peaks in NA19240. Distances are binned into &#40;B, C&#41; 50-bp, and &#40;D&#41; 100-bp windows. Negative distances are upstream and positive distances are downstream of the &#40;B-C&#41; TSS and CTCF binding peaks &#40;D&#41;. )
-
-
-[comment]: <> (![Figure6]&#40;https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig6.jpg&#41;)
-
-[comment]: <> (**Fig 6. CpG sites detected by methylation calling tools using NA19240.** UpSet diagram shown at the lower left is for CpG sites detected by all methylation calling tools. Venn diagram shown at the upper right is for CpG sites detected by Top3 performance methylation calling tools &#40;Nanopolish, Megalodon and DeepSignal&#41;. For each methylation calling tool, only CpG sites covered >= 3 reads are considered.)
-
-
-[comment]: <> (![Figure7]&#40;https://github.com/liuyangzzu/nanome/blob/reproduce-prepare/docs/Fig7.jpg&#41;)
-
-[comment]: <> (**Fig 7. CPU utilized time and memory usage for each methylation calling tool on each dataset.** All tools were compared on the same computer clusters: 32 cores, 2.6GHz HP Proliant SL Series CPU, 300 GB RAM, NVIDIA Tesla P100 Data Center and 1 TB Data Direct Networks Gridscalar GS7k GPFS storage appliance. The HPC platform software and hardware specifications are: slurm manager version: 19.05.5, CPU: Intel&#40;R&#41; Xeon&#40;R&#41; Gold 6136 CPU @ 3.00GHz, GPU: Tesla V100-SXM2-32GB.)
-
-
-**Conclusions:** Our study is the first benchmark of computational methods for mammalian whole genome DNA-modification detection in Nanopore sequencing. We provide a broad foundation for cross-platform standardization, and an evaluation of analytical tools designed for genome-scale modified-base detection using Nanopore sequencing.
+**Conclusions:** Our study is the first benchmark of computational methods for detection of mammalian whole-genome DNA-modifications in nanopore sequencing. We provide a broad foundation for cross-platform standardization, and an evaluation of analytical tools designed for genome-scale modified-base detection using nanopore sequencing. 
 
 ## System Requirements
 
