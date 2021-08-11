@@ -520,14 +520,14 @@ process DeepMod {
 	fi
 
 	DeepMod.py detect \
-			--wrkBase ${basecallDir}/workspace --Ref \${refGenome} \
-			--Base C --modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
+			--wrkBase ${basecallDir}/workspace \
+			--Ref \${refGenome} \
+			--Base C \
+			--modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
 			--FileID batch_${basecallDir.baseName}_num \
-			--threads ${params.processors * 4} ${params.DeepModMoveOptions}  \
-			--basecall_1d ${params.BasecallGroupName}
+			--threads ${params.processors * 4} ${params.DeepModMoveOptions}
 
 	tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
-
 	echo "### DeepMod methylation DONE"
 	"""
 }

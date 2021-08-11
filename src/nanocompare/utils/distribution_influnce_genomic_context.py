@@ -7,8 +7,10 @@ import scipy
 from nanocompare.global_config import pic_base_dir
 from nanocompare.global_settings import ToolNameList
 
-perfInfileName = os.path.join('/projects/li-lab/yang/results/2021-07-09', 'performance-results-METEORE.csv')
-distributionInfileName = os.path.join('/projects/li-lab/yang/results/2021-07-09',
+
+# TODO: quick cpg region only
+perfInfileName = os.path.join('/projects/li-lab/yang/results/2021-08-07/modify_cpg_bed', 'performance-results-METEORE.csv')
+distributionInfileName = os.path.join('/projects/li-lab/yang/results/2021-08-07/modify_cpg_bed',
                                       'all.certain.sites.distribution.each.genomic.region.METEORE.cov5.csv')
 
 genomic_regions = \

@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 #### Additional libraries:
 import numpy as np
 import pandas as pd
+import pybedtools
 import seaborn as sns
 from scipy import stats
 from scipy.stats import pearsonr
@@ -278,7 +279,7 @@ def plot_ROC_PR_curves(ret, outdir, tagname="tagname", removeDeepMod=False):
         fpr, tpr, threshold = metrics.roc_curve(ytrue, yscore, drop_intermediate=False)
         roc_auc = metrics.auc(fpr, tpr)
         plt.plot(fpr, tpr, toolcolor, label=f'{toolname}={roc_auc:.2f}')
-    leg =plt.legend(loc='lower right', title="AUC")
+    leg = plt.legend(loc='lower right', title="AUC")
     leg._legend_box.align = "left"
     # plt.plot([0, 1], [0, 1], 'r--')
     plt.xlim([0, 1])
@@ -457,7 +458,12 @@ def parse_arguments():
 if __name__ == '__main__':
     set_log_debug_level()
 
-    ## Use same font for plotting
+    ## Set tmp dir for bedtools
+    bedtool_tmp_dir = "/fastscratch/liuya/nanocompare/bedtools_tmp"
+    os.makedirs(bedtool_tmp_dir, exist_ok=True)
+    pybedtools.helpers.set_tempdir(bedtool_tmp_dir)
+
+    ## Use same font Arial for all plotting
     import matplotlib.font_manager as font_manager
 
     font_manager._rebuild()
@@ -475,7 +481,8 @@ if __name__ == '__main__':
             outdir = pic_base_dir
         for fn in args.i:
             gen_figure_5a(fn)
-    elif args.cmd == 'export-corr-data':
+    elif args.cmd == 'figs5ab-data':
+        # Fig. S5A-B data: PCC in each regions
         # python plot_figure.py export-corr-data -i /projects/li-lab/yang/results/2021-04-02-methcorr/MethCorr-HL60_RRBS_2Reps --beddir /projects/li-lab/yang/results/2021-04-07/MethPerf-cut5
         if not args.o:
             args.o = pic_base_dir
@@ -497,6 +504,7 @@ if __name__ == '__main__':
         outdf.to_excel(outfn)
         logger.info(f'save to {outfn}')
     elif args.cmd == 'export-data':
+        # Table S3 data
         # using global setting variable runPrefixDict to locate all data
         ## python plot_figure.py export-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-APL_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS_CPG --tagname CPG
 
@@ -547,6 +555,7 @@ if __name__ == '__main__':
 
         logger.info(f'save distribution of each genomic region to {outfn}')
     elif args.cmd == 'export-curve-data':
+        # Figure 3B data
         ## python plot_figure.py export-curve-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS
 
         ## python plot_figure.py export-curve-data -i /projects/li-lab/Nanopore_compare/result/MethPerf-APL_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-HL60_RRBS_CPG /projects/li-lab/Nanopore_compare/result/MethPerf-K562_WGBS_CPG --tagname CPG
@@ -606,6 +615,7 @@ if __name__ == '__main__':
                             f.write("\n")
             logger.info(f'For runPrefix={runPrefix} at dir={bdir}, total files={cnt}')
     elif args.cmd == 'plot-curve-data':
+        # Fig. 3B
         ## find /projects/li-lab/Nanopore_compare/result/plot-curve-data -name '*.pkl' -exec python plot_figure.py plot-curve-data -i {} \;
         if not args.o:
             args.o = pic_base_dir
@@ -638,6 +648,7 @@ if __name__ == '__main__':
             outfn = os.path.join(pic_base_dir, f'{bfn}.sequencing_summary.txt')
             outdf.to_csv(outfn, index=False, sep='\t')
     elif args.cmd == 'bed-to-bedGraph':
+        # Convert bed into bedGraph, extract specific column signals (5mC, or 5hmC)
         # Input is 0-based, output is same 0-based for TSS analysis
         # python plot_figure.py bed-to-bedGraph -i $fn --cutoff $CUTOFF -o $outdir --cov_col 7  --signal-col 6
         # python plot_figure.py bed-to-bedGraph -i $fn --cutoff 5 --cov_col -1  --signal-col 3

@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
-Calculate Nanopore raw reads coverage at each CpG sites based on raw fast5 files
+Calculate nanopore raw fast5 reads coverage at each CpG sites based on genomic context for Table S1.
 """
 import argparse
 import glob
 import gzip
 import os
 import re
-from collections import defaultdict
 from multiprocessing import Pool
 
 import pandas as pd
@@ -22,7 +21,7 @@ from nanocompare.global_settings import humanChrSet, narrowCoordFileList, locati
 
 # used for convert region bed cov to base level cov
 rawReadDir = '/pod/2/li-lab/Nanopore_compare/data/Nanopore_cov'
-rawReadDir = '/projects/li-lab/Nanopore_compare/suppdata/raw.fast5.reads.coverage/'
+rawReadDir = '/projects/li-lab/Nanopore_compare/suppdata/raw.fast5.reads.coverage'
 
 # base level cov bed files (combined + - strand)
 baseReadCovDir = '/projects/li-lab/yang/results/2021-04-05'
@@ -152,16 +151,48 @@ def get_len_of_bedtool(bed_obj, cov_col=3, cutoff=1):
     return (df.iloc[:, cov_col] >= cutoff).sum()
 
 
+def save_dataset(dataset, tagname=""):
+    ## dataframe for raw reads at each genomic regions
+    df = pd.DataFrame(dataset)
+    logger.info(df)
+
+    column_list = ['dsname', 'total', 'total_cutoff'] + \
+                  ["Singletons", "Non-singletons", "Promoters", "Exons", "Introns", "Intergenic", "CpG islands",
+                   "CpG shores", "CpG shelves"] + \
+                  ["CG_20", "CG_40", "CG_60", "CG_80", "CG_100"] + \
+                  ["rep_SINE", "rep_LINE", "rep_LTR", "rep_DNA", "rep_Others"] + \
+                  ['Concordant', 'Discordant', 'filename']
+
+    for cutoff in cutoff_list:
+        outdf = pd.concat([df.loc[:, ['dsname', 'filename', 'total']], df.filter(regex=f'.cutoff{cutoff}$', axis=1)],
+                          axis=1)
+
+        oldname_list = outdf.columns
+        newname_list = [the_name.replace(f'.cutoff{cutoff}', "") for the_name in oldname_list]
+        outdf.columns = newname_list
+
+        # outfn = os.path.join(pic_base_dir,
+        #                      f'raw.fast5.reads.cpg.coverage.across.regions.cutoff{cutoff}.not.sorted{tagname}.xlsx')
+        # outdf.to_excel(outfn)
+
+        ## Reorder columns based on list, if not exist, skit it
+        selcols = [colname for colname in column_list if colname in outdf.columns]
+        outdf = outdf[selcols]
+
+        outdf['dsname'] = pd.Categorical(df['dsname'], datasets_order)
+        outdf = outdf.sort_values(by='dsname', ascending=True)
+        outfn = os.path.join(pic_base_dir, f'raw.fast5.reads.cpg.coverage.across.regions.cutoff{cutoff}{tagname}.xlsx')
+        outdf.to_excel(outfn)
+        logger.info(f'save to {outfn}')
+
+
 def report_raw_fast5_cpg_in_regions_table():
     """
     Generate Figure 2 C and D data
     :return:
     """
-    # Nanopore reads coverage cutoff
-    cutoff_list = [cov_cutoff]
-
     dataset = []
-    distribution_dataset = defaultdict(list)
+    # distribution_dataset = defaultdict(list)
     for dsname in dsname_list:
         fnlist = glob.glob(os.path.join(baseReadCovDir, f'{dsname}.rawfast5.coverage.base.bed.gz'))
         if len(fnlist) != 1:
@@ -173,20 +204,24 @@ def report_raw_fast5_cpg_in_regions_table():
         rawReadBed = BedTool(fn).sort()
         logger.info(f'len(rawReadBed)={len(rawReadBed):,}')
         dataDict = {'dsname': dsname, 'filename': fn, 'total': len(rawReadBed)}
+
+        # list of return for each parrallellized jobs
         retList = []
 
-        ##TODO: we can use to_dataframe() for BedTool
+        ## we now use to_dataframe() for BedTool
         bed_df_cov_col = rawReadBed.to_dataframe().iloc[:, 3]
         # covList=[]
         # for row in rawReadBed:
         #     covList.append(int(row[3]))
         # covSeries = pd.Series(covList)
 
-        for i, cutoff in enumerate(cutoff_list):
-            ret1 = {f'total_cutoff.cutoff{cutoff}': (bed_df_cov_col >= cutoff).sum()}
+        ret1 = {}
+        for cutoff in cutoff_list:
+            ret1.update({f'total_cutoff.cutoff{cutoff}': (bed_df_cov_col >= cutoff).sum()})
 
+        logger.info(f"Evaluated regions: {eval_regions}")
         with Pool(processes=8) as pool:
-            for bedfn in narrowCoordFileList[1:] + cg_density_file_list + rep_file_list:
+            for bedfn in eval_regions:
                 tagname = location_filename_to_abbvname[os.path.basename(bedfn)]
                 ret = pool.apply_async(count_sites_in_coord, (rawReadBed, bedfn, tagname,),
                                        kwds={'cutoff_list': cutoff_list})
@@ -206,85 +241,67 @@ def report_raw_fast5_cpg_in_regions_table():
 
             pool.close()
             pool.join()
+        # Get each jobs's return results
         retList = [ret.get() for ret in retList]
+
+        # Update returned results into dataDict: each line of results in the table
         dataDict.update(ret1)
         for ret in retList:
             dataDict.update(ret)
         dataset.append(dataDict)
         logger.debug(dataDict)
 
+        ## Temp output for real-time view
+        save_dataset(dataset, tagname='tmp')
+
         ## Report singleton/nonsingleton at each genomic regions
         # rawReadBed - raw fast5 BedTool
-        singletonFilename = narrowCoordFileList[1]
-        singleton_bed = BedTool(singletonFilename).sort()
+        # singletonFilename = narrowCoordFileList[1]
+        # singleton_bed = BedTool(singletonFilename).sort()
+        #
+        # nonsingletonFilename = narrowCoordFileList[2]
+        # nonsingleton_bed = BedTool(nonsingletonFilename).sort()
+        #
+        # concordantFileName = find_bed_filename(basedir=bedDir,
+        #                                        pattern=f'{dsname}*hg38_nonsingletons.concordant.bed')
+        # concordant_bed = BedTool(concordantFileName).sort()
+        #
+        # discordantFileName = find_bed_filename(basedir=bedDir,
+        #                                        pattern=f'{dsname}*hg38_nonsingletons.discordant.bed')
+        # discordant_bed = BedTool(discordantFileName).sort()
 
-        nonsingletonFilename = narrowCoordFileList[2]
-        nonsingleton_bed = BedTool(nonsingletonFilename).sort()
-
-        concordantFileName = find_bed_filename(basedir=bedDir,
-                                               pattern=f'{dsname}*hg38_nonsingletons.concordant.bed')
-        concordant_bed = BedTool(concordantFileName).sort()
-
-        discordantFileName = find_bed_filename(basedir=bedDir,
-                                               pattern=f'{dsname}*hg38_nonsingletons.discordant.bed')
-        discordant_bed = BedTool(discordantFileName).sort()
-
-        for coordFilename in narrowCoordFileList[3:]:
-            tagname = os.path.basename(coordFilename)
-            coord_bed = BedTool(coordFilename).sort()
-            intersect_coord_bed = rawReadBed.intersect(coord_bed, u=True, wa=True)
-            num_total = get_len_of_bedtool(intersect_coord_bed, cutoff=cov_cutoff)
-
-            intersect_singleton_bed = intersect_coord_bed.intersect(singleton_bed, u=True, wa=True)
-            num_singleton = get_len_of_bedtool(intersect_singleton_bed, cutoff=cov_cutoff)
-
-            intersect_nonsingleton_bed = intersect_coord_bed.intersect(nonsingleton_bed, u=True, wa=True)
-            num_nonsingleton = get_len_of_bedtool(intersect_nonsingleton_bed, cutoff=cov_cutoff)
-
-            intersect_concordant_bed = intersect_coord_bed.intersect(concordant_bed, u=True, wa=True)
-            num_concordant = get_len_of_bedtool(intersect_concordant_bed, cutoff=cov_cutoff)
-
-            intersect_discordant_bed = intersect_coord_bed.intersect(discordant_bed, u=True, wa=True)
-            num_discordant = get_len_of_bedtool(intersect_discordant_bed, cutoff=cov_cutoff)
-
-            distribution_dataset['Dataset'].append(dsname)
-            distribution_dataset['Coord'].append(location_filename_to_abbvname[tagname])
-            distribution_dataset['Total'].append(num_total)
-            distribution_dataset['Singletons'].append(num_singleton)
-            distribution_dataset['Non-singletons'].append(num_nonsingleton)
-            distribution_dataset['Concordant'].append(num_concordant)
-            distribution_dataset['Discordant'].append(num_discordant)
+        # Distribution of sing/non-sing in nanopore raw reads
+        # for coordFilename in narrowCoordFileList[3:]:
+        #     tagname = os.path.basename(coordFilename)
+        #     coord_bed = BedTool(coordFilename).sort()
+        #     intersect_coord_bed = rawReadBed.intersect(coord_bed, u=True, wa=True)
+        #     num_total = get_len_of_bedtool(intersect_coord_bed, cutoff=cov_cutoff)
+        #
+        #     intersect_singleton_bed = intersect_coord_bed.intersect(singleton_bed, u=True, wa=True)
+        #     num_singleton = get_len_of_bedtool(intersect_singleton_bed, cutoff=cov_cutoff)
+        #
+        #     intersect_nonsingleton_bed = intersect_coord_bed.intersect(nonsingleton_bed, u=True, wa=True)
+        #     num_nonsingleton = get_len_of_bedtool(intersect_nonsingleton_bed, cutoff=cov_cutoff)
+        #
+        #     intersect_concordant_bed = intersect_coord_bed.intersect(concordant_bed, u=True, wa=True)
+        #     num_concordant = get_len_of_bedtool(intersect_concordant_bed, cutoff=cov_cutoff)
+        #
+        #     intersect_discordant_bed = intersect_coord_bed.intersect(discordant_bed, u=True, wa=True)
+        #     num_discordant = get_len_of_bedtool(intersect_discordant_bed, cutoff=cov_cutoff)
+        #
+        #     distribution_dataset['Dataset'].append(dsname)
+        #     distribution_dataset['Coord'].append(location_filename_to_abbvname[tagname])
+        #     distribution_dataset['Total'].append(num_total)
+        #     distribution_dataset['Singletons'].append(num_singleton)
+        #     distribution_dataset['Non-singletons'].append(num_nonsingleton)
+        #     distribution_dataset['Concordant'].append(num_concordant)
+        #     distribution_dataset['Discordant'].append(num_discordant)
 
     ## dataframe for distribution of singleton and non-singletons
-    dist_df = pd.DataFrame.from_dict(distribution_dataset)
-    outfn = os.path.join(pic_base_dir, f'nanopore.raw.fast5.distribution.at.each.genomic.region.cov{cov_cutoff}.xlsx')
-    dist_df.to_excel(outfn)
-
-    ## dataframe for raw reads at each genomic regions
-    df = pd.DataFrame(dataset)
-    logger.info(df)
-
-    for cutoff in cutoff_list:
-        outdf = pd.concat([df.loc[:, ['dsname', 'filename', 'total']], df.filter(regex=f'.cutoff{cutoff}$', axis=1)],
-                          axis=1)
-
-        oldname_list = outdf.columns
-        newname_list = [the_name.replace(f'.cutoff{cutoff}', "") for the_name in oldname_list]
-        outdf.columns = newname_list
-        outfn = os.path.join(pic_base_dir, f'raw.fast5.reads.cpg.coverage.across.regions.cutoff{cutoff}.not.sorted.xlsx')
-        outdf.to_excel(outfn)
-
-        outdf = outdf[['dsname', 'total', 'total_cutoff'] +
-                      ["Singletons", "Non-singletons", "Promoters", "Exons", "Introns", "Intergenic", "CpG islands",
-                       "CpG shores", "CpG shelves"] +
-                      ["CG_20", "CG_40", "CG_60", "CG_80", "CG_100"] +
-                      ["rep_SINE", "rep_LINE", "rep_LTR", "rep_DNA", "rep_Others"] +
-                      ['Concordant', 'Discordant', 'filename']]
-        outdf['dsname'] = pd.Categorical(df['dsname'], datasets_order)
-        outdf = outdf.sort_values(by='dsname', ascending=True)
-        outfn = os.path.join(pic_base_dir, f'raw.fast5.reads.cpg.coverage.across.regions.cutoff{cutoff}.xlsx')
-        outdf.to_excel(outfn)
-        logger.info(f'save to {outfn}')
+    # dist_df = pd.DataFrame.from_dict(distribution_dataset)
+    # outfn = os.path.join(pic_base_dir, f'nanopore.raw.fast5.distribution.at.each.genomic.region.cov{cov_cutoff}.xlsx')
+    # dist_df.to_excel(outfn)
+    save_dataset(dataset)
 
 
 def combine_na12878_coverage_bed():
@@ -319,6 +336,14 @@ def parse_arguments():
 
 if __name__ == '__main__':
     set_log_debug_level()
+
+    ## Set tmp dir for bedtools
+    bedtool_tmp_dir = "/fastscratch/liuya/nanocompare/bedtools_tmp"
+    os.makedirs(bedtool_tmp_dir, exist_ok=True)
+    pybedtools.helpers.set_tempdir(bedtool_tmp_dir)
+
+    refFasta = None
+
     args = parse_arguments()
     logger.debug(args)
 
@@ -333,15 +358,11 @@ if __name__ == '__main__':
 
     # Calculate raw fast5 cpg sites in each region
     if args.cmd == 'report-raw':
-        ## Set tmp dir for bedtools
-        bedtool_tmp_dir = "/fastscratch/liuya/nanocompare/bedtools_tmp"
-        os.makedirs(bedtool_tmp_dir, exist_ok=True)
-        pybedtools.helpers.set_tempdir(bedtool_tmp_dir)
-
         dsname_list = ['HL60', 'K562', 'APL', 'NA19240', 'NA12878']
-        # dsname_list = ['HL60']
+        # Nanopore reads coverage cutoff
+        cutoff_list = [3]
+        # list of evaluated regions (except for Genome-wide)
+        eval_regions = narrowCoordFileList[1:] + cg_density_file_list + rep_file_list
 
-        cov_cutoff = 3
-        refFasta = None
         report_raw_fast5_cpg_in_regions_table()
     logger.info("### computeRawCoverage DONE")

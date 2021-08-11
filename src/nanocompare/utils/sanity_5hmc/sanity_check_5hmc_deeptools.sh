@@ -8,6 +8,8 @@
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
+## Generate the 5hmC level matrix by DeepTool in agreement and discrepancy region
+## Note: the region file must be BED, not BED.GZ, due to DeepTool required.
 set -x
 set -e
 

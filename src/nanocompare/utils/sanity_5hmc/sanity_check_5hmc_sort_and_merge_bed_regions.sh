@@ -8,6 +8,8 @@
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
+## Sort, merge and deduplicate the bed region files
+
 set -x
 
 baseDir=/projects/li-lab/yang/results/2021-07-07

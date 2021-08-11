@@ -8,6 +8,8 @@
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
+## Convert the 5hmC level in bed to BigWig format
+
 set -x
 
 baseDir=/projects/li-lab/yang/results/2021-07-04

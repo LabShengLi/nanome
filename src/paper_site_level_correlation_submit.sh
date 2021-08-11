@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# bash paper_site_level_correlation_submit.sh "K562 APL NA19240 NA12878"
 # bash paper_site_level_correlation_submit.sh
 # bash paper_site_level_correlation_submit.sh "HL60 K562"
 set -x

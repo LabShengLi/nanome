@@ -11,6 +11,6 @@
 set -x
 
 NanoCompareDir=/projects/li-lab/yang/workspace/nano-compare
-pythonFile=${NanoCompareDir}/src/nanocompare/utils/sanity_check_5hmc.py
+pythonFile=${NanoCompareDir}/src/nanocompare/utils/sanity_5hmc/sanity_check_5hmc.py
 
 PHTHONPATH=${NanoCompareDir}/src python ${pythonFile} $@

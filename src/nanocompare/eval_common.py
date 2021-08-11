@@ -2169,7 +2169,7 @@ def sanity_check_sequence(chr='chr10', start_base0=10493):
     :return:
     """
     ret_seq = get_dna_base_from_reference(chr, start_base0, ref_fasta=refGenome)
-    logger.info(f'\n{chr}:{start_base0}\n{ret_seq}\n-----^-----\n\n')
+    logger.info(f'Report is 0-based for the input:\n{chr}:{start_base0}\n{ret_seq}\n-----^-----\n\n')
 
 
 def get_cache_filename(infn, params):
@@ -2586,8 +2586,8 @@ def sanity_check_merge_bedtools():
 
 def sanity_check_get_dna_seq():
     # refGenome = get_ref_fasta()
-    sanity_check_sequence('chr1', 10542)
-    sanity_check_sequence('chr1', 10563)
+    sanity_check_sequence('chr1', 159199943)
+    sanity_check_sequence('chr1', 159200094)
     return
     sanity_check_sequence('chr10', 10522)
     sanity_check_sequence('chr10', 10534)
@@ -2602,6 +2602,11 @@ def sanity_check_get_dna_seq():
 
 if __name__ == '__main__':
     set_log_debug_level()
+
+    refGenome = get_ref_fasta()
+    sanity_check_get_dna_seq()
+    sys.exit(0)
+
     refGenome = None
 
     do_singleton_nonsingleton_scanner()
