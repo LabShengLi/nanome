@@ -1741,7 +1741,10 @@ def save_keys_to_single_site_bed(keys, outfn, callBaseFormat=1, outBaseFormat=1,
     :param outfn:
     :return:
     """
-    outfile = open(outfn, 'w')
+    if outfn.endsWith('.gz'):
+        outfile = gzip.open(outfn, 'wt')
+    else:
+        outfile = open(outfn, 'w')
     for key in keys:
         if outBaseFormat == 0:
             outfile.write(
@@ -1947,7 +1950,8 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
         is_print_first = False
 
     concordantSet = list(set(concordantList) - set(discordantList))  # remove duplicate and same in discordant
-    outfile_concordant = open(nsConcordantFileName, "w")
+    # outfile_concordant = open(nsConcordantFileName, "w")
+    outfile_concordant = gzip.open(nsConcordantFileName, "wt")
     for cpgKey in concordantSet:  # (chrOut, startOut) -> (chrOut, startOut, methIndicator, methCov)
         cpg = concordantList[cpgKey]
         region_txt = '\t'.join([cpg[0], str(cpg[1]), str(cpg[1] + 1), str(cpg[2]), str(cpg[3])]) + '\n'
@@ -1955,7 +1959,8 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
     outfile_concordant.close()
 
     discordantSet = list(set(discordantList))  # remove duplicate
-    outfile_discordant = open(nsDisCordantFileName, "w")
+    # outfile_discordant = open(nsDisCordantFileName, "w")
+    outfile_discordant = gzip.open(nsDisCordantFileName, "wt")
     for cpgKey in discordantSet:
         cpg = discordantList[cpgKey]
         region_txt = '\t'.join([cpg[0], str(cpg[1]), str(cpg[1] + 1), str(cpg[2]), str(cpg[3])]) + '\n'
