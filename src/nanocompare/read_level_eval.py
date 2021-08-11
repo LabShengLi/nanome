@@ -9,7 +9,7 @@ This script will generate all per-read performance results, with regard to BED f
 import argparse
 from multiprocessing import Manager, Pool
 
-import pandas as pd
+import pybedtools
 from sklearn.metrics import confusion_matrix
 
 from nanocompare.eval_common import *
@@ -333,6 +333,11 @@ def parse_arguments():
 if __name__ == '__main__':
     set_log_debug_level()
 
+    ## Set tmp dir for bedtools
+    bedtool_tmp_dir = "/fastscratch/liuya/nanocompare/bedtools_tmp"
+    os.makedirs(bedtool_tmp_dir, exist_ok=True)
+    pybedtools.helpers.set_tempdir(bedtool_tmp_dir)
+
     args = parse_arguments()
 
     dsname = args.dsname
@@ -415,15 +420,16 @@ if __name__ == '__main__':
         nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant,
                                     nsDisCordantFileName=fn_discordant, print_first=False)
 
+        ## TODO: quick cpg region, skip
         # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
-        outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov1.csv')
-        report_singleton_nonsingleton_table(absoluteBGTruth, outfn, fn_concordant=fn_concordant,
-                                            fn_discordant=fn_discordant)
+        # outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov1.csv')
+        # report_singleton_nonsingleton_table(absoluteBGTruth, outfn, fn_concordant=fn_concordant,
+        #                                     fn_discordant=fn_discordant)
 
         # Report singletons vs non-singletons of bgtruth with cov cutoff >= 5
-        outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov{cutoffBGTruth}.csv')
-        report_singleton_nonsingleton_table(absoluteBGTruthCov, outfn, fn_concordant=fn_concordant,
-                                            fn_discordant=fn_discordant)
+        # outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov{cutoffBGTruth}.csv')
+        # report_singleton_nonsingleton_table(absoluteBGTruthCov, outfn, fn_concordant=fn_concordant,
+        #                                     fn_discordant=fn_discordant)
 
         logger.info("\n\n########################\n\n")
     else:
@@ -443,7 +449,7 @@ if __name__ == '__main__':
     ## Narrow down to BG-Truth if there BG-Truth is available
     ontCallWithinBGTruthDict = defaultdict()  # name->call
     loaded_callname_list = []  # [DeepSignal, DeepMod, etc.]
-    sitesDataset=defaultdict(list)
+    sitesDataset = defaultdict(list)
 
     for callstr in args.calls:
         call_encode, callfn = callstr.split(':')
@@ -503,10 +509,11 @@ if __name__ == '__main__':
 
     save_keys_to_single_site_bed(joinedCPG, outfn=bedfn_tool_join_bgtruth, callBaseFormat=baseFormat, outBaseFormat=1)
 
+    ## TODO: quick cpg
     ## Report joined CpGs in each regions
-    outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.joined.tools.singleton.nonsingleton.cov5.csv')
-    report_singleton_nonsingleton_table(joinedCPG, outfn, fn_concordant=fn_concordant,
-                                        fn_discordant=fn_discordant)
+    # outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.joined.tools.singleton.nonsingleton.cov5.csv')
+    # report_singleton_nonsingleton_table(joinedCPG, outfn, fn_concordant=fn_concordant,
+    #                                     fn_discordant=fn_discordant)
 
     ## Note all tools using cov>=1 for evaluation read-leval performance
     logger.info(
@@ -581,7 +588,10 @@ if __name__ == '__main__':
         discordant_bed = BedTool(discordantFilename).sort()
 
         datasets = defaultdict(list)
-        for coordFn in [None] + relateCoord[3:-2] + cg_density_file_list + rep_file_list:
+
+        # TODO: quick cpg new regions
+        # for coordFn in [None] + relateCoord[3:-2] + cg_density_file_list + rep_file_list:
+        for coordFn in [None] + relateCoord[7:-2]:
             tagname = os.path.basename(coordFn) if coordFn else 'x.x.Genome-wide'
             logger.debug(f"Start study coordFn={coordFn}, tagname={tagname}")
             if coordFn:  # get genomic region results
@@ -616,6 +626,9 @@ if __name__ == '__main__':
             datasets['Concordant'].append(num_concordant)
             datasets['Discordant'].append(num_discordant)
 
+            logger.info(
+                f"Coord={location_filename_to_abbvname[tagname]}, Total={num_total:,}, Total={num_total:,}, Singletons={num_singleton:,}, Non-singletons={num_nonsingleton:,}, Concordant={num_concordant:,}, Discordant={num_discordant:,}")
+
             if num_total != num_singleton + num_nonsingleton:
                 logger.error(f"Found incorrect sums at {tagname}: for num_total != num_singleton + num_nonsingleton")
             if num_nonsingleton != num_concordant + num_discordant:
@@ -638,13 +651,25 @@ if __name__ == '__main__':
         if args.mpi:  # Using mpi may cause error, not fixed, but fast running
             # Note: narrowedCoordinatesList - all singleton (absolute and mixed) and non-singleton generated bed. ranges
             #       secondFilterBedFileName - joined sites of four tools and bg-truth. points
+            # TODO: quick cpg region only
+            # df = report_per_read_performance_mp(ontCallWithinBGTruthDict[tool], bgTruth, tmpPrefix,
+            #                                     narrowedCoordinatesList=relateCoord + cg_density_file_list + rep_file_list,
+            #                                     secondFilterBedFileName=secondBedFileName, outdir=perf_dir,
+            #                                     tagname=tmpPrefix, processors=args.processors)
+
             df = report_per_read_performance_mp(ontCallWithinBGTruthDict[tool], bgTruth, tmpPrefix,
-                                                narrowedCoordinatesList=relateCoord + cg_density_file_list + rep_file_list,
+                                                narrowedCoordinatesList=relateCoord[7:10],
                                                 secondFilterBedFileName=secondBedFileName, outdir=perf_dir,
                                                 tagname=tmpPrefix, processors=args.processors)
         else:
+            # TODO: quick cpg region only
+            # df = report_per_read_performance(ontCallWithinBGTruthDict[tool], bgTruth, tmpPrefix,
+            #                                  narrowedCoordinatesList=relateCoord + cg_density_file_list + rep_file_list,
+            #                                  secondFilterBedFileName=secondBedFileName, outdir=perf_dir,
+            #                                  tagname=tmpPrefix)
+
             df = report_per_read_performance(ontCallWithinBGTruthDict[tool], bgTruth, tmpPrefix,
-                                             narrowedCoordinatesList=relateCoord + cg_density_file_list + rep_file_list,
+                                             narrowedCoordinatesList=relateCoord[7:10],
                                              secondFilterBedFileName=secondBedFileName, outdir=perf_dir,
                                              tagname=tmpPrefix)
             # This file will always report intermediate results

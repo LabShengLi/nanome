@@ -1,6 +1,8 @@
 """
-Tool for pre-processing results
+Sanity check for 5hmC detected by nanopore tools but not by BS-seq,
+generate the agreement and discrepancy area between tool and BS-seq.
 
+We will use these two areas to check the 5hmC level: we found that the discrepancy have a much higher 5hmC level.
 """
 import gzip
 
@@ -71,7 +73,7 @@ def wilcoxon_test_calls(call1, call2, keySet):
 if __name__ == '__main__':
     set_log_debug_level()
     dsname = "APL"
-    dsname = "NA12878"
+    # dsname = "NA12878"
 
     logger.info(f"Processing {dsname}:")
     if dsname == "APL":
@@ -256,4 +258,4 @@ if __name__ == '__main__':
         outfn = f"{dsname}.bgtruth.{callName}.regions.diff.get.40.bed.gz"
         output_cpg_set_0base(ret_diff_get_40, os.path.join(pic_base_dir, outfn), bgtruthDict=bgtruthDict)
 
-    logger.info(f"sanity_check 5hmc DONE for {dsname}.")
+    logger.info(f"sanity_check 5hmc DONE for {dsname}: generate the agreement and discrepancy regions.")

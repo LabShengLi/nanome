@@ -13,7 +13,7 @@
 
 dsname=${1:-HL60}
 runidSuffix=${2:-""} # "_RRBS_2Reps
-command=${3:-"six"}  # six - six tools, METEORE - include METEORE
+command=${3:-"METEORE"}  # six - six tools, METEORE - include METEORE
 otherOptions=${4:-"--mpi"}
 
 if [ ! -z "$runidSuffix" ]; then
@@ -100,8 +100,8 @@ elif [ "${command}" == "METEORE" ]; then
     DeepSignal:${DeepSignalCalls} \
     Guppy:${GuppyCalls} \
     Tombo:${TomboCalls} \
-    DeepMod.C:${DeepModCalls} \
     METEORE:${METEORECalls} \
+    DeepMod.C:${DeepModCalls} \
     --bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
     --runid MethPerf-${dsname}${runidSuffix} \
     --dsname ${dsname} \

@@ -138,7 +138,7 @@ elif [ "${command}" == "NA12878-1" ]; then
     --dsname ${dsname} \
     --toolcov-cutoff 3 --min-bgtruth-cov 5 \
     --beddir ${bedDir} \
-    --enable-cache --using-cache --gen-venn --summary-coverage
+    --enable-cache --using-cache --summary-coverage ##--gen-venn
 else
   echo "Not support command"
   exit 19

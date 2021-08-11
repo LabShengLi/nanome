@@ -44,9 +44,9 @@ referenceGenomeFile = "/projects/li-lab/Nanopore_compare/nf_input/reference_geno
 # These two files are defined from Reference Genome
 # Singletons:       XXXXXCGXXXXX            >=k bp distance CpGs
 # Nonsingletons:    XXXXXCGXXXCGXXXXCGXX    <k bp for pair of neighbors of CpGs
-singletonsFile = "hg38_singletons_10bp.bed"
-nonsingletonsFile = "hg38_nonsingletons_10bp.bed"
-singletonFileExtStr = "_10bp.bed"
+singletonsFile = "hg38_singletons_10bp.bed.gz"
+nonsingletonsFile = "hg38_nonsingletons_10bp.bed.gz"
+singletonFileExtStr = "_10bp.bed.gz"
 
 # singletonsFile = "hg38_singletons.bed"
 # nonsingletonsFile = "hg38_nonsingletons.bed"
@@ -61,9 +61,9 @@ singletonFileExtStr = "_10bp.bed"
 #                        "ONT.hg38.promoterFeature.flank_500.bed", "ONT.hg38.promoterFeature.flank_750.bed"]
 
 narrowCoordNameList = ['x.x.Genome-wide', singletonsFile, nonsingletonsFile,
-                       "ONT.hg38.promoterFeature.flank_2000.bed",
-                       "ONT.hg38.exonFeature.bed", "ONT.hg38.intronFeature.bed", "ONT.hg38.intergenic.bed",
-                       "ONT.hg38.cpgIslandExt.bed", "ONT.hg38.cpgShoresExt.bed", "ONT.hg38.cpgShelvesExt.bed"]
+                       "ONT.hg38.promoterFeature.flank_2000.bed.gz",
+                       "ONT.hg38.exonFeature.bed.gz", "ONT.hg38.intronFeature.bed.gz", "ONT.hg38.intergenic.bed.gz",
+                       "ONT.hg38.cpgIslandExt.bed.gz", "ONT.hg38.cpgShoresExt.bed.gz", "ONT.hg38.cpgShelvesExt.bed.gz"]
 
 # None means no coordinate used, i.e. Genome-wide
 narrowCoordFileList = [None] + [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in
@@ -78,8 +78,8 @@ cg_density_file_list = [os.path.join(data_base_dir, 'genome-annotation', cofn) f
 
 # Repetitive regions
 rep_coord_name_list = ["hg38.repetitive.rep_SINE.bed.gz", "hg38.repetitive.rep_LINE.bed.gz",
-                       "hg38.repetitive.rep_LTR.bed.gz",
-                       "hg38.repetitive.rep_DNA.bed.gz", "hg38.repetitive.rep_Others.bed.gz"]
+                       "hg38.repetitive.rep_LTR.bed.gz", "hg38.repetitive.rep_DNA.bed.gz",
+                       "hg38.repetitive.rep_Others.bed.gz"]
 rep_file_list = [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in rep_coord_name_list]
 
 # Map each bed file name to a standard name, used by curve data plotting
@@ -87,19 +87,20 @@ location_filename_to_abbvname = {
     'x.x.Genome-wide': 'Genome-wide',
     singletonsFile: 'Singletons',
     nonsingletonsFile: 'Non-singletons',
-    "ONT.hg38.cpgIslandExt.bed": "CpG islands",
-    "ONT.hg38.cpgShoresExt.bed": 'CpG shores',
-    "ONT.hg38.cpgShelvesExt.bed": 'CpG shelves',
-    "ONT.hg38.exonFeature.bed": 'Exons',
-    "ONT.hg38.geneFeature.bed": 'GeneFeature',
-    "ONT.hg38.intergenic.bed": 'Intergenic',
-    "ONT.hg38.intronFeature.bed": 'Introns',
-    "ONT.hg38.promoterFeature.flank_100.bed": 'Promoter_flank100',
-    "ONT.hg38.promoterFeature.flank_1000.bed": 'Promoter_flank1000',
-    "ONT.hg38.promoterFeature.flank_200.bed": 'Promoter_flank200',
-    "ONT.hg38.promoterFeature.flank_2000.bed": 'Promoters',  # 2k bp promoters used
-    "ONT.hg38.promoterFeature.flank_500.bed": 'Promoter_flank500',
-    "ONT.hg38.promoterFeature.flank_750.bed": 'Promoter_flank750',
+    "ONT.hg38.cpgIslandExt.bed.gz": "CpG islands",
+    "ONT.hg38.cpgShoresExt.bed.gz": 'CpG shores',
+    "ONT.hg38.cpgShelvesExt.bed.gz": 'CpG shelves',
+    "ONT.hg38.exonFeature.bed.gz": 'Exons',
+    "ONT.hg38.geneFeature.bed.gz": 'GeneFeature',
+    "ONT.hg38.intergenic.bed.gz": 'Intergenic',
+    "ONT.hg38.intronFeature.bed.gz": 'Introns',
+    "ONT.hg38.promoterFeature.flank_100.bed.gz": 'Promoter_flank100',
+    "ONT.hg38.promoterFeature.flank_1000.bed.gz": 'Promoter_flank1000',
+    "ONT.hg38.promoterFeature.flank_200.bed.gz": 'Promoter_flank200',
+    "ONT.hg38.promoterFeature.flank_2000.bed.gz": 'Promoters',  # 2k bp promoters used
+    "ONT.hg38.promoterFeature.flank_500.bed.gz": 'Promoter_flank500',
+    "ONT.hg38.promoterFeature.flank_750.bed.gz": 'Promoter_flank750',
+
     'hg38_nonsingletons.concordant.bed': 'Concordant',
     'hg38_nonsingletons.discordant.bed': 'Discordant',
 

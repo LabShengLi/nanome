@@ -43,7 +43,8 @@ def summary_cpgs_stats_results_table():
         # Add coverage of every regions by each tool here
         # for bedfn in narrowCoordFileList[
         #              1:] + cg_density_file_list + rep_file_list:  # calculate how overlap with Singletons, Non-Singletons, etc.
-        for bedfn in narrowCoordFileList[1:]:  # calculate how overlap with Singletons, Non-Singletons, etc.
+        # for bedfn in narrowCoordFileList[1:]:  # calculate how overlap with Singletons, Non-Singletons, etc.
+        for bedfn in narrowCoordFileList[7:10]:
             basefn = os.path.basename(bedfn)
             tagname = location_filename_to_abbvname[basefn]
             subset = filter_cpgkeys_using_bedfile(callSet, bedfn)

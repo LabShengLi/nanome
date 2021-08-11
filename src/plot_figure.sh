@@ -9,6 +9,8 @@
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
+# sbatch plot_figure.sh Figs5ab-data
+
 ## Script used for generate data and plot figures
 ## Parameters:
 ## 				command
@@ -45,7 +47,7 @@ fi
 if [ $command == "Step1" ]; then
     # Step 1: Table S2,S3
     # bash plot_figure.sh Step1
-    # bash plot_figure.sh Step1 METEORE /projects/li-lab/yang/results/2021-06-28
+    # bash plot_figure.sh Step1 METEORE /projects/li-lab/yang/results/2021-08-07
     python plot_figure.py export-data -i \
         ${HL60_Result_dir} \
         ${K562_Result_dir} \
@@ -90,11 +92,10 @@ elif [ $command == "Fig5a" ]; then
     done
     wait
 
-elif [ $command == "Fig5b-data" ]; then
-    ### Figure 5B data: COE on each region data for bar plot
-    # sbatch plot_figure.sh Fig5b-data
-    # sbatch plot_figure.sh Fig5b-data METEORE
-    python ${pythonFile} export-corr-data --beddir ${bedDir} \
+elif [ $command == "Figs5ab-data" ]; then
+    ### Figure S5AB data: COE on each region data for bar plot
+    # sbatch plot_figure.sh Figs5ab-data
+    python ${pythonFile} figs5ab-data --beddir ${bedDir} \
         -i ${HL60_Result_dir/MethPerf/MethCorr} \
         ${K562_Result_dir/MethPerf/MethCorr} \
         ${APL_Result_dir/MethPerf/MethCorr} \

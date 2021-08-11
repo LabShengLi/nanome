@@ -1,3 +1,6 @@
+"""
+We combine all chr methylation-calling results into a file for each tool
+"""
 import glob
 import gzip
 import os
@@ -7,7 +10,7 @@ import sys
 from nanocompare.global_config import set_log_debug_level, logger
 from nanocompare.global_settings import humanChrSet
 
-output_dir = "/projects/li-lab/Nanopore_compare/data/NA12878"
+input_dir = "/projects/li-lab/Nanopore_compare/data/NA12878"
 combine_dir = "/projects/li-lab/Nanopore_compare/data/NA12878/combine_allchrs"
 
 ## chr 1-22, chrX, chrY
@@ -37,7 +40,7 @@ if __name__ == '__main__':
     toolName = sys.argv[1]
 
     os.makedirs(combine_dir, exist_ok=True)
-    fnlist = glob.glob(os.path.join(output_dir, f'*/NA12878*.{toolSuffix[toolName]}.combine.*.gz'))
+    fnlist = glob.glob(os.path.join(input_dir, f'*/NA12878*.{toolSuffix[toolName]}.combine.*.gz'))
     logger.info(f'Find total files={len(fnlist)}')
 
     processDict = {}
