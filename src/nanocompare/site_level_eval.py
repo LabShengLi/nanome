@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Generate site-level methylation correlation results in Nanocompare paper.
+Generate site-level methylation correlation results in nanome paper.
 """
 import argparse
 import subprocess
@@ -39,12 +39,9 @@ def summary_cpgs_stats_results_table():
                'Joined CpG sites with BG-Truth': len(toolOverlapBGTruthCpGs)}
         ret.update({'Total calls by Nanopore reads': call_cov1_calls[toolname]})
 
-        # TODO: out of memory if add cgdensity and rep files
         # Add coverage of every regions by each tool here
-        # for bedfn in narrowCoordFileList[
-        #              1:] + cg_density_file_list + rep_file_list:  # calculate how overlap with Singletons, Non-Singletons, etc.
-        # for bedfn in narrowCoordFileList[1:]:  # calculate how overlap with Singletons, Non-Singletons, etc.
-        for bedfn in narrowCoordFileList[7:10]:
+        for bedfn in narrowCoordFileList[
+                     1:] + cg_density_file_list + rep_file_list:  # calculate how overlap with Singletons, Non-Singletons, etc.
             basefn = os.path.basename(bedfn)
             tagname = location_filename_to_abbvname[basefn]
             subset = filter_cpgkeys_using_bedfile(callSet, bedfn)
@@ -162,9 +159,8 @@ def parse_arguments():
                         default=None)  # need perform performance evaluation before, then get concordant, etc. bed files, like '/projects/li-lab/yang/results/2021-04-01'
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
     parser.add_argument('--processors', type=int, help="running processors", default=8)
-    parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff of coverage in bg-truth", default=5)
-    parser.add_argument('--toolcov-cutoff', type=int, help="cutoff of coverage in nanopore calls", default=3)
-    parser.add_argument('--baseFormat', type=int, help="base format after imported", default=1)
+    parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff for coverage in bg-truth", default=5)
+    parser.add_argument('--toolcov-cutoff', type=int, help="cutoff for coverage in nanopore tools", default=3)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
     parser.add_argument('--gen-venn', help="generate venn data", action='store_true')
     parser.add_argument('--summary-coverage', help="generate summary table for coverage at each region",
@@ -178,12 +174,12 @@ def parse_arguments():
 if __name__ == '__main__':
     set_log_debug_level()
 
-    args = parse_arguments()
-
     ## Set tmp dir for bedtools
     bedtool_tmp_dir = "/fastscratch/liuya/nanocompare/bedtools_tmp"
     os.makedirs(bedtool_tmp_dir, exist_ok=True)
     pybedtools.helpers.set_tempdir(bedtool_tmp_dir)
+
+    args = parse_arguments()
 
     # cache function same with read level
     enable_cache = args.enable_cache
@@ -201,9 +197,7 @@ if __name__ == '__main__':
     # bgtruth coverage cutoff 1, or 5, 10  --min-bgtruth-cov
     bgtruthCutt = args.min_bgtruth_cov
 
-    # load into program format 0-base or 1-base
-    baseFormat = args.baseFormat
-    # Currently we only use 1-base start format, for BED of singletons, non-singletons are use 1-base format
+    # We import and report use 1-base start format
     baseFormat = 1
 
     # output csv seperator: , or tab
@@ -271,7 +265,6 @@ if __name__ == '__main__':
         loaded_callname_list.append(callname)
 
         # For site level evaluation, only need (freq, cov) results, no score needed. Especially for DeepMod, we must import as freq and cov format from DeepMod.Cluster encode
-        # TODO: cov=1 will lead to too large size of dict objects, do we really report cov=1 results?
         # Do not filter bgtruth, because we use later for overlapping (without bg-truth)
         callresult_dict_cov1[callname] = import_call(callfn, callencode, baseFormat=baseFormat,
                                                      enable_cache=enable_cache, using_cache=using_cache,
