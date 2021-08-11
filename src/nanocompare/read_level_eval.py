@@ -53,6 +53,7 @@ def report_singleton_nonsingleton_table(bgTruth, outfn, fn_concordant, fn_discor
     else:
         raise Exception(f"Not support type for bgTruth={type(bgTruth)}")
 
+
     singletonFileName = narrowCoordFileList[1]  # Singleton file path
     singletonSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, singletonFileName)
 
@@ -491,8 +492,7 @@ if __name__ == '__main__':
 
     logger.info("\n\n########################\n\n")
 
-    # this file is the all tool joined with BS-seq (cov>=5) 0%, 100% together sites BED file, for evaluation on joined sites
-    bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}.Tools_BGTruth_cov{cutoffBGTruth}_Joined.bed.gz"
+
 
     # Study the joined CpG sites by all tools with BG-Truth,evaluation on joined CpG by default
     if absoluteBGTruthCov:
@@ -507,6 +507,8 @@ if __name__ == '__main__':
         joinedCPG = joinedCPG.intersection(set(ontCallWithinBGTruthDict[toolname].keys()))
         logger.info(f'After joined with {toolname}, cpgs={len(joinedCPG):,}')
 
+    # this file is the all tool joined with BS-seq (cov>=5) 0%, 100% together sites BED file, for evaluation on joined sites
+    bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}.Tools_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.bed.gz"
     save_keys_to_single_site_bed(joinedCPG, outfn=bedfn_tool_join_bgtruth, callBaseFormat=baseFormat, outBaseFormat=1)
 
     ## Report joined CpGs in each regions

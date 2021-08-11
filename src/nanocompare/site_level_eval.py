@@ -4,6 +4,7 @@
 Generate site-level methylation correlation results in nanome paper.
 """
 import argparse
+import os
 import subprocess
 
 import pybedtools
@@ -51,11 +52,11 @@ def summary_cpgs_stats_results_table():
             logger.info(f'We use Concordant and Discordant BED file at basedir={args.beddir}')
             datasetBedDir = args.beddir
             concordantFileName = find_bed_filename(basedir=datasetBedDir,
-                                                   pattern=f'{args.dsname}*hg38_nonsingletons*.concordant.bed')
+                                                   pattern=f'{args.dsname}*hg38_nonsingletons*.concordant.bed.gz')
             concordantSet = filter_cpgkeys_using_bedfile(callSet, concordantFileName)
 
             discordantFileName = find_bed_filename(basedir=datasetBedDir,
-                                                   pattern=f'{args.dsname}*hg38_nonsingletons*.discordant.bed')
+                                                   pattern=f'{args.dsname}*hg38_nonsingletons*.discordant.bed.gz')
             discordantSet = filter_cpgkeys_using_bedfile(callSet, discordantFileName)
 
             ret.update({'Concordant': len(concordantSet), 'Discordant': len(discordantSet)})
@@ -296,43 +297,46 @@ if __name__ == '__main__':
 
     if args.gen_venn:
         logger.info('Overlapping analysis start:')
-        logger.info(f"Start gen venn data for each tool (cov>={minToolCovCutt})")
+        logger.info(f"Start gen venn data for each tool (cov>={minToolCovCutt}) and BS-seq (cov>={args.min_bgtruth_cov})")
+        #
+        # # Study five set venn data, no join with bgtruth, tool-cov > tool-cutoff=1 or 3
+        # if len(loaded_callname_list) >= 5:
+        #     ## Exclude DeepMod, leave only 5 tools
+        #     logger.info(f"Start gen venn data for 5 tools ('Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo')")
+        #     cpg_set_dict = defaultdict()
+        #     for callname in ToolNameList[:5]:
+        #         cpg_set_dict[callname] = set(
+        #             callresult_dict_cov3[callname].keys())  # .intersection(set(bgTruth.keys()))
+        #     gen_venn_data(cpg_set_dict, namelist=ToolNameList[:5], outdir=out_dir,
+        #                   tagname=f'{RunPrefix}.{args.dsname}.five.tools.cov{minToolCovCutt}')
+        #
+        #     ## Top 4 tools
+        #     logger.info(f"Start gen venn data for 4 tools ('Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy')")
+        #     cpg_set_dict = defaultdict()
+        #     for callname in ToolNameList[:4]:
+        #         cpg_set_dict[callname] = set(
+        #             callresult_dict_cov3[callname].keys())  # .intersection(set(bgTruth.keys()))
+        #     gen_venn_data(cpg_set_dict, namelist=ToolNameList[:4], outdir=out_dir,
+        #                   tagname=f'{RunPrefix}.{args.dsname}.four.tools.cov{minToolCovCutt}')
+        #
+        # # Study top3 tool's venn data, no join with bgtruth, tool-cov > tool-cutoff=3
+        # logger.info(f"Start gen venn data for TOP3 tools (cov>={minToolCovCutt})")
+        # gen_venn_data(top3_cpg_set_dict, namelist=Top3ToolNameList, outdir=out_dir,
+        #               tagname=f'{RunPrefix}.{args.dsname}.top3.cov{minToolCovCutt}')
 
-        # Study five set venn data, no join with bgtruth, tool-cov > tool-cutoff=1 or 3
-        if len(loaded_callname_list) >= 5:
-            ## Exclude DeepMod, leave only 5 tools
-            logger.info(f"Start gen venn data for 5 tools ('Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo')")
-            cpg_set_dict = defaultdict()
-            for callname in ToolNameList[:5]:
-                cpg_set_dict[callname] = set(
-                    callresult_dict_cov3[callname].keys())  # .intersection(set(bgTruth.keys()))
-            gen_venn_data(cpg_set_dict, namelist=ToolNameList[:5], outdir=out_dir,
-                          tagname=f'{RunPrefix}.{args.dsname}.five.tools.cov{minToolCovCutt}')
-
-            ## Top 4 tools
-            logger.info(f"Start gen venn data for 4 tools ('Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy')")
-            cpg_set_dict = defaultdict()
-            for callname in ToolNameList[:4]:
-                cpg_set_dict[callname] = set(
-                    callresult_dict_cov3[callname].keys())  # .intersection(set(bgTruth.keys()))
-            gen_venn_data(cpg_set_dict, namelist=ToolNameList[:4], outdir=out_dir,
-                          tagname=f'{RunPrefix}.{args.dsname}.four.tools.cov{minToolCovCutt}')
-
-        # Study top3 tool's venn data, no join with bgtruth, tool-cov > tool-cutoff=3
-        logger.info(f"Start gen venn data for TOP3 tools (cov>={minToolCovCutt})")
-        gen_venn_data(top3_cpg_set_dict, namelist=Top3ToolNameList, outdir=out_dir,
-                      tagname=f'{RunPrefix}.{args.dsname}.top3.cov{minToolCovCutt}')
-
+        # Generate all tools and bsseq covered cpgs files for set evaluation
         logger.info("We generate sets file for each tool and bg-truth")
+        venn_outdir=os.path.join(out_dir, 'venn_data')
+        os.makedirs(venn_outdir, exist_ok=True)
 
         bg_cpgs = bgTruth.keys()
-        outfn = os.path.join(out_dir, f'{args.dsname}.bgtruth.cpg.sites.cov{args.min_bgtruth_cov}.setsfile.txt.gz')
+        outfn = os.path.join(venn_outdir, f'{args.dsname}.bgtruth.cpg.sites.cov{args.min_bgtruth_cov}.setsfile.txt.gz')
         output_keys_to_setsfile_txt_gz(bg_cpgs, outfn)
         for callname in ToolNameList:
             if callname not in callresult_dict_cov3:
                 continue
             call_keys = callresult_dict_cov3[callname].keys()
-            outfn = os.path.join(out_dir,
+            outfn = os.path.join(venn_outdir,
                                  f'{args.dsname}.{callname}.cpg.sites.cov{args.toolcov_cutoff}.setsfile.txt.gz')
             output_keys_to_setsfile_txt_gz(call_keys, outfn)
         logger.info(f'\n\n####################\n\n')

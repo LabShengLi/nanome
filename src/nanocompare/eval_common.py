@@ -1741,7 +1741,7 @@ def save_keys_to_single_site_bed(keys, outfn, callBaseFormat=1, outBaseFormat=1,
     :param outfn:
     :return:
     """
-    if outfn.endsWith('.gz'):
+    if outfn.endswith('.gz'):
         outfile = gzip.open(outfn, 'wt')
     else:
         outfile = open(outfn, 'w')
