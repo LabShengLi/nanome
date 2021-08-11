@@ -3,13 +3,15 @@
 #SBATCH --partition=compute
 #SBATCH --qos=batch
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 8 # number of cores
-#SBATCH --mem=300g
+#SBATCH -n 16 # number of cores
+#SBATCH --mem=300G
 #SBATCH --time=72:00:00
 #SBATCH -o log/%x.%j.out
 #SBATCH -e log/%x.%j.err
 #SBATCH --mail-user=yang.liu@jax.org
 #SBATCH --mail-type=END
+
+set -e
 
 dsname=${1:-HL60}
 runidSuffix=${2:-"BS"} # "RRBS_2Reps"

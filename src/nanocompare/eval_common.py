@@ -26,7 +26,8 @@ from tqdm import tqdm
 
 from nanocompare.global_config import *
 from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEncodeList, narrowCoordFileList, \
-    narrowCoordFileTag, referenceGenomeFile, cgCoordFileTag, cg_density_file_list, rep_file_list, repCoordFileTag
+    narrowCoordFileTag, referenceGenomeFile, cgCoordFileTag, cg_density_file_list, rep_file_list, repCoordFileTag, \
+    list_base0_bed_files, enable_base_detection_bedfile
 
 
 def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, readid_col=4, log_lik_ratio_col=5,
@@ -1022,7 +1023,7 @@ def readLevelToSiteLevelWithCov(ontDict, minCov=1, toolname="Tool"):
                 f'Not support type of value, type(ontDict[cpg])={type(ontDict[cpg])} for toolname={toolname}')
 
     logger.info(
-        f"###\treadLevelToSiteLevelWithCov: completed filtering with minCov={minCov}, {len(result):,} CpG sites left for {toolname}")
+        f"###\treadLevelToSiteLevelWithCov: completed filtering with minCov={minCov}: leave {len(result):,} CpG sites left for {toolname}")
     return result
 
 
@@ -1511,7 +1512,10 @@ def load_single_sites_bed_as_set(infn):
     :param infn:
     :return:
     """
-    infile = open(infn, 'r')
+    if infn.endswith('.gz'):
+        infile = gzip.open(infn, 'rt')
+    else:
+        infile = open(infn, 'r')
     ret = set()
     for row in infile:  # each row: chr123  123   123  .  .  +
         rowsplit = row[:-1].split('\t')
@@ -1553,6 +1557,9 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
         # Try ontCall intersect with coord (Genomewide, Singletons, etc.)
         ontCalls_bed = BedTool(calldict2txt(ontCallsKeySet), from_string=True).sort()
         coordBed = BedTool(coordBedFileName).sort()
+
+        if enable_base_detection_bedfile and os.path.basename(coordBedFileName) in list_base0_bed_files:
+            coordBed = bedtool_convert_0_to_1(coordBed)
 
         if os.path.basename(coordBedFileName).startswith("hg38.repetitive.rep"):
             # For repetitive regions, we consider strand info when intersect
@@ -2377,7 +2384,11 @@ def filter_cpgkeys_using_bedfile(cpgKeys, bedFileName):
     :return:
     """
     cpgBed = BedTool(calldict2txt(cpgKeys), from_string=True).sort()
+
     coordBed = BedTool(bedFileName).sort()
+    if enable_base_detection_bedfile and os.path.basename(bedFileName) in list_base0_bed_files:
+        coordBed = bedtool_convert_0_to_1(coordBed)
+
     intersectBed = cpgBed.intersect(coordBed, u=True, wa=True)
     ret = set(txt2dict(intersectBed).keys())
     return ret
@@ -2442,6 +2453,18 @@ def output_keys_to_setsfile_txt_gz(call_keys, outfn):
     logger.info(f"save to {outfn}")
 
 
+def bedtool_convert_0_to_1(bed):
+    """
+    Convert 0-based start BED file into 1-based start, assume end is always 1-based
+    :param bed: BedTool object
+    :return:
+    """
+    df = bed.to_dataframe()
+    df['start'] = df['start'] + 1
+    ret = BedTool.from_dataframe(df)
+    return ret
+
+
 def filter_corrdata_df_by_bedfile(df, df_bed, coord_fn):
     """
     Filter lines in correlation data, within coordinate BED file
@@ -2453,6 +2476,8 @@ def filter_corrdata_df_by_bedfile(df, df_bed, coord_fn):
         return df
 
     coordBed = BedTool(coord_fn).sort()
+    if enable_base_detection_bedfile and os.path.basename(coord_fn) in list_base0_bed_files:
+        coordBed = bedtool_convert_0_to_1(coordBed)
 
     # df_bed is chr  start  end . . strand
     if os.path.basename(coord_fn).startswith("hg38.repetitive.rep") or os.path.basename(coord_fn).endswith(

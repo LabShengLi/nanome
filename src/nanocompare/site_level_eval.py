@@ -4,14 +4,20 @@
 Generate site-level methylation correlation results in nanome paper.
 """
 import argparse
-import os
 import subprocess
+from multiprocessing import Manager, Pool
 
 import pybedtools
 
 from nanocompare.eval_common import *
 from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, location_filename_to_abbvname, \
     save_done_file
+
+
+def get_nsites_in_regions(callSet, bedfn, tagname):
+    subset = filter_cpgkeys_using_bedfile(callSet, bedfn)
+    ret = {tagname: len(subset)}
+    return ret
 
 
 def summary_cpgs_stats_results_table():
@@ -27,55 +33,73 @@ def summary_cpgs_stats_results_table():
     for toolname in loaded_callname_list:
         ## CpG sites set with cov >= cutoff(3)
         logger.info(f'Study tool={toolname}')
-        callSet = set(list(callresult_dict_cov3[toolname].keys()))
+        callSet = list(set(callresult_dict_cov3[toolname].keys()))
+
         if not joinedSet:
             joinedSet = set(callSet)
         else:
             joinedSet = joinedSet.intersection(callSet)
         unionSet = unionSet.union(callSet)
         toolOverlapBGTruthCpGs = bgtruthCpGs.intersection(set(list(callresult_dict_cov3[toolname].keys())))
-        ret = {f'CpG sites in BG-Truth cov>={bgtruthCutt}': len(bgtruthCpGs),
-               'Total CpG sites by Nanopore tool': call_cov1_cpg_sites[toolname],
-               f'Total CpG sites by tool cov>={minToolCovCutt}': len(callresult_dict_cov3[toolname]),
-               'Joined CpG sites with BG-Truth': len(toolOverlapBGTruthCpGs)}
-        ret.update({'Total calls by Nanopore reads': call_cov1_calls[toolname]})
+        row_dict = {f'CpG sites in BG-Truth cov>={bgtruthCutt}': len(bgtruthCpGs),
+                    'Total CpG sites by Nanopore tool': call_cov1_cpg_sites[toolname],
+                    f'Total CpG sites by tool cov>={minToolCovCutt}': len(callresult_dict_cov3[toolname]),
+                    'Joined CpG sites with BG-Truth': len(toolOverlapBGTruthCpGs)}
+        row_dict.update({'Total calls by Nanopore reads': call_cov1_calls[toolname]})
 
-        # Add coverage of every regions by each tool here
-        for bedfn in narrowCoordFileList[
-                     1:] + cg_density_file_list + rep_file_list:  # calculate how overlap with Singletons, Non-Singletons, etc.
-            basefn = os.path.basename(bedfn)
-            tagname = location_filename_to_abbvname[basefn]
-            subset = filter_cpgkeys_using_bedfile(callSet, bedfn)
-            ret.update({tagname: len(subset)})
+        ## using shared object for multiprocessing
+        manager = Manager()
+        callSet = manager.list(callSet)
 
-        if args.beddir:  # add concordant and discordant region coverage if needed
-            logger.info(f'We use Concordant and Discordant BED file at basedir={args.beddir}')
-            datasetBedDir = args.beddir
-            concordantFileName = find_bed_filename(basedir=datasetBedDir,
-                                                   pattern=f'{args.dsname}*hg38_nonsingletons*.concordant.bed.gz')
-            concordantSet = filter_cpgkeys_using_bedfile(callSet, concordantFileName)
+        with Pool(processes=args.processors) as pool:
+            retList = []
+            # Add coverage of every regions by each tool here
+            for bedfn in narrowCoordFileList[
+                         1:] + cg_density_file_list + rep_file_list:  # calculate how overlap with Singletons, Non-Singletons, etc.
+                basefn = os.path.basename(bedfn)
+                tagname = location_filename_to_abbvname[basefn]
 
-            discordantFileName = find_bed_filename(basedir=datasetBedDir,
-                                                   pattern=f'{args.dsname}*hg38_nonsingletons*.discordant.bed.gz')
-            discordantSet = filter_cpgkeys_using_bedfile(callSet, discordantFileName)
+                # get_nsites_in_regions(callSet, bedfn, tagname)
+                ret = pool.apply_async(get_nsites_in_regions, (callSet, bedfn, tagname,))
+                retList.append(ret)
+            if args.beddir:  # add concordant and discordant region coverage if needed
+                logger.info(f'We use Concordant and Discordant BED file at basedir={args.beddir}')
+                datasetBedDir = args.beddir
+                concordantFileName = find_bed_filename(basedir=datasetBedDir,
+                                                       pattern=f'{args.dsname}*hg38_nonsingletons*.concordant.bed.gz')
+                ret = pool.apply_async(get_nsites_in_regions, (callSet, concordantFileName, 'Concordant',))
+                retList.append(ret)
 
-            ret.update({'Concordant': len(concordantSet), 'Discordant': len(discordantSet)})
+                discordantFileName = find_bed_filename(basedir=datasetBedDir,
+                                                       pattern=f'{args.dsname}*hg38_nonsingletons*.discordant.bed.gz')
+                ret = pool.apply_async(get_nsites_in_regions, (callSet, discordantFileName, 'Discordant',))
+                retList.append(ret)
 
-        dataset.append(ret)
+            pool.close()
+            pool.join()
 
-        # logger.info(ret)
+            ## Get all dict results from multiprocessing jobs
+            retList = [ret.get() for ret in retList]
+            logger.info(f"retList={retList}")
 
+            retDict = {}
+            for e in retList:
+                retDict.update(e)
+            logger.info(f"retDict={retDict}")
+
+        row_dict.update(retDict)
+        dataset.append(row_dict)
         logger.info(f'BG-Truth join with {toolname} get {len(toolOverlapBGTruthCpGs):,} CpGs')
         # outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-bgtruth-{name1}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
         # save_keys_to_bed(overlapCpGs, outfn)
 
     # add additional rows for Joined count
-    ret = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(joinedSet)}
-    dataset.append(ret)
+    new_row_dict = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(joinedSet)}
+    dataset.append(new_row_dict)
 
     # add additional row for Unioned count
-    ret = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(unionSet)}
-    dataset.append(ret)
+    new_row_dict = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(unionSet)}
+    dataset.append(new_row_dict)
 
     # also report top3 joined and union set
     top3JointSet = None
@@ -89,18 +113,37 @@ def summary_cpgs_stats_results_table():
             top3JointSet = top3JointSet.intersection(toolSet)
         top3UnionSet = top3UnionSet.union(toolSet)
 
-    ret = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(top3JointSet)}
-    dataset.append(ret)
+    new_row_dict = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(top3JointSet)}
+    dataset.append(new_row_dict)
 
-    ret = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(top3UnionSet)}
-    dataset.append(ret)
+    new_row_dict = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(top3UnionSet)}
+    dataset.append(new_row_dict)
 
-    df = pd.DataFrame(dataset, index=loaded_callname_list + ['Joined', 'Union', 'TOP3 Joined', 'TOP3 Union'])
+    # also report top4 joined and union set
+    top4JointSet = None
+    top4UnionSet = set()
+
+    for callname in ToolNameList[:4]:
+        toolSet = set(callresult_dict_cov3[callname].keys())
+        if not top4JointSet:
+            top4JointSet = toolSet
+        else:
+            top4JointSet = top4JointSet.intersection(toolSet)
+        top4UnionSet = top4UnionSet.union(toolSet)
+
+    new_row_dict = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(top4JointSet)}
+    dataset.append(new_row_dict)
+
+    new_row_dict = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(top4UnionSet)}
+    dataset.append(new_row_dict)
+
+    df = pd.DataFrame(dataset, index=loaded_callname_list +
+                                     ['Joined', 'Union', 'TOP3 Joined', 'TOP3 Union', 'TOP4 Joined', 'TOP4 Union'])
 
     logger.info(df)
 
-    outfn = os.path.join(out_dir, f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.csv')
-    df.to_csv(outfn, sep=args.sep)
+    outfn = os.path.join(out_dir, f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.xlsx')
+    df.to_excel(outfn, sep=args.sep)
     logger.info(f'save to {outfn}\n')
 
 
@@ -159,7 +202,7 @@ def parse_arguments():
     parser.add_argument('--beddir', type=str, help="base dir for bed files",
                         default=None)  # need perform performance evaluation before, then get concordant, etc. bed files, like '/projects/li-lab/yang/results/2021-04-01'
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
-    parser.add_argument('--processors', type=int, help="running processors", default=8)
+    parser.add_argument('--processors', type=int, help="running processors", default=16)
     parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff for coverage in bg-truth", default=5)
     parser.add_argument('--toolcov-cutoff', type=int, help="cutoff for coverage in nanopore tools", default=3)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
@@ -297,7 +340,8 @@ if __name__ == '__main__':
 
     if args.gen_venn:
         logger.info('Overlapping analysis start:')
-        logger.info(f"Start gen venn data for each tool (cov>={minToolCovCutt}) and BS-seq (cov>={args.min_bgtruth_cov})")
+        logger.info(
+            f"Start gen venn data for each tool (cov>={minToolCovCutt}) and BS-seq (cov>={args.min_bgtruth_cov})")
         #
         # # Study five set venn data, no join with bgtruth, tool-cov > tool-cutoff=1 or 3
         # if len(loaded_callname_list) >= 5:
@@ -326,7 +370,7 @@ if __name__ == '__main__':
 
         # Generate all tools and bsseq covered cpgs files for set evaluation
         logger.info("We generate sets file for each tool and bg-truth")
-        venn_outdir=os.path.join(out_dir, 'venn_data')
+        venn_outdir = os.path.join(out_dir, 'venn_data')
         os.makedirs(venn_outdir, exist_ok=True)
 
         bg_cpgs = bgTruth.keys()
