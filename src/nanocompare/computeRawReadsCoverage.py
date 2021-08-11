@@ -14,10 +14,11 @@ import pybedtools
 from pybedtools import BedTool
 from tqdm import tqdm
 
-from nanocompare.eval_common import get_dna_seq_from_reference, open_file_gz_or_txt, find_bed_filename, get_ref_fasta
+from nanocompare.eval_common import get_dna_seq_from_reference, open_file_gz_or_txt, find_bed_filename, get_ref_fasta, \
+    bedtool_convert_0_to_1
 from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir
 from nanocompare.global_settings import humanChrSet, narrowCoordFileList, location_filename_to_abbvname, \
-    cg_density_file_list, rep_file_list, datasets_order
+    cg_density_file_list, rep_file_list, datasets_order, list_base0_bed_files, enable_base_detection_bedfile
 
 # used for convert region bed cov to base level cov
 rawReadDir = '/pod/2/li-lab/Nanopore_compare/data/Nanopore_cov'
@@ -116,9 +117,11 @@ def count_sites_in_coord(readBed, coordfn, tagname, cutoff_list):
     :return:
     """
     ret = {}
-    covList = []
 
     coordBed = BedTool(coordfn).sort()
+    if enable_base_detection_bedfile and os.path.basename(coordfn) in list_base0_bed_files:
+        coordBed = bedtool_convert_0_to_1(coordBed)
+
     ## Check if need strand for intersections, repetitive regions
     if os.path.basename(coordfn).startswith("hg38.repetitive.rep"):
         intersectBed = readBed.intersect(coordBed, u=True, wa=True, s=True)

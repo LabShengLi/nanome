@@ -53,6 +53,7 @@ def report_singleton_nonsingleton_table(bgTruth, outfn, fn_concordant, fn_discor
     else:
         raise Exception(f"Not support type for bgTruth={type(bgTruth)}")
 
+
     singletonFileName = narrowCoordFileList[1]  # Singleton file path
     singletonSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, singletonFileName)
 
@@ -491,8 +492,7 @@ if __name__ == '__main__':
 
     logger.info("\n\n########################\n\n")
 
-    # this file is the all tool joined with BS-seq (cov>=5) 0%, 100% together sites BED file, for evaluation on joined sites
-    bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}.Tools_BGTruth_cov{cutoffBGTruth}_Joined.bed.gz"
+
 
     # Study the joined CpG sites by all tools with BG-Truth,evaluation on joined CpG by default
     if absoluteBGTruthCov:
@@ -507,6 +507,8 @@ if __name__ == '__main__':
         joinedCPG = joinedCPG.intersection(set(ontCallWithinBGTruthDict[toolname].keys()))
         logger.info(f'After joined with {toolname}, cpgs={len(joinedCPG):,}')
 
+    # this file is the all tool joined with BS-seq (cov>=5) 0%, 100% together sites BED file, for evaluation on joined sites
+    bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}.Tools_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.bed.gz"
     save_keys_to_single_site_bed(joinedCPG, outfn=bedfn_tool_join_bgtruth, callBaseFormat=baseFormat, outBaseFormat=1)
 
     ## Report joined CpGs in each regions
@@ -570,7 +572,7 @@ if __name__ == '__main__':
         raise Exception("Currently only support joined sets evaluation.")
 
     if args.distribution:
-        logger.info("Report singletons/non-singletons in each genomic regions in Fig.3 and 4")
+        logger.info("Report singletons/non-singletons in each genomic context regions in Fig.3 and 4")
         logger.debug(f"coordinate file list={relateCoord[3:-2] + cg_density_file_list + rep_file_list}")
 
         bgTruth_bed = BedTool(calldict2txt(bgTruth.keys()), from_string=True)
@@ -593,6 +595,10 @@ if __name__ == '__main__':
             logger.debug(f"Start study coordFn={coordFn}, tagname={tagname}")
             if coordFn:  # get genomic region results
                 coordBed = BedTool(coordFn).sort()
+
+                if enable_base_detection_bedfile and os.path.basename(coordFn) in list_base0_bed_files:
+                    coordBed = bedtool_convert_0_to_1(coordBed)
+
                 if os.path.basename(coordFn).startswith("hg38.repetitive.rep"):
                     # For repetitive regions, we consider strand info when intersect
                     intersect_coord_bed = bgTruth_bed.intersect(coordBed, u=True, wa=True, s=True)

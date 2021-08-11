@@ -82,6 +82,17 @@ rep_coord_name_list = ["hg38.repetitive.rep_SINE.bed.gz", "hg38.repetitive.rep_L
                        "hg38.repetitive.rep_Others.bed.gz"]
 rep_file_list = [os.path.join(data_base_dir, 'genome-annotation', cofn) for cofn in rep_coord_name_list]
 
+# List of all start is 0-based bed files
+list_base0_bed_files = ["ONT.hg38.cpgIslandExt.bed.gz", "ONT.hg38.cpgShoresExt.bed.gz",
+                        "ONT.hg38.cpgShelvesExt.bed.gz"] + \
+                       ["hg38.gc5Base_merged.cg_bin20.bed.gz", "hg38.gc5Base_merged.cg_bin40.bed.gz",
+                        "hg38.gc5Base_merged.cg_bin60.bed.gz", "hg38.gc5Base_merged.cg_bin80.bed.gz",
+                        "hg38.gc5Base_merged.cg_bin100.bed.gz"] + \
+                       ["hg38.repetitive.rep_SINE.bed.gz", "hg38.repetitive.rep_LINE.bed.gz",
+                        "hg38.repetitive.rep_LTR.bed.gz", "hg38.repetitive.rep_DNA.bed.gz",
+                        "hg38.repetitive.rep_Others.bed.gz"]
+enable_base_detection_bedfile = True
+
 # Map each bed file name to a standard name, used by curve data plotting
 location_filename_to_abbvname = {
     'x.x.Genome-wide': 'Genome-wide',
