@@ -11,6 +11,9 @@
 #SBATCH --mail-user=yang.liu@jax.org
 #SBATCH --mail-type=END
 
+## Site level unified bed format for tools/bs-seq
+## Output: chr1	9037300	9037301	.	.	+	0.5294117647058824	17
+
 dsname=${1:-HL60}
 
 baseDir="/projects/li-lab/Nanopore_compare/data"
@@ -26,16 +29,16 @@ METEORECalls=$(find /projects/li-lab/Nanopore_compare/suppdata/METEORE_results -
 MegalodonOptions="Megalodon.ZW"
 
 if [ "$dsname" == "NA12878" ]; then
-  ## Detect NA12878 specific
-  baseDir="/projects/li-lab/Nanopore_compare/data/NA12878/combine_allchrs"
-  NanopolishCalls=$(find $baseDir -name "$dsname.nanopolish.methylation_calls.combine_allchrs.*.gz")
-  MegalodonCalls=$(find $baseDir -name "$dsname.megalodon.per_read.combine_allchrs.*.gz")
-  DeepSignalCalls=$(find $baseDir -name "$dsname.deepsignal.call_mods.combine_allchrs.*.gz")
-  GuppyCalls=$(find $baseDir -name "$dsname.guppy.fast5mod_site_level.combine_allchrs.*.gz")
-  TomboCalls=$(find $baseDir -name "$dsname.tombo.perReadsStats.combine_allchrs.*.gz")
-  DeepModCalls=$(find $baseDir -name "$dsname.deepmod.C_clusterCpG.combine_allchrs.*.gz")
-  METEORECalls=$(find /projects/li-lab/Nanopore_compare/suppdata/METEORE_results -name "$dsname.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
-  MegalodonOptions="Megalodon"
+    ## Detect NA12878 specific
+    baseDir="/projects/li-lab/Nanopore_compare/data/NA12878/combine_allchrs"
+    NanopolishCalls=$(find $baseDir -name "$dsname.nanopolish.methylation_calls.combine_allchrs.*.gz")
+    MegalodonCalls=$(find $baseDir -name "$dsname.megalodon.per_read.combine_allchrs.*.gz")
+    DeepSignalCalls=$(find $baseDir -name "$dsname.deepsignal.call_mods.combine_allchrs.*.gz")
+    GuppyCalls=$(find $baseDir -name "$dsname.guppy.fast5mod_site_level.combine_allchrs.*.gz")
+    TomboCalls=$(find $baseDir -name "$dsname.tombo.perReadsStats.combine_allchrs.*.gz")
+    DeepModCalls=$(find $baseDir -name "$dsname.deepmod.C_clusterCpG.combine_allchrs.*.gz")
+    METEORECalls=$(find /projects/li-lab/Nanopore_compare/suppdata/METEORE_results -name "$dsname.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
+    MegalodonOptions="Megalodon"
 fi
 
 ## Automatically get the input files for each tool
@@ -44,11 +47,11 @@ bgtruthEncodeDict=(["HL60"]="bismark" ["K562"]="encode" ["APL"]="bismark" ["NA19
 
 declare -A bgtruthFilenameDict
 bgtruthFilenameDict=(
-  ["HL60"]="/projects/li-lab/Nanopore_compare/data/HL60/HL60_RRBS_ENCFF000MDA.Read_R1.Rep_1_trimmed_bismark_bt2.CpG_report.txt.gz;/projects/li-lab/Nanopore_compare/data/HL60/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz"
-  ["K562"]="/projects/li-lab/Nanopore_compare/data/K562/ENCFF721JMB.bed.gz;/projects/li-lab/Nanopore_compare/data/K562/ENCFF867JRG.bed.gz"
-  ["APL"]="/projects/li-lab/Nanopore_compare/data/APL/APL-bs_R1_val_1_bismark_bt2_pe.deduplicated.bismark.cov.convert.add.strand.tsv.gz"
-  ["NA19240"]="/projects/li-lab/Nanopore_compare/data/NA19240/NA19240_RRBS_ENCFF000LZS_rep1.Read_R1.Rep_1_trimmed_bismark_bt2.CpG_report.txt.gz;/projects/li-lab/Nanopore_compare/data/NA19240/NA19240_RRBS_ENCFF000LZT_rep2.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz"
-  ["NA12878"]="/projects/li-lab/Nanopore_compare/data/NA12878/ENCFF279HCL.bed.gz;/projects/li-lab/Nanopore_compare/data/NA12878/ENCFF835NTC.bed.gz"
+    ["HL60"]="/projects/li-lab/Nanopore_compare/data/HL60/HL60_RRBS_ENCFF000MDA.Read_R1.Rep_1_trimmed_bismark_bt2.CpG_report.txt.gz;/projects/li-lab/Nanopore_compare/data/HL60/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz"
+    ["K562"]="/projects/li-lab/Nanopore_compare/data/K562/ENCFF721JMB.bed.gz;/projects/li-lab/Nanopore_compare/data/K562/ENCFF867JRG.bed.gz"
+    ["APL"]="/projects/li-lab/Nanopore_compare/data/APL/APL-bs_R1_val_1_bismark_bt2_pe.deduplicated.bismark.cov.convert.add.strand.tsv.gz"
+    ["NA19240"]="/projects/li-lab/Nanopore_compare/data/NA19240/NA19240_RRBS_ENCFF000LZS_rep1.Read_R1.Rep_1_trimmed_bismark_bt2.CpG_report.txt.gz;/projects/li-lab/Nanopore_compare/data/NA19240/NA19240_RRBS_ENCFF000LZT_rep2.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz"
+    ["NA12878"]="/projects/li-lab/Nanopore_compare/data/NA12878/ENCFF279HCL.bed.gz;/projects/li-lab/Nanopore_compare/data/NA12878/ENCFF835NTC.bed.gz"
 )
 
 echo "####################"
@@ -61,27 +64,28 @@ echo "MegalodonCalls=$MegalodonCalls"
 echo "DeepSignalCalls=$DeepSignalCalls"
 echo "GuppyCalls=$GuppyCalls"
 echo "TomboCalls=$TomboCalls"
-echo "DeepModCalls=$DeepModCalls"
 echo "METEORECalls=$METEORECalls"
-
+echo "DeepModCalls=$DeepModCalls"
 echo "####################"
+
+## Running script
 pythonFile=nanocompare/tss_eval.py
 
 set -x
 
-## Generate tools results for tss analysis
+## Generate tools/bsseq site level (freq, coverage) results for tss analysis
 python ${pythonFile} \
-  --calls \
-      Nanopolish:${NanopolishCalls} \
-      ${MegalodonOptions}:${MegalodonCalls} \
-      DeepSignal:${DeepSignalCalls} \
-      Guppy:${GuppyCalls} \
-      Tombo:${TomboCalls} \
-      DeepMod.Cluster:${DeepModCalls} \
-      METEORE:${METEORECalls} \
-  --bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
-  --runid TSS-${dsname} \
-  --dsname ${dsname} \
-  --enable-cache --using-cache
+    --calls \
+    Nanopolish:${NanopolishCalls} \
+    ${MegalodonOptions}:${MegalodonCalls} \
+    DeepSignal:${DeepSignalCalls} \
+    Guppy:${GuppyCalls} \
+    Tombo:${TomboCalls} \
+    METEORE:${METEORECalls} \
+    DeepMod.Cluster:${DeepModCalls} \
+    --bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
+    --runid TSS_SITE-${dsname} \
+    --dsname ${dsname} \
+    --enable-cache --using-cache
 
 echo "### TSS data generation DONE"

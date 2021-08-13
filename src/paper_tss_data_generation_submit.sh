@@ -1,9 +1,8 @@
 #!/bin/bash
 
-set -x
 # bash paper_tss_data_generation_submit.sh NA12878
 # bash paper_tss_data_generation_submit.sh "HL60 K562 APL NA19240 NA12878"
-#Running datasets "HL60 K562 APL NA19240 NA12878"
+# Running datasets "HL60 K562 APL NA19240 NA12878"
 datasetList=${1:-"HL60 K562"}
 
 if [[ "$datasetList" == *"HL60"* ]]; then

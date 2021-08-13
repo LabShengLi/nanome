@@ -8,11 +8,13 @@ Such as import_DeepSignal, import_BGTruth, etc.
 
 import glob
 import gzip
+import multiprocessing
 import pickle
 import re
 import sys
 from collections import defaultdict
 from itertools import combinations
+from multiprocessing import Pool
 
 import math
 import numpy as np
@@ -27,7 +29,7 @@ from tqdm import tqdm
 from nanocompare.global_config import *
 from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEncodeList, narrowCoordFileList, \
     narrowCoordFileTag, referenceGenomeFile, cgCoordFileTag, cg_density_file_list, rep_file_list, repCoordFileTag, \
-    list_base0_bed_files, enable_base_detection_bedfile
+    list_base0_bed_files, enable_base_detection_bedfile, location_filename_to_abbvname
 
 
 def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, readid_col=4, log_lik_ratio_col=5,
@@ -1033,7 +1035,7 @@ def open_file_gz_or_txt(infn):
     :param infn:
     :return:
     """
-    logger.info(f"open file: {infn}")
+    logger.debug(f"open file: {infn}")
     if infn.endswith('.gz'):
         infile = gzip.open(infn, 'rt')  # using rt option, no need to convert bytearray
     else:
@@ -1427,6 +1429,93 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     return calls0
 
 
+def import_call_mp(infn, encode, baseFormat=1, include_score=False, siteLevel=False, enable_cache=False,
+                   using_cache=False,
+                   filterChr=humanChrSet, saveMeteore=False, outfn=None):
+    """
+    General purpose for import any tools methylation calling input files.
+
+    Import fn based on callname and return key=(chr, start, strand) -> value=[0 0 1 1 1 1 ]
+
+    If include_score=True, then value= (0, score)
+        call0   -   original results
+    :param infn:
+    :param encode:
+    :return:
+    """
+    logger.info("\n\n####################\n\n")
+    logger.info(f"Start mp load encode={encode}, infn={infn}")
+
+    if enable_cache and using_cache:
+        ret = check_cache_available(infn=infn, encode=encode, baseFormat=baseFormat, include_score=include_score,
+                                    siteLevel=siteLevel)
+        if ret:
+            logger.debug(f'Import {encode} finished!\n')
+            return ret
+        logger.debug(f'Not cached yet, we load from raw file')
+    call0 = None
+    if encode == 'DeepSignal':
+        calls0 = importPredictions_DeepSignal(infn, baseFormat=baseFormat, include_score=include_score,
+                                              filterChr=filterChr, saveMeteore=saveMeteore, outfn=outfn)
+    elif encode == 'Tombo':
+        calls0 = importPredictions_Tombo(infn, baseFormat=baseFormat, include_score=include_score, filterChr=filterChr,
+                                         saveMeteore=saveMeteore, outfn=outfn)
+    elif encode == 'Nanopolish':
+        # multi-processing
+        retList = []
+        with Pool(processes=25) as pool:
+            for chr in filterChr:
+                ret = pool.apply_async(importPredictions_Nanopolish, (infn,),
+                                       kwds={'include_score': include_score, 'filterChr': [chr]})
+                retList.append(ret)
+            # calls0 = importPredictions_Nanopolish(infn, baseFormat=baseFormat, include_score=include_score,
+            #                                       filterChr=filterChr, saveMeteore=saveMeteore, outfn=outfn)
+            pool.close()
+            pool.join()
+        callList = [ret.get() for ret in retList]
+
+        logger.info("combine")
+        calls0 = {}
+        for call1 in callList:
+            calls0.update(call1)
+
+    elif encode == 'Megalodon':  # Original format
+        calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score,
+                                             filterChr=filterChr, saveMeteore=saveMeteore, outfn=outfn)
+    elif encode == 'Megalodon.ZW':  # Here, ziwei preprocess the raw file to this format: chr_col=0, start_col=1, strand_col=3
+        calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score, readid_col=2,
+                                             chr_col=0, start_col=1, strand_col=3, filterChr=filterChr,
+                                             saveMeteore=saveMeteore, outfn=outfn)
+    elif encode == 'DeepMod.Cluster':  # import DeepMod Clustered output for site level, itself tool reports by cluster, key->value={'freq':68, 'cov':10}
+        calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat, siteLevel=siteLevel,
+                                                     include_score=include_score, filterChr=filterChr)
+    elif encode == 'DeepMod.C':  # import DeepMod itself tool for read level
+        calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, siteLevel=siteLevel,
+                                           include_score=include_score, filterChr=filterChr)
+    elif encode == 'Guppy':  # import Guppy itself tool results by fast5mod raw results
+        calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel,
+                                         filterChr=filterChr)
+    elif encode == 'Guppy.ZW':  # import Guppy itself tool results by fast5mod processed by Ziwei
+        calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel,
+                                         filterChr=filterChr, formatSource="Guppy.ZW")
+    elif encode == 'Guppy.gcf52ref':  # import Guppy gcf52ref read level results
+        calls0 = importPredictions_Guppy_gcf52ref(infn, baseFormat=baseFormat, include_score=include_score,
+                                                  filterChr=filterChr, header=None, saveMeteore=saveMeteore,
+                                                  outfn=outfn)
+    elif encode == 'METEORE':  # import Guppy gcf52ref read level results
+        calls0 = importPredictions_METEORE(infn, baseFormat=baseFormat, include_score=include_score,
+                                           filterChr=filterChr)
+    else:
+        raise Exception(f'Not support {encode} for file {infn} now')
+
+    if enable_cache:
+        save_to_cache(infn, calls0, encode=encode, baseFormat=baseFormat, include_score=include_score,
+                      siteLevel=siteLevel)
+
+    logger.debug(f'Import {encode} finished!\n')
+    return calls0
+
+
 def import_bgtruth(infn, encode, covCutoff=5, baseFormat=1, includeCov=True, enable_cache=False, using_cache=False):
     """
     General purpose for import any BG-Truth input files.
@@ -1472,6 +1561,27 @@ def import_bgtruth(infn, encode, covCutoff=5, baseFormat=1, includeCov=True, ena
     return bgTruth
 
 
+def calldict2bed(inputDict, null_str='.'):
+    """
+    Directly convert dict into bed object, assume key is (chr1  123   +),
+    and output is bed like chr1  123  123 . .  +
+    Note columns name:  chrom  start  end name score strand
+    :param inputDict:
+    :return:
+    """
+    dataset = defaultdict(list)
+    for key in inputDict:
+        dataset['chrom'].append(key[0])
+        dataset['start'].append(int(key[1]))
+        dataset['end'].append(int(key[1]))
+        dataset['name'].append(null_str)
+        dataset['score'].append(null_str)
+        dataset['strand'].append(key[2])
+    df = pd.DataFrame.from_dict(dataset)[['chrom', 'start', 'end', 'name', 'score', 'strand']]
+    bedret = BedTool.from_dataframe(df).sort()
+    return bedret
+
+
 def calldict2txt(inputDict):
     """
     Convert all keys in dict to a string txt, txt file is:
@@ -1486,7 +1596,7 @@ def calldict2txt(inputDict):
     return text
 
 
-def txt2dict(pybed, strand_col=5):
+def bedtxt2dict(pybed, strand_col=5):
     """
     convert bed txt to a dict with keys in bed file
 
@@ -1495,15 +1605,15 @@ def txt2dict(pybed, strand_col=5):
     To
     ('chr123', 123, '+') -> 1
 
-    :param pybed:
+    :param pybed: bed object
     :return:
     """
-    d = {}
+    ret_dict = {}
     for t in pybed:
-        ret = str(t)[:-1].split('\t')
+        ret = str(t).strip().split('\t')
         key = (ret[0], int(ret[1]), ret[strand_col])
-        d[key] = 1
-    return d
+        ret_dict[key] = 1
+    return ret_dict
 
 
 def load_single_sites_bed_as_set(infn):
@@ -1553,31 +1663,34 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
     ontCallsKeySet = set(ontCalls.keys()).intersection(set(bgTruth.keys()))
 
     ontCalls_narrow_set = None  # Intersection of ontCall with coord, or None if genome-wide
-    if coordBedFileName:
+    if coordBedFileName is not None:
         # Try ontCall intersect with coord (Genomewide, Singletons, etc.)
-        ontCalls_bed = BedTool(calldict2txt(ontCallsKeySet), from_string=True).sort()
-        coordBed = BedTool(coordBedFileName).sort()
+        # ontCalls_bed = BedTool(calldict2txt(ontCallsKeySet), from_string=True).sort()
+        ontCalls_bed = calldict2bed(ontCallsKeySet)
 
-        if enable_base_detection_bedfile and os.path.basename(coordBedFileName) in list_base0_bed_files:
-            coordBed = bedtool_convert_0_to_1(coordBed)
-
-        if os.path.basename(coordBedFileName).startswith("hg38.repetitive.rep"):
-            # For repetitive regions, we consider strand info when intersect
-            ontCalls_intersect = ontCalls_bed.intersect(coordBed, u=True, wa=True, s=True)
+        if isinstance(coordBedFileName, str):  # bed file path
+            coordBed = get_region_bed(coordBedFileName)
+            bedfn_basename = os.path.basename(coordBedFileName)
+        elif isinstance(coordBedFileName, tuple):  # directly get the results
+            coordBed = coordBedFileName[2]
+            bedfn_basename = os.path.basename(coordBedFileName[0])
         else:
-            ontCalls_intersect = ontCalls_bed.intersect(coordBed, u=True, wa=True)
-        ontCalls_narrow_set = set(txt2dict(ontCalls_intersect).keys())
+            raise Exception(f"not correct coordBedFileName={coordBedFileName}")
+
+        ontCalls_intersect = intersect_bed_regions(ontCalls_bed, coordBed, bedfn_basename)
+        ontCalls_narrow_set = set(bedtxt2dict(ontCalls_intersect).keys())
+        region_name = bedfn_basename
+    else:
+        bedfn_basename = 'x.x.Genome-wide'
+        region_name = 'Genome-wide'
+
+    ## Used for ROC data file
+    # basefn = 'x.x.Genome-wide' if coordBedFileName is None else os.path.basename(bedfn_basename)
+    basefn = bedfn_basename
 
     ontCalls_narrow_second_set = None  # if using joined sites of all tools, or None for not using joined sites
-    if secondFilterBedFileName:
+    if secondFilterBedFileName is not None:
         joined_set = load_single_sites_bed_as_set(secondFilterBedFileName)
-        infile = open(secondFilterBedFileName, 'r')
-        secondFilterDict = {}
-        for row in infile:  # each row: chr123  123   123  .  .  +
-            rowsplit = row[:-1].split('\t')
-            key = (rowsplit[0], int(rowsplit[1]), rowsplit[5])
-            secondFilterDict[key] = 1
-        infile.close()
         ontCalls_narrow_second_set = set(ontCalls.keys()).intersection(joined_set)
 
     # Initial evaluation vars
@@ -1598,18 +1711,21 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
     # We find the narrowed CpG set to evaluate, try to reduce running time
     targetedSet = ontCallsKeySet
 
+    # Number of returned tuple size
+    num_tuples_ret = 20
+
     ## ontCalls_narrow_set
     ##          - set: need to intersect
     ##          - None: no need to intersect
     if ontCalls_narrow_set is not None:
         targetedSet = targetedSet.intersection(ontCalls_narrow_set)
     if len(targetedSet) == 0:  # no cpg sites for evaluation
-        return tuple([None] * 20)
+        return tuple([None] * num_tuples_ret)
 
     if ontCalls_narrow_second_set is not None:
         targetedSet = targetedSet.intersection(ontCalls_narrow_second_set)
     if len(targetedSet) == 0:  # no cpg sites for evaluation
-        return tuple([None] * 20)
+        return tuple([None] * num_tuples_ret)
 
     for cpgKey in targetedSet:  # key = (chr, start, strand)
         ##### for each sites, we perform per read stats:
@@ -1717,7 +1833,7 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
         average_precision = average_precision_score(y_of_bgtruth, yscore_of_ont_tool)
     except ValueError:
         logger.error(
-            f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{ypred_of_ont_tool}, \nother settings: {title}, {coordBedFileName}, {secondFilterBedFileName}")
+            f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{ypred_of_ont_tool}, \nother settings: {title}, {region_name}, {secondFilterBedFileName}")
         fprSwitch = 0
         roc_auc = 0.0
         average_precision = 0.0
@@ -1726,7 +1842,6 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
         roc_auc = auc(fpr, tpr)
 
     ########################
-    basefn = 'x.x.Genome-wide' if not coordBedFileName else os.path.basename(coordBedFileName)
 
     if is_save:
         # save y and y-pred and y-score for later plot:
@@ -1737,7 +1852,10 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
         with open(outfn, 'wb') as handle:
             pickle.dump(curve_data, handle)
 
-    return accuracy, roc_auc, average_precision, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, Csites_BGTruth, mCsites_BGTruth
+    return accuracy, roc_auc, average_precision, f1_macro, f1_micro, \
+           precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, \
+           recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, \
+           F1_5mC, mCalls, referenceCpGs, Csites_BGTruth, mCsites_BGTruth
 
 
 def save_keys_to_single_site_bed(keys, outfn, callBaseFormat=1, outBaseFormat=1, nonstr='.'):
@@ -1975,12 +2093,13 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
     outfile_discordant.close()
 
     logger.info(f'save to {[nsConcordantFileName, nsDisCordantFileName]}')
-    logger.debug(f'meth_cnt={meth_cnt_dict}, unmeth_cnt={unmeth_cnt_dict}')
+    # logger.debug(f'meth_cnt={meth_cnt_dict}, unmeth_cnt={unmeth_cnt_dict}')
     ret = {'Concordant.5mC': meth_cnt_dict['Concordant'], 'Concordant.5C': unmeth_cnt_dict['Concordant'],
            'Discordant.5mC': meth_cnt_dict['Discordant'], 'Discordant.5C': unmeth_cnt_dict['Discordant']}
     return ret
 
 
+## Will deprecated
 def load_nanopolish_df(
         infn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/APL/APL.nanopolish_methylation_calls.tsv'):
     """
@@ -2001,6 +2120,7 @@ def load_nanopolish_df(
     return df
 
 
+## Will deprecated
 def load_tombo_df(
         infn='/projects/li-lab/yang/workspace/nano-compare/data/tools-call-data/K562/K562.tombo_perReadsStats.bed'):
     """
@@ -2021,6 +2141,7 @@ def load_tombo_df(
     return df
 
 
+## Will deprecated
 def load_deepmod_df(infn):
     """
     Load the DeepMod original output results tsv into a dataframe
@@ -2240,7 +2361,7 @@ def filter_cpg_dict(cpgDict, filterDict):
     retDict = defaultdict(list)
     joinedKeys = set(filterDict.keys()).intersection(set(cpgDict.keys()))
     for k in joinedKeys:
-        retDict[k] = cpgDict[k]
+        retDict[k] = list(cpgDict[k])
     return retDict
 
 
@@ -2385,12 +2506,15 @@ def filter_cpgkeys_using_bedfile(cpgKeys, bedFileName):
     """
     cpgBed = BedTool(calldict2txt(cpgKeys), from_string=True).sort()
 
-    coordBed = BedTool(bedFileName).sort()
-    if enable_base_detection_bedfile and os.path.basename(bedFileName) in list_base0_bed_files:
-        coordBed = bedtool_convert_0_to_1(coordBed)
+    # coordBed = BedTool(bedFileName).sort()
+    # if enable_base_detection_bedfile and os.path.basename(bedFileName) in list_base0_bed_files:
+    #     coordBed = bedtool_convert_0_to_1(coordBed)
+    # intersectBed = cpgBed.intersect(coordBed, u=True, wa=True)
 
-    intersectBed = cpgBed.intersect(coordBed, u=True, wa=True)
-    ret = set(txt2dict(intersectBed).keys())
+    coordBed = get_region_bed(bedFileName)
+    intersectBed = intersect_bed_regions(cpgBed, coordBed, bedFileName)
+
+    ret = set(bedtxt2dict(intersectBed).keys())
     return ret
 
 
@@ -2465,6 +2589,58 @@ def bedtool_convert_0_to_1(bed):
     return ret
 
 
+def get_region_bed(infn):
+    """
+    Get the BED file for infn
+    :param infn:
+    :return:
+    """
+    coordBed = BedTool(infn).sort()
+    if enable_base_detection_bedfile and os.path.basename(infn) in list_base0_bed_files:
+        coordBed = bedtool_convert_0_to_1(coordBed)
+    return coordBed
+
+
+def get_region_bed_pairs(infn):
+    """
+    return (basefn, tagname, bedobject) of regions file
+    :param infn:
+    :return:
+    """
+    basefn = os.path.basename(infn)
+    if basefn.endswith('.hg38_nonsingletons.concordant.bed.gz'):
+        tagname = 'Concordant'
+    elif basefn.endswith('hg38_nonsingletons.discordant.bed.gz'):
+        tagname = 'Discordant'
+    else:
+        tagname = location_filename_to_abbvname[basefn]
+    region_bed = get_region_bed(infn)
+    return (basefn, tagname, region_bed)
+    pass
+
+
+def get_region_bed_pairs_list_mp(infn_list, processors=30):
+    """
+    Get list of pairs [(basefn, tagname, bedobject), ...] of regions file
+    :param infn_list:
+    :return:
+    """
+    logger.info(f"get_region_bed_pairs_list_mp start, cpus={multiprocessing.cpu_count()}")
+    with Pool(processors) as pool:
+        region_bed_list = pool.map(get_region_bed_pairs, infn_list)
+    logger.info("get_region_bed_pairs_list_mp finished")
+    return region_bed_list
+
+
+def intersect_bed_regions(bed_a, bed_region, bedfn):
+    ## Check if need strand for intersections, repetitive regions
+    if os.path.basename(bedfn).startswith("hg38.repetitive.rep"):
+        intersectBed = bed_a.intersect(bed_region, u=True, wa=True, s=True)
+    else:
+        intersectBed = bed_a.intersect(bed_region, u=True, wa=True)
+    return intersectBed
+
+
 def filter_corrdata_df_by_bedfile(df, df_bed, coord_fn):
     """
     Filter lines in correlation data, within coordinate BED file
@@ -2475,16 +2651,8 @@ def filter_corrdata_df_by_bedfile(df, df_bed, coord_fn):
     if not coord_fn:  # No need to filter for genome wide
         return df
 
-    coordBed = BedTool(coord_fn).sort()
-    if enable_base_detection_bedfile and os.path.basename(coord_fn) in list_base0_bed_files:
-        coordBed = bedtool_convert_0_to_1(coordBed)
-
-    # df_bed is chr  start  end . . strand
-    if os.path.basename(coord_fn).startswith("hg38.repetitive.rep") or os.path.basename(coord_fn).endswith(
-            "Tools_BGTruth_cov5_Joined.bed"):
-        df_bed_intersect = df_bed.intersect(coordBed, u=True, wa=True, s=True)
-    else:
-        df_bed_intersect = df_bed.intersect(coordBed, u=True, wa=True)
+    coordBed = get_region_bed(coord_fn)
+    df_bed_intersect = intersect_bed_regions(df_bed, coordBed, coord_fn)
 
     select_lines = []
     for line in df_bed_intersect:
