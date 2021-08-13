@@ -5,13 +5,11 @@ Generate site-level methylation correlation results in nanome paper.
 """
 import argparse
 import subprocess
-from multiprocessing import Manager, Pool
 
 import pybedtools
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, location_filename_to_abbvname, \
-    save_done_file
+from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, save_done_file
 
 
 def get_nsites_in_regions(callSet, bedfn, tagname):
@@ -30,9 +28,31 @@ def summary_cpgs_stats_results_table():
     bgtruthCpGs = set(list(bgTruth.keys()))
     joinedSet = None
     unionSet = set()
+
+    ## create region bed files
+    logger.info("Create region bed list firstly, take times.")
+    region_fn_list = narrowCoordFileList[
+                     1:] + cg_density_file_list + rep_file_list
+
+    # regionbed_list = []
+    # for region_fn in region_fn_list:
+    #     logger.info(f"Load file {region_fn}")
+    #     basefn = os.path.basename(region_fn)
+    #     tagname = location_filename_to_abbvname[basefn]
+    #     region_bed = get_region_bed(region_fn)
+    #     regionbed_list.append((region_fn, tagname, region_bed))
+
+    # TODO: check bed script intersect only
+    # outfn = os.path.join(pic_base_dir, basefn)
+    # region_bed.saveas(outfn)
+    # logger.info(f"save to {outfn}")
+    region_bed_list = get_region_bed_pairs_list_mp(region_fn_list)
+
+    retList = []
+    logger.info("Start to study coverage now:")
     for toolname in loaded_callname_list:
         ## CpG sites set with cov >= cutoff(3)
-        logger.info(f'Study tool={toolname}')
+        logger.info(f'\n\nStudy tool={toolname}')
         callSet = list(set(callresult_dict_cov3[toolname].keys()))
 
         if not joinedSet:
@@ -47,46 +67,53 @@ def summary_cpgs_stats_results_table():
                     'Joined CpG sites with BG-Truth': len(toolOverlapBGTruthCpGs)}
         row_dict.update({'Total calls by Nanopore reads': call_cov1_calls[toolname]})
 
-        ## using shared object for multiprocessing
-        manager = Manager()
-        callSet = manager.list(callSet)
+        ## TODO: check if can optimize
+        # callBed = BedTool(calldict2txt(callSet), from_string=True).sort()
+        callBed = calldict2bed(callSet)
 
-        with Pool(processes=args.processors) as pool:
-            retList = []
-            # Add coverage of every regions by each tool here
-            for bedfn in narrowCoordFileList[
-                         1:] + cg_density_file_list + rep_file_list:  # calculate how overlap with Singletons, Non-Singletons, etc.
-                basefn = os.path.basename(bedfn)
-                tagname = location_filename_to_abbvname[basefn]
+        outfn = os.path.join(out_dir, f'ont_calls_{args.dsname}_{toolname}_cov{args.toolcov_cutoff}.bed.gz')
+        callBed.saveas(outfn)
 
-                # get_nsites_in_regions(callSet, bedfn, tagname)
-                ret = pool.apply_async(get_nsites_in_regions, (callSet, bedfn, tagname,))
-                retList.append(ret)
-            if args.beddir:  # add concordant and discordant region coverage if needed
-                logger.info(f'We use Concordant and Discordant BED file at basedir={args.beddir}')
-                datasetBedDir = args.beddir
-                concordantFileName = find_bed_filename(basedir=datasetBedDir,
-                                                       pattern=f'{args.dsname}*hg38_nonsingletons*.concordant.bed.gz')
-                ret = pool.apply_async(get_nsites_in_regions, (callSet, concordantFileName, 'Concordant',))
-                retList.append(ret)
+        # Add coverage of every regions by each tool here
+        for (bedfn, tagname, region_bed) in tqdm(
+                region_bed_list):  # calculate how overlap with Singletons, Non-Singletons, etc.
+            # get_nsites_in_regions(callSet, bedfn, tagname)
+            intersect_bed = intersect_bed_regions(callBed, region_bed, bedfn)
+            ret = {tagname: len(intersect_bed)}
+            retList.append(ret)
+        if args.beddir:  # add concordant and discordant region coverage if needed
+            logger.info(f'We use Concordant and Discordant BED file at basedir={args.beddir}')
+            concordantFileName = find_bed_filename(basedir=args.beddir,
+                                                   pattern=f'{args.dsname}*hg38_nonsingletons*.concordant.bed.gz')
 
-                discordantFileName = find_bed_filename(basedir=datasetBedDir,
-                                                       pattern=f'{args.dsname}*hg38_nonsingletons*.discordant.bed.gz')
-                ret = pool.apply_async(get_nsites_in_regions, (callSet, discordantFileName, 'Discordant',))
-                retList.append(ret)
+            concordant_bed = get_region_bed(concordantFileName)
+            intersect_bed = intersect_bed_regions(callBed, concordant_bed, concordantFileName)
+            ret = {'Concordant': len(intersect_bed)}
+            retList.append(ret)
 
-            pool.close()
-            pool.join()
+            discordantFileName = find_bed_filename(basedir=args.beddir,
+                                                   pattern=f'{args.dsname}*hg38_nonsingletons*.discordant.bed.gz')
+            discordant_bed = get_region_bed(discordantFileName)
+            intersect_bed = intersect_bed_regions(callBed, discordant_bed, discordantFileName)
+            ret = {'Discordant': len(intersect_bed)}
+            retList.append(ret)
 
-            ## Get all dict results from multiprocessing jobs
-            retList = [ret.get() for ret in retList]
-            logger.info(f"retList={retList}")
+        retDict = {}
+        for e in retList:
+            retDict.update(e)
+        logger.info(f"retDict={retDict}")
 
-            retDict = {}
-            for e in retList:
-                retDict.update(e)
-            logger.info(f"retDict={retDict}")
+        ## Sanity check
+        sum_sing_nonsingle = retDict['Singletons'] + retDict['Non-singletons']
+        sum_cg = retDict['CG_20'] + retDict['CG_40'] + retDict['CG_60'] + retDict['CG_80'] + retDict['CG_100']
+        total_sites = row_dict[f'Total CpG sites by tool cov>={minToolCovCutt}']
+        logger.info(
+            f"\n\nSanity check: sum_sing_nonsingle={sum_sing_nonsingle:,}; sum_cg={sum_cg:,}; total={total_sites:,}")
 
+        if sum_sing_nonsingle != total_sites:
+            logger.error(
+                f"Sanity check for {toolname}, total_sites={total_sites:,}, sum_sing_nonsingle={sum_sing_nonsingle:,}, some non-singletons are not captered by bed file")
+            retDict['Non-singletons'] = total_sites - retDict['Singletons']
         row_dict.update(retDict)
         dataset.append(row_dict)
         logger.info(f'BG-Truth join with {toolname} get {len(toolOverlapBGTruthCpGs):,} CpGs')
@@ -142,8 +169,9 @@ def summary_cpgs_stats_results_table():
 
     logger.info(df)
 
-    outfn = os.path.join(out_dir, f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.xlsx')
-    df.to_excel(outfn, sep=args.sep)
+    outfn = os.path.join(out_dir,
+                         f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.table.s10.xlsx')
+    df.to_excel(outfn)
     logger.info(f'save to {outfn}\n')
 
 
@@ -398,14 +426,15 @@ if __name__ == '__main__':
         joinBSWithEachToolSet = coveredCpGs001.intersection(set(list(callresult_dict_cov3[name].keys())))
         sitesDataset['Dataset'].append(args.dsname)
         sitesDataset['Method'].append(name)
-        sitesDataset['Sites-cov3'].append(len(callresult_dict_cov3[name]))
-        sitesDataset['BS-seq-cov5-all'].append(len(coveredCpGs001))
-        sitesDataset['Join-with-BSseq-cov5-all'].append(len(joinBSWithEachToolSet))
+        sitesDataset[f'Sites-cov{args.toolcov_cutoff}'].append(len(callresult_dict_cov3[name]))
+        sitesDataset[f'BS-seq-cov{args.min_bgtruth_cov}-all'].append(len(coveredCpGs001))
+        sitesDataset[f'Join-with-BSseq-cov{args.min_bgtruth_cov}-all'].append(len(joinBSWithEachToolSet))
     df = pd.DataFrame.from_dict(sitesDataset)
-    outfn = os.path.join(out_dir, f'{args.dsname}.methods.join.with.bsseq.site.level.report.csv')
+    outfn = os.path.join(out_dir,
+                         f'{args.dsname}.tools.cov{args.toolcov_cutoff}.join.with.bsseq.cov{args.min_bgtruth_cov}.site.level.report.csv')
     df.to_csv(outfn)
 
-    logger.info(f"Reporting {len(coveredCpGs)} CpGs are covered by all tools and bgtruth")
+    logger.info(f"Reporting {len(coveredCpGs):,} CpGs are covered by all tools and bgtruth")
 
     logger.info('Output data of coverage and meth-freq on joined CpG sites for correlation analysis')
 
@@ -422,7 +451,8 @@ if __name__ == '__main__':
     df = df.filter(regex='_freq$', axis=1)
     cordf = df.corr()
     logger.info(f'Correlation matrix is:\n{cordf}')
-    corr_outfn = os.path.join(out_dir, f'Meth_corr_plot_data-{RunPrefix}-correlation-matrix.xlsx')
+    corr_outfn = os.path.join(out_dir,
+                              f'Meth_corr_plot_data-{RunPrefix}-correlation-matrix-toolcov{minToolCovCutt}-bsseqcov{bgtruthCutt}.xlsx')
     cordf.to_excel(corr_outfn)
 
     logger.info(f'\n\n####################\n\n')

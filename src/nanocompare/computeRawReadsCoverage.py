@@ -15,10 +15,10 @@ from pybedtools import BedTool
 from tqdm import tqdm
 
 from nanocompare.eval_common import get_dna_seq_from_reference, open_file_gz_or_txt, find_bed_filename, get_ref_fasta, \
-    bedtool_convert_0_to_1
+    get_region_bed, intersect_bed_regions
 from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir
 from nanocompare.global_settings import humanChrSet, narrowCoordFileList, location_filename_to_abbvname, \
-    cg_density_file_list, rep_file_list, datasets_order, list_base0_bed_files, enable_base_detection_bedfile
+    cg_density_file_list, rep_file_list, datasets_order
 
 # used for convert region bed cov to base level cov
 rawReadDir = '/pod/2/li-lab/Nanopore_compare/data/Nanopore_cov'
@@ -118,15 +118,8 @@ def count_sites_in_coord(readBed, coordfn, tagname, cutoff_list):
     """
     ret = {}
 
-    coordBed = BedTool(coordfn).sort()
-    if enable_base_detection_bedfile and os.path.basename(coordfn) in list_base0_bed_files:
-        coordBed = bedtool_convert_0_to_1(coordBed)
-
-    ## Check if need strand for intersections, repetitive regions
-    if os.path.basename(coordfn).startswith("hg38.repetitive.rep"):
-        intersectBed = readBed.intersect(coordBed, u=True, wa=True, s=True)
-    else:
-        intersectBed = readBed.intersect(coordBed, u=True, wa=True)
+    coordBed = get_region_bed(coordfn)
+    intersectBed = intersect_bed_regions(readBed, coordBed, coordfn)
 
     covList = []
     for row in intersectBed:
@@ -184,7 +177,7 @@ def save_dataset(dataset, tagname=""):
 
         outdf['dsname'] = pd.Categorical(df['dsname'], datasets_order)
         outdf = outdf.sort_values(by='dsname', ascending=True)
-        outfn = os.path.join(pic_base_dir, f'raw.fast5.reads.cpg.coverage.across.regions.cutoff{cutoff}{tagname}.xlsx')
+        outfn = os.path.join(pic_base_dir, f'raw.fast5.reads.cpg.coverage.across.regions.cutoff{cutoff}{tagname}.table.s1.xlsx')
         outdf.to_excel(outfn)
         logger.info(f'save to {outfn}')
 
@@ -223,7 +216,7 @@ def report_raw_fast5_cpg_in_regions_table():
             ret1.update({f'total_cutoff.cutoff{cutoff}': (bed_df_cov_col >= cutoff).sum()})
 
         logger.info(f"Evaluated regions: {eval_regions}")
-        with Pool(processes=8) as pool:
+        with Pool(processes=16) as pool:
             for bedfn in eval_regions:
                 tagname = location_filename_to_abbvname[os.path.basename(bedfn)]
                 ret = pool.apply_async(count_sites_in_coord, (rawReadBed, bedfn, tagname,),

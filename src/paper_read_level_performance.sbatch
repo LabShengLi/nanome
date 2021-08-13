@@ -43,7 +43,7 @@ if [ "$dsname" == "NA12878" ]; then
     TomboCalls=$(find $baseDir -name "$dsname.tombo.perReadsStats.combine_allchrs.*.gz")
     DeepModCalls=$(find $baseDir -name "$dsname.deepmod.C.combine_allchrs.*.gz")
     METEORECalls=$(find /projects/li-lab/Nanopore_compare/suppdata/METEORE_results -name "$dsname.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
-    MegalodonEncode="Megalodon.ZW"
+    MegalodonEncode="Megalodon"
 fi
 
 ## Automatically get the input files for each tool
@@ -109,8 +109,7 @@ elif [ "${command}" == "seven" ]; then
         --runid MethPerf-${dsname}${runidSuffix} \
         --dsname ${dsname} \
         --min-bgtruth-cov 5 \
-        --distribution \
-        --report-joined --enable-cache --using-cache ${otherOptions} ### --mpi
+        --report-joined --enable-cache --using-cache --distribution ${otherOptions} ### --mpi
 else
     echo "Not support command"
     exit 255

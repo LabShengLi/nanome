@@ -92,6 +92,8 @@ list_base0_bed_files = ["ONT.hg38.cpgIslandExt.bed.gz", "ONT.hg38.cpgShoresExt.b
                         "hg38.repetitive.rep_LTR.bed.gz", "hg38.repetitive.rep_DNA.bed.gz",
                         "hg38.repetitive.rep_Others.bed.gz"]
 enable_base_detection_bedfile = True
+# enable_base_detection_bedfile = False
+
 
 # Map each bed file name to a standard name, used by curve data plotting
 location_filename_to_abbvname = {

@@ -105,7 +105,8 @@ if __name__ == '__main__':
             if len(callfn) == 0:
                 continue
             callname = get_tool_name(callencode)
-
+            if callname not in ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo']:
+                continue
             outfn = os.path.join(out_dir, f"{args.dsname}_{callname}-METEORE-perRead-score.tsv.gz")
             import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=False, using_cache=False,
                         include_score=False, siteLevel=False, saveMeteore=args.output_meteore, outfn=outfn,
