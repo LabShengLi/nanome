@@ -96,6 +96,7 @@ if [ "${command}" == "six" ]; then
         --distribution \
         --report-joined --enable-cache --using-cache ${otherOptions} ### --mpi
 elif [ "${command}" == "seven" ]; then
+    ## --distribution: generate sites distribution in singletons/non-singletons for each genomic regions
     python ${pythonFile} \
         --calls \
         Nanopolish:${NanopolishCalls} \

@@ -29,7 +29,7 @@ from tqdm import tqdm
 from nanocompare.global_config import *
 from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEncodeList, narrowCoordFileList, \
     narrowCoordFileTag, referenceGenomeFile, cgCoordFileTag, cg_density_file_list, rep_file_list, repCoordFileTag, \
-    list_base0_bed_files, enable_base_detection_bedfile, location_filename_to_abbvname
+    list_base0_bed_basefn, enable_base_detection_bedfile, location_filename_to_abbvname, region_name_to_fn_dict
 
 
 def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, readid_col=4, log_lik_ratio_col=5,
@@ -2596,7 +2596,7 @@ def get_region_bed(infn):
     :return:
     """
     coordBed = BedTool(infn).sort()
-    if enable_base_detection_bedfile and os.path.basename(infn) in list_base0_bed_files:
+    if enable_base_detection_bedfile and os.path.basename(infn) in list_base0_bed_basefn:
         coordBed = bedtool_convert_0_to_1(coordBed)
     return coordBed
 
@@ -2607,6 +2607,8 @@ def get_region_bed_pairs(infn):
     :param infn:
     :return:
     """
+    if infn is None:
+        return (None, None, None)
     basefn = os.path.basename(infn)
     if basefn.endswith('.hg38_nonsingletons.concordant.bed.gz'):
         tagname = 'Concordant'
@@ -2616,7 +2618,6 @@ def get_region_bed_pairs(infn):
         tagname = location_filename_to_abbvname[basefn]
     region_bed = get_region_bed(infn)
     return (basefn, tagname, region_bed)
-    pass
 
 
 def get_region_bed_pairs_list_mp(infn_list, processors=30):
@@ -2630,6 +2631,24 @@ def get_region_bed_pairs_list_mp(infn_list, processors=30):
         region_bed_list = pool.map(get_region_bed_pairs, infn_list)
     logger.info("get_region_bed_pairs_list_mp finished")
     return region_bed_list
+
+
+def get_region_bed_pairs_dict_mp(region_name_list, processors=30, name_to_fn=region_name_to_fn_dict):
+    """
+    Get dict of {region_name: bed object} of regions file
+    :param region_name_list:
+    :return:
+    """
+    logger.info(f"get_region_bed_pairs_dict_mp start, cpus={multiprocessing.cpu_count()}")
+    region_fn_list = [name_to_fn[region_name] for region_name in region_name_list]
+    with Pool(processors) as pool:
+        region_bed_list = pool.map(get_region_bed_pairs, region_fn_list)
+    logger.info("get_region_bed_pairs_dict_mp finished")
+
+    ret = {}
+    for i in range(len(region_name_list)):
+        ret[region_name_list[i]] = region_bed_list[i][2]
+    return ret
 
 
 def intersect_bed_regions(bed_a, bed_region, bedfn):

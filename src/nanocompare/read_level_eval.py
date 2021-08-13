@@ -591,10 +591,10 @@ if __name__ == '__main__':
 
         joined_bed = BedTool(bedfn_tool_join_bgtruth).sort()
 
-        outfn = os.path.join(pic_base_dir, 'na19240_bgtruth.pkl')
-        with open(outfn, 'wb') as handle:
-            pickle.dump(bgTruth, handle)
-        logger.info(f"save to {outfn}")
+        # outfn = os.path.join(pic_base_dir, 'na19240_bgtruth.pkl')
+        # with open(outfn, 'wb') as handle:
+        #     pickle.dump(bgTruth, handle)
+        # logger.info(f"save to {outfn}")
 
         # bgTruth_bed = BedTool(calldict2txt(bgTruth.keys()), from_string=True).sort()
 

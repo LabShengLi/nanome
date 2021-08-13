@@ -96,8 +96,7 @@ elif [ $command == "Figs5ab-data" ]; then
     ### Figure S5AB data: COE on each region data for bar plot
     # sbatch plot_figure.sh Figs5ab-data
     python ${pythonFile} figs5ab-data --beddir ${bedDir} \
-        -i ${HL60_Result_dir/MethPerf/MethCorr} \
-        ${K562_Result_dir/MethPerf/MethCorr} \
+        -i ${K562_Result_dir/MethPerf/MethCorr} \
         ${APL_Result_dir/MethPerf/MethCorr} \
         ${NA19240_Result_dir/MethPerf/MethCorr} \
         ${NA12878_Result_dir/MethPerf/MethCorr} ${tagOptions}

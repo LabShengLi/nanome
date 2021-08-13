@@ -23,7 +23,7 @@ def summary_cpgs_stats_results_table():
     Study and summary each tool joined with bg-truth results, make table as dataframe
     :return:
     """
-    logger.debug(f"Report number of sites by methylation calling tools in each region, take times")
+    logger.debug(f"Report number of sites by methylation calling tools in each region, take times...")
     dataset = []
     bgtruthCpGs = set(list(bgTruth.keys()))
     joinedSet = None
@@ -71,8 +71,8 @@ def summary_cpgs_stats_results_table():
         # callBed = BedTool(calldict2txt(callSet), from_string=True).sort()
         callBed = calldict2bed(callSet)
 
-        outfn = os.path.join(out_dir, f'ont_calls_{args.dsname}_{toolname}_cov{args.toolcov_cutoff}.bed.gz')
-        callBed.saveas(outfn)
+        # outfn = os.path.join(out_dir, f'ont_calls_{args.dsname}_{toolname}_cov{args.toolcov_cutoff}.bed.gz')
+        # callBed.saveas(outfn)
 
         # Add coverage of every regions by each tool here
         for (bedfn, tagname, region_bed) in tqdm(
@@ -114,6 +114,7 @@ def summary_cpgs_stats_results_table():
             logger.error(
                 f"Sanity check for {toolname}, total_sites={total_sites:,}, sum_sing_nonsingle={sum_sing_nonsingle:,}, some non-singletons are not captered by bed file")
             retDict['Non-singletons'] = total_sites - retDict['Singletons']
+            logger.error(f"Updated, retDict={retDict}")
         row_dict.update(retDict)
         dataset.append(row_dict)
         logger.info(f'BG-Truth join with {toolname} get {len(toolOverlapBGTruthCpGs):,} CpGs')
