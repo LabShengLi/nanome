@@ -404,14 +404,14 @@ if __name__ == '__main__':
 
         bg_cpgs = bgTruth.keys()
         outfn = os.path.join(venn_outdir, f'{args.dsname}.bgtruth.cpg.sites.cov{args.min_bgtruth_cov}.setsfile.txt.gz')
-        output_keys_to_setsfile_txt_gz(bg_cpgs, outfn)
+        ontcalls_to_setsfile_for_venn_analysis(bg_cpgs, outfn)
         for callname in ToolNameList:
             if callname not in callresult_dict_cov3:
                 continue
             call_keys = callresult_dict_cov3[callname].keys()
             outfn = os.path.join(venn_outdir,
                                  f'{args.dsname}.{callname}.cpg.sites.cov{args.toolcov_cutoff}.setsfile.txt.gz')
-            output_keys_to_setsfile_txt_gz(call_keys, outfn)
+            ontcalls_to_setsfile_for_venn_analysis(call_keys, outfn)
         logger.info(f'\n\n####################\n\n')
 
     logger.info(f"Start getting intersection (all joined) sites by tools and bgtruth")

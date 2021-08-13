@@ -43,7 +43,7 @@ def report_meth_unmeth_table_by_chr(chr):
     logger.debug(f'Start for chr={chr}')
     chrSet = [chr]
     # Combine one/two replicates using DeepMod methods
-    bgTruth1, ret1 = combineBGTruthListUsingDeepMod(bgTruthList, covCutoff=1, filterChrs=chrSet)
+    bgTruth1, ret1 = combineBGTruthList_by_DeepModPaper(bgTruthList, covCutoff=1, filterChrs=chrSet)
 
     bgTruth5 = {key: bgTruth1[key] for key in bgTruth1 if bgTruth1[key][1] >= 5}
     methCnt5 = sum([bgTruth5[key][0] for key in bgTruth5])
@@ -177,7 +177,7 @@ if __name__ == '__main__':
     logger.info(f'Evalutate on chr={args.chr}')
     chrSet = [args.chr]
     # Combine one/two replicates using DeepMod methods
-    bgTruth1, ret1 = combineBGTruthListUsingDeepMod(bgTruthList, covCutoff=1, filterChrs=chrSet)
+    bgTruth1, ret1 = combineBGTruthList_by_DeepModPaper(bgTruthList, covCutoff=1, filterChrs=chrSet)
     bgTruth5 = {key: bgTruth1[key] for key in bgTruth1 if bgTruth1[key][1] >= 5}
     bgTruth10 = {key: bgTruth1[key] for key in bgTruth1 if bgTruth1[key][1] >= 10}
 
