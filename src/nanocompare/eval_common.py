@@ -683,7 +683,8 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
 def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=False, include_score=False,
                             siteLevel=False, filterChr=humanChrSet, formatSource="raw"):
     """
-
+    Import Guppy results by Fast5mod from ONT developed tools, it can report read-level or site-level results.
+    Start is 0-based, and combined + and - CpGs together.
     :param infileName:
     :param sep:
     :param output_first:
@@ -751,7 +752,7 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
                 continue
 
         logger.info(
-            f"###\timportPredictions_Guppy SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
+            f"###\timportPredictions_Guppy (fast5mod) SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
 
         return cpgDict
     elif formatSource == 'raw-correct':  # raw results of fast5mod
@@ -846,7 +847,7 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
                                      sep='\t', output_first=False, include_score=False, filterChr=humanChrSet,
                                      saveMeteore=False, outfn=None):
     """
-    Parse read level gcf52ref format
+    Parse read level gcf52ref format, start position is 0-base, end is 1-base
     Sample file:
     #chromosome     strand  start   end     read_name       log_lik_ratio   log_lik_methylated      log_lik_unmethylated    num_calling_strands     num_motifs      sequence
     chr1    -       11343976        11343977        9d47a371-d2af-4104-8097-c5c159035f1e    0.847   -0.0561 -0.903  1       1
@@ -871,6 +872,64 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
     :param filterChr:
     :return:
     """
+    ### Using scanner way
+    cpgDict = defaultdict(list)
+    call_cnt = methcall_cnt = 0
+    infile = open_file_gz_or_txt(infileName)
+
+    if saveMeteore:
+        outf = gzip.open(outfn, 'wt')
+        outf.write(f"ID\tChr\tPos\tStrand\tScore\n")
+
+    for row in infile:
+        tmp = row.strip().split(sep)
+        if tmp[chr_col] not in filterChr:
+            continue
+        chr = tmp[chr_col]
+        strand = tmp[strand_col]
+        start = int(tmp[start_col])
+        log_lik_methylated = float(row.iloc[log_lik_methylated_col])
+        log_ratio = float(row.iloc[log_ratio_col])
+        readid = row.iloc[readid_col]
+        if strand not in ['+', '-']:
+            raise Exception(f"gcf52ref format strand parse error, row={row}")
+        # Correct the coordinates into 1-based
+        if strand == "+":
+            start = start + baseFormat
+        elif strand == "-":
+            start = start + baseFormat + 1
+
+        prob_methylated = 10 ** log_lik_methylated
+
+        if saveMeteore:
+            # output to 1-based for meteore, ref: https://github.com/comprna/METEORE/blob/master/script_in_snakemake/format_guppy.R
+            outf.write(f"{readid}\t{chr}\t{start}\t{strand}\t{log_ratio}\n")
+        if (prob_methylated > cutoff[0]) and (prob_methylated < cutoff[1]):
+            continue
+
+        if prob_methylated <= cutoff[0]:
+            meth_indicator = 0
+        else:
+            meth_indicator = 1
+        call_cnt += 1
+        methcall_cnt += meth_indicator
+
+        key = (chr, int(start), strand)
+
+        if include_score:  # For read-level include scores
+            cpgDict[key].append((meth_indicator, prob_methylated))
+        else:  # For read-level no scores
+            cpgDict[key].append(meth_indicator)
+    if saveMeteore:
+        outf.close()
+        logger.info(f'Save METEORE output format to {outfn}')
+
+    unmethcall_cnt = call_cnt - methcall_cnt
+    logger.info(
+        f"###\timportPredictions_Guppy_gcf52ref SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
+    return cpgDict
+
+    ### Before df way
     df = pd.read_csv(infileName, sep=sep, header=header)
     logger.info(df)
 
