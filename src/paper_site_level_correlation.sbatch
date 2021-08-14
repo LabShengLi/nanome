@@ -95,6 +95,8 @@ if [ "${command}" == "six" ]; then
         --beddir ${bedDir} \
         --enable-cache --using-cache --gen-venn --summary-coverage
 elif [ "${command}" == "seven" ]; then
+    ## --gen-venn: generate venn analysis set's data
+    ## --summary-coverage: coverage at each region, take times
     python ${pythonFile} \
         --calls \
         Nanopolish:${NanopolishCalls} \

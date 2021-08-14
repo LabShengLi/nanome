@@ -4,7 +4,7 @@
 # Running datasets "HL60 K562 APL NA19240 NA12878"
 
 datasetList=${1:-"HL60 K562"}
-bedDir=${2:-"/projects/li-lab/yang/results/2021-07-07"} # folder contained MethPerf concordant and discordent bed files
+bedDir=${2:-"/projects/li-lab/yang/results/2021-08-11"} # folder contained MethPerf concordant and discordent bed files
 
 if [[ "$datasetList" == *"HL60"* ]]; then
     echo "Running HL60"

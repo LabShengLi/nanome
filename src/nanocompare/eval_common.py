@@ -29,7 +29,7 @@ from tqdm import tqdm
 from nanocompare.global_config import *
 from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEncodeList, narrowCoordFileList, \
     narrowCoordFileTag, referenceGenomeFile, cgCoordFileTag, cg_density_file_list, rep_file_list, repCoordFileTag, \
-    list_base0_bed_files, enable_base_detection_bedfile, location_filename_to_abbvname
+    list_base0_bed_basefn, enable_base_detection_bedfile, location_filename_to_abbvname, region_name_to_fn_dict
 
 
 def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, readid_col=4, log_lik_ratio_col=5,
@@ -683,7 +683,8 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
 def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=False, include_score=False,
                             siteLevel=False, filterChr=humanChrSet, formatSource="raw"):
     """
-
+    Import Guppy results by Fast5mod from ONT developed tools, it can report read-level or site-level results.
+    Start is 0-based, and combined + and - CpGs together.
     :param infileName:
     :param sep:
     :param output_first:
@@ -751,7 +752,7 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
                 continue
 
         logger.info(
-            f"###\timportPredictions_Guppy SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
+            f"###\timportPredictions_Guppy (fast5mod) SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
 
         return cpgDict
     elif formatSource == 'raw-correct':  # raw results of fast5mod
@@ -846,7 +847,7 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
                                      sep='\t', output_first=False, include_score=False, filterChr=humanChrSet,
                                      saveMeteore=False, outfn=None):
     """
-    Parse read level gcf52ref format
+    Parse read level gcf52ref format, start position is 0-base, end is 1-base
     Sample file:
     #chromosome     strand  start   end     read_name       log_lik_ratio   log_lik_methylated      log_lik_unmethylated    num_calling_strands     num_motifs      sequence
     chr1    -       11343976        11343977        9d47a371-d2af-4104-8097-c5c159035f1e    0.847   -0.0561 -0.903  1       1
@@ -871,6 +872,64 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
     :param filterChr:
     :return:
     """
+    ### Using scanner way
+    cpgDict = defaultdict(list)
+    call_cnt = methcall_cnt = 0
+    infile = open_file_gz_or_txt(infileName)
+
+    if saveMeteore:
+        outf = gzip.open(outfn, 'wt')
+        outf.write(f"ID\tChr\tPos\tStrand\tScore\n")
+
+    for row in infile:
+        tmp = row.strip().split(sep)
+        if tmp[chr_col] not in filterChr:
+            continue
+        chr = tmp[chr_col]
+        strand = tmp[strand_col]
+        start = int(tmp[start_col])
+        log_lik_methylated = float(row.iloc[log_lik_methylated_col])
+        log_ratio = float(row.iloc[log_ratio_col])
+        readid = row.iloc[readid_col]
+        if strand not in ['+', '-']:
+            raise Exception(f"gcf52ref format strand parse error, row={row}")
+        # Correct the coordinates into 1-based
+        if strand == "+":
+            start = start + baseFormat
+        elif strand == "-":
+            start = start + baseFormat + 1
+
+        prob_methylated = 10 ** log_lik_methylated
+
+        if saveMeteore:
+            # output to 1-based for meteore, ref: https://github.com/comprna/METEORE/blob/master/script_in_snakemake/format_guppy.R
+            outf.write(f"{readid}\t{chr}\t{start}\t{strand}\t{log_ratio}\n")
+        if (prob_methylated > cutoff[0]) and (prob_methylated < cutoff[1]):
+            continue
+
+        if prob_methylated <= cutoff[0]:
+            meth_indicator = 0
+        else:
+            meth_indicator = 1
+        call_cnt += 1
+        methcall_cnt += meth_indicator
+
+        key = (chr, int(start), strand)
+
+        if include_score:  # For read-level include scores
+            cpgDict[key].append((meth_indicator, prob_methylated))
+        else:  # For read-level no scores
+            cpgDict[key].append(meth_indicator)
+    if saveMeteore:
+        outf.close()
+        logger.info(f'Save METEORE output format to {outfn}')
+
+    unmethcall_cnt = call_cnt - methcall_cnt
+    logger.info(
+        f"###\timportPredictions_Guppy_gcf52ref SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
+    return cpgDict
+
+    ### Before df way
     df = pd.read_csv(infileName, sep=sep, header=header)
     logger.info(df)
 
@@ -1886,8 +1945,13 @@ def do_singleton_nonsingleton_scanner():
     :return:
     """
     kbp = 5
-    singletonFilename = os.path.join(pic_base_dir, f'hg38_singletons_{kbp}bp.bed')
-    nonsingletonFilename = os.path.join(pic_base_dir, f'hg38_nonsingletons_{kbp}bp.bed')
+    singletonFilename = os.path.join(pic_base_dir, f'hg38_singletons_{kbp}bp.bed.gz')
+    nonsingletonFilename = os.path.join(pic_base_dir, f'hg38_nonsingletons_{kbp}bp.bed.gz')
+    SingletonsAndNonSingletonsScanner(referenceGenomeFile, singletonFilename, nonsingletonFilename, kbp=kbp)
+
+    kbp = 10
+    singletonFilename = os.path.join(pic_base_dir, f'hg38_singletons_{kbp}bp.bed.gz')
+    nonsingletonFilename = os.path.join(pic_base_dir, f'hg38_nonsingletons_{kbp}bp.bed.gz')
     SingletonsAndNonSingletonsScanner(referenceGenomeFile, singletonFilename, nonsingletonFilename, kbp=kbp)
 
 
@@ -1904,8 +1968,8 @@ def SingletonsAndNonSingletonsScanner(referenceGenomeFile, outfileName_s, outfil
     logger.debug(
         f"###\tSingletonsAndNonSingletonsScanner: {referenceGenomeFile} reference genome file is parsed, up and down bp={kbp}")
 
-    outfile_s = open(outfileName_s, "w")  # "s" stands for Singletons
-    outfile_ns = open(outfileName_ns, "w")  # "s" stands for Non-Singletons
+    outfile_s = gzip.open(outfileName_s, "wt")  # "s" stands for Singletons
+    outfile_ns = gzip.open(outfileName_ns, "wt")  # "ns" stands for Non-Singletons
 
     for chromosome in list(reference.keys()):
         if chromosome not in humanChrSet:
@@ -1955,7 +2019,6 @@ def SingletonsAndNonSingletonsScanner(referenceGenomeFile, outfileName_s, outfil
         f"###\tSingletonsAndNonSingletonsScanner: {referenceGenomeFile} file processed, kbp={kbp}, save to Singletons:{outfile_s}, and Nonsingletons:{outfile_ns}")
 
 
-# 10-bp regions, current work on it
 def eval_concordant_within_kbp_region(cpgList, evalcpg, kbp=10):
     """
     Evaluate the kth elem if is concordant, by checking state of sites in k-bp region meth states
@@ -1980,7 +2043,6 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
                                 kbp=10, print_first=False):
     """
     Define concordant and discordant based on BG-Truth.
-
     Return 1-based Cocordant and Discordant regions in bed file
 
     Based on only 100% or 0% bg-truth in BS-seq (absoluteBGTruth), we define:
@@ -2203,49 +2265,6 @@ def load_sam_as_strand_info_df(infn='/projects/li-lab/yang/workspace/nano-compar
     return df
 
 
-# def get_dna_sequence_from_samfile(chr, start, end, bamfile):
-#     """
-#     Get the specific location DNA sequence at SAM files
-#
-#     start is 0-based format
-#
-#     Note: all functions of pysam need to be checked, see https://readthedocs.org/projects/pysam/downloads/pdf/latest/
-#
-#     :param chr:
-#     :param start:
-#     :param end:
-#     :param bamfile:
-#     :return:
-#     """
-#     for read in bamfile.fetch(chr, start=start, end=end):
-#
-#         alignedRefPositions = read.query_alignment_start
-#         # refStart = alignedRefPositions
-#
-#         refStart = read.get_reference_positions()[0]
-#
-#         # refSequence = read.get_reference_sequence()
-#         readSequence = read.query_alignment_sequence  # current use
-#
-#         readSequence = read.query_sequence
-#
-#         if readSequence is None:  # some read has no sequence, may return None, we only report the first read has sequence
-#             continue
-#         logger.debug(read.query_name)
-#         logger.debug(readSequence)
-#
-#         # logger.debug(f'ref-start={refStart} len(align) = {len(readSequence)}, len(seq) = {len(readSequence1)} compare two:\n{readSequence}\n{readSequence1}')
-#
-#         # logger.info(refStart)
-#         # logger.info(refSequence)
-#         # logger.info(readSequence)
-#
-#         # logger.debug(readSequence[start - refStart:end - refStart])
-#         return readSequence[start - refStart:end - refStart]
-#     # if all reads return None, we report None
-#     return None
-#
-
 def get_dna_base_from_reference(chr, start, num_seq=5, ref_fasta=None):
     """
     Get the base of DNA from start-num_seq to start+num_seq, totally 2*num_seq+1
@@ -2294,7 +2313,7 @@ def get_ref_fasta(ref_fn=referenceGenomeFile):
     return ref_fasta
 
 
-def sanity_check_sequence(chr='chr10', start_base0=10493):
+def sanity_check_dna_sequence(chr='chr10', start_base0=10493):
     """
     start is a 0-based position
     :param chr:
@@ -2306,6 +2325,12 @@ def sanity_check_sequence(chr='chr10', start_base0=10493):
 
 
 def get_cache_filename(infn, params):
+    """
+    Get the file name that encoded in cache based on parameters
+    :param infn:
+    :param params:
+    :return:
+    """
     basefn = os.path.basename(infn)
     cachefn = f'cachefile.{basefn}.encode.{params["encode"]}.base.{params["baseFormat"]}'
 
@@ -2324,6 +2349,13 @@ def get_cache_filename(infn, params):
 
 
 def save_to_cache(infn, data, **params):
+    """
+    Save the data from program into cache, encoded by parameters
+    :param infn:
+    :param data:
+    :param params:
+    :return:
+    """
     if not data:
         return
     # logger.debug(f'infn={infn}, data={len(data)}, params={params}')
@@ -2337,6 +2369,12 @@ def save_to_cache(infn, data, **params):
 
 
 def check_cache_available(infn, **params):
+    """
+    Check if the input file is in cache, and return if it is exists
+    :param infn:
+    :param params:
+    :return:
+    """
     cachefn = get_cache_filename(infn, params)
 
     if os.path.exists(cachefn):
@@ -2358,16 +2396,30 @@ def filter_cpg_dict(cpgDict, filterDict):
     :param filterDict:
     :return:
     """
-    retDict = defaultdict(list)
+    retDict = defaultdict()
     joinedKeys = set(filterDict.keys()).intersection(set(cpgDict.keys()))
     for k in joinedKeys:
-        retDict[k] = list(cpgDict[k])
+        if isinstance(cpgDict[k], list):
+            retDict[k] = list(cpgDict[k])
+        elif isinstance(cpgDict[k], tuple):
+            retDict[k] = tuple(cpgDict[k])
+        elif isinstance(cpgDict[k], int):
+            retDict[k] = int(cpgDict[k])
+        else:
+            raise Exception(f"Not correct type for cpgDict[k]={cpgDict[k]}, the type={type(cpgDict[k])}")
     return retDict
 
 
 def is_fully_meth(methfreq, eps=1e-5, cutoff_fully_meth=1.0):
+    """
+    Check if the freq is fully-methylated, can be 1.0, or 0.9
+    :param methfreq:
+    :param eps:
+    :param cutoff_fully_meth:
+    :return:
+    """
     if methfreq > 1.0 + eps or methfreq < 0:
-        raise Exception(f'detect non-freq value for freq={methfreq}')
+        raise Exception(f'detect error value for freq={methfreq}')
 
     if methfreq > cutoff_fully_meth - eps:  # near 1
         return True
@@ -2375,8 +2427,14 @@ def is_fully_meth(methfreq, eps=1e-5, cutoff_fully_meth=1.0):
 
 
 def is_fully_unmeth(methfreq, eps=1e-5):
+    """
+    Check if the freq is unmethylated, means 0.0 (almost)
+    :param methfreq:
+    :param eps:
+    :return:
+    """
     if methfreq > 1.0 + eps or methfreq < 0:
-        raise Exception(f'detect non-freq value for freq={methfreq}')
+        raise Exception(f'detect error value for freq={methfreq}')
 
     if methfreq < eps:  # near 0
         return True
@@ -2385,7 +2443,7 @@ def is_fully_unmeth(methfreq, eps=1e-5):
 
 def satisfy_fully_meth_or_unmeth(methfreq, eps=1e-5, cutoff_fully_meth=1.0):
     """
-    Return true if fully meth or unmeth, eps is a near number of 0 and 1
+    Return true if fully meth or unmeth, also known as certain sites
     :param methfreq:
     :return:
     """
@@ -2396,7 +2454,8 @@ def satisfy_fully_meth_or_unmeth(methfreq, eps=1e-5, cutoff_fully_meth=1.0):
 
 def combineBGTruthList(bgTruthList, covCutoff=1):
     """
-    Combine two replicates together, we joined two replicates together as one bgtruth, and retain only cov >= covCutoff sites
+    Combine two replicates together, we unioned two replicates together as one bgtruth, and retain only cov >= covCutoff sites.
+    Combined coverage = cov1 + cov2.
     :param bgTruthList:
     :return:
     """
@@ -2430,9 +2489,9 @@ def combineBGTruthList(bgTruthList, covCutoff=1):
             if cov < covCutoff:
                 continue
 
-            unionBGTruth[key] = [meth_freq, cov]
+            unionBGTruth[key] = (meth_freq, cov)
             if key in jointSet:
-                jointBGTruth[key] = [meth_freq, cov]
+                jointBGTruth[key] = (meth_freq, cov)
         logger.info(
             f'unionBGTruth = {len(unionBGTruth):,}, jointBGTruth={len(jointBGTruth):,}, with cov-cutoff={covCutoff}')
     elif len(bgTruthList) == 1:
@@ -2446,7 +2505,7 @@ def combineBGTruthList(bgTruthList, covCutoff=1):
     return unionBGTruth
 
 
-def combineBGTruthListUsingDeepMod(bgTruthList, freqCutoff=0.9, covCutoff=1, filterChrs=humanChrSet):
+def combineBGTruthList_by_DeepModPaper(bgTruthList, freqCutoff=0.9, covCutoff=1, filterChrs=humanChrSet):
     """
     Combine two replicates by DeepMod, >90% in both as methylated, =0% in both as unmethylated, remove others
     :param bgTruthList:
@@ -2504,13 +2563,8 @@ def filter_cpgkeys_using_bedfile(cpgKeys, bedFileName):
     :param bedFileName:
     :return:
     """
-    cpgBed = BedTool(calldict2txt(cpgKeys), from_string=True).sort()
-
-    # coordBed = BedTool(bedFileName).sort()
-    # if enable_base_detection_bedfile and os.path.basename(bedFileName) in list_base0_bed_files:
-    #     coordBed = bedtool_convert_0_to_1(coordBed)
-    # intersectBed = cpgBed.intersect(coordBed, u=True, wa=True)
-
+    # cpgBed = BedTool(calldict2txt(cpgKeys), from_string=True).sort()
+    cpgBed = calldict2bed(cpgKeys)
     coordBed = get_region_bed(bedFileName)
     intersectBed = intersect_bed_regions(cpgBed, coordBed, bedFileName)
 
@@ -2526,16 +2580,16 @@ def find_bed_filename(basedir, pattern):
     :return:
     """
     fnlist = glob.glob(os.path.join(basedir, '**', pattern), recursive=True)
-    # logger.info(fnlist)
     if len(fnlist) != 1:
-        raise Exception(f'Find not only one files: {fnlist}, please check the basedir={basedir} is correct')
+        raise Exception(
+            f'Find not only one files: {fnlist}, please check the basedir={basedir} if it is correct, and the search pattern={pattern}')
     logger.debug(f'find bed file:{fnlist[0]}')
     return fnlist[0]
 
 
-def gen_venn_data(set_dict, namelist, outdir, tagname='tagname'):
+def compute_and_gen_venn_data(set_dict, namelist, outdir, tagname='tagname'):
     """
-    Generate 7 data for three set or 31 data for five set joining Venn Diagram plotting
+    Compute and generate 7 data for three set or 31 data for five set joining Venn Diagram plotting
     Return 2^n-1 of set intersections
     :param set_dict:
     :param outdir:
@@ -2561,7 +2615,7 @@ def gen_venn_data(set_dict, namelist, outdir, tagname='tagname'):
     logger.info(f'save {len(retlist)} points venn data for {tagname} to {outfn}')
 
 
-def output_keys_to_setsfile_txt_gz(call_keys, outfn):
+def ontcalls_to_setsfile_for_venn_analysis(call_keys, outfn):
     """
     Ouput keys into a sets file for venn analysis later.
     key is (chr, pos, strand), output as chr1_1234_+
@@ -2569,7 +2623,6 @@ def output_keys_to_setsfile_txt_gz(call_keys, outfn):
     :param outfn:
     :return:
     """
-
     outf = gzip.open(outfn, 'wt')
     for key in call_keys:
         outf.write(f"{key[0]}_{key[1]}_{key[2]}\n")
@@ -2596,7 +2649,7 @@ def get_region_bed(infn):
     :return:
     """
     coordBed = BedTool(infn).sort()
-    if enable_base_detection_bedfile and os.path.basename(infn) in list_base0_bed_files:
+    if enable_base_detection_bedfile and os.path.basename(infn) in list_base0_bed_basefn:
         coordBed = bedtool_convert_0_to_1(coordBed)
     return coordBed
 
@@ -2607,6 +2660,8 @@ def get_region_bed_pairs(infn):
     :param infn:
     :return:
     """
+    if infn is None:
+        return (None, None, None)
     basefn = os.path.basename(infn)
     if basefn.endswith('.hg38_nonsingletons.concordant.bed.gz'):
         tagname = 'Concordant'
@@ -2616,7 +2671,6 @@ def get_region_bed_pairs(infn):
         tagname = location_filename_to_abbvname[basefn]
     region_bed = get_region_bed(infn)
     return (basefn, tagname, region_bed)
-    pass
 
 
 def get_region_bed_pairs_list_mp(infn_list, processors=30):
@@ -2632,7 +2686,32 @@ def get_region_bed_pairs_list_mp(infn_list, processors=30):
     return region_bed_list
 
 
+def get_region_bed_pairs_dict_mp(region_name_list, processors=30, name_to_fn=region_name_to_fn_dict):
+    """
+    Get dict of {region_name: bed object} of regions file
+    :param region_name_list:
+    :return:
+    """
+    logger.info(f"get_region_bed_pairs_dict_mp start, cpus={multiprocessing.cpu_count()}")
+    region_fn_list = [name_to_fn[region_name] for region_name in region_name_list]
+    with Pool(processors) as pool:
+        region_bed_list = pool.map(get_region_bed_pairs, region_fn_list)
+    logger.info("get_region_bed_pairs_dict_mp finished")
+
+    ret = {}
+    for i in range(len(region_name_list)):
+        ret[region_name_list[i]] = region_bed_list[i][2]
+    return ret
+
+
 def intersect_bed_regions(bed_a, bed_region, bedfn):
+    """
+    Intersect A with region, consider if bedfn need strandness
+    :param bed_a:
+    :param bed_region:
+    :param bedfn:
+    :return:
+    """
     ## Check if need strand for intersections, repetitive regions
     if os.path.basename(bedfn).startswith("hg38.repetitive.rep"):
         intersectBed = bed_a.intersect(bed_region, u=True, wa=True, s=True)
@@ -2725,7 +2804,6 @@ def correlation_report_on_regions(corr_infn, beddir=None, dsname=None, outdir=pi
     outfn = os.path.join(outdir, f'{dsname}.corrdata.coe.pvalue.each.regions.xlsx')
     outdf.to_excel(outfn)
     logger.info(f'save to {outfn}')
-
     return outdf
 
 
@@ -2784,18 +2862,18 @@ def sanity_check_merge_bedtools():
 
 def sanity_check_get_dna_seq():
     # refGenome = get_ref_fasta()
-    sanity_check_sequence('chr1', 159199943)
-    sanity_check_sequence('chr1', 159200094)
+    sanity_check_dna_sequence('chr1', 159199943)
+    sanity_check_dna_sequence('chr1', 159200094)
     return
-    sanity_check_sequence('chr10', 10522)
-    sanity_check_sequence('chr10', 10534)
-    sanity_check_sequence('chr10', 10557)
+    sanity_check_dna_sequence('chr10', 10522)
+    sanity_check_dna_sequence('chr10', 10534)
+    sanity_check_dna_sequence('chr10', 10557)
 
     logger.info("DeepMod check")
-    sanity_check_sequence('chr10', 74169)
-    sanity_check_sequence('chr10', 74424)
-    sanity_check_sequence('chr10', 376851)
-    sanity_check_sequence('chr10', 376949)
+    sanity_check_dna_sequence('chr10', 74169)
+    sanity_check_dna_sequence('chr10', 74424)
+    sanity_check_dna_sequence('chr10', 376851)
+    sanity_check_dna_sequence('chr10', 376949)
 
 
 if __name__ == '__main__':

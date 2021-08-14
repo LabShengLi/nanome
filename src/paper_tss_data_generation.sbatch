@@ -11,8 +11,9 @@
 #SBATCH --mail-user=yang.liu@jax.org
 #SBATCH --mail-type=END
 
-## Site level unified bed format for tools/bs-seq
+## Site level unified bed format for tools/bs-seq, results is 0-based BED
 ## Output: chr1	9037300	9037301	.	.	+	0.5294117647058824	17
+## Note: start is 0-based, end is 1-based
 
 dsname=${1:-HL60}
 
