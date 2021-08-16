@@ -346,11 +346,13 @@ def collect_singleton_vs_nonsingleton_df(runPrefix, pattern="*.summary.bsseq.sin
         # logger.debug(run1)
         flist = glob.glob(filepat)
         if len(flist) != 1:
-            raise Exception(
+            logger.error(
                 f"Too much/No summary of singleton vs non-singleton for {run1} in folder {runPrefix[run1]} with pattern={pattern}, len={len(flist)}")
         # logger.debug(f'Get file:{flist[0]}')
-        df = pd.read_csv(flist[0], index_col=0)
-        dflist.append(df)
+        if len(flist) >= 1:
+            logger.info(f"read file: {flist[0]}")
+            df = pd.read_csv(flist[0], index_col=0)
+            dflist.append(df)
     retdf = pd.concat(dflist)
     retdf.index.name = 'Dataset'
     return retdf
@@ -358,17 +360,20 @@ def collect_singleton_vs_nonsingleton_df(runPrefix, pattern="*.summary.bsseq.sin
 
 def collect_distribution_genomic_df(runPrefix, pattern=None):
     dflist = []
-    # logger.debug(runPrefix)
+    logger.debug(runPrefix)
     for run1 in runPrefix:
         filepat = os.path.join(runPrefix[run1], pattern)
         # logger.debug(run1)
         flist = glob.glob(filepat)
         if len(flist) != 1:
-            raise Exception(
+            logger.error(
                 f"Too much/No summary of singleton vs non-singleton for {run1} in folder {runPrefix[run1]} with pattern={pattern}, len={len(flist)}")
+
         # logger.debug(f'Get file:{flist[0]}')
-        df = pd.read_excel(flist[0], index_col=0, engine='openpyxl')  #
-        dflist.append(df)
+        if len(flist) >= 1:
+            logger.info(f"read file: {flist[0]}")
+            df = pd.read_excel(flist[0], index_col=0, engine='openpyxl')  #
+            dflist.append(df)
     retdf = pd.concat(dflist)
 
     retdf['Dataset'] = pd.Categorical(retdf['Dataset'], datasets_order)
@@ -521,28 +526,28 @@ if __name__ == '__main__':
         logger.info(run_prefix)
         save_wide_format_performance_results(run_prefix, args.o, args.tagname)
 
-        pattern1 = "*.summary.bsseq.singleton.nonsingleton.cov1.csv"
-        df = collect_singleton_vs_nonsingleton_df(run_prefix, pattern=pattern1)
-        ## arrange df
-        df = df.reindex(datasets_order)
+        # pattern1 = "*.summary.bsseq.singleton.nonsingleton.cov1.csv"
+        # df = collect_singleton_vs_nonsingleton_df(run_prefix, pattern=pattern1)
+        # ## arrange df
+        # df = df.reindex(datasets_order)
+        #
+        # outfn = os.path.join(args.o,
+        #                      f'dataset.singleton.vs.non-singleton{f".{args.tagname}" if args.tagname else ""}.cov1.csv')
+        # df.to_csv(outfn)
 
-        outfn = os.path.join(args.o,
-                             f'dataset.singleton.vs.non-singleton{f".{args.tagname}" if args.tagname else ""}.cov1.csv')
-        df.to_csv(outfn)
-
-        pattern2 = "*.summary.bsseq.singleton.nonsingleton.cov5.csv"
+        pattern2 = "*.summary.bsseq.singleton.nonsingleton.cov5.table.s2.csv"
         df = collect_singleton_vs_nonsingleton_df(run_prefix, pattern=pattern2)
         ## arrange df
         df = df.reindex(datasets_order)
 
         outfn = os.path.join(args.o,
-                             f'dataset.singleton.vs.non-singleton{f".{args.tagname}" if args.tagname else ""}.cov5.csv')
-        df.to_csv(outfn)
+                             f'dataset.singleton.vs.non-singleton{f".{args.tagname}" if args.tagname else ""}.cov5.table.s2.xlsx')
+        df.to_excel(outfn)
         logger.info(f'save stats of singleton and non-singleton to {outfn}')
 
         ## concat all singleton/nonsingleton for each datasets
         ## sample: HL60.bgtruth.certain.sites.distribution.sing.nonsing.each.genomic.cov5.xlsx
-        pattern3 = "*.bgtruth.certain.sites.distribution.sing.nonsing.each.genomic.cov5.xlsx"
+        pattern3 = "*.bgtruth.certain.sites.distribution.sing.nonsing.each.genomic.cov5.table.s6.xlsx"
         df = collect_distribution_genomic_df(run_prefix, pattern=pattern3)
         ## arrange df
         # df['Dataset'] = pd.Categorical(df['Dataset'], datasets_order)
@@ -550,7 +555,7 @@ if __name__ == '__main__':
         # df = df.sort_values(by='Dataset')
 
         outfn = os.path.join(args.o,
-                             f'all.certain.sites.distribution.each.genomic.region{f".{args.tagname}" if args.tagname else ""}.cov5.csv')
+                             f'all.certain.sites.distribution.each.genomic.region{f".{args.tagname}" if args.tagname else ""}.cov5.table.s6.csv')
         df.to_csv(outfn)
 
         logger.info(f'save distribution of each genomic region to {outfn}')

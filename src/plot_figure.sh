@@ -10,7 +10,7 @@
 #SBATCH -e log/%x.%j.err # STDERR
 
 # sbatch plot_figure.sh Figs5ab-data
-
+# bash plot_figure.sh Step1 seven /projects/li-lab/yang/results/2021-08-14
 ## Script used for generate data and plot figures
 ## Parameters:
 ## 				command
@@ -23,6 +23,7 @@ type=${2:-"METEORE"}
 resultsDir=${3:-"/projects/li-lab/yang/results/2021-07-08"}
 
 bedDir="/projects/li-lab/yang/results/2021-07-08"
+bedDir="/projects/li-lab/yang/results/2021-08-14"
 
 if [ "$type" == "six" ]; then
     HL60_Result_dir=${resultsDir}/MethPerf-HL60_RRBS_2Reps
@@ -31,14 +32,14 @@ if [ "$type" == "six" ]; then
     NA19240_Result_dir=${resultsDir}/MethPerf-NA19240_RRBS_2Reps
     tagOptions=""
     plotCurveDataDir="plot-curve-data"
-elif [ "$type" == "METEORE" ]; then
-    HL60_Result_dir=${resultsDir}/MethPerf-HL60_RRBS_2Reps_METEORE
-    K562_Result_dir=${resultsDir}/MethPerf-K562_WGBS_2Reps_METEORE
-    APL_Result_dir=${resultsDir}/MethPerf-APL_WGBS_METEORE
-    NA19240_Result_dir=${resultsDir}/MethPerf-NA19240_RRBS_2Reps_METEORE
-    NA12878_Result_dir=${resultsDir}/MethPerf-NA12878_WGBS_2Reps_seven
-    tagOptions="--tagname METEORE"
-    plotCurveDataDir="plot-curve-data-METEORE"
+elif [ "$type" == "seven" ]; then
+    HL60_Result_dir=${resultsDir}/MethPerf-HL60_RRBS_2Reps
+    K562_Result_dir=${resultsDir}/MethPerf-K562_WGBS_2Reps
+    APL_Result_dir=${resultsDir}/MethPerf-APL_WGBS
+    NA19240_Result_dir=${resultsDir}/MethPerf-NA19240_RRBS_2Reps
+    NA12878_Result_dir=${resultsDir}/MethPerf-NA12878_WGBS_2Reps
+    tagOptions="--tagname seven"
+    plotCurveDataDir="plot-curve-data-seven"
 else
     echo "### Unsupported type=$type"
     exit 156
@@ -47,7 +48,7 @@ fi
 if [ $command == "Step1" ]; then
     # Step 1: Table S2,S3
     # bash plot_figure.sh Step1
-    # bash plot_figure.sh Step1 METEORE /projects/li-lab/yang/results/2021-08-07
+    # bash plot_figure.sh Step1 seven /projects/li-lab/yang/results/2021-08-14
     python plot_figure.py export-data -i \
         ${HL60_Result_dir} \
         ${K562_Result_dir} \
@@ -58,7 +59,7 @@ if [ $command == "Step1" ]; then
 elif [ $command == "Step2" ]; then
     # Step 2.1: Export curve data for Figure 3B
     # sbatch plot_figure.sh Step2
-    # sbatch plot_figure.sh Step2 METEORE
+    # sbatch plot_figure.sh Step2 seven /projects/li-lab/yang/results/2021-08-14
     python plot_figure.py export-curve-data -i \
         ${HL60_Result_dir} \
         ${K562_Result_dir} \
@@ -74,11 +75,8 @@ elif [ $command == "Step2" ]; then
     find /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} \( -name "MethPerf-NA19240*Singletons.pkl" -o -name "MethPerf-NA19240*Non-singletons.pkl" -o -name "MethPerf-NA19240*Concordant.pkl" -o -name "MethPerf-NA19240*Discordant.pkl" \) \
         -exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
 
-    find /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} -name 'MethPerf-NA19240*.pkl' \
-        -exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
-
-    #	find /projects/li-lab/yang/results/2021-06-29/${plotCurveDataDir} -name '*.pkl' \
-    #		-exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
+#    find /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} -name 'MethPerf-NA19240*.pkl' \
+#        -exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
 
 elif [ $command == "Fig5a" ]; then
     ### Plot figure 5a
@@ -95,6 +93,7 @@ elif [ $command == "Fig5a" ]; then
 elif [ $command == "Figs5ab-data" ]; then
     ### Figure S5AB data: COE on each region data for bar plot
     # sbatch plot_figure.sh Figs5ab-data
+    # sbatch plot_figure.sh Figs5ab-data seven /projects/li-lab/yang/results/2021-08-14
     python ${pythonFile} figs5ab-data --beddir ${bedDir} \
         -i ${K562_Result_dir/MethPerf/MethCorr} \
         ${APL_Result_dir/MethPerf/MethCorr} \

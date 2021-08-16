@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 """
-Read-level evaluation on methylation calls of tools, compute the performance results(F1, accuracy, ROC-AUC, etc.) in Nanocompare paper.
+Read-level evaluation on methylation calls of tools, compute the performance results(F1, accuracy, ROC-AUC, etc.) in nanome paper.
 
-This script will generate all per-read performance results, with regard to BED files of singleton, non-singleton, etc.
+This script will generate all per-read performance results.
 """
 
 import argparse
@@ -15,7 +15,7 @@ from sklearn.metrics import confusion_matrix
 from nanocompare.eval_common import *
 from nanocompare.global_settings import nonsingletonsFile, cg_density_file_list, \
     rep_file_list, save_done_file
-from nanocompare.global_settings import rename_location_from_coordinate_name, perf_report_columns, singletonFileExtStr
+from nanocompare.global_settings import perf_report_columns, singletonFileExtStr
 
 
 def calculate_meth_unmeth(bgTruth, keySet):
@@ -98,7 +98,7 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     :param ontCalls: tool's call
     :param bgTruth:  BS seq results as bg-truth for evaluation
     :param analysisPrefix:
-    :param narrowedCoordinatesList: The bed file list for evaluation performance at regions (Genome-wide, Singleton, non-singleton, etc.)
+    :param narrowedCoordinatesList: The bed file list for evaluation performance at regions (Genome-wide, Singleton, non-singleton, etc.), it is a tuple (basefn, tagname, bed_of_region)
     :param secondFilterBedFileName: None for bgTruth or Joined bed files
     :param cutoff_meth:
     :return:
@@ -136,12 +136,10 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
         d["mCsites"].append(mSites_BGTruth)
         d["referenceCpGs"].append(referenceCpGs)
 
+        ## save a temp file for each region, for preview of results
         tmpdf = pd.DataFrame.from_dict(d)
         tmpfn = os.path.join(outdir, 'performance.report.tmp.csv')
         tmpdf.to_csv(tmpfn)
-
-        if test:
-            break
     df = pd.DataFrame.from_dict(d)
     return df
 
@@ -226,7 +224,7 @@ def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCo
 
 def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet, threshold=0.2):
     """
-    We now simply check results performance on positive data
+    We now simply check results performance on positive data for E. coli.
     :param ontCallDict:
     :return:
     """
@@ -248,7 +246,6 @@ def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet, threshold=0.2)
         for cpg in cpgSet:
             meth_indicator_list = [tt[0] for tt in call[cpg]]
             nsites += 1
-            # logger.info(f'cpg={cpg}, call[cpg]={call[cpg]}')
             methcalls += sum(meth_indicator_list)
             unmethcalls += len(meth_indicator_list) - sum(meth_indicator_list)
             numcalls += len(meth_indicator_list)
@@ -272,8 +269,6 @@ def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet, threshold=0.2)
 
         precision = precision_score(ylabel, ypred)
         recall = recall_score(ylabel, ypred)
-
-        # logger.info(f'npmatrix={npmatrix}')
 
         per_base_dataset['Method'].append(callname)
         per_base_dataset['#Base'].append(nsites)
@@ -419,37 +414,30 @@ if __name__ == '__main__':
         # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth) with cov>=1
         # Classify concordant and discordant based on cov>=1 bgtruth
         nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant,
-                                    nsDisCordantFileName=fn_discordant, print_first=False)
+                                    nsDisCordantFileName=fn_discordant)
 
-        ## TODO: quick cpg
         # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
-        # outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov1.csv')
-        # report_singleton_nonsingleton_table(absoluteBGTruth, outfn, fn_concordant=fn_concordant,
-        #                                     fn_discordant=fn_discordant)
+        outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov1.csv')
+        report_singleton_nonsingleton_table(absoluteBGTruth, outfn, fn_concordant=fn_concordant,
+                                            fn_discordant=fn_discordant)
 
         # Report singletons vs non-singletons of bgtruth with cov cutoff >= 5
-        # outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov{cutoffBGTruth}.csv')
-        # report_singleton_nonsingleton_table(absoluteBGTruthCov, outfn, fn_concordant=fn_concordant,
-        #                                     fn_discordant=fn_discordant)
+        outfn = os.path.join(out_dir,
+                             f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov{cutoffBGTruth}.table.s2.csv')
+        report_singleton_nonsingleton_table(absoluteBGTruthCov, outfn, fn_concordant=fn_concordant,
+                                            fn_discordant=fn_discordant)
 
         logger.info("\n\n########################\n\n")
     else:
         absoluteBGTruth = None
         absoluteBGTruthCov = None
 
-    # Load methlation callings by tools
-    # if "ecoli" in args.analysis:
-    #     filterChrSet = ecoliChrSet
-    # else:  # default is human
-    #     filterChrSet = humanChrSet
-
     filterChrSet = args.chrSet
-
-    callfn_dict = defaultdict()  # callname -> filename
 
     ## Narrow down to BG-Truth if there BG-Truth is available
     ontCallWithinBGTruthDict = defaultdict()  # name->call
-    loaded_callname_list = []  # [DeepSignal, DeepMod, etc.]
+
+    ## Dataframe for cpgs in tool and each tool joined with BS-seq
     sitesDataset = defaultdict(list)
 
     for callstr in args.calls:
@@ -461,8 +449,6 @@ if __name__ == '__main__':
         # Only DeepMod.C/DeepMod.Cluster will always named as DeepMod
         # call_name = get_tool_name(call_encode)
         call_name = call_encode.replace('.', '_')
-        loaded_callname_list.append(call_name)
-        callfn_dict[call_name] = callfn
 
         # We do now allow import DeepMod.Cluster for read level evaluation
         if call_encode == 'DeepMod.Cluster':
@@ -483,16 +469,16 @@ if __name__ == '__main__':
             sitesDataset[f'Join-tool-cov1-with-BSseq-cov{args.min_bgtruth_cov}-certain'].append(
                 len(ontCallWithinBGTruthDict[call_name]))
             logger.info(f'{call_name} left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
+            # Clean large size object
+            del ont_call0
         else:
             ontCallWithinBGTruthDict[call_name] = ont_call0
-        del ont_call0
+
     ## Report each tool (cov>=1) joined with BS-seq cov>=5 certain sites(0%, 100%)
     df = pd.DataFrame.from_dict(sitesDataset)
     outfn = os.path.join(out_dir,
-                         f'{dsname}.tools.cov1.join.with.bsseq.cov{args.min_bgtruth_cov}.read.level.report.csv')
-    df.to_csv(outfn)
-
-    logger.debug(loaded_callname_list)
+                         f'{dsname}.tools.cov1.join.with.bsseq.cov{args.min_bgtruth_cov}.read.level.report.xlsx')
+    df.to_excel(outfn)
 
     logger.info("\n\n########################\n\n")
 
@@ -516,7 +502,7 @@ if __name__ == '__main__':
 
     ## Report joined CpGs in each regions, this is the really read level evaluation sites, Table S2
     outfn = os.path.join(out_dir,
-                         f'{RunPrefix}.summary.bsseq.cov{cutoffBGTruth}.joined.tools.singleton.nonsingleton.table.s2.csv')
+                         f'{RunPrefix}.summary.bsseq.cov{cutoffBGTruth}.joined.tools.singleton.nonsingleton.table.like.s2.csv')
     report_singleton_nonsingleton_table(joinedCPG, outfn, fn_concordant=fn_concordant,
                                         fn_discordant=fn_discordant)
 
@@ -584,19 +570,10 @@ if __name__ == '__main__':
     region_bed_list = [None] + get_region_bed_pairs_list_mp(regions[1:])
 
     if args.distribution:
-        ## TODO: cpg quick check
-        # ontCallWithinBGTruthDict = None
         logger.info("Report singletons/non-singletons in each genomic context regions in Fig.3 and 4")
         logger.debug(f"coordinate file list={relateCoord[3:-2] + cg_density_file_list + rep_file_list}")
 
         joined_bed = BedTool(bedfn_tool_join_bgtruth).sort()
-
-        # outfn = os.path.join(pic_base_dir, 'na19240_bgtruth.pkl')
-        # with open(outfn, 'wb') as handle:
-        #     pickle.dump(bgTruth, handle)
-        # logger.info(f"save to {outfn}")
-
-        # bgTruth_bed = BedTool(calldict2txt(bgTruth.keys()), from_string=True).sort()
 
         singletonFilename = relateCoord[1]
         nonsingletonFilename = relateCoord[2]
@@ -605,7 +582,6 @@ if __name__ == '__main__':
 
         logger.info(
             f"Distribution based region bed files: {[singletonFilename, nonsingletonFilename, concordantFilename, discordantFilename]}")
-
         singleton_bed = BedTool(singletonFilename).sort()
         nonsingleton_bed = BedTool(nonsingletonFilename).sort()
         concordant_bed = BedTool(concordantFilename).sort()
@@ -613,33 +589,18 @@ if __name__ == '__main__':
 
         datasets = defaultdict(list)
         sum_cg = 0
-        ## TODO: test only cpg
-        # for coordFn in tqdm([None] + relateCoord[3:-2] + cg_density_file_list + rep_file_list):
-        # for coordFn in relateCoord[7:-2] + cg_density_file_list + rep_file_list:
         for coord_tuple in region_bed_list[:]:
-            # tagname = location_filename_to_abbvname[os.path.basename(coordFn) if coordFn else 'x.x.Genome-wide']
             coordFn = None
             if coord_tuple is not None:  # get genomic region results
-                # coordBed = BedTool(coordFn).sort()
-                # if enable_base_detection_bedfile and os.path.basename(coordFn) in list_base0_bed_files:
-                #     coordBed = bedtool_convert_0_to_1(coordBed)
-                #
-                # if os.path.basename(coordFn).startswith("hg38.repetitive.rep"):
-                #     # For repetitive regions, we consider strand info when intersect
-                #     intersect_coord_bed = bgTruth_bed.intersect(coordBed, u=True, wa=True, s=True)
-                # else:
-                #     intersect_coord_bed = bgTruth_bed.intersect(coordBed, u=True, wa=True)
                 (coordFn, tagname, coordBed) = coord_tuple
                 if tagname in ['Singletons', 'Non-singletons', 'Concordant', 'Discordant']:
                     continue
-                # coordBed = get_region_bed(coordFn)
                 intersect_coord_bed = intersect_bed_regions(joined_bed, coordBed, coordFn)
             else:  # Genome-wide results
                 intersect_coord_bed = joined_bed
                 tagname = "Genome-wide"
             logger.debug(f"Start study tagname={tagname}, coordFn={coordFn}")
 
-            # num_total = len(set(txt2dict(intersect_coord_bed).keys()))
             num_total = len(intersect_coord_bed)
 
             if tagname.startswith('CG_'):
@@ -647,19 +608,15 @@ if __name__ == '__main__':
                 logger.info(f"sanity check sum_cg={sum_cg}")
 
             intersect_singleton_bed = intersect_coord_bed.intersect(singleton_bed, u=True, wa=True)
-            # num_singleton = len(set(txt2dict(intersect_singleton_bed).keys()))
             num_singleton = len(intersect_singleton_bed)
 
             intersect_nonsingleton_bed = intersect_coord_bed.intersect(nonsingleton_bed, u=True, wa=True)
-            # num_nonsingleton = len(set(txt2dict(intersect_nonsingleton_bed).keys()))
             num_nonsingleton = len(intersect_nonsingleton_bed)
 
             intersect_concordant_bed = intersect_coord_bed.intersect(concordant_bed, u=True, wa=True)
-            # num_concordant = len(set(txt2dict(intersect_concordant_bed).keys()))
             num_concordant = len(intersect_concordant_bed)
 
             intersect_discordant_bed = intersect_coord_bed.intersect(discordant_bed, u=True, wa=True)
-            # num_discordant = len(set(txt2dict(intersect_discordant_bed).keys()))
             num_discordant = len(intersect_discordant_bed)
 
             datasets['Dataset'].append(dsname)
@@ -684,7 +641,6 @@ if __name__ == '__main__':
                              f'{dsname}.bgtruth.certain.sites.distribution.sing.nonsing.each.genomic.cov{cutoffBGTruth}.table.s6.xlsx')
         df.to_excel(outfn)
         logger.info(f"save to {outfn}")
-        # sys.exit(0)
 
     if args.mpi:  # Using mpi may cause error, not fixed, but fast running
         logger.debug('Using multi-processor function for evaluations:')
@@ -707,7 +663,7 @@ if __name__ == '__main__':
                                              secondFilterBedFileName=secondBedFileName, outdir=perf_dir,
                                              tagname=tmpPrefix)
 
-            # This file will always report intermediate results
+            # This file will always report intermediate results, after for each tool, remove temp file
             tmpfn = os.path.join(perf_dir, 'performance.report.tmp.csv')
             os.remove(tmpfn)
 
@@ -715,7 +671,8 @@ if __name__ == '__main__':
         df['Dataset'] = dsname
 
         # Rename function need to be checked
-        df = rename_location_from_coordinate_name(df)
+        # df = rename_location_from_coordinate_name(df)
+        df["Location"] = df["coord"].apply(map_region_fn_to_name)
 
         # Select columns to save
         df = df[perf_report_columns]
@@ -724,8 +681,5 @@ if __name__ == '__main__':
         df.to_csv(outfn)
         logger.info(f"save to {outfn}")
 
-        if args.test:
-            logger.info("Only test, so just output one tool's results")
-            break
     save_done_file(out_dir)
     logger.info("### Read level performance analysis DONE.")

@@ -16,7 +16,7 @@ fi
 if [[ "$datasetList" == *"K562"* ]]; then
     echo "Running K562"
     sbatch --job-name=meth.perf.K562_seven \
-        paper_read_level_performance.sbatch K562 WGBS_2Reps seven --mpi
+        paper_read_level_performance.sbatch K562 WGBS_2Reps seven
 fi
 
 if [[ "$datasetList" == *"APL"* ]]; then
@@ -28,11 +28,11 @@ fi
 if [[ "$datasetList" == *"NA19240"* ]]; then
     echo "Running NA19240"
     sbatch --job-name=meth.perf.NA19240_seven \
-        paper_read_level_performance.sbatch NA19240 RRBS_2Reps1 seven
+        paper_read_level_performance.sbatch NA19240 RRBS_2Reps seven
 fi
 
 if [[ "$datasetList" == *"NA12878"* ]]; then
     echo "Running NA12878"
     sbatch --job-name=meth.perf.NA12878_seven \
-        paper_read_level_performance.sbatch NA12878 WGBS_2Reps1 seven
+        paper_read_level_performance.sbatch NA12878 WGBS_2Reps seven
 fi
