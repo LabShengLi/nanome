@@ -84,7 +84,8 @@ process EnvCheck {
 //duplicate reference_genome dir to all other processes' input
 reference_genome_ch.into{reference_genome_ch1; reference_genome_ch2;
 	reference_genome_ch3; reference_genome_ch4; reference_genome_ch5;
-	reference_genome_ch6; reference_genome_ch7; reference_genome_ch8; reference_genome_ch9}
+	reference_genome_ch6; reference_genome_ch7; reference_genome_ch8;
+	reference_genome_ch9; reference_genome_ch10}
 
 
 // Untar of subfolders named 'M1', ..., 'M10', etc.
@@ -154,11 +155,13 @@ process Basecall {
 	file fast5_dir from untar_out_ch1
 	each file("*") from ch_utils1
 	val fast5_tar_size from tar_filesize_ch1
+	each file(reference_genome) from reference_genome_ch10
 
 	output:
 	file "${fast5_dir.baseName}.basecalled" into basecall_out_ch  // try to fix the christina proposed problems
 	file "${fast5_dir.baseName}.basecalled/${fast5_dir.baseName}-sequencing_summary.txt" into qc_ch
 	val fast5_tar_size into basecall_filesize_ch
+	file "${fast5_dir.baseName}.basecalled.bam" into ont_cov_bam_ch
 
 	when:
 	params.runBasecall
@@ -175,6 +178,21 @@ process Basecall {
 	## After basecall, rename and publishe summary file names
 	mv ${fast5_dir.baseName}.basecalled/sequencing_summary.txt ${fast5_dir.baseName}.basecalled/${fast5_dir.baseName}-sequencing_summary.txt
 
+	## After basecall, we process guppy results for ONT coverage analyses
+    refGenome=${params.referenceGenome}
+	# align FASTQ files to reference genome, write sorted alignments to a BAM file
+	minimap2 -a -z 600,200 -x map-ont \${refGenome} ${fast5_dir.baseName}.basecalled/*.fastq \
+	    -t ${params.processors*2} > ${fast5_dir.baseName}.basecalled.sam
+    echo "Alignment is done!"
+
+    # Convert the sam file to bam (a binary sam format) using samtools’ view command
+    samtools view -u ${fast5_dir.baseName}.basecalled.sam \
+        | samtools sort -@ ${params.processors*2} -o ${fast5_dir.baseName}.basecalled.bam --output-fmt BAM
+    echo "samtools is done!"
+
+    # Clean
+    rm -f ${fast5_dir.baseName}.basecalled.sam
+
 	echo "### Basecalled by Guppy DONE"
 	"""
 }
@@ -186,14 +204,36 @@ process QCExport {
 
 	input:
 	file flist from qc_ch.collect()
+	file bamlist from ont_cov_bam_ch.collect()
 
 	output:
 	file "${params.dsname}-qc-report.tar.gz" into qc_out_ch
+	file "${params.dsname}.coverage.*strand.bed.gz" into ont_cov_ch
 
 	"""
 	mkdir -p ${params.dsname}-qc-report
 	cp -L -f *-sequencing_summary.txt ${params.dsname}-qc-report/
 	tar -czf ${params.dsname}-qc-report.tar.gz ${params.dsname}-qc-report/
+
+    # Merge the bam file
+	find . -mindepth 1 -name "*.bam" | \
+	    parallel -j8 -N4095 -m --files samtools merge -u - | \
+	    parallel --xargs samtools merge -@ ${params.processors*2} \
+	    ${params.dsname}_merged.bam {}";" rm {}
+
+    samtools index ${params.dsname}_merged.bam  -@ ${params.processors*2}
+    echo "Samtools Merging is done!"
+
+    # calculates the sequence coverage at each position/ Reporting genome coverage for all positions in BEDGRAPH format.
+    bedtools genomecov -ibam ${params.dsname}_merged.bam -bg -strand + |
+        awk '\$4 = \$4 FS "+"' |
+        gzip > ${params.dsname}.coverage.positivestrand.bed.gz
+
+    bedtools genomecov -ibam ${params.dsname}_merged.bam -bg -strand - |
+        awk '\$4 = \$4 FS "-"' |
+        gzip > ${params.dsname}.coverage.negativestrand.bed.gz
+
+    echo "Coverage is done!"
 	"""
 }
 
@@ -302,7 +342,6 @@ process GuppyExtract {
 	echo "###   GuppyExtract methylation calling DONE"
 	"""
 }
-
 
 
 // Megalodon runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
@@ -679,7 +718,7 @@ process GuppyComb {
 		do
 			fast5mod call total.meth.bam \${refGenome} \
 				meth.chr\$i.tsv --meth cpg --quiet \
-				--regions chr\$i
+				--regions chr\$i &
 		done
 	elif [[ "${params.dataType}" == "ecoli" ]] ; then
 		echo "### For ecoli, chr=${params.DeepModSumChrSet}"
@@ -688,6 +727,7 @@ process GuppyComb {
 			--meth cpg --quiet \
 			--regions ${params.DeepModSumChrSet}
 	fi
+	wait
 
 	cat  meth.chr*.tsv > ${params.dsname}.guppy.fast5mod_site_level.combine.tsv
 	gzip ${params.dsname}.guppy.fast5mod_site_level.combine.tsv
