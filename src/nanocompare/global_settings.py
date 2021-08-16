@@ -104,8 +104,8 @@ location_filename_to_abbvname = {
     "ONT.hg38.intronFeature.bed.gz": 'Introns',
     "ONT.hg38.promoterFeature.flank_2000.bed.gz": 'Promoters',
 
-    'hg38_nonsingletons.concordant.bed': 'Concordant',
-    'hg38_nonsingletons.discordant.bed': 'Discordant',
+    'hg38_nonsingletons.concordant.bed.gz': 'Concordant',
+    'hg38_nonsingletons.discordant.bed.gz': 'Discordant',
 
     'hg38.gc5Base_merged.cg_bin20.bed.gz': 'CG_20',
     'hg38.gc5Base_merged.cg_bin40.bed.gz': 'CG_40',

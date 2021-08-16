@@ -1,24 +1,28 @@
 #!/bin/bash
-#SBATCH --job-name=tss.paper
+#SBATCH --job-name=sanity.nanopolish
 #SBATCH --partition=compute
 #SBATCH --qos=batch
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 8 # number of cores
-#SBATCH --mem=300g
+#SBATCH -n 16 # number of cores
+#SBATCH --mem=300G
 #SBATCH --time=72:00:00
 #SBATCH -o log/%x.%j.out
 #SBATCH -e log/%x.%j.err
 #SBATCH --mail-user=yang.liu@jax.org
 #SBATCH --mail-type=END
 
-## Site level unified bed format for tools/bs-seq, results is 0-based BED
-## Output: chr1	9037300	9037301	.	.	+	0.5294117647058824	17
-## Note: start is 0-based, end is 1-based
+set -e
 
 dsname=${1:-HL60}
+runidSuffix=${2:-"BS"} # "RRBS_2Reps"
+command=${3:-"seven"}  # six - six tools, seven - include all tools
+bedDir=${4:-"/projects/li-lab/yang/results/2021-07-07"}
+
+if [ ! -z "$runidSuffix" ]; then
+    runidSuffix="_${runidSuffix}"
+fi
 
 baseDir="/projects/li-lab/Nanopore_compare/data"
-
 ## Detect calls by tools
 NanopolishCalls=$(find $baseDir/$dsname -name "$dsname.nanopolish.methylation_calls.combine.*.gz")
 MegalodonCalls=$(find $baseDir/$dsname -name "$dsname.megalodon.per_read.sorted.*.gz")
@@ -27,7 +31,7 @@ GuppyCalls=$(find /projects/li-lab/Nanopore_compare/suppdata/guppy_methcall_yang
 TomboCalls=$(find $baseDir/$dsname -name "$dsname.tombo.*.combine.*.gz")
 DeepModCalls=$(find $baseDir/$dsname -name "$dsname.deepmod.C_clusterCpG.combine.*.gz")
 METEORECalls=$(find /projects/li-lab/Nanopore_compare/suppdata/METEORE_results -name "$dsname.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
-MegalodonOptions="Megalodon.ZW"
+MegalodonEncode="Megalodon.ZW"
 
 if [ "$dsname" == "NA12878" ]; then
     ## Detect NA12878 specific
@@ -39,13 +43,14 @@ if [ "$dsname" == "NA12878" ]; then
     TomboCalls=$(find $baseDir -name "$dsname.tombo.perReadsStats.combine_allchrs.*.gz")
     DeepModCalls=$(find $baseDir -name "$dsname.deepmod.C_clusterCpG.combine_allchrs.*.gz")
     METEORECalls=$(find /projects/li-lab/Nanopore_compare/suppdata/METEORE_results -name "$dsname.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
-    MegalodonOptions="Megalodon"
+    MegalodonEncode="Megalodon"
 fi
 
 ## Automatically get the input files for each tool
 declare -A bgtruthEncodeDict
 bgtruthEncodeDict=(["HL60"]="bismark" ["K562"]="encode" ["APL"]="bismark" ["NA19240"]="bismark" ["NA12878"]="encode")
 
+##
 declare -A bgtruthFilenameDict
 bgtruthFilenameDict=(
     ["HL60"]="/projects/li-lab/Nanopore_compare/data/HL60/HL60_RRBS_ENCFF000MDA.Read_R1.Rep_1_trimmed_bismark_bt2.CpG_report.txt.gz;/projects/li-lab/Nanopore_compare/data/HL60/HL60_RRBS_ENCFF000MDF.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz"
@@ -69,24 +74,47 @@ echo "METEORECalls=$METEORECalls"
 echo "DeepModCalls=$DeepModCalls"
 echo "####################"
 
-## Running script
-pythonFile=nanocompare/tss_eval.py
+# Site level evaluation script
+pythonFile=${NanoCompareDir}/src/nanocompare/utils/saniti-ecoli/sanity_nanopolish.py
 
 set -x
+if [ "${command}" == "six" ]; then
+    ## six tool
+    python ${pythonFile} \
+        --calls \
+        Nanopolish:${NanopolishCalls} \
+        ${MegalodonEncode}:${MegalodonCalls} \
+        DeepSignal:${DeepSignalCalls} \
+        Guppy:${GuppyCalls} \
+        Tombo:${TomboCalls} \
+        DeepMod.Cluster:${DeepModCalls} \
+        --bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
+        --runid MethCorr-${dsname}${runidSuffix} \
+        --dsname ${dsname} \
+        --toolcov-cutoff 3 --min-bgtruth-cov 5 \
+        --beddir ${bedDir} \
+        --enable-cache --using-cache --gen-venn --summary-coverage
+elif [ "${command}" == "seven" ]; then
+    ## --gen-venn: generate venn analysis set's data
+    ## --summary-coverage: coverage at each region, take times
+    python ${pythonFile} \
+        --calls \
+        Nanopolish:${NanopolishCalls} \
+        ${MegalodonEncode}:${MegalodonCalls} \
+        DeepSignal:${DeepSignalCalls} \
+        Guppy:${GuppyCalls} \
+        Tombo:${TomboCalls} \
+        METEORE:${METEORECalls} \
+        DeepMod.Cluster:${DeepModCalls} \
+        --bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
+        --runid Sanity_Nanopolish-${dsname}${runidSuffix} \
+        --dsname ${dsname} \
+        --toolcov-cutoff 3 --min-bgtruth-cov 5 \
+        --beddir ${bedDir} \
+        --enable-cache --using-cache --gen-venn --summary-coverage
+else
+    echo "Not support command"
+    exit 255
 
-## Generate tools/bsseq site level (freq, coverage) results for tss analysis
-python ${pythonFile} \
-    --calls \
-    Nanopolish:${NanopolishCalls} \
-    ${MegalodonOptions}:${MegalodonCalls} \
-    DeepSignal:${DeepSignalCalls} \
-    Guppy:${GuppyCalls} \
-    Tombo:${TomboCalls} \
-    METEORE:${METEORECalls} \
-    DeepMod.Cluster:${DeepModCalls} \
-    --bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
-    --runid TSS_Sites-${dsname} \
-    --dsname ${dsname} \
-    --enable-cache --using-cache
-
-echo "### TSS data generation DONE"
+fi
+echo "### DONE"

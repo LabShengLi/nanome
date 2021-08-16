@@ -7,9 +7,8 @@ import scipy
 from nanocompare.global_config import pic_base_dir
 from nanocompare.global_settings import ToolNameList
 
-
-# TODO: quick cpg region only
-perfInfileName = os.path.join('/projects/li-lab/yang/results/2021-08-07/modify_cpg_bed', 'performance-results-METEORE.csv')
+perfInfileName = os.path.join('/projects/li-lab/yang/results/2021-08-07/modify_cpg_bed',
+                              'performance-results-METEORE.csv')
 distributionInfileName = os.path.join('/projects/li-lab/yang/results/2021-08-07/modify_cpg_bed',
                                       'all.certain.sites.distribution.each.genomic.region.METEORE.cov5.csv')
 
@@ -17,6 +16,15 @@ genomic_regions = \
     ["Promoters", "Exons", "Introns", "Intergenic", "CpG Island", "CpG Shores", "CpG Shelves"] + \
     ['CG_20', 'CG_40', 'CG_60', 'CG_80', 'CG_100'] + \
     ['rep_SINE', 'rep_LINE', 'rep_LTR', 'rep_DNA', 'rep_Others']
+
+if False:
+    perfInfileName = os.path.join('/projects/li-lab/yang/results/2021-08-15', 'performance-results-seven.csv')
+    distributionInfileName = os.path.join('/projects/li-lab/yang/results/2021-08-15',
+                                          'all.certain.sites.distribution.each.genomic.region.seven.cov5.table.s6.csv')
+    genomic_regions = \
+        ["Promoters", "Exons", "Introns", "Intergenic", "CpG islands", "CpG shores", "CpG shelves"] + \
+        ['CG_20', 'CG_40', 'CG_60', 'CG_80', 'CG_100'] + \
+        ['rep_SINE', 'rep_LINE', 'rep_LTR', 'rep_DNA', 'rep_Others']
 
 perfDf = pd.read_csv(perfInfileName).loc[:, ['Dataset', 'Tool', 'Location', 'Macro-F1']]
 perfDf = perfDf.loc[perfDf['Location'].isin(genomic_regions)]

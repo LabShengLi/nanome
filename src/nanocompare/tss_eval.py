@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 """
-Generate site-level methylation results for TSS analysis in Nanocompare paper.
+Generate site-level methylation results for TSS/METEORE analysis in nanome paper.
 """
 import argparse
+from multiprocessing import Manager
 
 from nanocompare.eval_common import *
 from nanocompare.global_settings import get_tool_name, save_done_file
@@ -22,7 +23,7 @@ def parse_arguments():
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--beddir', type=str, help="base dir for bed files",
                         default=None)  # need perform performance evaluation before, then get concordant, etc. bed files, like '/projects/li-lab/yang/results/2021-04-01'
-    parser.add_argument('--sep', type=str, help="seperator for output csv file", default=' ')
+    parser.add_argument('--sep', type=str, help="seperator for output csv file", default='\t')
     parser.add_argument('--processors', type=int, help="running processors", default=8)
     parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff of coverage in bg-truth", default=1)
     parser.add_argument('--toolcov-cutoff', type=int, help="cutoff of coverage in nanopore calls", default=1)
@@ -30,16 +31,22 @@ def parse_arguments():
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
     parser.add_argument('--enable-cache', action='store_true')
     parser.add_argument('--using-cache', action='store_true')
-    parser.add_argument('--output-meteore', action='store_true')
+    parser.add_argument('--output-unified-format', action='store_true')
     parser.add_argument('--chrs', nargs='+', help='filter chr sets',
                         default=humanChrSet)
     return parser.parse_args()
 
 
-def output_dict_to_bed_as_0base(dictCalls, outfn, sep='\t'):
+def import_and_save_meteore(callfn, callencode, outfn):
+    import_call(callfn, callencode, baseFormat=1, enable_cache=False, using_cache=False,
+                include_score=False, siteLevel=False, save_unified_format=True, outfn=outfn,
+                filterChr=args.chrs)
+
+
+def output_calldict_to_unified_bed_as_0base(dictCalls, outfn, sep='\t'):
     """
     Assume dictCalls are key->value, key=(chr, 123, +), value=[(freq, cov), ...], note is 1-based format
-    Output is format: 0-based format with tab-sep for TSS analysis
+    Output is format: 0-based start, 1-base end format with tab-sep for TSS analysis
 
     ==============================
     chr start end . . freq  cov
@@ -58,16 +65,24 @@ def output_dict_to_bed_as_0base(dictCalls, outfn, sep='\t'):
     logger.debug(f'Output for TSS analysis: {outfn}')
 
 
+def import_and_save_site_level(callfn, callname, callencode, minToolCovCutt, outfn, ns):
+    ontCall = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache,
+                          using_cache=using_cache, include_score=False, siteLevel=True)
+
+    ontCallWithCov = readLevelToSiteLevelWithCov(ontCall, minCov=minToolCovCutt, toolname=callname)
+    ns.callsites[callname] = len(ontCallWithCov)
+    output_calldict_to_unified_bed_as_0base(ontCallWithCov, outfn)
+
+
 if __name__ == '__main__':
     set_log_debug_level()
 
     args = parse_arguments()
 
-    if args.output_meteore:
+    if args.output_unified_format:  ## if output METEORE format, must read directly
         enable_cache = False
         using_cache = False
     else:
-        # cache function same with read level
         enable_cache = args.enable_cache
         using_cache = args.using_cache
 
@@ -99,19 +114,24 @@ if __name__ == '__main__':
     logger.info(f'\n\n####################\n\n')
 
     if args.output_meteore:
-        logger.info(f"We are outputing each tool's results as METEORE format")
+        logger.info(f"We are outputing each tool's unified results same as METEORE format")
+        input_list = []
         for callstr in args.calls:
             callencode, callfn = callstr.split(':')
             if len(callfn) == 0:
                 continue
             callname = get_tool_name(callencode)
+            # Consider tools have read-level outputs, except for DeepMod
             if callname not in ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo']:
                 continue
             outfn = os.path.join(out_dir, f"{args.dsname}_{callname}-METEORE-perRead-score.tsv.gz")
-            import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=False, using_cache=False,
-                        include_score=False, siteLevel=False, saveMeteore=args.output_meteore, outfn=outfn,
-                        filterChr=args.chrs)
-        logger.info("### METEORE format output DONE")
+
+            input_list.append((callfn, callencode, outfn,))
+        with Pool(processes=10) as pool:
+            pool.starmap(import_and_save_meteore, input_list)
+
+        save_done_file(out_dir)
+        logger.info("### Unified format output DONE")
         sys.exit(0)
 
     if args.bgtruth:
@@ -138,34 +158,38 @@ if __name__ == '__main__':
         bgTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruthCutt)
         outfn = os.path.join(out_dir, f'{RunPrefix}.tss.bgtruth.cov{bgtruthCutt}.bed.gz')
         logger.info(f'Combined BS-seq data (cov>={bgtruthCutt}), all methylation level sites={len(bgTruth):,}')
-        output_dict_to_bed_as_0base(bgTruth, outfn)
+        output_calldict_to_unified_bed_as_0base(bgTruth, outfn)
         logger.info(f'\n\n####################\n\n')
 
     logger.info("We are outputing bed CpG results for each tool")
-    callfn_dict = defaultdict()  # callname -> filename
-    callresult_dict = defaultdict()
-    loaded_callname_list = []
 
+    mgr = Manager()
+    ns = mgr.Namespace()
+
+    # callname -> # of sites
+    ns.callsites = mgr.dict()
+
+    input_list = []
     for callstr in args.calls:
         logger.info(f'\n\n####################\n\n')
         callencode, callfn = callstr.split(':')
         if len(callfn) == 0:
             continue
         callname = get_tool_name(callencode)
-        callfn_dict[callname] = callfn
 
         # We do now allow import DeepMod.C for site level evaluation
         if callencode == 'DeepMod.C':
             raise Exception(
                 f'{callencode} is not allowed for site level evaluation, please use DeepMod.Cluster file here')
-
-        loaded_callname_list.append(callname)
-        ontCall = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache,
-                              using_cache=using_cache, include_score=False, siteLevel=True)
-
-        ontCallWithCov = readLevelToSiteLevelWithCov(ontCall, minCov=minToolCovCutt, toolname=callname)
-        callresult_dict[callname] = ontCallWithCov
         outfn = os.path.join(out_dir, f'{RunPrefix}.tss.{callname}.cov{minToolCovCutt}.bed.gz')
-        output_dict_to_bed_as_0base(ontCallWithCov, outfn)
+
+        input1 = (callfn, callname, callencode, minToolCovCutt, outfn, ns,)
+        input_list.append(input1)
+
+    with Pool(processes=10) as pool:
+        pool.starmap(import_and_save_site_level, input_list)
+
+    for key in ns.callsites.keys():
+        logger.info(f"key={key}, sites={ns.callsites[key]}")
     save_done_file(out_dir)
     logger.info("TSS bed file generation DONE")

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=to.meteore.format
+#SBATCH --job-name=to.unified.format
 #SBATCH --partition=compute
 #SBATCH --qos=batch
 #SBATCH -N 1 # number of nodes
@@ -9,7 +9,7 @@
 #SBATCH -o log/%x.%j.out
 #SBATCH -e log/%x.%j.err
 
-## Read level unified bed format for METEORE input
+## Read level unified bed format (same as the METEORE input)
 ## Output:  ID	Chr	Pos	Strand	Score
 #           14a6f90a-220d-45dd-b699-d7b8c51a41eb	chr8	1579304	+	-1.2320743055695798
 
@@ -56,7 +56,7 @@ python ${pythonFile} \
     DeepSignal:${DeepSignalCalls} \
     Guppy.gcf52ref:${GuppyCalls} \
     Tombo:${TomboCalls} \
-    --runid TSS-${dsname} \
-    --dsname ${dsname} --output-meteore
+    --runid TSS_METEORE-${dsname} \
+    --dsname ${dsname} --output-unified-format
 
 echo "### DONE"

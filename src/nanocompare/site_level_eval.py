@@ -3,6 +3,7 @@
 """
 Generate site-level methylation correlation results in nanome paper.
 """
+
 import argparse
 import subprocess
 
@@ -33,19 +34,6 @@ def summary_cpgs_stats_results_table():
     logger.info("Create region bed list firstly, take times.")
     region_fn_list = narrowCoordFileList[
                      1:] + cg_density_file_list + rep_file_list
-
-    # regionbed_list = []
-    # for region_fn in region_fn_list:
-    #     logger.info(f"Load file {region_fn}")
-    #     basefn = os.path.basename(region_fn)
-    #     tagname = location_filename_to_abbvname[basefn]
-    #     region_bed = get_region_bed(region_fn)
-    #     regionbed_list.append((region_fn, tagname, region_bed))
-
-    # TODO: check bed script intersect only
-    # outfn = os.path.join(pic_base_dir, basefn)
-    # region_bed.saveas(outfn)
-    # logger.info(f"save to {outfn}")
     region_bed_list = get_region_bed_pairs_list_mp(region_fn_list)
 
     retList = []
@@ -67,17 +55,11 @@ def summary_cpgs_stats_results_table():
                     'Joined CpG sites with BG-Truth': len(toolOverlapBGTruthCpGs)}
         row_dict.update({'Total calls by Nanopore reads': call_cov1_calls[toolname]})
 
-        ## TODO: check if can optimize
-        # callBed = BedTool(calldict2txt(callSet), from_string=True).sort()
         callBed = calldict2bed(callSet)
-
-        # outfn = os.path.join(out_dir, f'ont_calls_{args.dsname}_{toolname}_cov{args.toolcov_cutoff}.bed.gz')
-        # callBed.saveas(outfn)
 
         # Add coverage of every regions by each tool here
         for (bedfn, tagname, region_bed) in tqdm(
                 region_bed_list):  # calculate how overlap with Singletons, Non-Singletons, etc.
-            # get_nsites_in_regions(callSet, bedfn, tagname)
             intersect_bed = intersect_bed_regions(callBed, region_bed, bedfn)
             ret = {tagname: len(intersect_bed)}
             retList.append(ret)
@@ -85,7 +67,6 @@ def summary_cpgs_stats_results_table():
             logger.info(f'We use Concordant and Discordant BED file at basedir={args.beddir}')
             concordantFileName = find_bed_filename(basedir=args.beddir,
                                                    pattern=f'{args.dsname}*hg38_nonsingletons*.concordant.bed.gz')
-
             concordant_bed = get_region_bed(concordantFileName)
             intersect_bed = intersect_bed_regions(callBed, concordant_bed, concordantFileName)
             ret = {'Concordant': len(intersect_bed)}
@@ -258,9 +239,6 @@ if __name__ == '__main__':
     enable_cache = args.enable_cache
     using_cache = args.using_cache
 
-    # if enable_cache:
-    #     os.makedirs(cache_dir, exist_ok=True)
-
     # runid is always like 'MethCorr-K562_WGBS_2Reps', remove first word as RunPrefix like K562_WGBS_2Reps
     RunPrefix = args.runid.replace('MethCorr-', '')
 
@@ -318,6 +296,7 @@ if __name__ == '__main__':
     callresult_dict_cov1 = defaultdict()
     call_cov1_cpg_sites = defaultdict(int)
     call_cov1_calls = defaultdict(int)
+
     callresult_dict_cov3 = defaultdict()
     loaded_callname_list = []
 
@@ -353,13 +332,12 @@ if __name__ == '__main__':
     logger.debug(loaded_callname_list)
 
     logger.info(f'Start apply cutoff={minToolCovCutt} to methylation calls, take time')
-
     # Cutoff of read cov >= 1 or 3, 5 for nanopore tools
     for callname in loaded_callname_list:
         callresult_dict_cov3[callname] = readLevelToSiteLevelWithCov(callresult_dict_cov1[callname],
                                                                      minCov=minToolCovCutt, toolname=callname)
         ## Destroy cov1 for memory saving
-        callresult_dict_cov1[callname] = None
+        del callresult_dict_cov1[callname]
 
     logger.info(f'\n\n####################\n\n')
 
@@ -435,14 +413,14 @@ if __name__ == '__main__':
                          f'{args.dsname}.tools.cov{args.toolcov_cutoff}.join.with.bsseq.cov{args.min_bgtruth_cov}.site.level.report.csv')
     df.to_csv(outfn)
 
+    # Output sites report for all tools and BS-seq
     logger.info(f"Reporting {len(coveredCpGs):,} CpGs are covered by all tools and bgtruth")
-
-    logger.info('Output data of coverage and meth-freq on joined CpG sites for correlation analysis')
-
+    logger.info('Output data of meth-freq and coverage on joined CpG sites as datasets for correlation analysis')
     outfn_joined = os.path.join(out_dir,
                                 f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv.gz")
     save_meth_corr_data(callresult_dict_cov3, bgTruth, coveredCpGs, outfn_joined)
-
+    logger.info(
+        'Output data of meth-freq and coverage on bgTruth related CpG sites as datasets for correlation analysis')
     outfn_bgtruth = os.path.join(out_dir,
                                  f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv.gz")
     save_meth_corr_data(callresult_dict_cov3, bgTruth, set(list(bgTruth.keys())), outfn_bgtruth)

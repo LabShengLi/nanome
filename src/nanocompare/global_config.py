@@ -6,7 +6,6 @@ Global variable initializations
 =================================================================
 
 Define global directory and loggers
-
 """
 
 import datetime
@@ -32,21 +31,21 @@ if hostname.startswith('winter') or hostname.startswith('sumner'):  # in JAX HPC
     if username == 'liuya':  # output to ly's dirs
         results_dir = "/projects/li-lab/yang/results"  # temp output base
         cache_dir = '/fastscratch/liuya/nanocompare/cache_dir'  # cache readed object to pkl
+        temp_dir = '/fastscratch/liuya/nanocompare/temp_dir'
     else:  # output to shared dirs
         results_dir = "/projects/li-lab/Nanopore_compare/running_results"  # temp output base
         cache_dir = '/fastscratch/li-lab/nanocompare/cache_dir'  # cache readed object to pkl
+        temp_dir = '/fastscratch/li-lab/nanocompare/temp_dir'
 else:
     ## Default output dir set to pwd
     results_dir = os.path.join(os.getcwd(), 'results')
     cache_dir = os.path.join(os.getcwd(), 'cache_dir')
+    temp_dir = os.path.join(os.getcwd(), 'temp_dir')
 
 today_str = datetime.date.today().strftime("%Y-%m-%d")
 
 log_base_dir = os.path.join(results_dir, "log")
 pic_base_dir = os.path.join(results_dir, today_str)
-
-
-# logger.setLevel(init_log_level_prj)
 
 
 # Ensure dir is created if it is not exist
@@ -64,7 +63,8 @@ ensure_dir(log_base_dir)
 # Global loggers can be used any where
 logger = logging.getLogger()
 
-formatter_log_results = logging.Formatter('%(asctime)s - [%(filename)s:%(lineno)d] - %(levelname)s: %(message)s')  # datefmt='%Y-%m-%d %H:%M:%S'
+formatter_log_results = logging.Formatter(
+    '%(asctime)s - [%(filename)s:%(lineno)d] - %(levelname)s: %(message)s')  # datefmt='%Y-%m-%d %H:%M:%S'
 
 
 def add_logging_file(fn):
@@ -137,5 +137,5 @@ def set_log_error_level():
 
 def current_time_str():
     # time_str = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
-    time_str = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
+    time_str = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")
     return time_str
