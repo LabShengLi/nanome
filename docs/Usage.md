@@ -34,34 +34,36 @@ NANOME - NF PIPELINE (v1.0)
 by Li Lab at The Jackon Laboratory
 http://nanome.jax.org
 =================================
-dsname              :TestData
-input               :https://github.com/liuyangzzu/nano-compare/raw/master/test_data/demo.fast5.reads.tar.gz
+dsname          :TestData
+input           :inputs/test.demo.filelist.txt
 reference_genome    :reference_genome/hg38/hg38.fasta
 chromSizesFile      :reference_genome/hg38/hg38.chrom.sizes
-runBasecall         :true
-runMethcall         :true
-eval                :true
+runBasecall     :true
+runMethcall     :true
+evaluation      :false
 =================================
-[48/3e3907] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
-[17/90a391] process > Basecall (demo)                [100%] 1 of 1 ✔
-[d6/69e78c] process > QCExport                       [100%] 1 of 1 ✔
-[c5/cf14e8] process > Resquiggle (demo_basecalled)   [100%] 1 of 1 ✔
-[a3/999899] process > DeepSignal (demo_basecalled... [100%] 1 of 1 ✔
-[07/b1b4ee] process > Tombo (demo_basecalled_resq... [100%] 1 of 1 ✔
-[23/67a831] process > Megalodon (demo)               [100%] 1 of 1 ✔
-[ad/d1711a] process > DeepMod (demo_basecalled)      [100%] 1 of 1 ✔
-[11/16ec4f] process > Nanopolish (demo_basecalled)   [100%] 1 of 1 ✔
-[ff/cbc8eb] process > DpSigComb                      [100%] 1 of 1 ✔
-[8e/b03fa7] process > TomboComb                      [100%] 1 of 1 ✔
-[03/53d299] process > MgldnComb                      [100%] 1 of 1 ✔
-[28/c1e9ce] process > NplshComb                      [100%] 1 of 1 ✔
-[48/d6a003] process > DpmodComb                      [100%] 1 of 1 ✔
-[de/77fc3b] process > ReadLevelPerf                  [100%] 1 of 1 ✔
-[b5/be8fb0] process > SiteLevelCorr                  [100%] 1 of 1 ✔
-Completed at: 06-May-2021 18:31:41
-Duration    : 39m 18s
-CPU hours   : 0.9
-Succeeded   : 16
+[d2/e1e047] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
+[67/e8f2d6] process > Untar (demo2.fast5.reads.tar)  [100%] 2 of 2 ✔
+[bc/ee9e6f] process > Basecall (demo2.fast5.reads... [100%] 2 of 2 ✔
+[3a/99472f] process > QCExport                       [100%] 1 of 1 ✔
+[7b/c8a7aa] process > Guppy (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
+[54/c65c92] process > GuppyExtract (demo.fast5.re... [100%] 2 of 2 ✔
+[60/665d1e] process > Megalodon (demo.fast5.reads... [100%] 2 of 2 ✔
+[75/232d0e] process > Resquiggle (demo2.fast5.rea... [100%] 2 of 2 ✔
+[7c/6a4152] process > DeepSignal (demo.fast5.read... [100%] 2 of 2 ✔
+[98/c7c926] process > Tombo (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
+[cc/484339] process > DeepMod (demo.fast5.reads.tar) [100%] 2 of 2 ✔
+[60/a7b7e1] process > Nanopolish (demo2.fast5.rea... [100%] 2 of 2 ✔
+[7b/2bc531] process > DpSigComb                      [100%] 1 of 1 ✔
+[2d/5ca74b] process > TomboComb                      [100%] 1 of 1 ✔
+[af/7ca5e5] process > GuppyComb (1)                  [100%] 1 of 1 ✔
+[d2/20cfb9] process > MgldnComb                      [100%] 1 of 1 ✔
+[ca/910ed5] process > NplshComb                      [100%] 1 of 1 ✔
+[1b/1ec959] process > DpmodComb (1)                  [100%] 1 of 1 ✔
+Completed at: 16-Aug-2021 13:39:27
+Duration    : 41m 42s
+CPU hours   : 1.5
+Succeeded   : 18
 ```
 
 
@@ -71,11 +73,12 @@ All tools's methlation calling and evaluation results will be output to `outputs
 tree outputs/TestData-methylation-callings
 
 outputs/TestData-methylation-callings
-├── TestData.DeepModC_clusterCpG.combine.bed.gz
-├── TestData.DeepSignal.combine.tsv.gz
-├── TestData.Megalodon.combine.bed.gz
-├── TestData.Nanopolish.combine.tsv.gz
-└── TestData.Tombo.combine.bed.gz
+├── TestData.deepmod.C.combine.bed.gz
+├── TestData.deepsignal.call_mods.combine.tsv.gz
+├── TestData.guppy.fast5mod_site_level.combine.tsv.gz
+├── TestData.megalodon.per_read.combine.bed.gz
+├── TestData.nanopolish.methylation_calls.combine.tsv.gz
+└── TestData.tombo.perReadsStats.combined.bed.gz
 
 tree -L 3  outputs/TestData-nanome-analysis/
 
