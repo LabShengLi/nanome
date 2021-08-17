@@ -47,7 +47,6 @@ evaluation      :false
 [bc/ee9e6f] process > Basecall (demo2.fast5.reads... [100%] 2 of 2 ✔
 [3a/99472f] process > QCExport                       [100%] 1 of 1 ✔
 [7b/c8a7aa] process > Guppy (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
-[54/c65c92] process > GuppyExtract (demo.fast5.re... [100%] 2 of 2 ✔
 [60/665d1e] process > Megalodon (demo.fast5.reads... [100%] 2 of 2 ✔
 [75/232d0e] process > Resquiggle (demo2.fast5.rea... [100%] 2 of 2 ✔
 [7c/6a4152] process > DeepSignal (demo.fast5.read... [100%] 2 of 2 ✔

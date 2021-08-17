@@ -39,7 +39,6 @@ if (params.input.endsWith(".filelist.txt")) { // filelist
 process EnvCheck {
 	tag 'EnvCheck'
 	errorStrategy 'terminate'
-//	label 'with_gpus'
 
 	input:
 	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
@@ -50,6 +49,7 @@ process EnvCheck {
 	file "gcf52ref" into gcf52ref_code_ch
 
 	"""
+	set -x
 	which nanopolish
 	nanopolish --version
 
@@ -69,7 +69,7 @@ process EnvCheck {
 	DeepMod.py
 
 	which fast5mod
-    fast5mod --version
+	fast5mod --version
 
 	## Untar to dir reference_genome
 	tar -xzf ${reference_genome_tar}
@@ -251,13 +251,20 @@ process Guppy {
 	tag "${fast5_dir.baseName}"
 	disk { (((fast5_tar_size as long)*2.2 as long) >> 30).GB    + 100.GB +   20.GB * task.attempt }
 
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy" , mode: "copy", pattern: "outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy" , mode: "copy", pattern: "batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz"
+
 	input:
 	file fast5_dir from untar_out_ch2
 	each file(reference_genome) from reference_genome_ch1
+	each file("*") from ch_utils4
+	each file("*") from gcf52ref_code_ch
 	val fast5_tar_size from tar_filesize_ch2
 
 	output:
-	file "${fast5_dir.baseName}.methcalled" into guppy_methdir_out_ch
+	file "outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz" into guppy_methcall_gz_out_ch
+	file "batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*" into guppy_methcall_out_ch
+	file "batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz" into guppy_gcf52ref_out_ch
 
 	when:
 	params.runMethcall && params.runGuppy
@@ -273,64 +280,38 @@ process Guppy {
 		--verbose_logs ${params.GuppyGPUOptions}
 
 	echo "###   Guppy methylation calling DONE"
-	"""
-}
 
-
-// Extract methylation calling for Guppy with out GPU on cloud
-process GuppyExtract {
-	tag "${guppy_meth_dir.baseName}"
-
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy" , mode: "copy", pattern: "outbatch_${guppy_meth_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz"
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy" , mode: "copy", pattern: "batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz"
-
-	input:
-	file guppy_meth_dir from guppy_methdir_out_ch
-	each file("*") from ch_utils4
-	each file("*") from gcf52ref_code_ch
-	each file(reference_genome) from reference_genome_ch9
-
-	output:
-	file "outbatch_${guppy_meth_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz" into guppy_methcall_gz_out_ch
-	file "batch_${guppy_meth_dir.baseName}.guppy.fast5mod_guppy2sam.bam*" into guppy_methcall_out_ch
-	file "batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz" into guppy_gcf52ref_out_ch
-
-	when:
-	params.runMethcall && params.runGuppy
-
-	"""
-	refGenome=${params.referenceGenome}
-
+	## Extract guppy methylation-callings
 	## gcf52ref ways
 	minimap2 -t ${params.processors*2} -a -x map-ont \${refGenome} \
-		${guppy_meth_dir}/*.fastq | \
+		${fast5_dir.baseName}.methcalled/*.fastq | \
 		samtools sort -@ ${params.processors * 2} \
-		-T tmp -o gcf52ref.batch.${guppy_meth_dir.baseName}.bam
+		-T tmp -o gcf52ref.batch.${fast5_dir.baseName}.bam
 
 	samtools index -@ ${params.processors * 2} \
-		gcf52ref.batch.${guppy_meth_dir.baseName}.bam
+		gcf52ref.batch.${fast5_dir.baseName}.bam
 
 	echo "### gcf52ref minimap2 alignment is done!"
 
 	## Modified version, support dir input, not all fast5 files (too long arguments)
 	python utils/extract_methylation_fast5_support_dir.py \
-		-p ${params.processors * 2} ${guppy_meth_dir}/workspace
+		-p ${params.processors * 2} ${fast5_dir.baseName}.methcalled/workspace
 	echo "### gcf52ref extract to db DONE"
 
 	python gcf52ref/scripts/extract_methylation_from_rocks.py \
 		-d base_mods.rocksdb \
-		-a gcf52ref.batch.${guppy_meth_dir.baseName}.bam \
+		-a gcf52ref.batch.${fast5_dir.baseName}.bam \
 		-r \${refGenome} \
-		-o tmp.batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv
+		-o tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv
 	echo "### gcf52ref extract to tsv DONE"
 
-	tail -n +2 tmp.batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv | gzip > \
-		batch_${guppy_meth_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz
+	tail -n +2 tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv | gzip > \
+		batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz
 	echo "### gcf52ref all DONE"
 
 	## fast5mod ways
-	FAST5PATH=${guppy_meth_dir}/workspace
-	OUTBAM=batch_${guppy_meth_dir.baseName}.guppy.fast5mod_guppy2sam.bam
+	FAST5PATH=${fast5_dir.baseName}.methcalled/workspace
+	OUTBAM=batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam
 
 	fast5mod guppy2sam \${FAST5PATH} --reference \${refGenome} \
 		--workers 74 --recursive --quiet \
@@ -339,10 +320,11 @@ process GuppyExtract {
 
 	samtools index -@ ${params.processors * 2}  \${OUTBAM}
 
-	tar -czf outbatch_${guppy_meth_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz \
-		batch_${guppy_meth_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
+	tar -czf outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz \
+		batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
 
 	echo "###   GuppyExtract methylation calling DONE"
+
 	"""
 }
 
