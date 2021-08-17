@@ -50,9 +50,6 @@ process EnvCheck {
 	file "gcf52ref" into gcf52ref_code_ch
 
 	"""
-	which tombo
-	tombo -v
-
 	which nanopolish
 	nanopolish --version
 
@@ -62,17 +59,23 @@ process EnvCheck {
 	which deepsignal
 	deepsignal
 
+	which guppy_basecaller
+	guppy_basecaller -v
+
+	which tombo
+	tombo -v
+
 	which DeepMod.py
 	DeepMod.py
 
-	which guppy_basecaller
-	guppy_basecaller -v
+	which fast5mod
+    fast5mod --version
 
 	## Untar to dir reference_genome
 	tar -xzf ${reference_genome_tar}
 
-	## gcf52ref ways
-	###git clone https://github.com/kpalin/gcf52ref.git
+	## gcf52ref file preparation
+	### git clone https://github.com/kpalin/gcf52ref.git
 	tar xzf utils/gcf52ref.tar.gz -C .
 	patch gcf52ref/scripts/extract_methylation_from_rocks.py < utils/gcf52ref.patch
 
