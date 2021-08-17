@@ -324,7 +324,6 @@ process Guppy {
 		batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
 
 	echo "###   GuppyExtract methylation calling DONE"
-
 	"""
 }
 
