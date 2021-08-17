@@ -31,13 +31,14 @@ The 'nanome' is based on Nextflow pipeline framework, and start with raw fast5 N
 
 
 ### Software requirements
-nanopolish>=0.13.2  
-ont-tombo>=1.5.1  
-deepsignal>=0.1.8  
-deepmod>=0.1.3  
-megalodon>=2.2.9  
-METEORE>=1.0.0  
-ont-pyguppy-client-lib>=4.2.2  
+[nanopolish](https://github.com/jts/nanopolish) >=0.13.2  
+[ont-tombo](https://github.com/nanoporetech/tombo) >=1.5.1  
+[deepsignal](https://github.com/bioinfomaticsCSU/deepsignal) >=0.1.8  
+[deepmod](https://github.com/WGLab/DeepMod) >=0.1.3  
+[megalodon](https://github.com/nanoporetech/megalodon) >=2.2.9  
+[METEORE](https://github.com/comprna/METEORE) >=1.0.0  
+[ont-pyguppy-client-lib](https://github.com/nanoporetech/pyguppyclient) >=4.2.2  
+[fast5mod](https://github.com/nanoporetech/fast5mod) >=1.0.5
 
 Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https://nanoporetech.com)
 

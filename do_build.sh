@@ -24,11 +24,12 @@ docker build -t quay.io/liuyangzzu/nanome:v1.4 .
 
 docker login quay.io
 ## Enter user name and password
+# liuyangzzu+liuyangzzu_nanome
 
 docker push quay.io/liuyangzzu/nanome:v1.4
 
 ## docker run -v $PWD:$PWD -w $PWD -it  quay.io/liuyangzzu/nanome
-
+## docker run -v $PWD:$PWD -w $PWD -it  quay.io/liuyangzzu/nanome:v1.4
 exit 0
 
 ## Build docker image on google cloud platform
