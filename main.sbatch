@@ -7,34 +7,35 @@
 #SBATCH -q training
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 2 # number of cores
-#SBATCH --mem=70G # memory pool for all cores
+#SBATCH --mem=20G # memory pool for all cores
 #SBATCH --time=06:00:00 # time
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
 
 set -x
 
-date;hostname;pwd
+date
+hostname
+pwd
 
 # Get nextflow and install it
 # curl -s https://get.nextflow.io | bash
 
 workingDir=/fastscratch/liuya/nanocompare/work
-#rm -rf outputs
-#rm -rf $workingDir
 
 ###############################################################
 ###############################################################
 ###############################################################
 ## Option 1:
 # Running nanome pipeline on test data (from NA19240) in Human Genome
-#nextflow run main.nf -profile winter --input inputs/test.demo.filelist.txt \
-#    -work-dir ${workingDir}-test6
-#rm -rf ${workingDir}-test4
-./nextflow run main.nf -profile winter --input inputs/test.demo.filelist.txt
-#    -work-dir ${workingDir}-test4 \
-#    -config conf/test.config
+rm -rf ${workingDir}/test
+./nextflow run main.nf \
+    -profile winter -resume \
+    -with-report -with-timeline -with-trace -with-dag \
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
+    -work-dir ${workingDir}/test
 
+exit 0
 
 #./nextflow run main.nf -profile winter \
 #    -work-dir ${workingDir}-test3 \
@@ -48,7 +49,6 @@ workingDir=/fastscratch/liuya/nanocompare/work
 ./nextflow run main.nf -profile winter \
     -work-dir ${workingDir}-ecoli \
     -config conf/ecoli_demo.config -resume
-
 
 ###############################################################
 ###############################################################
@@ -76,8 +76,6 @@ workingDir=/fastscratch/liuya/nanocompare/work
 ###############################################################
 #./nextflow run main.nf -profile winter,test -with-singularity nanome.sif
 
-
 # module load singularity
 # builder="singularity run http://s3-far.jax.org/builder/builder"
 # $builder nanocompare.def nanocompare.sif
-

@@ -31,13 +31,14 @@ The 'nanome' is based on Nextflow pipeline framework, and start with raw fast5 N
 
 
 ### Software requirements
-nanopolish>=0.13.2  
-ont-tombo>=1.5.1  
-deepsignal>=0.1.8  
-deepmod>=0.1.3  
-megalodon>=2.2.9  
-METEORE>=1.0.0  
-ont-pyguppy-client-lib>=4.2.2  
+[nanopolish](https://github.com/jts/nanopolish) >=0.13.2  
+[ont-tombo](https://github.com/nanoporetech/tombo) >=1.5.1  
+[deepsignal](https://github.com/bioinfomaticsCSU/deepsignal) >=0.1.8  
+[deepmod](https://github.com/WGLab/DeepMod) >=0.1.3  
+[megalodon](https://github.com/nanoporetech/megalodon) >=2.2.9  
+[METEORE](https://github.com/comprna/METEORE) >=1.0.0  
+[ont-pyguppy-client-lib](https://github.com/nanoporetech/pyguppyclient) >=4.2.2  
+[fast5mod](https://github.com/nanoporetech/fast5mod) >=1.0.5
 
 Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https://nanoporetech.com)
 
@@ -58,7 +59,7 @@ The 'nanome' pipeline support running with various ways:
 * Docker
     1. Docker container name: `quay.io/liuyangzzu/nanome:v1.4`
 * Singularity
-    1. pull image from docker: `singularity pull quay.io/liuyangzzu/nanome:v1.4`
+    1. pull image from docker: `singularity pull docker://quay.io/liuyangzzu/nanome:v1.4`
 * Conda environment
     1. create conda enviroment: `conda env create -f environment.yml`
 
@@ -81,5 +82,5 @@ If you have any questions/issues/bugs, please post them on [GitHub](https://gith
 ## Reference
 Detailed results can be found in our preprint. Please cite our preprint below if you are interested in our pipeline:
 
-Yang Liu, Wojciech Rosikiewicz, Ziwei Pan, Nathaniel Jillette, Aziz Taghbalout, Jonathan Foox, Christopher Mason, Martin Carroll, Albert Cheng, Sheng Li. **DNA methylation calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation.** bioRxiv, 2020. Online at https://doi.org/10.1101/2021.05.05.442849.
+Yang Liu, Wojciech Rosikiewicz, Ziwei Pan, Nathaniel Jillette, Ping Wang, Aziz Taghbalout, Jonathan Foox, Christopher Mason, Martin Carroll, Albert Cheng, Sheng Li. **DNA methylation calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation.** bioRxiv, 2020. Online at https://doi.org/10.1101/2021.05.05.442849.
 

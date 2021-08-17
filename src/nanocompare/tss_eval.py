@@ -113,7 +113,7 @@ if __name__ == '__main__':
     logger.debug(args)
     logger.info(f'\n\n####################\n\n')
 
-    if args.output_meteore:
+    if args.output_unified_format:
         logger.info(f"We are outputing each tool's unified results same as METEORE format")
         input_list = []
         for callstr in args.calls:
