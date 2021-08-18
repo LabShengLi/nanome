@@ -10,7 +10,8 @@ import subprocess
 import pybedtools
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, save_done_file
+from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, save_done_file, \
+    narrowCoordNameList, cg_density_coord_name_list, rep_coord_name_list
 
 
 def get_nsites_in_regions(callSet, bedfn, tagname):
@@ -29,12 +30,6 @@ def summary_cpgs_stats_results_table():
     bgtruthCpGs = set(list(bgTruth.keys()))
     joinedSet = None
     unionSet = set()
-
-    ## create region bed files
-    logger.info("Create region bed list firstly, take times.")
-    region_fn_list = narrowCoordFileList[
-                     1:] + cg_density_file_list + rep_file_list
-    region_bed_list = get_region_bed_pairs_list_mp(region_fn_list)
 
     retList = []
     logger.info("Start to study coverage now:")
@@ -60,22 +55,19 @@ def summary_cpgs_stats_results_table():
         # Add coverage of every regions by each tool here
         for (bedfn, tagname, region_bed) in tqdm(
                 region_bed_list):  # calculate how overlap with Singletons, Non-Singletons, etc.
+            if region_bed is None:
+                logger.warning(f"region name={tagname} is not found")
+                continue
             intersect_bed = intersect_bed_regions(callBed, region_bed, bedfn)
             ret = {tagname: len(intersect_bed)}
             retList.append(ret)
-        if args.beddir:  # add concordant and discordant region coverage if needed
-            logger.info(f'We use Concordant and Discordant BED file at basedir={args.beddir}')
-            concordantFileName = find_bed_filename(basedir=args.beddir,
-                                                   pattern=f'{args.dsname}*hg38_nonsingletons*.concordant.bed.gz')
-            concordant_bed = get_region_bed(concordantFileName)
-            intersect_bed = intersect_bed_regions(callBed, concordant_bed, concordantFileName)
+        if concordant_bed is not None:
+            intersect_bed = intersect_bed_regions(callBed, concordant_bed)
             ret = {'Concordant': len(intersect_bed)}
             retList.append(ret)
 
-            discordantFileName = find_bed_filename(basedir=args.beddir,
-                                                   pattern=f'{args.dsname}*hg38_nonsingletons*.discordant.bed.gz')
-            discordant_bed = get_region_bed(discordantFileName)
-            intersect_bed = intersect_bed_regions(callBed, discordant_bed, discordantFileName)
+        if discordant_bed is not None:
+            intersect_bed = intersect_bed_regions(callBed, discordant_bed)
             ret = {'Discordant': len(intersect_bed)}
             retList.append(ret)
 
@@ -212,28 +204,31 @@ def parse_arguments():
     parser.add_argument('--beddir', type=str, help="base dir for bed files",
                         default=None)  # need perform performance evaluation before, then get concordant, etc. bed files, like '/projects/li-lab/yang/results/2021-04-01'
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
-    parser.add_argument('--processors', type=int, help="running processors", default=16)
+    parser.add_argument('--processors', type=int, help="running processors", default=1)
     parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff for coverage in bg-truth", default=5)
     parser.add_argument('--toolcov-cutoff', type=int, help="cutoff for coverage in nanopore tools", default=3)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
     parser.add_argument('--gen-venn', help="generate venn data", action='store_true')
     parser.add_argument('--summary-coverage', help="generate summary table for coverage at each region",
                         action='store_true')
+    parser.add_argument('--region-coe-report', help="generate report table for PCC value at each region",
+                        action='store_true')
     parser.add_argument('--enable-cache', action='store_true')
     parser.add_argument('--using-cache', action='store_true')
     parser.add_argument('--plot', help="plot the correlation figure", action='store_true')
+    parser.add_argument('--bedtools-tmp', type=str, help='special bedtools temp dir', default=temp_dir)
+    parser.add_argument('--genome-annotation', type=str, help='special genome annotation dir',
+                        default=os.path.join(data_base_dir, 'genome-annotation'))
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     set_log_debug_level()
+    args = parse_arguments()
 
     ## Set tmp dir for bedtools
-    bedtool_tmp_dir = "/fastscratch/liuya/nanocompare/bedtools_tmp"
-    os.makedirs(bedtool_tmp_dir, exist_ok=True)
-    pybedtools.helpers.set_tempdir(bedtool_tmp_dir)
-
-    args = parse_arguments()
+    os.makedirs(args.bedtools_tmp, exist_ok=True)
+    pybedtools.helpers.set_tempdir(args.bedtools_tmp)
 
     # cache function same with read level
     enable_cache = args.enable_cache
@@ -262,7 +257,6 @@ if __name__ == '__main__':
     add_logging_file(os.path.join(out_dir, 'run-results.log'))
 
     logger.debug(args)
-
     logger.info(f'\n\n####################\n\n')
 
     # we import multiple (1 or 2) replicates and join them
@@ -270,7 +264,7 @@ if __name__ == '__main__':
     fnlist = fnlist.split(';')
 
     if len(fnlist) > 2:
-        raise Exception(f'Currently only support bgtruth with upto two, but found more: {fnlist}')
+        raise Exception(f'Currently only support the number of bgtruth upto two, but found more: {fnlist}')
 
     logger.debug(f'BGTruth fnlist={fnlist}, encode={encode}')
 
@@ -435,6 +429,49 @@ if __name__ == '__main__':
     cordf.to_excel(corr_outfn)
 
     logger.info(f'\n\n####################\n\n')
+
+    if args.region_coe_report or args.summary_coverage:
+        ## load region bed list
+        logger.info("Create region bed list firstly, take times......")
+
+        # Evaluated all region filename lists, bed objects
+        regions_full_filepath = [os.path.join(args.genome_annotation, cofn) for cofn in narrowCoordNameList[1:]] + \
+                                [os.path.join(args.genome_annotation, cofn) for cofn in cg_density_coord_name_list] + \
+                                [os.path.join(args.genome_annotation, cofn) for cofn in rep_coord_name_list]
+        logger.debug(f"Evaluated regions: {regions_full_filepath}")
+        region_bed_list = get_region_bed_pairs_list_mp(regions_full_filepath, processors=args.processors)
+
+        if args.beddir:  # add concordant and discordant region coverage if needed
+            logger.info(f'We use Concordant and Discordant BED file at basedir={args.beddir}')
+            concordantFileName = find_bed_filename(basedir=args.beddir,
+                                                   pattern=f'{args.dsname}*hg38_nonsingletons*.concordant.bed.gz')
+            concordant_bed = get_region_bed(concordantFileName)
+            discordantFileName = find_bed_filename(basedir=args.beddir,
+                                                   pattern=f'{args.dsname}*hg38_nonsingletons*.discordant.bed.gz')
+            discordant_bed = get_region_bed(discordantFileName)
+        else:
+            concordant_bed = None
+            discordant_bed = None
+
+    if args.region_coe_report:
+        eval_genomic_context_tuple = [('x.x.Genome-wide', 'Genome-wide', None)] + region_bed_list
+        if concordant_bed is not None:
+            eval_genomic_context_tuple += [(os.path.basename(concordantFileName), 'Concordant', concordant_bed,)]
+        if discordant_bed is not None:
+            eval_genomic_context_tuple += [(os.path.basename(discordantFileName), 'Discordant', discordant_bed,)]
+
+        logger.debug(f"Evaluated on regions: {eval_genomic_context_tuple}")
+
+        fnlist = glob.glob(os.path.join(out_dir, 'Meth_corr_plot_data_joined-*.csv.gz'))
+        if len(fnlist) < 1:
+            raise Exception(f'Found no file for fnlist={fnlist}, for dir={out_dir}')
+        logger.info(f'Find file: {fnlist}')
+
+        basefn = os.path.basename(fnlist[0])
+        tagname = basefn.replace('Meth_corr_plot_data_joined-', '')
+        dsname = tagname[:tagname.find('_')]
+        correlation_report_on_regions(fnlist[0], bed_tuple_list=eval_genomic_context_tuple, dsname=dsname,
+                                      outdir=out_dir)
 
     if args.summary_coverage:
         logger.info("Start summarize coverage at each regions")

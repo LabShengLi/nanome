@@ -110,7 +110,9 @@ elif [ "${command}" == "seven" ]; then
         --runid MethPerf-${dsname}${runidSuffix} \
         --dsname ${dsname} \
         --min-bgtruth-cov 5 \
-        --report-joined --enable-cache --using-cache --distribution ${otherOptions} ### --mpi
+        --report-joined \
+        --enable-cache --using-cache \
+        --distribution --processors 30 ${otherOptions} ### --mpi
 else
     echo "Not support command"
     exit 255

@@ -86,19 +86,20 @@ def init_logging():
     Sample: /Users/liuya/results/log/log-11-30.txt
     :return:
     """
-    # 使用StreamHandler输出到屏幕
+    # StreamHandler to screen
     console_handler = logging.StreamHandler()
     console_handler.setLevel(init_log_level_prj)
     console_handler.setFormatter(formatter_log_results)
 
-    # 使用FileHandler输出到文件
-    file_handler = logging.FileHandler(os.path.join(log_base_dir, 'log-{}.txt'.format(today_str)))
-    file_handler.setLevel(init_log_level_prj)
-    file_handler.setFormatter(formatter_log_results)
+    # FileHandler to file
+    file_handler = None
+    # file_handler = logging.FileHandler(os.path.join(log_base_dir, 'log-{}.txt'.format(today_str)))
+    # file_handler.setLevel(init_log_level_prj)
+    # file_handler.setFormatter(formatter_log_results)
 
-    # 添加两个Handler
+    # add two Handlers
     logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
+    # logger.addHandler(file_handler)
 
     # suppress some libs' logging results
     logging.getLogger('matplotlib').setLevel(logging.WARNING)
@@ -115,7 +116,8 @@ def set_log_debug_level():
     Set debug logger level to file and std out
     :return:
     """
-    file_handler.setLevel(logging.DEBUG)
+    if file_handler is not None:
+        file_handler.setLevel(logging.DEBUG)
     console_handler.setLevel(logging.DEBUG)
     logging.getLogger().setLevel(logging.DEBUG)
 
@@ -125,13 +127,15 @@ def set_log_info_level():
     Set info logger level to file and std out
     :return:
     """
-    file_handler.setLevel(logging.INFO)
+    if file_handler is not None:
+        file_handler.setLevel(logging.INFO)
     console_handler.setLevel(logging.INFO)
     logging.getLogger().setLevel(logging.INFO)
 
 
 def set_log_error_level():
-    file_handler.setLevel(logging.ERROR)
+    if file_handler is not None:
+        file_handler.setLevel(logging.ERROR)
     console_handler.setLevel(logging.ERROR)
 
 

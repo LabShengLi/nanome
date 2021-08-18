@@ -13,6 +13,7 @@ import pickle
 import re
 import sys
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, wait
 from itertools import combinations
 from multiprocessing import Pool
 
@@ -1472,7 +1473,8 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
                                          filterChr=filterChr, formatSource="Guppy.ZW")
     elif encode == 'Guppy.gcf52ref':  # import Guppy gcf52ref read level results
         calls0 = importPredictions_Guppy_gcf52ref(infn, baseFormat=baseFormat, include_score=include_score,
-                                                  filterChr=filterChr, header=None, save_unified_format=save_unified_format,
+                                                  filterChr=filterChr, header=None,
+                                                  save_unified_format=save_unified_format,
                                                   outfn=outfn)
     elif encode == 'METEORE':  # import Guppy gcf52ref read level results
         calls0 = importPredictions_METEORE(infn, baseFormat=baseFormat, include_score=include_score,
@@ -1559,7 +1561,8 @@ def import_call_mp(infn, encode, baseFormat=1, include_score=False, siteLevel=Fa
                                          filterChr=filterChr, formatSource="Guppy.ZW")
     elif encode == 'Guppy.gcf52ref':  # import Guppy gcf52ref read level results
         calls0 = importPredictions_Guppy_gcf52ref(infn, baseFormat=baseFormat, include_score=include_score,
-                                                  filterChr=filterChr, header=None, save_unified_format=save_unified_format,
+                                                  filterChr=filterChr, header=None,
+                                                  save_unified_format=save_unified_format,
                                                   outfn=outfn)
     elif encode == 'METEORE':  # import Guppy gcf52ref read level results
         calls0 = importPredictions_METEORE(infn, baseFormat=baseFormat, include_score=include_score,
@@ -2030,7 +2033,7 @@ def eval_concordant_within_kbp_region(cpgList, evalcpg, kbp=10):
 
 
 def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcordantFileName, nsDisCordantFileName,
-                                kbp=10, print_first=False):
+                                kbp=10, print_first=False, genome_annotation_dir=os.path.join(data_base_dir, 'genome-annotation')):
     """
     Define concordant and discordant based on BG-Truth.
     Return 1-based Cocordant and Discordant regions in bed file
@@ -2048,7 +2051,7 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
     logger.debug(f"nonSingletonsPostprocessing, based on file={nsRegionsBedFileName}, kbp={kbp}")
     bedBGTruth = BedTool(calldict2txt(absoluteBGTruth), from_string=True).sort()
 
-    infn = os.path.join(data_base_dir, 'genome-annotation', nsRegionsBedFileName)
+    infn = os.path.join(genome_annotation_dir, nsRegionsBedFileName)
     regionNonsingletons = BedTool(infn).sort()
 
     regionWithBGTruth = regionNonsingletons.intersect(bedBGTruth, wa=True,
@@ -2647,14 +2650,29 @@ def map_region_fn_to_name(infn):
     raise Exception(f"Not correct infn={infn}")
 
 
-def get_region_bed(infn):
+def is_0base_region_files(infn):
     """
-    Get the BED file for infn
+    Return True if region file is 0-based start
     :param infn:
     :return:
     """
+    if os.path.basename(infn) in list_base0_bed_basefn:
+        return True
+    return False
+
+
+def get_region_bed(infn):
+    """
+    Get the BED file for infn, return 1-based start BED object
+    :param infn:
+    :return:
+    """
+    if not os.path.isfile(infn):
+        # Can not find this file
+        logger.warning(f"Can not find region file={infn}")
+        return None
     coordBed = BedTool(infn).sort()
-    if enable_base_detection_bedfile and os.path.basename(infn) in list_base0_bed_basefn:
+    if enable_base_detection_bedfile and is_0base_region_files(infn):
         coordBed = bedtool_convert_0_to_1(coordBed)
     return coordBed
 
@@ -2669,54 +2687,51 @@ def get_region_bed_pairs(infn):
         return (None, None, None)
 
     basefn = os.path.basename(infn)
-    # if basefn.endswith('.hg38_nonsingletons.concordant.bed.gz'):
-    #     tagname = 'Concordant'
-    # elif basefn.endswith('hg38_nonsingletons.discordant.bed.gz'):
-    #     tagname = 'Discordant'
-    # else:
-    #     tagname = location_filename_to_abbvname[basefn]
-    tagname = map_region_fn_to_name(infn)
+    tagname = map_region_fn_to_name(basefn)
     region_bed = get_region_bed(infn)
+    if region_bed is None:
+        logger.warning(
+            f"region {tagname} file is not loaded, filename={basefn}")
     return (basefn, tagname, region_bed)
 
 
-def get_region_bed_pairs_list_mp(infn_list, processors=30):
+def get_region_bed_pairs_list_mp(infn_list, processors=1):
     """
     Get list of pairs [(basefn, tagname, bedobject), ...] of regions file
     :param infn_list:
     :return:
     """
-    logger.info(f"get_region_bed_pairs_list_mp start, cpus={multiprocessing.cpu_count()}")
+    logger.info(f"get_region_bed_pairs_list_mp start, processors={processors}")
     with Pool(processors) as pool:
         region_bed_list = pool.map(get_region_bed_pairs, infn_list)
     logger.info("get_region_bed_pairs_list_mp finished")
     return region_bed_list
 
 
-def get_region_bed_pairs_dict_mp(region_name_list, processors=30, name_to_fn=region_name_to_fn_dict):
+def get_region_bed_pairs_list_mt(infn_list, max_threads=1):
     """
-    Get dict of {region_name: bed object} of regions file
-    :param region_name_list:
+    Get list of pairs [(basefn, tagname, bedobject), ...] of regions file
+    :param infn_list:
     :return:
     """
-    logger.info(f"get_region_bed_pairs_dict_mp start, cpus={multiprocessing.cpu_count()}")
-    region_fn_list = [name_to_fn[region_name] for region_name in region_name_list]
-    with Pool(processors) as pool:
-        region_bed_list = pool.map(get_region_bed_pairs, region_fn_list)
-    logger.info("get_region_bed_pairs_dict_mp finished")
+    logger.info(f"get_region_bed_pairs_list_mt start, max_threads={max_threads}")
+    with ThreadPoolExecutor(max_workers=max_threads) as t:
+        taskList=[]
+        for infn in infn_list:
+            task = t.submit(get_region_bed_pairs, infn)
+            taskList.append(task)
+        wait(taskList)
+        task_ret_list=[task.result() for task in taskList]
+    logger.info("get_region_bed_pairs_list_mt finished")
+    return task_ret_list
 
-    ret = {}
-    for i in range(len(region_name_list)):
-        ret[region_name_list[i]] = region_bed_list[i][2]
-    return ret
 
-
-def intersect_bed_regions(bed_a, bed_region, bedfn):
+def intersect_bed_regions(bed_a, bed_region, bedfn=""):
     """
-    Intersect A with region, consider if bedfn need strandness
+    Intersect A with region, consider if bedfn need strandness.
     :param bed_a:
     :param bed_region:
-    :param bedfn:
+    :param bedfn: default is strand insensitive
     :return:
     """
     ## Check if need strand for intersections, repetitive regions
@@ -2727,14 +2742,14 @@ def intersect_bed_regions(bed_a, bed_region, bedfn):
     return intersectBed
 
 
-def filter_corrdata_df_by_bedfile(df, coord_fn):
+def filter_corrdata_df_by_bedfile(df, coord_bed, coord_fn):
     """
     Filter lines in correlation data, within coordinate BED file
     :param df:
     :param coord_fn:
     :return:
     """
-    if not coord_fn:  # No need to filter for genome wide
+    if coord_bed is None:  # No need to filter for genome wide
         return df
 
     ## df is the dataframe for all joined csv, df_bed is the bed object used to intersect with coord file
@@ -2743,7 +2758,7 @@ def filter_corrdata_df_by_bedfile(df, coord_fn):
                     + '\t.\t.\t' + df["strand"]
     bedline_str = '\n'.join(df['bedline'].tolist())
     bed_of_df = BedTool(bedline_str, from_string=True).sort()
-    bed_of_coord = get_region_bed(coord_fn)
+    bed_of_coord = coord_bed
 
     bed_of_intersect = intersect_bed_regions(bed_of_df, bed_of_coord, coord_fn)
 
@@ -2754,7 +2769,7 @@ def filter_corrdata_df_by_bedfile(df, coord_fn):
     return retdf
 
 
-def correlation_report_on_regions(corr_infn, beddir=None, dsname=None, outdir=pic_base_dir):
+def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, outdir=pic_base_dir):
     """
     Calculate Pearson's correlation coefficient at different regions.
     :param corr_infn:
@@ -2763,27 +2778,29 @@ def correlation_report_on_regions(corr_infn, beddir=None, dsname=None, outdir=pi
     :param outdir:
     :return:
     """
+    logger.debug(f"Open corr data:{corr_infn}")
     df = pd.read_csv(corr_infn)
     logger.info(df)
 
-    location_flist = list(narrowCoordFileList) + list(cg_density_file_list) + list(rep_file_list)
-    location_ftag = list(narrowCoordFileTag) + list(cgCoordFileTag) + list(repCoordFileTag)
 
-    if beddir:  ## Add more regions such as concordant, and discrdant, etc.
-        concordantFileName = find_bed_filename(basedir=beddir, pattern=f'{dsname}*hg38_nonsingletons.concordant.bed.gz')
-        discordantFileName = find_bed_filename(basedir=beddir, pattern=f'{dsname}*hg38_nonsingletons.discordant.bed.gz')
-
-        # Name like: HL60_RRBS_2Reps_METEORE.Tools_BGTruth_cov5_Joined.bed, NA19240_RRBS_2Reps.Tools_BGTruth_cov5_Joined_baseFormat1.bed.gz
-        readLevelCertainRegion = find_bed_filename(basedir=beddir,
-                                                   pattern=f'{dsname}*Tools_BGTruth_cov5_Joined*.bed.gz')
-
-        location_flist.extend([concordantFileName, discordantFileName, readLevelCertainRegion])
-        location_ftag.extend(['Concordant', 'Discordant', 'ReadLevelCertain'])
+    # if beddir:  ## Add more regions such as concordant, and discrdant, etc.
+    #     concordantFileName = find_bed_filename(basedir=beddir, pattern=f'{dsname}*hg38_nonsingletons.concordant.bed.gz')
+    #     discordantFileName = find_bed_filename(basedir=beddir, pattern=f'{dsname}*hg38_nonsingletons.discordant.bed.gz')
+    #
+    #     # Name like: HL60_RRBS_2Reps_METEORE.Tools_BGTruth_cov5_Joined.bed, NA19240_RRBS_2Reps.Tools_BGTruth_cov5_Joined_baseFormat1.bed.gz
+    #     readLevelCertainRegion = find_bed_filename(basedir=beddir,
+    #                                                pattern=f'{dsname}*Tools_BGTruth_cov5_Joined*.bed.gz')
+    #
+    #     location_flist.extend([concordantFileName, discordantFileName, readLevelCertainRegion])
+    #     location_ftag.extend(['Concordant', 'Discordant', 'ReadLevelCertain'])
 
     dataset = defaultdict(list)
-    for tagname, coord_fn in zip(location_ftag[:], location_flist[:]):
-        logger.info(f'tagname={tagname}, coord_fn={coord_fn}')
-        newdf = filter_corrdata_df_by_bedfile(df, coord_fn)
+    for basefn, tagname, coord_bed in tqdm(bed_tuple_list):
+        logger.info(f'tagname={tagname}, coord_fn={basefn}')
+        if tagname != 'Genome-wide' and coord_bed is None:
+            logger.warning(f"Region name={tagname} is not found")
+            continue
+        newdf = filter_corrdata_df_by_bedfile(df, coord_bed, basefn)
 
         # Computer COE and pvalue
         newdf = newdf.filter(regex='_freq$', axis=1)

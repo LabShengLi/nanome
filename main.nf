@@ -1024,7 +1024,8 @@ process ReadLevelPerf {
 		--runid MethPerf-${params.runid} \
 		--dsname ${params.dsname} \
 		--min-bgtruth-cov ${params.bgtruth_cov} \
-		--report-joined --distribution -o .
+		--processors ${params.processors * 2} \
+		--report-joined -o . ## --distribution
 
 	echo "### Read level analysis DONE"
 	"""
@@ -1033,7 +1034,7 @@ process ReadLevelPerf {
 
 // Site level correlation analysis
 process SiteLevelCorr {
-	publishDir "${params.outputDir}/${params.dsname}-nanome-analysis" , mode: "copy"
+	publishDir "${params.outputDir}/nanome-analysis-${params.dsname}" , mode: "copy"
 
 	input:
 	file perfDir from readlevel_out_ch
@@ -1044,36 +1045,39 @@ process SiteLevelCorr {
 	file "MethCorr-*" into sitelevel_out_ch
 
 	when:
-	False && (fileList.size() >= 1)
+	params.eval && (fileList.size() >= 1)
 
 	"""
-	# Sort file by my self
+	# Show all files
 	flist=(\$(ls *.combine.{tsv,bed}.gz))
 	echo \${flist[@]}
 
-	deepsignalFile=\$(find . -maxdepth 1 -name '*.DeepSignal.combine.tsv.gz')
-	tomboFile=\$(find . -maxdepth 1 -name '*.Tombo.combine.bed.gz')
-	nanopolishFile=\$(find . -maxdepth 1 -name '*.Nanopolish.combine.tsv.gz')
-	deepmodFile=\$(find . -maxdepth 1 -name '*.DeepModC_clusterCpG.combine.bed.gz')
-	megalodonFile=\$(find . -maxdepth 1 -name '*.Megalodon.combine.bed.gz')
-
-	export PYTHONPATH=src:\${PYTHONPATH}
+	nanopolishFile=\$(find . -maxdepth 1 -name '*.nanopolish.per_read.combine.*.gz')
+	megalodonFile=\$(find . -maxdepth 1 -name '*.megalodon.per_read.combine.*.gz')
+	deepsignalFile=\$(find . -maxdepth 1 -name '*.deepsignal.per_read.combine.*.gz')
+	guppyFile=\$(find . -maxdepth 1 -name '*.guppy.fast5mod_per_site.combine.*.gz')
+	tomboFile=\$(find . -maxdepth 1 -name '*.tombo.per_read.combine.*.gz')
+	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_model_per_read.combine.*.gz')
+	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_clusterCpG_per_site.combine.*.gz')
 
 	## Site level evaluations
-	### python ${workflow.projectDir}/src/nanocompare/site_level_eval.py
-	python src/nanocompare/site_level_eval.py \
-		--calls DeepSignal:\${deepsignalFile} \
-				Tombo:\${tomboFile} \
+	PYTHONPATH=src  python src/nanocompare/site_level_eval.py \
+		--calls \
 				Nanopolish:\${nanopolishFile} \
-				DeepMod.Cluster:\${deepmodFile} \
 				Megalodon:\${megalodonFile} \
+				DeepSignal:\${deepsignalFile} \
+				Tombo:\${tomboFile} \
+				Guppy:\${guppyFile} \
+				METEORE:\${meteoreFile} \
+				DeepMod.Cluster:\${deepmodFile} \
 		--bgtruth "${params.bgtruthWithEncode}" \
 		--runid MethCorr-${params.runid} \
 		--dsname ${params.dsname} \
 		--min-bgtruth-cov ${params.bgtruth_cov} \
 		--toolcov-cutoff ${params.tool_cov} \
 		--beddir ${perfDir} \
-		-o .
+		--processors ${params.processors * 2} \
+		-o . --gen-venn ## --summary-coverage
 
 	echo "### Site level analysis DONE"
 	"""
