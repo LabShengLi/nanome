@@ -32,7 +32,7 @@ nextflow run https://github.com/liuyangzzu/nanome
     --input 'https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt'
 ```
 
-Command running results is below, please also check the pipeline output directory tree for [outputs](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/outputs.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/work.tree.txt) .
+Pipeline running results is below, please also check the pipeline output directory tree for [outputs](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/outputs.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/work.tree.txt). It can also generates [timeline](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/resources/timeline_demo.pdf), [report](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/resources/report_demo.pdf) and [resource usage](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/resources/trace_demo.txt.tsv).
 
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
