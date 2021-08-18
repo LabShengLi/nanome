@@ -10,31 +10,42 @@
 #SBATCH -o %x.%j.out # STDOUT
 #SBATCH -e %x.%j.err # STDERR
 
-outDir=${1:-/fastscratch/li-lab/nanome}
-mkdir -p $outDir
-
 date; hostname; pwd
 
-# Get nextflow and install it
-curl -s https://get.nextflow.io | bash
+outDir=${1:-/fastscratch/li-lab/nanome}
+mkdir -p ${outDir}; chmod ugo+w ${outDir}
 
+########################################
+########################################
+# Get nextflow and install it
+if [ ! -f "nextflow" ]; then
+    curl -s https://get.nextflow.io | bash
+fi
+
+########################################
+########################################
 # Pull nanome singularity
 module load singularity
 
-export SINGULARITY_CACHEDIR="/fastscratch/yang/singularity-cache"
-mkdir -p  $SINGULARITY_CACHEDIR
-
-sif_dir=/fastscratch/yang/sif
-mkdir -p $sif_dir
-cd $sif_dir
-singularity pull docker://quay.io/liuyangzzu/nanome:v1.4
+export SINGULARITY_CACHEDIR="${outDir}/singularity-cache"
+mkdir -p  $SINGULARITY_CACHEDIR; chmod ugo+w $SINGULARITY_CACHEDIR
+sif_dir="${outDir}/sif"
+mkdir -p $sif_dir; chmod ugo+w $sif_dir
 nanome_singularity="${sif_dir}/nanome_v1.4.sif"
+singularity pull ${nanome_singularity} docker://quay.io/liuyangzzu/nanome:v1.4
 
-cd -
+mkdir -p ${outDir}/work; chmod ugo+w ${outDir}/work
+mkdir -p ${outDir}/outputs; chmod ugo+w ${outDir}/outputs
+
+########################################
+########################################
+# Running pipeline
+set -x
 ./nextflow run main.nf \
     -profile winter2 -resume \
     -with-report -with-timeline -with-trace -with-dag \
     -work-dir ${outDir}/work \
     -with-singularity ${nanome_singularity} \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
-    --outputDir ${outDir}/outputs
+    --outputDir ${outDir}/outputs \
+    --eval true

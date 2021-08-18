@@ -24,7 +24,7 @@ def parse_arguments():
     parser.add_argument('--beddir', type=str, help="base dir for bed files",
                         default=None)  # need perform performance evaluation before, then get concordant, etc. bed files, like '/projects/li-lab/yang/results/2021-04-01'
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default='\t')
-    parser.add_argument('--processors', type=int, help="running processors", default=8)
+    parser.add_argument('--processors', type=int, help="running processors", default=1)
     parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff of coverage in bg-truth", default=1)
     parser.add_argument('--toolcov-cutoff', type=int, help="cutoff of coverage in nanopore calls", default=1)
     parser.add_argument('--baseFormat', type=int, help="base format after imported", default=1)
@@ -127,7 +127,7 @@ if __name__ == '__main__':
             outfn = os.path.join(out_dir, f"{args.dsname}_{callname}-METEORE-perRead-score.tsv.gz")
 
             input_list.append((callfn, callencode, outfn,))
-        with Pool(processes=10) as pool:
+        with Pool(processes=args.processors) as pool:
             pool.starmap(import_and_save_meteore, input_list)
 
         save_done_file(out_dir)
@@ -186,7 +186,7 @@ if __name__ == '__main__':
         input1 = (callfn, callname, callencode, minToolCovCutt, outfn, ns,)
         input_list.append(input1)
 
-    with Pool(processes=10) as pool:
+    with Pool(processes=args.processors) as pool:
         pool.starmap(import_and_save_site_level, input_list)
 
     for key in ns.callsites.keys():
