@@ -27,6 +27,7 @@ src/nanocompare/meth_stats
 src/nanocompare/methcall
 /script/
 /test/
+inputs/na12878
 .Rhistory
 dag.dot*
 report.html*
