@@ -32,7 +32,13 @@ mkdir -p  $SINGULARITY_CACHEDIR; chmod ugo+w $SINGULARITY_CACHEDIR
 sif_dir="${outDir}/sif"
 mkdir -p $sif_dir; chmod ugo+w $sif_dir
 nanome_singularity="${sif_dir}/nanome_v1.4.sif"
-singularity pull ${nanome_singularity} docker://quay.io/liuyangzzu/nanome:v1.4
+
+if [ ! -f ${nanome_singularity} ]; then
+    singularity pull ${nanome_singularity} docker://quay.io/liuyangzzu/nanome:v1.4
+fi
+
+rm -rf ${outDir}/work
+rm -rf ${outDir}/outputs
 
 mkdir -p ${outDir}/work; chmod ugo+w ${outDir}/work
 mkdir -p ${outDir}/outputs; chmod ugo+w ${outDir}/outputs

@@ -111,7 +111,9 @@ elif [ "${command}" == "seven" ]; then
         --dsname ${dsname} \
         --toolcov-cutoff 3 --min-bgtruth-cov 5 \
         --beddir ${bedDir} \
-        --enable-cache --using-cache --gen-venn --summary-coverage
+        --enable-cache --using-cache \
+        --processors 30 \
+        --gen-venn --summary-coverage --region-coe-report
 else
     echo "Not support command"
     exit 255
