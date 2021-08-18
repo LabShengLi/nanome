@@ -9,11 +9,19 @@ The command for running 'nanome' pipeline is to run `./nextflow run https://gith
 By default, we are using hg38 human reference genome, and you can specify reference genome using parameter `--referenceGenome="reference_genome/hg38/hg38.fasta"`. An example of how to use 'nanome' pipeline is given below.
 
 ```angular2html
+# Get nextflow executable file
 curl -fsSL get.nextflow.io | bash
 
-./nextflow run https://github.com/liuyangzzu/nanome \
-   --input 'https://github.com/liuyangzzu/nanome/raw/master/test_data/demo.fast5.reads.tar.gz' \
-   --dsname TestData --eval true -profile winter
+# Get nanome singularity
+singularity pull nanome_v1.4.sif docker://quay.io/liuyangzzu/nanome:v1.4
+
+# Run nanome pipeline on HPC
+./nextflow run main.nf \
+    -profile winter2 \
+    -with-report -with-timeline -with-trace -with-dag \
+    -with-singularity nanome_v1.4.sif \
+    --dsname TestData
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 ```
 
 You can also running the pipeline on CloudOS, using following command options.
@@ -21,87 +29,111 @@ You can also running the pipeline on CloudOS, using following command options.
 nextflow run https://github.com/liuyangzzu/nanome
     --config 'conf/google.config'
     --dsname TestData
-    --input 'https://github.com/liuyangzzu/nanome/raw/master/test_data/demo.fast5.reads.tar.gz'
+    --input 'https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt'
 ```
 
-Command running results is below.
+Command running results is below, please also check the pipeline output directory tree for [outputs](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/outputs.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/work.tree.txt) .
 
 ```angular2html
-/projects/li-lab/yang/workspace/nano-compare
 N E X T F L O W  ~  version 20.10.0
-Launching `main.nf` [cranky_mclean] - revision: 39f38efca0
+Launching `main.nf` [hungry_bartik] - revision: 12c6a8e37a
 NANOME - NF PIPELINE (v1.0)
-by Li Lab at The Jackon Laboratory
-http://nanome.jax.org
+by Li Lab at The Jackson Laboratory
+https://nanome.jax.org
 =================================
 dsname          :TestData
-input           :inputs/test.demo.filelist.txt
+input           :https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 reference_genome    :reference_genome/hg38/hg38.fasta
 chromSizesFile      :reference_genome/hg38/hg38.chrom.sizes
 runBasecall     :true
 runMethcall     :true
-evaluation      :false
+evaluation      :true
 =================================
-[d2/e1e047] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
-[67/e8f2d6] process > Untar (demo2.fast5.reads.tar)  [100%] 2 of 2 ✔
-[bc/ee9e6f] process > Basecall (demo2.fast5.reads... [100%] 2 of 2 ✔
-[3a/99472f] process > QCExport                       [100%] 1 of 1 ✔
-[7b/c8a7aa] process > Guppy (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
-[60/665d1e] process > Megalodon (demo.fast5.reads... [100%] 2 of 2 ✔
-[75/232d0e] process > Resquiggle (demo2.fast5.rea... [100%] 2 of 2 ✔
-[7c/6a4152] process > DeepSignal (demo.fast5.read... [100%] 2 of 2 ✔
-[98/c7c926] process > Tombo (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
-[cc/484339] process > DeepMod (demo.fast5.reads.tar) [100%] 2 of 2 ✔
-[60/a7b7e1] process > Nanopolish (demo2.fast5.rea... [100%] 2 of 2 ✔
-[7b/2bc531] process > DpSigComb                      [100%] 1 of 1 ✔
-[2d/5ca74b] process > TomboComb                      [100%] 1 of 1 ✔
-[af/7ca5e5] process > GuppyComb (1)                  [100%] 1 of 1 ✔
-[d2/20cfb9] process > MgldnComb                      [100%] 1 of 1 ✔
-[ca/910ed5] process > NplshComb                      [100%] 1 of 1 ✔
-[1b/1ec959] process > DpmodComb (1)                  [100%] 1 of 1 ✔
-Completed at: 16-Aug-2021 13:39:27
-Duration    : 41m 42s
-CPU hours   : 1.5
-Succeeded   : 18
+executor >  slurm (30)
+[a8/145382] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
+[94/d0e364] process > Untar (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
+[e4/a6c42f] process > Basecall (demo.fast5.reads.... [100%] 2 of 2 ✔
+[17/87d46b] process > QCExport                       [100%] 1 of 1 ✔
+[f0/8b1891] process > Guppy (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
+[d4/2f7794] process > Megalodon (demo.fast5.reads... [100%] 2 of 2 ✔
+[3f/336996] process > Resquiggle (demo.fast5.read... [100%] 2 of 2 ✔
+[78/76a38d] process > DeepSignal (demo.fast5.read... [100%] 2 of 2 ✔
+[b4/cd7309] process > Tombo (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
+[21/92aae7] process > DeepMod (demo.fast5.reads.tar) [100%] 2 of 2 ✔
+[bd/86ab7c] process > Nanopolish (demo.fast5.read... [100%] 2 of 2 ✔
+[aa/de3cba] process > DpSigComb                      [100%] 1 of 1 ✔
+[67/f0ba5b] process > TomboComb                      [100%] 1 of 1 ✔
+[06/911c00] process > GuppyComb (1)                  [100%] 1 of 1 ✔
+[71/7a6fe9] process > MgldnComb                      [100%] 1 of 1 ✔
+[4c/70dbe9] process > NplshComb                      [100%] 1 of 1 ✔
+[ae/17edb3] process > DpmodComb (1)                  [100%] 1 of 1 ✔
+[cf/706926] process > METEORE (1)                    [100%] 1 of 1 ✔
+[a5/732325] process > SiteLevelUnify (1)             [100%] 1 of 1 ✔
+[77/f19512] process > ReadLevelPerf (1)              [100%] 1 of 1 ✔
+[37/3cdaa5] process > SiteLevelCorr (1)              [100%] 1 of 1 ✔
+Completed at: 18-Aug-2021 16:04:14
+Duration    : 1h 46s
+CPU hours   : 1.9
+Succeeded   : 30
 ```
 
 
 All tools's methlation calling and evaluation results will be output to `outputs` folder by default below.
 
 ```angular2html
-tree outputs/TestData-methylation-callings
+tree outputs/TestData-methylation-callings/
 
-outputs/TestData-methylation-callings
-├── TestData.deepmod.C.combine.bed.gz
-├── TestData.deepsignal.call_mods.combine.tsv.gz
-├── TestData.guppy.fast5mod_site_level.combine.tsv.gz
+outputs/TestData-methylation-callings/
+├── TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz
+├── TestData.deepsignal.per_read.combine.tsv.gz
+├── TestData.guppy.fast5mod_per_site.combine.tsv.gz
 ├── TestData.megalodon.per_read.combine.bed.gz
-├── TestData.nanopolish.methylation_calls.combine.tsv.gz
-└── TestData.tombo.perReadsStats.combined.bed.gz
+├── TestData.meteore.megalodon_deepsignal_optimized_model_per_read.combine.tsv.gz
+├── TestData.nanopolish.per_read.combine.tsv.gz
+└── TestData.tombo.per_read.combine.bed.gz
 
-tree -L 3  outputs/TestData-nanome-analysis/
+tree outputs/TestData-qc-report
 
-outputs/TestData-nanome-analysis/
+outputs/TestData-qc-report
+├── TestData.coverage.negativestrand.bed.gz
+├── TestData.coverage.positivestrand.bed.gz
+└── TestData-qc-report.tar.gz
+
+tree outputs/nanome-analysis-TestData/ -L 2
+
+outputs/nanome-analysis-TestData/
 ├── MethCorr-TestData_RRBS
-│   ├── Meth_corr_plot_data_bgtruth-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv
-│   ├── Meth_corr_plot_data_joined-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv
-│   ├── Meth_corr_plot_data-TestData_RRBS-correlation-matrix.xlsx
+│   ├── DONE.txt
+│   ├── Meth_corr_plot_data_bgtruth-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv.gz
+│   ├── Meth_corr_plot_data_joined-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv.gz
+│   ├── Meth_corr_plot_data-TestData_RRBS-correlation-matrix-toolcov1-bsseqcov1.xlsx
 │   ├── run-results.log
-│   ├── TestData_RRBS-summary-bgtruth-tools-bsCov1-minCov1.csv
-│   ├── venn.data.TestData_RRBS.TestData.five.tools.cov1.dat
-│   └── venn.data.TestData_RRBS.TestData.top3.cov1.dat
-└── MethPerf-TestData_RRBS
-    ├── performance-results
-    │   ├── curve_data
-    │   ├── TestData_RRBS.DeepMod.performance.report.csv
-    │   ├── TestData_RRBS.DeepSignal.performance.report.csv
-    │   ├── TestData_RRBS.Megalodon.performance.report.csv
-    │   └── TestData_RRBS.Nanopolish.performance.report.csv
-    ├── run-results.log
-    ├── TestData_RRBS.hg38_nonsingletons.concordant.bed
-    ├── TestData_RRBS.hg38_nonsingletons.discordant.bed
-    ├── TestData_RRBS.summary.bsseq.singleton.nonsingleton.cov1.csv
-    └── TestData_RRBS.Tools_BGTruth_cov1_Joined.bed
+│   ├── TestData.tools.cov1.join.with.bsseq.cov1.site.level.report.csv
+│   └── venn_data
+├── MethPerf-TestData_RRBS
+│   ├── DONE.txt
+│   ├── performance-results
+│   ├── run-results.log
+│   ├── TestData_RRBS.hg38_nonsingletons.concordant.bed.gz
+│   ├── TestData_RRBS.hg38_nonsingletons.discordant.bed.gz
+│   ├── TestData_RRBS.summary.bsseq.cov1.joined.tools.singleton.nonsingleton.table.like.s2.csv
+│   ├── TestData_RRBS.summary.bsseq.singleton.nonsingleton.cov1.csv
+│   ├── TestData_RRBS.Tools_BGTruth_cov1_Joined_baseFormat1.bed.gz
+│   └── TestData.tools.cov1.join.with.bsseq.cov1.read.level.report.xlsx
+├── Read_Level-TestData
+│   ├── TestData_DeepSignal-METEORE-perRead-score.tsv.gz
+│   ├── TestData_Guppy-METEORE-perRead-score.tsv.gz
+│   ├── TestData_Megalodon-METEORE-perRead-score.tsv.gz
+│   ├── TestData_Nanopolish-METEORE-perRead-score.tsv.gz
+│   └── TestData_Tombo-METEORE-perRead-score.tsv.gz
+└── Site_Level-TestData
+    ├── Site_Level-TestData.tss.DeepMod.cov1.bed.gz
+    ├── Site_Level-TestData.tss.DeepSignal.cov1.bed.gz
+    ├── Site_Level-TestData.tss.Guppy.cov1.bed.gz
+    ├── Site_Level-TestData.tss.Megalodon.cov1.bed.gz
+    ├── Site_Level-TestData.tss.METEORE.cov1.bed.gz
+    ├── Site_Level-TestData.tss.Nanopolish.cov1.bed.gz
+    └── Site_Level-TestData.tss.Tombo.cov1.bed.gz
 ```
 
 We also support input as a file list if input is suffix like `.filelist.txt`, an example input is [inputs/test.demo.filelist.txt](https://github.com/liuyangzzu/nanome/blob/master/inputs/test.demo.filelist.txt).

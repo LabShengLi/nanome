@@ -1,0 +1,1997 @@
+work
+├── 04
+│   └── 5910ab7d6bbdbeeb5e47117408222d
+│       ├── batch_demo2.fast5.reads.tar.CpG.deepsignal.call_mods.tsv.gz
+│       ├── demo2.fast5.reads.tar.resquiggle -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/9f/45b9d8490b0f46310d7be04ed25cd5/demo2.fast5.reads.tar.resquiggle
+│       ├── model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+
+│       │   ├── bn_17.sn_360.epoch_9.ckpt.data-00000-of-00001
+│       │   ├── bn_17.sn_360.epoch_9.ckpt.index
+│       │   ├── bn_17.sn_360.epoch_9.ckpt.meta
+│       │   └── checkpoint
+│       ├── model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz -> /pod/2/li-lab/Nanopore_compare/nf_input/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz
+│       └── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+├── 06
+│   └── 911c004ce23b67ad041adc761dda63
+│       ├── batch_demo2.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/90/7cb1bb9ff02cfab76bc88eeb5692dc/batch_demo2.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam
+│       ├── batch_demo2.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam.bai -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/90/7cb1bb9ff02cfab76bc88eeb5692dc/batch_demo2.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam.bai
+│       ├── batch_demo2.fast5.reads.tar.guppy.gcf52ref_per_read.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/90/7cb1bb9ff02cfab76bc88eeb5692dc/batch_demo2.fast5.reads.tar.guppy.gcf52ref_per_read.tsv.gz
+│       ├── batch_demo.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/f0/8b1891d334ef63089e1e6938fc6319/batch_demo.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam
+│       ├── batch_demo.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam.bai -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/f0/8b1891d334ef63089e1e6938fc6319/batch_demo.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam.bai
+│       ├── batch_demo.fast5.reads.tar.guppy.gcf52ref_per_read.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/f0/8b1891d334ef63089e1e6938fc6319/batch_demo.fast5.reads.tar.guppy.gcf52ref_per_read.tsv.gz
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+│       ├── TestData.guppy_fast5mod.combined.bam.tar.gz
+│       ├── TestData.guppy.fast5mod_per_site.combine.tsv.gz
+│       └── TestData.guppy.gcf52ref_per_read.combine.tsv.gz
+├── 14
+│   └── 07244bc053ea48ce0a30516c03cfb1
+│       ├── batch_demo2.fast5.reads.tar.CpG.tombo.per_read_stats
+│       ├── batch_demo2.fast5.reads.tar.CpG.tombo.per_read_stats.bed.gz
+│       ├── batch_demo2.fast5.reads.tar.CpG.tombo.stats
+│       ├── demo2.fast5.reads.tar.resquiggle -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/9f/45b9d8490b0f46310d7be04ed25cd5/demo2.fast5.reads.tar.resquiggle
+│       ├── demo2.fast5.reads.tar.tombo.run.log
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+├── 17
+│   └── 87d46b6fa663e20c300d9235e3e5d0
+│       ├── demo2.fast5.reads.tar.basecalled.bam -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/1f/62bcaa308485ab80ea2b364e4f5284/demo2.fast5.reads.tar.basecalled.bam
+│       ├── demo2.fast5.reads.tar-sequencing_summary.txt -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/1f/62bcaa308485ab80ea2b364e4f5284/demo2.fast5.reads.tar.basecalled/demo2.fast5.reads.tar-sequencing_summary.txt
+│       ├── demo.fast5.reads.tar.basecalled.bam -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/e4/a6c42f89f1bca511dc555476df7cd4/demo.fast5.reads.tar.basecalled.bam
+│       ├── demo.fast5.reads.tar-sequencing_summary.txt -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/e4/a6c42f89f1bca511dc555476df7cd4/demo.fast5.reads.tar.basecalled/demo.fast5.reads.tar-sequencing_summary.txt
+│       ├── TestData.coverage.negativestrand.bed.gz
+│       ├── TestData.coverage.positivestrand.bed.gz
+│       ├── TestData_merged.bam
+│       ├── TestData_merged.bam.bai
+│       ├── TestData-qc-report
+│       │   ├── demo2.fast5.reads.tar-sequencing_summary.txt
+│       │   └── demo.fast5.reads.tar-sequencing_summary.txt
+│       └── TestData-qc-report.tar.gz
+├── 1f
+│   └── 62bcaa308485ab80ea2b364e4f5284
+│       ├── demo2.fast5.reads.tar.basecalled
+│       │   ├── demo2.fast5.reads.tar-sequencing_summary.txt
+│       │   ├── fastq_runid_067f8be7e5b4cac3170a36762e4878ba47eded20_0_0.fastq
+│       │   ├── fastq_runid_098c8278671ebb3df841b55ae73e7b7ca551ae8f_0_0.fastq
+│       │   ├── fastq_runid_0dda486d2f64c95b309f091ef013e31552f06a16_0_0.fastq
+│       │   ├── fastq_runid_233a1e55890869e7fe9651a4312a7df067aa419a_0_0.fastq
+│       │   ├── fastq_runid_27ce003e2a27f2fa749ebc26e04f8be83277bf6f_0_0.fastq
+│       │   ├── fastq_runid_385249cb667e0d1422d6589f455eceb44f303f75_0_0.fastq
+│       │   ├── fastq_runid_3a557d817fc78485f07a0d699ff00e80dfaab03e_0_0.fastq
+│       │   ├── fastq_runid_4a0b79a6d2b519101fe38535d229566c41c52c75_0_0.fastq
+│       │   ├── fastq_runid_4ad73ce5c735833db3b08fbc48379e456c52024c_0_0.fastq
+│       │   ├── fastq_runid_6bbb3c6f574fb109d7cad9a8811d7fbe5b7e81f9_0_0.fastq
+│       │   ├── fastq_runid_731889dc3fde03409d19417d7a76e850c59fd12a_0_0.fastq
+│       │   ├── fastq_runid_85b27b7d78ff7447b2d7eab4ce89d16785288173_0_0.fastq
+│       │   ├── fastq_runid_a19e2b775c5f8ee3d3c2293f06d6dc1127802153_0_0.fastq
+│       │   ├── fastq_runid_e9699e7507873bbb46e53bea45f46c292fd3c9bf_0_0.fastq
+│       │   ├── guppy_basecaller_log-2021-08-18_15-05-02.log
+│       │   ├── guppy_basecaller_verbose_log-2021-08-18_15-05-02.log
+│       │   ├── sequencing_telemetry.js
+│       │   └── workspace
+│       │       ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch68_read3820.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch12_read10393.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch293_read971.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_read_27487_ch_245_strand.fast5
+│       │       ├── GXB01102_20180126_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002_58381_read_257_ch_396_strand.fast5
+│       │       ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_ch87_read7346.fast5
+│       │       ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_read_11179_ch_12_strand.fast5
+│       │       ├── GXB01102_20180202_FAH58845_GA20000_sequencing_run_180202_18_lee_001_GXB01102_002_33233_read_48602_ch_317_strand.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch402_read25618.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch419_read21738.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch69_read3745.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_read_2842_ch_417_strand.fast5
+│       │       ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch285_read43240.fast5
+│       │       ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch507_read3355.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch471_read166952.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch162_read46690.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch27_read8601.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch331_read3837.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch354_read25106.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_read_27764_ch_497_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch261_read10049.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch365_read12855.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch462_read6220.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch222_read34004.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch236_read48072.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch256_read5351.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch421_read24443.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch188_read23328.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch347_read211808.fast5
+│       │       └── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch66_read47778.fast5
+│       ├── demo2.fast5.reads.tar.basecalled.bam
+│       ├── demo2.fast5.reads.tar.untar -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/3e/c9631a66b115f1b54a5434002b6999/demo2.fast5.reads.tar.untar
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+├── 21
+│   └── 92aae7f8c1939920ac818d07ec93b3
+│       ├── batch_demo.fast5.reads.tar_num.tar.gz
+│       ├── DeepMod-0.1.3
+│       │   ├── bin
+│       │   │   ├── DeepMod.py
+│       │   │   └── DeepMod_scripts
+│       │   │       ├── EventTable.py
+│       │   │       ├── __init__.py
+│       │   │       ├── MoveTable.py
+│       │   │       ├── myCom.py
+│       │   │       ├── myDetect.py
+│       │   │       ├── myGetFeatureBasedPos.py
+│       │   │       └── myMultiBiRNN.py
+│       │   ├── DeepMod_tools
+│       │   │   ├── cal_EcoliDetPerf.py
+│       │   │   ├── generate_motif_pos.py
+│       │   │   ├── hm_cluster_predict.py
+│       │   │   └── sum_chr_mod.py
+│       │   ├── docs
+│       │   │   ├── Description of well-trained models.md
+│       │   │   ├── Install.md
+│       │   │   ├── Reproducibility.md
+│       │   │   ├── Results_explanation.md
+│       │   │   └── Usage.md
+│       │   ├── INSTALL
+│       │   ├── LICENSE
+│       │   ├── README.md
+│       │   ├── setup.py
+│       │   └── train_deepmod
+│       │       ├── na12878_cluster_train_mod-keep_prob0.7-nb25-chr1
+│       │       │   ├── Cg.cov5.nb25.data-00000-of-00001
+│       │       │   ├── Cg.cov5.nb25.index
+│       │       │   ├── Cg.cov5.nb25.meta
+│       │       │   └── checkpoint
+│       │       ├── rnn_conmodA_E1m2wd21_f7ne1u0_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_conmodA_E1m2wd21_f3ne1u0.data-00000-of-00001
+│       │       │   ├── mod_train_conmodA_E1m2wd21_f3ne1u0.index
+│       │       │   └── mod_train_conmodA_E1m2wd21_f3ne1u0.meta
+│       │       ├── rnn_conmodA_P100wd21_f7ne1u0_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_conmodA_P100wd21_f3ne1u0.data-00000-of-00001
+│       │       │   ├── mod_train_conmodA_P100wd21_f3ne1u0.index
+│       │       │   └── mod_train_conmodA_P100wd21_f3ne1u0.meta
+│       │       ├── rnn_conmodC_P100wd21_f7ne1u0_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_conmodC_P100wd21_f3ne1u0.data-00000-of-00001
+│       │       │   ├── mod_train_conmodC_P100wd21_f3ne1u0.index
+│       │       │   └── mod_train_conmodC_P100wd21_f3ne1u0.meta
+│       │       ├── rnn_f7_wd21_chr1to10_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_f7_wd21_chr1to10.data-00000-of-00001
+│       │       │   ├── mod_train_f7_wd21_chr1to10.index
+│       │       │   └── mod_train_f7_wd21_chr1to10.meta
+│       │       └── rnn_sinmodC_P100wd21_f7ne1u0_4
+│       │           ├── checkpoint
+│       │           ├── mod_train_sinmodC_P100wd21_f3ne1u0.data-00000-of-00001
+│       │           ├── mod_train_sinmodC_P100wd21_f3ne1u0.index
+│       │           └── mod_train_sinmodC_P100wd21_f3ne1u0.meta
+│       ├── demo.fast5.reads.tar.basecalled -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/e4/a6c42f89f1bca511dc555476df7cd4/demo.fast5.reads.tar.basecalled
+│       ├── mod_output
+│       │   ├── batch_demo.fast5.reads.tar_num
+│       │   │   ├── 0
+│       │   │   │   ├── chr10.rnn.pred.ind.0
+│       │   │   │   ├── chr11.rnn.pred.ind.0
+│       │   │   │   ├── chr12.rnn.pred.ind.0
+│       │   │   │   ├── chr13.rnn.pred.ind.0
+│       │   │   │   ├── chr14.rnn.pred.ind.0
+│       │   │   │   ├── chr15.rnn.pred.ind.0
+│       │   │   │   ├── chr16.rnn.pred.ind.0
+│       │   │   │   ├── chr17.rnn.pred.ind.0
+│       │   │   │   ├── chr18.rnn.pred.ind.0
+│       │   │   │   ├── chr19.rnn.pred.ind.0
+│       │   │   │   ├── chr1.rnn.pred.ind.0
+│       │   │   │   ├── chr20.rnn.pred.ind.0
+│       │   │   │   ├── chr21.rnn.pred.ind.0
+│       │   │   │   ├── chr22.rnn.pred.ind.0
+│       │   │   │   ├── chr2.rnn.pred.ind.0
+│       │   │   │   ├── chr3.rnn.pred.ind.0
+│       │   │   │   ├── chr4.rnn.pred.ind.0
+│       │   │   │   ├── chr5.rnn.pred.ind.0
+│       │   │   │   ├── chr6.rnn.pred.ind.0
+│       │   │   │   ├── chr7.rnn.pred.ind.0
+│       │   │   │   ├── chr8.rnn.pred.ind.0
+│       │   │   │   ├── chr9.rnn.pred.ind.0
+│       │   │   │   ├── chrM.rnn.pred.ind.0
+│       │   │   │   ├── chrX.rnn.pred.ind.0
+│       │   │   │   └── rnn.pred.detail.fast5.0
+│       │   │   ├── mod_pos.chr10-.C.bed
+│       │   │   ├── mod_pos.chr10+.C.bed
+│       │   │   ├── mod_pos.chr11-.C.bed
+│       │   │   ├── mod_pos.chr11+.C.bed
+│       │   │   ├── mod_pos.chr12-.C.bed
+│       │   │   ├── mod_pos.chr12+.C.bed
+│       │   │   ├── mod_pos.chr13-.C.bed
+│       │   │   ├── mod_pos.chr14-.C.bed
+│       │   │   ├── mod_pos.chr14+.C.bed
+│       │   │   ├── mod_pos.chr15+.C.bed
+│       │   │   ├── mod_pos.chr16-.C.bed
+│       │   │   ├── mod_pos.chr17-.C.bed
+│       │   │   ├── mod_pos.chr17+.C.bed
+│       │   │   ├── mod_pos.chr18-.C.bed
+│       │   │   ├── mod_pos.chr19-.C.bed
+│       │   │   ├── mod_pos.chr1-.C.bed
+│       │   │   ├── mod_pos.chr1+.C.bed
+│       │   │   ├── mod_pos.chr20+.C.bed
+│       │   │   ├── mod_pos.chr21-.C.bed
+│       │   │   ├── mod_pos.chr22+.C.bed
+│       │   │   ├── mod_pos.chr2-.C.bed
+│       │   │   ├── mod_pos.chr2+.C.bed
+│       │   │   ├── mod_pos.chr3-.C.bed
+│       │   │   ├── mod_pos.chr3+.C.bed
+│       │   │   ├── mod_pos.chr4-.C.bed
+│       │   │   ├── mod_pos.chr4+.C.bed
+│       │   │   ├── mod_pos.chr5+.C.bed
+│       │   │   ├── mod_pos.chr6-.C.bed
+│       │   │   ├── mod_pos.chr6+.C.bed
+│       │   │   ├── mod_pos.chr7-.C.bed
+│       │   │   ├── mod_pos.chr7+.C.bed
+│       │   │   ├── mod_pos.chr8-.C.bed
+│       │   │   ├── mod_pos.chr8+.C.bed
+│       │   │   ├── mod_pos.chr9+.C.bed
+│       │   │   ├── mod_pos.chrM-.C.bed
+│       │   │   ├── mod_pos.chrX-.C.bed
+│       │   │   ├── mod_pos.chrX+.C.bed
+│       │   │   ├── rnn.pred.ind.chr1
+│       │   │   ├── rnn.pred.ind.chr10
+│       │   │   ├── rnn.pred.ind.chr11
+│       │   │   ├── rnn.pred.ind.chr12
+│       │   │   ├── rnn.pred.ind.chr13
+│       │   │   ├── rnn.pred.ind.chr14
+│       │   │   ├── rnn.pred.ind.chr15
+│       │   │   ├── rnn.pred.ind.chr16
+│       │   │   ├── rnn.pred.ind.chr17
+│       │   │   ├── rnn.pred.ind.chr18
+│       │   │   ├── rnn.pred.ind.chr19
+│       │   │   ├── rnn.pred.ind.chr2
+│       │   │   ├── rnn.pred.ind.chr20
+│       │   │   ├── rnn.pred.ind.chr21
+│       │   │   ├── rnn.pred.ind.chr22
+│       │   │   ├── rnn.pred.ind.chr3
+│       │   │   ├── rnn.pred.ind.chr4
+│       │   │   ├── rnn.pred.ind.chr5
+│       │   │   ├── rnn.pred.ind.chr6
+│       │   │   ├── rnn.pred.ind.chr7
+│       │   │   ├── rnn.pred.ind.chr8
+│       │   │   ├── rnn.pred.ind.chr9
+│       │   │   ├── rnn.pred.ind.chrM
+│       │   │   └── rnn.pred.ind.chrX
+│       │   └── batch_demo.fast5.reads.tar_num.done
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+│       └── v0.1.3.tar.gz
+├── 37
+│   └── 3cdaa560a76d0ecbbf702c05d68b58
+│       ├── MethCorr-TestData_RRBS
+│       │   ├── DONE.txt
+│       │   ├── Meth_corr_plot_data_bgtruth-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv.gz
+│       │   ├── Meth_corr_plot_data_joined-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv.gz
+│       │   ├── Meth_corr_plot_data-TestData_RRBS-correlation-matrix-toolcov1-bsseqcov1.xlsx
+│       │   ├── run-results.log
+│       │   ├── TestData.tools.cov1.join.with.bsseq.cov1.site.level.report.csv
+│       │   └── venn_data
+│       │       ├── TestData.bgtruth.cpg.sites.cov1.setsfile.txt.gz
+│       │       ├── TestData.DeepMod.cpg.sites.cov1.setsfile.txt.gz
+│       │       ├── TestData.DeepSignal.cpg.sites.cov1.setsfile.txt.gz
+│       │       ├── TestData.Guppy.cpg.sites.cov1.setsfile.txt.gz
+│       │       ├── TestData.Megalodon.cpg.sites.cov1.setsfile.txt.gz
+│       │       ├── TestData.METEORE.cpg.sites.cov1.setsfile.txt.gz
+│       │       ├── TestData.Nanopolish.cpg.sites.cov1.setsfile.txt.gz
+│       │       └── TestData.Tombo.cpg.sites.cov1.setsfile.txt.gz
+│       ├── MethPerf-TestData_RRBS -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/77/f19512c814fa45281afa47bc58b686/MethPerf-TestData_RRBS
+│       ├── src -> /pod/2/li-lab/yang/workspace/nano-compare/src
+│       ├── TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/ae/17edb30c5e0fa1552e2a671939c48f/TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz
+│       ├── TestData.deepmod.C_per_site.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/ae/17edb30c5e0fa1552e2a671939c48f/TestData.deepmod.C_per_site.combine.bed.gz
+│       ├── TestData.deepsignal.per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/aa/de3cba497cd326bbfcb5b669928cfc/TestData.deepsignal.per_read.combine.tsv.gz
+│       ├── TestData.guppy.fast5mod_per_site.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/06/911c004ce23b67ad041adc761dda63/TestData.guppy.fast5mod_per_site.combine.tsv.gz
+│       ├── TestData.guppy.gcf52ref_per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/06/911c004ce23b67ad041adc761dda63/TestData.guppy.gcf52ref_per_read.combine.tsv.gz
+│       ├── TestData.megalodon.per_read.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/71/7a6fe9d98ca41323c8404f04390630/TestData.megalodon.per_read.combine.bed.gz
+│       ├── TestData.meteore.megalodon_deepsignal_optimized_model_per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/cf/706926eb209cc61b2e00c783ded5bb/TestData.meteore.megalodon_deepsignal_optimized_model_per_read.combine.tsv.gz
+│       ├── TestData.nanopolish.per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/4c/70dbe92832763181260aa66d69d465/TestData.nanopolish.per_read.combine.tsv.gz
+│       └── TestData.tombo.per_read.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/67/f0ba5b9910cfa109b2d68f33420f4f/TestData.tombo.per_read.combine.bed.gz
+├── 39
+│   └── 072bdb88cbe523540c5851bf2cf510
+│       ├── batch_demo2.fast5.reads.tar.megalodon.per_read_modified_base_calls.txt.gz
+│       ├── demo2.fast5.reads.tar.untar -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/3e/c9631a66b115f1b54a5434002b6999/demo2.fast5.reads.tar.untar
+│       ├── megalodon_model
+│       │   ├── adapter_scaling_dna_r9.4.1_min.jsn
+│       │   ├── barcoding
+│       │   │   ├── 4x4_mismatch_matrix.txt
+│       │   │   ├── 5x5_mismatch_matrix_simple.txt
+│       │   │   ├── 5x5_mismatch_matrix.txt
+│       │   │   ├── barcode_arrs_16s.cfg
+│       │   │   ├── barcode_arrs_dual_nb24_pcr96.cfg
+│       │   │   ├── barcode_arrs_lamp8.cfg
+│       │   │   ├── barcode_arrs_lamp96.cfg
+│       │   │   ├── barcode_arrs_lwb.cfg
+│       │   │   ├── barcode_arrs_nb12.cfg
+│       │   │   ├── barcode_arrs_nb24.cfg
+│       │   │   ├── barcode_arrs_nb96.cfg
+│       │   │   ├── barcode_arrs_pcr12.cfg
+│       │   │   ├── barcode_arrs_pcr96.cfg
+│       │   │   ├── barcode_arrs_rab.cfg
+│       │   │   ├── barcode_arrs_rbk096.cfg
+│       │   │   ├── barcode_arrs_rbk4.cfg
+│       │   │   ├── barcode_arrs_rbk.cfg
+│       │   │   ├── barcode_arrs_rlb.cfg
+│       │   │   ├── barcode_arrs_vmk2.cfg
+│       │   │   ├── barcode_arrs_vmk.cfg
+│       │   │   ├── barcode_score_vs_classification.png
+│       │   │   ├── barcodes_masked.fasta
+│       │   │   ├── configuration.cfg
+│       │   │   ├── configuration_dual.cfg
+│       │   │   ├── lamp_targets.fasta
+│       │   │   └── nw_barcoding_grid.png
+│       │   ├── lambda_3.6kb.fasta
+│       │   ├── res_dna_r941_min_modbases_5mC_v001.cfg
+│       │   ├── res_dna_r941_min_modbases_5mC_v001.checkpoint
+│       │   └── res_dna_r941_min_modbases_5mC_v001.jsn
+│       ├── megalodon_model.tar.gz -> /pod/2/li-lab/Nanopore_compare/nf_input/megalodon_model.tar.gz
+│       ├── megalodon_results
+│       │   ├── guppy_log
+│       │   │   └── guppy_basecall_server_log-2021-08-18_15-05-06.log
+│       │   ├── guppy_log.err
+│       │   ├── guppy_log.out
+│       │   ├── log.txt
+│       │   ├── modified_bases.5mC.bed
+│       │   ├── modified_bases.5mC.fwd_strand.wig
+│       │   ├── modified_bases.5mC.rev_strand.wig
+│       │   ├── per_read_modified_base_calls.db
+│       │   └── per_read_modified_base_calls.txt
+│       └── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+├── 3e
+│   └── c9631a66b115f1b54a5434002b6999
+│       ├── demo2.fast5.reads.tar.gz -> /fastscratch/li-lab/nanome/work/stage/41/12e11634d8ad66aef303b4e576fbbf/demo2.fast5.reads.tar.gz
+│       ├── demo2.fast5.reads.tar.untar
+│       │   ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch68_read3820.fast5
+│       │   ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch12_read10393.fast5
+│       │   ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch293_read971.fast5
+│       │   ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_read_27487_ch_245_strand.fast5
+│       │   ├── GXB01102_20180126_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002_58381_read_257_ch_396_strand.fast5
+│       │   ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_ch87_read7346.fast5
+│       │   ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_read_11179_ch_12_strand.fast5
+│       │   ├── GXB01102_20180202_FAH58845_GA20000_sequencing_run_180202_18_lee_001_GXB01102_002_33233_read_48602_ch_317_strand.fast5
+│       │   ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch402_read25618.fast5
+│       │   ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch419_read21738.fast5
+│       │   ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch69_read3745.fast5
+│       │   ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_read_2842_ch_417_strand.fast5
+│       │   ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch285_read43240.fast5
+│       │   ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch507_read3355.fast5
+│       │   ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch471_read166952.fast5
+│       │   ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch162_read46690.fast5
+│       │   ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch27_read8601.fast5
+│       │   ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch331_read3837.fast5
+│       │   ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch354_read25106.fast5
+│       │   ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_read_27764_ch_497_strand.fast5
+│       │   ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch261_read10049.fast5
+│       │   ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch365_read12855.fast5
+│       │   ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch462_read6220.fast5
+│       │   ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch222_read34004.fast5
+│       │   ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch236_read48072.fast5
+│       │   ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch256_read5351.fast5
+│       │   ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch421_read24443.fast5
+│       │   ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch188_read23328.fast5
+│       │   ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch347_read211808.fast5
+│       │   └── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch66_read47778.fast5
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+├── 3f
+│   └── 336996a4226e7b5587ee9ced750f2a
+│       ├── demo.fast5.reads.tar.basecalled -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/e4/a6c42f89f1bca511dc555476df7cd4/demo.fast5.reads.tar.basecalled
+│       ├── demo.fast5.reads.tar.resquiggle
+│       │   ├── demo.fast5.reads.tar-sequencing_summary.txt
+│       │   ├── fastq_runid_067f8be7e5b4cac3170a36762e4878ba47eded20_0_0.fastq
+│       │   ├── fastq_runid_098c8278671ebb3df841b55ae73e7b7ca551ae8f_0_0.fastq
+│       │   ├── fastq_runid_0dda486d2f64c95b309f091ef013e31552f06a16_0_0.fastq
+│       │   ├── fastq_runid_20094623c8dd7fa115bb84072199ad962c57ca69_0_0.fastq
+│       │   ├── fastq_runid_233a1e55890869e7fe9651a4312a7df067aa419a_0_0.fastq
+│       │   ├── fastq_runid_27ce003e2a27f2fa749ebc26e04f8be83277bf6f_0_0.fastq
+│       │   ├── fastq_runid_385249cb667e0d1422d6589f455eceb44f303f75_0_0.fastq
+│       │   ├── fastq_runid_3a557d817fc78485f07a0d699ff00e80dfaab03e_0_0.fastq
+│       │   ├── fastq_runid_401a2a1fbc3f47cec5ed931cdbd64c075c3fe0f4_0_0.fastq
+│       │   ├── fastq_runid_4a0b79a6d2b519101fe38535d229566c41c52c75_0_0.fastq
+│       │   ├── fastq_runid_4ad73ce5c735833db3b08fbc48379e456c52024c_0_0.fastq
+│       │   ├── fastq_runid_674eade50eaf56e4dd3a6eadbd3311b122a2672e_0_0.fastq
+│       │   ├── fastq_runid_6bbb3c6f574fb109d7cad9a8811d7fbe5b7e81f9_0_0.fastq
+│       │   ├── fastq_runid_6ec0cc71c653a67d124c1e6a12d434d1bd038e94_0_0.fastq
+│       │   ├── fastq_runid_731889dc3fde03409d19417d7a76e850c59fd12a_0_0.fastq
+│       │   ├── fastq_runid_851c5b273cfa8598cf6bb4baece0787b5c552d4c_0_0.fastq
+│       │   ├── fastq_runid_85b27b7d78ff7447b2d7eab4ce89d16785288173_0_0.fastq
+│       │   ├── fastq_runid_a0795d21763d5515e8d04f7ea59728c5489daef0_0_0.fastq
+│       │   ├── fastq_runid_a0ac6263a22e6ffae3a9fb9976d1c9d42a15122d_0_0.fastq
+│       │   ├── fastq_runid_a19e2b775c5f8ee3d3c2293f06d6dc1127802153_0_0.fastq
+│       │   ├── fastq_runid_a62f4e94e1adc24ec06f83e560fcb260f421df61_0_0.fastq
+│       │   ├── fastq_runid_a71281099a34c6da392ba989c4b8c88d4af3df38_0_0.fastq
+│       │   ├── fastq_runid_c1cf079ba0bbc5752bd3855a7d22e64952b9196f_0_0.fastq
+│       │   ├── fastq_runid_c74dfb9d08ecc359e3c16658035ddbdf28fea6c4_0_0.fastq
+│       │   ├── fastq_runid_e5e10837d930df529e64a7e1f3edffb25f04b0de_0_0.fastq
+│       │   ├── fastq_runid_e9699e7507873bbb46e53bea45f46c292fd3c9bf_0_0.fastq
+│       │   ├── guppy_basecaller_log-2021-08-18_15-04-58.log
+│       │   ├── guppy_basecaller_verbose_log-2021-08-18_15-04-58.log
+│       │   ├── sequencing_telemetry.js
+│       │   └── workspace
+│       │       ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch107_read99744.fast5
+│       │       ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch323_read8827.fast5
+│       │       ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch335_read46533.fast5
+│       │       ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch68_read3820.fast5
+│       │       ├── GXB01025_20180129_FAH50344_GA40000_sequencing_run_180129_18_lee_001_GXB01025_004B_76359_ch10_read24663.fast5
+│       │       ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002_33841_read_1900_ch_85_strand.fast5
+│       │       ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002_33841_read_2358_ch_473_strand.fast5
+│       │       ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002B_13376_ch108_read58003.fast5
+│       │       ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002B_13376_ch117_read3139.fast5
+│       │       ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002B_13376_ch297_read7275.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005_83336_read_1065_ch_392_strand.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch12_read10393.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch293_read971.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch433_read5328.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch59_read41648.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_read_15235_ch_265_strand.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_read_27487_ch_245_strand.fast5
+│       │       ├── GXB01102_20180126_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002_58381_read_257_ch_396_strand.fast5
+│       │       ├── GXB01102_20180126_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002_58381_read_3421_ch_286_strand.fast5
+│       │       ├── GXB01102_20180126_FAH36638_GA40000_sequencing_run_180126_18_lee_001_GXB01102_004_87931_read_2335_ch_62_strand.fast5
+│       │       ├── GXB01102_20180127_FAH36530_GA10000_sequencing_run_180126_18_lee_001_GXB01102_001C_37011_ch502_read23513.fast5
+│       │       ├── GXB01102_20180127_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002C_81914_ch171_read28521.fast5
+│       │       ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_ch87_read7346.fast5
+│       │       ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_read_11179_ch_12_strand.fast5
+│       │       ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_read_663_ch_63_strand.fast5
+│       │       ├── GXB01102_20180127_FAH50336_GA30000_sequencing_run_180126_18_lee_001_GXB01102_003C_57955_ch149_read4133.fast5
+│       │       ├── GXB01102_20180127_FAH50336_GA30000_sequencing_run_180126_18_lee_001_GXB01102_003C_57955_ch70_read1463.fast5
+│       │       ├── GXB01102_20180202_FAH58845_GA20000_sequencing_run_180202_18_lee_001_GXB01102_002_33233_ch46_read7189.fast5
+│       │       ├── GXB01102_20180202_FAH58845_GA20000_sequencing_run_180202_18_lee_001_GXB01102_002_33233_read_48602_ch_317_strand.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch208_read8370.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch252_read21931.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch402_read25618.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch419_read21738.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch48_read7305.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch69_read3745.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_read_2842_ch_417_strand.fast5
+│       │       ├── GXB01102_20180202_FAH59036_GA30000_sequencing_run_180202_18_lee_001_GXB01102_003_14565_ch163_read44570.fast5
+│       │       ├── GXB01102_20180202_FAH59036_GA30000_sequencing_run_180202_18_lee_001_GXB01102_003_14565_ch261_read2768.fast5
+│       │       ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch171_read3147.fast5
+│       │       ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch285_read43240.fast5
+│       │       ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch507_read3355.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch107_read21567.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch192_read4507.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch211_read25544.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch391_read24228.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch471_read166952.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch162_read46690.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch228_read15240.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch237_read12166.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch27_read8601.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch331_read3837.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch354_read25106.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_read_27764_ch_497_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch195_read1447.fast5
+│       │       ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch24_read28319.fast5
+│       │       ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch261_read10049.fast5
+│       │       ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_read_35280_ch_136_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch258_read3384.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch365_read12855.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch422_read69882.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch462_read6220.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_read_47430_ch_318_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_read_58445_ch_335_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch152_read41466.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch222_read34004.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch236_read48072.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch256_read5351.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch309_read4161.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch344_read391.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch421_read24443.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_read_501472_ch_119_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch133_read147585.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch188_read23328.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch229_read22777.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch322_read1624.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_read_15605_ch_255_strand.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch156_read1947.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch162_read22400.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch267_read5856.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch317_read1450.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch371_read2444.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch382_read29286.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch114_read5540.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch168_read35205.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch217_read1162.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch386_read4360.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch417_read22714.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch433_read7342.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch510_read6460.fast5
+│       │       ├── GXB01102_20180209_FAH58926_GA40000_sequencing_run_180209_18_lee_001_GXB01102_004_40219_ch388_read6769.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch147_read1205.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch167_read77633.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch26_read25112.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch283_read6312.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch347_read211808.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch34_read35676.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch445_read4258.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch455_read780.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch489_read5953.fast5
+│       │       └── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch66_read47778.fast5
+│       ├── demo.fast5.reads.tar.resquiggle.run.log
+│       └── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+├── 4c
+│   └── 70dbe92832763181260aa66d69d465
+│       ├── batch_demo2.fast5.reads.tar.nanopolish.methylation_calls.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/89/00a957837f0baa7cd6373d18b4e93d/batch_demo2.fast5.reads.tar.nanopolish.methylation_calls.tsv.gz
+│       ├── batch_demo.fast5.reads.tar.nanopolish.methylation_calls.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/bd/86ab7cbf3fca1dc21ec7daa870e2a0/batch_demo.fast5.reads.tar.nanopolish.methylation_calls.tsv.gz
+│       └── TestData.nanopolish.per_read.combine.tsv.gz
+├── 67
+│   └── f0ba5b9910cfa109b2d68f33420f4f
+│       ├── batch_demo2.fast5.reads.tar.CpG.tombo.per_read_stats.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/14/07244bc053ea48ce0a30516c03cfb1/batch_demo2.fast5.reads.tar.CpG.tombo.per_read_stats.bed.gz
+│       ├── batch_demo.fast5.reads.tar.CpG.tombo.per_read_stats.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/b4/cd7309272985461af03cce9cf7cb0f/batch_demo.fast5.reads.tar.CpG.tombo.per_read_stats.bed.gz
+│       └── TestData.tombo.per_read.combine.bed.gz
+├── 71
+│   └── 7a6fe9d98ca41323c8404f04390630
+│       ├── batch_demo2.fast5.reads.tar.megalodon.per_read_modified_base_calls.txt.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/39/072bdb88cbe523540c5851bf2cf510/batch_demo2.fast5.reads.tar.megalodon.per_read_modified_base_calls.txt.gz
+│       ├── batch_demo.fast5.reads.tar.megalodon.per_read_modified_base_calls.txt.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/d4/2f779485546f691cec542e1079d9fb/batch_demo.fast5.reads.tar.megalodon.per_read_modified_base_calls.txt.gz
+│       └── TestData.megalodon.per_read.combine.bed.gz
+├── 77
+│   └── f19512c814fa45281afa47bc58b686
+│       ├── MethPerf-TestData_RRBS
+│       │   ├── DONE.txt
+│       │   ├── performance-results
+│       │   │   ├── curve_data
+│       │   │   │   ├── TestData_RRBS.DeepMod_C.hg38.gc5Base_merged.cg_bin100.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepMod_C.hg38.gc5Base_merged.cg_bin60.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepMod_C.hg38.gc5Base_merged.cg_bin80.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepMod_C.hg38_nonsingletons_10bp.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepMod_C.hg38.repetitive.rep_Others.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepMod_C.ONT.hg38.cpgIslandExt.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepMod_C.ONT.hg38.exonFeature.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepMod_C.ONT.hg38.intergenic.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepMod_C.ONT.hg38.promoterFeature.flank_2000.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepMod_C.TestData_RRBS.hg38_nonsingletons.concordant.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepMod_C.x.x.Genome-wide.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepSignal.hg38.gc5Base_merged.cg_bin100.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepSignal.hg38.gc5Base_merged.cg_bin60.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepSignal.hg38.gc5Base_merged.cg_bin80.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepSignal.hg38_nonsingletons_10bp.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepSignal.hg38.repetitive.rep_Others.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepSignal.ONT.hg38.cpgIslandExt.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepSignal.ONT.hg38.exonFeature.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepSignal.ONT.hg38.intergenic.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepSignal.ONT.hg38.promoterFeature.flank_2000.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepSignal.TestData_RRBS.hg38_nonsingletons.concordant.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.DeepSignal.x.x.Genome-wide.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Guppy.hg38.gc5Base_merged.cg_bin100.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Guppy.hg38.gc5Base_merged.cg_bin60.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Guppy.hg38.gc5Base_merged.cg_bin80.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Guppy.hg38_nonsingletons_10bp.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Guppy.hg38.repetitive.rep_Others.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Guppy.ONT.hg38.cpgIslandExt.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Guppy.ONT.hg38.exonFeature.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Guppy.ONT.hg38.intergenic.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Guppy.ONT.hg38.promoterFeature.flank_2000.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Guppy.TestData_RRBS.hg38_nonsingletons.concordant.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Guppy.x.x.Genome-wide.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Megalodon.hg38.gc5Base_merged.cg_bin100.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Megalodon.hg38.gc5Base_merged.cg_bin60.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Megalodon.hg38.gc5Base_merged.cg_bin80.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Megalodon.hg38_nonsingletons_10bp.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Megalodon.hg38.repetitive.rep_Others.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Megalodon.ONT.hg38.cpgIslandExt.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Megalodon.ONT.hg38.exonFeature.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Megalodon.ONT.hg38.intergenic.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Megalodon.ONT.hg38.promoterFeature.flank_2000.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Megalodon.TestData_RRBS.hg38_nonsingletons.concordant.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Megalodon.x.x.Genome-wide.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.METEORE.hg38.gc5Base_merged.cg_bin100.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.METEORE.hg38.gc5Base_merged.cg_bin60.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.METEORE.hg38.gc5Base_merged.cg_bin80.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.METEORE.hg38_nonsingletons_10bp.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.METEORE.hg38.repetitive.rep_Others.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.METEORE.ONT.hg38.cpgIslandExt.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.METEORE.ONT.hg38.exonFeature.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.METEORE.ONT.hg38.intergenic.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.METEORE.ONT.hg38.promoterFeature.flank_2000.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.METEORE.TestData_RRBS.hg38_nonsingletons.concordant.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.METEORE.x.x.Genome-wide.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Nanopolish.hg38.gc5Base_merged.cg_bin100.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Nanopolish.hg38.gc5Base_merged.cg_bin60.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Nanopolish.hg38.gc5Base_merged.cg_bin80.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Nanopolish.hg38_nonsingletons_10bp.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Nanopolish.hg38.repetitive.rep_Others.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Nanopolish.ONT.hg38.cpgIslandExt.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Nanopolish.ONT.hg38.exonFeature.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Nanopolish.ONT.hg38.intergenic.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Nanopolish.ONT.hg38.promoterFeature.flank_2000.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Nanopolish.TestData_RRBS.hg38_nonsingletons.concordant.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Nanopolish.x.x.Genome-wide.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Tombo.hg38.gc5Base_merged.cg_bin100.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Tombo.hg38.gc5Base_merged.cg_bin60.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Tombo.hg38.gc5Base_merged.cg_bin80.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Tombo.hg38_nonsingletons_10bp.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Tombo.hg38.repetitive.rep_Others.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Tombo.ONT.hg38.cpgIslandExt.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Tombo.ONT.hg38.exonFeature.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Tombo.ONT.hg38.intergenic.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Tombo.ONT.hg38.promoterFeature.flank_2000.bed.gz.curve_data.pkl
+│       │   │   │   ├── TestData_RRBS.Tombo.TestData_RRBS.hg38_nonsingletons.concordant.bed.gz.curve_data.pkl
+│       │   │   │   └── TestData_RRBS.Tombo.x.x.Genome-wide.curve_data.pkl
+│       │   │   ├── TestData_RRBS.DeepMod_C.performance.report.csv
+│       │   │   ├── TestData_RRBS.DeepSignal.performance.report.csv
+│       │   │   ├── TestData_RRBS.Guppy.performance.report.csv
+│       │   │   ├── TestData_RRBS.Megalodon.performance.report.csv
+│       │   │   ├── TestData_RRBS.METEORE.performance.report.csv
+│       │   │   ├── TestData_RRBS.Nanopolish.performance.report.csv
+│       │   │   └── TestData_RRBS.Tombo.performance.report.csv
+│       │   ├── run-results.log
+│       │   ├── TestData_RRBS.hg38_nonsingletons.concordant.bed.gz
+│       │   ├── TestData_RRBS.hg38_nonsingletons.discordant.bed.gz
+│       │   ├── TestData_RRBS.summary.bsseq.cov1.joined.tools.singleton.nonsingleton.table.like.s2.csv
+│       │   ├── TestData_RRBS.summary.bsseq.singleton.nonsingleton.cov1.csv
+│       │   ├── TestData_RRBS.Tools_BGTruth_cov1_Joined_baseFormat1.bed.gz
+│       │   └── TestData.tools.cov1.join.with.bsseq.cov1.read.level.report.xlsx
+│       ├── src -> /pod/2/li-lab/yang/workspace/nano-compare/src
+│       ├── TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/ae/17edb30c5e0fa1552e2a671939c48f/TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz
+│       ├── TestData.deepmod.C_per_site.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/ae/17edb30c5e0fa1552e2a671939c48f/TestData.deepmod.C_per_site.combine.bed.gz
+│       ├── TestData.deepsignal.per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/aa/de3cba497cd326bbfcb5b669928cfc/TestData.deepsignal.per_read.combine.tsv.gz
+│       ├── TestData.guppy.fast5mod_per_site.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/06/911c004ce23b67ad041adc761dda63/TestData.guppy.fast5mod_per_site.combine.tsv.gz
+│       ├── TestData.guppy.gcf52ref_per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/06/911c004ce23b67ad041adc761dda63/TestData.guppy.gcf52ref_per_read.combine.tsv.gz
+│       ├── TestData.megalodon.per_read.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/71/7a6fe9d98ca41323c8404f04390630/TestData.megalodon.per_read.combine.bed.gz
+│       ├── TestData.meteore.megalodon_deepsignal_optimized_model_per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/cf/706926eb209cc61b2e00c783ded5bb/TestData.meteore.megalodon_deepsignal_optimized_model_per_read.combine.tsv.gz
+│       ├── TestData.nanopolish.per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/4c/70dbe92832763181260aa66d69d465/TestData.nanopolish.per_read.combine.tsv.gz
+│       └── TestData.tombo.per_read.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/67/f0ba5b9910cfa109b2d68f33420f4f/TestData.tombo.per_read.combine.bed.gz
+├── 78
+│   └── 76a38d4ca33fec1936494dfbf89da3
+│       ├── batch_demo.fast5.reads.tar.CpG.deepsignal.call_mods.tsv.gz
+│       ├── demo.fast5.reads.tar.resquiggle -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/3f/336996a4226e7b5587ee9ced750f2a/demo.fast5.reads.tar.resquiggle
+│       ├── model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+
+│       │   ├── bn_17.sn_360.epoch_9.ckpt.data-00000-of-00001
+│       │   ├── bn_17.sn_360.epoch_9.ckpt.index
+│       │   ├── bn_17.sn_360.epoch_9.ckpt.meta
+│       │   └── checkpoint
+│       ├── model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz -> /pod/2/li-lab/Nanopore_compare/nf_input/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz
+│       └── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+├── 89
+│   └── 00a957837f0baa7cd6373d18b4e93d
+│       ├── batch_demo2.fast5.reads.tar.nanopolish.methylation_calls.tsv.gz
+│       ├── demo2.fast5.reads.tar.basecalled -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/1f/62bcaa308485ab80ea2b364e4f5284/demo2.fast5.reads.tar.basecalled
+│       ├── reads.fq
+│       ├── reads.fq.noDups.fq
+│       ├── reads.fq.noDups.fq.index
+│       ├── reads.fq.noDups.fq.index.fai
+│       ├── reads.fq.noDups.fq.index.gzi
+│       ├── reads.fq.noDups.fq.index.readdb
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+│       ├── TestData.batch_demo2.fast5.reads.tar.sorted.bam
+│       ├── TestData.batch_demo2.fast5.reads.tar.sorted.bam.bai
+│       ├── tmp.tsv
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+├── 90
+│   └── 7cb1bb9ff02cfab76bc88eeb5692dc
+│       ├── base_mods.rocksdb
+│       │   ├── 000004.sst
+│       │   ├── 000006.log
+│       │   ├── CURRENT
+│       │   ├── IDENTITY
+│       │   ├── LOCK
+│       │   ├── LOG
+│       │   ├── LOG.old.1629313582653174
+│       │   ├── MANIFEST-000005
+│       │   ├── OPTIONS-000005
+│       │   └── OPTIONS-000008
+│       ├── batch_demo2.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam
+│       ├── batch_demo2.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam.bai
+│       ├── batch_demo2.fast5.reads.tar.guppy.gcf52ref_per_read.tsv.gz
+│       ├── demo2.fast5.reads.tar.methcalled
+│       │   ├── fastq_runid_067f8be7e5b4cac3170a36762e4878ba47eded20_0_0.fastq
+│       │   ├── fastq_runid_098c8278671ebb3df841b55ae73e7b7ca551ae8f_0_0.fastq
+│       │   ├── fastq_runid_0dda486d2f64c95b309f091ef013e31552f06a16_0_0.fastq
+│       │   ├── fastq_runid_233a1e55890869e7fe9651a4312a7df067aa419a_0_0.fastq
+│       │   ├── fastq_runid_27ce003e2a27f2fa749ebc26e04f8be83277bf6f_0_0.fastq
+│       │   ├── fastq_runid_385249cb667e0d1422d6589f455eceb44f303f75_0_0.fastq
+│       │   ├── fastq_runid_3a557d817fc78485f07a0d699ff00e80dfaab03e_0_0.fastq
+│       │   ├── fastq_runid_4a0b79a6d2b519101fe38535d229566c41c52c75_0_0.fastq
+│       │   ├── fastq_runid_4ad73ce5c735833db3b08fbc48379e456c52024c_0_0.fastq
+│       │   ├── fastq_runid_6bbb3c6f574fb109d7cad9a8811d7fbe5b7e81f9_0_0.fastq
+│       │   ├── fastq_runid_731889dc3fde03409d19417d7a76e850c59fd12a_0_0.fastq
+│       │   ├── fastq_runid_85b27b7d78ff7447b2d7eab4ce89d16785288173_0_0.fastq
+│       │   ├── fastq_runid_a19e2b775c5f8ee3d3c2293f06d6dc1127802153_0_0.fastq
+│       │   ├── fastq_runid_e9699e7507873bbb46e53bea45f46c292fd3c9bf_0_0.fastq
+│       │   ├── guppy_basecaller_log-2021-08-18_15-04-58.log
+│       │   ├── guppy_basecaller_verbose_log-2021-08-18_15-04-58.log
+│       │   ├── sequencing_summary.txt
+│       │   ├── sequencing_telemetry.js
+│       │   └── workspace
+│       │       ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch68_read3820.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch12_read10393.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch293_read971.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_read_27487_ch_245_strand.fast5
+│       │       ├── GXB01102_20180126_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002_58381_read_257_ch_396_strand.fast5
+│       │       ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_ch87_read7346.fast5
+│       │       ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_read_11179_ch_12_strand.fast5
+│       │       ├── GXB01102_20180202_FAH58845_GA20000_sequencing_run_180202_18_lee_001_GXB01102_002_33233_read_48602_ch_317_strand.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch402_read25618.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch419_read21738.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch69_read3745.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_read_2842_ch_417_strand.fast5
+│       │       ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch285_read43240.fast5
+│       │       ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch507_read3355.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch471_read166952.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch162_read46690.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch27_read8601.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch331_read3837.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch354_read25106.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_read_27764_ch_497_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch261_read10049.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch365_read12855.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch462_read6220.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch222_read34004.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch236_read48072.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch256_read5351.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch421_read24443.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch188_read23328.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch347_read211808.fast5
+│       │       └── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch66_read47778.fast5
+│       ├── demo2.fast5.reads.tar.untar -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/3e/c9631a66b115f1b54a5434002b6999/demo2.fast5.reads.tar.untar
+│       ├── gcf52ref -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/gcf52ref
+│       ├── gcf52ref.batch.demo2.fast5.reads.tar.bam
+│       ├── gcf52ref.batch.demo2.fast5.reads.tar.bam.bai
+│       ├── outbatch_demo2.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+│       ├── tmp.batch_demo2.fast5.reads.tar.guppy.gcf52ref_per_read.tsv
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+├── 94
+│   └── d0e3640c1fa25b87112739734b34dd
+│       ├── demo.fast5.reads.tar.gz -> /fastscratch/li-lab/nanome/work/stage/5e/c048132a422a24dd572d121e24541c/demo.fast5.reads.tar.gz
+│       ├── demo.fast5.reads.tar.untar
+│       │   ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch107_read99744.fast5
+│       │   ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch323_read8827.fast5
+│       │   ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch335_read46533.fast5
+│       │   ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch68_read3820.fast5
+│       │   ├── GXB01025_20180129_FAH50344_GA40000_sequencing_run_180129_18_lee_001_GXB01025_004B_76359_ch10_read24663.fast5
+│       │   ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002_33841_read_1900_ch_85_strand.fast5
+│       │   ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002_33841_read_2358_ch_473_strand.fast5
+│       │   ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002B_13376_ch108_read58003.fast5
+│       │   ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002B_13376_ch117_read3139.fast5
+│       │   ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002B_13376_ch297_read7275.fast5
+│       │   ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005_83336_read_1065_ch_392_strand.fast5
+│       │   ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch12_read10393.fast5
+│       │   ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch293_read971.fast5
+│       │   ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch433_read5328.fast5
+│       │   ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch59_read41648.fast5
+│       │   ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_read_15235_ch_265_strand.fast5
+│       │   ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_read_27487_ch_245_strand.fast5
+│       │   ├── GXB01102_20180126_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002_58381_read_257_ch_396_strand.fast5
+│       │   ├── GXB01102_20180126_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002_58381_read_3421_ch_286_strand.fast5
+│       │   ├── GXB01102_20180126_FAH36638_GA40000_sequencing_run_180126_18_lee_001_GXB01102_004_87931_read_2335_ch_62_strand.fast5
+│       │   ├── GXB01102_20180127_FAH36530_GA10000_sequencing_run_180126_18_lee_001_GXB01102_001C_37011_ch502_read23513.fast5
+│       │   ├── GXB01102_20180127_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002C_81914_ch171_read28521.fast5
+│       │   ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_ch87_read7346.fast5
+│       │   ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_read_11179_ch_12_strand.fast5
+│       │   ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_read_663_ch_63_strand.fast5
+│       │   ├── GXB01102_20180127_FAH50336_GA30000_sequencing_run_180126_18_lee_001_GXB01102_003C_57955_ch149_read4133.fast5
+│       │   ├── GXB01102_20180127_FAH50336_GA30000_sequencing_run_180126_18_lee_001_GXB01102_003C_57955_ch70_read1463.fast5
+│       │   ├── GXB01102_20180202_FAH58845_GA20000_sequencing_run_180202_18_lee_001_GXB01102_002_33233_ch46_read7189.fast5
+│       │   ├── GXB01102_20180202_FAH58845_GA20000_sequencing_run_180202_18_lee_001_GXB01102_002_33233_read_48602_ch_317_strand.fast5
+│       │   ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch208_read8370.fast5
+│       │   ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch252_read21931.fast5
+│       │   ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch402_read25618.fast5
+│       │   ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch419_read21738.fast5
+│       │   ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch48_read7305.fast5
+│       │   ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch69_read3745.fast5
+│       │   ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_read_2842_ch_417_strand.fast5
+│       │   ├── GXB01102_20180202_FAH59036_GA30000_sequencing_run_180202_18_lee_001_GXB01102_003_14565_ch163_read44570.fast5
+│       │   ├── GXB01102_20180202_FAH59036_GA30000_sequencing_run_180202_18_lee_001_GXB01102_003_14565_ch261_read2768.fast5
+│       │   ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch171_read3147.fast5
+│       │   ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch285_read43240.fast5
+│       │   ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch507_read3355.fast5
+│       │   ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch107_read21567.fast5
+│       │   ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch192_read4507.fast5
+│       │   ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch211_read25544.fast5
+│       │   ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch391_read24228.fast5
+│       │   ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch471_read166952.fast5
+│       │   ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch162_read46690.fast5
+│       │   ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch228_read15240.fast5
+│       │   ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch237_read12166.fast5
+│       │   ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch27_read8601.fast5
+│       │   ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch331_read3837.fast5
+│       │   ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch354_read25106.fast5
+│       │   ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_read_27764_ch_497_strand.fast5
+│       │   ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch195_read1447.fast5
+│       │   ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch24_read28319.fast5
+│       │   ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch261_read10049.fast5
+│       │   ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_read_35280_ch_136_strand.fast5
+│       │   ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch258_read3384.fast5
+│       │   ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch365_read12855.fast5
+│       │   ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch422_read69882.fast5
+│       │   ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch462_read6220.fast5
+│       │   ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_read_47430_ch_318_strand.fast5
+│       │   ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_read_58445_ch_335_strand.fast5
+│       │   ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch152_read41466.fast5
+│       │   ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch222_read34004.fast5
+│       │   ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch236_read48072.fast5
+│       │   ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch256_read5351.fast5
+│       │   ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch309_read4161.fast5
+│       │   ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch344_read391.fast5
+│       │   ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch421_read24443.fast5
+│       │   ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_read_501472_ch_119_strand.fast5
+│       │   ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch133_read147585.fast5
+│       │   ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch188_read23328.fast5
+│       │   ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch229_read22777.fast5
+│       │   ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch322_read1624.fast5
+│       │   ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_read_15605_ch_255_strand.fast5
+│       │   ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch156_read1947.fast5
+│       │   ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch162_read22400.fast5
+│       │   ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch267_read5856.fast5
+│       │   ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch317_read1450.fast5
+│       │   ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch371_read2444.fast5
+│       │   ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch382_read29286.fast5
+│       │   ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch114_read5540.fast5
+│       │   ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch168_read35205.fast5
+│       │   ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch217_read1162.fast5
+│       │   ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch386_read4360.fast5
+│       │   ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch417_read22714.fast5
+│       │   ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch433_read7342.fast5
+│       │   ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch510_read6460.fast5
+│       │   ├── GXB01102_20180209_FAH58926_GA40000_sequencing_run_180209_18_lee_001_GXB01102_004_40219_ch388_read6769.fast5
+│       │   ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch147_read1205.fast5
+│       │   ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch167_read77633.fast5
+│       │   ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch26_read25112.fast5
+│       │   ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch283_read6312.fast5
+│       │   ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch347_read211808.fast5
+│       │   ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch34_read35676.fast5
+│       │   ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch445_read4258.fast5
+│       │   ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch455_read780.fast5
+│       │   ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch489_read5953.fast5
+│       │   └── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch66_read47778.fast5
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+├── 9f
+│   └── 45b9d8490b0f46310d7be04ed25cd5
+│       ├── demo2.fast5.reads.tar.basecalled -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/1f/62bcaa308485ab80ea2b364e4f5284/demo2.fast5.reads.tar.basecalled
+│       ├── demo2.fast5.reads.tar.resquiggle
+│       │   ├── demo2.fast5.reads.tar-sequencing_summary.txt
+│       │   ├── fastq_runid_067f8be7e5b4cac3170a36762e4878ba47eded20_0_0.fastq
+│       │   ├── fastq_runid_098c8278671ebb3df841b55ae73e7b7ca551ae8f_0_0.fastq
+│       │   ├── fastq_runid_0dda486d2f64c95b309f091ef013e31552f06a16_0_0.fastq
+│       │   ├── fastq_runid_233a1e55890869e7fe9651a4312a7df067aa419a_0_0.fastq
+│       │   ├── fastq_runid_27ce003e2a27f2fa749ebc26e04f8be83277bf6f_0_0.fastq
+│       │   ├── fastq_runid_385249cb667e0d1422d6589f455eceb44f303f75_0_0.fastq
+│       │   ├── fastq_runid_3a557d817fc78485f07a0d699ff00e80dfaab03e_0_0.fastq
+│       │   ├── fastq_runid_4a0b79a6d2b519101fe38535d229566c41c52c75_0_0.fastq
+│       │   ├── fastq_runid_4ad73ce5c735833db3b08fbc48379e456c52024c_0_0.fastq
+│       │   ├── fastq_runid_6bbb3c6f574fb109d7cad9a8811d7fbe5b7e81f9_0_0.fastq
+│       │   ├── fastq_runid_731889dc3fde03409d19417d7a76e850c59fd12a_0_0.fastq
+│       │   ├── fastq_runid_85b27b7d78ff7447b2d7eab4ce89d16785288173_0_0.fastq
+│       │   ├── fastq_runid_a19e2b775c5f8ee3d3c2293f06d6dc1127802153_0_0.fastq
+│       │   ├── fastq_runid_e9699e7507873bbb46e53bea45f46c292fd3c9bf_0_0.fastq
+│       │   ├── guppy_basecaller_log-2021-08-18_15-05-02.log
+│       │   ├── guppy_basecaller_verbose_log-2021-08-18_15-05-02.log
+│       │   ├── sequencing_telemetry.js
+│       │   └── workspace
+│       │       ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch68_read3820.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch12_read10393.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch293_read971.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_read_27487_ch_245_strand.fast5
+│       │       ├── GXB01102_20180126_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002_58381_read_257_ch_396_strand.fast5
+│       │       ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_ch87_read7346.fast5
+│       │       ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_read_11179_ch_12_strand.fast5
+│       │       ├── GXB01102_20180202_FAH58845_GA20000_sequencing_run_180202_18_lee_001_GXB01102_002_33233_read_48602_ch_317_strand.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch402_read25618.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch419_read21738.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch69_read3745.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_read_2842_ch_417_strand.fast5
+│       │       ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch285_read43240.fast5
+│       │       ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch507_read3355.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch471_read166952.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch162_read46690.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch27_read8601.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch331_read3837.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch354_read25106.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_read_27764_ch_497_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch261_read10049.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch365_read12855.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch462_read6220.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch222_read34004.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch236_read48072.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch256_read5351.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch421_read24443.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch188_read23328.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch347_read211808.fast5
+│       │       └── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch66_read47778.fast5
+│       ├── demo2.fast5.reads.tar.resquiggle.run.log
+│       └── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+├── a5
+│   └── 732325ed0732a218e03ea07ac7a2ba
+│       ├── Site_Level-TestData
+│       │   ├── DONE.txt
+│       │   ├── Site_Level-TestData.tss.DeepMod.cov1.bed.gz
+│       │   ├── Site_Level-TestData.tss.DeepSignal.cov1.bed.gz
+│       │   ├── Site_Level-TestData.tss.Guppy.cov1.bed.gz
+│       │   ├── Site_Level-TestData.tss.Megalodon.cov1.bed.gz
+│       │   ├── Site_Level-TestData.tss.METEORE.cov1.bed.gz
+│       │   ├── Site_Level-TestData.tss.Nanopolish.cov1.bed.gz
+│       │   └── Site_Level-TestData.tss.Tombo.cov1.bed.gz
+│       ├── src -> /pod/2/li-lab/yang/workspace/nano-compare/src
+│       ├── TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/ae/17edb30c5e0fa1552e2a671939c48f/TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz
+│       ├── TestData.deepmod.C_per_site.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/ae/17edb30c5e0fa1552e2a671939c48f/TestData.deepmod.C_per_site.combine.bed.gz
+│       ├── TestData.deepsignal.per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/aa/de3cba497cd326bbfcb5b669928cfc/TestData.deepsignal.per_read.combine.tsv.gz
+│       ├── TestData.guppy.fast5mod_per_site.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/06/911c004ce23b67ad041adc761dda63/TestData.guppy.fast5mod_per_site.combine.tsv.gz
+│       ├── TestData.guppy.gcf52ref_per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/06/911c004ce23b67ad041adc761dda63/TestData.guppy.gcf52ref_per_read.combine.tsv.gz
+│       ├── TestData.megalodon.per_read.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/71/7a6fe9d98ca41323c8404f04390630/TestData.megalodon.per_read.combine.bed.gz
+│       ├── TestData.meteore.megalodon_deepsignal_optimized_model_per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/cf/706926eb209cc61b2e00c783ded5bb/TestData.meteore.megalodon_deepsignal_optimized_model_per_read.combine.tsv.gz
+│       ├── TestData.nanopolish.per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/4c/70dbe92832763181260aa66d69d465/TestData.nanopolish.per_read.combine.tsv.gz
+│       └── TestData.tombo.per_read.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/67/f0ba5b9910cfa109b2d68f33420f4f/TestData.tombo.per_read.combine.bed.gz
+├── a8
+│   └── 145382b24956f165bae5b079501c87
+│       ├── gcf52ref
+│       │   ├── environment.yml
+│       │   ├── fast5_to_mapped_cram_individual.smk
+│       │   ├── fast5_to_mapped_cram_map_individual.smk
+│       │   ├── fast5_to_mapped_cram_map_individual_split.smk
+│       │   ├── fast5_to_mapped_cram.smk
+│       │   ├── LICENSE
+│       │   ├── README.md
+│       │   ├── scripts
+│       │   │   ├── cram_to_refpos.py
+│       │   │   ├── extract_methylation_fast5.py
+│       │   │   ├── extract_methylation_fast5_to_sam.py
+│       │   │   ├── extract_methylation_from_rocks.py
+│       │   │   ├── fast5_to_cram.sh
+│       │   │   ├── guppy_performance_stats.py
+│       │   │   └── __pycache__
+│       │   │       ├── extract_methylation_fast5.cpython-36.pyc
+│       │   │       └── extract_methylation_fast5.cpython-37.pyc
+│       │   └── test
+│       │       └── test_gcf52ref.sh
+│       ├── reference_genome
+│       │   ├── ecoli
+│       │   │   ├── Ecoli_k12_mg1655.fasta
+│       │   │   ├── Ecoli_k12_mg1655.fasta.amb
+│       │   │   ├── Ecoli_k12_mg1655.fasta.ann
+│       │   │   ├── Ecoli_k12_mg1655.fasta.bwt
+│       │   │   ├── Ecoli_k12_mg1655.fasta.fai
+│       │   │   ├── Ecoli_k12_mg1655.fasta.genome.sizes
+│       │   │   ├── Ecoli_k12_mg1655.fasta.pac
+│       │   │   └── Ecoli_k12_mg1655.fasta.sa
+│       │   └── hg38
+│       │       ├── bwa.index.7511698.err
+│       │       ├── bwa.index.7511698.out
+│       │       ├── hg38.chrom.sizes
+│       │       ├── hg38.fa
+│       │       ├── hg38.fa.fai
+│       │       ├── hg38.fasta
+│       │       ├── hg38.fasta.amb
+│       │       ├── hg38.fasta.ann
+│       │       ├── hg38.fasta.bwt
+│       │       ├── hg38.fasta.fai
+│       │       ├── hg38.fasta.genome.sizes
+│       │       ├── hg38.fasta.pac
+│       │       ├── hg38.fasta.sa
+│       │       └── index_fasta.sh
+│       ├── reference_genome.tar.gz -> /pod/2/li-lab/Nanopore_compare/nf_input/reference_genome.tar.gz
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+├── aa
+│   └── de3cba497cd326bbfcb5b669928cfc
+│       ├── batch_demo2.fast5.reads.tar.CpG.deepsignal.call_mods.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/04/5910ab7d6bbdbeeb5e47117408222d/batch_demo2.fast5.reads.tar.CpG.deepsignal.call_mods.tsv.gz
+│       ├── batch_demo.fast5.reads.tar.CpG.deepsignal.call_mods.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/78/76a38d4ca33fec1936494dfbf89da3/batch_demo.fast5.reads.tar.CpG.deepsignal.call_mods.tsv.gz
+│       └── TestData.deepsignal.per_read.combine.tsv.gz
+├── ab
+│   └── 3326b3cbde5c26937277d3b2162e98
+│       ├── batch_demo2.fast5.reads.tar_num.tar.gz
+│       ├── DeepMod-0.1.3
+│       │   ├── bin
+│       │   │   ├── DeepMod.py
+│       │   │   └── DeepMod_scripts
+│       │   │       ├── EventTable.py
+│       │   │       ├── __init__.py
+│       │   │       ├── MoveTable.py
+│       │   │       ├── myCom.py
+│       │   │       ├── myDetect.py
+│       │   │       ├── myGetFeatureBasedPos.py
+│       │   │       └── myMultiBiRNN.py
+│       │   ├── DeepMod_tools
+│       │   │   ├── cal_EcoliDetPerf.py
+│       │   │   ├── generate_motif_pos.py
+│       │   │   ├── hm_cluster_predict.py
+│       │   │   └── sum_chr_mod.py
+│       │   ├── docs
+│       │   │   ├── Description of well-trained models.md
+│       │   │   ├── Install.md
+│       │   │   ├── Reproducibility.md
+│       │   │   ├── Results_explanation.md
+│       │   │   └── Usage.md
+│       │   ├── INSTALL
+│       │   ├── LICENSE
+│       │   ├── README.md
+│       │   ├── setup.py
+│       │   └── train_deepmod
+│       │       ├── na12878_cluster_train_mod-keep_prob0.7-nb25-chr1
+│       │       │   ├── Cg.cov5.nb25.data-00000-of-00001
+│       │       │   ├── Cg.cov5.nb25.index
+│       │       │   ├── Cg.cov5.nb25.meta
+│       │       │   └── checkpoint
+│       │       ├── rnn_conmodA_E1m2wd21_f7ne1u0_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_conmodA_E1m2wd21_f3ne1u0.data-00000-of-00001
+│       │       │   ├── mod_train_conmodA_E1m2wd21_f3ne1u0.index
+│       │       │   └── mod_train_conmodA_E1m2wd21_f3ne1u0.meta
+│       │       ├── rnn_conmodA_P100wd21_f7ne1u0_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_conmodA_P100wd21_f3ne1u0.data-00000-of-00001
+│       │       │   ├── mod_train_conmodA_P100wd21_f3ne1u0.index
+│       │       │   └── mod_train_conmodA_P100wd21_f3ne1u0.meta
+│       │       ├── rnn_conmodC_P100wd21_f7ne1u0_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_conmodC_P100wd21_f3ne1u0.data-00000-of-00001
+│       │       │   ├── mod_train_conmodC_P100wd21_f3ne1u0.index
+│       │       │   └── mod_train_conmodC_P100wd21_f3ne1u0.meta
+│       │       ├── rnn_f7_wd21_chr1to10_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_f7_wd21_chr1to10.data-00000-of-00001
+│       │       │   ├── mod_train_f7_wd21_chr1to10.index
+│       │       │   └── mod_train_f7_wd21_chr1to10.meta
+│       │       └── rnn_sinmodC_P100wd21_f7ne1u0_4
+│       │           ├── checkpoint
+│       │           ├── mod_train_sinmodC_P100wd21_f3ne1u0.data-00000-of-00001
+│       │           ├── mod_train_sinmodC_P100wd21_f3ne1u0.index
+│       │           └── mod_train_sinmodC_P100wd21_f3ne1u0.meta
+│       ├── demo2.fast5.reads.tar.basecalled -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/1f/62bcaa308485ab80ea2b364e4f5284/demo2.fast5.reads.tar.basecalled
+│       ├── mod_output
+│       │   ├── batch_demo2.fast5.reads.tar_num
+│       │   │   ├── 0
+│       │   │   │   ├── chr10.rnn.pred.ind.0
+│       │   │   │   ├── chr11.rnn.pred.ind.0
+│       │   │   │   ├── chr12.rnn.pred.ind.0
+│       │   │   │   ├── chr14.rnn.pred.ind.0
+│       │   │   │   ├── chr16.rnn.pred.ind.0
+│       │   │   │   ├── chr19.rnn.pred.ind.0
+│       │   │   │   ├── chr1.rnn.pred.ind.0
+│       │   │   │   ├── chr20.rnn.pred.ind.0
+│       │   │   │   ├── chr21.rnn.pred.ind.0
+│       │   │   │   ├── chr22.rnn.pred.ind.0
+│       │   │   │   ├── chr2.rnn.pred.ind.0
+│       │   │   │   ├── chr3.rnn.pred.ind.0
+│       │   │   │   ├── chr4.rnn.pred.ind.0
+│       │   │   │   ├── chr5.rnn.pred.ind.0
+│       │   │   │   ├── chr6.rnn.pred.ind.0
+│       │   │   │   ├── chr7.rnn.pred.ind.0
+│       │   │   │   ├── chr8.rnn.pred.ind.0
+│       │   │   │   ├── chrX.rnn.pred.ind.0
+│       │   │   │   └── rnn.pred.detail.fast5.0
+│       │   │   ├── mod_pos.chr10-.C.bed
+│       │   │   ├── mod_pos.chr11-.C.bed
+│       │   │   ├── mod_pos.chr12-.C.bed
+│       │   │   ├── mod_pos.chr14+.C.bed
+│       │   │   ├── mod_pos.chr16-.C.bed
+│       │   │   ├── mod_pos.chr19-.C.bed
+│       │   │   ├── mod_pos.chr1-.C.bed
+│       │   │   ├── mod_pos.chr1+.C.bed
+│       │   │   ├── mod_pos.chr20+.C.bed
+│       │   │   ├── mod_pos.chr21-.C.bed
+│       │   │   ├── mod_pos.chr22+.C.bed
+│       │   │   ├── mod_pos.chr2+.C.bed
+│       │   │   ├── mod_pos.chr3-.C.bed
+│       │   │   ├── mod_pos.chr4-.C.bed
+│       │   │   ├── mod_pos.chr4+.C.bed
+│       │   │   ├── mod_pos.chr5+.C.bed
+│       │   │   ├── mod_pos.chr6-.C.bed
+│       │   │   ├── mod_pos.chr7-.C.bed
+│       │   │   ├── mod_pos.chr7+.C.bed
+│       │   │   ├── mod_pos.chr8-.C.bed
+│       │   │   ├── mod_pos.chr8+.C.bed
+│       │   │   ├── mod_pos.chrX-.C.bed
+│       │   │   ├── mod_pos.chrX+.C.bed
+│       │   │   ├── rnn.pred.ind.chr1
+│       │   │   ├── rnn.pred.ind.chr10
+│       │   │   ├── rnn.pred.ind.chr11
+│       │   │   ├── rnn.pred.ind.chr12
+│       │   │   ├── rnn.pred.ind.chr14
+│       │   │   ├── rnn.pred.ind.chr16
+│       │   │   ├── rnn.pred.ind.chr19
+│       │   │   ├── rnn.pred.ind.chr2
+│       │   │   ├── rnn.pred.ind.chr20
+│       │   │   ├── rnn.pred.ind.chr21
+│       │   │   ├── rnn.pred.ind.chr22
+│       │   │   ├── rnn.pred.ind.chr3
+│       │   │   ├── rnn.pred.ind.chr4
+│       │   │   ├── rnn.pred.ind.chr5
+│       │   │   ├── rnn.pred.ind.chr6
+│       │   │   ├── rnn.pred.ind.chr7
+│       │   │   ├── rnn.pred.ind.chr8
+│       │   │   └── rnn.pred.ind.chrX
+│       │   └── batch_demo2.fast5.reads.tar_num.done
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+│       └── v0.1.3.tar.gz
+├── ae
+│   └── 17edb30c5e0fa1552e2a671939c48f
+│       ├── batch_demo2.fast5.reads.tar_num -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/ab/3326b3cbde5c26937277d3b2162e98/mod_output/batch_demo2.fast5.reads.tar_num
+│       ├── batch_demo.fast5.reads.tar_num -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/21/92aae7f8c1939920ac818d07ec93b3/mod_output/batch_demo.fast5.reads.tar_num
+│       ├── C
+│       │   ├── motif_chr10_C.bed
+│       │   ├── motif_chr11_C.bed
+│       │   ├── motif_chr12_C.bed
+│       │   ├── motif_chr13_C.bed
+│       │   ├── motif_chr14_C.bed
+│       │   ├── motif_chr15_C.bed
+│       │   ├── motif_chr16_C.bed
+│       │   ├── motif_chr17_C.bed
+│       │   ├── motif_chr18_C.bed
+│       │   ├── motif_chr19_C.bed
+│       │   ├── motif_chr1_C.bed
+│       │   ├── motif_chr20_C.bed
+│       │   ├── motif_chr21_C.bed
+│       │   ├── motif_chr22_C.bed
+│       │   ├── motif_chr2_C.bed
+│       │   ├── motif_chr3_C.bed
+│       │   ├── motif_chr4_C.bed
+│       │   ├── motif_chr5_C.bed
+│       │   ├── motif_chr6_C.bed
+│       │   ├── motif_chr7_C.bed
+│       │   ├── motif_chr8_C.bed
+│       │   ├── motif_chr9_C.bed
+│       │   ├── motif_chrM_C.bed
+│       │   ├── motif_chrX_C.bed
+│       │   ├── motif_chrY_C.bed
+│       │   ├── na_chr10_C.bed
+│       │   ├── na_chr11_C.bed
+│       │   ├── na_chr12_C.bed
+│       │   ├── na_chr13_C.bed
+│       │   ├── na_chr14_C.bed
+│       │   ├── na_chr15_C.bed
+│       │   ├── na_chr16_C.bed
+│       │   ├── na_chr17_C.bed
+│       │   ├── na_chr18_C.bed
+│       │   ├── na_chr19_C.bed
+│       │   ├── na_chr1_C.bed
+│       │   ├── na_chr20_C.bed
+│       │   ├── na_chr21_C.bed
+│       │   ├── na_chr22_C.bed
+│       │   ├── na_chr2_C.bed
+│       │   ├── na_chr3_C.bed
+│       │   ├── na_chr4_C.bed
+│       │   ├── na_chr5_C.bed
+│       │   ├── na_chr6_C.bed
+│       │   ├── na_chr7_C.bed
+│       │   ├── na_chr8_C.bed
+│       │   ├── na_chr9_C.bed
+│       │   ├── na_chrM_C.bed
+│       │   ├── na_chrX_C.bed
+│       │   └── na_chrY_C.bed
+│       ├── C.tar.gz -> /pod/2/li-lab/Nanopore_compare/nf_input/C.tar.gz
+│       ├── DeepMod-0.1.3
+│       │   ├── bin
+│       │   │   ├── DeepMod.py
+│       │   │   └── DeepMod_scripts
+│       │   │       ├── EventTable.py
+│       │   │       ├── __init__.py
+│       │   │       ├── MoveTable.py
+│       │   │       ├── myCom.py
+│       │   │       ├── myDetect.py
+│       │   │       ├── myGetFeatureBasedPos.py
+│       │   │       └── myMultiBiRNN.py
+│       │   ├── DeepMod_tools
+│       │   │   ├── cal_EcoliDetPerf.py
+│       │   │   ├── generate_motif_pos.py
+│       │   │   ├── hm_cluster_predict.py
+│       │   │   └── sum_chr_mod.py
+│       │   ├── docs
+│       │   │   ├── Description of well-trained models.md
+│       │   │   ├── Install.md
+│       │   │   ├── Reproducibility.md
+│       │   │   ├── Results_explanation.md
+│       │   │   └── Usage.md
+│       │   ├── INSTALL
+│       │   ├── LICENSE
+│       │   ├── README.md
+│       │   ├── setup.py
+│       │   └── train_deepmod
+│       │       ├── na12878_cluster_train_mod-keep_prob0.7-nb25-chr1
+│       │       │   ├── Cg.cov5.nb25.data-00000-of-00001
+│       │       │   ├── Cg.cov5.nb25.index
+│       │       │   ├── Cg.cov5.nb25.meta
+│       │       │   └── checkpoint
+│       │       ├── rnn_conmodA_E1m2wd21_f7ne1u0_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_conmodA_E1m2wd21_f3ne1u0.data-00000-of-00001
+│       │       │   ├── mod_train_conmodA_E1m2wd21_f3ne1u0.index
+│       │       │   └── mod_train_conmodA_E1m2wd21_f3ne1u0.meta
+│       │       ├── rnn_conmodA_P100wd21_f7ne1u0_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_conmodA_P100wd21_f3ne1u0.data-00000-of-00001
+│       │       │   ├── mod_train_conmodA_P100wd21_f3ne1u0.index
+│       │       │   └── mod_train_conmodA_P100wd21_f3ne1u0.meta
+│       │       ├── rnn_conmodC_P100wd21_f7ne1u0_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_conmodC_P100wd21_f3ne1u0.data-00000-of-00001
+│       │       │   ├── mod_train_conmodC_P100wd21_f3ne1u0.index
+│       │       │   └── mod_train_conmodC_P100wd21_f3ne1u0.meta
+│       │       ├── rnn_f7_wd21_chr1to10_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_f7_wd21_chr1to10.data-00000-of-00001
+│       │       │   ├── mod_train_f7_wd21_chr1to10.index
+│       │       │   └── mod_train_f7_wd21_chr1to10.meta
+│       │       └── rnn_sinmodC_P100wd21_f7ne1u0_4
+│       │           ├── checkpoint
+│       │           ├── mod_train_sinmodC_P100wd21_f3ne1u0.data-00000-of-00001
+│       │           ├── mod_train_sinmodC_P100wd21_f3ne1u0.index
+│       │           └── mod_train_sinmodC_P100wd21_f3ne1u0.meta
+│       ├── indir
+│       │   ├── batch_demo2.fast5.reads.tar_num
+│       │   │   ├── 0
+│       │   │   │   ├── chr10.rnn.pred.ind.0
+│       │   │   │   ├── chr11.rnn.pred.ind.0
+│       │   │   │   ├── chr12.rnn.pred.ind.0
+│       │   │   │   ├── chr14.rnn.pred.ind.0
+│       │   │   │   ├── chr16.rnn.pred.ind.0
+│       │   │   │   ├── chr19.rnn.pred.ind.0
+│       │   │   │   ├── chr1.rnn.pred.ind.0
+│       │   │   │   ├── chr20.rnn.pred.ind.0
+│       │   │   │   ├── chr21.rnn.pred.ind.0
+│       │   │   │   ├── chr22.rnn.pred.ind.0
+│       │   │   │   ├── chr2.rnn.pred.ind.0
+│       │   │   │   ├── chr3.rnn.pred.ind.0
+│       │   │   │   ├── chr4.rnn.pred.ind.0
+│       │   │   │   ├── chr5.rnn.pred.ind.0
+│       │   │   │   ├── chr6.rnn.pred.ind.0
+│       │   │   │   ├── chr7.rnn.pred.ind.0
+│       │   │   │   ├── chr8.rnn.pred.ind.0
+│       │   │   │   ├── chrX.rnn.pred.ind.0
+│       │   │   │   └── rnn.pred.detail.fast5.0
+│       │   │   ├── mod_pos.chr10-.C.bed
+│       │   │   ├── mod_pos.chr11-.C.bed
+│       │   │   ├── mod_pos.chr12-.C.bed
+│       │   │   ├── mod_pos.chr14+.C.bed
+│       │   │   ├── mod_pos.chr16-.C.bed
+│       │   │   ├── mod_pos.chr19-.C.bed
+│       │   │   ├── mod_pos.chr1-.C.bed
+│       │   │   ├── mod_pos.chr1+.C.bed
+│       │   │   ├── mod_pos.chr20+.C.bed
+│       │   │   ├── mod_pos.chr21-.C.bed
+│       │   │   ├── mod_pos.chr22+.C.bed
+│       │   │   ├── mod_pos.chr2+.C.bed
+│       │   │   ├── mod_pos.chr3-.C.bed
+│       │   │   ├── mod_pos.chr4-.C.bed
+│       │   │   ├── mod_pos.chr4+.C.bed
+│       │   │   ├── mod_pos.chr5+.C.bed
+│       │   │   ├── mod_pos.chr6-.C.bed
+│       │   │   ├── mod_pos.chr7-.C.bed
+│       │   │   ├── mod_pos.chr7+.C.bed
+│       │   │   ├── mod_pos.chr8-.C.bed
+│       │   │   ├── mod_pos.chr8+.C.bed
+│       │   │   ├── mod_pos.chrX-.C.bed
+│       │   │   ├── mod_pos.chrX+.C.bed
+│       │   │   ├── rnn.pred.ind.chr1
+│       │   │   ├── rnn.pred.ind.chr10
+│       │   │   ├── rnn.pred.ind.chr11
+│       │   │   ├── rnn.pred.ind.chr12
+│       │   │   ├── rnn.pred.ind.chr14
+│       │   │   ├── rnn.pred.ind.chr16
+│       │   │   ├── rnn.pred.ind.chr19
+│       │   │   ├── rnn.pred.ind.chr2
+│       │   │   ├── rnn.pred.ind.chr20
+│       │   │   ├── rnn.pred.ind.chr21
+│       │   │   ├── rnn.pred.ind.chr22
+│       │   │   ├── rnn.pred.ind.chr3
+│       │   │   ├── rnn.pred.ind.chr4
+│       │   │   ├── rnn.pred.ind.chr5
+│       │   │   ├── rnn.pred.ind.chr6
+│       │   │   ├── rnn.pred.ind.chr7
+│       │   │   ├── rnn.pred.ind.chr8
+│       │   │   └── rnn.pred.ind.chrX
+│       │   ├── batch_demo.fast5.reads.tar_num
+│       │   │   ├── 0
+│       │   │   │   ├── chr10.rnn.pred.ind.0
+│       │   │   │   ├── chr11.rnn.pred.ind.0
+│       │   │   │   ├── chr12.rnn.pred.ind.0
+│       │   │   │   ├── chr13.rnn.pred.ind.0
+│       │   │   │   ├── chr14.rnn.pred.ind.0
+│       │   │   │   ├── chr15.rnn.pred.ind.0
+│       │   │   │   ├── chr16.rnn.pred.ind.0
+│       │   │   │   ├── chr17.rnn.pred.ind.0
+│       │   │   │   ├── chr18.rnn.pred.ind.0
+│       │   │   │   ├── chr19.rnn.pred.ind.0
+│       │   │   │   ├── chr1.rnn.pred.ind.0
+│       │   │   │   ├── chr20.rnn.pred.ind.0
+│       │   │   │   ├── chr21.rnn.pred.ind.0
+│       │   │   │   ├── chr22.rnn.pred.ind.0
+│       │   │   │   ├── chr2.rnn.pred.ind.0
+│       │   │   │   ├── chr3.rnn.pred.ind.0
+│       │   │   │   ├── chr4.rnn.pred.ind.0
+│       │   │   │   ├── chr5.rnn.pred.ind.0
+│       │   │   │   ├── chr6.rnn.pred.ind.0
+│       │   │   │   ├── chr7.rnn.pred.ind.0
+│       │   │   │   ├── chr8.rnn.pred.ind.0
+│       │   │   │   ├── chr9.rnn.pred.ind.0
+│       │   │   │   ├── chrM.rnn.pred.ind.0
+│       │   │   │   ├── chrX.rnn.pred.ind.0
+│       │   │   │   └── rnn.pred.detail.fast5.0
+│       │   │   ├── mod_pos.chr10-.C.bed
+│       │   │   ├── mod_pos.chr10+.C.bed
+│       │   │   ├── mod_pos.chr11-.C.bed
+│       │   │   ├── mod_pos.chr11+.C.bed
+│       │   │   ├── mod_pos.chr12-.C.bed
+│       │   │   ├── mod_pos.chr12+.C.bed
+│       │   │   ├── mod_pos.chr13-.C.bed
+│       │   │   ├── mod_pos.chr14-.C.bed
+│       │   │   ├── mod_pos.chr14+.C.bed
+│       │   │   ├── mod_pos.chr15+.C.bed
+│       │   │   ├── mod_pos.chr16-.C.bed
+│       │   │   ├── mod_pos.chr17-.C.bed
+│       │   │   ├── mod_pos.chr17+.C.bed
+│       │   │   ├── mod_pos.chr18-.C.bed
+│       │   │   ├── mod_pos.chr19-.C.bed
+│       │   │   ├── mod_pos.chr1-.C.bed
+│       │   │   ├── mod_pos.chr1+.C.bed
+│       │   │   ├── mod_pos.chr20+.C.bed
+│       │   │   ├── mod_pos.chr21-.C.bed
+│       │   │   ├── mod_pos.chr22+.C.bed
+│       │   │   ├── mod_pos.chr2-.C.bed
+│       │   │   ├── mod_pos.chr2+.C.bed
+│       │   │   ├── mod_pos.chr3-.C.bed
+│       │   │   ├── mod_pos.chr3+.C.bed
+│       │   │   ├── mod_pos.chr4-.C.bed
+│       │   │   ├── mod_pos.chr4+.C.bed
+│       │   │   ├── mod_pos.chr5+.C.bed
+│       │   │   ├── mod_pos.chr6-.C.bed
+│       │   │   ├── mod_pos.chr6+.C.bed
+│       │   │   ├── mod_pos.chr7-.C.bed
+│       │   │   ├── mod_pos.chr7+.C.bed
+│       │   │   ├── mod_pos.chr8-.C.bed
+│       │   │   ├── mod_pos.chr8+.C.bed
+│       │   │   ├── mod_pos.chr9+.C.bed
+│       │   │   ├── mod_pos.chrM-.C.bed
+│       │   │   ├── mod_pos.chrX-.C.bed
+│       │   │   ├── mod_pos.chrX+.C.bed
+│       │   │   ├── rnn.pred.ind.chr1
+│       │   │   ├── rnn.pred.ind.chr10
+│       │   │   ├── rnn.pred.ind.chr11
+│       │   │   ├── rnn.pred.ind.chr12
+│       │   │   ├── rnn.pred.ind.chr13
+│       │   │   ├── rnn.pred.ind.chr14
+│       │   │   ├── rnn.pred.ind.chr15
+│       │   │   ├── rnn.pred.ind.chr16
+│       │   │   ├── rnn.pred.ind.chr17
+│       │   │   ├── rnn.pred.ind.chr18
+│       │   │   ├── rnn.pred.ind.chr19
+│       │   │   ├── rnn.pred.ind.chr2
+│       │   │   ├── rnn.pred.ind.chr20
+│       │   │   ├── rnn.pred.ind.chr21
+│       │   │   ├── rnn.pred.ind.chr22
+│       │   │   ├── rnn.pred.ind.chr3
+│       │   │   ├── rnn.pred.ind.chr4
+│       │   │   ├── rnn.pred.ind.chr5
+│       │   │   ├── rnn.pred.ind.chr6
+│       │   │   ├── rnn.pred.ind.chr7
+│       │   │   ├── rnn.pred.ind.chr8
+│       │   │   ├── rnn.pred.ind.chr9
+│       │   │   ├── rnn.pred.ind.chrM
+│       │   │   └── rnn.pred.ind.chrX
+│       │   ├── TestData.deepmod.chr10.C.bed
+│       │   ├── TestData.deepmod.chr11.C.bed
+│       │   ├── TestData.deepmod.chr12.C.bed
+│       │   ├── TestData.deepmod.chr13.C.bed
+│       │   ├── TestData.deepmod.chr14.C.bed
+│       │   ├── TestData.deepmod.chr15.C.bed
+│       │   ├── TestData.deepmod.chr16.C.bed
+│       │   ├── TestData.deepmod.chr17.C.bed
+│       │   ├── TestData.deepmod.chr18.C.bed
+│       │   ├── TestData.deepmod.chr19.C.bed
+│       │   ├── TestData.deepmod.chr1.C.bed
+│       │   ├── TestData.deepmod.chr20.C.bed
+│       │   ├── TestData.deepmod.chr21.C.bed
+│       │   ├── TestData.deepmod.chr22.C.bed
+│       │   ├── TestData.deepmod.chr2.C.bed
+│       │   ├── TestData.deepmod.chr3.C.bed
+│       │   ├── TestData.deepmod.chr4.C.bed
+│       │   ├── TestData.deepmod.chr5.C.bed
+│       │   ├── TestData.deepmod.chr6.C.bed
+│       │   ├── TestData.deepmod.chr7.C.bed
+│       │   ├── TestData.deepmod.chr8.C.bed
+│       │   ├── TestData.deepmod.chr9.C.bed
+│       │   ├── TestData.deepmod.chrM.C.bed
+│       │   ├── TestData.deepmod.chrX.C.bed
+│       │   ├── TestData.deepmod.chrY.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr10.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr11.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr12.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr13.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr14.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr15.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr16.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr17.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr18.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr19.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr1.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr20.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr21.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr22.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr2.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr3.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr4.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr5.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr6.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr7.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr8.C.bed
+│       │   ├── TestData.deepmod_clusterCpG.chr9.C.bed
+│       │   └── TestData.deepmod_clusterCpG.chrX.C.bed
+│       ├── TestData.deepmod.all_batch.C.bed.tar.gz
+│       ├── TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz
+│       ├── TestData.deepmod_clusterCpG.all_chrs.C.bed.tar.gz
+│       ├── TestData.deepmod.C_per_site.combine.bed.gz
+│       ├── TestData.deepmod.sum_chrs_mod.C.bed.tar.gz
+│       ├── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+│       └── v0.1.3.tar.gz
+├── b4
+│   └── cd7309272985461af03cce9cf7cb0f
+│       ├── batch_demo.fast5.reads.tar.CpG.tombo.per_read_stats
+│       ├── batch_demo.fast5.reads.tar.CpG.tombo.per_read_stats.bed.gz
+│       ├── batch_demo.fast5.reads.tar.CpG.tombo.stats
+│       ├── demo.fast5.reads.tar.resquiggle -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/3f/336996a4226e7b5587ee9ced750f2a/demo.fast5.reads.tar.resquiggle
+│       ├── demo.fast5.reads.tar.tombo.run.log
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+├── bd
+│   └── 86ab7cbf3fca1dc21ec7daa870e2a0
+│       ├── batch_demo.fast5.reads.tar.nanopolish.methylation_calls.tsv.gz
+│       ├── demo.fast5.reads.tar.basecalled -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/e4/a6c42f89f1bca511dc555476df7cd4/demo.fast5.reads.tar.basecalled
+│       ├── reads.fq
+│       ├── reads.fq.noDups.fq
+│       ├── reads.fq.noDups.fq.index
+│       ├── reads.fq.noDups.fq.index.fai
+│       ├── reads.fq.noDups.fq.index.gzi
+│       ├── reads.fq.noDups.fq.index.readdb
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+│       ├── TestData.batch_demo.fast5.reads.tar.sorted.bam
+│       ├── TestData.batch_demo.fast5.reads.tar.sorted.bam.bai
+│       ├── tmp.tsv
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+├── cf
+│   └── 706926eb209cc61b2e00c783ded5bb
+│       ├── METEORE-1.0.0
+│       │   ├── combination_model_prediction.py
+│       │   ├── combination_model_train.py
+│       │   ├── combined_model_results
+│       │   │   ├── example_deepsignal_nanopolish-default-model-freq-perCG.tsv
+│       │   │   ├── example_deepsignal_nanopolish-default-model-perRead.tsv
+│       │   │   ├── example_deepsignal_nanopolish-optimized-model-freq-perCG.tsv
+│       │   │   └── example_deepsignal_nanopolish-optimized-model-perRead.tsv
+│       │   ├── data
+│       │   │   ├── ecoli_k12_mg1655.fasta
+│       │   │   ├── ecoli_k12_mg1655.fasta.fai
+│       │   │   └── example
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch114_read6906_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch118_read2334_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch118_read526_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch138_read698_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch139_read4507_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch142_read2358_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch158_read435_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch159_read630_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch162_read1065_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch172_read1102_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch175_read80_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch177_read479_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch193_read10923_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch205_read3886_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch217_read1495_strand1.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch224_read1419_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch228_read1212_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch230_read20744_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch241_read2385_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch252_read2417_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch258_read2664_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch262_read814_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch269_read2204_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch270_read545_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch279_read13169_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch291_read161080_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch294_read356_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch294_read732_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch298_read2348_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch311_read1440_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch313_read2657_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch324_read1332_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch324_read570_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch330_read2145_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch354_read2006_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch366_read1770_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch375_read1018_strand1.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch375_read1189_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch381_read12341_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch409_read716_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch412_read8784_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch418_read3292_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch422_read940_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch430_read511_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch431_read800_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch433_read26717_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch434_read696_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch436_read2992_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch443_read162_strand.fast5
+│       │   │       └── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch88_read4943_strand.fast5
+│       │   ├── Deepsignal1
+│       │   ├── Deepsignal2
+│       │   ├── example.fastq
+│       │   ├── example_results
+│       │   │   ├── deepsignal_results
+│       │   │   │   ├── example_deepsignal-feature.zip
+│       │   │   │   ├── example_deepsignal-freq-perCG-combStrand.tsv
+│       │   │   │   ├── example_deepsignal-freq-perCG-raw.tsv
+│       │   │   │   ├── example_deepsignal-freq-perCG.tsv
+│       │   │   │   ├── example_deepsignal-perRead-score.tsv
+│       │   │   │   └── example_deepsignal-prob.tsv
+│       │   │   ├── example.CpG.tombo.per_read_stats
+│       │   │   ├── example.CpG.tombo.stats
+│       │   │   ├── example.fastq.index
+│       │   │   ├── example.fastq.index.fai
+│       │   │   ├── example.fastq.index.gzi
+│       │   │   ├── example.fastq.index.readdb
+│       │   │   ├── example.fraction_modified_reads.minus.wig
+│       │   │   ├── example.fraction_modified_reads.plus.wig
+│       │   │   ├── example.valid_coverage.minus.wig
+│       │   │   ├── example.valid_coverage.plus.wig
+│       │   │   ├── guppy_results
+│       │   │   │   ├── example.fq
+│       │   │   │   ├── example_guppy-freq-perCG-combStrand.tsv
+│       │   │   │   ├── example_guppy-freq-perCG.tsv
+│       │   │   │   ├── example_guppy-log-perCG.tsv
+│       │   │   │   ├── example_guppy-perRead-score.tsv
+│       │   │   │   ├── mapped
+│       │   │   │   │   ├── example.bam
+│       │   │   │   │   └── example.bam.bai
+│       │   │   │   └── sequencing_summary.txt
+│       │   │   ├── megalodon_results
+│       │   │   │   ├── example_megalodon-freq-perCG-combStrand.tsv
+│       │   │   │   ├── example_megalodon-freq-perCG.tsv
+│       │   │   │   ├── example_megalodon-perRead-score.tsv
+│       │   │   │   ├── guppy_log
+│       │   │   │   │   └── guppy_basecall_server_log-2021-03-19_16-28-14.log
+│       │   │   │   ├── guppy_log.err
+│       │   │   │   ├── guppy_log.out
+│       │   │   │   ├── log.txt
+│       │   │   │   ├── modified_bases.5mC.bed
+│       │   │   │   ├── per_read_modified_base_calls.db
+│       │   │   │   └── per_read_modified_base_calls.txt
+│       │   │   ├── nanopolish_results
+│       │   │   │   ├── example_nanopolish-freq-perCG-combStrand.tsv
+│       │   │   │   ├── example_nanopolish-freq-perCG.tsv
+│       │   │   │   ├── example_nanopolish-log-perCG.tsv
+│       │   │   │   ├── example_nanopolish-log.tsv
+│       │   │   │   ├── example_nanopolish-perRead-score.tsv
+│       │   │   │   └── mapped
+│       │   │   │       ├── example.bam
+│       │   │   │       ├── example.log
+│       │   │   │       ├── example.sorted.bam
+│       │   │   │       └── example.sorted.bam.bai
+│       │   │   └── tombo_results
+│       │   │       ├── example_tombo-cov-only.tsv
+│       │   │       ├── example_tombo-freq-only.tsv
+│       │   │       ├── example_tombo-freq-perCG-combStrand.tsv
+│       │   │       ├── example_tombo-freq-perCG.tsv
+│       │   │       └── example_tombo-perRead-score.tsv
+│       │   ├── figure
+│       │   │   ├── meteore_logo_white.png
+│       │   │   └── meteore_pipeline.png
+│       │   ├── Guppy
+│       │   ├── guppy.yml
+│       │   ├── LICENSE
+│       │   ├── make_plots
+│       │   │   └── controlSet1_5tools_perSiteAnalysis.R
+│       │   ├── meteore_reg.py
+│       │   ├── model_content.tsv
+│       │   ├── Nanopolish
+│       │   ├── nanopolish.yml
+│       │   ├── prediction_to_mod_frequency.py
+│       │   ├── README.md
+│       │   ├── requirements.txt
+│       │   ├── saved_models
+│       │   │   ├── rf_model_default_deepsignal_guppy_megalodon_nanopolish_tombo.model
+│       │   │   ├── rf_model_default_deepsignal_guppy.model
+│       │   │   ├── rf_model_default_deepsignal_megalodon.model
+│       │   │   ├── rf_model_default_deepsignal_nanopolish.model
+│       │   │   ├── rf_model_default_deepsignal_tombo.model
+│       │   │   ├── rf_model_default_guppy_megalodon.model
+│       │   │   ├── rf_model_default_guppy_nanopolish.model
+│       │   │   ├── rf_model_default_guppy_tombo.model
+│       │   │   ├── rf_model_default_megalodon_nanopolish.model
+│       │   │   ├── rf_model_default_megalodon_tombo.model
+│       │   │   ├── rf_model_default_nanopolish_tombo.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_deepsignal_guppy_megalodon_nanopolish_tombo.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_deepsignal_guppy.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_deepsignal_megalodon.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_deepsignal_nanopolish.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_deepsignal_tombo.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_guppy_megalodon.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_guppy_nanopolish.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_guppy_tombo.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_megalodon_nanopolish.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_megalodon_tombo.model
+│       │   │   └── rf_model_max_depth_3_n_estimator_10_nanopolish_tombo.model
+│       │   ├── script
+│       │   │   ├── format_megalodon.R
+│       │   │   ├── megalodon.sh
+│       │   │   ├── run_deepmod.R
+│       │   │   └── run_megalodon.R
+│       │   ├── script_in_snakemake
+│       │   │   ├── call_modification_frequency.py
+│       │   │   ├── extract_tombo_per_read_results.py
+│       │   │   ├── format_deepsignal.R
+│       │   │   ├── format_guppy.R
+│       │   │   ├── format_nanopolish.R
+│       │   │   ├── __init__.py
+│       │   │   ├── __pycache__
+│       │   │   │   └── txt_formater.cpython-36.pyc
+│       │   │   ├── run_deepsignal.R
+│       │   │   ├── run_deepsignal.R.save
+│       │   │   ├── run_guppy.R
+│       │   │   ├── run_nanopolish.R
+│       │   │   ├── run_tombo.R
+│       │   │   ├── split_cpg_groups.py
+│       │   │   ├── txt_formater.py
+│       │   │   └── wig2bed.py
+│       │   ├── test_case
+│       │   │   ├── deepsignal_test.tsv
+│       │   │   └── nanopolish_test.tsv
+│       │   └── Tombo
+│       ├── Read_Level-TestData
+│       │   ├── DONE.txt
+│       │   ├── TestData_DeepSignal-METEORE-perRead-score.tsv.gz
+│       │   ├── TestData_Guppy-METEORE-perRead-score.tsv.gz
+│       │   ├── TestData_Megalodon-METEORE-perRead-score.tsv.gz
+│       │   ├── TestData_Nanopolish-METEORE-perRead-score.tsv.gz
+│       │   └── TestData_Tombo-METEORE-perRead-score.tsv.gz
+│       ├── src -> /pod/2/li-lab/yang/workspace/nano-compare/src
+│       ├── TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/ae/17edb30c5e0fa1552e2a671939c48f/TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz
+│       ├── TestData.deepmod.C_per_site.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/ae/17edb30c5e0fa1552e2a671939c48f/TestData.deepmod.C_per_site.combine.bed.gz
+│       ├── TestData.deepsignal.per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/aa/de3cba497cd326bbfcb5b669928cfc/TestData.deepsignal.per_read.combine.tsv.gz
+│       ├── TestData.guppy.fast5mod_per_site.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/06/911c004ce23b67ad041adc761dda63/TestData.guppy.fast5mod_per_site.combine.tsv.gz
+│       ├── TestData.guppy.gcf52ref_per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/06/911c004ce23b67ad041adc761dda63/TestData.guppy.gcf52ref_per_read.combine.tsv.gz
+│       ├── TestData_Megalodon_DeepSignal_combine.model_content.tsv
+│       ├── TestData.megalodon.per_read.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/71/7a6fe9d98ca41323c8404f04390630/TestData.megalodon.per_read.combine.bed.gz
+│       ├── TestData.meteore.megalodon_deepsignal_default_model_per_read.combine.tsv.gz
+│       ├── TestData.meteore.megalodon_deepsignal_optimized_model_per_read.combine.tsv.gz
+│       ├── TestData_Nanopolish_Megalodon_combine.model_content.tsv
+│       ├── TestData.nanopolish.per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/4c/70dbe92832763181260aa66d69d465/TestData.nanopolish.per_read.combine.tsv.gz
+│       ├── TestData.tombo.per_read.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/67/f0ba5b9910cfa109b2d68f33420f4f/TestData.tombo.per_read.combine.bed.gz
+│       ├── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+│       └── v1.0.0.tar.gz
+├── d4
+│   └── 2f779485546f691cec542e1079d9fb
+│       ├── batch_demo.fast5.reads.tar.megalodon.per_read_modified_base_calls.txt.gz
+│       ├── demo.fast5.reads.tar.untar -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/94/d0e3640c1fa25b87112739734b34dd/demo.fast5.reads.tar.untar
+│       ├── megalodon_model
+│       │   ├── adapter_scaling_dna_r9.4.1_min.jsn
+│       │   ├── barcoding
+│       │   │   ├── 4x4_mismatch_matrix.txt
+│       │   │   ├── 5x5_mismatch_matrix_simple.txt
+│       │   │   ├── 5x5_mismatch_matrix.txt
+│       │   │   ├── barcode_arrs_16s.cfg
+│       │   │   ├── barcode_arrs_dual_nb24_pcr96.cfg
+│       │   │   ├── barcode_arrs_lamp8.cfg
+│       │   │   ├── barcode_arrs_lamp96.cfg
+│       │   │   ├── barcode_arrs_lwb.cfg
+│       │   │   ├── barcode_arrs_nb12.cfg
+│       │   │   ├── barcode_arrs_nb24.cfg
+│       │   │   ├── barcode_arrs_nb96.cfg
+│       │   │   ├── barcode_arrs_pcr12.cfg
+│       │   │   ├── barcode_arrs_pcr96.cfg
+│       │   │   ├── barcode_arrs_rab.cfg
+│       │   │   ├── barcode_arrs_rbk096.cfg
+│       │   │   ├── barcode_arrs_rbk4.cfg
+│       │   │   ├── barcode_arrs_rbk.cfg
+│       │   │   ├── barcode_arrs_rlb.cfg
+│       │   │   ├── barcode_arrs_vmk2.cfg
+│       │   │   ├── barcode_arrs_vmk.cfg
+│       │   │   ├── barcode_score_vs_classification.png
+│       │   │   ├── barcodes_masked.fasta
+│       │   │   ├── configuration.cfg
+│       │   │   ├── configuration_dual.cfg
+│       │   │   ├── lamp_targets.fasta
+│       │   │   └── nw_barcoding_grid.png
+│       │   ├── lambda_3.6kb.fasta
+│       │   ├── res_dna_r941_min_modbases_5mC_v001.cfg
+│       │   ├── res_dna_r941_min_modbases_5mC_v001.checkpoint
+│       │   └── res_dna_r941_min_modbases_5mC_v001.jsn
+│       ├── megalodon_model.tar.gz -> /pod/2/li-lab/Nanopore_compare/nf_input/megalodon_model.tar.gz
+│       ├── megalodon_results
+│       │   ├── guppy_log
+│       │   │   └── guppy_basecall_server_log-2021-08-18_15-05-06.log
+│       │   ├── guppy_log.err
+│       │   ├── guppy_log.out
+│       │   ├── log.txt
+│       │   ├── modified_bases.5mC.bed
+│       │   ├── modified_bases.5mC.fwd_strand.wig
+│       │   ├── modified_bases.5mC.rev_strand.wig
+│       │   ├── per_read_modified_base_calls.db
+│       │   └── per_read_modified_base_calls.txt
+│       └── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+├── e4
+│   └── a6c42f89f1bca511dc555476df7cd4
+│       ├── demo.fast5.reads.tar.basecalled
+│       │   ├── demo.fast5.reads.tar-sequencing_summary.txt
+│       │   ├── fastq_runid_067f8be7e5b4cac3170a36762e4878ba47eded20_0_0.fastq
+│       │   ├── fastq_runid_098c8278671ebb3df841b55ae73e7b7ca551ae8f_0_0.fastq
+│       │   ├── fastq_runid_0dda486d2f64c95b309f091ef013e31552f06a16_0_0.fastq
+│       │   ├── fastq_runid_20094623c8dd7fa115bb84072199ad962c57ca69_0_0.fastq
+│       │   ├── fastq_runid_233a1e55890869e7fe9651a4312a7df067aa419a_0_0.fastq
+│       │   ├── fastq_runid_27ce003e2a27f2fa749ebc26e04f8be83277bf6f_0_0.fastq
+│       │   ├── fastq_runid_385249cb667e0d1422d6589f455eceb44f303f75_0_0.fastq
+│       │   ├── fastq_runid_3a557d817fc78485f07a0d699ff00e80dfaab03e_0_0.fastq
+│       │   ├── fastq_runid_401a2a1fbc3f47cec5ed931cdbd64c075c3fe0f4_0_0.fastq
+│       │   ├── fastq_runid_4a0b79a6d2b519101fe38535d229566c41c52c75_0_0.fastq
+│       │   ├── fastq_runid_4ad73ce5c735833db3b08fbc48379e456c52024c_0_0.fastq
+│       │   ├── fastq_runid_674eade50eaf56e4dd3a6eadbd3311b122a2672e_0_0.fastq
+│       │   ├── fastq_runid_6bbb3c6f574fb109d7cad9a8811d7fbe5b7e81f9_0_0.fastq
+│       │   ├── fastq_runid_6ec0cc71c653a67d124c1e6a12d434d1bd038e94_0_0.fastq
+│       │   ├── fastq_runid_731889dc3fde03409d19417d7a76e850c59fd12a_0_0.fastq
+│       │   ├── fastq_runid_851c5b273cfa8598cf6bb4baece0787b5c552d4c_0_0.fastq
+│       │   ├── fastq_runid_85b27b7d78ff7447b2d7eab4ce89d16785288173_0_0.fastq
+│       │   ├── fastq_runid_a0795d21763d5515e8d04f7ea59728c5489daef0_0_0.fastq
+│       │   ├── fastq_runid_a0ac6263a22e6ffae3a9fb9976d1c9d42a15122d_0_0.fastq
+│       │   ├── fastq_runid_a19e2b775c5f8ee3d3c2293f06d6dc1127802153_0_0.fastq
+│       │   ├── fastq_runid_a62f4e94e1adc24ec06f83e560fcb260f421df61_0_0.fastq
+│       │   ├── fastq_runid_a71281099a34c6da392ba989c4b8c88d4af3df38_0_0.fastq
+│       │   ├── fastq_runid_c1cf079ba0bbc5752bd3855a7d22e64952b9196f_0_0.fastq
+│       │   ├── fastq_runid_c74dfb9d08ecc359e3c16658035ddbdf28fea6c4_0_0.fastq
+│       │   ├── fastq_runid_e5e10837d930df529e64a7e1f3edffb25f04b0de_0_0.fastq
+│       │   ├── fastq_runid_e9699e7507873bbb46e53bea45f46c292fd3c9bf_0_0.fastq
+│       │   ├── guppy_basecaller_log-2021-08-18_15-04-58.log
+│       │   ├── guppy_basecaller_verbose_log-2021-08-18_15-04-58.log
+│       │   ├── sequencing_telemetry.js
+│       │   └── workspace
+│       │       ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch107_read99744.fast5
+│       │       ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch323_read8827.fast5
+│       │       ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch335_read46533.fast5
+│       │       ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch68_read3820.fast5
+│       │       ├── GXB01025_20180129_FAH50344_GA40000_sequencing_run_180129_18_lee_001_GXB01025_004B_76359_ch10_read24663.fast5
+│       │       ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002_33841_read_1900_ch_85_strand.fast5
+│       │       ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002_33841_read_2358_ch_473_strand.fast5
+│       │       ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002B_13376_ch108_read58003.fast5
+│       │       ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002B_13376_ch117_read3139.fast5
+│       │       ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002B_13376_ch297_read7275.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005_83336_read_1065_ch_392_strand.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch12_read10393.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch293_read971.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch433_read5328.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch59_read41648.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_read_15235_ch_265_strand.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_read_27487_ch_245_strand.fast5
+│       │       ├── GXB01102_20180126_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002_58381_read_257_ch_396_strand.fast5
+│       │       ├── GXB01102_20180126_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002_58381_read_3421_ch_286_strand.fast5
+│       │       ├── GXB01102_20180126_FAH36638_GA40000_sequencing_run_180126_18_lee_001_GXB01102_004_87931_read_2335_ch_62_strand.fast5
+│       │       ├── GXB01102_20180127_FAH36530_GA10000_sequencing_run_180126_18_lee_001_GXB01102_001C_37011_ch502_read23513.fast5
+│       │       ├── GXB01102_20180127_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002C_81914_ch171_read28521.fast5
+│       │       ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_ch87_read7346.fast5
+│       │       ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_read_11179_ch_12_strand.fast5
+│       │       ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_read_663_ch_63_strand.fast5
+│       │       ├── GXB01102_20180127_FAH50336_GA30000_sequencing_run_180126_18_lee_001_GXB01102_003C_57955_ch149_read4133.fast5
+│       │       ├── GXB01102_20180127_FAH50336_GA30000_sequencing_run_180126_18_lee_001_GXB01102_003C_57955_ch70_read1463.fast5
+│       │       ├── GXB01102_20180202_FAH58845_GA20000_sequencing_run_180202_18_lee_001_GXB01102_002_33233_ch46_read7189.fast5
+│       │       ├── GXB01102_20180202_FAH58845_GA20000_sequencing_run_180202_18_lee_001_GXB01102_002_33233_read_48602_ch_317_strand.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch208_read8370.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch252_read21931.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch402_read25618.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch419_read21738.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch48_read7305.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch69_read3745.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_read_2842_ch_417_strand.fast5
+│       │       ├── GXB01102_20180202_FAH59036_GA30000_sequencing_run_180202_18_lee_001_GXB01102_003_14565_ch163_read44570.fast5
+│       │       ├── GXB01102_20180202_FAH59036_GA30000_sequencing_run_180202_18_lee_001_GXB01102_003_14565_ch261_read2768.fast5
+│       │       ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch171_read3147.fast5
+│       │       ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch285_read43240.fast5
+│       │       ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch507_read3355.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch107_read21567.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch192_read4507.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch211_read25544.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch391_read24228.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch471_read166952.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch162_read46690.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch228_read15240.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch237_read12166.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch27_read8601.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch331_read3837.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch354_read25106.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_read_27764_ch_497_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch195_read1447.fast5
+│       │       ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch24_read28319.fast5
+│       │       ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch261_read10049.fast5
+│       │       ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_read_35280_ch_136_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch258_read3384.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch365_read12855.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch422_read69882.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch462_read6220.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_read_47430_ch_318_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_read_58445_ch_335_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch152_read41466.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch222_read34004.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch236_read48072.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch256_read5351.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch309_read4161.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch344_read391.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch421_read24443.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_read_501472_ch_119_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch133_read147585.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch188_read23328.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch229_read22777.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch322_read1624.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_read_15605_ch_255_strand.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch156_read1947.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch162_read22400.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch267_read5856.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch317_read1450.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch371_read2444.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch382_read29286.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch114_read5540.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch168_read35205.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch217_read1162.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch386_read4360.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch417_read22714.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch433_read7342.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch510_read6460.fast5
+│       │       ├── GXB01102_20180209_FAH58926_GA40000_sequencing_run_180209_18_lee_001_GXB01102_004_40219_ch388_read6769.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch147_read1205.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch167_read77633.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch26_read25112.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch283_read6312.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch347_read211808.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch34_read35676.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch445_read4258.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch455_read780.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch489_read5953.fast5
+│       │       └── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch66_read47778.fast5
+│       ├── demo.fast5.reads.tar.basecalled.bam
+│       ├── demo.fast5.reads.tar.untar -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/94/d0e3640c1fa25b87112739734b34dd/demo.fast5.reads.tar.untar
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+├── f0
+│   └── 8b1891d334ef63089e1e6938fc6319
+│       ├── base_mods.rocksdb
+│       │   ├── 000004.sst
+│       │   ├── 000006.log
+│       │   ├── CURRENT
+│       │   ├── IDENTITY
+│       │   ├── LOCK
+│       │   ├── LOG
+│       │   ├── LOG.old.1629313624214628
+│       │   ├── MANIFEST-000005
+│       │   ├── OPTIONS-000005
+│       │   └── OPTIONS-000008
+│       ├── batch_demo.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam
+│       ├── batch_demo.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam.bai
+│       ├── batch_demo.fast5.reads.tar.guppy.gcf52ref_per_read.tsv.gz
+│       ├── demo.fast5.reads.tar.methcalled
+│       │   ├── fastq_runid_067f8be7e5b4cac3170a36762e4878ba47eded20_0_0.fastq
+│       │   ├── fastq_runid_098c8278671ebb3df841b55ae73e7b7ca551ae8f_0_0.fastq
+│       │   ├── fastq_runid_0dda486d2f64c95b309f091ef013e31552f06a16_0_0.fastq
+│       │   ├── fastq_runid_20094623c8dd7fa115bb84072199ad962c57ca69_0_0.fastq
+│       │   ├── fastq_runid_233a1e55890869e7fe9651a4312a7df067aa419a_0_0.fastq
+│       │   ├── fastq_runid_27ce003e2a27f2fa749ebc26e04f8be83277bf6f_0_0.fastq
+│       │   ├── fastq_runid_385249cb667e0d1422d6589f455eceb44f303f75_0_0.fastq
+│       │   ├── fastq_runid_3a557d817fc78485f07a0d699ff00e80dfaab03e_0_0.fastq
+│       │   ├── fastq_runid_401a2a1fbc3f47cec5ed931cdbd64c075c3fe0f4_0_0.fastq
+│       │   ├── fastq_runid_4a0b79a6d2b519101fe38535d229566c41c52c75_0_0.fastq
+│       │   ├── fastq_runid_4ad73ce5c735833db3b08fbc48379e456c52024c_0_0.fastq
+│       │   ├── fastq_runid_674eade50eaf56e4dd3a6eadbd3311b122a2672e_0_0.fastq
+│       │   ├── fastq_runid_6bbb3c6f574fb109d7cad9a8811d7fbe5b7e81f9_0_0.fastq
+│       │   ├── fastq_runid_6ec0cc71c653a67d124c1e6a12d434d1bd038e94_0_0.fastq
+│       │   ├── fastq_runid_731889dc3fde03409d19417d7a76e850c59fd12a_0_0.fastq
+│       │   ├── fastq_runid_851c5b273cfa8598cf6bb4baece0787b5c552d4c_0_0.fastq
+│       │   ├── fastq_runid_85b27b7d78ff7447b2d7eab4ce89d16785288173_0_0.fastq
+│       │   ├── fastq_runid_a0795d21763d5515e8d04f7ea59728c5489daef0_0_0.fastq
+│       │   ├── fastq_runid_a0ac6263a22e6ffae3a9fb9976d1c9d42a15122d_0_0.fastq
+│       │   ├── fastq_runid_a19e2b775c5f8ee3d3c2293f06d6dc1127802153_0_0.fastq
+│       │   ├── fastq_runid_a62f4e94e1adc24ec06f83e560fcb260f421df61_0_0.fastq
+│       │   ├── fastq_runid_a71281099a34c6da392ba989c4b8c88d4af3df38_0_0.fastq
+│       │   ├── fastq_runid_c1cf079ba0bbc5752bd3855a7d22e64952b9196f_0_0.fastq
+│       │   ├── fastq_runid_c74dfb9d08ecc359e3c16658035ddbdf28fea6c4_0_0.fastq
+│       │   ├── fastq_runid_e5e10837d930df529e64a7e1f3edffb25f04b0de_0_0.fastq
+│       │   ├── fastq_runid_e9699e7507873bbb46e53bea45f46c292fd3c9bf_0_0.fastq
+│       │   ├── guppy_basecaller_log-2021-08-18_15-05-01.log
+│       │   ├── guppy_basecaller_verbose_log-2021-08-18_15-05-01.log
+│       │   ├── sequencing_summary.txt
+│       │   ├── sequencing_telemetry.js
+│       │   └── workspace
+│       │       ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch107_read99744.fast5
+│       │       ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch323_read8827.fast5
+│       │       ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch335_read46533.fast5
+│       │       ├── GXB01025_20180129_FAH46167_GA30000_sequencing_run_180129_18_lee_001_GXB01025_003B_66655_ch68_read3820.fast5
+│       │       ├── GXB01025_20180129_FAH50344_GA40000_sequencing_run_180129_18_lee_001_GXB01025_004B_76359_ch10_read24663.fast5
+│       │       ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002_33841_read_1900_ch_85_strand.fast5
+│       │       ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002_33841_read_2358_ch_473_strand.fast5
+│       │       ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002B_13376_ch108_read58003.fast5
+│       │       ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002B_13376_ch117_read3139.fast5
+│       │       ├── GXB01025_20180129_FAH50358_GA20000_sequencing_run_180129_18_lee_001_GXB01025_002B_13376_ch297_read7275.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005_83336_read_1065_ch_392_strand.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch12_read10393.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch293_read971.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch433_read5328.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_ch59_read41648.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_read_15235_ch_265_strand.fast5
+│       │       ├── GXB01025_20180129_FAH50407_GA50000_sequencing_run_180129_18_lee_001_GXB01025_005B_23059_read_27487_ch_245_strand.fast5
+│       │       ├── GXB01102_20180126_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002_58381_read_257_ch_396_strand.fast5
+│       │       ├── GXB01102_20180126_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002_58381_read_3421_ch_286_strand.fast5
+│       │       ├── GXB01102_20180126_FAH36638_GA40000_sequencing_run_180126_18_lee_001_GXB01102_004_87931_read_2335_ch_62_strand.fast5
+│       │       ├── GXB01102_20180127_FAH36530_GA10000_sequencing_run_180126_18_lee_001_GXB01102_001C_37011_ch502_read23513.fast5
+│       │       ├── GXB01102_20180127_FAH36582_GA20000_sequencing_run_180126_18_lee_001_GXB01102_002C_81914_ch171_read28521.fast5
+│       │       ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_ch87_read7346.fast5
+│       │       ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_read_11179_ch_12_strand.fast5
+│       │       ├── GXB01102_20180127_FAH36648_GA50000_sequencing_run_180126_18_lee_001_GXB01102_005C_17671_read_663_ch_63_strand.fast5
+│       │       ├── GXB01102_20180127_FAH50336_GA30000_sequencing_run_180126_18_lee_001_GXB01102_003C_57955_ch149_read4133.fast5
+│       │       ├── GXB01102_20180127_FAH50336_GA30000_sequencing_run_180126_18_lee_001_GXB01102_003C_57955_ch70_read1463.fast5
+│       │       ├── GXB01102_20180202_FAH58845_GA20000_sequencing_run_180202_18_lee_001_GXB01102_002_33233_ch46_read7189.fast5
+│       │       ├── GXB01102_20180202_FAH58845_GA20000_sequencing_run_180202_18_lee_001_GXB01102_002_33233_read_48602_ch_317_strand.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch208_read8370.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch252_read21931.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch402_read25618.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch419_read21738.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch48_read7305.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_ch69_read3745.fast5
+│       │       ├── GXB01102_20180202_FAH58920_GA40000_sequencing_run_180202_18_lee_001_GXB01102_004_63745_read_2842_ch_417_strand.fast5
+│       │       ├── GXB01102_20180202_FAH59036_GA30000_sequencing_run_180202_18_lee_001_GXB01102_003_14565_ch163_read44570.fast5
+│       │       ├── GXB01102_20180202_FAH59036_GA30000_sequencing_run_180202_18_lee_001_GXB01102_003_14565_ch261_read2768.fast5
+│       │       ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch171_read3147.fast5
+│       │       ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch285_read43240.fast5
+│       │       ├── GXB01102_20180202_FAH59132_GA50000_sequencing_run_180202_18_lee_001_GXB01102_005_36448_ch507_read3355.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch107_read21567.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch192_read4507.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch211_read25544.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch391_read24228.fast5
+│       │       ├── GXB01102_20180202_FAH59167_GA10000_sequencing_run_180202_18_lee_001_GXB01102_001_68149_ch471_read166952.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch162_read46690.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch228_read15240.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch237_read12166.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch27_read8601.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch331_read3837.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_ch354_read25106.fast5
+│       │       ├── GXB01102_20180205_FAH55803_GA50000_sequencing_run_180205_18_lee_001_GXB01102_005_88074_read_27764_ch_497_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch195_read1447.fast5
+│       │       ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch24_read28319.fast5
+│       │       ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_ch261_read10049.fast5
+│       │       ├── GXB01102_20180205_FAH59027_GA30000_sequencing_run_180205_18_lee_001_GXB01102_003_40051_read_35280_ch_136_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch258_read3384.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch365_read12855.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch422_read69882.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_ch462_read6220.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_read_47430_ch_318_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59070_GA10000_sequencing_run_180205_18_lee_001_GXB01102_001_74662_read_58445_ch_335_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch152_read41466.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch222_read34004.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch236_read48072.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch256_read5351.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch309_read4161.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch344_read391.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_ch421_read24443.fast5
+│       │       ├── GXB01102_20180205_FAH59119_GA20000_sequencing_run_180205_18_lee_001_GXB01102_002_17259_read_501472_ch_119_strand.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch133_read147585.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch188_read23328.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch229_read22777.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_ch322_read1624.fast5
+│       │       ├── GXB01102_20180205_FAH59130_GA40000_sequencing_run_180205_18_lee_001_GXB01102_004_67608_read_15605_ch_255_strand.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch156_read1947.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch162_read22400.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch267_read5856.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch317_read1450.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch371_read2444.fast5
+│       │       ├── GXB01102_20180209_FAH55488_GA20000_sequencing_run_180209_18_lee_001_GXB01102_002_29212_ch382_read29286.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch114_read5540.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch168_read35205.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch217_read1162.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch386_read4360.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch417_read22714.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch433_read7342.fast5
+│       │       ├── GXB01102_20180209_FAH55636_GA50000_sequencing_run_180209_18_lee_001_GXB01102_005_70664_ch510_read6460.fast5
+│       │       ├── GXB01102_20180209_FAH58926_GA40000_sequencing_run_180209_18_lee_001_GXB01102_004_40219_ch388_read6769.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch147_read1205.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch167_read77633.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch26_read25112.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch283_read6312.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch347_read211808.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch34_read35676.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch445_read4258.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch455_read780.fast5
+│       │       ├── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch489_read5953.fast5
+│       │       └── GXB01102_20180209_FAH59063_GA30000_sequencing_run_180209_18_lee_001_GXB01102_003_51084_ch66_read47778.fast5
+│       ├── demo.fast5.reads.tar.untar -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/94/d0e3640c1fa25b87112739734b34dd/demo.fast5.reads.tar.untar
+│       ├── gcf52ref -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/gcf52ref
+│       ├── gcf52ref.batch.demo.fast5.reads.tar.bam
+│       ├── gcf52ref.batch.demo.fast5.reads.tar.bam.bai
+│       ├── outbatch_demo.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work/a8/145382b24956f165bae5b079501c87/reference_genome
+│       ├── tmp.batch_demo.fast5.reads.tar.guppy.gcf52ref_per_read.tsv
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+└── stage
+    ├── 41
+    │   └── 12e11634d8ad66aef303b4e576fbbf
+    │       └── demo2.fast5.reads.tar.gz
+    └── 5e
+        └── c048132a422a24dd572d121e24541c
+            └── demo.fast5.reads.tar.gz
+
+229 directories, 1765 files
