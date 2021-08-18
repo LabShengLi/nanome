@@ -24,45 +24,49 @@ nextflow run https://github.com/liuyangzzu/nanome
     --input 'https://github.com/liuyangzzu/nanome/raw/master/test_data/demo.fast5.reads.tar.gz'
 ```
 
-Command running results is below.
+Command running results is below, please also check the pipeline output directory tree for [outputs]() and [work]() .
 
 ```angular2html
-/projects/li-lab/yang/workspace/nano-compare
 N E X T F L O W  ~  version 20.10.0
-Launching `main.nf` [cranky_mclean] - revision: 39f38efca0
+Launching `main.nf` [hungry_bartik] - revision: 12c6a8e37a
 NANOME - NF PIPELINE (v1.0)
-by Li Lab at The Jackon Laboratory
-http://nanome.jax.org
+by Li Lab at The Jackson Laboratory
+https://nanome.jax.org
 =================================
 dsname          :TestData
-input           :inputs/test.demo.filelist.txt
+input           :https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 reference_genome    :reference_genome/hg38/hg38.fasta
 chromSizesFile      :reference_genome/hg38/hg38.chrom.sizes
 runBasecall     :true
 runMethcall     :true
-evaluation      :false
+evaluation      :true
 =================================
-[d2/e1e047] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
-[67/e8f2d6] process > Untar (demo2.fast5.reads.tar)  [100%] 2 of 2 ✔
-[bc/ee9e6f] process > Basecall (demo2.fast5.reads... [100%] 2 of 2 ✔
-[3a/99472f] process > QCExport                       [100%] 1 of 1 ✔
-[7b/c8a7aa] process > Guppy (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
-[60/665d1e] process > Megalodon (demo.fast5.reads... [100%] 2 of 2 ✔
-[75/232d0e] process > Resquiggle (demo2.fast5.rea... [100%] 2 of 2 ✔
-[7c/6a4152] process > DeepSignal (demo.fast5.read... [100%] 2 of 2 ✔
-[98/c7c926] process > Tombo (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
-[cc/484339] process > DeepMod (demo.fast5.reads.tar) [100%] 2 of 2 ✔
-[60/a7b7e1] process > Nanopolish (demo2.fast5.rea... [100%] 2 of 2 ✔
-[7b/2bc531] process > DpSigComb                      [100%] 1 of 1 ✔
-[2d/5ca74b] process > TomboComb                      [100%] 1 of 1 ✔
-[af/7ca5e5] process > GuppyComb (1)                  [100%] 1 of 1 ✔
-[d2/20cfb9] process > MgldnComb                      [100%] 1 of 1 ✔
-[ca/910ed5] process > NplshComb                      [100%] 1 of 1 ✔
-[1b/1ec959] process > DpmodComb (1)                  [100%] 1 of 1 ✔
-Completed at: 16-Aug-2021 13:39:27
-Duration    : 41m 42s
-CPU hours   : 1.5
-Succeeded   : 18
+executor >  slurm (30)
+[a8/145382] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
+[94/d0e364] process > Untar (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
+[e4/a6c42f] process > Basecall (demo.fast5.reads.... [100%] 2 of 2 ✔
+[17/87d46b] process > QCExport                       [100%] 1 of 1 ✔
+[f0/8b1891] process > Guppy (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
+[d4/2f7794] process > Megalodon (demo.fast5.reads... [100%] 2 of 2 ✔
+[3f/336996] process > Resquiggle (demo.fast5.read... [100%] 2 of 2 ✔
+[78/76a38d] process > DeepSignal (demo.fast5.read... [100%] 2 of 2 ✔
+[b4/cd7309] process > Tombo (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
+[21/92aae7] process > DeepMod (demo.fast5.reads.tar) [100%] 2 of 2 ✔
+[bd/86ab7c] process > Nanopolish (demo.fast5.read... [100%] 2 of 2 ✔
+[aa/de3cba] process > DpSigComb                      [100%] 1 of 1 ✔
+[67/f0ba5b] process > TomboComb                      [100%] 1 of 1 ✔
+[06/911c00] process > GuppyComb (1)                  [100%] 1 of 1 ✔
+[71/7a6fe9] process > MgldnComb                      [100%] 1 of 1 ✔
+[4c/70dbe9] process > NplshComb                      [100%] 1 of 1 ✔
+[ae/17edb3] process > DpmodComb (1)                  [100%] 1 of 1 ✔
+[cf/706926] process > METEORE (1)                    [100%] 1 of 1 ✔
+[a5/732325] process > SiteLevelUnify (1)             [100%] 1 of 1 ✔
+[77/f19512] process > ReadLevelPerf (1)              [100%] 1 of 1 ✔
+[37/3cdaa5] process > SiteLevelCorr (1)              [100%] 1 of 1 ✔
+Completed at: 18-Aug-2021 16:04:14
+Duration    : 1h 46s
+CPU hours   : 1.9
+Succeeded   : 30
 ```
 
 
