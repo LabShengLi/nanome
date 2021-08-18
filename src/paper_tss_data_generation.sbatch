@@ -87,6 +87,7 @@ python ${pythonFile} \
     --bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
     --runid TSS_Sites-${dsname} \
     --dsname ${dsname} \
-    --enable-cache --using-cache
+    --enable-cache --using-cache \
+    --processors 8
 
 echo "### TSS data generation DONE"

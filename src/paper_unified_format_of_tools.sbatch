@@ -48,7 +48,7 @@ pythonFile=nanocompare/tss_eval.py
 
 set -x
 
-## convert tools format to format of METEORE
+## convert tools format to unified format (such as METEORE)
 python ${pythonFile} \
     --calls \
     Nanopolish:${NanopolishCalls} \
@@ -57,6 +57,7 @@ python ${pythonFile} \
     Guppy.gcf52ref:${GuppyCalls} \
     Tombo:${TomboCalls} \
     --runid TSS_METEORE-${dsname} \
-    --dsname ${dsname} --output-unified-format
+    --dsname ${dsname} --output-unified-format \
+    --processors 8
 
 echo "### DONE"
