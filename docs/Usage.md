@@ -9,11 +9,19 @@ The command for running 'nanome' pipeline is to run `./nextflow run https://gith
 By default, we are using hg38 human reference genome, and you can specify reference genome using parameter `--referenceGenome="reference_genome/hg38/hg38.fasta"`. An example of how to use 'nanome' pipeline is given below.
 
 ```angular2html
+# Get nextflow executable file
 curl -fsSL get.nextflow.io | bash
 
-./nextflow run https://github.com/liuyangzzu/nanome \
-   --input 'https://github.com/liuyangzzu/nanome/raw/master/test_data/demo.fast5.reads.tar.gz' \
-   --dsname TestData --eval true -profile winter
+# Get nanome singularity
+singularity pull nanome_v1.4.sif docker://quay.io/liuyangzzu/nanome:v1.4
+
+# Run nanome pipeline on HPC
+./nextflow run main.nf \
+    -profile winter2 \
+    -with-report -with-timeline -with-trace -with-dag \
+    -with-singularity nanome_v1.4.sif \
+    --dsname TestData
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 ```
 
 You can also running the pipeline on CloudOS, using following command options.
@@ -21,10 +29,10 @@ You can also running the pipeline on CloudOS, using following command options.
 nextflow run https://github.com/liuyangzzu/nanome
     --config 'conf/google.config'
     --dsname TestData
-    --input 'https://github.com/liuyangzzu/nanome/raw/master/test_data/demo.fast5.reads.tar.gz'
+    --input 'https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt'
 ```
 
-Command running results is below, please also check the pipeline output directory tree for [outputs]() and [work]() .
+Command running results is below, please also check the pipeline output directory tree for [outputs](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/outputs.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/work.tree.txt) .
 
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
@@ -73,39 +81,59 @@ Succeeded   : 30
 All tools's methlation calling and evaluation results will be output to `outputs` folder by default below.
 
 ```angular2html
-tree outputs/TestData-methylation-callings
+tree outputs/TestData-methylation-callings/
 
-outputs/TestData-methylation-callings
-├── TestData.deepmod.C.combine.bed.gz
-├── TestData.deepsignal.call_mods.combine.tsv.gz
-├── TestData.guppy.fast5mod_site_level.combine.tsv.gz
+outputs/TestData-methylation-callings/
+├── TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz
+├── TestData.deepsignal.per_read.combine.tsv.gz
+├── TestData.guppy.fast5mod_per_site.combine.tsv.gz
 ├── TestData.megalodon.per_read.combine.bed.gz
-├── TestData.nanopolish.methylation_calls.combine.tsv.gz
-└── TestData.tombo.perReadsStats.combined.bed.gz
+├── TestData.meteore.megalodon_deepsignal_optimized_model_per_read.combine.tsv.gz
+├── TestData.nanopolish.per_read.combine.tsv.gz
+└── TestData.tombo.per_read.combine.bed.gz
 
-tree -L 3  outputs/TestData-nanome-analysis/
+tree outputs/TestData-qc-report
 
-outputs/TestData-nanome-analysis/
+outputs/TestData-qc-report
+├── TestData.coverage.negativestrand.bed.gz
+├── TestData.coverage.positivestrand.bed.gz
+└── TestData-qc-report.tar.gz
+
+tree outputs/nanome-analysis-TestData/ -L 2
+
+outputs/nanome-analysis-TestData/
 ├── MethCorr-TestData_RRBS
-│   ├── Meth_corr_plot_data_bgtruth-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv
-│   ├── Meth_corr_plot_data_joined-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv
-│   ├── Meth_corr_plot_data-TestData_RRBS-correlation-matrix.xlsx
+│   ├── DONE.txt
+│   ├── Meth_corr_plot_data_bgtruth-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv.gz
+│   ├── Meth_corr_plot_data_joined-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv.gz
+│   ├── Meth_corr_plot_data-TestData_RRBS-correlation-matrix-toolcov1-bsseqcov1.xlsx
 │   ├── run-results.log
-│   ├── TestData_RRBS-summary-bgtruth-tools-bsCov1-minCov1.csv
-│   ├── venn.data.TestData_RRBS.TestData.five.tools.cov1.dat
-│   └── venn.data.TestData_RRBS.TestData.top3.cov1.dat
-└── MethPerf-TestData_RRBS
-    ├── performance-results
-    │   ├── curve_data
-    │   ├── TestData_RRBS.DeepMod.performance.report.csv
-    │   ├── TestData_RRBS.DeepSignal.performance.report.csv
-    │   ├── TestData_RRBS.Megalodon.performance.report.csv
-    │   └── TestData_RRBS.Nanopolish.performance.report.csv
-    ├── run-results.log
-    ├── TestData_RRBS.hg38_nonsingletons.concordant.bed
-    ├── TestData_RRBS.hg38_nonsingletons.discordant.bed
-    ├── TestData_RRBS.summary.bsseq.singleton.nonsingleton.cov1.csv
-    └── TestData_RRBS.Tools_BGTruth_cov1_Joined.bed
+│   ├── TestData.tools.cov1.join.with.bsseq.cov1.site.level.report.csv
+│   └── venn_data
+├── MethPerf-TestData_RRBS
+│   ├── DONE.txt
+│   ├── performance-results
+│   ├── run-results.log
+│   ├── TestData_RRBS.hg38_nonsingletons.concordant.bed.gz
+│   ├── TestData_RRBS.hg38_nonsingletons.discordant.bed.gz
+│   ├── TestData_RRBS.summary.bsseq.cov1.joined.tools.singleton.nonsingleton.table.like.s2.csv
+│   ├── TestData_RRBS.summary.bsseq.singleton.nonsingleton.cov1.csv
+│   ├── TestData_RRBS.Tools_BGTruth_cov1_Joined_baseFormat1.bed.gz
+│   └── TestData.tools.cov1.join.with.bsseq.cov1.read.level.report.xlsx
+├── Read_Level-TestData
+│   ├── TestData_DeepSignal-METEORE-perRead-score.tsv.gz
+│   ├── TestData_Guppy-METEORE-perRead-score.tsv.gz
+│   ├── TestData_Megalodon-METEORE-perRead-score.tsv.gz
+│   ├── TestData_Nanopolish-METEORE-perRead-score.tsv.gz
+│   └── TestData_Tombo-METEORE-perRead-score.tsv.gz
+└── Site_Level-TestData
+    ├── Site_Level-TestData.tss.DeepMod.cov1.bed.gz
+    ├── Site_Level-TestData.tss.DeepSignal.cov1.bed.gz
+    ├── Site_Level-TestData.tss.Guppy.cov1.bed.gz
+    ├── Site_Level-TestData.tss.Megalodon.cov1.bed.gz
+    ├── Site_Level-TestData.tss.METEORE.cov1.bed.gz
+    ├── Site_Level-TestData.tss.Nanopolish.cov1.bed.gz
+    └── Site_Level-TestData.tss.Tombo.cov1.bed.gz
 ```
 
 We also support input as a file list if input is suffix like `.filelist.txt`, an example input is [inputs/test.demo.filelist.txt](https://github.com/liuyangzzu/nanome/blob/master/inputs/test.demo.filelist.txt).
