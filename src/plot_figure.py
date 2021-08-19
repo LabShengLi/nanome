@@ -488,20 +488,17 @@ if __name__ == '__main__':
             gen_figure_5a(fn)
     elif args.cmd == 'figs5ab-data':
         # Fig. S5A-B data: PCC in each regions
-        # python plot_figure.py export-corr-data -i /projects/li-lab/yang/results/2021-04-02-methcorr/MethCorr-HL60_RRBS_2Reps --beddir /projects/li-lab/yang/results/2021-04-07/MethPerf-cut5
         if not args.o:
             args.o = pic_base_dir
         dflist = []
         for indir in args.i:
-            fnlist = glob.glob(os.path.join(indir, 'Meth_corr_plot_data_joined-*.csv.gz'))
+            # file like: NA12878.corrdata.coe.pvalue.each.regions.xlsx
+            fnlist = glob.glob(os.path.join(indir, '*.corrdata.coe.pvalue.each.regions.xlsx'))
             if len(fnlist) != 1:
                 raise Exception(f'Found more or none fnlist={fnlist}, for indir={indir}')
             logger.info(f'Find file: {fnlist[0]}')
 
-            basefn = os.path.basename(fnlist[0])
-            tagname = basefn.replace('Meth_corr_plot_data_joined-', '')
-            dsname = tagname[:tagname.find('_')]
-            df = correlation_report_on_regions(fnlist[0], beddir=args.beddir, dsname=dsname, outdir=args.o)
+            df = pd.read_excel(fnlist[0], index_col=0, engine='openpyxl')
             dflist.append(df)
         outdf = pd.concat(dflist)
         outfn = os.path.join(args.o,

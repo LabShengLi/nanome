@@ -33,4 +33,6 @@ dag.dot*
 report.html*
 timeline.html*
 trace.txt*
+do_build_docker.sh
+
 ## maintained by ly

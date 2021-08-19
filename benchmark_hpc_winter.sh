@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=nanome.demo.hpc
+#SBATCH --job-name=nanome.benchmark.hpc
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 #SBATCH -q inference
@@ -16,8 +16,8 @@ baseDir=${1:-/fastscratch/li-lab/nanome}
 
 sif_dir="${baseDir}/sif"
 nanome_singularity="${sif_dir}/nanome_v1.4.sif"
-workDir=${baseDir}/work
-outputsDir=${baseDir}/outputs
+workDir=${baseDir}/work-benchmark
+outputsDir=${baseDir}/outputs-benchmark
 
 
 ########################################
@@ -60,23 +60,15 @@ fi
 mkdir -p ${workDir}; chmod ugo+w ${workDir}
 mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
+
 ########################################
 ########################################
-# Running pipeline for demo human data
+# Running pipeline for benchmark data
 set -x
 ./nextflow run main.nf \
-    -profile winter2 -resume \
-    -with-singularity ${nanome_singularity} \
+    -profile winter -resume\
     -with-report -with-timeline -with-trace -with-dag \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
-    --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
-
-exit 0
-
-nextflow run https://github.com/liuyangzzu/nanome.git \
-    -profile winter2 -resume\
-    -with-singularity ${nanome_singularity} \
-    --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+    -config conf/benchmarking.config \
+    --processors 8
