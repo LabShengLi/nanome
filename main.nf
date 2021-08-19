@@ -611,7 +611,7 @@ deepmod_combine_in_ch=deepmod_out_ch.toList()
 megalodon_combine_in_ch = megalodon_out_ch.toList()
 tombo_combine_in_ch = tombo_out_ch.toList()
 deepsignal_combine_in_ch = deepsignal_out_ch.toList()
-guppy_combine_in_ch = guppy_methcall_out_ch.flatten().toList()
+guppy_combine_in_ch = guppy_methcall_out_ch.collect()
 
 
 // Combine DeepSignal runs' all results together
@@ -663,7 +663,7 @@ process GuppyComb {
 
 	input:
 	file x from guppy_combine_in_ch
-	file y from guppy_gcf52ref_out_ch.toList()
+	file y from guppy_gcf52ref_out_ch.collect()
 	// each file(reference_genome) from reference_genome_ch8
 	file reference_genome from reference_genome_ch8
 
