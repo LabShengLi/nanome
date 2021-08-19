@@ -53,5 +53,4 @@ set -x
     -work-dir ${outDir}/work \
     -with-singularity ${nanome_singularity} \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
-    --outputDir ${outDir}/outputs \
-    --eval true
+    --outputDir ${outDir}/outputs
