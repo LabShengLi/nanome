@@ -1,0 +1,50 @@
+outputs-ecoli
+├── EcoliDemoData-methylation-callings
+│   ├── EcoliDemoData.deepmod.C_per_site.combine.bed.gz
+│   ├── EcoliDemoData.deepsignal.per_read.combine.tsv.gz
+│   ├── EcoliDemoData.guppy.fast5mod_per_site.combine.tsv.gz
+│   ├── EcoliDemoData.guppy.gcf52ref_per_read.combine.tsv.gz
+│   ├── EcoliDemoData.megalodon.per_read.combine.bed.gz
+│   ├── EcoliDemoData.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
+│   ├── EcoliDemoData.nanopolish.per_read.combine.tsv.gz
+│   └── EcoliDemoData.tombo.per_read.combine.bed.gz
+├── EcoliDemoData-qc-report
+│   ├── EcoliDemoData.coverage.negativestrand.bed.gz
+│   ├── EcoliDemoData.coverage.positivestrand.bed.gz
+│   └── EcoliDemoData-qc-report.tar.gz
+├── EcoliDemoData_raw_outputs
+│   ├── deepmod
+│   │   ├── batch_ecoli_meteore.tar_num.tar.gz
+│   │   ├── EcoliDemoData.deepmod.all_batch.C.bed.tar.gz
+│   │   ├── EcoliDemoData.deepmod_clusterCpG.all_chrs.C.bed.tar.gz
+│   │   └── EcoliDemoData.deepmod.sum_chrs_mod.C.bed.tar.gz
+│   ├── deepsignal
+│   │   └── batch_ecoli_meteore.tar.CpG.deepsignal.call_mods.tsv.gz
+│   ├── guppy
+│   │   ├── batch_ecoli_meteore.tar.guppy.gcf52ref_per_read.tsv.gz
+│   │   ├── EcoliDemoData.guppy_fast5mod.combined.bam.tar.gz
+│   │   └── outbatch_ecoli_meteore.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+│   ├── megalodon
+│   │   └── batch_ecoli_meteore.tar.megalodon.per_read_modified_base_calls.txt.gz
+│   ├── nanopolish
+│   │   └── batch_ecoli_meteore.tar.nanopolish.methylation_calls.tsv.gz
+│   ├── resquiggle
+│   │   └── ecoli_meteore.tar.resquiggle.run.log
+│   └── tombo
+│       ├── batch_ecoli_meteore.tar.CpG.tombo.per_read_stats.bed.gz
+│       └── ecoli_meteore.tar.tombo.run.log
+└── nanome-analysis-EcoliDemoData
+    ├── Read_Level-EcoliDemoData
+    │   ├── EcoliDemoData_DeepSignal-METEORE-perRead-score.tsv.gz
+    │   ├── EcoliDemoData_Guppy-METEORE-perRead-score.tsv.gz
+    │   ├── EcoliDemoData_Megalodon-METEORE-perRead-score.tsv.gz
+    │   ├── EcoliDemoData_Nanopolish-METEORE-perRead-score.tsv.gz
+    │   └── EcoliDemoData_Tombo-METEORE-perRead-score.tsv.gz
+    └── Site_Level-EcoliDemoData
+        ├── Site_Level-EcoliDemoData.tss.DeepSignal.cov1.bed.gz
+        ├── Site_Level-EcoliDemoData.tss.Guppy.cov1.bed.gz
+        ├── Site_Level-EcoliDemoData.tss.Megalodon.cov1.bed.gz
+        ├── Site_Level-EcoliDemoData.tss.Nanopolish.cov1.bed.gz
+        └── Site_Level-EcoliDemoData.tss.Tombo.cov1.bed.gz
+
+13 directories, 34 files

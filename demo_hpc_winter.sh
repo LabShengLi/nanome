@@ -52,5 +52,14 @@ set -x
     -with-report -with-timeline -with-trace -with-dag \
     -work-dir ${outDir}/work \
     -with-singularity ${nanome_singularity} \
+    --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
     --outputDir ${outDir}/outputs
+
+exit 0
+
+nextflow run https://github.com/liuyangzzu/nanome.git \
+    -profile winter2 -resume\
+    -with-singularity ${nanome_singularity} \
+    --dsname TestData \
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
