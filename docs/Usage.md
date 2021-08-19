@@ -4,7 +4,7 @@ The inputs of 'nanome' pipeline is a folder/tar/tar.gz or txt file list containi
 
 # 1. Running 'nanome' for human Nanopore sequencing data
 
-The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome`. `--input` is a compressed file contains Fast5 input file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `--eval true` indicates running evaluation steps,`-profile` is the name of execution platform configuration, an example of our HPC configuration is the server named as [winter](https://github.com/liuyangzzu/nanome/blob/master/nextflow.config#L109), which will include the HPC config file [conf/hpc.config](https://github.com/liuyangzzu/nanome/blob/master/conf/hpc.config). 
+The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome.git`. `--input` is a compressed file contains Fast5 input file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `-profile` is the name of execution platform configuration, an example of our HPC configuration is the server named as [winter2](https://github.com/liuyangzzu/nanome/blob/master/nextflow.config#L197). 
 
 By default, we are using hg38 human reference genome, and you can specify reference genome using parameter `--referenceGenome="reference_genome/hg38/hg38.fasta"`. An example of how to use 'nanome' pipeline is given below.
 
@@ -20,7 +20,7 @@ singularity pull nanome_v1.4.sif docker://quay.io/liuyangzzu/nanome:v1.4
     -profile winter2 \
     -with-report -with-timeline -with-trace -with-dag \
     -with-singularity nanome_v1.4.sif \
-    --dsname TestData
+    --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 
 # Running nanome pipeline directly from github
@@ -159,17 +159,15 @@ The 'nanome' pipeline supports 5mC detection by all tools on both human and Esch
 ```angular2html
 git clone https://github.com/liuyangzzu/nanome.git
 cd nanome
-curl -fsSL get.nextflow.io | bash
 
-./nextflow run main.nf -profile winter \
-    -config conf/ecoli_demo.config
+curl -fsSL get.nextflow.io | bash
 
 ./nextflow run main.nf \
     -profile winter2 -resume \
     -with-singularity nanome_v1.4.sif \
     -config conf/ecoli_demo.config
 ```
-Command running results is below.
+Pipeline results for E. coli data is below.
 
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
@@ -251,7 +249,10 @@ git clone https://github.com/liuyangzzu/nanome.git
 cd nanome
 curl -s https://get.nextflow.io | bash
 
-./nextflow run main.nf -profile gls -w gs://jax-nanopore-01-project-data/nanome-work-test --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
+./nextflow run main.nf \
+    -profile gls \
+    -w gs://jax-nanopore-01-project-data/nanome-work-test \
+    --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
 ```
 
 The `jax-nanopore-01-project-data` is a sample of **Data Bucket** name that you can access on google cloud. `-w` is pipeline output working directory, `--outputDir` is methylation calling and evaluation results directory.
