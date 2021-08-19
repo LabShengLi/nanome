@@ -31,15 +31,15 @@ nextflow run https://github.com/liuyangzzu/nanome.git \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 ```
 
-You can also running the pipeline on CloudOS, using following command options.
+You can also running 'nanome' pipeline on cloud computing platform, using following command options.
 ```angular2html
-# Running on LifeBit CloudOS
+# Running on Lifebit CloudOS (https://lifebit.gitbook.io/cloudos)
 nextflow run https://github.com/liuyangzzu/nanome.git \
     --config 'conf/google.config' \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 
-# Running on Google Cloud
+# Running on Google Cloud (https://cloud.google.com)
 nextflow run main.nf \
     -profile gls \
     -w gs://jax-nanopore-01-project-data/TestData-work \

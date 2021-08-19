@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=nxf.google
+#SBATCH --job-name=nanome.google
 #SBATCH -p compute
 #SBATCH -q long
 #SBATCH -N 1 # number of nodes

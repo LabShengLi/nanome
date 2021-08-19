@@ -137,7 +137,7 @@ process Untar {
 
 	echo "Total fast5 files:"
 	find ${fast5_tar.baseName}.untar \
-		-name "*.fast5" | wc -l
+		-name "*.fast5" -type f | wc -l
 	echo "### Untar DONE"
 	"""
 }
