@@ -15,21 +15,28 @@ curl -fsSL get.nextflow.io | bash
 # Get nanome singularity
 singularity pull nanome_v1.4.sif docker://quay.io/liuyangzzu/nanome:v1.4
 
-# Run nanome pipeline on HPC
+# Run nanome pipeline on project directory
 ./nextflow run main.nf \
     -profile winter2 \
     -with-report -with-timeline -with-trace -with-dag \
     -with-singularity nanome_v1.4.sif \
     --dsname TestData
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+
+# Running nanome pipeline directly from github
+nextflow run https://github.com/liuyangzzu/nanome.git \
+    -profile winter2 \
+    -with-singularity nanome_v1.4.sif \
+    --dsname TestData \
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 ```
 
 You can also running the pipeline on CloudOS, using following command options.
 ```angular2html
-nextflow run https://github.com/liuyangzzu/nanome
-    --config 'conf/google.config'
-    --dsname TestData
-    --input 'https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt'
+nextflow run https://github.com/liuyangzzu/nanome.git \
+    --config 'conf/google.config' \
+    --dsname TestData \
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 ```
 
 Pipeline running results is below, please also check the pipeline output directory tree for [outputs](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/outputs.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/work.tree.txt). It can also generates [timeline](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/resources/timeline_demo.pdf), [report](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/resources/report_demo.pdf) and [resource usage](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/resources/trace_demo.txt.tsv).
