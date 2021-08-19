@@ -453,7 +453,7 @@ process DeepSignal {
 		--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 		--reference_path ${params.referenceGenome} \
 		--corrected_group ${params.resquiggleCorrectedGroup} \
-		--nproc ${params.processors  * 4} \
+		--nproc ${params.processors  * params.deepLearningProcessorTimes} \
 		--is_gpu ${params.DeepSignal_isgpu}
 
 	gzip batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv
@@ -546,7 +546,7 @@ process DeepMod {
 			--Base C \
 			--modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
 			--FileID batch_${basecallDir.baseName}_num \
-			--threads ${params.processors * 4} ${params.DeepModMoveOptions}
+			--threads ${params.processors * params.deepLearningProcessorTimes} ${params.DeepModMoveOptions}
 
 	tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
 	echo "### DeepMod methylation DONE"
@@ -664,7 +664,6 @@ process GuppyComb {
 	input:
 	file x from guppy_combine_in_ch
 	file y from guppy_gcf52ref_out_ch.collect()
-	// each file(reference_genome) from reference_genome_ch8
 	file reference_genome from reference_genome_ch8
 
 	output:

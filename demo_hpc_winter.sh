@@ -37,8 +37,8 @@ if [ ! -f ${nanome_singularity} ]; then
     singularity pull ${nanome_singularity} docker://quay.io/liuyangzzu/nanome:v1.4
 fi
 
-rm -rf ${outDir}/work
-rm -rf ${outDir}/outputs
+#rm -rf ${outDir}/work
+#rm -rf ${outDir}/outputs
 
 mkdir -p ${outDir}/work; chmod ugo+w ${outDir}/work
 mkdir -p ${outDir}/outputs; chmod ugo+w ${outDir}/outputs
