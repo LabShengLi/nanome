@@ -54,7 +54,7 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
 ########################################
 ########################################
-# Running pipeline
+# Running pipeline for E. coli data
 set -x
 ./nextflow run main.nf \
     -profile winter2 -resume \

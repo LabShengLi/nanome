@@ -12,10 +12,10 @@
 
 
 ![Figure1B](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/Fig1B.jpg)
-**Fig. 1B. Workflow for 5-methylcytosine (5mC) detection for Nanopore sequencing.** 
+**Fig. 1B. Workflow for 5-methylcytosine (5mC) detection for nanopore sequencing.** 
 
 
-**Results:** We compared seven analytic tools for detecting DNA modifications from nanopore long-read sequencing data. We evaluated the CpG methylation-detection accuracy, CpG site coverage, and running time using Nanopore sequencing data across different genomic contexts, using natural human DNA. Furthermore, we provide an online DNA methylation database (https://nanome.jax.org) with which to display the DNA methylation levels detected by nanopore sequencing and bisulfite sequencing data across different genomic contexts.
+**Results:** We compared seven analytic tools for detecting DNA modifications from nanopore long-read sequencing data. We evaluated the CpG methylation-detection accuracy, CpG site coverage, and running time using nanopore sequencing data across different genomic contexts, using natural human DNA. Furthermore, we provide an online DNA methylation database (https://nanome.jax.org) with which to display the DNA methylation levels detected by nanopore sequencing and bisulfite sequencing data across different genomic contexts.
 
 
 **Conclusions:** Our study is the first benchmark of computational methods for detection of mammalian whole-genome DNA-modifications in nanopore sequencing. We provide a broad foundation for cross-platform standardization, and an evaluation of analytical tools designed for genome-scale modified-base detection using nanopore sequencing. 
@@ -24,7 +24,7 @@
 
 ### Hardware requirements
 
-The 'nanome' is based on Nextflow pipeline framework, and start with raw fast5 Nanopore sequencing input data with a reference genome. The pipeline can be configured with different RAM, number of processors, GPU resources schema to parallel run all methylation calling tools. For optimal usage, we recommend using 'nanome' pipeline on HPC:
+The 'nanome' is based on Nextflow pipeline framework, and start with raw fast5 nanopore sequencing input data with a reference genome. The pipeline can be configured with different RAM, number of processors, GPU resources schema to parallel run all methylation calling tools. For optimal usage, we recommend using 'nanome' pipeline on HPC:
 * GPU or CPU with 8+ cores. 
 * RAM: 50+ GB per cpu.
 * Storage using HDD or SSD. Please ensure your storage before running the pipeline.
