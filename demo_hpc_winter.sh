@@ -12,8 +12,30 @@
 
 date; hostname; pwd
 
-outDir=${1:-/fastscratch/li-lab/nanome}
-mkdir -p ${outDir}; chmod ugo+w ${outDir}
+baseDir=${1:-/fastscratch/li-lab/nanome}
+
+sif_dir="${baseDir}/sif"
+nanome_singularity="${sif_dir}/nanome_v1.4.sif"
+workDir=${baseDir}/work
+outputsDir=${baseDir}/outputs
+
+
+########################################
+########################################
+# Ensure directories
+mkdir -p ${baseDir}; chmod ugo+w ${baseDir}
+export SINGULARITY_CACHEDIR="${baseDir}/singularity-cache"
+mkdir -p  $SINGULARITY_CACHEDIR; chmod ugo+w $SINGULARITY_CACHEDIR
+mkdir -p $sif_dir; chmod ugo+w $sif_dir
+
+
+########################################
+########################################
+# Get nextflow and install it
+if [ ! -f "nextflow" ]; then
+    curl -s https://get.nextflow.io | bash
+fi
+
 
 ########################################
 ########################################
@@ -26,35 +48,30 @@ fi
 ########################################
 # Pull nanome singularity
 module load singularity
-
-export SINGULARITY_CACHEDIR="${outDir}/singularity-cache"
-mkdir -p  $SINGULARITY_CACHEDIR; chmod ugo+w $SINGULARITY_CACHEDIR
-sif_dir="${outDir}/sif"
-mkdir -p $sif_dir; chmod ugo+w $sif_dir
-nanome_singularity="${sif_dir}/nanome_v1.4.sif"
-
 if [ ! -f ${nanome_singularity} ]; then
     singularity pull ${nanome_singularity} docker://quay.io/liuyangzzu/nanome:v1.4
 fi
 
-#rm -rf ${outDir}/work
-#rm -rf ${outDir}/outputs
-
-mkdir -p ${outDir}/work; chmod ugo+w ${outDir}/work
-mkdir -p ${outDir}/outputs; chmod ugo+w ${outDir}/outputs
 
 ########################################
 ########################################
-# Running pipeline
+# Clean old results
+#rm -rf ${workDir} ${outputsDir}
+mkdir -p ${workDir}; chmod ugo+w ${workDir}
+mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
+
+########################################
+########################################
+# Running pipeline for demo human data
 set -x
 ./nextflow run main.nf \
     -profile winter2 -resume \
-    -with-report -with-timeline -with-trace -with-dag \
-    -work-dir ${outDir}/work \
     -with-singularity ${nanome_singularity} \
+    -with-report -with-timeline -with-trace -with-dag \
+    -work-dir ${workDir} \
+    --outputDir ${outputsDir} \
     --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
-    --outputDir ${outDir}/outputs
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 
 exit 0
 
