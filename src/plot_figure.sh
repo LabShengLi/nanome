@@ -19,7 +19,7 @@
 pythonFile=plot_figure.py
 
 command=${1:-"Step1"}
-type=${2:-"METEORE"}
+type=${2:-"seven"}
 resultsDir=${3:-"/projects/li-lab/yang/results/2021-07-08"}
 
 bedDir="/projects/li-lab/yang/results/2021-07-08"
@@ -92,8 +92,8 @@ elif [ $command == "Fig5a" ]; then
 
 elif [ $command == "Figs5ab-data" ]; then
     ### Figure S5AB data: COE on each region data for bar plot
-    # sbatch plot_figure.sh Figs5ab-data
-    # sbatch plot_figure.sh Figs5ab-data seven /projects/li-lab/yang/results/2021-08-14
+    # bash plot_figure.sh Figs5ab-data seven
+    # bash plot_figure.sh Figs5ab-data seven /projects/li-lab/yang/results/2021-08-18
     python ${pythonFile} figs5ab-data --beddir ${bedDir} \
         -i ${K562_Result_dir/MethPerf/MethCorr} \
         ${APL_Result_dir/MethPerf/MethCorr} \
