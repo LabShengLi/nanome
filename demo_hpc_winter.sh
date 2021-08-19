@@ -37,8 +37,8 @@ if [ ! -f ${nanome_singularity} ]; then
     singularity pull ${nanome_singularity} docker://quay.io/liuyangzzu/nanome:v1.4
 fi
 
-rm -rf ${outDir}/work
-rm -rf ${outDir}/outputs
+#rm -rf ${outDir}/work
+#rm -rf ${outDir}/outputs
 
 mkdir -p ${outDir}/work; chmod ugo+w ${outDir}/work
 mkdir -p ${outDir}/outputs; chmod ugo+w ${outDir}/outputs
@@ -52,5 +52,14 @@ set -x
     -with-report -with-timeline -with-trace -with-dag \
     -work-dir ${outDir}/work \
     -with-singularity ${nanome_singularity} \
+    --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
     --outputDir ${outDir}/outputs
+
+exit 0
+
+nextflow run https://github.com/liuyangzzu/nanome.git \
+    -profile winter2 -resume\
+    -with-singularity ${nanome_singularity} \
+    --dsname TestData \
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt

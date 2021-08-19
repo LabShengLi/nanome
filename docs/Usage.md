@@ -47,7 +47,7 @@ nextflow run main.nf \
     --input inputs/test.demo.filelist.txt
 ```
 
-Pipeline running results is below, please also check the pipeline output directory tree for [outputs](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/outputs.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/work.tree.txt). It can also generates [timeline](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/resources/timeline_demo.pdf), [report](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/resources/report_demo.pdf) and [resource usage](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/resources/trace_demo.txt.tsv).
+Pipeline running results is below, please also check the pipeline output directory tree for [outputs](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/outputs_demo.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/work_demo.tree.txt). It can also generates [timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/timeline_demo.pdf), [report](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/report_demo.pdf) and [resource usage](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/trace_demo.txt.tsv).
 
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
@@ -62,7 +62,6 @@ reference_genome    :reference_genome/hg38/hg38.fasta
 chromSizesFile      :reference_genome/hg38/hg38.chrom.sizes
 runBasecall     :true
 runMethcall     :true
-evaluation      :true
 =================================
 executor >  slurm (30)
 [a8/145382] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
@@ -152,9 +151,7 @@ outputs/nanome-analysis-TestData/
 ```
 
 We also support input as a file list if input is suffix like `.filelist.txt`, an example input is [inputs/test.demo.filelist.txt](https://github.com/liuyangzzu/nanome/blob/master/inputs/test.demo.filelist.txt).
-```angular2html
-./nextflow run main.nf -profile winter --input inputs/test.demo.filelist.txt
-```
+
 
 # 2. Experiment for E. coli data
 The 'nanome' pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--referenceGenome` need to be set as E. coli reference genome such as 'reference_genome/ecoli/Ecoli_k12_mg1655.fasta'. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline `-config` params [conf/ecoli_demo.config](https://github.com/liuyangzzu/nanome/blob/master/conf/ecoli_demo.config).
@@ -166,56 +163,68 @@ curl -fsSL get.nextflow.io | bash
 
 ./nextflow run main.nf -profile winter \
     -config conf/ecoli_demo.config
+
+./nextflow run main.nf \
+    -profile winter2 -resume \
+    -with-singularity nanome_v1.4.sif \
+    -config conf/ecoli_demo.config
 ```
 Command running results is below.
 
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
-Launching `main.nf` [friendly_leakey] - revision: eafc216253
+Launching `main.nf` [zen_hilbert] - revision: ab05dc72d5
 NANOME - NF PIPELINE (v1.0)
-by Li Lab at The Jackon Laboratory
-http://nanome.jax.org
+by Li Lab at The Jackson Laboratory
+https://nanome.jax.org
 =================================
-dsname              :EcoliDemo
-input               :/projects/li-lab/Nanopore_compare/suppdata/ecoli-sanity-check/ecoli_meteore.tar.gz
-reference_genome    :reference_genome/ecoli/Ecoli_k12_mg1655.fasta
-chromSizesFile      :reference_genome/ecoli/Ecoli_k12_mg1655.fasta.genome.sizes
-runBasecall         :true
-runMethcall         :true
-eval                :false
+dsname			:EcoliDemoData
+input			:/projects/li-lab/Nanopore_compare/suppdata/ecoli-sanity-check/ecoli_meteore.tar.gz
+reference_genome	:reference_genome/ecoli/Ecoli_k12_mg1655.fasta
+runBasecall		:true
+runMethcall		:true
 =================================
-executor >  slurm (14)
-[3f/f6f1d7] process > EnvCheck (EnvCheck)                                  [100%] 1 of 1 ✔
-[f8/ce877c] process > Basecall (ecoli_meteore)                             [100%] 1 of 1 ✔
-[d5/f84584] process > QCExport                                             [100%] 1 of 1 ✔
-[21/74324c] process > Resquiggle (ecoli_meteore_basecalled)                [100%] 1 of 1 ✔
-[2f/f36517] process > DeepSignal (ecoli_meteore_basecalled_resquiggle_dir) [100%] 1 of 1 ✔
-[ba/166a6f] process > Tombo (ecoli_meteore_basecalled_resquiggle_dir)      [100%] 1 of 1 ✔
-[5b/c3613f] process > Megalodon (ecoli_meteore)                            [100%] 1 of 1 ✔
-[2a/f80bc3] process > DeepMod (ecoli_meteore_basecalled)                   [100%] 1 of 1 ✔
-[29/d9b126] process > Nanopolish (ecoli_meteore_basecalled)                [100%] 1 of 1 ✔
-[2b/18376c] process > DpSigComb                                            [100%] 1 of 1 ✔
-[20/ca5232] process > TomboComb                                            [100%] 1 of 1 ✔
-[c7/4c2e8d] process > MgldnComb                                            [100%] 1 of 1 ✔
-[4c/50e8a1] process > NplshComb                                            [100%] 1 of 1 ✔
-[c5/ad8ca7] process > DpmodComb                                            [100%] 1 of 1 ✔
-Completed at: 08-May-2021 16:53:56
-Duration    : 7m 35s
-CPU hours   : 0.4
-Succeeded   : 14
+executor >  slurm (19)
+[a8/145382] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
+[e6/448ac3] process > Untar (ecoli_meteore.tar)      [100%] 1 of 1 ✔
+[d1/877c1b] process > Basecall (ecoli_meteore.tar)   [100%] 1 of 1 ✔
+[5d/28286d] process > QCExport                       [100%] 1 of 1 ✔
+[47/4d1744] process > Guppy (ecoli_meteore.tar)      [100%] 1 of 1 ✔
+[c9/d99d9f] process > Megalodon (ecoli_meteore.tar)  [100%] 1 of 1 ✔
+[92/4494ca] process > Resquiggle (ecoli_meteore.tar) [100%] 1 of 1 ✔
+[96/496d59] process > DeepSignal (ecoli_meteore.tar) [100%] 1 of 1 ✔
+[67/c7af4b] process > Tombo (ecoli_meteore.tar)      [100%] 1 of 1 ✔
+[8a/26ccf8] process > DeepMod (ecoli_meteore.tar)    [100%] 1 of 1 ✔
+[9a/1e322d] process > Nanopolish (ecoli_meteore.tar) [100%] 1 of 1 ✔
+[4e/1bd70c] process > DpSigComb                      [100%] 1 of 1 ✔
+[86/6f1331] process > TomboComb                      [100%] 1 of 1 ✔
+[a4/ad93ab] process > GuppyComb (1)                  [100%] 1 of 1 ✔
+[a5/db8dc2] process > MgldnComb                      [100%] 1 of 1 ✔
+[b0/538e6f] process > NplshComb                      [100%] 1 of 1 ✔
+[a5/fa9840] process > DpmodComb (1)                  [100%] 1 of 1 ✔
+[17/25a230] process > METEORE (1)                    [100%] 1 of 1 ✔
+[64/d1f30b] process > SiteLevelUnify (1)             [100%] 1 of 1 ✔
+Completed at: 19-Aug-2021 15:10:29
+Duration    : 11m 31s
+CPU hours   : 0.3
+Succeeded   : 19
 ```
 
-The output files of pipeline on E. coli data by all tools are below.
+The output files of pipeline on E. coli data by all tools are below, please also check the pipeline output directory tree for [outputs](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/outputs_ecoli.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/work_ecoli.tree.txt). It also generates [timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/timeline_ecoli.pdf), [report](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/report_ecoli.pdf) and [resource usage](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/trace_ecoli.txt.tsv).
 
 ```angular2html
-tree outputs/EcoliDemo-methylation-callings
+tree outputs-ecoli/EcoliDemoData-methylation-callings/
+outputs-ecoli/EcoliDemoData-methylation-callings/
+├── EcoliDemoData.deepmod.C_per_site.combine.bed.gz
+├── EcoliDemoData.deepsignal.per_read.combine.tsv.gz
+├── EcoliDemoData.guppy.fast5mod_per_site.combine.tsv.gz
+├── EcoliDemoData.guppy.gcf52ref_per_read.combine.tsv.gz
+├── EcoliDemoData.megalodon.per_read.combine.bed.gz
+├── EcoliDemoData.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
+├── EcoliDemoData.nanopolish.per_read.combine.tsv.gz
+└── EcoliDemoData.tombo.per_read.combine.bed.gz
 
-outputs/EcoliDemo-methylation-callings
-├── EcoliDemo.DeepModC.combine.bed.gz
-├── EcoliDemo.DeepSignal.combine.tsv.gz
-├── EcoliDemo.Megalodon.combine.bed.gz
-├── EcoliDemo.Nanopolish.combine.tsv.gz
-└── EcoliDemo.Tombo.combine.bed.gz
+0 directories, 8 files
 ```
 
 

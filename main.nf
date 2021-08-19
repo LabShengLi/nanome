@@ -10,7 +10,6 @@ input			:${params.input}
 reference_genome	:${params.referenceGenome}
 runBasecall		:${params.runBasecall}
 runMethcall		:${params.runMethcall}
-evaluation		:${params.eval}
 =================================
 """
 .stripIndent()
@@ -453,7 +452,7 @@ process DeepSignal {
 		--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 		--reference_path ${params.referenceGenome} \
 		--corrected_group ${params.resquiggleCorrectedGroup} \
-		--nproc ${params.processors  * 4} \
+		--nproc ${params.processors  * params.deepLearningProcessorTimes} \
 		--is_gpu ${params.DeepSignal_isgpu}
 
 	gzip batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv
@@ -546,7 +545,7 @@ process DeepMod {
 			--Base C \
 			--modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
 			--FileID batch_${basecallDir.baseName}_num \
-			--threads ${params.processors * 4} ${params.DeepModMoveOptions}
+			--threads ${params.processors * params.deepLearningProcessorTimes} ${params.DeepModMoveOptions}
 
 	tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
 	echo "### DeepMod methylation DONE"
@@ -664,7 +663,6 @@ process GuppyComb {
 	input:
 	file x from guppy_combine_in_ch
 	file y from guppy_gcf52ref_out_ch.collect()
-	// each file(reference_genome) from reference_genome_ch8
 	file reference_genome from reference_genome_ch8
 
 	output:
@@ -852,7 +850,7 @@ deepsignal_combine_out_ch.concat(tombo_combine_out_ch,megalodon_combine_out_ch, 
 
 // Read level unified output, and get METEORE output
 process METEORE {
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy", pattern: "${params.dsname}.meteore.megalodon_deepsignal_optimized_model_per_read.combine.tsv.gz"
+	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy", pattern: "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz"
 	publishDir "${params.outputDir}/nanome-analysis-${params.dsname}" , mode: "copy", pattern: "Read_Level-${params.dsname}/${params.dsname}_*-METEORE-perRead-score.tsv.gz"
 
 	input:
@@ -861,7 +859,7 @@ process METEORE {
 	each file("*") from ch_utils8
 
 	output:
-	file "${params.dsname}.meteore.megalodon_deepsignal_optimized_model_per_read.combine.tsv.gz" into meteore_combine_out_ch
+	file "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz" into meteore_combine_out_ch
 	file "Read_Level-${params.dsname}/${params.dsname}_*-METEORE-perRead-score.tsv.gz" into unify_read_level_out_ch
 
 	when:
@@ -878,6 +876,11 @@ process METEORE {
 	guppyFile=\$(find . -maxdepth 1 -name '*.guppy.*per_read.combine.*.gz')
 	tomboFile=\$(find . -maxdepth 1 -name '*.tombo.per_read.combine.*.gz')
 
+	tss_more_options=""
+	if [[ "${params.dataType}" == "ecoli" ]] ; then
+		tss_more_options="--chrs ${params.DeepModSumChrSet}"
+	fi
+
 	## Read level unify
 	PYTHONPATH=src python src/nanocompare/tss_eval.py \
 		--calls \
@@ -888,7 +891,7 @@ process METEORE {
 			Tombo:\${tomboFile} \
 		--runid Read_Level-${params.dsname} \
 		--dsname ${params.dsname} --output-unified-format \
-		--processors 8	-o .
+		--processors 8	-o . \${tss_more_options}
 
 	## METEORE outputs by combining other tools
 	nanopolishFileName=\$(find Read_Level-${params.dsname} -name "${params.dsname}_Nanopolish-METEORE-perRead-score.tsv.gz")
@@ -918,13 +921,13 @@ process METEORE {
 	# Use the optimized model
 	python \${combineScript} \
 		-i \${modelContentFileName} -m optimized -b \${METEORE_Dir} \
-		-o ${params.dsname}.meteore.megalodon_deepsignal_optimized_model_per_read.combine.tsv.gz
+		-o ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
 	# Use the default model
 	python \${combineScript} \
 		-i \${modelContentFileName} -m default -b \${METEORE_Dir} \
-		-o ${params.dsname}.meteore.megalodon_deepsignal_default_model_per_read.combine.tsv.gz
+		-o ${params.dsname}.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz
 
-	echo "### ReadLevelUnify DONE"
+	echo "### METEORE post combine DONE"
 	"""
 }
 
