@@ -24,12 +24,12 @@ ch_src.into{ch_src1; ch_src2; ch_src3; ch_src4}
 
 // Collect all folders of fast5 files, and send into Channels for pipelines
 if (params.input.endsWith(".filelist.txt")) { // filelist
-	Channel.fromPath( params.input )
+	Channel.fromPath( params.input, checkIfExists: true )
 		.splitCsv(header: false)
 		.map { file(it[0]) }
 		.set{ fast5_tar_ch }
 } else { // For single file
-	Channel.fromPath( params.input ).set {fast5_tar_ch}
+	Channel.fromPath( params.input, checkIfExists: true ).set {fast5_tar_ch}
 }
 
 
