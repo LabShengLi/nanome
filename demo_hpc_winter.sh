@@ -14,8 +14,6 @@ date; hostname; pwd
 
 baseDir=${1:-/fastscratch/li-lab/nanome}
 
-sif_dir="${baseDir}/sif"
-nanome_singularity="${sif_dir}/nanome_v1.4.sif"
 workDir=${baseDir}/work
 outputsDir=${baseDir}/outputs
 
@@ -23,11 +21,8 @@ outputsDir=${baseDir}/outputs
 ########################################
 ########################################
 # Ensure directories
-mkdir -p ${baseDir}; chmod ugo+w ${baseDir}
 export SINGULARITY_CACHEDIR="${baseDir}/singularity-cache"
 mkdir -p  $SINGULARITY_CACHEDIR; chmod ugo+w $SINGULARITY_CACHEDIR
-mkdir -p $sif_dir; chmod ugo+w $sif_dir
-
 
 ########################################
 ########################################
@@ -38,29 +33,21 @@ fi
 
 
 ########################################
-########################################
-# Pull nanome singularity
-module load singularity
-if [ ! -f ${nanome_singularity} ]; then
-    singularity pull ${nanome_singularity} docker://quay.io/liuyangzzu/nanome:v1.4
-fi
-
-
-########################################
-########################################
 # Clean old results
 #rm -rf ${workDir} ${outputsDir}
 mkdir -p ${workDir}; chmod ugo+w ${workDir}
 mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
+
 ########################################
 ########################################
 # Running pipeline for demo human data
+# More options: -with-report -with-timeline -with-trace -with-dag -resume
 module load singularity
 set -x
 ./nextflow run main.nf \
-    -profile winter2 -resume \
-    -with-report -with-timeline -with-trace -with-dag \
+    -profile winter2 \
+    -with-report -with-timeline -with-trace -with-dag -resume \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     --dsname TestData \
@@ -68,8 +55,22 @@ set -x
 
 exit 0
 
-nextflow run https://github.com/liuyangzzu/nanome.git \
-    -profile winter2 -resume\
-    -with-singularity ${nanome_singularity} \
+
+########################################
+########################################
+# Running pipeline for demo human data
+# More options: -with-report -with-timeline -with-trace -with-dag -resume
+module load singularity
+set -x
+./nextflow run main.nf \
+    -profile winter2 \
+    --dsname TestData \
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+
+exit 0
+
+./nextflow run https://github.com/liuyangzzu/nanome.git \
+    -r d8175c9510b85c693901ff7b63fbbce8acb9c288 \
+    -profile winter2 \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt

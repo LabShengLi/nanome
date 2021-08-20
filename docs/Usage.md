@@ -18,15 +18,12 @@ singularity pull nanome_v1.4.sif docker://quay.io/liuyangzzu/nanome:v1.4
 # Run nanome pipeline on project directory
 ./nextflow run main.nf \
     -profile winter2 \
-    -with-report -with-timeline -with-trace -with-dag \
-    -with-singularity nanome_v1.4.sif \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 
 # Running nanome pipeline directly from github
 nextflow run https://github.com/liuyangzzu/nanome.git \
     -profile winter2 \
-    -with-singularity nanome_v1.4.sif \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 ```
@@ -47,7 +44,7 @@ nextflow run https://github.com/liuyangzzu/nanome.git \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 ```
 
-Pipeline running results is below, please also check the pipeline output directory tree for [outputs](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/outputs_demo.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/work_demo.tree.txt). It can also generates [timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/timeline_demo.pdf), [report](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/report_demo.pdf) and [resource usage](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/trace_demo.txt.tsv).
+Pipeline running results is below, output directory trees are [outputs](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/outputs_demo.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/work_demo.tree.txt). It can also generates [timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/timeline_demo.pdf), [report](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/report_demo.pdf) and [resource usage](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/trace_demo.txt.tsv) with more Nextflow [options](https://www.nextflow.io/docs/latest/tracing.html) (e.g., `-with-report -with-timeline -with-trace -with-dag -resume`).
 
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
@@ -163,8 +160,7 @@ cd nanome
 curl -fsSL get.nextflow.io | bash
 
 ./nextflow run main.nf \
-    -profile winter2 -resume \
-    -with-singularity nanome_v1.4.sif \
+    -profile winter2 \
     -config conf/ecoli_demo.config
 ```
 Pipeline results for E. coli data is below.
@@ -234,7 +230,6 @@ git clone https://github.com/liuyangzzu/nanome.git
 cd nanome
 
 nextflow run main.nf -profile winter  \
-	-with-report -with-timeline -with-trace -with-dag \
 	-config conf/benchmarking.config
 ```
 
