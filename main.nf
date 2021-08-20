@@ -107,35 +107,40 @@ process Untar {
 	val "${fast5_tar.size()}" into tar_filesize_ch
 
 	"""
-	mkdir -p untarDir
 	infn="${fast5_tar}"
-	if [ "\${infn##*.}" == "tar" ]; then ### deal with tar
-		tar -xf \${infn} -C untarDir
+	mkdir -p untarTempDir
+	if [ "\${infn##*.}" == "tar" ]; then
+		### deal with tar
+		tar -xf \${infn} -C untarTempDir
 		## move fast5 files in tree folders into a single folder
-		mkdir -p untarDir1
-		find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
-	elif [ "\${infn##*.}" == "gz" ]; then ### deal with tar.gz
-		tar -xzf \${infn} -C untarDir
+		mkdir -p ${fast5_tar.baseName}.untar
+		find untarTempDir -name "*.fast5" -type f -exec mv {} ${fast5_tar.baseName}.untar/ \\;
+	elif [ "\${infn##*.}" == "gz" ]; then
+		### deal with tar.gz
+		tar -xzf \${infn} -C untarTempDir
 		## move fast5 files in tree folders into a single folder
-		mkdir -p untarDir1
-		find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
-	else ### deal with ready folder
-		mv ${fast5_tar} untarDir1
+		mkdir -p ${fast5_tar.baseName}.untar
+		find untarTempDir -name "*.fast5" -type f -exec mv {} ${fast5_tar.baseName}.untar/ \\;
+	elif [[ -d ${fast5_tar} ]]; then
+		## Copy files, do not change original files such as old analyses data
+		cp -rf ${fast5_tar}/* untarTempDir/
+		mkdir -p ${fast5_tar.baseName}.untar
+		find untarTempDir -name "*.fast5" -type f -exec mv {} ${fast5_tar.baseName}.untar/ \\;
+	else
+		echo "### Untar error for input=${fast5_tar}"
 	fi
 
 	## Clean old analyses in input fast5 files
 	if [[ "${params.cleanAnalyses}" = true ]] ; then
 		echo "### Start cleaning old analysis"
 		python -c 'import h5py; print(h5py.version.info)'
-		python utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir --processor ${params.processors * 8}
+		python utils/clean_old_basecall_in_fast5.py -i untarTempDir1 --is-indir --processor ${params.processors * 8}
 	fi
 
-	mv untarDir1 ${fast5_tar.baseName}.untar
-
 	## Clean unused files
-	rm -rf untarDir
+	rm -rf untarTempDir
 
-	echo "Total fast5 files:"
+	echo "Total fast5 input files:"
 	find ${fast5_tar.baseName}.untar \
 		-name "*.fast5" -type f | wc -l
 	echo "### Untar DONE"
