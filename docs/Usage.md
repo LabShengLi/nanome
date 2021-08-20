@@ -33,18 +33,18 @@ nextflow run https://github.com/liuyangzzu/nanome.git \
 
 You can also running 'nanome' pipeline on cloud computing platform, using following command options.
 ```angular2html
-# Running on Lifebit CloudOS (https://lifebit.gitbook.io/cloudos)
-nextflow run https://github.com/liuyangzzu/nanome.git \
-    --config 'conf/google.config' \
-    --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
-
 # Running on Google Cloud (https://cloud.google.com)
 nextflow run main.nf \
     -profile gls \
     -w gs://jax-nanopore-01-project-data/TestData-work \
     --outputDir gs://jax-nanopore-01-export-bucket/TestData-ouputs \
     --input inputs/test.demo.filelist.txt
+
+# Running on Lifebit CloudOS (https://lifebit.gitbook.io/cloudos)
+nextflow run https://github.com/liuyangzzu/nanome.git \
+    --config 'conf/google.config' \
+    --dsname TestData \
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 ```
 
 Pipeline running results is below, please also check the pipeline output directory tree for [outputs](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/outputs_demo.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/work_demo.tree.txt). It can also generates [timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/timeline_demo.pdf), [report](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/report_demo.pdf) and [resource usage](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/trace_demo.txt.tsv).

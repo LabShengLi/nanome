@@ -2,11 +2,11 @@
 #SBATCH --job-name=nanome.benchmark.hpc
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
-#SBATCH -q inference
+#SBATCH -q training
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 1 # number of cores
 #SBATCH --mem=20G # memory pool for all cores
-#SBATCH --time=06:00:00 # time
+#SBATCH --time=14-00:00:00 # time
 #SBATCH -o %x.%j.out # STDOUT
 #SBATCH -e %x.%j.err # STDERR
 
@@ -36,13 +36,6 @@ if [ ! -f "nextflow" ]; then
     curl -s https://get.nextflow.io | bash
 fi
 
-
-########################################
-########################################
-# Get nextflow and install it
-if [ ! -f "nextflow" ]; then
-    curl -s https://get.nextflow.io | bash
-fi
 
 ########################################
 ########################################
