@@ -120,7 +120,8 @@ process Untar {
 		mkdir -p untarDir1
 		find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
 	else ### deal with ready folder
-		mv  \${infn} untarDir1
+		mkdir -p untarDir1
+		cp \${infn}/*.fast5 untarDir1/
 	fi
 
 	## Clean old analyses in input fast5 files
