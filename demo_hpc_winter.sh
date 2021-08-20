@@ -46,7 +46,7 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 module load singularity
 set -x
 ./nextflow run main.nf \
-    -profile winter2 \
+    -profile winter_singularity \
     -with-report -with-timeline -with-trace -with-dag -resume \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
@@ -63,14 +63,15 @@ exit 0
 module load singularity
 set -x
 ./nextflow run main.nf \
-    -profile winter2 \
+    -profile winter_singularity \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 
 exit 0
 
 ./nextflow run https://github.com/liuyangzzu/nanome.git \
-    -r d8175c9510b85c693901ff7b63fbbce8acb9c288 \
-    -profile winter2 \
+    -profile winter_singularity \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+
+exit 0

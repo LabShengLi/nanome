@@ -14,8 +14,6 @@ date; hostname; pwd
 
 baseDir=${1:-/fastscratch/li-lab/nanome}
 
-sif_dir="${baseDir}/sif"
-nanome_singularity="${sif_dir}/nanome_v1.4.sif"
 workDir=${baseDir}/work-benchmark
 outputsDir=${baseDir}/outputs-benchmark
 
@@ -26,7 +24,6 @@ outputsDir=${baseDir}/outputs-benchmark
 mkdir -p ${baseDir}; chmod ugo+w ${baseDir}
 export SINGULARITY_CACHEDIR="${baseDir}/singularity-cache"
 mkdir -p  $SINGULARITY_CACHEDIR; chmod ugo+w $SINGULARITY_CACHEDIR
-mkdir -p $sif_dir; chmod ugo+w $sif_dir
 
 
 ########################################
@@ -39,17 +36,8 @@ fi
 
 ########################################
 ########################################
-# Pull nanome singularity
-module load singularity
-if [ ! -f ${nanome_singularity} ]; then
-    singularity pull ${nanome_singularity} docker://quay.io/liuyangzzu/nanome:v1.4
-fi
-
-
-########################################
-########################################
 # Clean old results
-#rm -rf ${workDir} ${outputsDir}
+rm -rf ${workDir} ${outputsDir}
 mkdir -p ${workDir}; chmod ugo+w ${workDir}
 mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
@@ -59,9 +47,10 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 # Running pipeline for benchmark data
 set -x
 ./nextflow run main.nf \
-    -profile winter -resume\
+    -profile winter_conda -resume\
     -with-report -with-timeline -with-trace -with-dag \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     -config conf/benchmarking.config \
-    --processors 8
+    --processors 8 \
+    --runGPUTaskOnly true
