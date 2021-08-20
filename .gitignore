@@ -36,6 +36,6 @@ trace.txt*
 do_build_docker.sh
 src/nanocompare/__pycache__/
 __pycache__/
-/benchmark_hpc_sumner.sh
+benchmark_hpc_sumner.sh
 ## maintained by ly
 
