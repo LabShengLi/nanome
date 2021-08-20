@@ -53,4 +53,4 @@ set -x
     --outputDir ${outputsDir} \
     -config conf/benchmarking.config \
     --processors 8 \
-    --runGPUTaskOnly true
+    --filterGPUTaskRuns true
