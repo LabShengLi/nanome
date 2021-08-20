@@ -4,7 +4,7 @@ The inputs of 'nanome' pipeline is a folder/tar/tar.gz or txt file list containi
 
 # 1. Running 'nanome' for human nanopore sequencing data
 
-The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome.git`. `--input` is a compressed file contains Fast5 input file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `-profile` is the name of execution platform configuration, an example of our HPC configuration is the server named as [winter2](https://github.com/liuyangzzu/nanome/blob/master/nextflow.config#L197). 
+The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome.git`. `--input` is a compressed file contains Fast5 input file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `-profile` is the name of execution platform configuration, an example of our HPC configuration is the server named as [winter_singularity](https://github.com/liuyangzzu/nanome/blob/master/nextflow.config#L197). 
 
 By default, we are using hg38 human reference genome, and you can specify reference genome using parameter `--referenceGenome="reference_genome/hg38/hg38.fasta"`. An example of how to use 'nanome' pipeline is given below.
 
@@ -12,18 +12,15 @@ By default, we are using hg38 human reference genome, and you can specify refere
 # Get nextflow executable file
 curl -fsSL get.nextflow.io | bash
 
-# Get nanome singularity
-singularity pull nanome_v1.4.sif docker://quay.io/liuyangzzu/nanome:v1.4
-
 # Run nanome pipeline on project directory
 ./nextflow run main.nf \
-    -profile winter2 \
+    -profile winter_singularity \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 
 # Running nanome pipeline directly from github
 nextflow run https://github.com/liuyangzzu/nanome.git \
-    -profile winter2 \
+    -profile winter_singularity \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 ```
@@ -32,14 +29,14 @@ You can also running 'nanome' pipeline on cloud computing platform, using follow
 ```angular2html
 # Running on Google Cloud (https://cloud.google.com)
 nextflow run main.nf \
-    -profile gls \
+    -profile google_cloud \
     -w gs://jax-nanopore-01-project-data/TestData-work \
     --outputDir gs://jax-nanopore-01-export-bucket/TestData-ouputs \
     --input inputs/test.demo.filelist.txt
 
 # Running on Lifebit CloudOS (https://lifebit.gitbook.io/cloudos)
 nextflow run https://github.com/liuyangzzu/nanome.git \
-    --config 'conf/google.config' \
+    --config 'conf/lifebit_cloudos.config' \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 ```
@@ -160,7 +157,7 @@ cd nanome
 curl -fsSL get.nextflow.io | bash
 
 ./nextflow run main.nf \
-    -profile winter2 \
+    -profile winter_singularity \
     -config conf/ecoli_demo.config
 ```
 Pipeline results for E. coli data is below.
@@ -204,7 +201,7 @@ CPU hours   : 0.3
 Succeeded   : 19
 ```
 
-The output files of pipeline on E. coli data by all tools are below, please also check the pipeline output directory tree for [outputs](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/outputs_ecoli.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/work_ecoli.tree.txt). It also generates [timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/timeline_ecoli.pdf), [report](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/report_ecoli.pdf) and [resource usage](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/trace_ecoli.txt.tsv).
+The output files of pipeline on E. coli data by all tools are below, please also check the pipeline output directory tree for [outputs](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/outputs_ecoli.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/work_ecoli.tree.txt). The pipeline can also generate [timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/timeline_ecoli.pdf), [report](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/report_ecoli.pdf) and [resource usage](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/trace_ecoli.txt.tsv).
 
 ```angular2html
 tree outputs-ecoli/EcoliDemoData-methylation-callings/
@@ -229,7 +226,8 @@ We constructed a list of benchmarking datasets that contain Fast5 reads from 800
 git clone https://github.com/liuyangzzu/nanome.git
 cd nanome
 
-nextflow run main.nf -profile winter  \
+nextflow run main.nf \
+    -profile winter_conda  \
 	-config conf/benchmarking.config
 ```
 
@@ -245,12 +243,12 @@ cd nanome
 curl -s https://get.nextflow.io | bash
 
 ./nextflow run main.nf \
-    -profile gls \
+    -profile google_cloud \
     -w gs://jax-nanopore-01-project-data/nanome-work-test \
     --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
 ```
 
-The `jax-nanopore-01-project-data` is a sample of **Data Bucket** name that you can access on google cloud. `-w` is pipeline output working directory, `--outputDir` is methylation calling and evaluation results directory.
+The `jax-nanopore-01-project-data` is a sample of **Data Bucket** name that you can access on google cloud. `-w` is pipeline output working directory, `--outputDir` is the directory for methylation-calling results.
 
 For more detail of using cloud computing, please check [Cloud computing usage](https://github.com/liuyangzzu/nanome/blob/master/docs/CloudComputing.md).
 
