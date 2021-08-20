@@ -14,8 +14,6 @@ date; hostname; pwd
 
 baseDir=${1:-/fastscratch/li-lab/nanome}
 
-sif_dir="${baseDir}/sif"
-nanome_singularity="${sif_dir}/nanome_v1.4.sif"
 workDir=${baseDir}/work-ecoli
 outputsDir=${baseDir}/outputs-ecoli
 
@@ -25,22 +23,12 @@ outputsDir=${baseDir}/outputs-ecoli
 mkdir -p ${baseDir}; chmod ugo+w ${baseDir}
 export SINGULARITY_CACHEDIR="${baseDir}/singularity-cache"
 mkdir -p  $SINGULARITY_CACHEDIR; chmod ugo+w $SINGULARITY_CACHEDIR
-mkdir -p $sif_dir; chmod ugo+w $sif_dir
 
 ########################################
 ########################################
 # Get nextflow and install it
 if [ ! -f "nextflow" ]; then
     curl -s https://get.nextflow.io | bash
-fi
-
-
-########################################
-########################################
-# Pull nanome singularity
-module load singularity
-if [ ! -f ${nanome_singularity} ]; then
-    singularity pull ${nanome_singularity} docker://quay.io/liuyangzzu/nanome:v1.4
 fi
 
 
@@ -57,8 +45,7 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 # Running pipeline for E. coli data
 set -x
 ./nextflow run main.nf \
-    -profile winter2 -resume \
-    -with-singularity ${nanome_singularity} \
+    -profile winter_singularity -resume \
     -with-report -with-timeline -with-trace -with-dag \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \

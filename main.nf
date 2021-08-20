@@ -24,12 +24,12 @@ ch_src.into{ch_src1; ch_src2; ch_src3; ch_src4}
 
 // Collect all folders of fast5 files, and send into Channels for pipelines
 if (params.input.endsWith(".filelist.txt")) { // filelist
-	Channel.fromPath( params.input )
+	Channel.fromPath( params.input, checkIfExists: true )
 		.splitCsv(header: false)
 		.map { file(it[0]) }
 		.set{ fast5_tar_ch }
 } else { // For single file
-	Channel.fromPath( params.input ).set {fast5_tar_ch}
+	Channel.fromPath( params.input, checkIfExists: true ).set {fast5_tar_ch}
 }
 
 
@@ -107,35 +107,40 @@ process Untar {
 	val "${fast5_tar.size()}" into tar_filesize_ch
 
 	"""
-	mkdir -p untarDir
 	infn="${fast5_tar}"
-	if [ "\${infn##*.}" == "tar" ]; then ### deal with tar
-		tar -xf \${infn} -C untarDir
+	mkdir -p untarTempDir
+	if [ "\${infn##*.}" == "tar" ]; then
+		### deal with tar
+		tar -xf \${infn} -C untarTempDir
 		## move fast5 files in tree folders into a single folder
-		mkdir -p untarDir1
-		find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
-	elif [ "\${infn##*.}" == "gz" ]; then ### deal with tar.gz
-		tar -xzf \${infn} -C untarDir
+		mkdir -p ${fast5_tar.baseName}.untar
+		find untarTempDir -name "*.fast5" -type f -exec mv {} ${fast5_tar.baseName}.untar/ \\;
+	elif [ "\${infn##*.}" == "gz" ]; then
+		### deal with tar.gz
+		tar -xzf \${infn} -C untarTempDir
 		## move fast5 files in tree folders into a single folder
-		mkdir -p untarDir1
-		find untarDir -name "*.fast5" -type f -exec mv {} untarDir1/ \\;
-	else ### deal with ready folder
-		mv  \${infn} untarDir1
+		mkdir -p ${fast5_tar.baseName}.untar
+		find untarTempDir -name "*.fast5" -type f -exec mv {} ${fast5_tar.baseName}.untar/ \\;
+	elif [[ -d ${fast5_tar} ]]; then
+		## Copy files, do not change original files such as old analyses data
+		cp -rf ${fast5_tar}/* untarTempDir/
+		mkdir -p ${fast5_tar.baseName}.untar
+		find untarTempDir -name "*.fast5" -type f -exec mv {} ${fast5_tar.baseName}.untar/ \\;
+	else
+		echo "### Untar error for input=${fast5_tar}"
 	fi
 
 	## Clean old analyses in input fast5 files
 	if [[ "${params.cleanAnalyses}" = true ]] ; then
 		echo "### Start cleaning old analysis"
 		python -c 'import h5py; print(h5py.version.info)'
-		python utils/clean_old_basecall_in_fast5.py -i untarDir1 --is-indir --processor ${params.processors * 8}
+		python utils/clean_old_basecall_in_fast5.py -i ${fast5_tar.baseName}.untar --is-indir --processor ${params.processors * 8}
 	fi
 
-	mv untarDir1 ${fast5_tar.baseName}.untar
-
 	## Clean unused files
-	rm -rf untarDir
+	rm -rf untarTempDir
 
-	echo "Total fast5 files:"
+	echo "Total fast5 input files:"
 	find ${fast5_tar.baseName}.untar \
 		-name "*.fast5" -type f | wc -l
 	echo "### Untar DONE"
@@ -172,12 +177,29 @@ process Basecall {
 
 	"""
 	mkdir -p ${fast5_dir.baseName}.basecalled
-	guppy_basecaller --input_path ${fast5_dir} \
-		--save_path "${fast5_dir.baseName}.basecalled" \
-		--config ${params.GUPPY_BASECALL_MODEL} \
-		--num_callers ${params.GuppyNumCallers} \
-		--fast5_out --recursive \
-		--verbose_logs ${params.GuppyGPUOptions}
+
+	if [[ \${computeName} == "cpu" ]]; then
+		## CPU version command
+		guppy_basecaller --input_path ${fast5_dir} \
+			--save_path "${fast5_dir.baseName}.basecalled" \
+			--config ${params.GUPPY_BASECALL_MODEL} \
+			--num_callers ${params.processors} \
+			--fast5_out --recursive \
+			--verbose_logs
+	elif [[ \${computeName} == "gpu" ]]; then
+		## GPU version command
+		guppy_basecaller --input_path ${fast5_dir} \
+			--save_path "${fast5_dir.baseName}.basecalled" \
+			--config ${params.GUPPY_BASECALL_MODEL} \
+			--num_callers ${params.processors} \
+			--fast5_out --recursive \
+			--verbose_logs \
+			--gpu_runners_per_device ${params.processors} \
+			--device auto
+	else
+		echo "### error value for computeName=\${computeName}"
+		exit 255
+	fi
 
 	## After basecall, rename and publishe summary file names
 	mv ${fast5_dir.baseName}.basecalled/sequencing_summary.txt \
@@ -275,12 +297,29 @@ process Guppy {
 
 	"""
 	mkdir -p ${fast5_dir.baseName}.methcalled
-	guppy_basecaller --input_path ${fast5_dir} \
-		--save_path ${fast5_dir.baseName}.methcalled \
-		--config ${params.GUPPY_METHCALL_MODEL} \
-		--num_callers ${params.GuppyNumCallers} \
-		--fast5_out \
-		--verbose_logs ${params.GuppyGPUOptions}
+
+	if [[ \${computeName} == "cpu" ]]; then
+		## CPU version command
+		guppy_basecaller --input_path ${fast5_dir} \
+			--save_path ${fast5_dir.baseName}.methcalled \
+			--config ${params.GUPPY_METHCALL_MODEL} \
+			--num_callers ${params.processors} \
+			--fast5_out \
+			--verbose_logs
+	elif [[ \${computeName} == "gpu" ]]; then
+		## GPU version command
+		guppy_basecaller --input_path ${fast5_dir} \
+			--save_path ${fast5_dir.baseName}.methcalled \
+			--config ${params.GUPPY_METHCALL_MODEL} \
+			--num_callers ${params.processors} \
+			--fast5_out \
+			--verbose_logs \
+			--gpu_runners_per_device ${params.processors} \
+			--device auto
+	else
+		echo "### error value for computeName=\${computeName}"
+		exit 255
+	fi
 	echo "### Guppy methylation calling DONE"
 
 	## Extract guppy methylation-callings
@@ -353,24 +392,51 @@ process Megalodon {
 	## Get megalodon model dir
 	tar -xzf ${megalodonModelTar}
 
-	## Ref: https://github.com/nanoporetech/megalodon
-	megalodon \
-		${fast5_dir} \
-		--overwrite \
-		--outputs per_read_mods mods per_read_refs \
-		--guppy-server-path guppy_basecall_server \
-		--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-		--guppy-params "-d ./megalodon_model/ --num_callers ${params.GuppyNumCallers} --ipc_threads 80" \
-		--guppy-timeout ${params.GUPPY_TIMEOUT} \
-		--samtools-executable ${params.SAMTOOLS_PATH} \
-		--sort-mappings \
-		--mappings-format bam \
-		--reference ${params.referenceGenome} \
-		--mod-motif m CG 0 \
-		--mod-output-formats bedmethyl wiggle \
-		--write-mods-text \
-		--write-mod-log-probs \
-		--processes ${params.processors * 2}  ${params.megalodonGPUOptions}
+	if [[ \${computeName} == "cpu" ]]; then
+		## CPU version command
+		## Ref: https://github.com/nanoporetech/megalodon
+		megalodon \
+			${fast5_dir} \
+			--overwrite \
+			--outputs per_read_mods mods per_read_refs \
+			--guppy-server-path guppy_basecall_server \
+			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
+			--guppy-params "-d ./megalodon_model/ --num_callers ${params.processors} --ipc_threads 80" \
+			--guppy-timeout ${params.GUPPY_TIMEOUT} \
+			--samtools-executable ${params.SAMTOOLS_PATH} \
+			--sort-mappings \
+			--mappings-format bam \
+			--reference ${params.referenceGenome} \
+			--mod-motif m CG 0 \
+			--mod-output-formats bedmethyl wiggle \
+			--write-mods-text \
+			--write-mod-log-probs \
+			--processes ${params.processors * 2}
+	elif [[ \${computeName} == "gpu" ]]; then
+		## GPU version command
+		## Ref: https://github.com/nanoporetech/megalodon
+		megalodon \
+			${fast5_dir} \
+			--overwrite \
+			--outputs per_read_mods mods per_read_refs \
+			--guppy-server-path guppy_basecall_server \
+			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
+			--guppy-params "-d ./megalodon_model/ --num_callers ${params.processors} --ipc_threads 80" \
+			--guppy-timeout ${params.GUPPY_TIMEOUT} \
+			--samtools-executable ${params.SAMTOOLS_PATH} \
+			--sort-mappings \
+			--mappings-format bam \
+			--reference ${params.referenceGenome} \
+			--mod-motif m CG 0 \
+			--mod-output-formats bedmethyl wiggle \
+			--write-mods-text \
+			--write-mod-log-probs \
+			--processes ${params.processors * 2} \
+			--devices 0
+	else
+		echo "### error value for computeName=\${computeName}"
+		exit 255
+	fi
 
 	### mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_dir.baseName}.per_read_modified_base_calls.txt
 	tail -n +2 megalodon_results/per_read_modified_base_calls.txt | gzip > \
@@ -381,6 +447,7 @@ process Megalodon {
 
 
 // Resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
+// TODO: reduce processors to run resquiggle
 process Resquiggle {
 	tag "${basecallIndir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle" , mode: "copy", pattern: "${basecallIndir.baseName}.resquiggle.run.log"
@@ -398,7 +465,7 @@ process Resquiggle {
 	file "${basecallIndir.baseName}.resquiggle.run.log" into resquiggle_logs
 
 	when:
-	params.runMethcall && params.runResquiggle
+	params.runMethcall && params.runResquiggle && !params.filterGPUTaskRuns
 
 	"""
 	### copy basecall workspace files, due to tombo resquiggle modify base folder
@@ -441,19 +508,35 @@ process DeepSignal {
 	file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv.gz" into deepsignal_out_ch
 
 	when:
-	params.runMethcall && params.runDeepSignal
+	params.runMethcall && params.runDeepSignal && !params.filterGPUTaskRuns
 
 	"""
 	tar -xzf ${deepsignal_model_tar}
 
-	deepsignal call_mods \
-		--input_path ${indir}/workspace \
-		--model_path ./model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+/bn_17.sn_360.epoch_9.ckpt \
-		--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
-		--reference_path ${params.referenceGenome} \
-		--corrected_group ${params.resquiggleCorrectedGroup} \
-		--nproc ${params.processors  * params.deepLearningProcessorTimes} \
-		--is_gpu ${params.DeepSignal_isgpu}
+	if [[ \${computeName} == "cpu" ]]; then
+		## CPU version command
+		deepsignal call_mods \
+			--input_path ${indir}/workspace \
+			--model_path ./model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+/bn_17.sn_360.epoch_9.ckpt \
+			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
+			--reference_path ${params.referenceGenome} \
+			--corrected_group ${params.resquiggleCorrectedGroup} \
+			--nproc ${params.processors  * params.deepLearningProcessorTimes} \
+			--is_gpu no
+	elif [[ \${computeName} == "gpu" ]]; then
+		## GPU version command
+		deepsignal call_mods \
+			--input_path ${indir}/workspace \
+			--model_path ./model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+/bn_17.sn_360.epoch_9.ckpt \
+			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
+			--reference_path ${params.referenceGenome} \
+			--corrected_group ${params.resquiggleCorrectedGroup} \
+			--nproc ${params.processors  * params.deepLearningProcessorTimes} \
+			--is_gpu yes
+	else
+		echo "### error value for computeName=\${computeName}"
+		exit 255
+	fi
 
 	gzip batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv
 	echo "### DeepSignal methylation DONE"
@@ -476,7 +559,7 @@ process Tombo {
 	file "${resquiggleDir.baseName}.tombo.run.log" into tombo_log_ch
 
 	when:
-	params.runMethcall && params.runTombo
+	params.runMethcall && params.runTombo && !params.filterGPUTaskRuns
 
 	"""
 	## Check if there is a BrokenPipeError: [Errno 32] Broken pipe
@@ -488,7 +571,7 @@ process Tombo {
 		--statistics-file-basename batch_${resquiggleDir.baseName} \
 		--per-read-statistics-basename batch_${resquiggleDir.baseName} \
 		--alternate-bases CpG \
-		--processes ${params.processors * 2} \
+		--processes 1 \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--multiprocess-region-size 1000 &> \
 		${resquiggleDir.baseName}.tombo.run.log
@@ -526,7 +609,7 @@ process DeepMod {
 	file "batch_${basecallDir.baseName}_num.tar.gz" into deepmod_gz_out_ch
 
 	when:
-	params.runMethcall && params.runDeepMod
+	params.runMethcall && params.runDeepMod && !params.filterGPUTaskRuns
 
 	"""
 	wget ${params.DeepModGithub} --no-verbose
@@ -567,7 +650,7 @@ process Nanopolish {
 	file "batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz" into nanopolish_out_ch
 
 	when:
-	params.runMethcall && params.runNanopolish
+	params.runMethcall && params.runNanopolish && !params.filterGPUTaskRuns
 
 	"""
 	### Put all fq and bam files into working dir, DO NOT affect the basecall dir
@@ -701,11 +784,11 @@ process GuppyComb {
 				--regions chr\$i &
 		done
 	elif [[ "${params.dataType}" == "ecoli" ]] ; then
-		echo "### For ecoli, chr=${params.DeepModSumChrSet}"
+		echo "### For ecoli, chr=${params.chrSet}"
 		fast5mod call total.meth.bam ${params.referenceGenome} \
-			meth.chr_${params.DeepModSumChrSet}.tsv \
+			meth.chr_${params.chrSet}.tsv \
 			--meth cpg --quiet \
-			--regions ${params.DeepModSumChrSet}
+			--regions ${params.chrSet}
 	fi
 	wait
 
@@ -800,7 +883,7 @@ process DpmodComb {
 	done
 
 	python \${DeepModProjectDir}/DeepMod_tools/sum_chr_mod.py \
-		indir/ C ${params.dsname}.deepmod ${params.DeepModSumChrSet}
+		indir/ C ${params.dsname}.deepmod ${params.chrSet}
 
 	> ${params.dsname}.deepmod.C_per_site.combine.bed
 
@@ -878,7 +961,7 @@ process METEORE {
 
 	tss_more_options=""
 	if [[ "${params.dataType}" == "ecoli" ]] ; then
-		tss_more_options="--chrs ${params.DeepModSumChrSet}"
+		tss_more_options="--chrs ${params.chrSet}"
 	fi
 
 	## Read level unify
