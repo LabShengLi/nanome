@@ -34,5 +34,6 @@ report.html*
 timeline.html*
 trace.txt*
 do_build_docker.sh
+src/nanocompare/__pycache__/
 
 ## maintained by ly
