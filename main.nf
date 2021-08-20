@@ -134,7 +134,7 @@ process Untar {
 	if [[ "${params.cleanAnalyses}" = true ]] ; then
 		echo "### Start cleaning old analysis"
 		python -c 'import h5py; print(h5py.version.info)'
-		python utils/clean_old_basecall_in_fast5.py -i untarTempDir1 --is-indir --processor ${params.processors * 8}
+		python utils/clean_old_basecall_in_fast5.py -i ${fast5_tar.baseName}.untar --is-indir --processor ${params.processors * 8}
 	fi
 
 	## Clean unused files
@@ -465,7 +465,7 @@ process Resquiggle {
 	file "${basecallIndir.baseName}.resquiggle.run.log" into resquiggle_logs
 
 	when:
-	params.runMethcall && params.runResquiggle
+	params.runMethcall && params.runResquiggle && !params.runGPUTaskOnly
 
 	"""
 	### copy basecall workspace files, due to tombo resquiggle modify base folder
@@ -508,7 +508,7 @@ process DeepSignal {
 	file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv.gz" into deepsignal_out_ch
 
 	when:
-	params.runMethcall && params.runDeepSignal
+	params.runMethcall && params.runDeepSignal && !params.runGPUTaskOnly
 
 	"""
 	tar -xzf ${deepsignal_model_tar}
@@ -559,7 +559,7 @@ process Tombo {
 	file "${resquiggleDir.baseName}.tombo.run.log" into tombo_log_ch
 
 	when:
-	params.runMethcall && params.runTombo
+	params.runMethcall && params.runTombo && !params.runGPUTaskOnly
 
 	"""
 	## Check if there is a BrokenPipeError: [Errno 32] Broken pipe
@@ -609,7 +609,7 @@ process DeepMod {
 	file "batch_${basecallDir.baseName}_num.tar.gz" into deepmod_gz_out_ch
 
 	when:
-	params.runMethcall && params.runDeepMod
+	params.runMethcall && params.runDeepMod && !params.runGPUTaskOnly
 
 	"""
 	wget ${params.DeepModGithub} --no-verbose
@@ -650,7 +650,7 @@ process Nanopolish {
 	file "batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz" into nanopolish_out_ch
 
 	when:
-	params.runMethcall && params.runNanopolish
+	params.runMethcall && params.runNanopolish && !params.runGPUTaskOnly
 
 	"""
 	### Put all fq and bam files into working dir, DO NOT affect the basecall dir
