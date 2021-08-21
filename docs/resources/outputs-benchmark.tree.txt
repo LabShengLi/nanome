@@ -1,0 +1,133 @@
+outputs-benchmark
+├── BenchmarkData-methylation-callings
+│   ├── BenchmarkData.deepmod.C_clusterCpG_per_site.combine.bed.gz
+│   ├── BenchmarkData.deepmod.C_per_site.combine.bed.gz
+│   ├── BenchmarkData.deepsignal.per_read.combine.tsv.gz
+│   ├── BenchmarkData.guppy.fast5mod_per_site.combine.tsv.gz
+│   ├── BenchmarkData.guppy.gcf52ref_per_read.combine.tsv.gz
+│   ├── BenchmarkData.megalodon.per_read.combine.bed.gz
+│   ├── BenchmarkData.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
+│   ├── BenchmarkData.nanopolish.per_read.combine.tsv.gz
+│   └── BenchmarkData.tombo.per_read.combine.bed.gz
+├── BenchmarkData-qc-report
+│   ├── BenchmarkData.coverage.negativestrand.bed.gz
+│   ├── BenchmarkData.coverage.positivestrand.bed.gz
+│   └── BenchmarkData-qc-report.tar.gz
+├── BenchmarkData_raw_outputs
+│   ├── deepmod
+│   │   ├── batch_MB1600K.tar_num.tar.gz
+│   │   ├── batch_MB2400K.tar_num.tar.gz
+│   │   ├── batch_MB3200K.tar_num.tar.gz
+│   │   ├── batch_MB4000K.tar_num.tar.gz
+│   │   ├── batch_MB4800K.tar_num.tar.gz
+│   │   ├── batch_MB5600K.tar_num.tar.gz
+│   │   ├── batch_MB6400K.tar_num.tar.gz
+│   │   ├── batch_MB7200K.tar_num.tar.gz
+│   │   ├── batch_MB8000K.tar_num.tar.gz
+│   │   ├── batch_MB800K.tar_num.tar.gz
+│   │   ├── BenchmarkData.deepmod.all_batch.C.bed.tar.gz
+│   │   ├── BenchmarkData.deepmod_clusterCpG.all_chrs.C.bed.tar.gz
+│   │   └── BenchmarkData.deepmod.sum_chrs_mod.C.bed.tar.gz
+│   ├── deepsignal
+│   │   ├── batch_MB1600K.tar.CpG.deepsignal.call_mods.tsv.gz
+│   │   ├── batch_MB2400K.tar.CpG.deepsignal.call_mods.tsv.gz
+│   │   ├── batch_MB3200K.tar.CpG.deepsignal.call_mods.tsv.gz
+│   │   ├── batch_MB4000K.tar.CpG.deepsignal.call_mods.tsv.gz
+│   │   ├── batch_MB4800K.tar.CpG.deepsignal.call_mods.tsv.gz
+│   │   ├── batch_MB5600K.tar.CpG.deepsignal.call_mods.tsv.gz
+│   │   ├── batch_MB6400K.tar.CpG.deepsignal.call_mods.tsv.gz
+│   │   ├── batch_MB7200K.tar.CpG.deepsignal.call_mods.tsv.gz
+│   │   ├── batch_MB8000K.tar.CpG.deepsignal.call_mods.tsv.gz
+│   │   └── batch_MB800K.tar.CpG.deepsignal.call_mods.tsv.gz
+│   ├── guppy
+│   │   ├── batch_MB1600K.tar.guppy.gcf52ref_per_read.tsv.gz
+│   │   ├── batch_MB2400K.tar.guppy.gcf52ref_per_read.tsv.gz
+│   │   ├── batch_MB3200K.tar.guppy.gcf52ref_per_read.tsv.gz
+│   │   ├── batch_MB4000K.tar.guppy.gcf52ref_per_read.tsv.gz
+│   │   ├── batch_MB4800K.tar.guppy.gcf52ref_per_read.tsv.gz
+│   │   ├── batch_MB5600K.tar.guppy.gcf52ref_per_read.tsv.gz
+│   │   ├── batch_MB6400K.tar.guppy.gcf52ref_per_read.tsv.gz
+│   │   ├── batch_MB7200K.tar.guppy.gcf52ref_per_read.tsv.gz
+│   │   ├── batch_MB8000K.tar.guppy.gcf52ref_per_read.tsv.gz
+│   │   ├── batch_MB800K.tar.guppy.gcf52ref_per_read.tsv.gz
+│   │   ├── BenchmarkData.guppy_fast5mod.combined.bam.tar.gz
+│   │   ├── outbatch_MB1600K.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+│   │   ├── outbatch_MB2400K.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+│   │   ├── outbatch_MB3200K.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+│   │   ├── outbatch_MB4000K.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+│   │   ├── outbatch_MB4800K.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+│   │   ├── outbatch_MB5600K.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+│   │   ├── outbatch_MB6400K.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+│   │   ├── outbatch_MB7200K.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+│   │   ├── outbatch_MB8000K.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+│   │   └── outbatch_MB800K.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+│   ├── megalodon
+│   │   ├── batch_MB1600K.tar.megalodon.per_read_modified_base_calls.txt.gz
+│   │   ├── batch_MB2400K.tar.megalodon.per_read_modified_base_calls.txt.gz
+│   │   ├── batch_MB3200K.tar.megalodon.per_read_modified_base_calls.txt.gz
+│   │   ├── batch_MB4000K.tar.megalodon.per_read_modified_base_calls.txt.gz
+│   │   ├── batch_MB4800K.tar.megalodon.per_read_modified_base_calls.txt.gz
+│   │   ├── batch_MB5600K.tar.megalodon.per_read_modified_base_calls.txt.gz
+│   │   ├── batch_MB6400K.tar.megalodon.per_read_modified_base_calls.txt.gz
+│   │   ├── batch_MB7200K.tar.megalodon.per_read_modified_base_calls.txt.gz
+│   │   ├── batch_MB8000K.tar.megalodon.per_read_modified_base_calls.txt.gz
+│   │   └── batch_MB800K.tar.megalodon.per_read_modified_base_calls.txt.gz
+│   ├── nanopolish
+│   │   ├── batch_MB1600K.tar.nanopolish.methylation_calls.tsv.gz
+│   │   ├── batch_MB2400K.tar.nanopolish.methylation_calls.tsv.gz
+│   │   ├── batch_MB3200K.tar.nanopolish.methylation_calls.tsv.gz
+│   │   ├── batch_MB4000K.tar.nanopolish.methylation_calls.tsv.gz
+│   │   ├── batch_MB4800K.tar.nanopolish.methylation_calls.tsv.gz
+│   │   ├── batch_MB5600K.tar.nanopolish.methylation_calls.tsv.gz
+│   │   ├── batch_MB6400K.tar.nanopolish.methylation_calls.tsv.gz
+│   │   ├── batch_MB7200K.tar.nanopolish.methylation_calls.tsv.gz
+│   │   ├── batch_MB8000K.tar.nanopolish.methylation_calls.tsv.gz
+│   │   └── batch_MB800K.tar.nanopolish.methylation_calls.tsv.gz
+│   ├── resquiggle
+│   │   ├── MB1600K.tar.resquiggle.run.log
+│   │   ├── MB2400K.tar.resquiggle.run.log
+│   │   ├── MB3200K.tar.resquiggle.run.log
+│   │   ├── MB4000K.tar.resquiggle.run.log
+│   │   ├── MB4800K.tar.resquiggle.run.log
+│   │   ├── MB5600K.tar.resquiggle.run.log
+│   │   ├── MB6400K.tar.resquiggle.run.log
+│   │   ├── MB7200K.tar.resquiggle.run.log
+│   │   ├── MB8000K.tar.resquiggle.run.log
+│   │   └── MB800K.tar.resquiggle.run.log
+│   └── tombo
+│       ├── batch_MB1600K.tar.CpG.tombo.per_read_stats.bed.gz
+│       ├── batch_MB2400K.tar.CpG.tombo.per_read_stats.bed.gz
+│       ├── batch_MB3200K.tar.CpG.tombo.per_read_stats.bed.gz
+│       ├── batch_MB4000K.tar.CpG.tombo.per_read_stats.bed.gz
+│       ├── batch_MB4800K.tar.CpG.tombo.per_read_stats.bed.gz
+│       ├── batch_MB5600K.tar.CpG.tombo.per_read_stats.bed.gz
+│       ├── batch_MB6400K.tar.CpG.tombo.per_read_stats.bed.gz
+│       ├── batch_MB7200K.tar.CpG.tombo.per_read_stats.bed.gz
+│       ├── batch_MB8000K.tar.CpG.tombo.per_read_stats.bed.gz
+│       ├── batch_MB800K.tar.CpG.tombo.per_read_stats.bed.gz
+│       ├── MB1600K.tar.tombo.run.log
+│       ├── MB2400K.tar.tombo.run.log
+│       ├── MB3200K.tar.tombo.run.log
+│       ├── MB4000K.tar.tombo.run.log
+│       ├── MB4800K.tar.tombo.run.log
+│       ├── MB5600K.tar.tombo.run.log
+│       ├── MB6400K.tar.tombo.run.log
+│       ├── MB7200K.tar.tombo.run.log
+│       ├── MB8000K.tar.tombo.run.log
+│       └── MB800K.tar.tombo.run.log
+└── nanome-analysis-BenchmarkData
+    ├── Read_Level-BenchmarkData
+    │   ├── BenchmarkData_DeepSignal-METEORE-perRead-score.tsv.gz
+    │   ├── BenchmarkData_Guppy-METEORE-perRead-score.tsv.gz
+    │   ├── BenchmarkData_Megalodon-METEORE-perRead-score.tsv.gz
+    │   ├── BenchmarkData_Nanopolish-METEORE-perRead-score.tsv.gz
+    │   └── BenchmarkData_Tombo-METEORE-perRead-score.tsv.gz
+    └── Site_Level-BenchmarkData
+        ├── Site_Level-BenchmarkData.tss.DeepMod.cov1.bed.gz
+        ├── Site_Level-BenchmarkData.tss.DeepSignal.cov1.bed.gz
+        ├── Site_Level-BenchmarkData.tss.Guppy.cov1.bed.gz
+        ├── Site_Level-BenchmarkData.tss.Megalodon.cov1.bed.gz
+        ├── Site_Level-BenchmarkData.tss.Nanopolish.cov1.bed.gz
+        └── Site_Level-BenchmarkData.tss.Tombo.cov1.bed.gz
+
+13 directories, 117 files
