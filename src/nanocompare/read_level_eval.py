@@ -310,26 +310,25 @@ def parse_arguments():
     """
     :return:
     """
-    parser = argparse.ArgumentParser(description='Read level performance evaluation in Nanocompare paper')
-    parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff", default=5)
+    parser = argparse.ArgumentParser(description='Read-level performance evaluation in nanome paper')
     parser.add_argument('--dsname', type=str, help="dataset name", default='DS')
-    parser.add_argument('--processors', type=int, help="multi-processors", default=1)
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
-    parser.add_argument('--report-joined', action='store_true', help="True if report on only joined sets")
-    parser.add_argument('--test', action='store_true', help="True if only test for short time running")
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by space',
                         required=True)
-    parser.add_argument('--chrSet', nargs='+', help='chromosome list', default=humanChrSet)
     parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>;<file-name>",
                         default=None)
+    parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff", default=5)
+    parser.add_argument('--processors', type=int, help="multi-processors", default=1)
+    parser.add_argument('--report-joined', action='store_true', help="true if report on only joined sets")
+    parser.add_argument('--chrSet', nargs='+', help='chromosome list', default=humanChrSet)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
-    parser.add_argument('--enable-cache', action='store_true')
-    parser.add_argument('--using-cache', action='store_true')
-    parser.add_argument('--distribution', action='store_true')
-    parser.add_argument('--mpi', action='store_true')
-    parser.add_argument('--analysis', type=str, help='special analysis specifications', default="")
-    parser.add_argument('--bedtools-tmp', type=str, help='special bedtools temp dir', default=temp_dir)
-    parser.add_argument('--genome-annotation', type=str, help='special genome annotation dir',
+    parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
+    parser.add_argument('--using-cache', help="if use cache files", action='store_true')
+    parser.add_argument('--distribution', help="report singleton/nonsingleton distributions", action='store_true')
+    parser.add_argument('--mpi', help="if using multi-processing for evaluation", action='store_true')
+    parser.add_argument('--analysis', type=str, help='special analysis specifications for ecoli', default="")
+    parser.add_argument('--bedtools-tmp', type=str, help='bedtools temp dir', default=temp_dir)
+    parser.add_argument('--genome-annotation', type=str, help='genome annotation dir',
                         default=os.path.join(data_base_dir, 'genome-annotation'))
     return parser.parse_args()
 

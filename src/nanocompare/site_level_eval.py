@@ -194,34 +194,34 @@ def parse_arguments():
     """
     :return:
     """
-    parser = argparse.ArgumentParser(description='Site level correlation analysis')
+    parser = argparse.ArgumentParser(description='Site-level correlation analysis in nanome paper')
+    parser.add_argument('--dsname', type=str, help="dataset name", required=True)
+    parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces',
                         required=True)
     parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name1>",
                         required=True)
-    parser.add_argument('--dsname', type=str, help="dataset name", required=True)
-    parser.add_argument('--runid', type=str, help="running prefix", required=True)
-    parser.add_argument('--beddir', type=str, help="base dir for bed files",
-                        default=None)  # need perform performance evaluation before, then get concordant, etc. bed files, like '/projects/li-lab/yang/results/2021-04-01'
-    parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
-    parser.add_argument('--processors', type=int, help="running processors", default=1)
+    parser.add_argument('--beddir', type=str, help="base dir for concordant/discordant bed files",
+                        default=None)
     parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff for coverage in bg-truth", default=5)
     parser.add_argument('--toolcov-cutoff', type=int, help="cutoff for coverage in nanopore tools", default=3)
+    parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
+    parser.add_argument('--processors', type=int, help="running processors", default=1)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
-    parser.add_argument('--gen-venn', help="generate venn data", action='store_true')
+    parser.add_argument('--gen-venn', help="generate CpGs for venn data analysis", action='store_true')
     parser.add_argument('--summary-coverage', help="generate summary table for coverage at each region",
                         action='store_true')
-    parser.add_argument('--region-coe-report', help="generate report table for PCC value at each region",
+    parser.add_argument('--region-coe-report', help="report table for PCC value at each region",
                         action='store_true')
-    parser.add_argument('--enable-cache', action='store_true')
-    parser.add_argument('--using-cache', action='store_true')
-    parser.add_argument('--plot', help="plot the correlation figure", action='store_true')
-    parser.add_argument('--bedtools-tmp', type=str, help='special bedtools temp dir', default=temp_dir)
-    parser.add_argument('--genome-annotation', type=str, help='special genome annotation dir',
+    parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
+    parser.add_argument('--using-cache', help="if use cache files", action='store_true')
+    parser.add_argument('--plot', help="plot the correlation matrix figure", action='store_true')
+    parser.add_argument('--bedtools-tmp', type=str, help='bedtools temp dir', default=temp_dir)
+    parser.add_argument('--genome-annotation', type=str, help='genome annotation dir',
                         default=os.path.join(data_base_dir, 'genome-annotation'))
     return parser.parse_args()
 
-
+    
 if __name__ == '__main__':
     set_log_debug_level()
     args = parse_arguments()

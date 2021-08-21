@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Generate site-level methylation results for TSS/METEORE analysis in nanome paper.
+Export read/site-level methylation results for TSS/METEORE analysis in nanome paper.
 """
 import argparse
 from multiprocessing import Manager
@@ -14,25 +14,23 @@ def parse_arguments():
     """
     :return:
     """
-    parser = argparse.ArgumentParser(description='Site level correlation analysis')
+    parser = argparse.ArgumentParser(
+        description='Export read/site level methylation results of all nanopore tools in nanome paper')
+    parser.add_argument('--dsname', type=str, help="dataset name", required=True)
+    parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces',
                         required=True)
     parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name1>",
                         default=None)
-    parser.add_argument('--dsname', type=str, help="dataset name", required=True)
-    parser.add_argument('--runid', type=str, help="running prefix", required=True)
-    parser.add_argument('--beddir', type=str, help="base dir for bed files",
-                        default=None)  # need perform performance evaluation before, then get concordant, etc. bed files, like '/projects/li-lab/yang/results/2021-04-01'
+    parser.add_argument('--beddir', type=str, help="base dir for concordant/discordant bed files",
+                        default=None)
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default='\t')
     parser.add_argument('--processors', type=int, help="running processors", default=1)
-    parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff of coverage in bg-truth", default=1)
-    parser.add_argument('--toolcov-cutoff', type=int, help="cutoff of coverage in nanopore calls", default=1)
-    parser.add_argument('--baseFormat', type=int, help="base format after imported", default=1)
     parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
-    parser.add_argument('--enable-cache', action='store_true')
-    parser.add_argument('--using-cache', action='store_true')
+    parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
+    parser.add_argument('--using-cache', help="if use cache files", action='store_true')
     parser.add_argument('--output-unified-format', action='store_true')
-    parser.add_argument('--chrs', nargs='+', help='filter chr sets',
+    parser.add_argument('--chrs', nargs='+', help='chromosome list',
                         default=humanChrSet)
     return parser.parse_args()
 
@@ -89,17 +87,9 @@ if __name__ == '__main__':
     # runid is always like 'MethCorr-K562_WGBS_2Reps', remove first word as RunPrefix like K562_WGBS_2Reps
     RunPrefix = args.runid.replace('TSS-', '')
 
-    ## Now, we are exporting >=1 cov results, the cov = 3,5, etc. can be later used before plotting
-    # tool coverage cutoff 1, or 3, 5
-    minToolCovCutt = args.toolcov_cutoff
     minToolCovCutt = 1
-
-    # bgtruth coverage cutoff 1, or 5, 10  --min-bgtruth-cov
-    bgtruthCutt = args.min_bgtruth_cov
     bgtruthCutt = 1
 
-    # load into program format 0-base or 1-base
-    baseFormat = args.baseFormat
     # Currently we only use 1-base start format, for BED of singletons, non-singletons are use 1-base format
     baseFormat = 1
 
