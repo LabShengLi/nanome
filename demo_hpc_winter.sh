@@ -51,8 +51,13 @@ set -x
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
+    --eval true
 
+# Report
+tree ${workDir} > ${baseDir}/work.tree.txt
+tree ${outputsDir} > ${baseDir}/outputs.tree.txt
+echo "### nanome pipeline demo DONE"
 exit 0
 
 

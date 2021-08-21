@@ -3,8 +3,8 @@
 #SBATCH -p compute
 #SBATCH -q long
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 2 # number of cores
-#SBATCH --mem=20G # memory pool for all cores
+#SBATCH -n 1 # number of cores
+#SBATCH --mem=30G # memory pool for all cores
 #SBATCH --time=14-00:00:00 # time
 #SBATCH -o log/%x.%j.out # STDOUT
 #SBATCH -e log/%x.%j.err # STDERR
@@ -26,10 +26,9 @@ OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/TestData-ouputs
 
 ## Run test demo on google cloud
 nextflow run main.nf \
-    -profile gls -resume \
-    -with-report -with-timeline -with-trace -with-dag \
+    -profile google_cloud -resume \
 	-w ${WORK_DIR_BUCKET} \
-	--glsContainerName 'us.gcr.io/jax-nanopore-01/nanome:v1.4' \
+	--outputDir ${OUTPUT_DIR_BUCKET} \
 	--dsname TestData \
-	--input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
-	--outputDir ${OUTPUT_DIR_BUCKET}
+	--input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+

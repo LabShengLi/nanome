@@ -37,11 +37,14 @@ WORKDIR /data/
 RUN mkdir /opt/bin
 ADD utils/ /opt/bin/utils
 ADD src/ /opt/bin/src
+ADD test_data/ /opt/bin/test_data
+ADD inputs/ /opt/bin/inputs
 RUN chmod +x /opt/bin/utils/*
 RUN chmod +x /opt/bin/src/*
 RUN chmod +x /opt/bin/src/nanocompare/*
 ENV PATH="$PATH:/opt/bin/utils"
 ENV PATH="$PATH:/opt/bin/src"
 ENV PATH="$PATH:/opt/bin/src/nanocompare"
+ENV PYTHONPATH="/opt/bin/src"
 
 CMD ["bash"]

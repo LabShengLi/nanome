@@ -75,13 +75,13 @@ echo "METEORECalls=$METEORECalls"
 echo "####################"
 
 ## Read level evaluation script
-pythonFile=nanocompare/read_level_eval.py
+pythonFile=read_level_eval.py
 
 set -x
 
 if [ "${command}" == "six" ]; then
     ## six tool
-    python ${pythonFile} \
+    ${pythonFile} \
         --calls \
         Nanopolish:${NanopolishCalls} \
         ${MegalodonEncode}:${MegalodonCalls} \
@@ -97,7 +97,7 @@ if [ "${command}" == "six" ]; then
         --report-joined --enable-cache --using-cache ${otherOptions} ### --mpi
 elif [ "${command}" == "seven" ]; then
     ## --distribution: generate sites distribution in singletons/non-singletons for each genomic regions
-    python ${pythonFile} \
+    ${pythonFile} \
         --calls \
         Nanopolish:${NanopolishCalls} \
         ${MegalodonEncode}:${MegalodonCalls} \

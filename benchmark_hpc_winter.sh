@@ -9,6 +9,8 @@
 #SBATCH --time=14-00:00:00 # time
 #SBATCH -o %x.%j.out # STDOUT
 #SBATCH -e %x.%j.err # STDERR
+#SBATCH --mail-user=yang.liu@jax.org
+#SBATCH --mail-type=END
 
 date; hostname; pwd
 

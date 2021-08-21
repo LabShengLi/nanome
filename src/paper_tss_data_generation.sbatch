@@ -70,12 +70,12 @@ echo "DeepModCalls=$DeepModCalls"
 echo "####################"
 
 ## Running script
-pythonFile=nanocompare/tss_eval.py
+pythonFile=tss_eval.py
 
 set -x
 
 ## Generate tools/bsseq site level (freq, coverage) results for tss analysis
-python ${pythonFile} \
+${pythonFile} \
     --calls \
     Nanopolish:${NanopolishCalls} \
     ${MegalodonOptions}:${MegalodonCalls} \

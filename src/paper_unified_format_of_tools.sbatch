@@ -44,12 +44,12 @@ echo "GuppyCalls=$GuppyCalls"
 echo "TomboCalls=$TomboCalls"
 echo "####################"
 
-pythonFile=nanocompare/tss_eval.py
+pythonFile=tss_eval.py
 
 set -x
 
 ## convert tools format to unified format (such as METEORE)
-python ${pythonFile} \
+${pythonFile} \
     --calls \
     Nanopolish:${NanopolishCalls} \
     ${MegalodonEncode}:${MegalodonCalls} \

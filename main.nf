@@ -23,13 +23,18 @@ ch_utils.into{ch_utils1; ch_utils2; ch_utils3; ch_utils4; ch_utils5; ch_utils6; 
 ch_src.into{ch_src1; ch_src2; ch_src3; ch_src4}
 
 // Collect all folders of fast5 files, and send into Channels for pipelines
-if (params.input.endsWith(".filelist.txt")) { // filelist
+if (params.input.endsWith(".filelist.txt")) {
+	// list of files in filelist.txt
 	Channel.fromPath( params.input, checkIfExists: true )
 		.splitCsv(header: false)
 		.map { file(it[0]) }
 		.set{ fast5_tar_ch }
-} else { // For single file
-	Channel.fromPath( params.input, checkIfExists: true ).set {fast5_tar_ch}
+} else if(params.input.endsWith("/*")) {
+	// match all files in the folder
+	Channel.fromPath(params.input, type: 'any').set{fast5_tar_ch}
+} else {
+	// For single file
+	Channel.fromPath( params.input, checkIfExists: true ).set{fast5_tar_ch}
 }
 
 
@@ -112,37 +117,38 @@ process Untar {
 	if [ "\${infn##*.}" == "tar" ]; then
 		### deal with tar
 		tar -xf \${infn} -C untarTempDir
-		## move fast5 files in tree folders into a single folder
-		mkdir -p ${fast5_tar.baseName}.untar
-		find untarTempDir -name "*.fast5" -type f -exec mv {} ${fast5_tar.baseName}.untar/ \\;
 	elif [ "\${infn##*.}" == "gz" ]; then
 		### deal with tar.gz
 		tar -xzf \${infn} -C untarTempDir
-		## move fast5 files in tree folders into a single folder
-		mkdir -p ${fast5_tar.baseName}.untar
-		find untarTempDir -name "*.fast5" -type f -exec mv {} ${fast5_tar.baseName}.untar/ \\;
 	elif [[ -d ${fast5_tar} ]]; then
 		## Copy files, do not change original files such as old analyses data
-		cp -rf ${fast5_tar}/* untarTempDir/
-		mkdir -p ${fast5_tar.baseName}.untar
-		find untarTempDir -name "*.fast5" -type f -exec mv {} ${fast5_tar.baseName}.untar/ \\;
+		cp -rf ${fast5_tar}/* untarTempDir/  # failed means nothing in this folder
 	else
 		echo "### Untar error for input=${fast5_tar}"
 	fi
+
+	## move fast5 files in tree folders into a single folder
+	mkdir -p ${fast5_tar.baseName}.untar
+	find untarTempDir -name "*.fast5" -type f -exec mv {} ${fast5_tar.baseName}.untar/ \\;
 
 	## Clean old analyses in input fast5 files
 	if [[ "${params.cleanAnalyses}" = true ]] ; then
 		echo "### Start cleaning old analysis"
 		python -c 'import h5py; print(h5py.version.info)'
-		python utils/clean_old_basecall_in_fast5.py -i ${fast5_tar.baseName}.untar --is-indir --processor ${params.processors * 8}
+		python utils/clean_old_basecall_in_fast5.py \
+			-i ${fast5_tar.baseName}.untar --is-indir \
+			--processor \$(( numProcessor*8 ))
 	fi
 
 	## Clean unused files
 	rm -rf untarTempDir
 
-	echo "Total fast5 input files:"
-	find ${fast5_tar.baseName}.untar \
-		-name "*.fast5" -type f | wc -l
+	totalFiles=\$( find ${fast5_tar.baseName}.untar -name "*.fast5" -type f | wc -l )
+	echo "### Total fast5 input files:\${totalFiles}"
+	if (( totalFiles==0 )); then
+		echo "### no fast5 files error at ${fast5_tar.baseName}.untar"
+		exit 255
+	fi
 	echo "### Untar DONE"
 	"""
 }
@@ -183,7 +189,7 @@ process Basecall {
 		guppy_basecaller --input_path ${fast5_dir} \
 			--save_path "${fast5_dir.baseName}.basecalled" \
 			--config ${params.GUPPY_BASECALL_MODEL} \
-			--num_callers ${params.processors} \
+			--num_callers \$(( numProcessor )) \
 			--fast5_out --recursive \
 			--verbose_logs
 	elif [[ \${computeName} == "gpu" ]]; then
@@ -191,10 +197,9 @@ process Basecall {
 		guppy_basecaller --input_path ${fast5_dir} \
 			--save_path "${fast5_dir.baseName}.basecalled" \
 			--config ${params.GUPPY_BASECALL_MODEL} \
-			--num_callers ${params.processors} \
+			--num_callers \$(( numProcessor )) \
 			--fast5_out --recursive \
 			--verbose_logs \
-			--gpu_runners_per_device ${params.processors} \
 			--device auto
 	else
 		echo "### error value for computeName=\${computeName}"
@@ -208,12 +213,12 @@ process Basecall {
 	## After basecall, we process guppy results for ONT coverage analyses
 	# align FASTQ files to reference genome, write sorted alignments to a BAM file
 	minimap2 -a -z 600,200 -x map-ont ${params.referenceGenome} ${fast5_dir.baseName}.basecalled/*.fastq \
-	    -t ${params.processors*2} > ${fast5_dir.baseName}.basecalled.sam
+	    -t \$(( numProcessor*2 )) > ${fast5_dir.baseName}.basecalled.sam
     echo "Alignment done"
 
     # Convert the sam file to bam (a binary sam format) using samtools’ view command
     samtools view -u ${fast5_dir.baseName}.basecalled.sam \
-        | samtools sort -@ ${params.processors*2} -o ${fast5_dir.baseName}.basecalled.bam --output-fmt BAM
+        | samtools sort -@ \$(( numProcessor*2 )) -o ${fast5_dir.baseName}.basecalled.bam --output-fmt BAM
     echo "samtools done"
 
     # Clean
@@ -244,10 +249,10 @@ process QCExport {
     # Merge the bam file
 	find . -maxdepth 1 -name "*.bam" | \
 	    parallel -j8 -N4095 -m --files samtools merge -u - | \
-	    parallel --xargs samtools merge -@ ${params.processors*2} \
+	    parallel --xargs samtools merge -@ \$(( numProcessor*2 )) \
 	    ${params.dsname}_merged.bam {}";" rm {}
 
-    samtools index ${params.dsname}_merged.bam  -@ ${params.processors*2}
+    samtools index ${params.dsname}_merged.bam  -@ \$(( numProcessor*2 ))
     echo "Samtools merging done!"
 
     # calculates the sequence coverage at each position/ Reporting genome coverage for all positions in BEDGRAPH format.
@@ -303,7 +308,7 @@ process Guppy {
 		guppy_basecaller --input_path ${fast5_dir} \
 			--save_path ${fast5_dir.baseName}.methcalled \
 			--config ${params.GUPPY_METHCALL_MODEL} \
-			--num_callers ${params.processors} \
+			--num_callers \$(( numProcessor )) \
 			--fast5_out \
 			--verbose_logs
 	elif [[ \${computeName} == "gpu" ]]; then
@@ -311,10 +316,9 @@ process Guppy {
 		guppy_basecaller --input_path ${fast5_dir} \
 			--save_path ${fast5_dir.baseName}.methcalled \
 			--config ${params.GUPPY_METHCALL_MODEL} \
-			--num_callers ${params.processors} \
+			--num_callers \$(( numProcessor )) \
 			--fast5_out \
 			--verbose_logs \
-			--gpu_runners_per_device ${params.processors} \
 			--device auto
 	else
 		echo "### error value for computeName=\${computeName}"
@@ -324,18 +328,18 @@ process Guppy {
 
 	## Extract guppy methylation-callings
 	## gcf52ref ways
-	minimap2 -t ${params.processors*2} -a -x map-ont ${params.referenceGenome} \
+	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${params.referenceGenome} \
 		${fast5_dir.baseName}.methcalled/*.fastq | \
-		samtools sort -@ ${params.processors * 2} \
+		samtools sort -@ \$(( numProcessor*2 )) \
 		-T tmp -o gcf52ref.batch.${fast5_dir.baseName}.bam
 
-	samtools index -@ ${params.processors * 2} \
+	samtools index -@ \$(( numProcessor*2 )) \
 		gcf52ref.batch.${fast5_dir.baseName}.bam
 	echo "### gcf52ref minimap2 alignment is done!"
 
 	## Modified version, support dir input, not all fast5 files (too long arguments)
 	python utils/extract_methylation_fast5_support_dir.py \
-		-p ${params.processors * 2} ${fast5_dir.baseName}.methcalled/workspace
+		-p \$(( numProcessor*2 )) ${fast5_dir.baseName}.methcalled/workspace
 	echo "### gcf52ref extract to db DONE"
 
 	python gcf52ref/scripts/extract_methylation_from_rocks.py \
@@ -355,10 +359,10 @@ process Guppy {
 
 	fast5mod guppy2sam \${FAST5PATH} --reference ${params.referenceGenome} \
 		--workers 74 --recursive --quiet \
-		| samtools sort -@ ${params.processors * 2} | \
-		samtools view -b -@ ${params.processors * 2} > \${OUTBAM}
+		| samtools sort -@ \$(( numProcessor*2 )) | \
+		samtools view -b -@ \$(( numProcessor*2 )) > \${OUTBAM}
 
-	samtools index -@ ${params.processors * 2}  \${OUTBAM}
+	samtools index -@ \$(( numProcessor*2 ))  \${OUTBAM}
 
 	tar -czf outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz \
 		batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
@@ -401,7 +405,7 @@ process Megalodon {
 			--outputs per_read_mods mods per_read_refs \
 			--guppy-server-path guppy_basecall_server \
 			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-			--guppy-params "-d ./megalodon_model/ --num_callers ${params.processors} --ipc_threads 80" \
+			--guppy-params "-d ./megalodon_model/ --num_callers \$(( numProcessor )) --ipc_threads 80" \
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--samtools-executable ${params.SAMTOOLS_PATH} \
 			--sort-mappings \
@@ -411,7 +415,7 @@ process Megalodon {
 			--mod-output-formats bedmethyl wiggle \
 			--write-mods-text \
 			--write-mod-log-probs \
-			--processes ${params.processors * 2}
+			--processes \$(( numProcessor*2 ))
 	elif [[ \${computeName} == "gpu" ]]; then
 		## GPU version command
 		## Ref: https://github.com/nanoporetech/megalodon
@@ -421,7 +425,7 @@ process Megalodon {
 			--outputs per_read_mods mods per_read_refs \
 			--guppy-server-path guppy_basecall_server \
 			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-			--guppy-params "-d ./megalodon_model/ --num_callers ${params.processors} --ipc_threads 80" \
+			--guppy-params "-d ./megalodon_model/ --num_callers \$(( numProcessor )) --ipc_threads 80" \
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--samtools-executable ${params.SAMTOOLS_PATH} \
 			--sort-mappings \
@@ -431,7 +435,7 @@ process Megalodon {
 			--mod-output-formats bedmethyl wiggle \
 			--write-mods-text \
 			--write-mod-log-probs \
-			--processes ${params.processors * 2} \
+			--processes \$(( numProcessor*2 )) \
 			--devices 0
 	else
 		echo "### error value for computeName=\${computeName}"
@@ -447,7 +451,6 @@ process Megalodon {
 
 
 // Resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
-// TODO: reduce processors to run resquiggle
 process Resquiggle {
 	tag "${basecallIndir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle" , mode: "copy", pattern: "${basecallIndir.baseName}.resquiggle.run.log"
@@ -478,7 +481,7 @@ process Resquiggle {
 	### ref: https://github.com/nanoporetech/tombo/issues/139
 	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
 	tombo resquiggle --dna \
-		--processes ${params.processors * 2} \
+		--processes \$(( numProcessor*2 )) \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} \
 		--overwrite \
@@ -521,7 +524,7 @@ process DeepSignal {
 			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 			--reference_path ${params.referenceGenome} \
 			--corrected_group ${params.resquiggleCorrectedGroup} \
-			--nproc ${params.processors  * params.deepLearningProcessorTimes} \
+			--nproc \$(( numProcessor * ${params.deepLearningProcessorTimes}  )) \
 			--is_gpu no
 	elif [[ \${computeName} == "gpu" ]]; then
 		## GPU version command
@@ -531,7 +534,7 @@ process DeepSignal {
 			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 			--reference_path ${params.referenceGenome} \
 			--corrected_group ${params.resquiggleCorrectedGroup} \
-			--nproc ${params.processors  * params.deepLearningProcessorTimes} \
+			--nproc \$(( numProcessor * ${params.deepLearningProcessorTimes}  )) \
 			--is_gpu yes
 	else
 		echo "### error value for computeName=\${computeName}"
@@ -571,16 +574,37 @@ process Tombo {
 		--statistics-file-basename batch_${resquiggleDir.baseName} \
 		--per-read-statistics-basename batch_${resquiggleDir.baseName} \
 		--alternate-bases CpG \
-		--processes 1 \
+		--processes \$(( numProcessor )) \
 		--corrected-group ${params.resquiggleCorrectedGroup} \
 		--multiprocess-region-size 1000 &> \
 		${resquiggleDir.baseName}.tombo.run.log
 
+	retry=1
+	while grep -q "BrokenPipeError:" ${resquiggleDir.baseName}.tombo.run.log
+	do
+		echo "### Found error 32, repeat tombo running again!!!"
+		tombo detect_modifications alternative_model \
+			--fast5-basedirs ${resquiggleDir}/workspace \
+			--dna --standard-log-likelihood-ratio \
+			--statistics-file-basename batch_${resquiggleDir.baseName} \
+			--per-read-statistics-basename batch_${resquiggleDir.baseName} \
+			--alternate-bases CpG \
+			--processes \$(( numProcessor )) \
+			--corrected-group ${params.resquiggleCorrectedGroup} \
+			--multiprocess-region-size 1000 &> \
+			${resquiggleDir.baseName}.tombo.run.log
+		retry=\$(( retry+1 ))
+		if (( retry >= 8 )); then
+			break
+		fi
+	done
+
 	if grep -q "BrokenPipeError: \\[Errno 32\\] Broken pipe" ${resquiggleDir.baseName}.tombo.run.log; then
 		## Grep the broken pipeline bug for Tombo
-		echo "### Tombo bug occur, may need retry to solve it"
+		echo "### Tombo bug occur, max retry reached at \${retry} times, return error"
 		exit 32
-	else  ## Tombo was ok
+	else
+		## Tombo was ok
 		echo "### Tombo log passed"
 	fi
 
@@ -626,9 +650,9 @@ process DeepMod {
 			--wrkBase ${basecallDir}/workspace \
 			--Ref ${params.referenceGenome} \
 			--Base C \
-			--modfile \${DeepModProjectDir}/train_deepmod/${params.deepModModel} \
+			--modfile \${DeepModProjectDir}/train_deepmod/${params.DEEPMOD_RNN_MODEL} \
 			--FileID batch_${basecallDir.baseName}_num \
-			--threads ${params.processors * params.deepLearningProcessorTimes} ${params.DeepModMoveOptions}
+			--threads \$(( numProcessor*${params.deepLearningProcessorTimes} ))  ${params.DeepModMoveOptions}
 
 	tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
 	echo "### DeepMod methylation DONE"
@@ -670,15 +694,15 @@ process Nanopolish {
 	# Index the raw read with fastq
 	nanopolish index -d ${basecallDir}/workspace \${fastqNoDupFile}
 
-	minimap2 -t ${params.processors} -a -x map-ont ${params.referenceGenome} \${fastqNoDupFile} | \
-		samtools sort -@ ${params.processors} -T tmp -o \${bamFileName}
+	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${params.referenceGenome} \${fastqNoDupFile} | \
+		samtools sort -@ \$(( numProcessor*2 )) -T tmp -o \${bamFileName}
 	echo "### minimap2 finished"
 
-	samtools index -@ ${params.processors}  \${bamFileName}
+	samtools index -@ \$(( numProcessor*2 ))  \${bamFileName}
 	echo "### samtools finished"
 	echo "### Alignment step DONE"
 
-	nanopolish call-methylation -t ${params.processors} -r \${fastqNoDupFile} \
+	nanopolish call-methylation -t \$(( numProcessor*2 )) -r \${fastqNoDupFile} \
 		-b \${bamFileName} -g ${params.referenceGenome} > tmp.tsv
 
 	tail -n +2 tmp.tsv | gzip > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
@@ -765,11 +789,11 @@ process GuppyComb {
 	## find name like batch_\${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
 	find . -name 'batch_*.guppy.fast5mod_guppy2sam.bam' -maxdepth 1 |
 	  parallel -j8 -N4095 -m --files samtools merge -u - |
-	  parallel --xargs samtools merge -@${params.processors * 2} total.meth.bam {}
+	  parallel --xargs samtools merge -@\$(( numProcessor*2 )) total.meth.bam {}
 
 	### sort is not used
-	### samtools sort -@ ${params.processors * 2} total.meth.bam
-	samtools index -@ ${params.processors * 2} total.meth.bam
+	### samtools sort -@ \$(( numProcessor*2 )) total.meth.bam
+	samtools index -@ \$(( numProcessor*2 )) total.meth.bam
 	echo "samtool index is done"
 
 	tar -czf ${params.dsname}.guppy_fast5mod.combined.bam.tar.gz total.meth.bam*
@@ -900,7 +924,7 @@ process DpmodComb {
 		python utils/hm_cluster_predict.py \
 			indir/${params.dsname}.deepmod \
 			./C \
-			\${DeepModProjectDir}/train_deepmod/${params.clusterDeepModModel} || true
+			\${DeepModProjectDir}/train_deepmod/${params.DEEPMOD_CLUSTER_MODEL} || true
 
 		> ${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed
 		for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
@@ -946,7 +970,7 @@ process METEORE {
 	file "Read_Level-${params.dsname}/${params.dsname}_*-METEORE-perRead-score.tsv.gz" into unify_read_level_out_ch
 
 	when:
-	fileList.size() >= 1
+	fileList.size() >= 1 && !params.filterGPUTaskRuns
 
 	"""
 	# Show all files
@@ -965,7 +989,7 @@ process METEORE {
 	fi
 
 	## Read level unify
-	PYTHONPATH=src python src/nanocompare/tss_eval.py \
+	src/nanocompare/tss_eval.py \
 		--calls \
 			Nanopolish:\${nanopolishFile} \
 			Megalodon:\${megalodonFile} \
@@ -974,7 +998,7 @@ process METEORE {
 			Tombo:\${tomboFile} \
 		--runid Read_Level-${params.dsname} \
 		--dsname ${params.dsname} --output-unified-format \
-		--processors 8	-o . \${tss_more_options}
+		--processors \$(( numProcessor*2 ))	-o . \${tss_more_options}
 
 	## METEORE outputs by combining other tools
 	nanopolishFileName=\$(find Read_Level-${params.dsname} -name "${params.dsname}_Nanopolish-METEORE-perRead-score.tsv.gz")
@@ -1031,7 +1055,7 @@ process SiteLevelUnify {
 	file "Site_Level-${params.dsname}/*.tss.*.cov1.bed.gz" into site_unify_out_ch
 
 	when:
-	fileList.size() >= 1
+	fileList.size() >= 1 && !params.filterGPUTaskRuns
 
 	"""
 	# Show all files
@@ -1044,10 +1068,10 @@ process SiteLevelUnify {
 	guppyFile=\$(find . -maxdepth 1 -name '*.guppy.*per_site.combine.*.gz')
 	tomboFile=\$(find . -maxdepth 1 -name '*.tombo.per_read.combine.*.gz')
 	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_clusterCpG_per_site.combine.*.gz')
-	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_model_per_read.combine.*.gz')
+	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.*.gz')
 
 	## Site level unify
-	PYTHONPATH=src python src/nanocompare/tss_eval.py \
+	tss_eval.py \
 		--calls \
 			Nanopolish:\${nanopolishFile} \
 			Megalodon:\${megalodonFile} \
@@ -1058,7 +1082,7 @@ process SiteLevelUnify {
 			DeepMod.Cluster:\${deepmodFile} \
 		--runid Site_Level-${params.dsname} \
 		--dsname ${params.dsname} \
-		--processors 8 -o .
+		--processors \$(( numProcessor*2 )) -o .
 	"""
 }
 
@@ -1087,11 +1111,11 @@ process ReadLevelPerf {
 	deepsignalFile=\$(find . -maxdepth 1 -name '*.deepsignal.per_read.combine.*.gz')
 	guppyFile=\$(find . -maxdepth 1 -name '*.guppy.fast5mod_per_site.combine.*.gz')
 	tomboFile=\$(find . -maxdepth 1 -name '*.tombo.per_read.combine.*.gz')
-	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_model_per_read.combine.*.gz')
+	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.*.gz')
 	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_per_site.combine.*.gz')
 
 	## Read level evaluations
-	PYTHONPATH=src python src/nanocompare/read_level_eval.py \
+	read_level_eval.py \
 		--calls \
 				Nanopolish:\${nanopolishFile} \
 				Megalodon:\${megalodonFile} \
@@ -1104,7 +1128,7 @@ process ReadLevelPerf {
 		--runid MethPerf-${params.runid} \
 		--dsname ${params.dsname} \
 		--min-bgtruth-cov ${params.bgtruth_cov} \
-		--processors ${params.processors * 2} \
+		--processors \$(( numProcessor*2 )) \
 		--report-joined -o . ## --distribution
 
 	echo "### Read level analysis DONE"
@@ -1137,11 +1161,11 @@ process SiteLevelCorr {
 	deepsignalFile=\$(find . -maxdepth 1 -name '*.deepsignal.per_read.combine.*.gz')
 	guppyFile=\$(find . -maxdepth 1 -name '*.guppy.fast5mod_per_site.combine.*.gz')
 	tomboFile=\$(find . -maxdepth 1 -name '*.tombo.per_read.combine.*.gz')
-	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_model_per_read.combine.*.gz')
+	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.*.gz')
 	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_clusterCpG_per_site.combine.*.gz')
 
 	## Site level evaluations
-	PYTHONPATH=src  python src/nanocompare/site_level_eval.py \
+	site_level_eval.py \
 		--calls \
 				Nanopolish:\${nanopolishFile} \
 				Megalodon:\${megalodonFile} \
@@ -1156,7 +1180,7 @@ process SiteLevelCorr {
 		--min-bgtruth-cov ${params.bgtruth_cov} \
 		--toolcov-cutoff ${params.tool_cov} \
 		--beddir ${perfDir} \
-		--processors ${params.processors * 2} \
+		--processors \$(( numProcessor*2 )) \
 		-o . --gen-venn ## --summary-coverage
 
 	echo "### Site level analysis DONE"

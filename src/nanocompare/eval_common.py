@@ -1439,7 +1439,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
         ret = check_cache_available(infn=infn, encode=encode, baseFormat=baseFormat, include_score=include_score,
                                     siteLevel=siteLevel)
         if ret is not None:
-            logger.debug(f'Import {encode} finished from cache, CpGs={len(ret)}.\n')
+            logger.debug(f'Import {encode} finished from cache, CpGs={len(ret):,}\n')
             return ret
         logger.debug(f'Not cached yet, we load from raw file')
     call0 = None
