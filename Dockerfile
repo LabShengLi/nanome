@@ -45,5 +45,6 @@ RUN chmod +x /opt/bin/src/nanocompare/*
 ENV PATH="$PATH:/opt/bin/utils"
 ENV PATH="$PATH:/opt/bin/src"
 ENV PATH="$PATH:/opt/bin/src/nanocompare"
+ENV PYTHONPATH="/opt/bin/src"
 
 CMD ["bash"]

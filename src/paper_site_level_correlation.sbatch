@@ -75,12 +75,12 @@ echo "DeepModCalls=$DeepModCalls"
 echo "####################"
 
 # Site level evaluation script
-pythonFile=nanocompare/site_level_eval.py
+pythonFile=site_level_eval.py
 
 set -x
 if [ "${command}" == "six" ]; then
     ## six tool
-    python ${pythonFile} \
+    ${pythonFile} \
         --calls \
         Nanopolish:${NanopolishCalls} \
         ${MegalodonEncode}:${MegalodonCalls} \
@@ -97,7 +97,7 @@ if [ "${command}" == "six" ]; then
 elif [ "${command}" == "seven" ]; then
     ## --gen-venn: generate venn analysis set's data
     ## --summary-coverage: coverage at each region, take times
-    python ${pythonFile} \
+    ${pythonFile} \
         --calls \
         Nanopolish:${NanopolishCalls} \
         ${MegalodonEncode}:${MegalodonCalls} \
