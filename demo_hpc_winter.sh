@@ -34,7 +34,7 @@ fi
 
 ########################################
 # Clean old results
-rm -rf ${workDir} ${outputsDir}
+#rm -rf ${workDir} ${outputsDir}
 mkdir -p ${workDir}; chmod ugo+w ${workDir}
 mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
@@ -51,7 +51,8 @@ set -x
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
+    --eval true
 
 # Report
 tree ${workDir} > ${baseDir}/work.tree.txt
