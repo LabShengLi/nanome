@@ -34,7 +34,7 @@ fi
 
 ########################################
 # Clean old results
-#rm -rf ${workDir} ${outputsDir}
+rm -rf ${workDir} ${outputsDir}
 mkdir -p ${workDir}; chmod ugo+w ${workDir}
 mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
@@ -53,6 +53,10 @@ set -x
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 
+# Report
+tree ${workDir} > ${baseDir}/work.tree.txt
+tree ${outputsDir} > ${baseDir}/outputs.tree.txt
+echo "### nanome pipeline demo DONE"
 exit 0
 
 

@@ -200,7 +200,6 @@ process Basecall {
 			--num_callers \$(( numProcessor )) \
 			--fast5_out --recursive \
 			--verbose_logs \
-			--gpu_runners_per_device \$(( numProcessor )) \
 			--device auto
 	else
 		echo "### error value for computeName=\${computeName}"
@@ -320,7 +319,6 @@ process Guppy {
 			--num_callers \$(( numProcessor )) \
 			--fast5_out \
 			--verbose_logs \
-			--gpu_runners_per_device \$(( numProcessor )) \
 			--device auto
 	else
 		echo "### error value for computeName=\${computeName}"
@@ -991,7 +989,7 @@ process METEORE {
 	fi
 
 	## Read level unify
-	PYTHONPATH=src python src/nanocompare/tss_eval.py \
+	tss_eval.py \
 		--calls \
 			Nanopolish:\${nanopolishFile} \
 			Megalodon:\${megalodonFile} \
@@ -1070,10 +1068,10 @@ process SiteLevelUnify {
 	guppyFile=\$(find . -maxdepth 1 -name '*.guppy.*per_site.combine.*.gz')
 	tomboFile=\$(find . -maxdepth 1 -name '*.tombo.per_read.combine.*.gz')
 	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_clusterCpG_per_site.combine.*.gz')
-	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_model_per_read.combine.*.gz')
+	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.*.gz')
 
 	## Site level unify
-	PYTHONPATH=src python src/nanocompare/tss_eval.py \
+	tss_eval.py \
 		--calls \
 			Nanopolish:\${nanopolishFile} \
 			Megalodon:\${megalodonFile} \
@@ -1113,11 +1111,11 @@ process ReadLevelPerf {
 	deepsignalFile=\$(find . -maxdepth 1 -name '*.deepsignal.per_read.combine.*.gz')
 	guppyFile=\$(find . -maxdepth 1 -name '*.guppy.fast5mod_per_site.combine.*.gz')
 	tomboFile=\$(find . -maxdepth 1 -name '*.tombo.per_read.combine.*.gz')
-	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_model_per_read.combine.*.gz')
+	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.*.gz')
 	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_per_site.combine.*.gz')
 
 	## Read level evaluations
-	PYTHONPATH=src python src/nanocompare/read_level_eval.py \
+	read_level_eval.py \
 		--calls \
 				Nanopolish:\${nanopolishFile} \
 				Megalodon:\${megalodonFile} \
@@ -1163,11 +1161,11 @@ process SiteLevelCorr {
 	deepsignalFile=\$(find . -maxdepth 1 -name '*.deepsignal.per_read.combine.*.gz')
 	guppyFile=\$(find . -maxdepth 1 -name '*.guppy.fast5mod_per_site.combine.*.gz')
 	tomboFile=\$(find . -maxdepth 1 -name '*.tombo.per_read.combine.*.gz')
-	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_model_per_read.combine.*.gz')
+	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.*.gz')
 	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_clusterCpG_per_site.combine.*.gz')
 
 	## Site level evaluations
-	PYTHONPATH=src  python src/nanocompare/site_level_eval.py \
+	site_level_eval.py \
 		--calls \
 				Nanopolish:\${nanopolishFile} \
 				Megalodon:\${megalodonFile} \
