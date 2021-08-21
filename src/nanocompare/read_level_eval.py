@@ -575,7 +575,7 @@ if __name__ == '__main__':
                             [os.path.join(args.genome_annotation, cofn) for cofn in cg_density_coord_name_list] + \
                             [os.path.join(args.genome_annotation, cofn) for cofn in rep_coord_name_list] + \
                             [fn_concordant, fn_discordant]
-    logger.debug(f"Evaluated regions: {regions_full_filepath}")
+    # logger.debug(f"Evaluated regions: {regions_full_filepath}")
 
     # Create the bed list for evaluation, save time for every loading of bed region
     # None, singelton, non-singletons, ...
