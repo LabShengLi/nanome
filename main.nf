@@ -989,7 +989,7 @@ process METEORE {
 	fi
 
 	## Read level unify
-	tss_eval.py \
+	src/nanocompare/tss_eval.py \
 		--calls \
 			Nanopolish:\${nanopolishFile} \
 			Megalodon:\${megalodonFile} \

@@ -231,7 +231,7 @@ nextflow run main.nf \
     -config conf/benchmarking.config
 ```
 
-Resource usage are reported by [Nextflow](https://www.nextflow.io/) workflow reporting utilities. Please refer to the [Trace file](https://github.com/liuyangzzu/nanome/blob/master/docs/nanome.pipeline_trace.tsv), [Report](https://github.com/liuyangzzu/nanome/blob/master/docs/reports2.pdf) and [Timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/timeline.pdf) of benchmarking results on our HPC.
+Resource usage are reported by [Nextflow](https://www.nextflow.io/) workflow reporting utilities. Please refer to the [Trace file](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/trace_benchmark.txt.tsv), [Report](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/report_benchmark.pdf) and [Timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/timeline_benchmark.pdf) of benchmarking results on our HPC.
 
 # 4. Running pipeline on cloud computing platform
 
