@@ -54,5 +54,4 @@ set -x
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     -config conf/benchmarking.config \
-    --processors 8 \
     --filterGPUTaskRuns true

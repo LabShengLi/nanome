@@ -54,12 +54,10 @@ process EnvCheck {
 	errorStrategy 'terminate'
 
 	input:
-	file reference_genome_tar 	from 	Channel.fromPath(params.reference_genome_tar)
-	each file("*") 				from 	ch_utils7
+	file reference_genome_tar 	from 	Channel.fromPath(params.reference_genome_tar, type: 'any')
 
 	output:
 	file "reference_genome" into reference_genome_ch
-	file "gcf52ref" into gcf52ref_code_ch
 
 	"""
 	set -x
@@ -84,14 +82,14 @@ process EnvCheck {
 	which fast5mod
 	fast5mod --version
 
-	## Untar to dir reference_genome
-	tar -xzf ${reference_genome_tar}
-
-	## gcf52ref file preparation
-	### git clone https://github.com/kpalin/gcf52ref.git
-	tar xzf utils/gcf52ref.tar.gz -C .
-	patch gcf52ref/scripts/extract_methylation_from_rocks.py < utils/gcf52ref.patch
-
+	## Get dir for reference_genome
+	if [[ "${reference_genome_tar}" == *.tar.gz ]] ; then
+		tar -xzf ${reference_genome_tar}
+	else
+		if [[ "${reference_genome_tar}" != "reference_genome" ]] ; then
+			mv ${reference_genome_tar} reference_genome
+		fi
+	fi
 	echo "### Check env DONE"
 	"""
 }
@@ -299,7 +297,6 @@ process Guppy {
 	file fast5_dir 					from 	untar_out_ch2
 	each file(reference_genome) 	from 	reference_genome_ch1
 	each file("*") 					from 	ch_utils4
-	each file("*") 					from 	gcf52ref_code_ch
 	val  fast5_tar_size 			from 	tar_filesize_ch2
 
 	output:
@@ -351,6 +348,11 @@ process Guppy {
 	python utils/extract_methylation_fast5_support_dir.py \
 		-p \$(( numProcessor*2 )) ${fast5_dir.baseName}.methcalled/workspace
 	echo "### gcf52ref extract to db DONE"
+
+	## gcf52ref file preparation
+	### git clone https://github.com/kpalin/gcf52ref.git
+	tar -xzf utils/gcf52ref.tar.gz -C .
+	patch gcf52ref/scripts/extract_methylation_from_rocks.py < utils/gcf52ref.patch
 
 	python gcf52ref/scripts/extract_methylation_from_rocks.py \
 		-d base_mods.rocksdb \
@@ -1001,7 +1003,7 @@ process METEORE {
 	fi
 
 	## Read level unify
-	src/nanocompare/tss_eval.py \
+	PYTHONPATH=src python src/nanocompare/tss_eval.py \
 		--calls \
 			Nanopolish:\${nanopolishFile} \
 			Megalodon:\${megalodonFile} \
@@ -1092,7 +1094,7 @@ process SiteLevelUnify {
 	fi
 
 	## Site level unify
-	src/nanocompare/tss_eval.py \
+	PYTHONPATH=src python src/nanocompare/tss_eval.py \
 		--calls \
 			Nanopolish:\${nanopolishFile} \
 			Megalodon:\${megalodonFile} \
@@ -1138,7 +1140,7 @@ process ReadLevelPerf {
 	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_per_site.combine.*.gz')
 
 	## Read level evaluations
-	src/nanocompare/read_level_eval.py \
+	PYTHONPATH=src python src/nanocompare/read_level_eval.py \
 		--calls \
 				Nanopolish:\${nanopolishFile} \
 				Megalodon:\${megalodonFile} \
@@ -1189,7 +1191,7 @@ process SiteLevelCorr {
 	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_clusterCpG_per_site.combine.*.gz')
 
 	## Site level evaluations
-	src/nanocompare/site_level_eval.py \
+	PYTHONPATH=src python src/nanocompare/site_level_eval.py \
 		--calls \
 				Nanopolish:\${nanopolishFile} \
 				Megalodon:\${megalodonFile} \
