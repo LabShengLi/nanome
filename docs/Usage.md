@@ -4,7 +4,7 @@ The inputs of 'nanome' pipeline is a folder/tar/tar.gz or txt file list containi
 
 # 1. Running 'nanome' for human nanopore sequencing data
 
-The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome.git`. `--input` is a compressed file contains Fast5 input file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `-profile` is the name of execution platform configuration, an example of our HPC configuration is the server named as [winter_singularity](https://github.com/liuyangzzu/nanome/blob/master/nextflow.config#L197). 
+The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome.git`. `--input` is input Fast5 file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `-profile` is the name of execution platform configuration, an example of our HPC configuration is the server named as [winter_singularity](https://github.com/liuyangzzu/nanome/blob/master/nextflow.config#L197). 
 
 By default, we are using hg38 human reference genome, and you can specify reference genome using parameter `--referenceGenome="reference_genome/hg38/hg38.fasta"`. An example of how to use 'nanome' pipeline is given below.
 
@@ -12,7 +12,7 @@ By default, we are using hg38 human reference genome, and you can specify refere
 # Get nextflow executable file
 curl -fsSL get.nextflow.io | bash
 
-# Run nanome pipeline on project directory
+# Run nanome pipeline from project directory
 ./nextflow run main.nf \
     -profile winter_singularity \
     --dsname TestData \
@@ -32,7 +32,8 @@ nextflow run main.nf \
     -profile google_cloud \
     -w gs://jax-nanopore-01-project-data/TestData-work \
     --outputDir gs://jax-nanopore-01-export-bucket/TestData-ouputs \
-    --input inputs/test.demo.filelist.txt
+    --dsname TestData \
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 
 # Running on Lifebit CloudOS (https://lifebit.gitbook.io/cloudos)
 nextflow run https://github.com/liuyangzzu/nanome.git \
@@ -160,6 +161,7 @@ curl -fsSL get.nextflow.io | bash
     -profile winter_singularity \
     -config conf/ecoli_demo.config
 ```
+
 Pipeline results for E. coli data is below.
 
 ```angular2html
