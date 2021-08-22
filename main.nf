@@ -37,6 +37,15 @@ if (params.input.endsWith(".filelist.txt")) {
 	Channel.fromPath( params.input, checkIfExists: true ).set{fast5_tar_ch}
 }
 
+if (params.bgTruth) {
+	Channel
+    	.from(params.bgTruth.split(';') )
+		.map { file(it) }
+		.collect().into{in_bg_ch1; in_bg_ch2}
+} else {
+	in_bg_ch1 = Channel.empty()
+	in_bg_ch2 = Channel.empty()
+}
 
 // Check all tools work well
 process EnvCheck {
@@ -1094,6 +1103,7 @@ process ReadLevelPerf {
 	input:
 	file fileList from readlevel_in_ch
 	each file("*") from ch_src1
+	file bgFiles from in_bg_ch1
 
 	output:
 	file "MethPerf-*" into readlevel_out_ch
@@ -1124,7 +1134,7 @@ process ReadLevelPerf {
 				Tombo:\${tomboFile} \
 				METEORE:\${meteoreFile} \
 				DeepMod.C:\${deepmodFile} \
-		--bgtruth "${params.bgtruthWithEncode}" \
+		--bgtruth "${params.bgEncode}:${bgFiles.join(';')}" \
 		--runid MethPerf-${params.runid} \
 		--dsname ${params.dsname} \
 		--min-bgtruth-cov ${params.bgtruth_cov} \
@@ -1144,6 +1154,7 @@ process SiteLevelCorr {
 	file perfDir from readlevel_out_ch
 	file fileList from sitelevel_in_ch
 	each file("*") from ch_src2
+	file bgFiles from in_bg_ch2
 
 	output:
 	file "MethCorr-*" into sitelevel_out_ch
@@ -1174,7 +1185,7 @@ process SiteLevelCorr {
 				Guppy:\${guppyFile} \
 				METEORE:\${meteoreFile} \
 				DeepMod.Cluster:\${deepmodFile} \
-		--bgtruth "${params.bgtruthWithEncode}" \
+		--bgtruth "${params.bgEncode}:${bgFiles.join(';')}" \
 		--runid MethCorr-${params.runid} \
 		--dsname ${params.dsname} \
 		--min-bgtruth-cov ${params.bgtruth_cov} \
