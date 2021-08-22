@@ -47,18 +47,17 @@ if (params.bgTruth) {
 	in_bg_ch2 = Channel.empty()
 }
 
+
 // Check all tools work well
 process EnvCheck {
 	tag 'EnvCheck'
 	errorStrategy 'terminate'
 
 	input:
-	file reference_genome_tar from Channel.fromPath(params.reference_genome_tar)
-	each file("*") from ch_utils7
+	file reference_genome_tar 	from 	Channel.fromPath(params.reference_genome_tar, type: 'any')
 
 	output:
 	file "reference_genome" into reference_genome_ch
-	file "gcf52ref" into gcf52ref_code_ch
 
 	"""
 	set -x
@@ -83,14 +82,14 @@ process EnvCheck {
 	which fast5mod
 	fast5mod --version
 
-	## Untar to dir reference_genome
-	tar -xzf ${reference_genome_tar}
-
-	## gcf52ref file preparation
-	### git clone https://github.com/kpalin/gcf52ref.git
-	tar xzf utils/gcf52ref.tar.gz -C .
-	patch gcf52ref/scripts/extract_methylation_from_rocks.py < utils/gcf52ref.patch
-
+	## Get dir for reference_genome
+	if [[ "${reference_genome_tar}" == *.tar.gz ]] ; then
+		tar -xzf ${reference_genome_tar}
+	else
+		if [[ "${reference_genome_tar}" != "reference_genome" ]] ; then
+			mv ${reference_genome_tar} reference_genome
+		fi
+	fi
 	echo "### Check env DONE"
 	"""
 }
@@ -113,8 +112,8 @@ process Untar {
 	disk {((fast5_tar.size() * 2.0 as long) >> 30).GB   +  150.GB +   20.GB * task.attempt }
 
 	input:
-	file fast5_tar from fast5_tar_ch // using staging, large file suggest firstly using data transfer
-	each file("*") from ch_utils5
+	file fast5_tar from 	fast5_tar_ch
+	each file("*") from 	ch_utils5
 
 	output:
 	file "${fast5_tar.baseName}.untar" into untar_out_ch
@@ -176,10 +175,10 @@ process Basecall {
 	disk { (((fast5_tar_size as long)*2.2 as long)>>30).GB   + 100.GB +  20.GB * task.attempt }
 
 	input:
-	file fast5_dir from untar_out_ch1
-	each file("*") from ch_utils1
-	val fast5_tar_size from tar_filesize_ch1
-	each file(reference_genome) from reference_genome_ch9
+	file fast5_dir 				from 	untar_out_ch1
+	each file("*") 				from 	ch_utils1
+	val fast5_tar_size 			from 	tar_filesize_ch1
+	each file(reference_genome) from 	reference_genome_ch9
 
 	output:
 	file "${fast5_dir.baseName}.basecalled" into basecall_out_ch  // try to fix the christina proposed problems
@@ -240,11 +239,11 @@ process Basecall {
 
 // Collect and output QC results for basecall, and report ONT coverage
 process QCExport {
-	publishDir "${params.outputDir}/${params.dsname}-qc-report" , mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}-qc-report", mode: "copy"
 
 	input:
-	file flist from qc_ch.collect()
-	file bamlist from ont_cov_bam_ch.collect()
+	file flist 		from 	qc_ch.collect()
+	file bamlist 	from 	ont_cov_bam_ch.collect()
 
 	output:
 	file "${params.dsname}-qc-report.tar.gz" into qc_out_ch
@@ -295,11 +294,10 @@ process Guppy {
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy", mode: "copy", pattern: "batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz"
 
 	input:
-	file fast5_dir from untar_out_ch2
-	each file(reference_genome) from reference_genome_ch1
-	each file("*") from ch_utils4
-	each file("*") from gcf52ref_code_ch
-	val fast5_tar_size from tar_filesize_ch2
+	file fast5_dir 					from 	untar_out_ch2
+	each file(reference_genome) 	from 	reference_genome_ch1
+	each file("*") 					from 	ch_utils4
+	val  fast5_tar_size 			from 	tar_filesize_ch2
 
 	output:
 	file "outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz" into guppy_methcall_gz_out_ch
@@ -351,6 +349,11 @@ process Guppy {
 		-p \$(( numProcessor*2 )) ${fast5_dir.baseName}.methcalled/workspace
 	echo "### gcf52ref extract to db DONE"
 
+	## gcf52ref file preparation
+	### git clone https://github.com/kpalin/gcf52ref.git
+	tar -xzf utils/gcf52ref.tar.gz -C .
+	patch gcf52ref/scripts/extract_methylation_from_rocks.py < utils/gcf52ref.patch
+
 	python gcf52ref/scripts/extract_methylation_from_rocks.py \
 		-d base_mods.rocksdb \
 		-a gcf52ref.batch.${fast5_dir.baseName}.bam \
@@ -390,10 +393,10 @@ process Megalodon {
 	disk { (((fast5_tar_size as long)*2.2 as long) >> 30).GB    + 100.GB +   20.GB * task.attempt }
 
 	input:
-	file fast5_dir from untar_out_ch3
-	val fast5_tar_size from tar_filesize_ch3
-	each file(reference_genome) from reference_genome_ch2
-	each file (megalodonModelTar) from Channel.fromPath(params.megalodon_model_tar)
+	file fast5_dir 					from untar_out_ch3
+	val  fast5_tar_size 			from tar_filesize_ch3
+	each file(reference_genome) 	from reference_genome_ch2
+	each file (megalodonModelTar) 	from Channel.fromPath(params.megalodon_model_tar)
 
 	output:
 	file "batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt.gz" into megalodon_out_ch
@@ -462,15 +465,15 @@ process Megalodon {
 // Resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
 process Resquiggle {
 	tag "${basecallIndir.baseName}"
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle" , mode: "copy", pattern: "${basecallIndir.baseName}.resquiggle.run.log"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle", mode: "copy", pattern: "${basecallIndir.baseName}.resquiggle.run.log"
 
 	// Disk size is determined by input size, if failed, increase the size
 	disk { (((file_size as long)*2.2 as long) >> 30).GB    + 100.GB +   20.GB * task.attempt }
 
 	input:
-	file basecallIndir from resquiggle_in_ch
-	each file(reference_genome) from reference_genome_ch3
-	val file_size from basecall_filesize_ch
+	file 	basecallIndir 			from resquiggle_in_ch
+	each 	file(reference_genome) 	from reference_genome_ch3
+	val 	file_size 				from basecall_filesize_ch
 
 	output:
 	file "${basecallIndir.baseName}.resquiggle" into resquiggle_out_ch
@@ -509,12 +512,12 @@ resquiggle_out_ch.into { deepsignal_in_ch; tombo_in_ch }
 // DeepSignal runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepSignal {
 	tag "${indir.baseName}"
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepsignal" , mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepsignal", mode: "copy"
 
 	input:
-	file indir from deepsignal_in_ch
+	file indir 						from deepsignal_in_ch
 	each file(deepsignal_model_tar) from Channel.fromPath(params.deepsignal_model_tar)
-	each file(reference_genome) from reference_genome_ch4
+	each file(reference_genome) 	from reference_genome_ch4
 
 	output:
 	file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv.gz" into deepsignal_out_ch
@@ -559,12 +562,12 @@ process DeepSignal {
 // Tombo runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Tombo {
 	tag "${resquiggleDir.baseName}"
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/tombo" , mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/tombo", mode: "copy"
 
 	input:
 	each file(reference_genome) from reference_genome_ch5
-	each file("*") from ch_utils2
-	file resquiggleDir from tombo_in_ch
+	each file("*") 				from ch_utils2
+	file resquiggleDir	 		from tombo_in_ch
 
 	output:
 	file "batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed.gz" into tombo_out_ch
@@ -631,11 +634,11 @@ process Tombo {
 // DeepMod runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepMod {
 	tag "${basecallDir.baseName}"
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod" , mode: "copy", pattern: "batch_${basecallDir.baseName}_num.tar.gz"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod", mode: "copy", pattern: "batch_${basecallDir.baseName}_num.tar.gz"
 
 	input:
 	each file(reference_genome) from reference_genome_ch6
-	file basecallDir from deepmod_in_ch
+	file basecallDir 			from deepmod_in_ch
 
 	output:
 	file "mod_output/batch_${basecallDir.baseName}_num" into deepmod_out_ch
@@ -672,12 +675,12 @@ process DeepMod {
 // Nanopolish runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Nanopolish {
 	tag "${basecallDir.baseName}"
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/nanopolish" , mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/nanopolish", mode: "copy"
 
 	input:
-	file basecallDir from nanopolish_in_ch
+	file basecallDir 			from nanopolish_in_ch
 	each file(reference_genome) from reference_genome_ch7
-	each file("*") from ch_utils3
+	each file("*") 				from ch_utils3
 
 	output:
 	file "batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz" into nanopolish_out_ch
@@ -731,7 +734,7 @@ guppy_combine_in_ch = guppy_methcall_out_ch.collect()
 
 // Combine DeepSignal runs' all results together
 process DpSigComb {
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}-methylation-callings", mode: "copy"
 
 	input:
 	file x from deepsignal_combine_in_ch
@@ -752,7 +755,7 @@ process DpSigComb {
 
 // Combine Tombo runs' all results together
 process TomboComb {
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}-methylation-callings", mode: "copy"
 
 	input:
 	file x from tombo_combine_in_ch // list of tombo bed files
@@ -773,13 +776,13 @@ process TomboComb {
 
 // Combine Guppy runs' all results together
 process GuppyComb {
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy", pattern: "${params.dsname}.guppy.*.combine.tsv.gz"
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy" , mode: "copy", pattern: "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz"
+	publishDir "${params.outputDir}/${params.dsname}-methylation-callings", mode: "copy", pattern: "${params.dsname}.guppy.*.combine.tsv.gz"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy", mode: "copy", pattern: "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz"
 
 	input:
-	file x from guppy_combine_in_ch
-	file y from guppy_gcf52ref_out_ch.collect()
-	file reference_genome from reference_genome_ch8
+	file x 					from guppy_combine_in_ch
+	file y 					from guppy_gcf52ref_out_ch.collect()
+	file reference_genome 	from reference_genome_ch8
 
 	output:
 	file "${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz" into guppy_fast5mod_combine_out_ch
@@ -838,7 +841,7 @@ process GuppyComb {
 
 // Combine Megalodon runs' all results together
 process MgldnComb {
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}-methylation-callings", mode: "copy"
 
 	input:
 	file x from megalodon_combine_in_ch
@@ -859,7 +862,7 @@ process MgldnComb {
 
 // Combine Nanopolish runs' all results together
 process NplshComb {
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy"
+	publishDir "${params.outputDir}/${params.dsname}-methylation-callings", mode: "copy"
 
 	input:
 	file x from nanopolish_combine_in_ch
@@ -880,15 +883,15 @@ process NplshComb {
 
 // Combine DeepMod runs' all results together
 process DpmodComb {
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy", pattern: "${params.dsname}.deepmod.*.combine.bed.gz"
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod" , mode: "copy", pattern: "${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz"
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod" , mode: "copy", pattern: "${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz"
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod" , mode: "copy", pattern: "${params.dsname}.deepmod.all_batch.C.bed.tar.gz"
+	publishDir "${params.outputDir}/${params.dsname}-methylation-callings", mode: "copy", pattern: "${params.dsname}.deepmod.*.combine.bed.gz"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod", mode: "copy", pattern: "${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod", mode: "copy", pattern: "${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz"
+	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod", mode: "copy", pattern: "${params.dsname}.deepmod.all_batch.C.bed.tar.gz"
 
 	input:
-	file x from deepmod_combine_in_ch
+	file x 					from deepmod_combine_in_ch
 	file deepmod_c_tar_file from Channel.fromPath(params.deepmod_ctar)
-	each file("*") from ch_utils6
+	each file("*") 			from ch_utils6
 
 	output:
 	file "${params.dsname}.deepmod.*.combine.bed.gz" into deepmod_combine_out_ch
@@ -958,21 +961,23 @@ process DpmodComb {
 }
 
 
-deepsignal_combine_out_ch.concat(tombo_combine_out_ch,megalodon_combine_out_ch, \
-	nanopolish_combine_out_ch,deepmod_combine_out_ch.flatten(), guppy_fast5mod_combine_out_ch, guppy_gcf52ref_combine_out_ch)
+deepsignal_combine_out_ch
+	.concat(tombo_combine_out_ch,megalodon_combine_out_ch, \
+			nanopolish_combine_out_ch,deepmod_combine_out_ch.flatten(), \
+			guppy_fast5mod_combine_out_ch, guppy_gcf52ref_combine_out_ch)
 	.toSortedList()
-	.into { readlevel_unify_in; ; sitelevel_unify_in }
+	.into { readlevel_unify_in; sitelevel_unify_in }
 
 
 // Read level unified output, and get METEORE output
 process METEORE {
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings" , mode: "copy", pattern: "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz"
-	publishDir "${params.outputDir}/nanome-analysis-${params.dsname}" , mode: "copy", pattern: "Read_Level-${params.dsname}/${params.dsname}_*-METEORE-perRead-score.tsv.gz"
+	publishDir "${params.outputDir}/${params.dsname}-methylation-callings", mode: "copy", pattern: "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz"
+	publishDir "${params.outputDir}/nanome-analysis-${params.dsname}", mode: "copy", pattern: "Read_Level-${params.dsname}/${params.dsname}_*-METEORE-perRead-score.tsv.gz"
 
 	input:
-	file fileList from readlevel_unify_in
-	each file("*") from ch_src3
-	each file("*") from ch_utils8
+	file fileList 	from 	readlevel_unify_in
+	each file("*") 	from 	ch_src3
+	each file("*") 	from 	ch_utils8
 
 	output:
 	file "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz" into meteore_combine_out_ch
@@ -998,7 +1003,7 @@ process METEORE {
 	fi
 
 	## Read level unify
-	src/nanocompare/tss_eval.py \
+	PYTHONPATH=src python src/nanocompare/tss_eval.py \
 		--calls \
 			Nanopolish:\${nanopolishFile} \
 			Megalodon:\${megalodonFile} \
@@ -1007,7 +1012,8 @@ process METEORE {
 			Tombo:\${tomboFile} \
 		--runid Read_Level-${params.dsname} \
 		--dsname ${params.dsname} --output-unified-format \
-		--processors \$(( numProcessor*2 ))	-o . \${tss_more_options}
+		--processors \$(( numProcessor*2 ))	\
+		-o . \${tss_more_options}
 
 	## METEORE outputs by combining other tools
 	nanopolishFileName=\$(find Read_Level-${params.dsname} -name "${params.dsname}_Nanopolish-METEORE-perRead-score.tsv.gz")
@@ -1050,15 +1056,15 @@ process METEORE {
 
 meteore_combine_out_ch.concat(sitelevel_unify_in.flatten())
 	.toSortedList()
-	.into { sitelevel_unify_in1; readlevel_in_ch; sitelevel_in_ch}
+	.into { sitelevel_unify_in1; readlevelperf_in_ch; sitelevelcorr_in_ch}
 
 
 process SiteLevelUnify {
-	publishDir "${params.outputDir}/nanome-analysis-${params.dsname}" , mode: "copy", pattern: "Site_Level-${params.dsname}/*.tss.*.cov1.bed.gz"
+	publishDir "${params.outputDir}/nanome-analysis-${params.dsname}", mode: "copy", pattern: "Site_Level-${params.dsname}/*.tss.*.cov1.bed.gz"
 
 	input:
-	file fileList from sitelevel_unify_in1
-	each file("*") from ch_src4
+	file fileList 	from 	sitelevel_unify_in1
+	each file("*") 	from 	ch_src4
 
 	output:
 	file "Site_Level-${params.dsname}/*.tss.*.cov1.bed.gz" into site_unify_out_ch
@@ -1078,9 +1084,17 @@ process SiteLevelUnify {
 	tomboFile=\$(find . -maxdepth 1 -name '*.tombo.per_read.combine.*.gz')
 	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_clusterCpG_per_site.combine.*.gz')
 	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.*.gz')
+	deepmodEncode="DeepMod.Cluster"
+
+	tss_more_options=""
+	if [[ "${params.dataType}" == "ecoli" ]] ; then
+		tss_more_options="--chrs ${params.chrSet}"
+		deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_per_site.combine.*.gz')
+		deepmodEncode="DeepMod.C"
+	fi
 
 	## Site level unify
-	src/nanocompare/tss_eval.py \
+	PYTHONPATH=src python src/nanocompare/tss_eval.py \
 		--calls \
 			Nanopolish:\${nanopolishFile} \
 			Megalodon:\${megalodonFile} \
@@ -1088,22 +1102,23 @@ process SiteLevelUnify {
 			Guppy:\${guppyFile} \
 			Tombo:\${tomboFile} \
 			METEORE:\${meteoreFile} \
-			DeepMod.Cluster:\${deepmodFile} \
+			\${deepmodEncode}:\${deepmodFile} \
 		--runid Site_Level-${params.dsname} \
 		--dsname ${params.dsname} \
-		--processors \$(( numProcessor*2 )) -o .
+		--processors \$(( numProcessor*2 )) \
+		-o .  \${tss_more_options}
 	"""
 }
 
 
 // Read level evaluations
 process ReadLevelPerf {
-	publishDir "${params.outputDir}/nanome-analysis-${params.dsname}" , mode: "copy"
+	publishDir "${params.outputDir}/nanome-analysis-${params.dsname}", mode: "copy"
 
 	input:
-	file fileList from readlevel_in_ch
-	each file("*") from ch_src1
-	file bgFiles from in_bg_ch1
+	file fileList 	from 	readlevelperf_in_ch
+	each file("*") 	from 	ch_src1
+	file bgFiles 	from 	in_bg_ch1
 
 	output:
 	file "MethPerf-*" into readlevel_out_ch
@@ -1125,7 +1140,7 @@ process ReadLevelPerf {
 	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_per_site.combine.*.gz')
 
 	## Read level evaluations
-	src/nanocompare/read_level_eval.py \
+	PYTHONPATH=src python src/nanocompare/read_level_eval.py \
 		--calls \
 				Nanopolish:\${nanopolishFile} \
 				Megalodon:\${megalodonFile} \
@@ -1148,13 +1163,13 @@ process ReadLevelPerf {
 
 // Site level correlation analysis
 process SiteLevelCorr {
-	publishDir "${params.outputDir}/nanome-analysis-${params.dsname}" , mode: "copy"
+	publishDir "${params.outputDir}/nanome-analysis-${params.dsname}", mode: "copy"
 
 	input:
-	file perfDir from readlevel_out_ch
-	file fileList from sitelevel_in_ch
-	each file("*") from ch_src2
-	file bgFiles from in_bg_ch2
+	file perfDir 	from 	readlevel_out_ch
+	file fileList 	from 	sitelevelcorr_in_ch
+	each file("*") 	from 	ch_src2
+	file bgFiles 	from 	in_bg_ch2
 
 	output:
 	file "MethCorr-*" into sitelevel_out_ch
@@ -1176,7 +1191,7 @@ process SiteLevelCorr {
 	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_clusterCpG_per_site.combine.*.gz')
 
 	## Site level evaluations
-	src/nanocompare/site_level_eval.py \
+	PYTHONPATH=src python src/nanocompare/site_level_eval.py \
 		--calls \
 				Nanopolish:\${nanopolishFile} \
 				Megalodon:\${megalodonFile} \

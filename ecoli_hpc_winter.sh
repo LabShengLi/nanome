@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=nanome.demo
+#SBATCH --job-name=nanome.ecoli
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
-#SBATCH -q inference
+#SBATCH -q training
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 1 # number of cores
 #SBATCH --mem=20G # memory pool for all cores
-#SBATCH --time=06:00:00 # time
+#SBATCH --time=14-00:00:00 # time
 #SBATCH -o %x.%j.out # STDOUT
 #SBATCH -e %x.%j.err # STDERR
 
@@ -50,9 +50,10 @@ set -x
     -with-report -with-timeline -with-trace -with-dag \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
-    -config conf/ecoli_demo.config --processors 10
+    -config conf/ecoli_demo.config --processors 8
 
 # Report
 tree ${workDir} > ${baseDir}/work-ecoli.tree.txt
 tree ${outputsDir} > ${baseDir}/outputs-ecoli.tree.txt
-echo "### nanome pipeline demo DONE"
+
+echo "### nanome pipeline for ecoli data DONE"
