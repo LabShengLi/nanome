@@ -65,7 +65,7 @@ def output_calldict_to_unified_bed_as_0base(dictCalls, outfn, sep='\t'):
 
 def import_and_save_site_level(callfn, callname, callencode, minToolCovCutt, outfn, ns):
     ontCall = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache,
-                          using_cache=using_cache, include_score=False, siteLevel=True)
+                          using_cache=using_cache, include_score=False, siteLevel=True, filterChr=args.chrs)
 
     ontCallWithCov = readLevelToSiteLevelWithCov(ontCall, minCov=minToolCovCutt, toolname=callname)
     ns.callsites[callname] = len(ontCallWithCov)
@@ -167,12 +167,7 @@ if __name__ == '__main__':
             continue
         callname = get_tool_name(callencode)
 
-        # We do now allow import DeepMod.C for site level evaluation
-        if callencode == 'DeepMod.C':
-            raise Exception(
-                f'{callencode} is not allowed for site level evaluation, please use DeepMod.Cluster file here')
         outfn = os.path.join(out_dir, f'{RunPrefix}.tss.{callname}.cov{minToolCovCutt}.bed.gz')
-
         input1 = (callfn, callname, callencode, minToolCovCutt, outfn, ns,)
         input_list.append(input1)
 
