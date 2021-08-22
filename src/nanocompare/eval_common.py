@@ -1590,7 +1590,7 @@ def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, ena
     if enable_cache and using_cache:
         ret = check_cache_available(infn, encode=encode, cov=covCutoff, baseFormat=baseFormat, includeCov=includeCov)
         if ret is not None:
-            logger.debug(f'Import BG-Truth using encode={encode} finished from cache, CpGs={len(ret)}!\n')
+            logger.debug(f'Import BG-Truth using encode={encode} finished from cache, CpGs={len(ret):,}\n')
             return ret
         logger.debug(f'Not cached yet, we load from raw file')
 
@@ -2695,6 +2695,16 @@ def get_region_bed_pairs(infn):
     return (basefn, tagname, region_bed)
 
 
+def update_progress_bar(*a):
+    """
+    Update progress for multiprocessing
+    :param a:
+    :return:
+    """
+    global progress_bar_global
+    progress_bar_global.update()
+
+
 def get_region_bed_pairs_list_mp(infn_list, processors=1):
     """
     Get list of pairs [(basefn, tagname, bedobject), ...] of regions file
@@ -2702,8 +2712,18 @@ def get_region_bed_pairs_list_mp(infn_list, processors=1):
     :return:
     """
     logger.info(f"get_region_bed_pairs_list_mp start, processors={processors}")
+    logger.debug(f"regions={infn_list}, len={len(infn_list)}")
+    ret_list=[]
     with Pool(processors) as pool:
-        region_bed_list = pool.map(get_region_bed_pairs, infn_list)
+        # region_bed_list = pool.map(get_region_bed_pairs, infn_list)
+        global progress_bar_global
+        progress_bar_global = tqdm(total=len(infn_list))
+        for infn in infn_list:
+            ret_list.append(pool.apply_async(get_region_bed_pairs, args=(infn,), callback=update_progress_bar))
+        pool.close()
+        pool.join()
+        progress_bar_global.close()
+    region_bed_list = [ret.get() for ret in ret_list]
     logger.info("get_region_bed_pairs_list_mp finished")
     return region_bed_list
 

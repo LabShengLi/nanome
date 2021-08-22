@@ -22,7 +22,7 @@ from scipy.stats import pearsonr
 from sklearn import metrics
 from sklearn.metrics import precision_recall_curve
 
-from nanocompare.eval_common import correlation_report_on_regions, logger, set_log_debug_level, pic_base_dir
+from nanocompare.eval_common import logger, set_log_debug_level, pic_base_dir
 from nanocompare.global_settings import *
 
 
@@ -116,8 +116,8 @@ def grid_plot_correlation_matrix_for_fig5a(infn, removeDeepMod=False):
     position = 1
     for yrow in range(1, num_col + 1):  # row
         for xcol in range(1, num_col + 1):  # column, each tool
-            logger.debug("Please wait, processing column xcol {}, yrow {}.".format(xcol,
-                                                                                   yrow))  # adding this so that one would be able to estimate how much time one has for a coffe
+            # adding this so that one would be able to estimate how much time one has for a coffe
+            logger.debug(f"Please wait, processing column xcol {xcol}, yrow {yrow}.")
             if xcol == yrow:
                 # Diagonal, distribution lines:
                 plt.subplot(num_col, num_col, position)

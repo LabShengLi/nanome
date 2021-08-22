@@ -24,6 +24,7 @@ mkdir -p ${baseDir}; chmod ugo+w ${baseDir}
 export SINGULARITY_CACHEDIR="${baseDir}/singularity-cache"
 mkdir -p  $SINGULARITY_CACHEDIR; chmod ugo+w $SINGULARITY_CACHEDIR
 
+
 ########################################
 ########################################
 # Get nextflow and install it
@@ -35,7 +36,7 @@ fi
 ########################################
 ########################################
 # Clean old results
-#rm -rf ${workDir} ${outputsDir}
+rm -rf ${workDir} ${outputsDir}
 mkdir -p ${workDir}; chmod ugo+w ${workDir}
 mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
@@ -49,4 +50,9 @@ set -x
     -with-report -with-timeline -with-trace -with-dag \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
-    -config conf/ecoli_demo.config
+    -config conf/ecoli_demo.config --processors 10
+
+# Report
+tree ${workDir} > ${baseDir}/work-ecoli.tree.txt
+tree ${outputsDir} > ${baseDir}/outputs-ecoli.tree.txt
+echo "### nanome pipeline demo DONE"

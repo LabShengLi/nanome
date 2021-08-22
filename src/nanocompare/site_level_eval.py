@@ -438,7 +438,7 @@ if __name__ == '__main__':
         regions_full_filepath = [os.path.join(args.genome_annotation, cofn) for cofn in narrowCoordNameList[1:]] + \
                                 [os.path.join(args.genome_annotation, cofn) for cofn in cg_density_coord_name_list] + \
                                 [os.path.join(args.genome_annotation, cofn) for cofn in rep_coord_name_list]
-        logger.debug(f"Evaluated regions: {regions_full_filepath}")
+        # logger.debug(f"Evaluated regions: {regions_full_filepath}")
         region_bed_list = get_region_bed_pairs_list_mp(regions_full_filepath, processors=args.processors)
 
         if args.beddir:  # add concordant and discordant region coverage if needed
