@@ -38,6 +38,21 @@ rm -rf ${workDir} ${outputsDir}
 mkdir -p ${workDir}; chmod ugo+w ${workDir}
 mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
+########################################
+########################################
+# Running pipeline for demo human data
+# More options: -with-report -with-timeline -with-trace -with-dag -resume
+module load singularity
+set -x
+./nextflow run main.nf \
+    -profile winter_singularity \
+    -resume \
+    -work-dir ${workDir} \
+    --outputDir ${outputsDir} \
+    --dsname TestData \
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+
+exit 0
 
 ########################################
 ########################################
@@ -78,6 +93,7 @@ exit 0
 ./nextflow run https://github.com/liuyangzzu/nanome.git \
     -profile winter_singularity \
     --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
+    --processors 4
 
 exit 0
