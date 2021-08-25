@@ -63,6 +63,9 @@ process EnvCheck {
 	set -x
 	date; hostname; pwd
 
+	which python
+	python --version
+
 	which nanopolish
 	nanopolish --version
 
@@ -109,9 +112,6 @@ reference_genome_ch.into{
 // Untar of subfolders named 'M1', ..., 'M10', etc.
 process Untar {
 	tag "${fast5_tar.baseName}"
-
-	// Disk size is determined by input size, if failed, increase the size
-	disk {((fast5_tar.size() * 2.0 as long) >> 30).GB   +  150.GB +   20.GB * task.attempt }
 
 	input:
 	path fast5_tar from 	fast5_tar_ch
@@ -172,9 +172,6 @@ tar_filesize_ch.into{ tar_filesize_ch1; tar_filesize_ch2; tar_filesize_ch3 }
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
 	tag "${fast5_dir.baseName}"
-
-	// Disk size is determined by input size, if failed, increase the size
-	disk { (((fast5_tar_size as long)*2.2 as long)>>30).GB   + 100.GB +  20.GB * task.attempt }
 
 	input:
 	path fast5_dir 				from 	untar_out_ch1
@@ -291,9 +288,6 @@ basecall_out_ch
 process Guppy {
 	tag "${fast5_dir.baseName}"
 
-	// Disk size is determined by input size, if failed, increase the size
-	disk { (((fast5_tar_size as long)*2.2 as long) >> 30).GB    + 100.GB +   20.GB * task.attempt }
-
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy", mode: "copy", pattern: "outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy", mode: "copy", pattern: "batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz"
 
@@ -395,9 +389,6 @@ process Megalodon {
 	tag "${fast5_dir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/megalodon", mode: "copy"
 
-	// Disk size is determined by input size, if failed, increase the size
-	disk { (((fast5_tar_size as long)*2.2 as long) >> 30).GB    + 100.GB +   20.GB * task.attempt }
-
 	input:
 	path fast5_dir 					from untar_out_ch3
 	val  fast5_tar_size 			from tar_filesize_ch3
@@ -474,9 +465,6 @@ process Megalodon {
 process Resquiggle {
 	tag "${basecallIndir.baseName}"
 	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle", mode: "copy", pattern: "${basecallIndir.baseName}.resquiggle.run.log"
-
-	// Disk size is determined by input size, if failed, increase the size
-	disk { (((file_size as long)*2.2 as long) >> 30).GB    + 100.GB +   20.GB * task.attempt }
 
 	input:
 	path 	basecallIndir 			from resquiggle_in_ch

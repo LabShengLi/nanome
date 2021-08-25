@@ -45,8 +45,9 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 module load singularity
 set -x
 ./nextflow run main.nf \
-    -profile winter_singularity \
+    -profile conda,hpc \
     -resume \
+    -config conf/jax_hpc.config \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     --dsname TestData \

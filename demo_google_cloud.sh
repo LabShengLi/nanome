@@ -25,8 +25,8 @@ OUTPUT_DIR_BUCKET=gs://jax-nanopore-01-export-bucket/TestData-ouputs
 #gsutil rm -rf ${OUTPUT_DIR_BUCKET}
 
 ## Run test demo on google cloud
-nextflow run main.nf -resume\
-    -profile google_cloud \
+nextflow run main.nf \
+    -profile docker,google \
 	-w ${WORK_DIR_BUCKET} \
 	--outputDir ${OUTPUT_DIR_BUCKET} \
 	--dsname TestData \
