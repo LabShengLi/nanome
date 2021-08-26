@@ -32,6 +32,8 @@ def parse_arguments():
     parser.add_argument('--output-unified-format', action='store_true')
     parser.add_argument('--chrs', nargs='+', help='chromosome list',
                         default=humanChrSet)
+    parser.add_argument('--tagname', type=str, help="output unified file tagname", default=None)
+
     return parser.parse_args()
 
 
@@ -114,7 +116,7 @@ if __name__ == '__main__':
             # Consider tools have read-level outputs, except for DeepMod
             if callname not in ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo']:
                 continue
-            outfn = os.path.join(out_dir, f"{args.dsname}_{callname}-METEORE-perRead-score.tsv.gz")
+            outfn = os.path.join(out_dir, f"{args.dsname}_{callname}{f'-{args.tagname}' if args.tagname else ''}-perRead-score.tsv.gz")
 
             input_list.append((callfn, callencode, outfn,))
         with Pool(processes=args.processors) as pool:
@@ -146,7 +148,7 @@ if __name__ == '__main__':
 
         # Combine one/two replicates, using cutoff=1 or 5
         bgTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruthCutt)
-        outfn = os.path.join(out_dir, f'{RunPrefix}.tss.bgtruth.cov{bgtruthCutt}.bed.gz')
+        outfn = os.path.join(out_dir, f'{args.dsname}_BSseq-perSite-cov{bgtruthCutt}.bed.gz')
         logger.info(f'Combined BS-seq data (cov>={bgtruthCutt}), all methylation level sites={len(bgTruth):,}')
         output_calldict_to_unified_bed_as_0base(bgTruth, outfn)
         logger.info(f'\n\n####################\n\n')
@@ -167,7 +169,7 @@ if __name__ == '__main__':
             continue
         callname = get_tool_name(callencode)
 
-        outfn = os.path.join(out_dir, f'{RunPrefix}.tss.{callname}.cov{minToolCovCutt}.bed.gz')
+        outfn = os.path.join(out_dir, f'{args.dsname}_{callname}-perSite-cov{minToolCovCutt}.bed.gz')
         input1 = (callfn, callname, callencode, minToolCovCutt, outfn, ns,)
         input_list.append(input1)
 

@@ -34,25 +34,29 @@ fi
 
 ########################################
 # Clean old results
-rm -rf ${workDir} ${outputsDir}
+#rm -rf ${workDir} ${outputsDir}
 mkdir -p ${workDir}; chmod ugo+w ${workDir}
 mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
+
 
 ########################################
 ########################################
 # Running pipeline for demo human data
 # More options: -with-report -with-timeline -with-trace -with-dag -resume
-module load singularity
 set -x
 ./nextflow run main.nf \
-    -profile conda,hpc \
-    -resume \
+    -profile conda,hpc -resume \
     -config conf/jax_hpc.config \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
+    --guppyDir '/projects/li-lab/software/ont-guppy-gpu_4.2.2'
 
+# Report
+tree ${workDir} > ${baseDir}/work.tree.txt
+tree ${outputsDir} > ${baseDir}/outputs.tree.txt
+echo "### nanome pipeline demo DONE"
 exit 0
 
 ########################################

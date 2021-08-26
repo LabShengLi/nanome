@@ -46,11 +46,11 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 # Running pipeline for E. coli data
 set -x
 ./nextflow run main.nf \
-    -profile winter_singularity -resume \
-    -with-report -with-timeline -with-trace -with-dag \
+    -profile conda,hpc \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
-    -config conf/ecoli_demo.config --processors 8
+    -config conf/jax_hpc.config,conf/ecoli_demo.config \
+    --guppyDir '/projects/li-lab/software/ont-guppy-gpu_4.2.2'
 
 # Report
 tree ${workDir} > ${baseDir}/work-ecoli.tree.txt
