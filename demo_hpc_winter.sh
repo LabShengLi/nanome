@@ -43,9 +43,10 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 ########################################
 # Running pipeline for demo human data
 # More options: -with-report -with-timeline -with-trace -with-dag -resume
+module load singularity
 set -x
 ./nextflow run main.nf \
-    -profile conda,hpc -resume \
+    -profile conda,hpc \
     -config conf/jax_hpc.config \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
