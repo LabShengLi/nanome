@@ -269,6 +269,13 @@ process QCExport {
 	done
 
 	## QC report generation
+	if ! command -v NanoComp &> /dev/null
+	then
+		echo "NanoComp could not be found, install it..."
+		conda install -c bioconda nanocomp
+	else
+		NanoComp -v
+	fi
 	NanoComp --summary ${params.dsname}_combine_sequencing_summary.txt.gz  \
 		--names ${params.dsname} --outdir ${params.dsname}_QCReport -t \$(( numProcessor )) \
 		--verbose  --raw  -f pdf -p ${params.dsname}_
