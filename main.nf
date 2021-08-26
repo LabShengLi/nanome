@@ -16,9 +16,17 @@ runMethcall		:${params.runMethcall}
 """
 .stripIndent()
 
+
 projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
+
+workflow.onComplete {
+	if (workflow.success && params.cleanCache) {
+		def workDir = new File("${workflow.workDir}")
+		workDir.deleteDir()
+	}
+}
 
 // Channel for utils/ and src/ folders
 ch_utils.into{ch_utils1; ch_utils2; ch_utils3; ch_utils4; ch_utils5; ch_utils6; ch_utils7; ch_utils8}
