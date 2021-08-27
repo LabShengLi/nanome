@@ -162,10 +162,13 @@ with tf.Session() as sess:
       batch_data = np.array_split(train_data, int(len(train_data)/batch_size) if len(train_data)>batch_size else 2)
       m_pred_new_per = []
       for i in range(len(batch_data)):
-          moutp = sess.run([output], feed_dict={X:batch_data[i], keep_prob:1})
-          for mpind in moutp:
-              for curpd in mpind:
-                 m_pred_new_per.append(curpd)
+         try:
+             moutp = sess.run([output], feed_dict={X:batch_data[i], keep_prob:1})
+             for mpind in moutp:
+                 for curpd in mpind:
+                    m_pred_new_per.append(curpd)
+         except:
+            pass
       print("new per: {}, {}  {} {}".format(len(pdkeys), len(train_data), len(m_pred_new_per), curpd ))
       for wind in range(10):
          try:

@@ -38,20 +38,57 @@ rm -rf ${workDir} ${outputsDir}
 mkdir -p ${workDir}; chmod ugo+w ${workDir}
 mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
+
 ########################################
 ########################################
 # Running pipeline for demo human data
 # More options: -with-report -with-timeline -with-trace -with-dag -resume
+
 module load singularity
 set -x
 ./nextflow run main.nf \
-    -profile winter_singularity \
-    -resume \
+    -profile singularity,hpc \
+    -config conf/jax_hpc.config \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 
+
+# Report
+tree ${workDir} > ${baseDir}/work_demo.tree.txt
+tree ${outputsDir} > ${baseDir}/outputs_demo.tree.txt
+echo "### nanome pipeline demo DONE"
+
+exit 0
+
+
+
+module load singularity
+set -x
+./nextflow run main.nf \
+    -profile singularity,hpc \
+    -config conf/jax_hpc.config \
+    -work-dir ${workDir} \
+    --outputDir ${outputsDir} \
+    --dsname TestData \
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+exit 0
+
+
+./nextflow run main.nf \
+    -profile conda,hpc \
+    -config conf/jax_hpc.config \
+    -work-dir ${workDir} \
+    --outputDir ${outputsDir} \
+    --dsname TestData \
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
+    --guppyDir '/projects/li-lab/software/ont-guppy-gpu_4.2.2'
+
+# Report
+tree ${workDir} > ${baseDir}/work.tree.txt
+tree ${outputsDir} > ${baseDir}/outputs.tree.txt
+echo "### nanome pipeline demo DONE"
 exit 0
 
 ########################################

@@ -14,13 +14,13 @@ curl -fsSL get.nextflow.io | bash
 
 # Run nanome pipeline from project directory
 ./nextflow run main.nf \
-    -profile winter_singularity \
+    -profile singularity,hpc \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 
 # Running nanome pipeline directly from github
 nextflow run https://github.com/liuyangzzu/nanome.git \
-    -profile winter_singularity \
+    -profile singularity,hpc \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 ```
@@ -29,15 +29,9 @@ You can also running 'nanome' pipeline on cloud computing platform, using follow
 ```angular2html
 # Running on Google Cloud (https://cloud.google.com)
 nextflow run main.nf \
-    -profile google_cloud \
+    -profile docker,google \
     -w gs://jax-nanopore-01-project-data/TestData-work \
     --outputDir gs://jax-nanopore-01-export-bucket/TestData-ouputs \
-    --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
-
-# Running on Lifebit CloudOS (https://lifebit.gitbook.io/cloudos)
-nextflow run https://github.com/liuyangzzu/nanome.git \
-    --config 'conf/lifebit_cloudos.config' \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 ```
@@ -54,7 +48,6 @@ https://nanome.jax.org
 dsname          :TestData
 input           :https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 reference_genome    :reference_genome/hg38/hg38.fasta
-chromSizesFile      :reference_genome/hg38/hg38.chrom.sizes
 runBasecall     :true
 runMethcall     :true
 =================================
@@ -158,7 +151,7 @@ cd nanome
 curl -fsSL get.nextflow.io | bash
 
 ./nextflow run main.nf \
-    -profile winter_singularity \
+    -profile singularity,hpc \
     -config conf/ecoli_demo.config
 ```
 
@@ -229,7 +222,7 @@ git clone https://github.com/liuyangzzu/nanome.git
 cd nanome
 
 nextflow run main.nf \
-    -profile winter_conda  \
+    -profile singularity,hpc  \
     -config conf/benchmarking.config
 ```
 
@@ -245,7 +238,7 @@ cd nanome
 curl -s https://get.nextflow.io | bash
 
 ./nextflow run main.nf \
-    -profile google_cloud \
+    -profile docker,google \
     -w gs://jax-nanopore-01-project-data/nanome-work-test \
     --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
 ```
