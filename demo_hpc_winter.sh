@@ -43,6 +43,19 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 ########################################
 # Running pipeline for demo human data
 # More options: -with-report -with-timeline -with-trace -with-dag -resume
+
+module load singularity
+set -x
+./nextflow run main.nf \
+    -profile singularity,hpc \
+    -work-dir ${workDir} \
+    --outputDir ${outputsDir} \
+    --dsname TestData \
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+exit 0
+
+
+
 module load singularity
 set -x
 ./nextflow run main.nf \

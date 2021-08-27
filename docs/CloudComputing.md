@@ -81,7 +81,7 @@ Note that our project id is `jax-nanopore-01`, used for `[PROJECT_ID]`, **Data B
 cd nanome
 curl -s https://get.nextflow.io | bash
 
-nextflow run main.nf -profile gls -w gs://jax-nanopore-01-project-data/nanome-work-test --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
+nextflow run main.nf -profile docker,google -w gs://jax-nanopore-01-project-data/nanome-work-test --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
 ```
 
 
