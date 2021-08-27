@@ -46,11 +46,11 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 # Running pipeline for E. coli data
 set -x
 ./nextflow run main.nf \
-    -profile conda,hpc \
+    -profile singularity,hpc \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     -config conf/jax_hpc.config,conf/ecoli_demo.config \
-    --guppyDir '/projects/li-lab/software/ont-guppy-gpu_4.2.2'
+    --cleanCache false
 
 # Report
 tree ${workDir} > ${baseDir}/work-ecoli.tree.txt

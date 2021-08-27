@@ -46,7 +46,7 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 module load singularity
 set -x
 ./nextflow run main.nf \
-    -profile singular,hpc \
+    -profile singularity,hpc \
     -config conf/jax_hpc.config \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \

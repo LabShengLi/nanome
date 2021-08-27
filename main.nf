@@ -256,8 +256,7 @@ process QCExport {
 	path bamlist 	from 	ont_cov_bam_ch.collect()
 
 	output:
-	path "${params.dsname}_combine_sequencing_summary.txt.gz" into qc_out_ch
-	path "${params.dsname}_ONT_coverage_combine.bed.gz" into ont_cov_ch
+	path "${params.dsname}_basecall_report.html" into qc_out_ch
 	path "${params.dsname}_QCReport" into qc_report_out_ch
 
 	"""
@@ -308,6 +307,10 @@ process QCExport {
 
     cat ${params.dsname}.coverage.positivestrand.bed.gz > ${params.dsname}_ONT_coverage_combine.bed.gz
 	cat ${params.dsname}.coverage.negativestrand.bed.gz >> ${params.dsname}_ONT_coverage_combine.bed.gz
+
+	mv ${params.dsname}_ONT_coverage_combine.bed.gz ${params.dsname}_QCReport/
+	mv ${params.dsname}_combine_sequencing_summary.txt.gz ${params.dsname}_QCReport/
+	mv ${params.dsname}_QCReport/${params.dsname}_NanoComp-report.html ${params.dsname}_basecall_report.html
 
 	## Clean
 	rm -f ${params.dsname}.coverage.positivestrand.bed.gz ${params.dsname}.coverage.negativestrand.bed.gz
@@ -1050,9 +1053,10 @@ process DpmodComb {
 
 
 deepsignal_combine_out_ch
-	.concat(tombo_combine_out_ch,megalodon_combine_out_ch, \
-			nanopolish_combine_out_ch,deepmod_combine_out_ch.flatten(), \
-			guppy_fast5mod_combine_out_ch, guppy_gcf52ref_combine_out_ch)
+	.concat(tombo_combine_out_ch,
+			megalodon_combine_out_ch,
+			nanopolish_combine_out_ch,
+			guppy_gcf52ref_combine_out_ch)
 	.toSortedList()
 	.into { readlevel_unify_in; sitelevel_unify_in }
 
@@ -1147,14 +1151,17 @@ process METEORE {
 
 	zcat ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz | \
 		awk -F '\t' 'BEGIN {OFS = FS} {print \$1,\$2,\$3,\$6,\$5}' |
-		gzip > Read_Level-${params.dsname}/TestData_METEORE-perRead-score.tsv.gz
+		gzip > Read_Level-${params.dsname}/${params.dsname}_METEORE-perRead-score.tsv.gz
 
 	echo "### METEORE post combine DONE"
 	"""
 }
 
 
-meteore_combine_out_ch.concat(sitelevel_unify_in.flatten())
+meteore_combine_out_ch
+	.concat(sitelevel_unify_in.flatten(),
+			deepmod_combine_out_ch.flatten(),
+			guppy_fast5mod_combine_out_ch)
 	.toSortedList()
 	.into { sitelevel_unify_in1; readlevelperf_in_ch; sitelevelcorr_in_ch}
 
