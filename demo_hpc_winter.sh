@@ -46,6 +46,16 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 module load singularity
 set -x
 ./nextflow run main.nf \
+    -profile singular,hpc \
+    -config conf/jax_hpc.config \
+    -work-dir ${workDir} \
+    --outputDir ${outputsDir} \
+    --dsname TestData \
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+exit 0
+
+
+./nextflow run main.nf \
     -profile conda,hpc \
     -config conf/jax_hpc.config \
     -work-dir ${workDir} \
