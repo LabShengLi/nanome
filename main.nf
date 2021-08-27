@@ -24,7 +24,7 @@ ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: fals
 workflow.onComplete {
 	if (workflow.success && params.cleanCache) {
 		def workDir = new File("${workflow.workDir}")
-		workDir.deleteDir()
+		println "rm -rf ${workflow.workDir}".execute().text
 	}
 }
 
