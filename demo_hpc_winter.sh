@@ -48,10 +48,18 @@ module load singularity
 set -x
 ./nextflow run main.nf \
     -profile singularity,hpc \
+    -config conf/jax_hpc.config \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+
+
+# Report
+tree ${workDir} > ${baseDir}/work_demo.tree.txt
+tree ${outputsDir} > ${baseDir}/outputs_demo.tree.txt
+echo "### nanome pipeline demo DONE"
+
 exit 0
 
 

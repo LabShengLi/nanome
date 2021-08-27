@@ -47,13 +47,14 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 set -x
 ./nextflow run main.nf \
     -profile singularity,hpc \
+    -with-report -with-timeline -with-trace -with-dag \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     -config conf/jax_hpc.config,conf/ecoli_demo.config \
     --cleanCache false
 
 # Report
-tree ${workDir} > ${baseDir}/work-ecoli.tree.txt
-tree ${outputsDir} > ${baseDir}/outputs-ecoli.tree.txt
+tree ${workDir} > ${baseDir}/work_ecoli.tree.txt
+tree ${outputsDir} > ${baseDir}/outputs_ecoli.tree.txt
 
 echo "### nanome pipeline for ecoli data DONE"

@@ -998,9 +998,6 @@ process DpmodComb {
 	tar -xzf v0.1.3.tar.gz
 	DeepModProjectDir="DeepMod-0.1.3"
 
-	## Untar deepmod cluster-model inputs
-	tar -xzf ${deepmod_c_tar_file}
-
 	## Copy all batch results, then summarize site level outputs by chromosome
 	mkdir -p indir
 	for dx in $x
@@ -1014,7 +1011,7 @@ process DpmodComb {
 
 	> ${params.dsname}.deepmod.C_per_site.combine.bed
 
-	## Note: for ecoli data, no chr*, but N*
+	## Note: for ecoli data, no pattern for chr*, but N*
 	for f in \$(ls -1 indir/${params.dsname}.deepmod.*.C.bed)
 	do
 	  cat \$f >> ${params.dsname}.deepmod.C_per_site.combine.bed
@@ -1024,10 +1021,20 @@ process DpmodComb {
 	if [[ "${params.dataType}" == "human" ]] ; then
 		## Only apply to human genome
 		echo "### For human, apply cluster model of DeepMod"
+
+		## Get dir for deepmod cluster-model inputs
+		if [[ "${deepmod_c_tar_file}" == *.tar.gz ]] ; then
+			tar -xzf ${deepmod_c_tar_file}
+		else
+			if [[ "${deepmod_c_tar_file}" != "C" ]] ; then
+				mv ${deepmod_c_tar_file} C
+			fi
+		fi
+
 		python utils/hm_cluster_predict.py \
 			indir/${params.dsname}.deepmod \
 			./C \
-			\${DeepModProjectDir}/train_deepmod/${params.DEEPMOD_CLUSTER_MODEL} || true
+			\${DeepModProjectDir}/train_deepmod/${params.DEEPMOD_CLUSTER_MODEL} ## || true
 
 		> ${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed
 		for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
