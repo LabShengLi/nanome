@@ -1187,7 +1187,7 @@ process SiteLevelUnify {
 
 	output:
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz" into site_unify_out_ch
-	path "readme.txt" into readme_out_ch
+	path "README.txt" into readme_out_ch
 
 	when:
 	fileList.size() >= 1 && !params.filterGPUTaskRuns
