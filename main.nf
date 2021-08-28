@@ -1187,6 +1187,7 @@ process SiteLevelUnify {
 
 	output:
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz" into site_unify_out_ch
+	path "readme.txt" into readme_out_ch
 
 	when:
 	fileList.size() >= 1 && !params.filterGPUTaskRuns
@@ -1236,7 +1237,9 @@ process SiteLevelUnify {
 	done
 
 	PYTHONIOENCODING=UTF-8 python utils/gen_readme.py \
-		utils/readme.txt.template ${params.dsname} ${params.outputDir} > readme.txt
+		utils/readme.txt.template ${params.dsname} ${params.outputDir} \
+		${workflow.projectDir} ${workflow.workDir} "${workflow.commandLine}" ${workflow.runName} "${workflow.start}" \
+		> readme.txt
 	"""
 }
 

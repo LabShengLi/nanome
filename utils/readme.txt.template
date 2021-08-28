@@ -1,4 +1,12 @@
-NANOME pipeline output file list for ${dsname}
+NANOME pipeline report of methylation calling for Oxford Nanopore sequencing data
+
+==========================================
+Project : 			${projectDir}
+Working directory:	${workDir}
+Command line: 		${commandLine}
+Run name:			${runName}
+Start time:			${start}
+==========================================
 
 Outputs folder at ${outdir}:
 
