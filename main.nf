@@ -1178,7 +1178,7 @@ process SiteLevelUnify {
 		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
 
 	publishDir "${params.outputDir}",
-		mode: "copy", pattern: "readme.txt"
+		mode: "copy", pattern: "README.txt"
 
 	input:
 	path fileList 	from 	sitelevel_unify_in1
@@ -1239,7 +1239,7 @@ process SiteLevelUnify {
 	PYTHONIOENCODING=UTF-8 python utils/gen_readme.py \
 		utils/readme.txt.template ${params.dsname} ${params.outputDir} \
 		${workflow.projectDir} ${workflow.workDir} "${workflow.commandLine}" ${workflow.runName} "${workflow.start}" \
-		> readme.txt
+		> README.txt
 	"""
 }
 
