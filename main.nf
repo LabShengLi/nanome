@@ -29,7 +29,7 @@ workflow.onComplete {
 }
 
 // Channel for utils/ and src/ folders
-ch_utils.into{ch_utils1; ch_utils2; ch_utils3; ch_utils4; ch_utils5; ch_utils6; ch_utils7; ch_utils8}
+ch_utils.into{ch_utils1; ch_utils2; ch_utils3; ch_utils4; ch_utils5; ch_utils6; ch_utils7; ch_utils8; ch_utils9}
 ch_src.into{ch_src1; ch_src2; ch_src3; ch_src4}
 
 // Collect all folders of fast5 files, and send into Channels for pipelines
@@ -1177,9 +1177,13 @@ process SiteLevelUnify {
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings",
 		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
 
+	publishDir "${params.outputDir}",
+		mode: "copy", pattern: "readme.txt"
+
 	input:
 	path fileList 	from 	sitelevel_unify_in1
 	each path("*") 	from 	ch_src4
+	each path("*") 	from 	ch_utils9
 
 	output:
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz" into site_unify_out_ch
@@ -1231,6 +1235,8 @@ process SiteLevelUnify {
 		rm \${fn}
 	done
 
+	PYTHONIOENCODING=UTF-8 python utils/gen_readme.py \
+		utils/readme.txt.template ${params.dsname} ${params.outputDir} > readme.txt
 	"""
 }
 

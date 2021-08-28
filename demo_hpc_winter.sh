@@ -34,7 +34,7 @@ fi
 
 ########################################
 # Clean old results
-rm -rf ${workDir} ${outputsDir}
+#rm -rf ${workDir} ${outputsDir}
 mkdir -p ${workDir}; chmod ugo+w ${workDir}
 mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
@@ -47,12 +47,13 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 module load singularity
 set -x
 ./nextflow run main.nf \
-    -profile singularity,hpc \
+    -profile singularity,hpc -resume\
     -config conf/jax_hpc.config \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
+    --cleanCache false
 
 
 # Report
