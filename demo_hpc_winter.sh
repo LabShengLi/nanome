@@ -47,90 +47,17 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 module load singularity
 set -x
 ./nextflow run main.nf \
-    -profile singularity,hpc \
+    -profile singularity,hpc\
     -config conf/jax_hpc.config \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
+    --cleanCache false \
+    --singularity_cache_dir '/fastscratch/li-lab/nanome/singularity-cache'
 
 
 # Report
 tree ${workDir} > ${baseDir}/work_demo.tree.txt
 tree ${outputsDir} > ${baseDir}/outputs_demo.tree.txt
 echo "### nanome pipeline demo DONE"
-
-exit 0
-
-
-
-module load singularity
-set -x
-./nextflow run main.nf \
-    -profile singularity,hpc \
-    -config conf/jax_hpc.config \
-    -work-dir ${workDir} \
-    --outputDir ${outputsDir} \
-    --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
-exit 0
-
-
-./nextflow run main.nf \
-    -profile conda,hpc \
-    -config conf/jax_hpc.config \
-    -work-dir ${workDir} \
-    --outputDir ${outputsDir} \
-    --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
-    --guppyDir '/projects/li-lab/software/ont-guppy-gpu_4.2.2'
-
-# Report
-tree ${workDir} > ${baseDir}/work.tree.txt
-tree ${outputsDir} > ${baseDir}/outputs.tree.txt
-echo "### nanome pipeline demo DONE"
-exit 0
-
-########################################
-########################################
-# Running pipeline for demo human data
-# More options: -with-report -with-timeline -with-trace -with-dag -resume
-module load singularity
-set -x
-./nextflow run main.nf \
-    -profile winter_singularity \
-    -with-report -with-timeline -with-trace -with-dag -resume \
-    -work-dir ${workDir} \
-    --outputDir ${outputsDir} \
-    --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
-    --bgTruth='/projects/li-lab/Nanopore_compare/data/NA19240/NA19240_RRBS_ENCFF000LZS_rep1.Read_R1.Rep_1_trimmed_bismark_bt2.CpG_report.txt.gz;/projects/li-lab/Nanopore_compare/data/NA19240/NA19240_RRBS_ENCFF000LZT_rep2.Read_R1.Rep_2_trimmed_bismark_bt2.CpG_report.txt.gz' \
-    --eval true
-
-# Report
-tree ${workDir} > ${baseDir}/work.tree.txt
-tree ${outputsDir} > ${baseDir}/outputs.tree.txt
-echo "### nanome pipeline demo DONE"
-exit 0
-
-
-########################################
-########################################
-# Running pipeline for demo human data
-# More options: -with-report -with-timeline -with-trace -with-dag -resume
-module load singularity
-set -x
-./nextflow run main.nf \
-    -profile winter_singularity \
-    --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
-
-exit 0
-
-./nextflow run https://github.com/liuyangzzu/nanome.git \
-    -profile winter_singularity \
-    --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
-    --processors 4
-
-exit 0

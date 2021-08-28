@@ -4,7 +4,7 @@ The inputs of 'nanome' pipeline is a folder/tar/tar.gz or txt file list containi
 
 # 1. Running 'nanome' for human nanopore sequencing data
 
-The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome.git`. `--input` is input Fast5 file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `-profile` is the name of execution platform configuration, an example of our HPC configuration is the server named as [winter_singularity](https://github.com/liuyangzzu/nanome/blob/master/nextflow.config#L197). 
+The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome.git`. `--input` is input Fast5 file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `-profile` is the name of execution configuration, we support various of  configurations, e.g., `conda`, `docker`, `singularity`, `hpc`, and `google`, check [here](). 
 
 By default, we are using hg38 human reference genome, and you can specify reference genome using parameter `--referenceGenome="reference_genome/hg38/hg38.fasta"`. An example of how to use 'nanome' pipeline is given below.
 
@@ -85,57 +85,36 @@ All tools's methlation calling and evaluation results will be output to `outputs
 ```angular2html
 tree outputs/TestData-methylation-callings/
 
-outputs/TestData-methylation-callings/
-├── TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz
-├── TestData.deepsignal.per_read.combine.tsv.gz
-├── TestData.guppy.fast5mod_per_site.combine.tsv.gz
-├── TestData.megalodon.per_read.combine.bed.gz
-├── TestData.meteore.megalodon_deepsignal_optimized_model_per_read.combine.tsv.gz
-├── TestData.nanopolish.per_read.combine.tsv.gz
-└── TestData.tombo.per_read.combine.bed.gz
+outputs/TestData-methylation-callings
+    ├── Raw_Results-TestData
+    │   ├── TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz
+    │   ├── TestData.deepsignal.per_read.combine.tsv.gz
+    │   ├── TestData.guppy.fast5mod_per_site.combine.tsv.gz
+    │   ├── TestData.megalodon.per_read.combine.bed.gz
+    │   ├── TestData.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
+    │   ├── TestData.nanopolish.per_read.combine.tsv.gz
+    │   └── TestData.tombo.per_read.combine.bed.gz
+    ├── Read_Level-TestData
+    │   ├── TestData_DeepSignal-perRead-score.tsv.gz
+    │   ├── TestData_Guppy-perRead-score.tsv.gz
+    │   ├── TestData_Megalodon-perRead-score.tsv.gz
+    │   ├── TestData_METEORE-perRead-score.tsv.gz
+    │   ├── TestData_Nanopolish-perRead-score.tsv.gz
+    │   └── TestData_Tombo-perRead-score.tsv.gz
+    └── Site_Level-TestData
+        ├── TestData_DeepMod-perSite-cov1.sort.bed.gz
+        ├── TestData_DeepSignal-perSite-cov1.sort.bed.gz
+        ├── TestData_Guppy-perSite-cov1.sort.bed.gz
+        ├── TestData_Megalodon-perSite-cov1.sort.bed.gz
+        ├── TestData_METEORE-perSite-cov1.sort.bed.gz
+        ├── TestData_Nanopolish-perSite-cov1.sort.bed.gz
+        └── TestData_Tombo-perSite-cov1.sort.bed.gz
 
-tree outputs/TestData-qc-report
+tree outputs/TestData-basecall-report
 
-outputs/TestData-qc-report
-├── TestData.coverage.negativestrand.bed.gz
-├── TestData.coverage.positivestrand.bed.gz
-└── TestData-qc-report.tar.gz
-
-tree outputs/nanome-analysis-TestData/ -L 2
-
-outputs/nanome-analysis-TestData/
-├── MethCorr-TestData_RRBS
-│   ├── DONE.txt
-│   ├── Meth_corr_plot_data_bgtruth-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv.gz
-│   ├── Meth_corr_plot_data_joined-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv.gz
-│   ├── Meth_corr_plot_data-TestData_RRBS-correlation-matrix-toolcov1-bsseqcov1.xlsx
-│   ├── run-results.log
-│   ├── TestData.tools.cov1.join.with.bsseq.cov1.site.level.report.csv
-│   └── venn_data
-├── MethPerf-TestData_RRBS
-│   ├── DONE.txt
-│   ├── performance-results
-│   ├── run-results.log
-│   ├── TestData_RRBS.hg38_nonsingletons.concordant.bed.gz
-│   ├── TestData_RRBS.hg38_nonsingletons.discordant.bed.gz
-│   ├── TestData_RRBS.summary.bsseq.cov1.joined.tools.singleton.nonsingleton.table.like.s2.csv
-│   ├── TestData_RRBS.summary.bsseq.singleton.nonsingleton.cov1.csv
-│   ├── TestData_RRBS.Tools_BGTruth_cov1_Joined_baseFormat1.bed.gz
-│   └── TestData.tools.cov1.join.with.bsseq.cov1.read.level.report.xlsx
-├── Read_Level-TestData
-│   ├── TestData_DeepSignal-METEORE-perRead-score.tsv.gz
-│   ├── TestData_Guppy-METEORE-perRead-score.tsv.gz
-│   ├── TestData_Megalodon-METEORE-perRead-score.tsv.gz
-│   ├── TestData_Nanopolish-METEORE-perRead-score.tsv.gz
-│   └── TestData_Tombo-METEORE-perRead-score.tsv.gz
-└── Site_Level-TestData
-    ├── Site_Level-TestData.tss.DeepMod.cov1.bed.gz
-    ├── Site_Level-TestData.tss.DeepSignal.cov1.bed.gz
-    ├── Site_Level-TestData.tss.Guppy.cov1.bed.gz
-    ├── Site_Level-TestData.tss.Megalodon.cov1.bed.gz
-    ├── Site_Level-TestData.tss.METEORE.cov1.bed.gz
-    ├── Site_Level-TestData.tss.Nanopolish.cov1.bed.gz
-    └── Site_Level-TestData.tss.Tombo.cov1.bed.gz
+outputs/TestData-basecall-report
+   ├── TestData_basecall_report.html
+   └── TestData_QCReport
 ```
 
 We also support input as a file list if input is suffix like `.filelist.txt`, an example input is [inputs/test.demo.filelist.txt](https://github.com/liuyangzzu/nanome/blob/master/inputs/test.demo.filelist.txt).
@@ -197,21 +176,6 @@ Succeeded   : 19
 ```
 
 The output files of pipeline on E. coli data by all tools are below, please also check the pipeline output directory tree for [outputs](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/outputs_ecoli.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/work_ecoli.tree.txt). The pipeline can also generate [timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/timeline_ecoli.pdf), [report](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/report_ecoli.pdf) and [resource usage](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/trace_ecoli.txt.tsv).
-
-```angular2html
-tree outputs-ecoli/EcoliDemoData-methylation-callings/
-outputs-ecoli/EcoliDemoData-methylation-callings/
-├── EcoliDemoData.deepmod.C_per_site.combine.bed.gz
-├── EcoliDemoData.deepsignal.per_read.combine.tsv.gz
-├── EcoliDemoData.guppy.fast5mod_per_site.combine.tsv.gz
-├── EcoliDemoData.guppy.gcf52ref_per_read.combine.tsv.gz
-├── EcoliDemoData.megalodon.per_read.combine.bed.gz
-├── EcoliDemoData.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
-├── EcoliDemoData.nanopolish.per_read.combine.tsv.gz
-└── EcoliDemoData.tombo.per_read.combine.bed.gz
-
-0 directories, 8 files
-```
 
 
 # 3. Benchmarking experiment
