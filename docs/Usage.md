@@ -4,7 +4,7 @@ The inputs of 'nanome' pipeline is a folder/tar/tar.gz or txt file list containi
 
 # 1. Running 'nanome' for human nanopore sequencing data
 
-The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome.git`. `--input` is input Fast5 file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `-profile` is the name of execution configuration, we support various of  configurations, e.g., `conda`, `docker`, `singularity`, `hpc`, and `google`, check [here](). 
+The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome.git`. `--input` is input Fast5 file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `-profile` is the name of execution configuration, we support various of  configurations, e.g., `conda`, `docker`, `singularity`, `hpc`, and `google`, check detailed from [here](https://github.com/liuyangzzu/nanome/blob/master/nextflow.config#L174). 
 
 By default, we are using hg38 human reference genome, and you can specify reference genome using parameter `--referenceGenome="reference_genome/hg38/hg38.fasta"`. An example of how to use 'nanome' pipeline is given below.
 
