@@ -10,7 +10,8 @@ Start time:			${start}
 
 Outputs folder at ${outdir}:
 
-${dsname}-basecall-report		-	basecalling reports
+report						-	html report of NANOME pipeline
+${dsname}-basecallings		-	basecalling reports
 ${dsname}-methylation-callings	-	methylation calling results
 			├── Raw_Results-TestData	-	raw format of methylation calling results for each tool
 			├── Read_Level-TestData		-	read-level unified format for methylation calling results

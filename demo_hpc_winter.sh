@@ -34,7 +34,7 @@ fi
 
 ########################################
 # Clean old results
-rm -rf ${workDir} ${outputsDir}
+#rm -rf ${workDir} ${outputsDir}
 mkdir -p ${workDir}; chmod ugo+w ${workDir}
 mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
@@ -46,8 +46,8 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
 module load singularity
 set -x
-./nextflow run main.nf \
-    -profile singularity,hpc\
+./nextflow run main.nf -resume \
+    -profile singularity,hpc \
     -config conf/jax_hpc.config \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
