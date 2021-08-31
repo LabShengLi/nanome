@@ -1,48 +1,49 @@
 #!/usr/bin/env nextflow
 
 def helpMessage() {
-    log.info"""
-    Usage:
-    The typical command for running the pipeline is as follows:
-    nextflow run main.nf -profile singularity,hpc --dsname TestData --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+	log.info"""
+	Usage:
+	The typical command for running the pipeline is as follows:
+	nextflow run main.nf -profile singularity,hpc --dsname TestData --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 
-    Mandatory arguments:
-      --dsname                      Dataset name
-      --input                       Input raw fast5 folders/tar/tar.gz files
+	Mandatory arguments:
+	  --dsname		Dataset name
+	  --input		Input path for raw fast5 folders/tar/tar.gz files
 
-    Options:
-      --processors                  Processors used for each process, default is 8
-      --outputDir                   Output dir, default is 'outputs'
-      --dataType                    Data type, default is 'human', can be also 'ecoli'
-      --referenceGenome             Reference genome, default is 'reference_genome/hg38/hg38.fasta'
+	Options:
+	  --processors		Processors used for each process, default is 8
+	  --outputDir		Output dir, default is 'outputs'
+	  --dataType		Data type, default is 'human', can be also 'ecoli'
+	  --referenceGenome	Reference genome, default is 'reference_genome/hg38/hg38.fasta'
 
-      --cleanCache                  True if clean work dir after complete
-      --computeName                 Command used for tools, default is 'gpu', can be 'cpu'
+	  --cleanCache		True if clean work dir after complete
+	  --computeName		Command used for tools, default is 'gpu', can be 'cpu'
 
-      --queueName                   SLURM job submission queue name, default is 'gpu'
-      --qosName                     SLURM job submission qos name, default is 'inference'
-      --gresGPUOptions              SLURM job submission GPU options, default is '--gres=gpu:v100:1'
-      --jobMaxTime              	SLURM job submission time options, default is '06:00:00'
-      --jobMaxMem                   SLURM job submission memory options, default is '180G'
+	  --queueName		SLURM job submission queue name, default is 'gpu'
+	  --qosName		SLURM job submission qos name, default is 'inference'
+	  --gresGPUOptions	SLURM job submission GPU options, default is '--gres=gpu:v100:1'
+	  --jobMaxTime		SLURM job submission time options, default is '06:00:00'
+	  --jobMaxMem		SLURM job submission memory options, default is '180G'
 
-      --conda_name              	Conda name used for pipeline
-      --docker_name              	Docker name used for pipeline
-      --singularity_name            Singularity name used for pipeline
-      --singularity_cache_dir       Singularity cache dir
+	  --conda_name			Conda name used for pipeline
+	  --docker_name			Docker name used for pipeline
+	  --singularity_name		Singularity name used for pipeline
+	  --singularity_cache_dir	Singularity cache dir
 
-    Other options:
-      --guppyDir                    Guppy installation dir
+	Other options:
+	  --guppyDir		Guppy installation dir
 
-    -profile options:
-      Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments.
+	-profile options:
+	  Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments.
 
-      docker 			A generic configuration profile to be used with Docker, pulls software from Docker Hub: quay.io/liuyangzzu/nanome:v1.5
-      singulairy			A generic configuration profile to be used with Singularity, pulls software from: docker://quay.io/liuyangzzu/nanome:v1.5
-      conda				Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Create conda enviroment by 'conda env create -f environment.yml'
-      hpc				A generic configuration profile to be used on HPC with SLURM job submission support.
-      google			A generic configuration profile to be used on Google Cloud with 'google-lifesciences' support.
+	  docker 	A generic configuration profile to be used with Docker, pulls software from Docker Hub: quay.io/liuyangzzu/nanome:v1.5
+	  singulairy	A generic configuration profile to be used with Singularity, pulls software from: docker://quay.io/liuyangzzu/nanome:v1.5
+	  conda		Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Create conda enviroment by 'conda env create -f environment.yml'
+	  hpc		A generic configuration profile to be used on HPC cluster with SLURM job submission support.
+	  google	A generic configuration profile to be used on Google Cloud platform with 'google-lifesciences' support.
 
-    """.stripIndent()
+	Contact to https://nanome.jax.org for bug report.
+	""".stripIndent()
 }
 
 // Show help emssage
@@ -1254,9 +1255,14 @@ process SiteLevelUnify {
 	deepsignalFile=\$(find . -maxdepth 1 -name '*.deepsignal.per_read.combine.*.gz')
 	guppyFile=\$(find . -maxdepth 1 -name '*.guppy.*per_site.combine.*.gz')
 	tomboFile=\$(find . -maxdepth 1 -name '*.tombo.per_read.combine.*.gz')
-	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_clusterCpG_per_site.combine.*.gz')
+	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_per_site.combine.*.gz')
 	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.*.gz')
-	deepmodEncode="DeepMod.Cluster"
+	deepmodEncode="DeepMod.C"
+
+	if [[ "${params.useDeepModCluster}" == true ]] ; then
+		deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_clusterCpG_per_site.combine.*.gz')
+		deepmodEncode="DeepMod.Cluster"
+	fi
 
 	tss_more_options=""
 	if [[ "${params.dataType}" == "ecoli" ]] ; then

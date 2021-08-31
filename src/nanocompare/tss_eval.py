@@ -163,7 +163,7 @@ if __name__ == '__main__':
 
     input_list = []
     for callstr in args.calls:
-        logger.info(f'\n\n####################\n\n')
+        # logger.info(f'\n\n####################\n\n')
         callencode, callfn = callstr.split(':')
         if len(callfn) == 0:
             continue
