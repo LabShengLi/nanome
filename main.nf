@@ -11,19 +11,19 @@ def helpMessage() {
 	  --input		Input path for raw fast5 folders/tar/tar.gz files
 
 	Options:
-	  --processors		Processors used for each process, default is 8
+	  --processors		Processors used for each task
 	  --outputDir		Output dir, default is 'outputs'
 	  --dataType		Data type, default is 'human', can be also 'ecoli'
 	  --referenceGenome	Reference genome, default is 'reference_genome/hg38/hg38.fasta'
 
 	  --cleanCache		True if clean work dir after complete
-	  --computeName		Command used for tools, default is 'gpu', can be 'cpu'
+	  --computeName		Command used for tools, default is 'gpu', can be also 'cpu'
 
-	  --queueName		SLURM job submission queue name, default is 'gpu'
-	  --qosName		SLURM job submission qos name, default is 'inference'
-	  --gresGPUOptions	SLURM job submission GPU options, default is '--gres=gpu:v100:1'
-	  --jobMaxTime		SLURM job submission time options, default is '06:00:00'
-	  --jobMaxMem		SLURM job submission memory options, default is '180G'
+	  --queueName		SLURM job submission queue name for cluster running, default is 'gpu'
+	  --qosName		SLURM job submission qos name for cluster running, default is 'inference'
+	  --gresGPUOptions	SLURM job submission GPU allocation options for cluster running, default is '--gres=gpu:v100:1'
+	  --jobMaxTime		SLURM job submission time allocation options for cluster running, default is '05:00:00'
+	  --jobMaxMem		SLURM job submission memory allocation options for cluster running, default is '64G'
 
 	  --conda_name			Conda name used for pipeline
 	  --docker_name			Docker name used for pipeline
