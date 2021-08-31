@@ -1,5 +1,58 @@
 #!/usr/bin/env nextflow
 
+def helpMessage() {
+    log.info"""
+    Usage:
+    The typical command for running the pipeline is as follows:
+    nextflow run main.nf -profile singularity,hpc --dsname TestData --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+
+    Mandatory arguments:
+      --dsname                      Dataset name
+      --input                       Input raw fast5 folders/tar/tar.gz files
+
+    Options:
+      --processors                  Processors used for each process, default is 8
+      --outputDir                   Output dir, default is 'outputs'
+      --dataType                    Data type, default is 'human', can be also 'ecoli'
+      --referenceGenome             Reference genome, default is 'reference_genome/hg38/hg38.fasta'
+
+      --cleanCache                  True if clean work dir after complete
+      --computeName                 Command used for tools, default is 'gpu', can be 'cpu'
+
+      --queueName                   SLURM job submission queue name, default is 'gpu'
+      --qosName                     SLURM job submission qos name, default is 'inference'
+      --gresGPUOptions              SLURM job submission GPU options, default is '--gres=gpu:v100:1'
+      --jobMaxTime              	SLURM job submission time options, default is '06:00:00'
+      --jobMaxMem                   SLURM job submission memory options, default is '180G'
+
+      --conda_name              	Conda name used for pipeline
+      --docker_name              	Docker name used for pipeline
+      --singularity_name            Singularity name used for pipeline
+      --singularity_cache_dir       Singularity cache dir
+
+    Other options:
+      --guppyDir                    Guppy installation dir
+
+    -profile options:
+      Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments.
+
+      docker 			A generic configuration profile to be used with Docker, pulls software from Docker Hub: quay.io/liuyangzzu/nanome:v1.5
+      singulairy			A generic configuration profile to be used with Singularity, pulls software from: docker://quay.io/liuyangzzu/nanome:v1.5
+      conda				Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Create conda enviroment by 'conda env create -f environment.yml'
+      hpc				A generic configuration profile to be used on HPC with SLURM job submission support.
+      google			A generic configuration profile to be used on Google Cloud with 'google-lifesciences' support.
+
+    """.stripIndent()
+}
+
+// Show help emssage
+params.help = false
+if (params.help){
+    helpMessage()
+    exit 0
+}
+
+
 log.info """\
 NANOME - NF PIPELINE (v$workflow.manifest.version)
 by Li Lab at The Jackson Laboratory
@@ -15,7 +68,6 @@ runMethcall		:${params.runMethcall}
 =================================
 """
 .stripIndent()
-
 
 projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
