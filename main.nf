@@ -1283,7 +1283,6 @@ process ReportHtml {
 	mkdir -p report
 	cp src/nanocompare/report/style.css report/
 	cp -rf src/nanocompare/report/icons report/
-	cp -rf src/nanocompare/report/images report/
 	cp -rf src/nanocompare/report/js report/
 
 	PYTHONPATH=src  python src/nanocompare/report/gen_html_report.py \

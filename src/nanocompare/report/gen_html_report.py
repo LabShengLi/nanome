@@ -3,13 +3,36 @@ import os
 import sys
 from collections import defaultdict
 
+import matplotlib.pyplot as plt
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader
 
 from nanocompare.global_settings import ToolNameList
 
 
-def get_methcall_report_df(baseDir):
+def density_plot(df, outfn, tool, col_index=6, bins=10):
+    # setting font size
+    plt.rcParams.update({'font.size': 6})
+
+    # plots
+    plt.hist(df.iloc[:, col_index], bins=bins, range=(0, 1), color='blue', edgecolor='black')
+
+    # Add labels
+    plt.xlim([0, 1])
+    plt.title(f'{tool} = {len(df):,} CpGs')
+    plt.xlabel('Methylation %')
+    plt.ylabel('# of CpGs')
+
+    # save figures
+    fig = plt.gcf()
+    fig.set_size_inches(2, 2)
+    os.makedirs(os.path.dirname(outfn), exist_ok=True)
+    plt.savefig(outfn, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"save to {outfn}")
+
+
+def get_methcall_report_df(baseDir, outDir):
     """
     Generate the methylation calling report dataframe
     :param baseDir:
@@ -23,6 +46,9 @@ def get_methcall_report_df(baseDir):
         df_site_level = pd.read_csv(fnlist[0], sep='\t', header=None, index_col=False)
         ret_dict['Tool'].append(tool)
         ret_dict['CpGs'].append(f"{len(df_site_level):,}")
+
+        outfn = os.path.join(outDir, 'images', f'dist_{tool}.png')
+        density_plot(df_site_level, outfn, tool)
     return pd.DataFrame.from_dict(ret_dict)
 
 
@@ -55,7 +81,7 @@ if __name__ == '__main__':
     df_basecall_info = pd.DataFrame.from_dict(dataset_basecall)
     print(df_basecall_info)
 
-    df_methcall_info = get_methcall_report_df(indir_methcall)
+    df_methcall_info = get_methcall_report_df(indir_methcall, outdir)
     print(df_methcall_info)
 
     env = Environment(loader=FileSystemLoader('src/nanocompare/report'))
