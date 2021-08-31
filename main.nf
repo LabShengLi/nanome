@@ -30,7 +30,7 @@ workflow.onComplete {
 
 // Channel for utils/ and src/ folders
 ch_utils.into{ch_utils1; ch_utils2; ch_utils3; ch_utils4; ch_utils5; ch_utils6; ch_utils7; ch_utils8; ch_utils9}
-ch_src.into{ch_src1; ch_src2; ch_src3; ch_src4}
+ch_src.into{ch_src1; ch_src2; ch_src3; ch_src4; ch_src5}
 
 // Collect all folders of fast5 files, and send into Channels for pipelines
 if (params.input.endsWith(".filelist.txt")) {
@@ -248,7 +248,7 @@ process Basecall {
 
 // Collect and output QC results for basecall, and report ONT coverage
 process QCExport {
-	publishDir "${params.outputDir}/${params.dsname}-basecall-report",
+	publishDir "${params.outputDir}/${params.dsname}-basecallings",
 		mode: "copy", enabled: params.outputQC
 
 	input:
@@ -1065,7 +1065,7 @@ deepsignal_combine_out_ch
 			nanopolish_combine_out_ch,
 			guppy_gcf52ref_combine_out_ch)
 	.toSortedList()
-	.into { readlevel_unify_in; sitelevel_unify_in }
+	.into { raw_results_five_tools1; raw_results_five_tools2 }
 
 
 // Read level unified output, and get METEORE output
@@ -1079,13 +1079,13 @@ process METEORE {
 		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
 
 	input:
-	path fileList 	from 	readlevel_unify_in
+	path fileList 	from 	raw_results_five_tools1
 	each path("*") 	from 	ch_src3
 	each path("*") 	from 	ch_utils8
 
 	output:
 	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz" into meteore_combine_out_ch
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz" into unify_read_level_out_ch
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz" into read_unify_out_ch
 
 	when:
 	fileList.size() >= 1 && !params.filterGPUTaskRuns
@@ -1166,11 +1166,11 @@ process METEORE {
 
 
 meteore_combine_out_ch
-	.concat(sitelevel_unify_in.flatten(),
+	.concat(raw_results_five_tools2.flatten(),
 			deepmod_combine_out_ch.flatten(),
 			guppy_fast5mod_combine_out_ch)
 	.toSortedList()
-	.into { sitelevel_unify_in1; readlevelperf_in_ch; sitelevelcorr_in_ch}
+	.into { all_raw_results1; all_raw_results2; all_raw_results3; all_raw_results4}
 
 
 process SiteLevelUnify {
@@ -1181,7 +1181,7 @@ process SiteLevelUnify {
 		mode: "copy", pattern: "README.txt"
 
 	input:
-	path fileList 	from 	sitelevel_unify_in1
+	path fileList 	from 	all_raw_results1
 	each path("*") 	from 	ch_src4
 	each path("*") 	from 	ch_utils9
 
@@ -1244,12 +1244,65 @@ process SiteLevelUnify {
 }
 
 
+qc_report_out_ch
+	.concat(all_raw_results2.flatten(), site_unify_out_ch.flatten(), read_unify_out_ch.flatten())
+	.toSortedList()
+	.set {report_in_ch}
+
+
+process ReportHtml {
+	publishDir "${params.outputDir}", mode: "copy"
+
+	input:
+	path fileList 	from 	report_in_ch
+	each path("*") 	from 	ch_src5
+
+	output:
+	path "report" 	into	report_out_ch
+
+	when:
+	fileList.size() >= 1
+
+	"""
+	## Generate running information tsv
+	> running_information.tsv
+	printf '%s\t%s\n' Title Information >> running_information.tsv
+	printf '%s\t%s\n' dsname ${params.dsname} >> running_information.tsv
+	printf '%s\t%s\n' projectDir ${workflow.projectDir} >> running_information.tsv
+	printf '%s\t%s\n' workDir ${workflow.workDir} >> running_information.tsv
+	printf '%s\t%s\n' commandLine "${workflow.commandLine}" >> running_information.tsv
+	printf '%s\t%s\n' runName ${workflow.runName} >> running_information.tsv
+	printf '%s\t%s\n' start ${workflow.start} >> running_information.tsv
+	printf '%s\t%s\n' input "${params.input}" >> running_information.tsv
+	printf '%s\t%s\n' outputDir ${params.outputDir} >> running_information.tsv
+
+	## Get basecalling results from NanoComp
+	basecallOutputFile=\$(find ${params.dsname}_QCReport/ -name "*NanoStats.txt" -type f)
+
+	## Generate report dir and html utilities
+	mkdir -p report
+	cp src/nanocompare/report/style.css report/
+	cp -rf src/nanocompare/report/icons report/
+	cp -rf src/nanocompare/report/js report/
+
+	PYTHONPATH=src  python src/nanocompare/report/gen_html_report.py \
+		${params.dsname} \
+		running_information.tsv \
+		\${basecallOutputFile} \
+		. \
+		report
+
+	echo "### report html DONE"
+	"""
+}
+
+
 // Read level evaluations
 process ReadLevelPerf {
 	publishDir "${params.outputDir}/nanome-analysis-${params.dsname}", mode: "copy"
 
 	input:
-	path fileList 	from 	readlevelperf_in_ch
+	path fileList 	from 	all_raw_results3
 	each path("*") 	from 	ch_src1
 	path bgFiles 	from 	in_bg_ch1
 
@@ -1300,7 +1353,7 @@ process SiteLevelCorr {
 
 	input:
 	path perfDir 	from 	readlevel_out_ch
-	path fileList 	from 	sitelevelcorr_in_ch
+	path fileList 	from 	all_raw_results4
 	each path("*") 	from 	ch_src2
 	path bgFiles 	from 	in_bg_ch2
 
