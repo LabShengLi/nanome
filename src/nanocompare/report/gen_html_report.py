@@ -4,6 +4,7 @@ import sys
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader
 
@@ -15,7 +16,8 @@ def density_plot(df, outfn, tool, col_index=6, bins=10):
     plt.rcParams.update({'font.size': 6})
 
     # plots
-    plt.hist(df.iloc[:, col_index], bins=bins, range=(0, 1), color='blue', edgecolor='black')
+    fig, ax = plt.subplots(figsize=(2, 2))
+    ax.hist(df.iloc[:, col_index], bins=bins, range=(0, 1), color='blue', alpha=0.4)
 
     # Add labels
     plt.xlim([0, 1])
@@ -24,8 +26,6 @@ def density_plot(df, outfn, tool, col_index=6, bins=10):
     plt.ylabel('# of CpGs')
 
     # save figures
-    fig = plt.gcf()
-    fig.set_size_inches(2, 2)
     os.makedirs(os.path.dirname(outfn), exist_ok=True)
     plt.savefig(outfn, dpi=300, bbox_inches='tight')
     plt.close()
