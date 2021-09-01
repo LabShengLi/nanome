@@ -1,5 +1,59 @@
 #!/usr/bin/env nextflow
 
+def helpMessage() {
+	log.info"""
+	Usage:
+	The typical command for running the pipeline is as follows:
+	nextflow run main.nf -profile singularity,hpc --dsname TestData --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+
+	Mandatory arguments:
+	  --dsname		Dataset name
+	  --input		Input path for raw fast5 folders/tar/tar.gz files
+
+	Options:
+	  --processors		Processors used for each task
+	  --outputDir		Output dir, default is 'outputs'
+	  --dataType		Data type, default is 'human', can be also 'ecoli'
+	  --referenceGenome	Reference genome, default is 'reference_genome/hg38/hg38.fasta'
+
+	  --cleanCache		True if clean work dir after complete
+	  --computeName		Command used for tools, default is 'gpu', can be also 'cpu'
+
+	  --queueName		SLURM job submission queue name for cluster running, default is 'gpu'
+	  --qosName		SLURM job submission qos name for cluster running, default is 'inference'
+	  --gresGPUOptions	SLURM job submission GPU allocation options for cluster running, default is '--gres=gpu:v100:1'
+	  --jobMaxTime		SLURM job submission time allocation options for cluster running, default is '05:00:00'
+	  --jobMaxMem		SLURM job submission memory allocation options for cluster running, default is '64G'
+
+	  --conda_name			Conda name used for pipeline
+	  --docker_name			Docker name used for pipeline
+	  --singularity_name		Singularity name used for pipeline
+	  --singularity_cache_dir	Singularity cache dir
+
+	Other options:
+	  --guppyDir		Guppy installation dir
+
+	-profile options:
+	  Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments.
+
+	  docker 	A generic configuration profile to be used with Docker, pulls software from Docker Hub: quay.io/liuyangzzu/nanome:v1.5
+	  singulairy	A generic configuration profile to be used with Singularity, pulls software from: docker://quay.io/liuyangzzu/nanome:v1.5
+	  conda		Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Create conda enviroment by 'conda env create -f environment.yml'
+	  hpc		A generic configuration profile to be used on HPC cluster with SLURM job submission support.
+	  google	A generic configuration profile to be used on Google Cloud platform with 'google-lifesciences' support.
+
+	Contact to https://nanome.jax.org for bug report.
+	""".stripIndent()
+}
+
+// Show help emssage
+params.help = false
+if (params.help){
+    helpMessage()
+    exit 0
+}
+
+
 log.info """\
 NANOME - NF PIPELINE (v$workflow.manifest.version)
 by Li Lab at The Jackson Laboratory
@@ -15,7 +69,6 @@ runMethcall		:${params.runMethcall}
 =================================
 """
 .stripIndent()
-
 
 projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
@@ -1202,9 +1255,14 @@ process SiteLevelUnify {
 	deepsignalFile=\$(find . -maxdepth 1 -name '*.deepsignal.per_read.combine.*.gz')
 	guppyFile=\$(find . -maxdepth 1 -name '*.guppy.*per_site.combine.*.gz')
 	tomboFile=\$(find . -maxdepth 1 -name '*.tombo.per_read.combine.*.gz')
-	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_clusterCpG_per_site.combine.*.gz')
+	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_per_site.combine.*.gz')
 	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.*.gz')
-	deepmodEncode="DeepMod.Cluster"
+	deepmodEncode="DeepMod.C"
+
+	if [[ "${params.useDeepModCluster}" == true ]] ; then
+		deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_clusterCpG_per_site.combine.*.gz')
+		deepmodEncode="DeepMod.Cluster"
+	fi
 
 	tss_more_options=""
 	if [[ "${params.dataType}" == "ecoli" ]] ; then

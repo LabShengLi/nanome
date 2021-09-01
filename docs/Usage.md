@@ -117,7 +117,52 @@ outputs/TestData-basecall-report
    └── TestData_QCReport
 ```
 
-We also support input as a file list if input is suffix like `.filelist.txt`, an example input is [inputs/test.demo.filelist.txt](https://github.com/liuyangzzu/nanome/blob/master/inputs/test.demo.filelist.txt).
+We also support input as a file list if input is suffix like `.filelist.txt`, an example input is [inputs/test.demo.filelist.txt](https://github.com/liuyangzzu/nanome/blob/master/inputs/test.demo.filelist.txt). Please use folowings for command line help:
+```angular2html
+./nextflow run main.nf --help
+
+N E X T F L O W  ~  version 20.10.0
+Launching `main.nf` [maniac_babbage] - revision: deabf939f5
+Usage:
+The typical command for running the pipeline is as follows:
+nextflow run main.nf -profile singularity,hpc --dsname TestData --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+
+Mandatory arguments:
+  --dsname                      Dataset name
+  --input                       Input raw fast5 folders/tar/tar.gz files
+
+Options:
+  --processors                  Processors used for each process, default is 8
+  --outputDir                   Output dir, default is 'outputs'
+  --dataType                    Data type, default is 'human', can be also 'ecoli'
+  --referenceGenome             Reference genome, default is 'reference_genome/hg38/hg38.fasta'
+
+  --cleanCache                  True if clean work dir after complete
+  --computeName                 Command used for tools, default is 'gpu', can be 'cpu'
+
+  --queueName                   SLURM job submission queue name, default is 'gpu'
+  --qosName                     SLURM job submission qos name, default is 'inference'
+  --gresGPUOptions              SLURM job submission GPU options, default is '--gres=gpu:v100:1'
+  --jobMaxTime              	SLURM job submission time options, default is '06:00:00'
+  --jobMaxMem                   SLURM job submission memory options, default is '180G'
+
+  --conda_name              	Conda name used for pipeline
+  --docker_name              	Docker name used for pipeline
+  --singularity_name            Singularity name used for pipeline
+  --singularity_cache_dir       Singularity cache dir
+
+Other options:
+  --guppyDir                    Guppy installation dir
+
+-profile options:
+  Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments.
+
+  docker 			A generic configuration profile to be used with Docker, pulls software from Docker Hub: quay.io/liuyangzzu/nanome:v1.5
+  singulairy			A generic configuration profile to be used with Singularity, pulls software from: docker://quay.io/liuyangzzu/nanome:v1.5
+  conda				Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Create conda enviroment by 'conda env create -f environment.yml'
+  hpc				A generic configuration profile to be used on HPC with SLURM job submission support.
+  google			A generic configuration profile to be used on Google Cloud with 'google-lifesciences' support.
+```
 
 
 # 2. Experiment for E. coli data
