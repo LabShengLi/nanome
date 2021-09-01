@@ -23,7 +23,7 @@ def helpMessage() {
 	  --qosName		SLURM job submission qos name for cluster running, default is 'inference'
 	  --gresGPUOptions	SLURM job submission GPU allocation options for cluster running, default is '--gres=gpu:v100:1'
 	  --jobMaxTime		SLURM job submission time allocation options for cluster running, default is '05:00:00'
-	  --jobMaxMem		SLURM job submission memory allocation options for cluster running, default is '64G'
+	  --jobMaxMem		SLURM job submission memory allocation options for cluster running, default is '32G'
 
 	  --conda_name			Conda name used for pipeline
 	  --docker_name			Docker name used for pipeline
@@ -716,9 +716,10 @@ process Tombo {
 		${resquiggleDir.baseName}.tombo.run.log
 
 	retry=1
-	while grep -q "BrokenPipeError:" ${resquiggleDir.baseName}.tombo.run.log
+	## while grep -q "BrokenPipeError:" ${resquiggleDir.baseName}.tombo.run.log
+	while ! tail -n 1 ${resquiggleDir.baseName}.tombo.run.log |  grep -q "100%"
 	do
-		echo "### Found error 32, repeat tombo running again!!!"
+		echo "### Found error in tombo detect_modifications, repeat tombo running again!!!"
 		tombo detect_modifications alternative_model \
 			--fast5-basedirs ${resquiggleDir}/workspace \
 			--dna --standard-log-likelihood-ratio \
@@ -730,18 +731,19 @@ process Tombo {
 			--multiprocess-region-size 1000 &> \
 			${resquiggleDir.baseName}.tombo.run.log
 		retry=\$(( retry+1 ))
-		if (( retry >= 8 )); then
+		if (( retry >= 5 )); then
 			break
 		fi
 	done
 
-	if grep -q "BrokenPipeError: \\[Errno 32\\] Broken pipe" ${resquiggleDir.baseName}.tombo.run.log; then
+	## if grep -q "BrokenPipeError: \\[Errno 32\\] Broken pipe" ${resquiggleDir.baseName}.tombo.run.log; then
+	if ! tail -n 1 ${resquiggleDir.baseName}.tombo.run.log |  grep -q "100%" ; then
 		## Grep the broken pipeline bug for Tombo
-		echo "### Tombo bug occur, max retry reached at \${retry} times, return error"
+		echo "### Tombo detect_modifications bug occur, max retry reached at \${retry} times, return error, please increase memory or decrease processors"
 		exit 32
 	else
 		## Tombo was ok
-		echo "### Tombo log passed"
+		echo "### Tombo log passed, OK"
 	fi
 
 	python utils/tombo_extract_per_read_stats.py \
@@ -749,7 +751,7 @@ process Tombo {
 		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats" \
 		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed"
 
-	gzip batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed
+	gzip -f batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed
 	echo "### Tombo methylation calling DONE"
 	"""
 }

@@ -34,7 +34,7 @@ fi
 
 ########################################
 # Clean old results
-#rm -rf ${workDir} ${outputsDir}
+rm -rf ${workDir} ${outputsDir}
 mkdir -p ${workDir}; chmod ugo+w ${workDir}
 mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
@@ -54,7 +54,6 @@ set -x
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
     --singularity_cache_dir '/fastscratch/li-lab/nanome/singularity-cache'
-
 
 # Report
 tree ${workDir} > ${baseDir}/work_demo.tree.txt
