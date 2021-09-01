@@ -4,7 +4,7 @@ def helpMessage() {
 	log.info"""
 	Usage:
 	The typical command for running the pipeline is as follows:
-	nextflow run main.nf -profile singularity,hpc --dsname TestData --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+	nextflow run https://github.com/liuyangzzu/nanome.git -profile singularity,hpc --dsname TestData --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 
 	Mandatory arguments:
 	  --dsname		Dataset name
@@ -14,10 +14,10 @@ def helpMessage() {
 	  --processors		Processors used for each task
 	  --outputDir		Output dir, default is 'outputs'
 	  --dataType		Data type, default is 'human', can be also 'ecoli'
-	  --referenceGenome	Reference genome, default is 'reference_genome/hg38/hg38.fasta'
+	  --chrSet		Chromosomes used in analysis, default is chr1-22, X and Y, seperated by comma. For E. coli data, it is set to 'NC_000913.3'
 
 	  --cleanCache		True if clean work dir after complete
-	  --computeName		Command used for tools, default is 'gpu', can be also 'cpu'
+	  --commandType		Command used for tools, default is 'gpu', can be also 'cpu'
 
 	  --queueName		SLURM job submission queue name for cluster running, default is 'gpu'
 	  --qosName		SLURM job submission qos name for cluster running, default is 'inference'
@@ -42,7 +42,7 @@ def helpMessage() {
 	  hpc		A generic configuration profile to be used on HPC cluster with SLURM job submission support.
 	  google	A generic configuration profile to be used on Google Cloud platform with 'google-lifesciences' support.
 
-	Contact to https://nanome.jax.org for bug report.
+	Contact to https://github.com/liuyangzzu/nanome or https://nanome.jax.org for bug report.
 	""".stripIndent()
 }
 
@@ -51,6 +51,21 @@ params.help = false
 if (params.help){
     helpMessage()
     exit 0
+}
+
+// Check mandatory params
+assert params.dsname != null : "Missing --dsname option, for command help use --help"
+assert params.input != null : "Missing --input option, for command help use --help"
+
+if (params.dataType == 'human') {
+	referenceGenome="reference_genome/hg38/hg38.fasta"
+	chromSizesFile="reference_genome/hg38/hg38.chrom.sizes"
+} else if (params.dataType == 'ecoli') {
+	referenceGenome="reference_genome/ecoli/Ecoli_k12_mg1655.fasta"
+	chromSizesFile="reference_genome/ecoli/Ecoli_k12_mg1655.fasta.genome.sizes"
+} else {
+	println "Param dataType=${params.dataType} is not support"
+	exit 1
 }
 
 
@@ -63,7 +78,7 @@ dsname			:${params.dsname}
 input			:${params.input}
 output			:${params.outputDir}
 work			:${workflow.workDir}
-reference_genome	:${params.referenceGenome}
+reference_genome	:${referenceGenome}
 runBasecall		:${params.runBasecall}
 runMethcall		:${params.runMethcall}
 =================================
@@ -73,6 +88,9 @@ runMethcall		:${params.runMethcall}
 projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
+
+
+
 
 workflow.onComplete {
 	if (workflow.success && params.cleanCache) {
@@ -254,7 +272,7 @@ process Basecall {
 	which guppy_basecaller
 	mkdir -p ${fast5_dir.baseName}.basecalled
 
-	if [[ \${computeName} == "cpu" ]]; then
+	if [[ \${commandType} == "cpu" ]]; then
 		## CPU version command
 		guppy_basecaller --input_path ${fast5_dir} \
 			--save_path "${fast5_dir.baseName}.basecalled" \
@@ -262,7 +280,7 @@ process Basecall {
 			--num_callers \$(( numProcessor )) \
 			--fast5_out \
 			--verbose_logs
-	elif [[ \${computeName} == "gpu" ]]; then
+	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		guppy_basecaller --input_path ${fast5_dir} \
 			--save_path "${fast5_dir.baseName}.basecalled" \
@@ -272,7 +290,7 @@ process Basecall {
 			--verbose_logs \
 			-x auto
 	else
-		echo "### error value for computeName=\${computeName}"
+		echo "### error value for commandType=\${commandType}"
 		exit 255
 	fi
 
@@ -282,7 +300,7 @@ process Basecall {
 
 	## After basecall, we process guppy results for ONT coverage analyses
 	# align FASTQ files to reference genome, write sorted alignments to a BAM file
-	minimap2 -a -z 600,200 -x map-ont ${params.referenceGenome} ${fast5_dir.baseName}.basecalled/*.fastq \
+	minimap2 -a -z 600,200 -x map-ont ${referenceGenome} ${fast5_dir.baseName}.basecalled/*.fastq \
 	    -t \$(( numProcessor*2 )) > ${fast5_dir.baseName}.basecalled.sam
     echo "Alignment done"
 
@@ -411,7 +429,7 @@ process Guppy {
 
 	mkdir -p ${fast5_dir.baseName}.methcalled
 
-	if [[ \${computeName} == "cpu" ]]; then
+	if [[ \${commandType} == "cpu" ]]; then
 		## CPU version command
 		guppy_basecaller --input_path ${fast5_dir} \
 			--save_path ${fast5_dir.baseName}.methcalled \
@@ -419,7 +437,7 @@ process Guppy {
 			--num_callers \$(( numProcessor )) \
 			--fast5_out \
 			--verbose_logs
-	elif [[ \${computeName} == "gpu" ]]; then
+	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		guppy_basecaller --input_path ${fast5_dir} \
 			--save_path ${fast5_dir.baseName}.methcalled \
@@ -429,14 +447,14 @@ process Guppy {
 			--verbose_logs \
 			--device auto
 	else
-		echo "### error value for computeName=\${computeName}"
+		echo "### error value for commandType=\${commandType}"
 		exit 255
 	fi
 	echo "### Guppy methylation calling DONE"
 
 	## Extract guppy methylation-callings
 	## gcf52ref ways
-	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${params.referenceGenome} \
+	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \
 		${fast5_dir.baseName}.methcalled/*.fastq | \
 		samtools sort -@ \$(( numProcessor*2 )) \
 		-T tmp -o gcf52ref.batch.${fast5_dir.baseName}.bam
@@ -458,7 +476,7 @@ process Guppy {
 	python gcf52ref/scripts/extract_methylation_from_rocks.py \
 		-d base_mods.rocksdb \
 		-a gcf52ref.batch.${fast5_dir.baseName}.bam \
-		-r ${params.referenceGenome} \
+		-r ${referenceGenome} \
 		-o tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv
 	echo "### gcf52ref extract to tsv DONE"
 
@@ -470,7 +488,7 @@ process Guppy {
 	FAST5PATH=${fast5_dir.baseName}.methcalled/workspace
 	OUTBAM=batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam
 
-	fast5mod guppy2sam \${FAST5PATH} --reference ${params.referenceGenome} \
+	fast5mod guppy2sam \${FAST5PATH} --reference ${referenceGenome} \
 		--workers 74 --recursive --quiet \
 		| samtools sort -@ \$(( numProcessor*2 )) | \
 		samtools view -b -@ \$(( numProcessor*2 )) > \${OUTBAM}
@@ -510,7 +528,7 @@ process Megalodon {
 	## Get megalodon model dir
 	tar -xzf ${megalodonModelTar}
 
-	if [[ \${computeName} == "cpu" ]]; then
+	if [[ \${commandType} == "cpu" ]]; then
 		## CPU version command
 		## Ref: https://github.com/nanoporetech/megalodon
 		megalodon \
@@ -524,13 +542,13 @@ process Megalodon {
 			--samtools-executable ${params.SAMTOOLS_PATH} \
 			--sort-mappings \
 			--mappings-format bam \
-			--reference ${params.referenceGenome} \
+			--reference ${referenceGenome} \
 			--mod-motif m CG 0 \
 			--mod-output-formats bedmethyl wiggle \
 			--write-mods-text \
 			--write-mod-log-probs \
 			--processes \$(( numProcessor*2 ))
-	elif [[ \${computeName} == "gpu" ]]; then
+	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		## Ref: https://github.com/nanoporetech/megalodon
 		megalodon \
@@ -544,7 +562,7 @@ process Megalodon {
 			--samtools-executable ${params.SAMTOOLS_PATH} \
 			--sort-mappings \
 			--mappings-format bam \
-			--reference ${params.referenceGenome} \
+			--reference ${referenceGenome} \
 			--mod-motif m CG 0 \
 			--mod-output-formats bedmethyl wiggle \
 			--write-mods-text \
@@ -552,7 +570,7 @@ process Megalodon {
 			--processes \$(( numProcessor*2 )) \
 			--devices 0
 	else
-		echo "### error value for computeName=\${computeName}"
+		echo "### error value for commandType=\${commandType}"
 		exit 255
 	fi
 
@@ -600,7 +618,7 @@ process Resquiggle {
 		--basecall-group ${params.BasecallGroupName} \
 		--overwrite \
 		${basecallIndir.baseName}.resquiggle/workspace \
-		${params.referenceGenome} &> \
+		${referenceGenome} &> \
 		${basecallIndir.baseName}.resquiggle.run.log
 	echo "### Resquiggle DONE"
 	"""
@@ -633,28 +651,28 @@ process DeepSignal {
 	"""
 	tar -xzf ${deepsignal_model_tar}
 
-	if [[ \${computeName} == "cpu" ]]; then
+	if [[ \${commandType} == "cpu" ]]; then
 		## CPU version command
 		deepsignal call_mods \
 			--input_path ${indir}/workspace \
 			--model_path "./${params.DEEPSIGNAL_MODEL}" \
 			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
-			--reference_path ${params.referenceGenome} \
+			--reference_path ${referenceGenome} \
 			--corrected_group ${params.resquiggleCorrectedGroup} \
 			--nproc \$(( numProcessor * ${params.deepLearningProcessorTimes}  )) \
 			--is_gpu no
-	elif [[ \${computeName} == "gpu" ]]; then
+	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		deepsignal call_mods \
 			--input_path ${indir}/workspace \
 			--model_path "./${params.DEEPSIGNAL_MODEL}" \
 			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
-			--reference_path ${params.referenceGenome} \
+			--reference_path ${referenceGenome} \
 			--corrected_group ${params.resquiggleCorrectedGroup} \
 			--nproc \$(( numProcessor * ${params.deepLearningProcessorTimes}  )) \
 			--is_gpu yes
 	else
-		echo "### error value for computeName=\${computeName}"
+		echo "### error value for commandType=\${commandType}"
 		exit 255
 	fi
 
@@ -729,7 +747,7 @@ process Tombo {
 	fi
 
 	python utils/tombo_extract_per_read_stats.py \
-		${params.chromSizesFile} \
+		${chromSizesFile} \
 		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats" \
 		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed"
 
@@ -771,7 +789,7 @@ process DeepMod {
 
 	DeepMod.py detect \
 			--wrkBase ${basecallDir}/workspace \
-			--Ref ${params.referenceGenome} \
+			--Ref ${referenceGenome} \
 			--Base C \
 			--modfile \${DeepModProjectDir}/train_deepmod/${params.DEEPMOD_RNN_MODEL} \
 			--FileID batch_${basecallDir.baseName}_num \
@@ -820,7 +838,7 @@ process Nanopolish {
 	# Index the raw read with fastq
 	nanopolish index -d ${basecallDir}/workspace \${fastqNoDupFile}
 
-	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${params.referenceGenome} \${fastqNoDupFile} | \
+	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \${fastqNoDupFile} | \
 		samtools sort -@ \$(( numProcessor*2 )) -T tmp -o \${bamFileName}
 	echo "### minimap2 finished"
 
@@ -829,7 +847,7 @@ process Nanopolish {
 	echo "### Alignment step DONE"
 
 	nanopolish call-methylation -t \$(( numProcessor*2 )) -r \${fastqNoDupFile} \
-		-b \${bamFileName} -g ${params.referenceGenome} > tmp.tsv
+		-b \${bamFileName} -g ${referenceGenome} > tmp.tsv
 
 	tail -n +2 tmp.tsv | gzip > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
 	echo "### Nanopolish methylation calling DONE"
@@ -939,14 +957,14 @@ process GuppyComb {
 		## Ref: https://github.com/nanoporetech/medaka/issues/177
 		for i in {1..22} X Y
 		do
-			fast5mod call total.meth.bam ${params.referenceGenome} \
+			fast5mod call total.meth.bam ${referenceGenome} \
 				meth.chr_\$i.tsv \
 				--meth cpg --quiet \
 				--regions chr\$i &
 		done
 	elif [[ "${params.dataType}" == "ecoli" ]] ; then
 		echo "### For ecoli, chr=${params.chrSet}"
-		fast5mod call total.meth.bam ${params.referenceGenome} \
+		fast5mod call total.meth.bam ${referenceGenome} \
 			meth.chr_${params.chrSet}.tsv \
 			--meth cpg --quiet \
 			--regions ${params.chrSet}

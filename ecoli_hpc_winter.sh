@@ -44,7 +44,7 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 ########################################
 ########################################
 # Running pipeline for E. coli data
-module load singularity
+#module load singularity
 
 set -x
 ./nextflow run main.nf \
@@ -52,7 +52,6 @@ set -x
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     -config conf/jax_hpc.config,conf/ecoli_demo.config \
-    --cleanCache false \
     --singularity_cache_dir '/fastscratch/li-lab/nanome/singularity-cache'
 
 # Report
