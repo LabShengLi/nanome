@@ -90,8 +90,6 @@ ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: fa
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
 
 
-
-
 workflow.onComplete {
 	if (workflow.success && params.cleanCache) {
 		def workDir = new File("${workflow.workDir}")
