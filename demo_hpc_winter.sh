@@ -53,7 +53,8 @@ set -x
     --outputDir ${outputsDir} \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
-    --singularity_cache_dir '/fastscratch/li-lab/nanome/singularity-cache'
+    --singularity_cache_dir '/fastscratch/li-lab/nanome/singularity-cache' \
+    --cleanCache false
 
 # Report
 tree ${workDir} > ${baseDir}/work_demo.tree.txt

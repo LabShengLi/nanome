@@ -55,14 +55,17 @@ Our HPC hardware specifications are as follows:
 
 
 ## Installation
-The 'nanome' pipeline support running with various ways:
-* Conda environment
+Users only need to install Nextflow by `curl -fsSL get.nextflow.io | bash`, execution environment will be automatically configured.
+
+The 'nanome' pipeline support running with various ways in different platforms:
+* Conda
     1. Create conda enviroment: `conda env create -f environment.yml`
 * Docker
     1. Docker container name: `quay.io/liuyangzzu/nanome:v1.5`
 * Singularity
     1. Pull image from docker hub: `singularity pull docker://quay.io/liuyangzzu/nanome:v1.5`
-
+* HPC clusters with SLURM support
+* Google Cloud platmform with google-lifesciences support
 
 For running on CloudOS platform (such as google cloud), our Nextflow pipeline supports using an Docker image (i.e., `quay.io/liuyangzzu/nanome:v1.5`), details please check [Usage](https://github.com/liuyangzzu/nanome/blob/master/docs/Usage.md). 
 
