@@ -10,31 +10,35 @@ def helpMessage() {
 	  --dsname		Dataset name
 	  --input		Input path for raw fast5 folders/tar/tar.gz files
 
-	Options:
+	General options:
 	  --processors		Processors used for each task
 	  --outputDir		Output dir, default is 'outputs'
 	  --dataType		Data type, default is 'human', can be also 'ecoli'
 	  --chrSet		Chromosomes used in analysis, default is chr1-22, X and Y, seperated by comma. For E. coli data, it is set to 'NC_000913.3'
 
-	  --cleanCache		True if clean work dir after complete
+	  --cleanCache		If clean work dir after complete, default is true
 	  --commandType		Command used for tools, default is 'gpu', can be also 'cpu'
 
+	Running environment options:
+	  --conda_name			Conda name used for pipeline, default is '~/anaconda3/envs/nanome'
+	  --docker_name			Docker name used for pipeline, default is 'quay.io/liuyangzzu/nanome:v1.5'
+	  --singularity_name		Singularity name used for pipeline, default is 'docker://quay.io/liuyangzzu/nanome:v1.5'
+	  --singularity_cache_dir	Singularity cache dir, default is '~/.singularity/cache'
+
+	Platform specific options:
 	  --queueName		SLURM job submission queue name for cluster running, default is 'gpu'
 	  --qosName		SLURM job submission qos name for cluster running, default is 'inference'
 	  --gresGPUOptions	SLURM job submission GPU allocation options for cluster running, default is '--gres=gpu:v100:1'
 	  --jobMaxTime		SLURM job submission time allocation options for cluster running, default is '05:00:00'
 	  --jobMaxMem		SLURM job submission memory allocation options for cluster running, default is '32G'
 
-	  --conda_name			Conda name used for pipeline
-	  --docker_name			Docker name used for pipeline
-	  --singularity_name		Singularity name used for pipeline
-	  --singularity_cache_dir	Singularity cache dir
+	  --googleProjectName	Google Cloud project name for google-lifesciences task running
 
 	Other options:
 	  --guppyDir		Guppy installation dir
 
 	-profile options:
-	  Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments.
+	  Use this parameter to choose a predefined configuration profile. Profiles can give configuration presets for different compute environments.
 
 	  docker 	A generic configuration profile to be used with Docker, pulls software from Docker Hub: quay.io/liuyangzzu/nanome:v1.5
 	  singulairy	A generic configuration profile to be used with Singularity, pulls software from: docker://quay.io/liuyangzzu/nanome:v1.5

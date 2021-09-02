@@ -4,22 +4,43 @@ The inputs of 'nanome' pipeline is a folder/tar/tar.gz or txt file list containi
 
 # 1. Running 'nanome' for human nanopore sequencing data
 
-The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome.git`. `--input` is input Fast5 file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name, `-profile` is the name of execution configuration, we support various of  configurations, e.g., `conda`, `docker`, `singularity`, `hpc`, and `google`, check detailed from [here](https://github.com/liuyangzzu/nanome/blob/master/nextflow.config#L174). 
 
-By default, we are using hg38 human reference genome, and you can specify reference genome using parameter `--referenceGenome="reference_genome/hg38/hg38.fasta"`. An example of how to use 'nanome' pipeline is given below.
+## Pre-defined pipeline profiles
+`-profile` is the name of execution configuration, we support various of  configurations, e.g., `conda`, `docker`, `singularity`, `hpc` and `google`. Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments.
+
+Several generic profiles are bundled with the pipeline which instruct the pipeline to use software packaged using different methods (Conda, Docker, Singularity) - see below.
+
+Note that multiple profiles can be loaded, for example: `-profile singularity,hpc` - the order of arguments is important! They are loaded in sequence, so later profiles can overwrite earlier profiles.
+
+If `-profile` is not specified, the pipeline will run locally and expect all software to be installed and available on the PATH. This is not recommended.
+
+* `conda`
+  * A generic configuration profile to be used with [Conda](https://docker.com/)
+* `docker`
+  * A generic configuration profile to be used with [Docker](https://docker.com/)
+  * Pulls software from: quay.io/liuyangzzu/nanome:v1.5
+* `singularity`
+  * A generic configuration profile to be used with [Singularity](https://sylabs.io/docs/)
+  * Pulls software from: docker://quay.io/liuyangzzu/nanome:v1.5
+* `hpc`		
+  * A generic configuration profile to be used on HPC cluster with [SLURM](https://slurm.schedmd.com/documentation.html) job submission support.
+* `google`	
+  * A generic configuration profile to be used on [Google Cloud](https://cloud.google.com/) platform with 'google-lifesciences' support.
+
+## Running samples
+The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome.git`. `--input` is input Fast5 file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name.
+
+By default, we are using hg38 human reference genome, and you can specify other reference genome using parameter `dataType='ecoli'`. An example of how to use 'nanome' pipeline is given below.
 
 ```angular2html
 # Get nextflow executable file
 curl -fsSL get.nextflow.io | bash
 
-# Run nanome pipeline from project directory
-./nextflow run main.nf \
-    -profile singularity,hpc \
-    --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+# Get command help
+./nextflow run https://github.com/liuyangzzu/nanome.git --help
 
-# Running nanome pipeline directly from github
-nextflow run https://github.com/liuyangzzu/nanome.git \
+# Running nanome pipeline
+./nextflow run https://github.com/liuyangzzu/nanome.git \
     -profile singularity,hpc \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
@@ -28,7 +49,7 @@ nextflow run https://github.com/liuyangzzu/nanome.git \
 You can also running 'nanome' pipeline on cloud computing platform, using following command options.
 ```angular2html
 # Running on Google Cloud (https://cloud.google.com)
-nextflow run main.nf \
+./nextflow run https://github.com/liuyangzzu/nanome.git \
     -profile docker,google \
     -w gs://jax-nanopore-01-project-data/TestData-work \
     --outputDir gs://jax-nanopore-01-export-bucket/TestData-ouputs \
@@ -166,7 +187,7 @@ Other options:
 
 
 # 2. Experiment for E. coli data
-The 'nanome' pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--referenceGenome` need to be set as E. coli reference genome such as 'reference_genome/ecoli/Ecoli_k12_mg1655.fasta'. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline `-config` params [conf/ecoli_demo.config](https://github.com/liuyangzzu/nanome/blob/master/conf/ecoli_demo.config).
+The 'nanome' pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--dataType` need to be set as `ecoli`. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline `-config` params [conf/ecoli_demo.config](https://github.com/liuyangzzu/nanome/blob/master/conf/ecoli_demo.config).
 
 ```angular2html
 git clone https://github.com/liuyangzzu/nanome.git
