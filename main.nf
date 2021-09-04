@@ -1081,7 +1081,7 @@ process DpmodComb {
 		cp -rf \$dx/* indir/\$dx/
 	done
 
-	python \${DeepModProjectDir}/DeepMod_tools/sum_chr_mod.py \
+	python utils/sum_chr_mod.py \
 		indir/ C ${params.dsname}.deepmod ${params.chrSet}
 
 	> ${params.dsname}.deepmod.C_per_site.combine.bed

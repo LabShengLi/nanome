@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import os, sys, string
 import multiprocessing
@@ -41,7 +41,7 @@ def readbed2(bedf):
          if not line: break;
          line = line.strip();
          lsp = line.split();
-         cur_ad[(lsp[0], int(lsp[1]), lsp[5])] = [int(lsp[9]), int(lsp[11])]
+         cur_ad[(lsp[0], int(lsp[1]), lsp[5])] = [int(lsp[9]), int(lsp[11])]  ## Ref: https://github.com/WGLab/DeepMod/blob/master/docs/Results_explanation.md#2-format-of-output
    return cur_ad
 
 def mergeMod(g_ad, cur_ad):
@@ -54,7 +54,7 @@ def mergeMod(g_ad, cur_ad):
 def save_mod(res_file, amod_dict, baseOfin):
    poskeys = sorted(list(amod_dict.keys()))
    for pk in poskeys:
-      if amod_dict[pk][1]==0: del amod_dict[pk]
+      if amod_dict[pk][1]==0: del amod_dict[pk] ## We correct bug for DeepMod using [0] instead of [1], TODO:
 
    poskeys = list(amod_dict.keys())
    poskeys = sorted(poskeys);
@@ -90,6 +90,7 @@ def sum_amod_handler(run_Q):
           cur_ad = readbed2(allbedfiles[bedf_ind])
           mergeMod(amod_dict, cur_ad)
 
+
       save_mod(res_file, amod_dict, baseOfin)
 
 ##############################
@@ -111,8 +112,3 @@ while any(p.is_alive() for p in mhandlers):
    except:
       time.sleep(1);
       continue;
-
-
-
-
-

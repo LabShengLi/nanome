@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=sanity_check
+#SBATCH --job-name=sanity_check_deepmod
 #SBATCH --partition=compute
 #SBATCH --qos=batch
 #SBATCH -N 1 # number of nodes
@@ -18,11 +18,11 @@ echo ${NanoCompareDir}
 
 Dataset=${1:-"NA12878-CHR20"}
 chrName=${2:-"chr20"}
-callList=${3:-"/projects/li-lab/Nanopore_compare/data/NA12878/CHR20/NA12878CHR20.deepmod.C.combine.bed.gz"}
+callList=${3:-"DeepMod.C:/projects/li-lab/Nanopore_compare/data/NA12878/CHR20/NA12878CHR20.deepmod.C.combine.bed.gz"}
 bgTruth=${4:-"/projects/li-lab/Nanopore_compare/data/NA12878/ENCFF279HCL.bed.gz;/projects/li-lab/Nanopore_compare/data/NA12878/ENCFF835NTC.bed.gz"}
 parser=${5:-"encode"}
 predThreshold=${6:-"0.5"}
-otherOptions=${7:-"--enable-cache --using-cache"}
+otherOptions=${7:-"--enable-cache --using-cache --is-report"}
 
 pythonFn=sanity_check_deepmod.py
 

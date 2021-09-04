@@ -7,7 +7,8 @@ import argparse
 from multiprocessing import Pool
 
 from nanocompare.eval_common import *
-
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score
 
 def report_performance_deepmod(ontCall, bgTruth, threshold=0.5):
     """
@@ -27,13 +28,11 @@ def report_performance_deepmod(ontCall, bgTruth, threshold=0.5):
     unmethCnt = len(y_truth) - methCnt
     prec = precision_score(y_truth, y_pred)
     recall = recall_score(y_truth, y_pred)
-    from sklearn.metrics import accuracy_score
-    from sklearn.metrics import f1_score
 
-    f1_score = f1_score(y_truth, y_pred)
+    f1 = f1_score(y_truth, y_pred)
     accuracy = accuracy_score(y_truth, y_pred)
     ret = {"Precision": prec, "Recall": recall,
-            "F1"      : f1_score, "Accuracy": accuracy, "Threshold": threshold,
+            "F1"      : f1, "Accuracy": accuracy, "Threshold": threshold,
             "Unmeth"  : unmethCnt, "Meth": methCnt}
 
     return ret
@@ -109,6 +108,8 @@ def parse_arguments():
     parser.add_argument('--enable-cache', action='store_true')
     parser.add_argument('--using-cache', action='store_true')
     parser.add_argument('--is-report', action='store_true')
+    parser.add_argument('--deepmod-paper-results', action='store_true')
+
     return parser.parse_args()
 
 
@@ -170,6 +171,66 @@ if __name__ == '__main__':
     logger.info(f'\n\n####################\n\n')
     if args.is_report:
         report_meth_unmeth_table()
+        sys.exit(0)
+
+    if args.deepmod_paper_results:
+        ## Evaluate for chr
+        logger.debug(f'Start check paper results for chr={args.chr}')
+        chrSet = [args.chr]
+        # Combine one/two replicates using DeepMod methods
+        bgTruth1, ret1 = combineBGTruthList_by_DeepModPaper(bgTruthList, covCutoff=1, filterChrs=chrSet)
+
+        # value is (meth_indicator: int, cov)
+        bgTruth5 = {key: bgTruth1[key] for key in bgTruth1 if bgTruth1[key][1] >= 5}
+
+        for callstr in args.calls:
+            callencode, callfn = callstr.split(':')
+            if len(callfn) == 0:
+                continue
+            if callencode != 'DeepMod.Cluster':
+                raise Exception("Only Deepmod paper results")
+            # value is (meth_freq, cov)
+            ontCall = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache,
+                                      using_cache=using_cache, include_score=False, siteLevel=True)
+        callSet = set(ontCall.keys())
+        bsSet = set(bgTruth5.keys())
+        joinedSet = callSet.intersection(bsSet)
+        logger.info(f"BS-seq(cov>=5)={len(bgTruth5):,}, DeepMod={len(ontCall):,}, intersect={len(joinedSet):,}")
+
+        ## joined sets performance report
+        y_truth = []
+        y_pred = []
+        for key in joinedSet:
+            bs_label=bgTruth5[key][0]
+            pred_label = 1 if ontCall[key][0] >= args.pred_threshold else 0
+            y_truth.append(bs_label)
+            y_pred.append(pred_label)
+        ## Calculate precision and recall
+        prec = precision_score(y_truth, y_pred)
+        recall = recall_score(y_truth, y_pred)
+        f1 = f1_score(y_truth, y_pred)
+        accuracy = accuracy_score(y_truth, y_pred)
+        logger.info(f"Joined report: chr={args.chr} (Meth={sum(y_truth):,}, Unmeth={len(y_truth)-sum(y_truth)}), precision={prec}, recall={recall}, f1={f1}, accuracy={accuracy}")
+        print(f"Joined report\t{args.chr}\t{sum(y_truth)}\t{len(y_truth)-sum(y_truth)}\t{prec}\t{recall}\t{f1}\t{accuracy}\n")
+
+        y_truth = []
+        y_pred = []
+        for key in bgTruth5:
+            bs_label = bgTruth5[key][0]
+            if key in ontCall:
+                pred_label = 1 if ontCall[key][0] >= args.pred_threshold else 0
+            else:
+                pred_label = 0
+            y_truth.append(bs_label)
+            y_pred.append(pred_label)
+        ## Calculate precision and recall
+        prec = precision_score(y_truth, y_pred)
+        recall = recall_score(y_truth, y_pred)
+        f1 = f1_score(y_truth, y_pred)
+        accuracy = accuracy_score(y_truth, y_pred)
+        logger.info(f"BS-seq report: chr={args.chr} (Meth={sum(y_truth):,}, Unmeth={len(y_truth)-sum(y_truth):,}), precision={prec}, recall={recall}, f1={f1}, accuracy={accuracy}")
+        print(
+            f"Bs-seq report\t{args.chr}\t{sum(y_truth)}\t{len(y_truth) - sum(y_truth)}\t{prec}\t{recall}\t{f1}\t{accuracy}\n")
         sys.exit(0)
 
     ## Evalutate on chromsome

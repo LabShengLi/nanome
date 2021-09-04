@@ -1,0 +1,2 @@
+/projects/li-lab/yang/workspace/nano-compare/test_data/demo3.fast5.tar.gz
+/projects/li-lab/yang/workspace/nano-compare/test_data/demo4.fast5.tar.gz

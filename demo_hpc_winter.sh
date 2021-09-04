@@ -24,6 +24,7 @@ outputsDir=${baseDir}/outputs
 export SINGULARITY_CACHEDIR="${baseDir}/singularity-cache"
 mkdir -p  $SINGULARITY_CACHEDIR; chmod ugo+w $SINGULARITY_CACHEDIR
 
+
 ########################################
 ########################################
 # Get nextflow and install it
@@ -43,7 +44,7 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 ########################################
 # Running pipeline for demo human data
 # More options: -with-report -with-timeline -with-trace -with-dag -resume
-
+# https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 module load singularity
 set -x
 ./nextflow run main.nf -resume \
