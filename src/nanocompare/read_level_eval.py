@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+# @Author   : Yang Liu
+# @FileName : read_level_eval.py
+# @Software : NANOME project
+# @Organization : JAX Li Lab
+# @Website  : https://github.com/liuyangzzu/nanome
 
 """
 Read-level evaluation on methylation calls of tools, compute the performance results(F1, accuracy, ROC-AUC, etc.) in nanome paper.

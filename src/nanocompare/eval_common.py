@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+# @Author   : Yang Liu
+# @FileName : eval_common.py
+# @Software : NANOME project
+# @Organization : JAX Li Lab
+# @Website  : https://github.com/liuyangzzu/nanome
 
 """
 Common functions used by read level and site level evaluations in Nanocompare paper.
@@ -383,8 +388,8 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, readid_col=3, st
 
 
 def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-3, meth_freq_col=-2,
-                              meth_cov_col=-1, baseFormat=1, sep=' ', output_first=False, include_score=False,
-                              siteLevel=False, filterChr=humanChrSet, total_cols=13):
+                              meth_cov_col=-1, baseFormat=1, output_first=False, include_score=False,
+                              siteLevel=False, filterChr=humanChrSet, total_cols=12):
     """
     DeepMod RNN results format
     We treate input as 0-based format for start col.
@@ -430,7 +435,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     first_row_checked = False
 
     for row in infile:
-        tmp = row.strip().split(sep)
+        tmp = row.strip().split()
 
         if len(tmp) != total_cols:
             raise Exception(f"DeepMod RNN output format error: tmp={tmp}")
@@ -497,9 +502,9 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
 
 
 def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4,
-                                        meth_cov_col=-2, clustered_meth_freq_col=-1, baseFormat=1, sep=' ',
+                                        meth_cov_col=-2, clustered_meth_freq_col=-1, baseFormat=1,
                                         output_first=False, siteLevel=True, include_score=False, filterChr=humanChrSet,
-                                        total_cols=14):
+                                        total_cols=13):
     """
     DeepMod RNN+Cluster results format for human genome
     Note that DeepMod only outputs site level stats, we use DeepMod clustered results for site level evaluation only.
@@ -523,7 +528,7 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     unmeth_cnt = 0
 
     for row in infile:
-        tmp = row.strip().split(sep)
+        tmp = row.strip().split()
 
         if len(tmp) != total_cols:
             raise Exception(f"DeepMod RNN+clustered output format error: tmp={tmp}")

@@ -1,6 +1,12 @@
+#!/usr/bin/env python3
+# @Author   : Yang Liu
+# @FileName : meth_stats_tool.py
+# @Software : NANOME project
+# @Organization : JAX Li Lab
+# @Website  : https://github.com/liuyangzzu/nanome
+
 """
 Tool for pre-processing results
-
 """
 import argparse
 import glob
