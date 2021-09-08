@@ -61,17 +61,22 @@ if (params.help){
 assert params.dsname != null : "Missing --dsname option, for command help use --help"
 assert params.input != null : "Missing --input option, for command help use --help"
 
+projectDir = workflow.projectDir
+ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
+ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
+
 if (params.dataType == 'human') {
 	referenceGenome="reference_genome/hg38/hg38.fasta"
 	chromSizesFile="reference_genome/hg38/hg38.chrom.sizes"
+	deepmod_tar_file = params.deepmod_ctar
 } else if (params.dataType == 'ecoli') {
 	referenceGenome="reference_genome/ecoli/Ecoli_k12_mg1655.fasta"
 	chromSizesFile="reference_genome/ecoli/Ecoli_k12_mg1655.fasta.genome.sizes"
+	deepmod_tar_file = "${projectDir}/README.md"
 } else {
 	println "Param dataType=${params.dataType} is not support"
 	exit 1
 }
-
 
 log.info """\
 NANOME - NF PIPELINE (v$workflow.manifest.version)
@@ -88,10 +93,6 @@ runMethcall		:${params.runMethcall}
 =================================
 """
 .stripIndent()
-
-projectDir = workflow.projectDir
-ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
-ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
 
 
 workflow.onComplete {
@@ -173,10 +174,10 @@ process EnvCheck {
 	## Get dir for reference_genome
 	if [[ "${reference_genome_tar}" == *.tar.gz ]] ; then
 		tar -xzf ${reference_genome_tar}
-	else
-		if [[ "${reference_genome_tar}" != "reference_genome" ]] ; then
-			mv ${reference_genome_tar} reference_genome
-		fi
+	fi
+	if [ ! -d "reference_genome" ]  ; then
+		mkdir reference_genome
+		mv ${reference_genome_tar.name.replaceAll(".tar.gz", "")} reference_genome
 	fi
 	echo "### Check env DONE"
 	"""
@@ -499,6 +500,10 @@ process Guppy {
 
 	tar -czf outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz \
 		batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
+
+	## Clean
+	rm -rf ${fast5_dir.baseName}.methcalled
+
 	echo "### fast5mod DONE"
 	echo "### Guppy fast5mod and gcf52ref DONE"
 	"""
@@ -662,7 +667,7 @@ process DeepSignal {
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.resquiggleCorrectedGroup} \
 			--nproc \$(( numProcessor * ${params.deepLearningProcessorTimes}  )) \
-			--is_gpu no
+			--is_gpu yes
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		deepsignal call_mods \
@@ -678,7 +683,7 @@ process DeepSignal {
 		exit 255
 	fi
 
-	gzip batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv
+	gzip -f batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv
 	echo "### DeepSignal methylation DONE"
 	"""
 }
@@ -1056,13 +1061,13 @@ process DpmodComb {
 
 	input:
 	path x 					from deepmod_combine_in_ch
-	path deepmod_c_tar_file from Channel.fromPath(params.deepmod_ctar)
+	path deepmod_c_tar_file from Channel.fromPath(deepmod_tar_file)
 	each path("*") 			from ch_utils6
 
 	output:
 	path "${params.dsname}.deepmod.*.combine.bed.gz" into deepmod_combine_out_ch
 	path "${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz" into deepmod_combine_sum_chrs_mod_ch
-	path "${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz" into deepmod_combine_c_cluster_all_chrs_ch
+	path "${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz" optional true into deepmod_combine_c_cluster_all_chrs_ch
 	path "${params.dsname}.deepmod.all_batch.C.bed.tar.gz" into deepmod_combine_all_batch_c_ch
 
 	when:
@@ -1121,7 +1126,8 @@ process DpmodComb {
 		tar -czf ${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz \
 			indir/${params.dsname}.deepmod_clusterCpG.chr*.C.bed
 	else
-		touch ${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz
+		echo "### no cluster results for ecoli "
+		## touch ${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz
 	fi
 
 	tar -czf ${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz \
