@@ -39,5 +39,10 @@ __pycache__/
 benchmark_hpc_sumner.sh
 demo_hpc_sumner.sh
 ecoli_hpc_sumner.sh
+.DS_Store
+docs/.DS_Store
+src/nanocompare/report/.DS_Store
+src/nanocompare/report/icons/.DS_Store
+testdemo.py
 ## maintained by ly
 

@@ -65,14 +65,19 @@ projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
 
+// Reference genome, deepmod cluster settings
+deepmod_tar_file = "${projectDir}/README.md"
 if (params.dataType == 'human') {
 	referenceGenome="reference_genome/hg38/hg38.fasta"
 	chromSizesFile="reference_genome/hg38/hg38.chrom.sizes"
-	deepmod_tar_file = params.deepmod_ctar
+	isDeepModCluster = params.useDeepModCluster
+	if (isDeepModCluster) {
+		deepmod_tar_file = params.deepmod_ctar
+	}
 } else if (params.dataType == 'ecoli') {
 	referenceGenome="reference_genome/ecoli/Ecoli_k12_mg1655.fasta"
 	chromSizesFile="reference_genome/ecoli/Ecoli_k12_mg1655.fasta.genome.sizes"
-	deepmod_tar_file = "${projectDir}/README.md"
+	isDeepModCluster = false
 } else {
 	println "Param dataType=${params.dataType} is not support"
 	exit 1
@@ -87,7 +92,7 @@ dsname			:${params.dsname}
 input			:${params.input}
 output			:${params.outputDir}
 work			:${workflow.workDir}
-reference_genome	:${referenceGenome}
+dataType		:${params.dataType}
 runBasecall		:${params.runBasecall}
 runMethcall		:${params.runMethcall}
 =================================
@@ -538,13 +543,14 @@ process Megalodon {
 	if [[ \${commandType} == "cpu" ]]; then
 		## CPU version command
 		## Ref: https://github.com/nanoporetech/megalodon
+		## CPU issues: https://github.com/nanoporetech/megalodon/issues/172
 		megalodon \
 			${fast5_dir} \
 			--overwrite \
 			--outputs per_read_mods mods per_read_refs \
 			--guppy-server-path guppy_basecall_server \
 			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-			--guppy-params "-d ./megalodon_model/ --num_callers \$(( numProcessor )) --ipc_threads 80" \
+			--guppy-params "-d ./megalodon_model/ --num_callers \$(( numProcessor )) --ipc_threads 6" \
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--samtools-executable ${params.SAMTOOLS_PATH} \
 			--sort-mappings \
@@ -554,7 +560,7 @@ process Megalodon {
 			--mod-output-formats bedmethyl wiggle \
 			--write-mods-text \
 			--write-mod-log-probs \
-			--processes \$(( numProcessor*2 ))
+			--processes \$(( numProcessor ))
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		## Ref: https://github.com/nanoporetech/megalodon
@@ -802,7 +808,7 @@ process DeepMod {
 			--Base C \
 			--modfile \${DeepModProjectDir}/train_deepmod/${params.DEEPMOD_RNN_MODEL} \
 			--FileID batch_${basecallDir.baseName}_num \
-			--threads \$(( numProcessor*${params.deepLearningProcessorTimes} ))  ${params.DeepModMoveOptions}
+			--threads \$(( numProcessor*${params.deepLearningProcessorTimes} ))  ${params.moveOption ? '--move' : ' '}
 
 	tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
 	echo "### DeepMod methylation DONE"
@@ -1098,7 +1104,7 @@ process DpmodComb {
 	done
 	gzip ${params.dsname}.deepmod.C_per_site.combine.bed
 
-	if [[ "${params.dataType}" == "human" ]] ; then
+	if [[ "${params.dataType}" == "human" && "${isDeepModCluster}" == "true" ]] ; then
 		## Only apply to human genome
 		echo "### For human, apply cluster model of DeepMod"
 
@@ -1125,9 +1131,6 @@ process DpmodComb {
 		gzip ${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed
 		tar -czf ${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz \
 			indir/${params.dsname}.deepmod_clusterCpG.chr*.C.bed
-	else
-		echo "### no cluster results for ecoli "
-		## touch ${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz
 	fi
 
 	tar -czf ${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz \
@@ -1165,7 +1168,7 @@ process METEORE {
 	each path("*") 	from 	ch_utils8
 
 	output:
-	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz" into meteore_combine_out_ch
+	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz" optional true into meteore_combine_out_ch
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz" into read_unify_out_ch
 
 	when:
@@ -1182,9 +1185,9 @@ process METEORE {
 	guppyFile=\$(find . -maxdepth 1 -name '*.guppy.*per_read.combine.*.gz')
 	tomboFile=\$(find . -maxdepth 1 -name '*.tombo.per_read.combine.*.gz')
 
-	tss_more_options=""
+	chr_options=""
 	if [[ "${params.dataType}" == "ecoli" ]] ; then
-		tss_more_options="--chrs ${params.chrSet}"
+		chr_options="--chrs ${params.chrSet}"
 	fi
 
 	## Read level unify
@@ -1198,7 +1201,7 @@ process METEORE {
 		--runid Read_Level-${params.dsname} \
 		--dsname ${params.dsname} --output-unified-format \
 		--processors \$(( numProcessor*2 ))	\
-		-o . \${tss_more_options}
+		-o . \${chr_options}
 
 	## METEORE outputs by combining other tools
 	nanopolishFileName=\$(find Read_Level-${params.dsname} -name "${params.dsname}_Nanopolish-perRead-score.tsv.gz")
@@ -1237,10 +1240,11 @@ process METEORE {
 	##cp ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz \
 	##	Read_Level-${params.dsname}/TestData_METEORE-perRead-score.tsv.gz
 
-	zcat ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz | \
-		awk -F '\t' 'BEGIN {OFS = FS} {print \$1,\$2,\$3,\$6,\$5}' |
-		gzip > Read_Level-${params.dsname}/${params.dsname}_METEORE-perRead-score.tsv.gz
-
+	if [ -f ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz ] ; then
+		zcat ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz | \
+			awk -F '\t' 'BEGIN {OFS = FS} {print \$1,\$2,\$3,\$6,\$5}' |
+			gzip > Read_Level-${params.dsname}/${params.dsname}_METEORE-perRead-score.tsv.gz
+	fi
 	echo "### METEORE post combine DONE"
 	"""
 }
@@ -1286,17 +1290,15 @@ process SiteLevelUnify {
 	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_per_site.combine.*.gz')
 	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.*.gz')
 	deepmodEncode="DeepMod.C"
+	chr_options=""
 
-	if [[ "${params.useDeepModCluster}" == true ]] ; then
+	if [[ "${isDeepModCluster}" == true ]] ; then
 		deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_clusterCpG_per_site.combine.*.gz')
 		deepmodEncode="DeepMod.Cluster"
 	fi
 
-	tss_more_options=""
 	if [[ "${params.dataType}" == "ecoli" ]] ; then
-		tss_more_options="--chrs ${params.chrSet}"
-		deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_per_site.combine.*.gz')
-		deepmodEncode="DeepMod.C"
+		chr_options="--chrs ${params.chrSet}"
 	fi
 
 	## Site level unify
@@ -1312,7 +1314,7 @@ process SiteLevelUnify {
 		--runid Site_Level-${params.dsname} \
 		--dsname ${params.dsname} \
 		--processors \$(( numProcessor*2 )) \
-		-o .  \${tss_more_options}
+		-o .  \${chr_options}
 
 	## Sort site level results
 	fnlist=\$(find Site_Level-${params.dsname} -name '*-perSite-cov1.bed.gz')
@@ -1383,6 +1385,7 @@ process ReportHtml {
 }
 
 
+/* not support analysis in pipeline
 // Read level evaluations
 process ReadLevelPerf {
 	publishDir "${params.outputDir}/nanome-analysis-${params.dsname}", mode: "copy"
@@ -1484,3 +1487,4 @@ process SiteLevelCorr {
 	echo "### Site level analysis DONE"
 	"""
 }
+*/

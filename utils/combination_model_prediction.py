@@ -107,4 +107,5 @@ if __name__ == '__main__':
     combine_id_strand = pd.concat(dfs_id_strand)
     combine_id_strand.drop_duplicates(inplace=True)
     # print(combine_id_strand)
-    main(mp, combine_file, combine_id_strand)  ##
+    if len(combine_file) > 0:
+        main(mp, combine_file, combine_id_strand)  ##

@@ -1,0 +1,43 @@
+name: nanome pipelines for CI test
+# This workflow is triggered on pushes and PRs to the repository.
+on: [pull_request]
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        nxf_ver: ['20.01.0', '']
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install Nextflow
+        run: |
+          export NXF_VER=${{ matrix.nxf_ver }}
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+      - name: Basic workflow tests
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} -profile ci,docker
+          echo "Outputs tree view:" ; tree -a outputs
+#  singularity:
+#    runs-on: ubuntu-latest
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        singularity_version: ['3.6.4']
+#        nxf_ver: ['20.01.0', '']
+#    steps:
+#      - uses: actions/checkout@v1
+#      - uses: eWaterCycle/setup-singularity@v6
+#        with:
+#          singularity-version: ${{ matrix.singularity_version }}
+#      - name: Install Nextflow
+#        run: |
+#          export NXF_VER=${{ matrix.nxf_ver }}
+#          wget -qO- get.nextflow.io | bash
+#          sudo mv nextflow /usr/local/bin/
+#      - name: Basic workflow tests
+#        run: |
+#          nextflow run ${GITHUB_WORKSPACE} -profile ci,singularity
+#          echo "Outputs tree view:" ; tree -a outputs

@@ -52,9 +52,7 @@ set -x
     --outputDir ${outputsDir} \
     -config conf/jax_hpc.config,conf/ecoli_demo.config \
     --singularity_cache_dir '/fastscratch/li-lab/nanome/singularity-cache' \
-    --jobMaxMem '7G' \
-    --cleanCache false \
-    --input https://zenodo.org/record/5483859/files/ecoli_fast5_test.tar.gz
+    --cleanCache false
 
 # Report
 tree ${workDir} > ${baseDir}/work_ecoli.tree.txt
