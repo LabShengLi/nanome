@@ -1385,6 +1385,7 @@ process ReportHtml {
 }
 
 
+/* not support analysis in pipeline
 // Read level evaluations
 process ReadLevelPerf {
 	publishDir "${params.outputDir}/nanome-analysis-${params.dsname}", mode: "copy"
@@ -1486,3 +1487,4 @@ process SiteLevelCorr {
 	echo "### Site level analysis DONE"
 	"""
 }
+*/
