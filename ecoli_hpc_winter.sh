@@ -44,15 +44,17 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 ########################################
 ########################################
 # Running pipeline for E. coli data
-#module load singularity
-
+module load singularity
 set -x
 ./nextflow run main.nf \
     -profile singularity,hpc \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     -config conf/jax_hpc.config,conf/ecoli_demo.config \
-    --singularity_cache_dir '/fastscratch/li-lab/nanome/singularity-cache'
+    --singularity_cache_dir '/fastscratch/li-lab/nanome/singularity-cache' \
+    --jobMaxMem '7G' \
+    --cleanCache false \
+    --input https://zenodo.org/record/5483859/files/ecoli_fast5_test.tar.gz
 
 # Report
 tree ${workDir} > ${baseDir}/work_ecoli.tree.txt

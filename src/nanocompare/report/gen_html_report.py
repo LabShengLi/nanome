@@ -50,12 +50,16 @@ def get_methcall_report_df(baseDir, outDir):
         fnlist = glob.glob(os.path.join(baseDir, f'*_{tool}-perSite-cov1.sort.bed.gz'))
         if len(fnlist) < 1:
             raise Exception(f"Not found file in baseDir={baseDir}, pattern={f'*_{tool}-perSite-cov1.sort.bed.gz'}")
-        df_site_level = pd.read_csv(fnlist[0], sep='\t', header=None, index_col=False)
-        ret_dict['Tool'].append(tool)
-        ret_dict['CpGs'].append(f"{len(df_site_level):,}")
+        try:
+            df_site_level = pd.read_csv(fnlist[0], sep='\t', header=None, index_col=False)
+            ret_dict['Tool'].append(tool)
+            ret_dict['CpGs'].append(f"{len(df_site_level):,}")
 
-        outfn = os.path.join(outDir, 'images', f'dist_{tool}.png')
-        density_plot(df_site_level, outfn, tool)
+            outfn = os.path.join(outDir, 'images', f'dist_{tool}.png')
+            density_plot(df_site_level, outfn, tool)
+        except: # can not call any results
+            ret_dict['Tool'].append(tool)
+            ret_dict['CpGs'].append(f"0")
     return pd.DataFrame.from_dict(ret_dict)
 
 
