@@ -538,13 +538,14 @@ process Megalodon {
 	if [[ \${commandType} == "cpu" ]]; then
 		## CPU version command
 		## Ref: https://github.com/nanoporetech/megalodon
+		## CPU issues: https://github.com/nanoporetech/megalodon/issues/172
 		megalodon \
 			${fast5_dir} \
 			--overwrite \
 			--outputs per_read_mods mods per_read_refs \
 			--guppy-server-path guppy_basecall_server \
 			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-			--guppy-params "-d ./megalodon_model/ --num_callers \$(( numProcessor )) --ipc_threads 80" \
+			--guppy-params "-d ./megalodon_model/ --num_callers \$(( numProcessor )) --ipc_threads 6" \
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--samtools-executable ${params.SAMTOOLS_PATH} \
 			--sort-mappings \
@@ -554,7 +555,7 @@ process Megalodon {
 			--mod-output-formats bedmethyl wiggle \
 			--write-mods-text \
 			--write-mod-log-probs \
-			--processes \$(( numProcessor*2 ))
+			--processes \$(( numProcessor ))
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		## Ref: https://github.com/nanoporetech/megalodon
@@ -802,7 +803,7 @@ process DeepMod {
 			--Base C \
 			--modfile \${DeepModProjectDir}/train_deepmod/${params.DEEPMOD_RNN_MODEL} \
 			--FileID batch_${basecallDir.baseName}_num \
-			--threads \$(( numProcessor*${params.deepLearningProcessorTimes} ))  ${params.DeepModMoveOptions}
+			--threads \$(( numProcessor*${params.deepLearningProcessorTimes} ))  ${params.moveOption}
 
 	tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
 	echo "### DeepMod methylation DONE"
@@ -1165,7 +1166,7 @@ process METEORE {
 	each path("*") 	from 	ch_utils8
 
 	output:
-	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz" into meteore_combine_out_ch
+	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz" optional true into meteore_combine_out_ch
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz" into read_unify_out_ch
 
 	when:
@@ -1237,10 +1238,11 @@ process METEORE {
 	##cp ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz \
 	##	Read_Level-${params.dsname}/TestData_METEORE-perRead-score.tsv.gz
 
-	zcat ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz | \
-		awk -F '\t' 'BEGIN {OFS = FS} {print \$1,\$2,\$3,\$6,\$5}' |
-		gzip > Read_Level-${params.dsname}/${params.dsname}_METEORE-perRead-score.tsv.gz
-
+	if [ -f ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz ] ; then
+		zcat ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz | \
+			awk -F '\t' 'BEGIN {OFS = FS} {print \$1,\$2,\$3,\$6,\$5}' |
+			gzip > Read_Level-${params.dsname}/${params.dsname}_METEORE-perRead-score.tsv.gz
+	fi
 	echo "### METEORE post combine DONE"
 	"""
 }
