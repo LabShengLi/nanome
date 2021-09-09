@@ -25,8 +25,8 @@
 ### Hardware requirements
 
 The 'nanome' is based on Nextflow pipeline framework, and start with raw fast5 nanopore sequencing input data with a reference genome. The pipeline can be configured with different RAM, number of processors, GPU resources schema to parallel run all methylation calling tools. For optimal usage, we recommend using 'nanome' pipeline on HPC:
-* GPU or CPU with 8+ cores. 
-* RAM: 50+ GB per cpu.
+* GPU or CPU with 2+ cores. 
+* RAM: 7+ GB per cpu.
 * Storage using HDD or SSD. Please ensure your storage before running the pipeline.
 
 
