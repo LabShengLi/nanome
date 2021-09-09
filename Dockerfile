@@ -1,4 +1,4 @@
-FROM genomicpariscentre/guppy-gpu:4.2.2
+FROM genomicpariscentre/guppy-gpu:latest
 LABEL description="Nanome project by Li Lab at JAX" \
       author="yang.liu@jax.org"
 RUN apt-get update -y \
