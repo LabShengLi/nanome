@@ -52,7 +52,6 @@ set -x
     --outputDir ${outputsDir} \
     -config conf/jax_hpc.config,conf/ecoli_demo.config \
     --singularity_cache_dir '/fastscratch/li-lab/nanome/singularity-cache' \
-    --jobMaxMem '7G' \
     --cleanCache false
 
 # Report

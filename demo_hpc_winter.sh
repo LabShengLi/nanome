@@ -6,7 +6,7 @@
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 1 # number of cores
 #SBATCH --mem=20G # memory pool for all cores
-#SBATCH --time=14-00:00:00 # time
+#SBATCH --time=1-00:00:00 # time
 #SBATCH -o %x.%j.out # STDOUT
 #SBATCH -e %x.%j.err # STDERR
 
