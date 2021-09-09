@@ -65,14 +65,19 @@ projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
 
+// Reference genome, deepmod cluster settings
+deepmod_tar_file = "${projectDir}/README.md"
 if (params.dataType == 'human') {
 	referenceGenome="reference_genome/hg38/hg38.fasta"
 	chromSizesFile="reference_genome/hg38/hg38.chrom.sizes"
-	deepmod_tar_file = params.deepmod_ctar
+	isDeepModCluster = params.useDeepModCluster
+	if (isDeepModCluster) {
+		deepmod_tar_file = params.deepmod_ctar
+	}
 } else if (params.dataType == 'ecoli') {
 	referenceGenome="reference_genome/ecoli/Ecoli_k12_mg1655.fasta"
 	chromSizesFile="reference_genome/ecoli/Ecoli_k12_mg1655.fasta.genome.sizes"
-	deepmod_tar_file = "${projectDir}/README.md"
+	isDeepModCluster = false
 } else {
 	println "Param dataType=${params.dataType} is not support"
 	exit 1
@@ -87,7 +92,7 @@ dsname			:${params.dsname}
 input			:${params.input}
 output			:${params.outputDir}
 work			:${workflow.workDir}
-reference_genome	:${referenceGenome}
+dataType		:${params.dataType}
 runBasecall		:${params.runBasecall}
 runMethcall		:${params.runMethcall}
 =================================
@@ -803,7 +808,7 @@ process DeepMod {
 			--Base C \
 			--modfile \${DeepModProjectDir}/train_deepmod/${params.DEEPMOD_RNN_MODEL} \
 			--FileID batch_${basecallDir.baseName}_num \
-			--threads \$(( numProcessor*${params.deepLearningProcessorTimes} ))  ${params.moveOption}
+			--threads \$(( numProcessor*${params.deepLearningProcessorTimes} ))  ${params.moveOption ? '--move' : ' '}
 
 	tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
 	echo "### DeepMod methylation DONE"
@@ -1099,7 +1104,7 @@ process DpmodComb {
 	done
 	gzip ${params.dsname}.deepmod.C_per_site.combine.bed
 
-	if [[ "${params.dataType}" == "human" ]] ; then
+	if [[ "${params.dataType}" == "human" && "${isDeepModCluster}" == "true" ]] ; then
 		## Only apply to human genome
 		echo "### For human, apply cluster model of DeepMod"
 
@@ -1126,9 +1131,6 @@ process DpmodComb {
 		gzip ${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed
 		tar -czf ${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz \
 			indir/${params.dsname}.deepmod_clusterCpG.chr*.C.bed
-	else
-		echo "### no cluster results for ecoli "
-		## touch ${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz
 	fi
 
 	tar -czf ${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz \
@@ -1183,9 +1185,9 @@ process METEORE {
 	guppyFile=\$(find . -maxdepth 1 -name '*.guppy.*per_read.combine.*.gz')
 	tomboFile=\$(find . -maxdepth 1 -name '*.tombo.per_read.combine.*.gz')
 
-	tss_more_options=""
+	chr_options=""
 	if [[ "${params.dataType}" == "ecoli" ]] ; then
-		tss_more_options="--chrs ${params.chrSet}"
+		chr_options="--chrs ${params.chrSet}"
 	fi
 
 	## Read level unify
@@ -1199,7 +1201,7 @@ process METEORE {
 		--runid Read_Level-${params.dsname} \
 		--dsname ${params.dsname} --output-unified-format \
 		--processors \$(( numProcessor*2 ))	\
-		-o . \${tss_more_options}
+		-o . \${chr_options}
 
 	## METEORE outputs by combining other tools
 	nanopolishFileName=\$(find Read_Level-${params.dsname} -name "${params.dsname}_Nanopolish-perRead-score.tsv.gz")
@@ -1288,17 +1290,15 @@ process SiteLevelUnify {
 	deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_per_site.combine.*.gz')
 	meteoreFile=\$(find . -maxdepth 1 -name '*.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.*.gz')
 	deepmodEncode="DeepMod.C"
+	chr_options=""
 
-	if [[ "${params.useDeepModCluster}" == true ]] ; then
+	if [[ "${isDeepModCluster}" == true ]] ; then
 		deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_clusterCpG_per_site.combine.*.gz')
 		deepmodEncode="DeepMod.Cluster"
 	fi
 
-	tss_more_options=""
 	if [[ "${params.dataType}" == "ecoli" ]] ; then
-		tss_more_options="--chrs ${params.chrSet}"
-		deepmodFile=\$(find . -maxdepth 1 -name '*.deepmod.C_per_site.combine.*.gz')
-		deepmodEncode="DeepMod.C"
+		chr_options="--chrs ${params.chrSet}"
 	fi
 
 	## Site level unify
@@ -1314,7 +1314,7 @@ process SiteLevelUnify {
 		--runid Site_Level-${params.dsname} \
 		--dsname ${params.dsname} \
 		--processors \$(( numProcessor*2 )) \
-		-o .  \${tss_more_options}
+		-o .  \${chr_options}
 
 	## Sort site level results
 	fnlist=\$(find Site_Level-${params.dsname} -name '*-perSite-cov1.bed.gz')
