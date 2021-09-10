@@ -11,26 +11,26 @@ import sys
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader
 
 from nanocompare.global_settings import ToolNameList
 
 
-def density_plot(df, outfn, tool, col_index=6, bins=10):
+def density_plot(df, outfn, tool, col_index=6, bins=None, the_range=None, x_label=None):
     # setting font size
     plt.rcParams.update({'font.size': 6})
 
     # plots
     fig, ax = plt.subplots(figsize=(2, 2))
-    ax.hist(df.iloc[:, col_index], bins=bins, range=(0, 1), color='blue', alpha=0.4)
+    ax.hist(df.iloc[:, col_index], bins=bins, range=the_range, color='blue', alpha=0.4)
 
     # Add labels
-    plt.xlim([0, 1])
+    if the_range:
+        plt.xlim([0, 1])
     plt.title(f'{tool} = {len(df):,} CpGs')
-    plt.xlabel('Methylation %')
-    plt.ylabel('# of CpGs')
+    plt.xlabel(x_label)
+    plt.ylabel('# CpGs')
 
     # save figures
     os.makedirs(os.path.dirname(outfn), exist_ok=True)
@@ -56,8 +56,11 @@ def get_methcall_report_df(baseDir, outDir):
             ret_dict['CpGs'].append(f"{len(df_site_level):,}")
 
             outfn = os.path.join(outDir, 'images', f'dist_{tool}.png')
-            density_plot(df_site_level, outfn, tool)
-        except: # can not call any results
+            density_plot(df_site_level, outfn, tool, bins=10, the_range=(0,1), x_label='Methylation %')
+
+            outfn = os.path.join(outDir, 'images', f'cov_{tool}.png')
+            density_plot(df_site_level, outfn, tool, col_index=7, x_label='Coverage')
+        except:  # can not call any results
             ret_dict['Tool'].append(tool)
             ret_dict['CpGs'].append(f"0")
     return pd.DataFrame.from_dict(ret_dict)
