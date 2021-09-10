@@ -177,11 +177,6 @@ process EnvCheck {
 	which DeepMod.py
 	DeepMod.py
 
-	## fast5mod ways combine
-	if ! command -v fast5mod &> /dev/null
-	then
-		PATH="/opt/conda/envs/fast5mod/bin:\$PATH"
-	fi
 	which fast5mod
 	fast5mod --version
 
@@ -277,7 +272,7 @@ process Basecall {
 	each path(reference_genome) from 	reference_genome_ch9
 
 	output:
-	path "${fast5_dir.baseName}.basecalled" into basecall_out_ch  // try to fix the christina proposed problems
+	path "${fast5_dir.baseName}.basecalled" into basecall_out_ch
 	path "${fast5_dir.baseName}.basecalled/${fast5_dir.baseName}-sequencing_summary.txt" into qc_ch
 	path "${fast5_dir.baseName}.basecalled.bam" into ont_cov_bam_ch
 
@@ -311,13 +306,20 @@ process Basecall {
 		exit 255
 	fi
 
+	## Combine fastq
+	touch "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq
+	for f in \$(find "${fast5_dir.baseName}.basecalled/" "${fast5_dir.baseName}.basecalled/pass/" -maxdepth 1 -name '*.fastq')
+	do
+		cat \$f >> "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq
+	done
+
 	## After basecall, rename and publishe summary filenames
 	mv ${fast5_dir.baseName}.basecalled/sequencing_summary.txt \
 		${fast5_dir.baseName}.basecalled/${fast5_dir.baseName}-sequencing_summary.txt
 
 	## After basecall, we process guppy results for ONT coverage analyses
 	# align FASTQ files to reference genome, write sorted alignments to a BAM file
-	minimap2 -a -z 600,200 -x map-ont ${referenceGenome} ${fast5_dir.baseName}.basecalled/*.fastq \
+	minimap2 -a -z 600,200 -x map-ont ${referenceGenome} "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq \
 	    -t \$(( numProcessor*2 )) > ${fast5_dir.baseName}.basecalled.sam
     echo "Alignment done"
 
@@ -470,9 +472,16 @@ process Guppy {
 	echo "### Guppy methylation calling DONE"
 
 	## Extract guppy methylation-callings
+	## Combine fastq
+	touch batch_combine_fq.fq
+	for f in \$(find "${fast5_dir.baseName}.methcalled/" "${fast5_dir.baseName}.methcalled/pass/" -maxdepth 1 -name '*.fastq')
+	do
+		cat \$f >> batch_combine_fq.fq
+	done
+
 	## gcf52ref ways
 	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \
-		${fast5_dir.baseName}.methcalled/*.fastq | \
+		batch_combine_fq.fq | \
 		samtools sort -@ \$(( numProcessor*2 )) \
 		-T tmp -o gcf52ref.batch.${fast5_dir.baseName}.bam
 
@@ -522,6 +531,7 @@ process Guppy {
 
 	## Clean
 	rm -rf ${fast5_dir.baseName}.methcalled
+	rm -f gcf52ref.*.bam gcf52ref.*.bam.bai tmp*.tsv batch_combine_fq.fq
 
 	echo "### fast5mod DONE"
 	echo "### Guppy fast5mod and gcf52ref DONE"
@@ -851,23 +861,17 @@ process Nanopolish {
 
 	"""
 	### Put all fq and bam files into working dir, DO NOT affect the basecall dir
-	fastqFile=reads.fq
-	fastqNoDupFile="\${fastqFile}.noDups.fq"
 	bamFileName="${params.dsname}.batch_${basecallDir.baseName}.sorted.bam"
 
 	## Do alignment firstly
-	touch \${fastqFile}
-	for f in \$(ls -1 ${basecallDir}/*.fastq)
-	do
-		cat \$f >> \$fastqFile
-	done
+	fastqFile=\$(find ${basecallDir}/ -name 'batch_basecall_combine_fq_*.fq')
 
-	python utils/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
+	## python utils/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
 
 	# Index the raw read with fastq
-	nanopolish index -d ${basecallDir}/workspace \${fastqNoDupFile}
+	nanopolish index -d ${basecallDir}/workspace \${fastqFile}
 
-	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \${fastqNoDupFile} | \
+	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \${fastqFile} | \
 		samtools sort -@ \$(( numProcessor*2 )) -T tmp -o \${bamFileName}
 	echo "### minimap2 finished"
 
@@ -875,10 +879,13 @@ process Nanopolish {
 	echo "### samtools finished"
 	echo "### Alignment step DONE"
 
-	nanopolish call-methylation -t \$(( numProcessor*2 )) -r \${fastqNoDupFile} \
+	nanopolish call-methylation -t \$(( numProcessor*2 )) -r \${fastqFile} \
 		-b \${bamFileName} -g ${referenceGenome} > tmp.tsv
 
 	tail -n +2 tmp.tsv | gzip > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
+
+	## Clean
+	rm -f *.sorted.bam *.sorted.bam.bai tmp.tsv
 	echo "### Nanopolish methylation calling DONE"
 	"""
 }
