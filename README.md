@@ -6,12 +6,12 @@
 **Background:** Nanopore long-read sequencing technology greatly expands the capacity of long-range, single-molecule DNA-modification detection. A growing number of analytical tools have been developed to detect DNA methylation from nanopore sequencing reads. Here, we assess the performance of different methylation calling tools to provide a systematic evaluation to guide researchers performing human epigenome-wide studies.
 
 
-![Figure1A](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/Fig1A.jpg)
+![Figure1A](https://github.com/liuyangzzu/nanome/blob/master/docs/Fig1A.jpg)
 
 **Fig. 1A. Survey of methylation calling tools .**  Timeline of publication and technological developments of Oxford Nanopore Technologies (ONT) methylation calling tools to detect DNA cytosine modifications. 
 
 
-![Figure1B](https://github.com/liuyangzzu/nanome/blob/doc-task/docs/Fig1B.jpg)
+![Figure1B](https://github.com/liuyangzzu/nanome/blob/master/docs/Fig1B.jpg)
 **Fig. 1B. Workflow for 5-methylcytosine (5mC) detection for nanopore sequencing.** 
 
 
@@ -25,8 +25,8 @@
 ### Hardware requirements
 
 The 'nanome' is based on Nextflow pipeline framework, and start with raw fast5 nanopore sequencing input data with a reference genome. The pipeline can be configured with different RAM, number of processors, GPU resources schema to parallel run all methylation calling tools. For optimal usage, we recommend using 'nanome' pipeline on HPC:
-* GPU or CPU with 8+ cores. 
-* RAM: 50+ GB per cpu.
+* GPU or CPU with 2+ cores. 
+* RAM: 7+ GB per cpu.
 * Storage using HDD or SSD. Please ensure your storage before running the pipeline.
 
 
