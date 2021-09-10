@@ -152,8 +152,12 @@ process EnvCheck {
 	set -x
 	date; hostname; pwd
 
+	which conda
+	conda env list
+
 	which python
 	python --version
+	which pip
 
 	which nanopolish
 	nanopolish --version
@@ -173,6 +177,11 @@ process EnvCheck {
 	which DeepMod.py
 	DeepMod.py
 
+	## fast5mod ways combine
+	if ! command -v fast5mod &> /dev/null
+	then
+		PATH="/opt/conda/envs/fast5mod/bin:\$PATH"
+	fi
 	which fast5mod
 	fast5mod --version
 
@@ -493,6 +502,11 @@ process Guppy {
 	echo "### gcf52ref DONE"
 
 	## fast5mod ways
+	if ! command -v fast5mod &> /dev/null
+	then
+		PATH="/opt/conda/envs/fast5mod/bin:\$PATH"
+	fi
+
 	FAST5PATH=${fast5_dir.baseName}.methcalled/workspace
 	OUTBAM=batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam
 
@@ -954,6 +968,11 @@ process GuppyComb {
 	echo "### gcf52ref combine DONE"
 
 	## fast5mod ways combine
+	if ! command -v fast5mod &> /dev/null
+	then
+		PATH="/opt/conda/envs/fast5mod/bin:\$PATH"
+	fi
+
 	## find name like batch_\${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
 	find . -name 'batch_*.guppy.fast5mod_guppy2sam.bam' -maxdepth 1 |
 	  parallel -j8 -N4095 -m --files samtools merge -u - |
