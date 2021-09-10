@@ -60,4 +60,5 @@ set -x
 # Report
 tree ${workDir} > ${baseDir}/work_demo.tree.txt
 tree ${outputsDir} > ${baseDir}/outputs_demo.tree.txt
+
 echo "### nanome pipeline demo DONE"

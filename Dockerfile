@@ -27,16 +27,11 @@ ENV PATH /opt/conda/bin:$PATH
 COPY environment.yml /
 RUN conda env create -f environment.yml
 
-# Create fast5mod environment:
-COPY environment_fast5mod.yml /
-RUN conda env create -f environment_fast5mod.yml
-
-# Create fast5mod environment:
-COPY environment_meteore.yml /
-RUN conda env create -f environment_meteore.yml && conda clean -a
-
 # Make RUN commands use the new environment:
 SHELL ["conda", "run", "-n", "nanome", "/bin/bash", "-c"]
+
+# Install megalodon, even conflicts with fast5mod, they can work
+RUN pip install megalodon==2.3.4
 
 ENV PATH /opt/conda/envs/nanome/bin:$PATH
 USER root

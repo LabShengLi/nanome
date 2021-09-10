@@ -49,7 +49,10 @@ def get_methcall_report_df(baseDir, outDir):
     for tool in ToolNameList:
         fnlist = glob.glob(os.path.join(baseDir, f'*_{tool}-perSite-cov1.sort.bed.gz'))
         if len(fnlist) < 1:
-            raise Exception(f"Not found file in baseDir={baseDir}, pattern={f'*_{tool}-perSite-cov1.sort.bed.gz'}")
+            print(f"Not found file in baseDir={baseDir}, pattern={f'*_{tool}-perSite-cov1.sort.bed.gz'}")
+            ret_dict['Tool'].append(tool)
+            ret_dict['CpGs'].append(f"0")
+            continue
         try:
             df_site_level = pd.read_csv(fnlist[0], sep='\t', header=None, index_col=False)
             ret_dict['Tool'].append(tool)
