@@ -1,0 +1,15 @@
+name: meteore
+channels:
+  - bioconda
+  - r
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.6.13
+  - pip=21.0.1
+  - numpy
+  - pandas
+  - cython
+  - Joblib==0.13.2
+  - scikit-learn==0.21.3
+  
