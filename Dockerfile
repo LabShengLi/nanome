@@ -25,7 +25,15 @@ ENV PATH /opt/conda/bin:$PATH
 
 # Create the environment:
 COPY environment.yml /
-RUN conda env create -f environment.yml && conda clean -a
+RUN conda env create -f environment.yml
+
+# Create fast5mod environment:
+COPY environment_fast5mod.yml /
+RUN conda env create -f environment_fast5mod.yml
+
+# Create fast5mod environment:
+COPY environment_meteore.yml /
+RUN conda env create -f environment_meteore.yml && conda clean -a
 
 # Make RUN commands use the new environment:
 SHELL ["conda", "run", "-n", "nanome", "/bin/bash", "-c"]
