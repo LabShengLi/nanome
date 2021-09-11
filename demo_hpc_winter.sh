@@ -35,7 +35,7 @@ fi
 
 ########################################
 # Clean old results
-#rm -rf ${workDir} ${outputsDir}
+rm -rf ${workDir} ${outputsDir}
 mkdir -p ${workDir}; chmod ugo+w ${workDir}
 mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
