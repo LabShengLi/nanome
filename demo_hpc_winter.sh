@@ -57,26 +57,8 @@ set -x
     --singularity_cache_dir '/fastscratch/li-lab/nanome/singularity-cache' \
     --cleanCache false
 
-exit 0
-
-########################################
-########################################
-# Running pipeline for demo human data
-# More options: -with-report -with-timeline -with-trace -with-dag -resume
-# https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
-module load singularity
-set -x
-./nextflow run main.nf -resume \
-    -profile singularity,hpc \
-    -config conf/jax_hpc.config \
-    -work-dir ${workDir} \
-    --outputDir ${outputsDir} \
-    --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
-    --singularity_cache_dir '/fastscratch/li-lab/nanome/singularity-cache' \
-    --cleanCache false
-
 # Report
 tree ${workDir} > ${baseDir}/work_demo.tree.txt
 tree ${outputsDir} > ${baseDir}/outputs_demo.tree.txt
+
 echo "### nanome pipeline demo DONE"
