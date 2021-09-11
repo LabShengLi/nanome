@@ -939,6 +939,7 @@ process NplshComb {
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  Nanopolish ${params.dsname}.nanopolish.per_read.combine.tsv.gz \
 		.  \$((numProcessor))  12 ${params.chrSet}
+
 	echo "### Nanopolish combine DONE"
 	"""
 }
@@ -978,6 +979,7 @@ process MgldnComb {
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  Megalodon ${params.dsname}.megalodon.per_read.combine.bed.gz \
 		.  \$((numProcessor))  12  ${params.chrSet}
+
 	echo "### Megalodon combine DONE"
 	"""
 }
@@ -1307,8 +1309,8 @@ process METEORE {
 
 	output:
 	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz" optional true into meteore_combine_out_ch
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz" into read_unify_meteore
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz" into site_unify_meteore
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz" optional true into read_unify_meteore
+	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz" optional true into site_unify_meteore
 
 	when:
 	params.runMETEORE && ! params.filterGPUTaskRuns
@@ -1339,18 +1341,20 @@ process METEORE {
 		-i \${modelContentFileName} -m default -b ${params.METEORE_Dir} \
 		-o ${params.dsname}.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz
 
-	# Read level output
+	# Read level and site level output
 	if [ -f ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz ] ; then
 		mkdir -p Read_Level-${params.dsname}
 		zcat ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz | \
 			awk -F '\t' 'BEGIN {OFS = FS} {print \$1,\$2,\$3,\$6,\$5}' |
 			gzip > Read_Level-${params.dsname}/${params.dsname}_METEORE-perRead-score.tsv.gz
+
+		## Unify format output for site level
+		bash src/unify_format_for_calls.sh \
+			${params.dsname}  METEORE ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz \
+			.  \$((numProcessor))  2  ${params.chrSet}
 	fi
 
-	## Unify format output for site level
-	bash src/unify_format_for_calls.sh \
-		${params.dsname}  METEORE ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz \
-		.  \$((numProcessor))  2  ${params.chrSet}
+
 
 	echo "### METEORE post combine DONE"
 	"""

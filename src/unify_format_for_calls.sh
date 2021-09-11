@@ -1,8 +1,8 @@
 #!/bin/bash
-# <dsname> <call-encode> <call-fn> <outd-dir> <num-processors> <step12> <chr-options>
-
-set -xue
-
+# Generate unified read-level and/or site-level format of calls
+# Usage:
+# prog  <dsname> <call-encode> <call-fn> <outd-dir> <num-processors> <step12> <chr-options>
+#           1       2               3       4               5            6          7
 dsname=${1}
 encode=${2}
 callfn=${3}
