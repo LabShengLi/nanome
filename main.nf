@@ -109,7 +109,7 @@ workflow.onComplete {
 
 // Channel for utils/ and src/ folders
 ch_utils.into{ch_utils1; ch_utils2; ch_utils3; ch_utils4; ch_utils5; ch_utils6; ch_utils7; ch_utils8; ch_utils9}
-ch_src.into{ch_src1; ch_src2; ch_src3; ch_src4; ch_src5}
+ch_src.into{ch_src1; ch_src2; ch_src3; ch_src4; ch_src5; }
 
 // Collect all folders of fast5 files, and send into Channels for pipelines
 if (params.input.endsWith(".filelist.txt")) {
@@ -167,6 +167,7 @@ process EnvCheck {
 
 	which deepsignal
 	deepsignal
+	pip show deepsignal
 
 	which guppy_basecaller
 	guppy_basecaller -v
@@ -176,6 +177,7 @@ process EnvCheck {
 
 	which DeepMod.py
 	DeepMod.py
+	pip show deepmod
 
 	which fast5mod
 	fast5mod --version
@@ -308,7 +310,7 @@ process Basecall {
 
 	## Combine fastq
 	touch "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq
-	for f in \$(find "${fast5_dir.baseName}.basecalled/" "${fast5_dir.baseName}.basecalled/pass/" -maxdepth 1 -name '*.fastq')
+	for f in \$(find "${fast5_dir.baseName}.basecalled/" "${fast5_dir.baseName}.basecalled/pass/" "${fast5_dir.baseName}.basecalled/fail/" -maxdepth 1 -name '*.fastq')
 	do
 		cat \$f >> "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq
 	done
@@ -474,7 +476,7 @@ process Guppy {
 	## Extract guppy methylation-callings
 	## Combine fastq
 	touch batch_combine_fq.fq
-	for f in \$(find "${fast5_dir.baseName}.methcalled/" "${fast5_dir.baseName}.methcalled/pass/" -maxdepth 1 -name '*.fastq')
+	for f in \$(find "${fast5_dir.baseName}.methcalled/" "${fast5_dir.baseName}.methcalled/pass/" "${fast5_dir.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq')
 	do
 		cat \$f >> batch_combine_fq.fq
 	done
@@ -511,11 +513,6 @@ process Guppy {
 	echo "### gcf52ref DONE"
 
 	## fast5mod ways
-	if ! command -v fast5mod &> /dev/null
-	then
-		PATH="/opt/conda/envs/fast5mod/bin:\$PATH"
-	fi
-
 	FAST5PATH=${fast5_dir.baseName}.methcalled/workspace
 	OUTBAM=batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam
 
@@ -1060,7 +1057,7 @@ process NplshComb {
 		enabled: params.outputRaw
 
 	input:
-	path x from nanopolish_combine_in_ch
+	path x 		from nanopolish_combine_in_ch
 
 	output:
 	path "${params.dsname}.nanopolish.per_read.combine.tsv.gz" into nanopolish_combine_out_ch

@@ -40,7 +40,7 @@ from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEnco
 
 def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, readid_col=4, log_lik_ratio_col=5,
                                  sequence_col=-1, num_motifs_col=-2, baseFormat=1, llr_cutoff=2.0, output_first=False,
-                                 include_score=False, filterChr=humanChrSet, save_unified_format=False, outfn=None):
+                                 include_score=False, filterChr=humanChrSet, save_unified_format=False, outfn=None, stringent_cutoff=True):
     """
     We checked the input is 0-based for the start col
     Return dict of key='chr1\t123\t123\t+', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
@@ -106,11 +106,12 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                 logger.error(f'###\tError when parsing row=[{row}] in {infileName}')
                 continue
 
-            if abs(llr) < llr_cutoff * num_sites:  # Consider all sites as a group when there are multiple sites
-                continue
+            if stringent_cutoff:
+                final_cutoff = llr_cutoff * num_sites
+            else:
+                final_cutoff = llr_cutoff
 
             if num_sites == 1:  # we have singleton, i.e. only one CpG within the area
-
                 if baseFormat == 0:
                     key = (tmp[chr_col], start, strand_info)
                 elif baseFormat == 1:
@@ -124,6 +125,9 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                 if save_unified_format:
                     # output to 1-based for meteore, ref: https://github.com/comprna/METEORE/blob/master/script_in_snakemake/format_nanopolish.R#L14
                     outf.write(f"{tmp[readid_col]}\t{tmp[chr_col]}\t{start + 1}\t{tmp[strand_col]}\t{meth_score}\n")
+
+                if abs(llr) < final_cutoff:  # Consider all sites as a group when there are multiple sites
+                    continue
 
                 if include_score:
                     cpgDict[key].append((meth_indicator, meth_score))
@@ -159,6 +163,9 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
                         # output to 1-based for meteore, ref: https://github.com/comprna/METEORE/blob/master/script_in_snakemake/format_nanopolish.R#L14
                         outf.write(
                             f"{tmp[readid_col]}\t{tmp[chr_col]}\t{cpgStart + 1}\t{tmp[strand_col]}\t{meth_score}\n")
+
+                    if abs(llr) < final_cutoff:  # Consider all sites as a group when there are multiple sites
+                        continue
 
                     if include_score:
                         cpgDict[key].append((meth_indicator, meth_score))
@@ -2934,6 +2941,11 @@ def sanity_check_get_dna_seq():
 
 if __name__ == '__main__':
     set_log_debug_level()
+
+    infn = '/projects/li-lab/yang/workspace/nano-compare/w3/98/1d4a2a1e155530173718d846eb7ed2/EcoliDemo.nanopolish.per_read.combine.tsv.gz'
+    call = importPredictions_Nanopolish(infn,  filterChr=['NC_000913.3'], stringent_cutoff=True)
+    if True:
+        sys.exit(0)
 
     refGenome = get_ref_fasta()
     sanity_check_get_dna_seq()

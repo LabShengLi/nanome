@@ -35,10 +35,29 @@ fi
 
 ########################################
 # Clean old results
-rm -rf ${workDir} ${outputsDir}
+#rm -rf ${workDir} ${outputsDir}
 mkdir -p ${workDir}; chmod ugo+w ${workDir}
 mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
+
+########################################
+########################################
+# Running pipeline for demo human data
+# More options: -with-report -with-timeline -with-trace -with-dag -resume
+# https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+module load singularity
+set -x
+./nextflow run main.nf -resume \
+    -profile singularity,hpc \
+    -config conf/jax_hpc.config \
+    -work-dir ${workDir} \
+    --outputDir ${outputsDir} \
+    --dsname TestData \
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
+    --singularity_cache_dir '/fastscratch/li-lab/nanome/singularity-cache' \
+    --cleanCache false
+
+exit 0
 
 ########################################
 ########################################

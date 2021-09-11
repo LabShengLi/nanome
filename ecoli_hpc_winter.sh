@@ -36,7 +36,7 @@ fi
 ########################################
 ########################################
 # Clean old results
-rm -rf ${workDir} ${outputsDir}
+#rm -rf ${workDir} ${outputsDir}
 mkdir -p ${workDir}; chmod ugo+w ${workDir}
 mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
@@ -46,7 +46,7 @@ mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 # Running pipeline for E. coli data
 module load singularity
 set -x
-./nextflow run main.nf \
+./nextflow run main.nf -resume\
     -profile singularity,hpc \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
