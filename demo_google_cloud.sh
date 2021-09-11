@@ -25,10 +25,9 @@ gsutil rm -rf ${WORK_DIR_BUCKET}
 gsutil rm -rf ${OUTPUT_DIR_BUCKET}
 
 ## Run test demo on google cloud
-nextflow run main.nf \
+nextflow run main.nf -resume\
     -profile docker,google \
 	-w ${WORK_DIR_BUCKET} \
 	--outputDir ${OUTPUT_DIR_BUCKET} \
 	--dsname TestData \
 	--input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
-
