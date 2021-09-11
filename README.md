@@ -63,7 +63,7 @@ The 'nanome' pipeline support running with various ways in different platforms:
 * Docker
     1. Docker container name: `liuyangzzu/nanome:v1.0`
 * Singularity
-    1. Pull image from docker hub: `singularity pull liuyangzzu/nanome:v1.0`
+    1. Pull image from docker hub: `singularity pull docker://liuyangzzu/nanome:v1.0`
 * HPC clusters with SLURM support
 * Google Cloud platmform with google-lifesciences support
 
