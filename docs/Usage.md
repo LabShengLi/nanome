@@ -39,7 +39,11 @@ curl -fsSL get.nextflow.io | bash
 # Get command help
 ./nextflow run https://github.com/liuyangzzu/nanome.git --help
 
-# Running nanome pipeline
+# Running nanome pipeline on HPC using Singularity
+./nextflow run https://github.com/liuyangzzu/nanome.git \
+    -profile ci,singularity,hpc 
+
+# Running nanome pipeline on Nanopore data for human
 ./nextflow run https://github.com/liuyangzzu/nanome.git \
     -profile singularity,hpc \
     --dsname TestData \
@@ -50,11 +54,9 @@ You can also running 'nanome' pipeline on cloud computing platform, using follow
 ```angular2html
 # Running on Google Cloud (https://cloud.google.com)
 ./nextflow run https://github.com/liuyangzzu/nanome.git \
-    -profile docker,google \
+    -profile ci,docker,google \
     -w gs://jax-nanopore-01-project-data/TestData-work \
-    --outputDir gs://jax-nanopore-01-export-bucket/TestData-ouputs \
-    --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+    --outputDir gs://jax-nanopore-01-export-bucket/TestData-ouputs
 ```
 
 Pipeline running results is below, output directory trees are [outputs](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/outputs_demo.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/work_demo.tree.txt). It can also generates [timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/timeline_demo.pdf), [report](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/report_demo.pdf) and [resource usage](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/trace_demo.txt.tsv) with more Nextflow [options](https://www.nextflow.io/docs/latest/tracing.html) (e.g., `-with-report -with-timeline -with-trace -with-dag -resume`).
@@ -268,9 +270,9 @@ cd nanome
 curl -s https://get.nextflow.io | bash
 
 ./nextflow run main.nf \
-    -profile docker,google \
-    -w gs://jax-nanopore-01-project-data/nanome-work-test \
-    --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
+    -profile ci,docker,google \
+    -w gs://jax-nanopore-01-project-data/nanome-work-ci \
+    --outputDir gs://jax-nanopore-01-project-data/nanome-outputs-ci
 ```
 
 The `jax-nanopore-01-project-data` is a sample of **Data Bucket** name that you can access on google cloud. `-w` is pipeline output working directory, `--outputDir` is the directory for methylation-calling results.
