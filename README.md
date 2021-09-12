@@ -61,13 +61,13 @@ The 'nanome' pipeline support running with various ways in different platforms:
 * Conda
     1. Create conda enviroment: `conda env create -f environment.yml`
 * Docker
-    1. Docker container name: `quay.io/liuyangzzu/nanome:v1.5`
+    1. Docker container name: `liuyangzzu/nanome:v1.0`
 * Singularity
-    1. Pull image from docker hub: `singularity pull docker://quay.io/liuyangzzu/nanome:v1.5`
+    1. Pull image from docker hub: `singularity pull docker://liuyangzzu/nanome:v1.0`
 * HPC clusters with SLURM support
 * Google Cloud platmform with google-lifesciences support
 
-For running on CloudOS platform (such as google cloud), our Nextflow pipeline supports using an Docker image (i.e., `quay.io/liuyangzzu/nanome:v1.5`), details please check [Usage](https://github.com/liuyangzzu/nanome/blob/master/docs/Usage.md). 
+For running on CloudOS platform (such as google cloud), our Nextflow pipeline supports using an Docker image (i.e., `liuyangzzu/nanome:v1.0`), details please check [Usage](https://github.com/liuyangzzu/nanome/blob/master/docs/Usage.md). 
 
 We will update more information within a short time.
 
