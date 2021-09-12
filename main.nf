@@ -155,11 +155,10 @@ process EnvCheck {
 	path "reference_genome" into reference_genome_ch
 
 	"""
-	set -x
 	date; hostname; pwd
+	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
 
 	which conda
-	conda env list
 
 	which python
 	python --version
@@ -222,6 +221,9 @@ process Untar {
 	path "${fast5_tar.baseName}.untar" optional true into untar_out_ch
 
 	"""
+	date; hostname; pwd
+	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
+
 	infn="${fast5_tar}"
 	mkdir -p untarTempDir
 	if [ "\${infn##*.}" == "tar" ]; then
@@ -290,6 +292,13 @@ process Basecall {
 
 	## nvidia-smi
 	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
+	if [[ "\${CUDA_VISIBLE_DEVICES:-}" == "" ]] ; then
+		echo "Detect no GPU, using CPU commandType"
+		commandType='cpu'
+	else
+		echo "Detect GPU, using GPU commandType"
+		commandType='gpu'
+	fi
 
 	which guppy_basecaller
 	mkdir -p ${fast5_dir.baseName}.basecalled
@@ -547,6 +556,15 @@ process Megalodon {
 	"""
 	date; hostname; pwd
 
+	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
+	if [[ "\${CUDA_VISIBLE_DEVICES:-}" == "" ]] ; then
+		echo "Detect no GPU, using CPU commandType"
+		commandType='cpu'
+	else
+		echo "Detect GPU, using GPU commandType"
+		commandType='gpu'
+	fi
+
 	## Get megalodon model dir
 	tar -xzf ${megalodonModelTar}
 
@@ -627,6 +645,7 @@ process DeepSignal {
 	"""
 	tar -xzf ${deepsignal_model_tar}
 
+	commandType='gpu'
 	if [[ \${commandType} == "cpu" ]]; then
 		## CPU version command
 		deepsignal call_mods \
@@ -636,7 +655,7 @@ process DeepSignal {
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.resquiggleCorrectedGroup} \
 			--nproc \$(( numProcessor * ${params.deepLearningProcessorTimes}  )) \
-			--is_gpu yes
+			--is_gpu no
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		deepsignal call_mods \
@@ -686,6 +705,15 @@ process Guppy {
 
 	"""
 	date; hostname; pwd
+
+	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
+	if [[ "\${CUDA_VISIBLE_DEVICES:-}" == "" ]] ; then
+		echo "Detect no GPU, using CPU commandType"
+		commandType='cpu'
+	else
+		echo "Detect GPU, using GPU commandType"
+		commandType='gpu'
+	fi
 
 	mkdir -p ${fast5_dir.baseName}.methcalled
 
