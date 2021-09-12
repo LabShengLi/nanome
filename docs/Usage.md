@@ -63,43 +63,43 @@ Pipeline running results is below, output directory trees are [outputs](https://
 
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
-Launching `main.nf` [hungry_bartik] - revision: 12c6a8e37a
-NANOME - NF PIPELINE (v1.0)
+Launching `main.nf` [wise_crick] - revision: efbaa90697
+NANOME - NF PIPELINE (v1.3)
 by Li Lab at The Jackson Laboratory
 https://nanome.jax.org
 =================================
 dsname          :TestData
 input           :https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
-reference_genome    :reference_genome/hg38/hg38.fasta
+output          :/fastscratch/li-lab/nanome/outputs
+work            :/fastscratch/li-lab/nanome/work
+dataType        :human
 runBasecall     :true
 runMethcall     :true
 =================================
-executor >  slurm (30)
-[a8/145382] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
-[94/d0e364] process > Untar (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
-[e4/a6c42f] process > Basecall (demo.fast5.reads.... [100%] 2 of 2 ✔
-[17/87d46b] process > QCExport                       [100%] 1 of 1 ✔
-[f0/8b1891] process > Guppy (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
-[d4/2f7794] process > Megalodon (demo.fast5.reads... [100%] 2 of 2 ✔
-[3f/336996] process > Resquiggle (demo.fast5.read... [100%] 2 of 2 ✔
-[78/76a38d] process > DeepSignal (demo.fast5.read... [100%] 2 of 2 ✔
-[b4/cd7309] process > Tombo (demo.fast5.reads.tar)   [100%] 2 of 2 ✔
-[21/92aae7] process > DeepMod (demo.fast5.reads.tar) [100%] 2 of 2 ✔
-[bd/86ab7c] process > Nanopolish (demo.fast5.read... [100%] 2 of 2 ✔
-[aa/de3cba] process > DpSigComb                      [100%] 1 of 1 ✔
-[67/f0ba5b] process > TomboComb                      [100%] 1 of 1 ✔
-[06/911c00] process > GuppyComb (1)                  [100%] 1 of 1 ✔
-[71/7a6fe9] process > MgldnComb                      [100%] 1 of 1 ✔
-[4c/70dbe9] process > NplshComb                      [100%] 1 of 1 ✔
-[ae/17edb3] process > DpmodComb (1)                  [100%] 1 of 1 ✔
-[cf/706926] process > METEORE (1)                    [100%] 1 of 1 ✔
-[a5/732325] process > SiteLevelUnify (1)             [100%] 1 of 1 ✔
-[77/f19512] process > ReadLevelPerf (1)              [100%] 1 of 1 ✔
-[37/3cdaa5] process > SiteLevelCorr (1)              [100%] 1 of 1 ✔
-Completed at: 18-Aug-2021 16:04:14
-Duration    : 1h 46s
-CPU hours   : 1.9
-Succeeded   : 30
+executor >  slurm (28)
+[30/56fb5a] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
+[79/2d4393] process > Untar (demo1.fast5.reads.tar)  [100%] 2 of 2 ✔
+[c2/1e6506] process > Basecall (demo1.fast5.reads... [100%] 2 of 2 ✔
+[fc/3f5bd2] process > QCExport                       [100%] 1 of 1 ✔
+[61/a78829] process > Resquiggle (demo1.fast5.rea... [100%] 2 of 2 ✔
+[ef/ce1142] process > Nanopolish (demo1.fast5.rea... [100%] 2 of 2 ✔
+[cb/72762f] process > Megalodon (demo1.fast5.read... [100%] 2 of 2 ✔
+[2c/217ece] process > DeepSignal (demo1.fast5.rea... [100%] 2 of 2 ✔
+[b7/7140d1] process > Guppy (demo1.fast5.reads.tar)  [100%] 2 of 2 ✔
+[04/1b4c2a] process > Tombo (demo1.fast5.reads.tar)  [100%] 2 of 2 ✔
+[d9/43d3cf] process > DeepMod (demo1.fast5.reads.... [100%] 2 of 2 ✔
+[5a/244b39] process > NplshComb (1)                  [100%] 1 of 1 ✔
+[72/a4f1a7] process > MgldnComb (1)                  [100%] 1 of 1 ✔
+[a8/151a61] process > DpSigComb (1)                  [100%] 1 of 1 ✔
+[d3/0d1141] process > GuppyComb (1)                  [100%] 1 of 1 ✔
+[83/c7ecd3] process > TomboComb (1)                  [100%] 1 of 1 ✔
+[63/5e39c1] process > DpmodComb (1)                  [100%] 1 of 1 ✔
+[09/a1d741] process > METEORE (1)                    [100%] 1 of 1 ✔
+[10/e307c2] process > Report (1)                     [100%] 1 of 1 ✔
+Completed at: 11-Sep-2021 20:16:38
+Duration    : 15m 24s
+CPU hours   : 1.0
+Succeeded   : 28
 ```
 
 
@@ -108,36 +108,39 @@ All tools's methlation calling and evaluation results will be output to `outputs
 ```angular2html
 tree outputs/TestData-methylation-callings/
 
-outputs/TestData-methylation-callings
-    ├── Raw_Results-TestData
-    │   ├── TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz
-    │   ├── TestData.deepsignal.per_read.combine.tsv.gz
-    │   ├── TestData.guppy.fast5mod_per_site.combine.tsv.gz
-    │   ├── TestData.megalodon.per_read.combine.bed.gz
-    │   ├── TestData.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
-    │   ├── TestData.nanopolish.per_read.combine.tsv.gz
-    │   └── TestData.tombo.per_read.combine.bed.gz
-    ├── Read_Level-TestData
-    │   ├── TestData_DeepSignal-perRead-score.tsv.gz
-    │   ├── TestData_Guppy-perRead-score.tsv.gz
-    │   ├── TestData_Megalodon-perRead-score.tsv.gz
-    │   ├── TestData_METEORE-perRead-score.tsv.gz
-    │   ├── TestData_Nanopolish-perRead-score.tsv.gz
-    │   └── TestData_Tombo-perRead-score.tsv.gz
-    └── Site_Level-TestData
-        ├── TestData_DeepMod-perSite-cov1.sort.bed.gz
-        ├── TestData_DeepSignal-perSite-cov1.sort.bed.gz
-        ├── TestData_Guppy-perSite-cov1.sort.bed.gz
-        ├── TestData_Megalodon-perSite-cov1.sort.bed.gz
-        ├── TestData_METEORE-perSite-cov1.sort.bed.gz
-        ├── TestData_Nanopolish-perSite-cov1.sort.bed.gz
-        └── TestData_Tombo-perSite-cov1.sort.bed.gz
+outputs/TestData-methylation-callings/
+├── Raw_Results-TestData
+│   ├── TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz
+│   ├── TestData.deepmod.C_per_site.combine.bed.gz
+│   ├── TestData.deepsignal.per_read.combine.tsv.gz
+│   ├── TestData.guppy.fast5mod_per_site.combine.tsv.gz
+│   ├── TestData.guppy.gcf52ref_per_read.combine.tsv.gz
+│   ├── TestData.megalodon.per_read.combine.bed.gz
+│   ├── TestData.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
+│   ├── TestData.nanopolish.per_read.combine.tsv.gz
+│   └── TestData.tombo.per_read.combine.bed.gz
+├── Read_Level-TestData
+│   ├── TestData_DeepSignal-perRead-score.tsv.gz
+│   ├── TestData_Guppy-perRead-score.tsv.gz
+│   ├── TestData_Megalodon-perRead-score.tsv.gz
+│   ├── TestData_METEORE-perRead-score.tsv.gz
+│   ├── TestData_Nanopolish-perRead-score.tsv.gz
+│   └── TestData_Tombo-perRead-score.tsv.gz
+└── Site_Level-TestData
+    ├── TestData_DeepMod-perSite-cov1.sort.bed.gz
+    ├── TestData_DeepSignal-perSite-cov1.sort.bed.gz
+    ├── TestData_Guppy-perSite-cov1.sort.bed.gz
+    ├── TestData_Megalodon-perSite-cov1.sort.bed.gz
+    ├── TestData_METEORE-perSite-cov1.sort.bed.gz
+    ├── TestData_Nanopolish-perSite-cov1.sort.bed.gz
+    └── TestData_Tombo-perSite-cov1.sort.bed.gz
 
-tree outputs/TestData-basecall-report
-
-outputs/TestData-basecall-report
-   ├── TestData_basecall_report.html
-   └── TestData_QCReport
+tree outputs -L 1
+outputs
+├── README.txt
+├── report
+├── TestData-basecallings
+└── TestData-methylation-callings
 ```
 
 We also support input as a file list if input is suffix like `.filelist.txt`, an example input is [inputs/test.demo.filelist.txt](https://github.com/liuyangzzu/nanome/blob/master/inputs/test.demo.filelist.txt). Please use folowings for command line help:
@@ -206,40 +209,42 @@ Pipeline results for E. coli data is below.
 
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
-Launching `main.nf` [zen_hilbert] - revision: ab05dc72d5
-NANOME - NF PIPELINE (v1.0)
+Launching `main.nf` [drunk_carlsson] - revision: efbaa90697
+NANOME - NF PIPELINE (v1.3)
 by Li Lab at The Jackson Laboratory
 https://nanome.jax.org
 =================================
-dsname			:EcoliDemoData
-input			:/projects/li-lab/Nanopore_compare/suppdata/ecoli-sanity-check/ecoli_meteore.tar.gz
-reference_genome	:reference_genome/ecoli/Ecoli_k12_mg1655.fasta
-runBasecall		:true
-runMethcall		:true
+dsname          :EcoliDemo
+input           :https://zenodo.org/record/5483859/files/ecoli_data_from_meteore.tar.gz
+output          :/fastscratch/li-lab/nanome/outputs-ecoli
+work            :/fastscratch/li-lab/nanome/work-ecoli
+dataType        :ecoli
+runBasecall     :true
+runMethcall     :true
 =================================
 executor >  slurm (19)
-[a8/145382] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
-[e6/448ac3] process > Untar (ecoli_meteore.tar)      [100%] 1 of 1 ✔
-[d1/877c1b] process > Basecall (ecoli_meteore.tar)   [100%] 1 of 1 ✔
-[5d/28286d] process > QCExport                       [100%] 1 of 1 ✔
-[47/4d1744] process > Guppy (ecoli_meteore.tar)      [100%] 1 of 1 ✔
-[c9/d99d9f] process > Megalodon (ecoli_meteore.tar)  [100%] 1 of 1 ✔
-[92/4494ca] process > Resquiggle (ecoli_meteore.tar) [100%] 1 of 1 ✔
-[96/496d59] process > DeepSignal (ecoli_meteore.tar) [100%] 1 of 1 ✔
-[67/c7af4b] process > Tombo (ecoli_meteore.tar)      [100%] 1 of 1 ✔
-[8a/26ccf8] process > DeepMod (ecoli_meteore.tar)    [100%] 1 of 1 ✔
-[9a/1e322d] process > Nanopolish (ecoli_meteore.tar) [100%] 1 of 1 ✔
-[4e/1bd70c] process > DpSigComb                      [100%] 1 of 1 ✔
-[86/6f1331] process > TomboComb                      [100%] 1 of 1 ✔
-[a4/ad93ab] process > GuppyComb (1)                  [100%] 1 of 1 ✔
-[a5/db8dc2] process > MgldnComb                      [100%] 1 of 1 ✔
-[b0/538e6f] process > NplshComb                      [100%] 1 of 1 ✔
-[a5/fa9840] process > DpmodComb (1)                  [100%] 1 of 1 ✔
-[17/25a230] process > METEORE (1)                    [100%] 1 of 1 ✔
-[64/d1f30b] process > SiteLevelUnify (1)             [100%] 1 of 1 ✔
-Completed at: 19-Aug-2021 15:10:29
-Duration    : 11m 31s
-CPU hours   : 0.3
+[e6/9fbf7e] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
+[10/24fad4] process > Untar (ecoli_data_from_mete... [100%] 1 of 1 ✔
+[45/94553b] process > Basecall (ecoli_data_from_m... [100%] 1 of 1 ✔
+[6d/7fd4ca] process > QCExport                       [100%] 1 of 1 ✔
+[2c/31de5c] process > Resquiggle (ecoli_data_from... [100%] 1 of 1 ✔
+[58/256829] process > Nanopolish (ecoli_data_from... [100%] 1 of 1 ✔
+[67/bf7f23] process > Megalodon (ecoli_data_from_... [100%] 1 of 1 ✔
+[97/dd7a8f] process > DeepSignal (ecoli_data_from... [100%] 1 of 1 ✔
+[03/efbbca] process > Guppy (ecoli_data_from_mete... [100%] 1 of 1 ✔
+[b9/3ed251] process > Tombo (ecoli_data_from_mete... [100%] 1 of 1 ✔
+[4f/c40418] process > DeepMod (ecoli_data_from_me... [100%] 1 of 1 ✔
+[5c/8182bf] process > NplshComb (1)                  [100%] 1 of 1 ✔
+[d0/123535] process > MgldnComb (1)                  [100%] 1 of 1 ✔
+[a1/25ef0c] process > DpSigComb (1)                  [100%] 1 of 1 ✔
+[ff/f8786e] process > GuppyComb (1)                  [100%] 1 of 1 ✔
+[07/e1fa8a] process > TomboComb (1)                  [100%] 1 of 1 ✔
+[fa/863b04] process > DpmodComb (1)                  [100%] 1 of 1 ✔
+[a0/3326d1] process > METEORE (1)                    [100%] 1 of 1 ✔
+[2f/9a2ad7] process > Report (1)                     [100%] 1 of 1 ✔
+Completed at: 11-Sep-2021 20:25:14
+Duration    : 5m 19s
+CPU hours   : 0.1
 Succeeded   : 19
 ```
 
