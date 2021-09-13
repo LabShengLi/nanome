@@ -1,0 +1,25 @@
+NANOME pipeline report of methylation calling for Oxford Nanopore sequencing data
+
+==========================================
+Project : 			${projectDir}
+Working directory:	${workDir}
+Command line: 		${commandLine}
+Run name:			${runName}
+Start time:			${start}
+==========================================
+
+Outputs folder at ${outdir}:
+
+report						-	html report of NANOME pipeline
+${dsname}-basecallings		-	basecalling reports
+${dsname}-methylation-callings	-	methylation calling results
+			├── Raw_Results-TestData	-	raw format of methylation calling results for each tool
+			├── Read_Level-TestData		-	read-level unified format for methylation calling results
+			└── Site_Level-TestData		-	site-level unified format for methylation calling results
+
+Reference
+
+Yang Liu, Wojciech Rosikiewicz, Ziwei Pan, Nathaniel Jillette, Ping Wang, Aziz Taghbalout, Jonathan Foox, Christopher Mason, Martin Carroll, Albert Cheng, Sheng Li. DNA methylation calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation. bioRxiv, 2021. Online at https://doi.org/10.1101/2021.05.05.442849.
+
+https://nanome.jax.org
+https://github.com/liuyangzzu/nanome

@@ -1,0 +1,2 @@
+https://github.com/liuyangzzu/nano-compare/raw/master/test_data/demo1.fast5.reads.tar.gz
+https://github.com/liuyangzzu/nano-compare/raw/master/test_data/demo2.fast5.reads.tar.gz

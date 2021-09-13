@@ -1,0 +1,859 @@
+work-ecoli
+├── 17
+│   └── 25a230c6721a17ba0b0242cc9b2564
+│       ├── EcoliDemoData.deepmod.C_per_site.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a5/fa98405dda261d3181e0ae9bcd956c/EcoliDemoData.deepmod.C_per_site.combine.bed.gz
+│       ├── EcoliDemoData.deepsignal.per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/4e/1bd70c8c9fb1fcccc024e93b770531/EcoliDemoData.deepsignal.per_read.combine.tsv.gz
+│       ├── EcoliDemoData.guppy.fast5mod_per_site.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a4/ad93ab4c3088a11e7730374025f311/EcoliDemoData.guppy.fast5mod_per_site.combine.tsv.gz
+│       ├── EcoliDemoData.guppy.gcf52ref_per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a4/ad93ab4c3088a11e7730374025f311/EcoliDemoData.guppy.gcf52ref_per_read.combine.tsv.gz
+│       ├── EcoliDemoData_Megalodon_DeepSignal_combine.model_content.tsv
+│       ├── EcoliDemoData.megalodon.per_read.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a5/db8dc2775974b3ac931ec93950286a/EcoliDemoData.megalodon.per_read.combine.bed.gz
+│       ├── EcoliDemoData.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz
+│       ├── EcoliDemoData.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
+│       ├── EcoliDemoData_Nanopolish_Megalodon_combine.model_content.tsv
+│       ├── EcoliDemoData.nanopolish.per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/b0/538e6f84a184d4aae2ea8460fca92a/EcoliDemoData.nanopolish.per_read.combine.tsv.gz
+│       ├── EcoliDemoData.tombo.per_read.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/86/6f1331755a63ce3855d76f9fdc92dd/EcoliDemoData.tombo.per_read.combine.bed.gz
+│       ├── METEORE-1.0.0
+│       │   ├── combination_model_prediction.py
+│       │   ├── combination_model_train.py
+│       │   ├── combined_model_results
+│       │   │   ├── example_deepsignal_nanopolish-default-model-freq-perCG.tsv
+│       │   │   ├── example_deepsignal_nanopolish-default-model-perRead.tsv
+│       │   │   ├── example_deepsignal_nanopolish-optimized-model-freq-perCG.tsv
+│       │   │   └── example_deepsignal_nanopolish-optimized-model-perRead.tsv
+│       │   ├── data
+│       │   │   ├── ecoli_k12_mg1655.fasta
+│       │   │   ├── ecoli_k12_mg1655.fasta.fai
+│       │   │   └── example
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch114_read6906_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch118_read2334_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch118_read526_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch138_read698_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch139_read4507_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch142_read2358_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch158_read435_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch159_read630_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch162_read1065_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch172_read1102_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch175_read80_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch177_read479_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch193_read10923_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch205_read3886_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch217_read1495_strand1.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch224_read1419_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch228_read1212_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch230_read20744_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch241_read2385_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch252_read2417_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch258_read2664_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch262_read814_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch269_read2204_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch270_read545_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch279_read13169_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch291_read161080_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch294_read356_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch294_read732_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch298_read2348_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch311_read1440_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch313_read2657_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch324_read1332_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch324_read570_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch330_read2145_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch354_read2006_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch366_read1770_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch375_read1018_strand1.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch375_read1189_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch381_read12341_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch409_read716_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch412_read8784_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch418_read3292_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch422_read940_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch430_read511_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch431_read800_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch433_read26717_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch434_read696_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch436_read2992_strand.fast5
+│       │   │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch443_read162_strand.fast5
+│       │   │       └── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch88_read4943_strand.fast5
+│       │   ├── Deepsignal1
+│       │   ├── Deepsignal2
+│       │   ├── example.fastq
+│       │   ├── example_results
+│       │   │   ├── deepsignal_results
+│       │   │   │   ├── example_deepsignal-feature.zip
+│       │   │   │   ├── example_deepsignal-freq-perCG-combStrand.tsv
+│       │   │   │   ├── example_deepsignal-freq-perCG-raw.tsv
+│       │   │   │   ├── example_deepsignal-freq-perCG.tsv
+│       │   │   │   ├── example_deepsignal-perRead-score.tsv
+│       │   │   │   └── example_deepsignal-prob.tsv
+│       │   │   ├── example.CpG.tombo.per_read_stats
+│       │   │   ├── example.CpG.tombo.stats
+│       │   │   ├── example.fastq.index
+│       │   │   ├── example.fastq.index.fai
+│       │   │   ├── example.fastq.index.gzi
+│       │   │   ├── example.fastq.index.readdb
+│       │   │   ├── example.fraction_modified_reads.minus.wig
+│       │   │   ├── example.fraction_modified_reads.plus.wig
+│       │   │   ├── example.valid_coverage.minus.wig
+│       │   │   ├── example.valid_coverage.plus.wig
+│       │   │   ├── guppy_results
+│       │   │   │   ├── example.fq
+│       │   │   │   ├── example_guppy-freq-perCG-combStrand.tsv
+│       │   │   │   ├── example_guppy-freq-perCG.tsv
+│       │   │   │   ├── example_guppy-log-perCG.tsv
+│       │   │   │   ├── example_guppy-perRead-score.tsv
+│       │   │   │   ├── mapped
+│       │   │   │   │   ├── example.bam
+│       │   │   │   │   └── example.bam.bai
+│       │   │   │   └── sequencing_summary.txt
+│       │   │   ├── megalodon_results
+│       │   │   │   ├── example_megalodon-freq-perCG-combStrand.tsv
+│       │   │   │   ├── example_megalodon-freq-perCG.tsv
+│       │   │   │   ├── example_megalodon-perRead-score.tsv
+│       │   │   │   ├── guppy_log
+│       │   │   │   │   └── guppy_basecall_server_log-2021-03-19_16-28-14.log
+│       │   │   │   ├── guppy_log.err
+│       │   │   │   ├── guppy_log.out
+│       │   │   │   ├── log.txt
+│       │   │   │   ├── modified_bases.5mC.bed
+│       │   │   │   ├── per_read_modified_base_calls.db
+│       │   │   │   └── per_read_modified_base_calls.txt
+│       │   │   ├── nanopolish_results
+│       │   │   │   ├── example_nanopolish-freq-perCG-combStrand.tsv
+│       │   │   │   ├── example_nanopolish-freq-perCG.tsv
+│       │   │   │   ├── example_nanopolish-log-perCG.tsv
+│       │   │   │   ├── example_nanopolish-log.tsv
+│       │   │   │   ├── example_nanopolish-perRead-score.tsv
+│       │   │   │   └── mapped
+│       │   │   │       ├── example.bam
+│       │   │   │       ├── example.log
+│       │   │   │       ├── example.sorted.bam
+│       │   │   │       └── example.sorted.bam.bai
+│       │   │   └── tombo_results
+│       │   │       ├── example_tombo-cov-only.tsv
+│       │   │       ├── example_tombo-freq-only.tsv
+│       │   │       ├── example_tombo-freq-perCG-combStrand.tsv
+│       │   │       ├── example_tombo-freq-perCG.tsv
+│       │   │       └── example_tombo-perRead-score.tsv
+│       │   ├── figure
+│       │   │   ├── meteore_logo_white.png
+│       │   │   └── meteore_pipeline.png
+│       │   ├── Guppy
+│       │   ├── guppy.yml
+│       │   ├── LICENSE
+│       │   ├── make_plots
+│       │   │   └── controlSet1_5tools_perSiteAnalysis.R
+│       │   ├── meteore_reg.py
+│       │   ├── model_content.tsv
+│       │   ├── Nanopolish
+│       │   ├── nanopolish.yml
+│       │   ├── prediction_to_mod_frequency.py
+│       │   ├── README.md
+│       │   ├── requirements.txt
+│       │   ├── saved_models
+│       │   │   ├── rf_model_default_deepsignal_guppy_megalodon_nanopolish_tombo.model
+│       │   │   ├── rf_model_default_deepsignal_guppy.model
+│       │   │   ├── rf_model_default_deepsignal_megalodon.model
+│       │   │   ├── rf_model_default_deepsignal_nanopolish.model
+│       │   │   ├── rf_model_default_deepsignal_tombo.model
+│       │   │   ├── rf_model_default_guppy_megalodon.model
+│       │   │   ├── rf_model_default_guppy_nanopolish.model
+│       │   │   ├── rf_model_default_guppy_tombo.model
+│       │   │   ├── rf_model_default_megalodon_nanopolish.model
+│       │   │   ├── rf_model_default_megalodon_tombo.model
+│       │   │   ├── rf_model_default_nanopolish_tombo.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_deepsignal_guppy_megalodon_nanopolish_tombo.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_deepsignal_guppy.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_deepsignal_megalodon.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_deepsignal_nanopolish.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_deepsignal_tombo.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_guppy_megalodon.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_guppy_nanopolish.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_guppy_tombo.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_megalodon_nanopolish.model
+│       │   │   ├── rf_model_max_depth_3_n_estimator_10_megalodon_tombo.model
+│       │   │   └── rf_model_max_depth_3_n_estimator_10_nanopolish_tombo.model
+│       │   ├── script
+│       │   │   ├── format_megalodon.R
+│       │   │   ├── megalodon.sh
+│       │   │   ├── run_deepmod.R
+│       │   │   └── run_megalodon.R
+│       │   ├── script_in_snakemake
+│       │   │   ├── call_modification_frequency.py
+│       │   │   ├── extract_tombo_per_read_results.py
+│       │   │   ├── format_deepsignal.R
+│       │   │   ├── format_guppy.R
+│       │   │   ├── format_nanopolish.R
+│       │   │   ├── __init__.py
+│       │   │   ├── __pycache__
+│       │   │   │   └── txt_formater.cpython-36.pyc
+│       │   │   ├── run_deepsignal.R
+│       │   │   ├── run_deepsignal.R.save
+│       │   │   ├── run_guppy.R
+│       │   │   ├── run_nanopolish.R
+│       │   │   ├── run_tombo.R
+│       │   │   ├── split_cpg_groups.py
+│       │   │   ├── txt_formater.py
+│       │   │   └── wig2bed.py
+│       │   ├── test_case
+│       │   │   ├── deepsignal_test.tsv
+│       │   │   └── nanopolish_test.tsv
+│       │   └── Tombo
+│       ├── Read_Level-EcoliDemoData
+│       │   ├── DONE.txt
+│       │   ├── EcoliDemoData_DeepSignal-METEORE-perRead-score.tsv.gz
+│       │   ├── EcoliDemoData_Guppy-METEORE-perRead-score.tsv.gz
+│       │   ├── EcoliDemoData_Megalodon-METEORE-perRead-score.tsv.gz
+│       │   ├── EcoliDemoData_Nanopolish-METEORE-perRead-score.tsv.gz
+│       │   └── EcoliDemoData_Tombo-METEORE-perRead-score.tsv.gz
+│       ├── src -> /pod/2/li-lab/yang/workspace/nano-compare/src
+│       ├── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+│       └── v1.0.0.tar.gz
+├── 47
+│   └── 4d1744a536774fdbf478f0fda181c2
+│       ├── base_mods.rocksdb
+│       │   ├── 000004.sst
+│       │   ├── 000006.log
+│       │   ├── CURRENT
+│       │   ├── IDENTITY
+│       │   ├── LOCK
+│       │   ├── LOG
+│       │   ├── LOG.old.1629399637076309
+│       │   ├── MANIFEST-000005
+│       │   ├── OPTIONS-000005
+│       │   └── OPTIONS-000008
+│       ├── batch_ecoli_meteore.tar.guppy.fast5mod_guppy2sam.bam
+│       ├── batch_ecoli_meteore.tar.guppy.fast5mod_guppy2sam.bam.bai
+│       ├── batch_ecoli_meteore.tar.guppy.gcf52ref_per_read.tsv.gz
+│       ├── ecoli_meteore.tar.methcalled
+│       │   ├── fastq_runid_87b136ffc8ea5a243bdcff637a644011b53b6120_0_0.fastq
+│       │   ├── guppy_basecaller_log-2021-08-19_15-00-24.log
+│       │   ├── guppy_basecaller_verbose_log-2021-08-19_15-00-24.log
+│       │   ├── sequencing_summary.txt
+│       │   ├── sequencing_telemetry.js
+│       │   └── workspace
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch114_read6906_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch118_read2334_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch118_read526_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch138_read698_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch139_read4507_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch142_read2358_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch158_read435_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch159_read630_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch162_read1065_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch172_read1102_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch175_read80_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch177_read479_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch193_read10923_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch205_read3886_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch217_read1495_strand1.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch224_read1419_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch228_read1212_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch230_read20744_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch241_read2385_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch252_read2417_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch258_read2664_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch262_read814_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch269_read2204_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch270_read545_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch279_read13169_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch291_read161080_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch294_read356_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch294_read732_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch298_read2348_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch311_read1440_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch313_read2657_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch324_read1332_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch324_read570_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch330_read2145_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch354_read2006_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch366_read1770_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch375_read1018_strand1.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch375_read1189_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch381_read12341_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch409_read716_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch412_read8784_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch418_read3292_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch422_read940_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch430_read511_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch431_read800_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch433_read26717_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch434_read696_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch436_read2992_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch443_read162_strand.fast5
+│       │       └── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch88_read4943_strand.fast5
+│       ├── ecoli_meteore.tar.untar -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/e6/448ac3e0099cf7558ee0c1f2cbe24a/ecoli_meteore.tar.untar
+│       ├── gcf52ref -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a8/145382b24956f165bae5b079501c87/gcf52ref
+│       ├── gcf52ref.batch.ecoli_meteore.tar.bam
+│       ├── gcf52ref.batch.ecoli_meteore.tar.bam.bai
+│       ├── outbatch_ecoli_meteore.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a8/145382b24956f165bae5b079501c87/reference_genome
+│       ├── tmp.batch_ecoli_meteore.tar.guppy.gcf52ref_per_read.tsv
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+├── 4e
+│   └── 1bd70c8c9fb1fcccc024e93b770531
+│       ├── batch_ecoli_meteore.tar.CpG.deepsignal.call_mods.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/96/496d599e0de457d41f2f3dec17d0e2/batch_ecoli_meteore.tar.CpG.deepsignal.call_mods.tsv.gz
+│       └── EcoliDemoData.deepsignal.per_read.combine.tsv.gz
+├── 5d
+│   └── 28286dcc57d694d163126e97ae2bd6
+│       ├── EcoliDemoData.coverage.negativestrand.bed.gz
+│       ├── EcoliDemoData.coverage.positivestrand.bed.gz
+│       ├── EcoliDemoData_merged.bam
+│       ├── EcoliDemoData_merged.bam.bai
+│       ├── EcoliDemoData-qc-report
+│       │   └── ecoli_meteore.tar-sequencing_summary.txt
+│       ├── EcoliDemoData-qc-report.tar.gz
+│       ├── ecoli_meteore.tar.basecalled.bam -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/d1/877c1b10de6430cb71691d1f8a3d6c/ecoli_meteore.tar.basecalled.bam
+│       └── ecoli_meteore.tar-sequencing_summary.txt -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/d1/877c1b10de6430cb71691d1f8a3d6c/ecoli_meteore.tar.basecalled/ecoli_meteore.tar-sequencing_summary.txt
+├── 64
+│   └── d1f30ba45fa1ea78facab363ea2179
+│       ├── EcoliDemoData.deepmod.C_per_site.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a5/fa98405dda261d3181e0ae9bcd956c/EcoliDemoData.deepmod.C_per_site.combine.bed.gz
+│       ├── EcoliDemoData.deepsignal.per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/4e/1bd70c8c9fb1fcccc024e93b770531/EcoliDemoData.deepsignal.per_read.combine.tsv.gz
+│       ├── EcoliDemoData.guppy.fast5mod_per_site.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a4/ad93ab4c3088a11e7730374025f311/EcoliDemoData.guppy.fast5mod_per_site.combine.tsv.gz
+│       ├── EcoliDemoData.guppy.gcf52ref_per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a4/ad93ab4c3088a11e7730374025f311/EcoliDemoData.guppy.gcf52ref_per_read.combine.tsv.gz
+│       ├── EcoliDemoData.megalodon.per_read.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a5/db8dc2775974b3ac931ec93950286a/EcoliDemoData.megalodon.per_read.combine.bed.gz
+│       ├── EcoliDemoData.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/17/25a230c6721a17ba0b0242cc9b2564/EcoliDemoData.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
+│       ├── EcoliDemoData.nanopolish.per_read.combine.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/b0/538e6f84a184d4aae2ea8460fca92a/EcoliDemoData.nanopolish.per_read.combine.tsv.gz
+│       ├── EcoliDemoData.tombo.per_read.combine.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/86/6f1331755a63ce3855d76f9fdc92dd/EcoliDemoData.tombo.per_read.combine.bed.gz
+│       ├── Site_Level-EcoliDemoData
+│       │   ├── DONE.txt
+│       │   ├── Site_Level-EcoliDemoData.tss.DeepSignal.cov1.bed.gz
+│       │   ├── Site_Level-EcoliDemoData.tss.Guppy.cov1.bed.gz
+│       │   ├── Site_Level-EcoliDemoData.tss.Megalodon.cov1.bed.gz
+│       │   ├── Site_Level-EcoliDemoData.tss.Nanopolish.cov1.bed.gz
+│       │   └── Site_Level-EcoliDemoData.tss.Tombo.cov1.bed.gz
+│       └── src -> /pod/2/li-lab/yang/workspace/nano-compare/src
+├── 67
+│   └── c7af4b3d4c785bea1f401710d1c4ef
+│       ├── batch_ecoli_meteore.tar.CpG.tombo.per_read_stats
+│       ├── batch_ecoli_meteore.tar.CpG.tombo.per_read_stats.bed.gz
+│       ├── batch_ecoli_meteore.tar.CpG.tombo.stats
+│       ├── ecoli_meteore.tar.resquiggle -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/92/4494caf7c738ffafa6728f5163dcec/ecoli_meteore.tar.resquiggle
+│       ├── ecoli_meteore.tar.tombo.run.log
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a8/145382b24956f165bae5b079501c87/reference_genome
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+├── 86
+│   └── 6f1331755a63ce3855d76f9fdc92dd
+│       ├── batch_ecoli_meteore.tar.CpG.tombo.per_read_stats.bed.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/67/c7af4b3d4c785bea1f401710d1c4ef/batch_ecoli_meteore.tar.CpG.tombo.per_read_stats.bed.gz
+│       └── EcoliDemoData.tombo.per_read.combine.bed.gz
+├── 8a
+│   └── 26ccf85e12ee925d346b59fab8c94c
+│       ├── batch_ecoli_meteore.tar_num.tar.gz
+│       ├── DeepMod-0.1.3
+│       │   ├── bin
+│       │   │   ├── DeepMod.py
+│       │   │   └── DeepMod_scripts
+│       │   │       ├── EventTable.py
+│       │   │       ├── __init__.py
+│       │   │       ├── MoveTable.py
+│       │   │       ├── myCom.py
+│       │   │       ├── myDetect.py
+│       │   │       ├── myGetFeatureBasedPos.py
+│       │   │       └── myMultiBiRNN.py
+│       │   ├── DeepMod_tools
+│       │   │   ├── cal_EcoliDetPerf.py
+│       │   │   ├── generate_motif_pos.py
+│       │   │   ├── hm_cluster_predict.py
+│       │   │   └── sum_chr_mod.py
+│       │   ├── docs
+│       │   │   ├── Description of well-trained models.md
+│       │   │   ├── Install.md
+│       │   │   ├── Reproducibility.md
+│       │   │   ├── Results_explanation.md
+│       │   │   └── Usage.md
+│       │   ├── INSTALL
+│       │   ├── LICENSE
+│       │   ├── README.md
+│       │   ├── setup.py
+│       │   └── train_deepmod
+│       │       ├── na12878_cluster_train_mod-keep_prob0.7-nb25-chr1
+│       │       │   ├── Cg.cov5.nb25.data-00000-of-00001
+│       │       │   ├── Cg.cov5.nb25.index
+│       │       │   ├── Cg.cov5.nb25.meta
+│       │       │   └── checkpoint
+│       │       ├── rnn_conmodA_E1m2wd21_f7ne1u0_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_conmodA_E1m2wd21_f3ne1u0.data-00000-of-00001
+│       │       │   ├── mod_train_conmodA_E1m2wd21_f3ne1u0.index
+│       │       │   └── mod_train_conmodA_E1m2wd21_f3ne1u0.meta
+│       │       ├── rnn_conmodA_P100wd21_f7ne1u0_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_conmodA_P100wd21_f3ne1u0.data-00000-of-00001
+│       │       │   ├── mod_train_conmodA_P100wd21_f3ne1u0.index
+│       │       │   └── mod_train_conmodA_P100wd21_f3ne1u0.meta
+│       │       ├── rnn_conmodC_P100wd21_f7ne1u0_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_conmodC_P100wd21_f3ne1u0.data-00000-of-00001
+│       │       │   ├── mod_train_conmodC_P100wd21_f3ne1u0.index
+│       │       │   └── mod_train_conmodC_P100wd21_f3ne1u0.meta
+│       │       ├── rnn_f7_wd21_chr1to10_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_f7_wd21_chr1to10.data-00000-of-00001
+│       │       │   ├── mod_train_f7_wd21_chr1to10.index
+│       │       │   └── mod_train_f7_wd21_chr1to10.meta
+│       │       └── rnn_sinmodC_P100wd21_f7ne1u0_4
+│       │           ├── checkpoint
+│       │           ├── mod_train_sinmodC_P100wd21_f3ne1u0.data-00000-of-00001
+│       │           ├── mod_train_sinmodC_P100wd21_f3ne1u0.index
+│       │           └── mod_train_sinmodC_P100wd21_f3ne1u0.meta
+│       ├── ecoli_meteore.tar.basecalled -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/d1/877c1b10de6430cb71691d1f8a3d6c/ecoli_meteore.tar.basecalled
+│       ├── mod_output
+│       │   ├── batch_ecoli_meteore.tar_num
+│       │   │   ├── 0
+│       │   │   │   ├── NC_000913.3.rnn.pred.ind.0
+│       │   │   │   └── rnn.pred.detail.fast5.0
+│       │   │   ├── mod_pos.NC_000913.3-.C.bed
+│       │   │   ├── mod_pos.NC_000913.3+.C.bed
+│       │   │   └── rnn.pred.ind.NC_000913.3
+│       │   └── batch_ecoli_meteore.tar_num.done
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a8/145382b24956f165bae5b079501c87/reference_genome
+│       └── v0.1.3.tar.gz
+├── 92
+│   └── 4494caf7c738ffafa6728f5163dcec
+│       ├── ecoli_meteore.tar.basecalled -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/d1/877c1b10de6430cb71691d1f8a3d6c/ecoli_meteore.tar.basecalled
+│       ├── ecoli_meteore.tar.resquiggle
+│       │   ├── ecoli_meteore.tar-sequencing_summary.txt
+│       │   ├── fastq_runid_87b136ffc8ea5a243bdcff637a644011b53b6120_0_0.fastq
+│       │   ├── guppy_basecaller_log-2021-08-19_15-00-24.log
+│       │   ├── guppy_basecaller_verbose_log-2021-08-19_15-00-24.log
+│       │   ├── sequencing_telemetry.js
+│       │   └── workspace
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch114_read6906_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch118_read2334_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch118_read526_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch138_read698_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch139_read4507_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch142_read2358_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch158_read435_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch159_read630_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch162_read1065_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch172_read1102_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch175_read80_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch177_read479_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch193_read10923_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch205_read3886_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch217_read1495_strand1.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch224_read1419_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch228_read1212_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch230_read20744_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch241_read2385_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch252_read2417_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch258_read2664_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch262_read814_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch269_read2204_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch270_read545_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch279_read13169_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch291_read161080_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch294_read356_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch294_read732_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch298_read2348_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch311_read1440_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch313_read2657_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch324_read1332_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch324_read570_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch330_read2145_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch354_read2006_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch366_read1770_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch375_read1018_strand1.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch375_read1189_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch381_read12341_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch409_read716_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch412_read8784_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch418_read3292_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch422_read940_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch430_read511_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch431_read800_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch433_read26717_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch434_read696_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch436_read2992_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch443_read162_strand.fast5
+│       │       └── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch88_read4943_strand.fast5
+│       ├── ecoli_meteore.tar.resquiggle.run.log
+│       └── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a8/145382b24956f165bae5b079501c87/reference_genome
+├── 96
+│   └── 496d599e0de457d41f2f3dec17d0e2
+│       ├── batch_ecoli_meteore.tar.CpG.deepsignal.call_mods.tsv.gz
+│       ├── ecoli_meteore.tar.resquiggle -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/92/4494caf7c738ffafa6728f5163dcec/ecoli_meteore.tar.resquiggle
+│       ├── model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+
+│       │   ├── bn_17.sn_360.epoch_9.ckpt.data-00000-of-00001
+│       │   ├── bn_17.sn_360.epoch_9.ckpt.index
+│       │   ├── bn_17.sn_360.epoch_9.ckpt.meta
+│       │   └── checkpoint
+│       ├── model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz -> /pod/2/li-lab/Nanopore_compare/nf_input/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz
+│       └── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a8/145382b24956f165bae5b079501c87/reference_genome
+├── 9a
+│   └── 1e322db166260057f9cfa4d1d7de73
+│       ├── batch_ecoli_meteore.tar.nanopolish.methylation_calls.tsv.gz
+│       ├── EcoliDemoData.batch_ecoli_meteore.tar.sorted.bam
+│       ├── EcoliDemoData.batch_ecoli_meteore.tar.sorted.bam.bai
+│       ├── ecoli_meteore.tar.basecalled -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/d1/877c1b10de6430cb71691d1f8a3d6c/ecoli_meteore.tar.basecalled
+│       ├── reads.fq
+│       ├── reads.fq.noDups.fq
+│       ├── reads.fq.noDups.fq.index
+│       ├── reads.fq.noDups.fq.index.fai
+│       ├── reads.fq.noDups.fq.index.gzi
+│       ├── reads.fq.noDups.fq.index.readdb
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a8/145382b24956f165bae5b079501c87/reference_genome
+│       ├── tmp.tsv
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+├── a4
+│   └── ad93ab4c3088a11e7730374025f311
+│       ├── batch_ecoli_meteore.tar.guppy.fast5mod_guppy2sam.bam -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/47/4d1744a536774fdbf478f0fda181c2/batch_ecoli_meteore.tar.guppy.fast5mod_guppy2sam.bam
+│       ├── batch_ecoli_meteore.tar.guppy.fast5mod_guppy2sam.bam.bai -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/47/4d1744a536774fdbf478f0fda181c2/batch_ecoli_meteore.tar.guppy.fast5mod_guppy2sam.bam.bai
+│       ├── batch_ecoli_meteore.tar.guppy.gcf52ref_per_read.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/47/4d1744a536774fdbf478f0fda181c2/batch_ecoli_meteore.tar.guppy.gcf52ref_per_read.tsv.gz
+│       ├── EcoliDemoData.guppy_fast5mod.combined.bam.tar.gz
+│       ├── EcoliDemoData.guppy.fast5mod_per_site.combine.tsv.gz
+│       ├── EcoliDemoData.guppy.gcf52ref_per_read.combine.tsv.gz
+│       └── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a8/145382b24956f165bae5b079501c87/reference_genome
+├── a5
+│   ├── db8dc2775974b3ac931ec93950286a
+│   │   ├── batch_ecoli_meteore.tar.megalodon.per_read_modified_base_calls.txt.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/c9/d99d9fe009a9c3192793e5984bb44f/batch_ecoli_meteore.tar.megalodon.per_read_modified_base_calls.txt.gz
+│   │   └── EcoliDemoData.megalodon.per_read.combine.bed.gz
+│   └── fa98405dda261d3181e0ae9bcd956c
+│       ├── batch_ecoli_meteore.tar_num -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/8a/26ccf85e12ee925d346b59fab8c94c/mod_output/batch_ecoli_meteore.tar_num
+│       ├── C
+│       │   ├── motif_chr10_C.bed
+│       │   ├── motif_chr11_C.bed
+│       │   ├── motif_chr12_C.bed
+│       │   ├── motif_chr13_C.bed
+│       │   ├── motif_chr14_C.bed
+│       │   ├── motif_chr15_C.bed
+│       │   ├── motif_chr16_C.bed
+│       │   ├── motif_chr17_C.bed
+│       │   ├── motif_chr18_C.bed
+│       │   ├── motif_chr19_C.bed
+│       │   ├── motif_chr1_C.bed
+│       │   ├── motif_chr20_C.bed
+│       │   ├── motif_chr21_C.bed
+│       │   ├── motif_chr22_C.bed
+│       │   ├── motif_chr2_C.bed
+│       │   ├── motif_chr3_C.bed
+│       │   ├── motif_chr4_C.bed
+│       │   ├── motif_chr5_C.bed
+│       │   ├── motif_chr6_C.bed
+│       │   ├── motif_chr7_C.bed
+│       │   ├── motif_chr8_C.bed
+│       │   ├── motif_chr9_C.bed
+│       │   ├── motif_chrM_C.bed
+│       │   ├── motif_chrX_C.bed
+│       │   ├── motif_chrY_C.bed
+│       │   ├── na_chr10_C.bed
+│       │   ├── na_chr11_C.bed
+│       │   ├── na_chr12_C.bed
+│       │   ├── na_chr13_C.bed
+│       │   ├── na_chr14_C.bed
+│       │   ├── na_chr15_C.bed
+│       │   ├── na_chr16_C.bed
+│       │   ├── na_chr17_C.bed
+│       │   ├── na_chr18_C.bed
+│       │   ├── na_chr19_C.bed
+│       │   ├── na_chr1_C.bed
+│       │   ├── na_chr20_C.bed
+│       │   ├── na_chr21_C.bed
+│       │   ├── na_chr22_C.bed
+│       │   ├── na_chr2_C.bed
+│       │   ├── na_chr3_C.bed
+│       │   ├── na_chr4_C.bed
+│       │   ├── na_chr5_C.bed
+│       │   ├── na_chr6_C.bed
+│       │   ├── na_chr7_C.bed
+│       │   ├── na_chr8_C.bed
+│       │   ├── na_chr9_C.bed
+│       │   ├── na_chrM_C.bed
+│       │   ├── na_chrX_C.bed
+│       │   └── na_chrY_C.bed
+│       ├── C.tar.gz -> /pod/2/li-lab/Nanopore_compare/nf_input/C.tar.gz
+│       ├── DeepMod-0.1.3
+│       │   ├── bin
+│       │   │   ├── DeepMod.py
+│       │   │   └── DeepMod_scripts
+│       │   │       ├── EventTable.py
+│       │   │       ├── __init__.py
+│       │   │       ├── MoveTable.py
+│       │   │       ├── myCom.py
+│       │   │       ├── myDetect.py
+│       │   │       ├── myGetFeatureBasedPos.py
+│       │   │       └── myMultiBiRNN.py
+│       │   ├── DeepMod_tools
+│       │   │   ├── cal_EcoliDetPerf.py
+│       │   │   ├── generate_motif_pos.py
+│       │   │   ├── hm_cluster_predict.py
+│       │   │   └── sum_chr_mod.py
+│       │   ├── docs
+│       │   │   ├── Description of well-trained models.md
+│       │   │   ├── Install.md
+│       │   │   ├── Reproducibility.md
+│       │   │   ├── Results_explanation.md
+│       │   │   └── Usage.md
+│       │   ├── INSTALL
+│       │   ├── LICENSE
+│       │   ├── README.md
+│       │   ├── setup.py
+│       │   └── train_deepmod
+│       │       ├── na12878_cluster_train_mod-keep_prob0.7-nb25-chr1
+│       │       │   ├── Cg.cov5.nb25.data-00000-of-00001
+│       │       │   ├── Cg.cov5.nb25.index
+│       │       │   ├── Cg.cov5.nb25.meta
+│       │       │   └── checkpoint
+│       │       ├── rnn_conmodA_E1m2wd21_f7ne1u0_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_conmodA_E1m2wd21_f3ne1u0.data-00000-of-00001
+│       │       │   ├── mod_train_conmodA_E1m2wd21_f3ne1u0.index
+│       │       │   └── mod_train_conmodA_E1m2wd21_f3ne1u0.meta
+│       │       ├── rnn_conmodA_P100wd21_f7ne1u0_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_conmodA_P100wd21_f3ne1u0.data-00000-of-00001
+│       │       │   ├── mod_train_conmodA_P100wd21_f3ne1u0.index
+│       │       │   └── mod_train_conmodA_P100wd21_f3ne1u0.meta
+│       │       ├── rnn_conmodC_P100wd21_f7ne1u0_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_conmodC_P100wd21_f3ne1u0.data-00000-of-00001
+│       │       │   ├── mod_train_conmodC_P100wd21_f3ne1u0.index
+│       │       │   └── mod_train_conmodC_P100wd21_f3ne1u0.meta
+│       │       ├── rnn_f7_wd21_chr1to10_4
+│       │       │   ├── checkpoint
+│       │       │   ├── mod_train_f7_wd21_chr1to10.data-00000-of-00001
+│       │       │   ├── mod_train_f7_wd21_chr1to10.index
+│       │       │   └── mod_train_f7_wd21_chr1to10.meta
+│       │       └── rnn_sinmodC_P100wd21_f7ne1u0_4
+│       │           ├── checkpoint
+│       │           ├── mod_train_sinmodC_P100wd21_f3ne1u0.data-00000-of-00001
+│       │           ├── mod_train_sinmodC_P100wd21_f3ne1u0.index
+│       │           └── mod_train_sinmodC_P100wd21_f3ne1u0.meta
+│       ├── EcoliDemoData.deepmod.all_batch.C.bed.tar.gz
+│       ├── EcoliDemoData.deepmod_clusterCpG.all_chrs.C.bed.tar.gz
+│       ├── EcoliDemoData.deepmod.C_per_site.combine.bed.gz
+│       ├── EcoliDemoData.deepmod.sum_chrs_mod.C.bed.tar.gz
+│       ├── indir
+│       │   ├── batch_ecoli_meteore.tar_num
+│       │   │   ├── 0
+│       │   │   │   ├── NC_000913.3.rnn.pred.ind.0
+│       │   │   │   └── rnn.pred.detail.fast5.0
+│       │   │   ├── mod_pos.NC_000913.3-.C.bed
+│       │   │   ├── mod_pos.NC_000913.3+.C.bed
+│       │   │   └── rnn.pred.ind.NC_000913.3
+│       │   └── EcoliDemoData.deepmod.NC_000913.3.C.bed
+│       ├── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+│       └── v0.1.3.tar.gz
+├── a8
+│   └── 145382b24956f165bae5b079501c87
+│       ├── gcf52ref
+│       │   ├── environment.yml
+│       │   ├── fast5_to_mapped_cram_individual.smk
+│       │   ├── fast5_to_mapped_cram_map_individual.smk
+│       │   ├── fast5_to_mapped_cram_map_individual_split.smk
+│       │   ├── fast5_to_mapped_cram.smk
+│       │   ├── LICENSE
+│       │   ├── README.md
+│       │   ├── scripts
+│       │   │   ├── cram_to_refpos.py
+│       │   │   ├── extract_methylation_fast5.py
+│       │   │   ├── extract_methylation_fast5_to_sam.py
+│       │   │   ├── extract_methylation_from_rocks.py
+│       │   │   ├── fast5_to_cram.sh
+│       │   │   ├── guppy_performance_stats.py
+│       │   │   └── __pycache__
+│       │   │       ├── extract_methylation_fast5.cpython-36.pyc
+│       │   │       └── extract_methylation_fast5.cpython-37.pyc
+│       │   └── test
+│       │       └── test_gcf52ref.sh
+│       ├── reference_genome
+│       │   ├── ecoli
+│       │   │   ├── Ecoli_k12_mg1655.fasta
+│       │   │   ├── Ecoli_k12_mg1655.fasta.amb
+│       │   │   ├── Ecoli_k12_mg1655.fasta.ann
+│       │   │   ├── Ecoli_k12_mg1655.fasta.bwt
+│       │   │   ├── Ecoli_k12_mg1655.fasta.fai
+│       │   │   ├── Ecoli_k12_mg1655.fasta.genome.sizes
+│       │   │   ├── Ecoli_k12_mg1655.fasta.pac
+│       │   │   └── Ecoli_k12_mg1655.fasta.sa
+│       │   └── hg38
+│       │       ├── bwa.index.7511698.err
+│       │       ├── bwa.index.7511698.out
+│       │       ├── hg38.chrom.sizes
+│       │       ├── hg38.fa
+│       │       ├── hg38.fa.fai
+│       │       ├── hg38.fasta
+│       │       ├── hg38.fasta.amb
+│       │       ├── hg38.fasta.ann
+│       │       ├── hg38.fasta.bwt
+│       │       ├── hg38.fasta.fai
+│       │       ├── hg38.fasta.genome.sizes
+│       │       ├── hg38.fasta.pac
+│       │       ├── hg38.fasta.sa
+│       │       └── index_fasta.sh
+│       ├── reference_genome.tar.gz -> /pod/2/li-lab/Nanopore_compare/nf_input/reference_genome.tar.gz
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+├── b0
+│   └── 538e6f84a184d4aae2ea8460fca92a
+│       ├── batch_ecoli_meteore.tar.nanopolish.methylation_calls.tsv.gz -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/9a/1e322db166260057f9cfa4d1d7de73/batch_ecoli_meteore.tar.nanopolish.methylation_calls.tsv.gz
+│       └── EcoliDemoData.nanopolish.per_read.combine.tsv.gz
+├── c9
+│   └── d99d9fe009a9c3192793e5984bb44f
+│       ├── batch_ecoli_meteore.tar.megalodon.per_read_modified_base_calls.txt.gz
+│       ├── ecoli_meteore.tar.untar -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/e6/448ac3e0099cf7558ee0c1f2cbe24a/ecoli_meteore.tar.untar
+│       ├── megalodon_model
+│       │   ├── adapter_scaling_dna_r9.4.1_min.jsn
+│       │   ├── barcoding
+│       │   │   ├── 4x4_mismatch_matrix.txt
+│       │   │   ├── 5x5_mismatch_matrix_simple.txt
+│       │   │   ├── 5x5_mismatch_matrix.txt
+│       │   │   ├── barcode_arrs_16s.cfg
+│       │   │   ├── barcode_arrs_dual_nb24_pcr96.cfg
+│       │   │   ├── barcode_arrs_lamp8.cfg
+│       │   │   ├── barcode_arrs_lamp96.cfg
+│       │   │   ├── barcode_arrs_lwb.cfg
+│       │   │   ├── barcode_arrs_nb12.cfg
+│       │   │   ├── barcode_arrs_nb24.cfg
+│       │   │   ├── barcode_arrs_nb96.cfg
+│       │   │   ├── barcode_arrs_pcr12.cfg
+│       │   │   ├── barcode_arrs_pcr96.cfg
+│       │   │   ├── barcode_arrs_rab.cfg
+│       │   │   ├── barcode_arrs_rbk096.cfg
+│       │   │   ├── barcode_arrs_rbk4.cfg
+│       │   │   ├── barcode_arrs_rbk.cfg
+│       │   │   ├── barcode_arrs_rlb.cfg
+│       │   │   ├── barcode_arrs_vmk2.cfg
+│       │   │   ├── barcode_arrs_vmk.cfg
+│       │   │   ├── barcode_score_vs_classification.png
+│       │   │   ├── barcodes_masked.fasta
+│       │   │   ├── configuration.cfg
+│       │   │   ├── configuration_dual.cfg
+│       │   │   ├── lamp_targets.fasta
+│       │   │   └── nw_barcoding_grid.png
+│       │   ├── lambda_3.6kb.fasta
+│       │   ├── res_dna_r941_min_modbases_5mC_v001.cfg
+│       │   ├── res_dna_r941_min_modbases_5mC_v001.checkpoint
+│       │   └── res_dna_r941_min_modbases_5mC_v001.jsn
+│       ├── megalodon_model.tar.gz -> /pod/2/li-lab/Nanopore_compare/nf_input/megalodon_model.tar.gz
+│       ├── megalodon_results
+│       │   ├── guppy_log
+│       │   │   └── guppy_basecall_server_log-2021-08-19_15-00-27.log
+│       │   ├── guppy_log.err
+│       │   ├── guppy_log.out
+│       │   ├── log.txt
+│       │   ├── modified_bases.5mC.bed
+│       │   ├── modified_bases.5mC.fwd_strand.wig
+│       │   ├── modified_bases.5mC.rev_strand.wig
+│       │   ├── per_read_modified_base_calls.db
+│       │   └── per_read_modified_base_calls.txt
+│       └── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a8/145382b24956f165bae5b079501c87/reference_genome
+├── d1
+│   └── 877c1b10de6430cb71691d1f8a3d6c
+│       ├── ecoli_meteore.tar.basecalled
+│       │   ├── ecoli_meteore.tar-sequencing_summary.txt
+│       │   ├── fastq_runid_87b136ffc8ea5a243bdcff637a644011b53b6120_0_0.fastq
+│       │   ├── guppy_basecaller_log-2021-08-19_15-00-24.log
+│       │   ├── guppy_basecaller_verbose_log-2021-08-19_15-00-24.log
+│       │   ├── sequencing_telemetry.js
+│       │   └── workspace
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch114_read6906_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch118_read2334_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch118_read526_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch138_read698_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch139_read4507_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch142_read2358_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch158_read435_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch159_read630_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch162_read1065_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch172_read1102_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch175_read80_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch177_read479_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch193_read10923_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch205_read3886_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch217_read1495_strand1.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch224_read1419_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch228_read1212_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch230_read20744_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch241_read2385_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch252_read2417_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch258_read2664_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch262_read814_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch269_read2204_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch270_read545_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch279_read13169_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch291_read161080_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch294_read356_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch294_read732_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch298_read2348_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch311_read1440_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch313_read2657_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch324_read1332_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch324_read570_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch330_read2145_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch354_read2006_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch366_read1770_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch375_read1018_strand1.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch375_read1189_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch381_read12341_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch409_read716_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch412_read8784_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch418_read3292_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch422_read940_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch430_read511_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch431_read800_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch433_read26717_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch434_read696_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch436_read2992_strand.fast5
+│       │       ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch443_read162_strand.fast5
+│       │       └── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch88_read4943_strand.fast5
+│       ├── ecoli_meteore.tar.basecalled.bam
+│       ├── ecoli_meteore.tar.untar -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/e6/448ac3e0099cf7558ee0c1f2cbe24a/ecoli_meteore.tar.untar
+│       ├── reference_genome -> /gpfs/ctgs0/fastscratch/li-lab/nanome/work-ecoli/a8/145382b24956f165bae5b079501c87/reference_genome
+│       └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+└── e6
+    └── 448ac3e0099cf7558ee0c1f2cbe24a
+        ├── ecoli_meteore.tar.gz -> /pod/2/li-lab/Nanopore_compare/suppdata/ecoli-sanity-check/ecoli_meteore.tar.gz
+        ├── ecoli_meteore.tar.untar
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch114_read6906_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch118_read2334_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch118_read526_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch138_read698_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch139_read4507_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch142_read2358_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch158_read435_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch159_read630_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch162_read1065_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch172_read1102_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch175_read80_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch177_read479_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch193_read10923_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch205_read3886_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch217_read1495_strand1.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch224_read1419_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch228_read1212_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch230_read20744_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch241_read2385_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch252_read2417_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch258_read2664_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch262_read814_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch269_read2204_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch270_read545_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch279_read13169_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch291_read161080_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch294_read356_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch294_read732_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch298_read2348_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch311_read1440_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch313_read2657_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch324_read1332_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch324_read570_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch330_read2145_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch354_read2006_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch366_read1770_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch375_read1018_strand1.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch375_read1189_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch381_read12341_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch409_read716_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch412_read8784_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch418_read3292_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch422_read940_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch430_read511_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch431_read800_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch433_read26717_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch434_read696_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch436_read2992_strand.fast5
+        │   ├── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch443_read162_strand.fast5
+        │   └── kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch88_read4943_strand.fast5
+        └── utils -> /pod/2/li-lab/yang/workspace/nano-compare/utils
+
+140 directories, 716 files

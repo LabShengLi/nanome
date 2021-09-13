@@ -1,0 +1,173 @@
+outputs
+├── nanome-analysis-TestData
+│   ├── MethCorr-TestData_RRBS
+│   │   ├── DONE.txt
+│   │   ├── Meth_corr_plot_data_bgtruth-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv.gz
+│   │   ├── Meth_corr_plot_data_joined-TestData_RRBS-bsCov1-minToolCov1-baseFormat1.csv.gz
+│   │   ├── Meth_corr_plot_data-TestData_RRBS-correlation-matrix-toolcov1-bsseqcov1.xlsx
+│   │   ├── run-results.log
+│   │   ├── TestData.tools.cov1.join.with.bsseq.cov1.site.level.report.csv
+│   │   └── venn_data
+│   │       ├── TestData.bgtruth.cpg.sites.cov1.setsfile.txt.gz
+│   │       ├── TestData.DeepMod.cpg.sites.cov1.setsfile.txt.gz
+│   │       ├── TestData.DeepSignal.cpg.sites.cov1.setsfile.txt.gz
+│   │       ├── TestData.Guppy.cpg.sites.cov1.setsfile.txt.gz
+│   │       ├── TestData.Megalodon.cpg.sites.cov1.setsfile.txt.gz
+│   │       ├── TestData.METEORE.cpg.sites.cov1.setsfile.txt.gz
+│   │       ├── TestData.Nanopolish.cpg.sites.cov1.setsfile.txt.gz
+│   │       └── TestData.Tombo.cpg.sites.cov1.setsfile.txt.gz
+│   ├── MethPerf-TestData_RRBS
+│   │   ├── DONE.txt
+│   │   ├── performance-results
+│   │   │   ├── curve_data
+│   │   │   │   ├── TestData_RRBS.DeepMod_C.hg38.gc5Base_merged.cg_bin100.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepMod_C.hg38.gc5Base_merged.cg_bin60.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepMod_C.hg38.gc5Base_merged.cg_bin80.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepMod_C.hg38_nonsingletons_10bp.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepMod_C.hg38.repetitive.rep_Others.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepMod_C.ONT.hg38.cpgIslandExt.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepMod_C.ONT.hg38.exonFeature.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepMod_C.ONT.hg38.intergenic.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepMod_C.ONT.hg38.promoterFeature.flank_2000.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepMod_C.TestData_RRBS.hg38_nonsingletons.concordant.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepMod_C.x.x.Genome-wide.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepSignal.hg38.gc5Base_merged.cg_bin100.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepSignal.hg38.gc5Base_merged.cg_bin60.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepSignal.hg38.gc5Base_merged.cg_bin80.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepSignal.hg38_nonsingletons_10bp.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepSignal.hg38.repetitive.rep_Others.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepSignal.ONT.hg38.cpgIslandExt.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepSignal.ONT.hg38.exonFeature.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepSignal.ONT.hg38.intergenic.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepSignal.ONT.hg38.promoterFeature.flank_2000.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepSignal.TestData_RRBS.hg38_nonsingletons.concordant.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.DeepSignal.x.x.Genome-wide.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Guppy.hg38.gc5Base_merged.cg_bin100.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Guppy.hg38.gc5Base_merged.cg_bin60.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Guppy.hg38.gc5Base_merged.cg_bin80.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Guppy.hg38_nonsingletons_10bp.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Guppy.hg38.repetitive.rep_Others.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Guppy.ONT.hg38.cpgIslandExt.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Guppy.ONT.hg38.exonFeature.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Guppy.ONT.hg38.intergenic.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Guppy.ONT.hg38.promoterFeature.flank_2000.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Guppy.TestData_RRBS.hg38_nonsingletons.concordant.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Guppy.x.x.Genome-wide.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Megalodon.hg38.gc5Base_merged.cg_bin100.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Megalodon.hg38.gc5Base_merged.cg_bin60.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Megalodon.hg38.gc5Base_merged.cg_bin80.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Megalodon.hg38_nonsingletons_10bp.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Megalodon.hg38.repetitive.rep_Others.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Megalodon.ONT.hg38.cpgIslandExt.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Megalodon.ONT.hg38.exonFeature.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Megalodon.ONT.hg38.intergenic.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Megalodon.ONT.hg38.promoterFeature.flank_2000.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Megalodon.TestData_RRBS.hg38_nonsingletons.concordant.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Megalodon.x.x.Genome-wide.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.METEORE.hg38.gc5Base_merged.cg_bin100.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.METEORE.hg38.gc5Base_merged.cg_bin60.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.METEORE.hg38.gc5Base_merged.cg_bin80.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.METEORE.hg38_nonsingletons_10bp.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.METEORE.hg38.repetitive.rep_Others.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.METEORE.ONT.hg38.cpgIslandExt.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.METEORE.ONT.hg38.exonFeature.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.METEORE.ONT.hg38.intergenic.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.METEORE.ONT.hg38.promoterFeature.flank_2000.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.METEORE.TestData_RRBS.hg38_nonsingletons.concordant.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.METEORE.x.x.Genome-wide.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Nanopolish.hg38.gc5Base_merged.cg_bin100.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Nanopolish.hg38.gc5Base_merged.cg_bin60.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Nanopolish.hg38.gc5Base_merged.cg_bin80.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Nanopolish.hg38_nonsingletons_10bp.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Nanopolish.hg38.repetitive.rep_Others.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Nanopolish.ONT.hg38.cpgIslandExt.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Nanopolish.ONT.hg38.exonFeature.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Nanopolish.ONT.hg38.intergenic.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Nanopolish.ONT.hg38.promoterFeature.flank_2000.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Nanopolish.TestData_RRBS.hg38_nonsingletons.concordant.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Nanopolish.x.x.Genome-wide.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Tombo.hg38.gc5Base_merged.cg_bin100.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Tombo.hg38.gc5Base_merged.cg_bin60.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Tombo.hg38.gc5Base_merged.cg_bin80.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Tombo.hg38_nonsingletons_10bp.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Tombo.hg38.repetitive.rep_Others.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Tombo.ONT.hg38.cpgIslandExt.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Tombo.ONT.hg38.exonFeature.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Tombo.ONT.hg38.intergenic.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Tombo.ONT.hg38.promoterFeature.flank_2000.bed.gz.curve_data.pkl
+│   │   │   │   ├── TestData_RRBS.Tombo.TestData_RRBS.hg38_nonsingletons.concordant.bed.gz.curve_data.pkl
+│   │   │   │   └── TestData_RRBS.Tombo.x.x.Genome-wide.curve_data.pkl
+│   │   │   ├── TestData_RRBS.DeepMod_C.performance.report.csv
+│   │   │   ├── TestData_RRBS.DeepSignal.performance.report.csv
+│   │   │   ├── TestData_RRBS.Guppy.performance.report.csv
+│   │   │   ├── TestData_RRBS.Megalodon.performance.report.csv
+│   │   │   ├── TestData_RRBS.METEORE.performance.report.csv
+│   │   │   ├── TestData_RRBS.Nanopolish.performance.report.csv
+│   │   │   └── TestData_RRBS.Tombo.performance.report.csv
+│   │   ├── run-results.log
+│   │   ├── TestData_RRBS.hg38_nonsingletons.concordant.bed.gz
+│   │   ├── TestData_RRBS.hg38_nonsingletons.discordant.bed.gz
+│   │   ├── TestData_RRBS.summary.bsseq.cov1.joined.tools.singleton.nonsingleton.table.like.s2.csv
+│   │   ├── TestData_RRBS.summary.bsseq.singleton.nonsingleton.cov1.csv
+│   │   ├── TestData_RRBS.Tools_BGTruth_cov1_Joined_baseFormat1.bed.gz
+│   │   └── TestData.tools.cov1.join.with.bsseq.cov1.read.level.report.xlsx
+│   ├── Read_Level-TestData
+│   │   ├── TestData_DeepSignal-METEORE-perRead-score.tsv.gz
+│   │   ├── TestData_Guppy-METEORE-perRead-score.tsv.gz
+│   │   ├── TestData_Megalodon-METEORE-perRead-score.tsv.gz
+│   │   ├── TestData_Nanopolish-METEORE-perRead-score.tsv.gz
+│   │   └── TestData_Tombo-METEORE-perRead-score.tsv.gz
+│   └── Site_Level-TestData
+│       ├── Site_Level-TestData.tss.DeepMod.cov1.bed.gz
+│       ├── Site_Level-TestData.tss.DeepSignal.cov1.bed.gz
+│       ├── Site_Level-TestData.tss.Guppy.cov1.bed.gz
+│       ├── Site_Level-TestData.tss.Megalodon.cov1.bed.gz
+│       ├── Site_Level-TestData.tss.METEORE.cov1.bed.gz
+│       ├── Site_Level-TestData.tss.Nanopolish.cov1.bed.gz
+│       └── Site_Level-TestData.tss.Tombo.cov1.bed.gz
+├── TestData-methylation-callings
+│   ├── TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz
+│   ├── TestData.deepmod.C_per_site.combine.bed.gz
+│   ├── TestData.deepsignal.per_read.combine.tsv.gz
+│   ├── TestData.guppy.fast5mod_per_site.combine.tsv.gz
+│   ├── TestData.guppy.gcf52ref_per_read.combine.tsv.gz
+│   ├── TestData.megalodon.per_read.combine.bed.gz
+│   ├── TestData.meteore.megalodon_deepsignal_optimized_model_per_read.combine.tsv.gz
+│   ├── TestData.nanopolish.per_read.combine.tsv.gz
+│   └── TestData.tombo.per_read.combine.bed.gz
+├── TestData-qc-report
+│   ├── TestData.coverage.negativestrand.bed.gz
+│   ├── TestData.coverage.positivestrand.bed.gz
+│   └── TestData-qc-report.tar.gz
+└── TestData_raw_outputs
+    ├── deepmod
+    │   ├── batch_demo2.fast5.reads.tar_num.tar.gz
+    │   ├── batch_demo.fast5.reads.tar_num.tar.gz
+    │   ├── TestData.deepmod.all_batch.C.bed.tar.gz
+    │   ├── TestData.deepmod_clusterCpG.all_chrs.C.bed.tar.gz
+    │   └── TestData.deepmod.sum_chrs_mod.C.bed.tar.gz
+    ├── deepsignal
+    │   ├── batch_demo2.fast5.reads.tar.CpG.deepsignal.call_mods.tsv.gz
+    │   └── batch_demo.fast5.reads.tar.CpG.deepsignal.call_mods.tsv.gz
+    ├── guppy
+    │   ├── batch_demo2.fast5.reads.tar.guppy.gcf52ref_per_read.tsv.gz
+    │   ├── batch_demo.fast5.reads.tar.guppy.gcf52ref_per_read.tsv.gz
+    │   ├── outbatch_demo2.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+    │   ├── outbatch_demo.fast5.reads.tar.guppy.fast5mod_guppy2sam.bam.tar.gz
+    │   └── TestData.guppy_fast5mod.combined.bam.tar.gz
+    ├── megalodon
+    │   ├── batch_demo2.fast5.reads.tar.megalodon.per_read_modified_base_calls.txt.gz
+    │   └── batch_demo.fast5.reads.tar.megalodon.per_read_modified_base_calls.txt.gz
+    ├── nanopolish
+    │   ├── batch_demo2.fast5.reads.tar.nanopolish.methylation_calls.tsv.gz
+    │   └── batch_demo.fast5.reads.tar.nanopolish.methylation_calls.tsv.gz
+    ├── resquiggle
+    │   ├── demo2.fast5.reads.tar.resquiggle.run.log
+    │   └── demo.fast5.reads.tar.resquiggle.run.log
+    └── tombo
+        ├── batch_demo2.fast5.reads.tar.CpG.tombo.per_read_stats.bed.gz
+        ├── batch_demo.fast5.reads.tar.CpG.tombo.per_read_stats.bed.gz
+        ├── demo2.fast5.reads.tar.tombo.run.log
+        └── demo.fast5.reads.tar.tombo.run.log
+
+18 directories, 152 files

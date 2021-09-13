@@ -1,0 +1,10 @@
+/projects/li-lab/Nanopore_compare/suppdata/benchmarking/dataset/MB1600K.tar.gz
+/projects/li-lab/Nanopore_compare/suppdata/benchmarking/dataset/MB5600K.tar.gz
+/projects/li-lab/Nanopore_compare/suppdata/benchmarking/dataset/MB8000K.tar.gz
+/projects/li-lab/Nanopore_compare/suppdata/benchmarking/dataset/MB3200K.tar.gz
+/projects/li-lab/Nanopore_compare/suppdata/benchmarking/dataset/MB7200K.tar.gz
+/projects/li-lab/Nanopore_compare/suppdata/benchmarking/dataset/MB6400K.tar.gz
+/projects/li-lab/Nanopore_compare/suppdata/benchmarking/dataset/MB800K.tar.gz
+/projects/li-lab/Nanopore_compare/suppdata/benchmarking/dataset/MB4800K.tar.gz
+/projects/li-lab/Nanopore_compare/suppdata/benchmarking/dataset/MB4000K.tar.gz
+/projects/li-lab/Nanopore_compare/suppdata/benchmarking/dataset/MB2400K.tar.gz

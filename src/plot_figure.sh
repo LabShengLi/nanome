@@ -1,0 +1,107 @@
+#!/bin/bash
+#SBATCH --job-name=plot-figure
+#SBATCH -q long
+##SBATCH -q batch
+#SBATCH -N 1 # number of nodes
+#SBATCH -n 8 # number of cores
+#SBATCH --mem 300G # memory pool for all cores
+#SBATCH -t 14-00:00:00 # time (D-HH:MM:SS)
+#SBATCH -o log/%x.%j.out # STDOUT
+#SBATCH -e log/%x.%j.err # STDERR
+
+# sbatch plot_figure.sh Figs5ab-data
+# bash plot_figure.sh Step1 seven /projects/li-lab/yang/results/2021-08-14
+## Script used for generate data and plot figures
+## Parameters:
+## 				command
+## 				resultsDir
+
+pythonFile=plot_figure.py
+
+command=${1:-"Step1"}
+type=${2:-"seven"}
+resultsDir=${3:-"/projects/li-lab/yang/results/2021-07-08"}
+
+bedDir="/projects/li-lab/yang/results/2021-07-08"
+bedDir="/projects/li-lab/yang/results/2021-08-14"
+
+if [ "$type" == "six" ]; then
+    HL60_Result_dir=${resultsDir}/MethPerf-HL60_RRBS_2Reps
+    K562_Result_dir=${resultsDir}/MethPerf-K562_WGBS_2Reps
+    APL_Result_dir=${resultsDir}/MethPerf-APL_WGBS
+    NA19240_Result_dir=${resultsDir}/MethPerf-NA19240_RRBS_2Reps
+    tagOptions=""
+    plotCurveDataDir="plot-curve-data"
+elif [ "$type" == "seven" ]; then
+    HL60_Result_dir=${resultsDir}/MethPerf-HL60_RRBS_2Reps
+    K562_Result_dir=${resultsDir}/MethPerf-K562_WGBS_2Reps
+    APL_Result_dir=${resultsDir}/MethPerf-APL_WGBS
+    NA19240_Result_dir=${resultsDir}/MethPerf-NA19240_RRBS_2Reps
+    NA12878_Result_dir=${resultsDir}/MethPerf-NA12878_WGBS_2Reps
+    tagOptions="--tagname seven"
+    plotCurveDataDir="plot-curve-data-seven"
+else
+    echo "### Unsupported type=$type"
+    exit 156
+fi
+
+if [ $command == "Step1" ]; then
+    # Step 1: Table S2,S3
+    # bash plot_figure.sh Step1
+    # bash plot_figure.sh Step1 seven /projects/li-lab/yang/results/2021-08-14
+    python plot_figure.py export-data -i \
+        ${HL60_Result_dir} \
+        ${K562_Result_dir} \
+        ${APL_Result_dir} \
+        ${NA19240_Result_dir} \
+        ${NA12878_Result_dir} ${tagOptions}
+
+elif [ $command == "Step2" ]; then
+    # Step 2.1: Export curve data for Figure 3B
+    # sbatch plot_figure.sh Step2
+    # sbatch plot_figure.sh Step2 seven /projects/li-lab/yang/results/2021-08-14
+    python plot_figure.py export-curve-data -i \
+        ${HL60_Result_dir} \
+        ${K562_Result_dir} \
+        ${APL_Result_dir} \
+        ${NA19240_Result_dir} \
+        ${NA12878_Result_dir} ${tagOptions}
+
+    # Step 2.2: Figure 3B Plot curves data
+    ## python plot_figure.py plot-curve-data -i  /projects/li-lab/yang/results/2021-08-01/plot-curve-data-METEORE/MethPerf-NA19240_RRBS_2Reps_METEORE.plot.curve.data.ytrue.ypred.yscore.Singletons.pkl
+    #    find /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} -name '*.pkl' \
+    #        -exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
+
+    find /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} \( -name "MethPerf-NA19240*Singletons.pkl" -o -name "MethPerf-NA19240*Non-singletons.pkl" -o -name "MethPerf-NA19240*Concordant.pkl" -o -name "MethPerf-NA19240*Discordant.pkl" \) \
+        -exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
+
+#    find /projects/li-lab/yang/results/$(date +%F)/${plotCurveDataDir} -name 'MethPerf-NA19240*.pkl' \
+#        -exec python plot_figure.py plot-curve-data -i {} ${tagOptions} \;
+
+elif [ $command == "Fig5a" ]; then
+    ### Plot figure 5a
+    # sbatch plot_figure.sh Fig5a
+    ## python plot_figure.py fig5a -i /projects/li-lab/yang/results/2021-06-28/MethCorr-HL60_RRBS_2Reps_METEORE/Meth_corr_plot_data_joined-HL60_RRBS_2Reps_METEORE-bsCov5-minToolCov3-baseFormat1.csv
+
+    set -x
+    fileList=$(find ${resultsDir} -name "Meth_corr_plot_data_joined-*.csv.gz")
+    for fn in $fileList; do
+        python ${pythonFile} fig5a -i $fn &
+    done
+    wait
+
+elif [ $command == "Figs5ab-data" ]; then
+    ### Figure S5AB data: COE on each region data for bar plot
+    # bash plot_figure.sh Figs5ab-data seven
+    # bash plot_figure.sh Figs5ab-data seven /projects/li-lab/yang/results/2021-08-18
+    python ${pythonFile} figs5ab-data --beddir ${bedDir} \
+        -i ${K562_Result_dir/MethPerf/MethCorr} \
+        ${APL_Result_dir/MethPerf/MethCorr} \
+        ${NA19240_Result_dir/MethPerf/MethCorr} \
+        ${NA12878_Result_dir/MethPerf/MethCorr} ${tagOptions}
+else
+    echo "### Unsupported command=${command}"
+    exit 3
+fi
+
+echo "### DONE"
