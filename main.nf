@@ -17,12 +17,11 @@ def helpMessage() {
 	  --chrSet		Chromosomes used in analysis, default is chr1-22, X and Y, seperated by comma. For E. coli data, it is set to 'NC_000913.3'
 
 	  --cleanCache		If clean work dir after complete, default is true
-	  --commandType		Command used for tools, default is 'gpu', can be also 'cpu'
 
 	Running environment options:
 	  --conda_name			Conda name used for pipeline, default is '~/anaconda3/envs/nanome'
-	  --docker_name			Docker name used for pipeline, default is 'quay.io/liuyangzzu/nanome:v1.5'
-	  --singularity_name		Singularity name used for pipeline, default is 'docker://quay.io/liuyangzzu/nanome:v1.5'
+	  --docker_name			Docker name used for pipeline, default is 'liuyangzzu/nanome:v1.0'
+	  --singularity_name		Singularity name used for pipeline, default is 'docker://liuyangzzu/nanome:v1.0'
 	  --singularity_cache_dir	Singularity cache dir, default is '~/.singularity/cache'
 
 	Platform specific options:
