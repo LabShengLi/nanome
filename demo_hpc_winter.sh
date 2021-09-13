@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=nanome.demo.hpc
 #SBATCH -p gpu
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:v100:1
 #SBATCH -q training
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 1 # number of cores
@@ -12,17 +12,11 @@
 
 date; hostname; pwd
 
+# Base directory of running and output for nanome
 baseDir=${1:-/fastscratch/li-lab/nanome}
 
 workDir=${baseDir}/work
 outputsDir=${baseDir}/outputs
-
-
-########################################
-########################################
-# Ensure directories
-export SINGULARITY_CACHEDIR="${baseDir}/singularity-cache"
-mkdir -p  $SINGULARITY_CACHEDIR; chmod ugo+w $SINGULARITY_CACHEDIR
 
 
 ########################################
@@ -36,8 +30,6 @@ fi
 ########################################
 # Clean old results
 rm -rf ${workDir} ${outputsDir}
-mkdir -p ${workDir}; chmod ugo+w ${workDir}
-mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
 
 
 ########################################
@@ -52,13 +44,13 @@ set -x
     -config conf/jax_hpc.config \
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
+    --singularity_cache_dir "${baseDir}/singularity-cache" \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
-    --singularity_cache_dir '/fastscratch/li-lab/nanome/singularity-cache' \
     --cleanCache false
 
 # Report
-tree ${workDir} > ${baseDir}/work_demo.tree.txt
-tree ${outputsDir} > ${baseDir}/outputs_demo.tree.txt
+tree ${workDir} > ${baseDir}/work_demo_filetree.txt
+tree ${outputsDir} > ${baseDir}/outputs_demo_filetree.txt
 
-echo "### nanome pipeline demo DONE"
+echo "### nanome pipeline for demo data on HPC winter DONE"

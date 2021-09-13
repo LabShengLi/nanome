@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=nanome.ecoli
+#SBATCH --job-name=nanome.ecoli.hpc
 #SBATCH -p gpu
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:v100:1
 #SBATCH -q training
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 1 # number of cores
@@ -12,18 +12,11 @@
 
 date; hostname; pwd
 
+# Base directory of running and output for nanome
 baseDir=${1:-/fastscratch/li-lab/nanome}
 
 workDir=${baseDir}/work-ecoli
 outputsDir=${baseDir}/outputs-ecoli
-
-########################################
-########################################
-# Ensure directories
-mkdir -p ${baseDir}; chmod ugo+w ${baseDir}
-export SINGULARITY_CACHEDIR="${baseDir}/singularity-cache"
-mkdir -p  $SINGULARITY_CACHEDIR; chmod ugo+w $SINGULARITY_CACHEDIR
-
 
 ########################################
 ########################################
@@ -32,14 +25,10 @@ if [ ! -f "nextflow" ]; then
     curl -s https://get.nextflow.io | bash
 fi
 
-
 ########################################
 ########################################
 # Clean old results
 rm -rf ${workDir} ${outputsDir}
-mkdir -p ${workDir}; chmod ugo+w ${workDir}
-mkdir -p ${outputsDir}; chmod ugo+w ${outputsDir}
-
 
 ########################################
 ########################################
@@ -51,11 +40,11 @@ set -x
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     -config conf/jax_hpc.config,conf/ecoli_demo.config \
-    --singularity_cache_dir '/fastscratch/li-lab/nanome/singularity-cache' \
+    --singularity_cache_dir "${baseDir}/singularity-cache" \
     --cleanCache false
 
 # Report
-tree ${workDir} > ${baseDir}/work_ecoli.tree.txt
-tree ${outputsDir} > ${baseDir}/outputs_ecoli.tree.txt
+tree ${workDir} > ${baseDir}/work_ecoli_filetree.txt
+tree ${outputsDir} > ${baseDir}/outputs_ecoli_filetree.txt
 
-echo "### nanome pipeline for ecoli data DONE"
+echo "### nanome pipeline for ecoli data on HPC DONE"

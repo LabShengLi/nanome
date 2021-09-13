@@ -47,3 +47,5 @@ testdemo.py
 ## maintained by ly
 
 /ci_google_cloud.sh
+/ci_hpc_winter.sh
+/pull_nanome_images.sh
