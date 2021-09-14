@@ -87,4 +87,3 @@ If you have any questions/issues/bugs, please post them on [GitHub](https://gith
 Detailed results can be found in our preprint. Please cite our preprint below if you are interested in our pipeline:
 
 Yang Liu, Wojciech Rosikiewicz, Ziwei Pan, Nathaniel Jillette, Ping Wang, Aziz Taghbalout, Jonathan Foox, Christopher Mason, Martin Carroll, Albert Cheng, Sheng Li. **DNA methylation calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation.** bioRxiv, 2021. Online at https://doi.org/10.1101/2021.05.05.442849.
-
