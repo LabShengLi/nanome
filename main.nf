@@ -148,7 +148,7 @@ process EnvCheck {
 	errorStrategy 'terminate'
 
 	input:
-	path reference_genome_tar 	from 	Channel.fromPath(params.reference_genome_tar, type: 'any')
+	path reference_genome 	from 	Channel.fromPath(params.reference_genome, type: 'any')
 
 	output:
 	path "reference_genome" into reference_genome_ch
@@ -187,12 +187,12 @@ process EnvCheck {
 	fast5mod --version
 
 	## Get dir for reference_genome
-	if [[ "${reference_genome_tar}" == *.tar.gz ]] ; then
-		tar -xzf ${reference_genome_tar}
+	if [[ "${reference_genome}" == *.tar.gz ]] ; then
+		tar -xzf ${reference_genome}
 	fi
 	if [ ! -d "reference_genome" ]  ; then
 		mkdir reference_genome
-		mv ${reference_genome_tar.name.replaceAll(".tar.gz", "")} reference_genome
+		mv ${reference_genome.name.replaceAll(".tar.gz", "")} reference_genome
 	fi
 	echo "### Check env DONE"
 	"""
