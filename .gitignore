@@ -49,3 +49,7 @@ testdemo.py
 /ci_google_cloud.sh
 /ci_hpc_winter.sh
 /pull_nanome_images.sh
+/ci_git_test.sh
+/sumner_test.sh
+/testpy.py
+/winter_test.sh
