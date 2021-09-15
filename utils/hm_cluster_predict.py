@@ -169,7 +169,10 @@ with tf.Session() as sess:
                     m_pred_new_per.append(curpd)
          except:
             pass
-      print("new per: {}, {}  {} {}".format(len(pdkeys), len(train_data), len(m_pred_new_per), curpd ))
+      try:
+         print("new per: {}, {}  {} {}".format(len(pdkeys), len(train_data), len(m_pred_new_per), curpd ))
+      except:
+         pass
       for wind in range(10):
          try:
             print("'{}' <{}> {}".format(preddict[pdkeys[wind]][-1], m_pred_new_per[wind], train_data[wind]))
