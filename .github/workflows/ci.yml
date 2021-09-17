@@ -9,17 +9,18 @@ jobs:
       fail-fast: false
       matrix:
         nxf_ver: ['20.01.0', '']
+        ci_test_ver: ['ci', 'ci_human']
     steps:
       - uses: actions/checkout@v1
-      - name: Install Nextflow
+      - name: Install Nextflow ${{ matrix.nxf_ver }}
         run: |
           export NXF_VER=${{ matrix.nxf_ver }}
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
-      - name: Basic workflow tests
+      - name: Basic workflow tests by ${{ matrix.ci_test_ver }}
         run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile ci,docker
-          echo "Outputs tree view:" ; tree -a outputs
+          nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.ci_test_ver }},docker
+          echo "Outputs tree view:" ; tree -a outputs; ls -lh -R outputs; du -hs * 2>/dev/null | sort -h
 #  singularity:
 #    runs-on: ubuntu-latest
 #    strategy:

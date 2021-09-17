@@ -67,8 +67,17 @@ ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: fals
 // Reference genome, deepmod cluster settings
 deepmod_tar_file = "${projectDir}/README.md"
 if (params.dataType == 'human') {
-	referenceGenome="reference_genome/hg38/hg38.fasta"
-	chromSizesFile="reference_genome/hg38/hg38.chrom.sizes"
+	if (!params.refGenomePath) { // default
+		referenceGenome="reference_genome/hg38/hg38.fasta"
+	} else {
+		referenceGenome="reference_genome/${params.refGenomePath}"
+	}
+	if (!params.chromSizesPath) { // default
+		chromSizesFile="reference_genome/hg38/hg38.chrom.sizes"
+	} else {
+		chromSizesFile="reference_genome/${params.chromSizesPath}"
+	}
+
 	isDeepModCluster = params.useDeepModCluster
 	if (isDeepModCluster) {
 		deepmod_tar_file = params.deepmod_ctar
@@ -194,6 +203,13 @@ process EnvCheck {
 		mkdir reference_genome
 		mv ${reference_genome.name.replaceAll(".tar.gz", "")} reference_genome
 	fi
+
+	## Check reference genome
+	echo "referenceGenome=${referenceGenome}"
+	echo "chromSizesFile=${chromSizesFile}"
+
+	ls -lh ${referenceGenome}
+	ls -lh ${chromSizesFile}
 	echo "### Check env DONE"
 	"""
 }
