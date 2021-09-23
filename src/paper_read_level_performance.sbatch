@@ -16,21 +16,24 @@ runidSuffix=${2:-"BS"} # "RRBS_2Reps"
 command=${3:-"seven"}  # six - six tools, seven - all seven tools
 otherOptions=${4:-""}  # if using mpi to run tasks for evaluation
 
+genome_annotation_dir="${NanoCompareDir}/data/genome-annotation"
+guppyDataDir="/projects/li-lab/Nanopore_compare/nanome_paper_result/supp_data/guppy_methcall_yang"
+METEOREDataDir="/projects/li-lab/Nanopore_compare/nanome_paper_result/supp_data/METEORE_results"
+baseDir="/projects/li-lab/Nanopore_compare/data"
+
 if [ ! -z "$runidSuffix" ]; then
     runidSuffix="_${runidSuffix}"
 fi
 
 set -x
-
-baseDir="/projects/li-lab/Nanopore_compare/data"
 ## Detect calls by tools
 NanopolishCalls=$(find $baseDir/$dsname -name "$dsname.nanopolish.methylation_calls.combine.*.gz")
 MegalodonCalls=$(find $baseDir/$dsname -name "$dsname.megalodon.per_read.sorted.*.gz")
 DeepSignalCalls=$(find $baseDir/$dsname -name "$dsname.deepsignal.call_mods.combine.*.gz")
-GuppyCalls=$(find /projects/li-lab/Nanopore_compare/suppdata/guppy_methcall_yang/ -name "$dsname.guppy.fast5mod_site_level.combine.*.gz")
+GuppyCalls=$(find ${guppyDataDir} -name "$dsname.guppy.fast5mod_site_level.combine.*.gz")
 TomboCalls=$(find $baseDir/$dsname -name "$dsname.tombo.*.combine.*.gz")
 DeepModCalls=$(find $baseDir/$dsname -name "$dsname.deepmod.C.combine.*.gz")
-METEORECalls=$(find /projects/li-lab/Nanopore_compare/suppdata/METEORE_results -name "$dsname.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
+METEORECalls=$(find ${METEOREDataDir} -name "$dsname.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
 MegalodonEncode="Megalodon.ZW"
 
 if [ "$dsname" == "NA12878" ]; then
@@ -42,7 +45,7 @@ if [ "$dsname" == "NA12878" ]; then
     GuppyCalls=$(find $baseDir -name "$dsname.guppy.fast5mod_site_level.combine_allchrs.*.gz")
     TomboCalls=$(find $baseDir -name "$dsname.tombo.perReadsStats.combine_allchrs.*.gz")
     DeepModCalls=$(find $baseDir -name "$dsname.deepmod.C.combine_allchrs.*.gz")
-    METEORECalls=$(find /projects/li-lab/Nanopore_compare/suppdata/METEORE_results -name "$dsname.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
+    METEORECalls=$(find ${METEOREDataDir} -name "$dsname.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
     MegalodonEncode="Megalodon"
 fi
 
@@ -70,8 +73,8 @@ echo "MegalodonCalls=$MegalodonCalls"
 echo "DeepSignalCalls=$DeepSignalCalls"
 echo "GuppyCalls=$GuppyCalls"
 echo "TomboCalls=$TomboCalls"
-echo "DeepModCalls=$DeepModCalls"
 echo "METEORECalls=$METEORECalls"
+echo "DeepModCalls=$DeepModCalls"
 echo "####################"
 
 ## Read level evaluation script
@@ -83,36 +86,40 @@ if [ "${command}" == "six" ]; then
     ## six tool
     ${pythonFile} \
         --calls \
-        Nanopolish:${NanopolishCalls} \
-        ${MegalodonEncode}:${MegalodonCalls} \
-        DeepSignal:${DeepSignalCalls} \
-        Guppy:${GuppyCalls} \
-        Tombo:${TomboCalls} \
-        DeepMod.C:${DeepModCalls} \
+            Nanopolish:${NanopolishCalls} \
+            ${MegalodonEncode}:${MegalodonCalls} \
+            DeepSignal:${DeepSignalCalls} \
+            Guppy:${GuppyCalls} \
+            Tombo:${TomboCalls} \
+            DeepMod.C:${DeepModCalls} \
         --bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
         --runid MethPerf-${dsname}${runidSuffix} \
         --dsname ${dsname} \
         --min-bgtruth-cov 5 \
         --distribution \
-        --report-joined --enable-cache --using-cache ${otherOptions} ### --mpi
+        --report-joined \
+        --processors 30 \
+        --enable-cache --using-cache\
+        --genome-annotation ${genome_annotation_dir} ${otherOptions} ### --mpi
 elif [ "${command}" == "seven" ]; then
     ## --distribution: generate sites distribution in singletons/non-singletons for each genomic regions
     ${pythonFile} \
         --calls \
-        Nanopolish:${NanopolishCalls} \
-        ${MegalodonEncode}:${MegalodonCalls} \
-        DeepSignal:${DeepSignalCalls} \
-        Guppy:${GuppyCalls} \
-        Tombo:${TomboCalls} \
-        METEORE:${METEORECalls} \
-        DeepMod.C:${DeepModCalls} \
+            Nanopolish:${NanopolishCalls} \
+            ${MegalodonEncode}:${MegalodonCalls} \
+            DeepSignal:${DeepSignalCalls} \
+            Guppy:${GuppyCalls} \
+            Tombo:${TomboCalls} \
+            METEORE:${METEORECalls} \
+            DeepMod.C:${DeepModCalls} \
         --bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
         --runid MethPerf-${dsname}${runidSuffix} \
         --dsname ${dsname} \
         --min-bgtruth-cov 5 \
         --report-joined \
         --enable-cache --using-cache \
-        --distribution --processors 30 ${otherOptions} ### --mpi
+        --distribution --processors 30 \
+        --genome-annotation ${genome_annotation_dir} ${otherOptions} ### --mpi
 else
     echo "Not support command"
     exit 255

@@ -17,7 +17,7 @@ import socket
 import matplotlib.pyplot as plt
 
 ## Modify to the project base dir
-project_base_dir = "/projects/li-lab/yang/workspace/nano-compare"  # project base
+project_base_dir = "/projects/li-lab/yang/workspace/nanome"  # project base
 
 data_base_dir = os.path.join(project_base_dir, 'data')  # all used data base
 src_base_dir = os.path.join(project_base_dir, 'src')  # source code base
@@ -30,21 +30,21 @@ if hostname.startswith('winter') or hostname.startswith('sumner'):  # in JAX HPC
     username = getpass.getuser()
     if username == 'liuya':  # output to ly's dirs
         results_dir = "/projects/li-lab/yang/results"  # temp output base
-        cache_dir = '/fastscratch/liuya/nanocompare/cache_dir'  # cache readed object to pkl
-        temp_dir = '/fastscratch/liuya/nanocompare/temp_dir'
+        cache_dir = '/fastscratch/liuya/nanome/cache_dir'  # cache readed object to pkl
+        temp_dir = '/fastscratch/liuya/nanome/temp_dir'
     else:  # output to shared dirs
-        results_dir = "/projects/li-lab/Nanopore_compare/running_results"  # temp output base
-        cache_dir = '/fastscratch/li-lab/nanocompare/cache_dir'  # cache readed object to pkl
-        temp_dir = '/fastscratch/li-lab/nanocompare/temp_dir'
+        results_dir = f"/fastscratch/{username}/nanome/nanome_results"  # temp output base
+        cache_dir = f'/fastscratch/{username}/nanome/nanome_cache_dir'  # cache readed object to pkl
+        temp_dir = f'/fastscratch/{username}/nanome/nanome_temp_dir'
 else:
     ## Default output dir set to pwd
-    results_dir = os.path.join(os.getcwd(), 'results')
-    cache_dir = os.path.join(os.getcwd(), 'cache_dir')
-    temp_dir = os.path.join(os.getcwd(), 'temp_dir')
+    results_dir = os.path.join(os.getcwd(), 'nanome_results')
+    cache_dir = os.path.join(os.getcwd(), 'nanome_cache_dir')
+    temp_dir = os.path.join(os.getcwd(), 'nanome_temp_dir')
 
 today_str = datetime.date.today().strftime("%Y-%m-%d")
 
-log_base_dir = os.path.join(results_dir, "log")
+# log_base_dir = os.path.join(results_dir, "log")
 pic_base_dir = os.path.join(results_dir, today_str)
 
 
@@ -58,7 +58,7 @@ def ensure_dir(dir_name):
 
 # create 3 folders if needed
 ensure_dir(pic_base_dir)
-ensure_dir(log_base_dir)
+# ensure_dir(log_base_dir)
 
 # Global loggers can be used any where
 logger = logging.getLogger()
