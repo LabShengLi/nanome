@@ -1,5 +1,5 @@
 # DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation
-## -- The 'nanome' pipeline for evaluation of DNA methylation calling tools for Oxford Nanopore sequencing 
+## --NANOME(Nanopore methylation) pipeline for evaluation of DNA methylation calling tools for Oxford Nanopore sequencing 
 
 ## Methodology of nanome pipeline
 
