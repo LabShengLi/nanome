@@ -1,5 +1,5 @@
 FROM genomicpariscentre/guppy-gpu:latest
-LABEL description="Nanome project by Li Lab at JAX" \
+LABEL description="Nanome project in Li Lab at The Jackson Laboratory" \
       author="yang.liu@jax.org"
 RUN apt-get update -y \
   && DEBIAN_FRONTEND=noninteractive apt-get install procps git curl -y \
