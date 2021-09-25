@@ -3,7 +3,7 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - python=3.6.13 # need 3.6 for some software
+  - python=3.6 # need 3.6 for some software
   - pip
   - biopython
   - jinja2
@@ -24,8 +24,10 @@ dependencies:
   - cython
   - openpyxl
   - nanocomp
-  - scikit-learn==0.21.3 # need by METEORE
-  - ont-fast5-api==3.0 # need by fast5mod, will upgrade by pip for Megalodon
+  - h5py==2.8 # due to tombo issue, must < 3.0, ref: https://github.com/nanoporetech/tombo/issues/325
+  - tqdm>=4.60 # need by Megalodon, ref: https://github.com/nanoporetech/megalodon/issues/105
+  - scikit-learn==0.21.3 # need by METEORE, it needs old package for model load, ref: https://github.com/comprna/METEORE/blob/master/combination_model_prediction.py#L44
+  - ont-fast5-api==3.0 # need by fast5mod, will upgrade by pip install for Megalodon, but it's ok for running both >3.0
   - deepmod=0.1.3
   - ont-tombo=1.5.1
   - nanopolish=0.13.2
@@ -34,5 +36,10 @@ dependencies:
     - deepsignal==0.1.8
     - fast5mod==1.0.5
 #The conflict is caused by:
-#    fast5mod 1.0.5 depends on ont-fast5-api==3.0.0
-#    megalodon 2.3.4 depends on ont-fast5-api>=3.2
+#    fast5mod 1.0.5 depends on ont-fast5-api==3.0.0, but it can be use higher
+#    megalodon 2.3.4 depends on ont-fast5-api>=3.2, it must be higher, so later install it
+#
+# in our HPC, fast5mod and Megalodon need to be installed like below:
+# wget https://files.pythonhosted.org/packages/b6/e2/10e19c4daa0609f527d74f49bdfb63ac8e05e5bc4ec1e87713cf8385eef4/fast5mod-1.0.5-cp36-cp36m-manylinux1_x86_64.whl
+# pip install fast5mod-1.0.5-cp36-cp36m-manylinux1_x86_64.whl
+# pip install megalodon==2.3.4
