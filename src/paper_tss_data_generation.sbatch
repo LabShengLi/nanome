@@ -18,15 +18,17 @@
 dsname=${1:-HL60}
 
 baseDir="/projects/li-lab/Nanopore_compare/data"
+guppyDataDir="/projects/li-lab/Nanopore_compare/nanome_paper_result/supp_data/guppy_methcall_yang"
+METEOREDataDir="/projects/li-lab/Nanopore_compare/nanome_paper_result/supp_data/METEORE_results"
 
 ## Detect calls by tools
 NanopolishCalls=$(find $baseDir/$dsname -name "$dsname.nanopolish.methylation_calls.combine.*.gz")
 MegalodonCalls=$(find $baseDir/$dsname -name "$dsname.megalodon.per_read.sorted.*.gz")
 DeepSignalCalls=$(find $baseDir/$dsname -name "$dsname.deepsignal.call_mods.combine.*.gz")
-GuppyCalls=$(find /projects/li-lab/Nanopore_compare/suppdata/guppy_methcall_yang/ -name "$dsname.guppy.fast5mod_site_level.combine.*.gz")
+GuppyCalls=$(find ${guppyDataDir} -name "$dsname.guppy.fast5mod_site_level.combine.*.gz")
 TomboCalls=$(find $baseDir/$dsname -name "$dsname.tombo.*.combine.*.gz")
 DeepModCalls=$(find $baseDir/$dsname -name "$dsname.deepmod.C_clusterCpG.combine.*.gz")
-METEORECalls=$(find /projects/li-lab/Nanopore_compare/suppdata/METEORE_results -name "$dsname.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
+METEORECalls=$(find ${METEOREDataDir} -name "$dsname.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
 MegalodonOptions="Megalodon.ZW"
 
 if [ "$dsname" == "NA12878" ]; then
@@ -38,7 +40,7 @@ if [ "$dsname" == "NA12878" ]; then
     GuppyCalls=$(find $baseDir -name "$dsname.guppy.fast5mod_site_level.combine_allchrs.*.gz")
     TomboCalls=$(find $baseDir -name "$dsname.tombo.perReadsStats.combine_allchrs.*.gz")
     DeepModCalls=$(find $baseDir -name "$dsname.deepmod.C_clusterCpG.combine_allchrs.*.gz")
-    METEORECalls=$(find /projects/li-lab/Nanopore_compare/suppdata/METEORE_results -name "$dsname.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
+    METEORECalls=$(find ${METEOREDataDir} -name "$dsname.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
     MegalodonOptions="Megalodon"
 fi
 
@@ -77,13 +79,13 @@ set -x
 ## Generate tools/bsseq site level (freq, coverage) results for tss analysis
 ${pythonFile} \
     --calls \
-    Nanopolish:${NanopolishCalls} \
-    ${MegalodonOptions}:${MegalodonCalls} \
-    DeepSignal:${DeepSignalCalls} \
-    Guppy:${GuppyCalls} \
-    Tombo:${TomboCalls} \
-    METEORE:${METEORECalls} \
-    DeepMod.Cluster:${DeepModCalls} \
+        Nanopolish:${NanopolishCalls} \
+        ${MegalodonOptions}:${MegalodonCalls} \
+        DeepSignal:${DeepSignalCalls} \
+        Guppy:${GuppyCalls} \
+        Tombo:${TomboCalls} \
+        METEORE:${METEORECalls} \
+        DeepMod.Cluster:${DeepModCalls} \
     --bgtruth ${bgtruthEncodeDict[$dsname]}:${bgtruthFilenameDict[$dsname]} \
     --runid TSS_Sites-${dsname} \
     --dsname ${dsname} \

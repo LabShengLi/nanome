@@ -15,33 +15,6 @@ from nanocompare.eval_common import *
 from nanocompare.global_settings import get_tool_name, save_done_file
 
 
-def parse_arguments():
-    """
-    :return:
-    """
-    parser = argparse.ArgumentParser(
-        description='Export read/site level methylation results of all nanopore tools in nanome paper')
-    parser.add_argument('--dsname', type=str, help="dataset name", required=True)
-    parser.add_argument('--runid', type=str, help="running prefix", required=True)
-    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces',
-                        required=True)
-    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name1>",
-                        default=None)
-    parser.add_argument('--beddir', type=str, help="base dir for concordant/discordant bed files",
-                        default=None)
-    parser.add_argument('--sep', type=str, help="seperator for output csv file", default='\t')
-    parser.add_argument('--processors', type=int, help="running processors", default=1)
-    parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
-    parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
-    parser.add_argument('--using-cache', help="if use cache files", action='store_true')
-    parser.add_argument('--output-unified-format', action='store_true')
-    parser.add_argument('--chrs', nargs='+', help='chromosome list',
-                        default=humanChrSet)
-    parser.add_argument('--tagname', type=str, help="output unified file tagname", default=None)
-
-    return parser.parse_args()
-
-
 def import_and_save_meteore(callfn, callencode, outfn):
     import_call(callfn, callencode, baseFormat=1, enable_cache=False, using_cache=False,
                 include_score=False, siteLevel=False, save_unified_format=True, outfn=outfn,
@@ -79,10 +52,36 @@ def import_and_save_site_level(callfn, callname, callencode, minToolCovCutt, out
     output_calldict_to_unified_bed_as_0base(ontCallWithCov, outfn)
 
 
+def parse_arguments():
+    """
+    :return:
+    """
+    parser = argparse.ArgumentParser(
+        description='Export read/site level methylation results of all nanopore tools in nanome paper')
+    parser.add_argument('--dsname', type=str, help="dataset name", required=True)
+    parser.add_argument('--runid', type=str, help="running prefix", required=True)
+    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces',
+                        required=True)
+    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name2>",
+                        default=None)
+    parser.add_argument('--sep', type=str, help="seperator for output csv file", default='\t')
+    parser.add_argument('--processors', type=int, help="running processors", default=1)
+    parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
+    parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
+    parser.add_argument('--using-cache', help="if use cache files", action='store_true')
+    parser.add_argument('--output-unified-format', help="True:output read level results(1-based start), False: output site-level results(0-based start)", action='store_true')
+    parser.add_argument('--chrs', nargs='+', help='chromosome list',
+                        default=humanChrSet)
+    parser.add_argument('--tagname', type=str, help="output unified file tagname", default=None)
+
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
     set_log_debug_level()
 
     args = parse_arguments()
+    logger.debug(f"args={args}")
 
     if args.output_unified_format:  ## if output METEORE format, must read directly
         enable_cache = False
@@ -111,7 +110,8 @@ if __name__ == '__main__':
     logger.info(f'\n\n####################\n\n')
 
     if args.output_unified_format:
-        logger.info(f"We are outputing each tool's unified results same as METEORE format")
+        ## Output read-level unified format with 1-based start
+        logger.info(f"We are outputing each tool's unified results for read-level, same as METEORE format")
         input_list = []
         for callstr in args.calls:
             callencode, callfn = callstr.split(':')
@@ -121,7 +121,8 @@ if __name__ == '__main__':
             # Consider tools have read-level outputs, except for DeepMod
             if callname not in ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo']:
                 continue
-            outfn = os.path.join(out_dir, f"{args.dsname}_{callname}{f'-{args.tagname}' if args.tagname else ''}-perRead-score.tsv.gz")
+            outfn = os.path.join(out_dir,
+                                 f"{args.dsname}_{callname}{f'-{args.tagname}' if args.tagname else ''}-perRead-score.tsv.gz")
 
             input_list.append((callfn, callencode, outfn,))
         with Pool(processes=args.processors) as pool:
@@ -131,6 +132,7 @@ if __name__ == '__main__':
         logger.info("### Unified format output DONE")
         sys.exit(0)
 
+    ## Convert into 0-based format site level bed CpG files, used for TSS plot
     if args.bgtruth:
         logger.info("We are generating bed CpG results for BG-Truth")
         # we import multiple (1 or 2) replicates and join them

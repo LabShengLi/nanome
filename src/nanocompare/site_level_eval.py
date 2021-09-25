@@ -440,6 +440,7 @@ if __name__ == '__main__':
         logger.info("Create region bed list firstly, take times......")
 
         # Evaluated all region filename lists, bed objects
+        # assume all files are located in args.genome_annotation dir
         regions_full_filepath = [os.path.join(args.genome_annotation, cofn) for cofn in narrowCoordNameList[1:]] + \
                                 [os.path.join(args.genome_annotation, cofn) for cofn in cg_density_coord_name_list] + \
                                 [os.path.join(args.genome_annotation, cofn) for cofn in rep_coord_name_list]

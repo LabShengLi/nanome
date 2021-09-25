@@ -335,6 +335,8 @@ def parse_arguments():
     parser.add_argument('--bedtools-tmp', type=str, help='bedtools temp dir', default=temp_dir)
     parser.add_argument('--genome-annotation', type=str, help='genome annotation dir',
                         default=os.path.join(data_base_dir, 'genome-annotation'))
+    parser.add_argument('--reference-genome', type=str, help='genome annotation dir',
+                        default=referenceGenomeFile)
     return parser.parse_args()
 
 
@@ -411,7 +413,7 @@ if __name__ == '__main__':
         logger.info(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(absoluteBGTruthCov):,}')
 
         # Load all coordinate file list (full path) in this runs
-        relateCoord = list(narrowCoordFileList)  # copy the basic coordinate
+        # relateCoord = list(narrowCoordFileList)  # copy the basic coordinate
 
         ## add additional two region files based on bgtruth (Concordant, Discordant):
         ## file name is like: K562_WGBS_2Reps.hg38_nonsingletons.concordant.bed
@@ -420,8 +422,8 @@ if __name__ == '__main__':
         fn_concordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed.gz"
         fn_discordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed.gz"
 
-        relateCoord.append(fn_concordant)
-        relateCoord.append(fn_discordant)
+        # relateCoord.append(fn_concordant)
+        # relateCoord.append(fn_discordant)
 
         # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth) with cov>=1
         # Classify concordant and discordant based on cov>=1 bgtruth
@@ -575,7 +577,8 @@ if __name__ == '__main__':
         secondBedFileName = None
         raise Exception("Currently only support joined sets evaluation.")
 
-    # Evaluated all region filename lists
+    # Evaluated all region filename lists,
+    # assume all genome annotations are in args.genome_annotation dir
     regions_full_filepath = [os.path.join(args.genome_annotation, cofn) for cofn in narrowCoordNameList[1:]] + \
                             [os.path.join(args.genome_annotation, cofn) for cofn in cg_density_coord_name_list] + \
                             [os.path.join(args.genome_annotation, cofn) for cofn in rep_coord_name_list] + \

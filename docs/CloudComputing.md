@@ -49,7 +49,7 @@
     cp Dockerfile environment.yml docker_files
     cd docker_files
     
-    gcloud builds submit --tag us.gcr.io/jax-nanopore-01/nanome:v1.0 --timeout=2000s
+    gcloud builds submit --tag us.gcr.io/jax-nanopore-01/nanome:latest --timeout=2000s
     ```
     Output will be below.
     ```

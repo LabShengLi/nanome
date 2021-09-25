@@ -1,5 +1,5 @@
 FROM genomicpariscentre/guppy-gpu:latest
-LABEL description="Nanome project by Li Lab at JAX" \
+LABEL description="Nanome project in Li Lab at The Jackson Laboratory" \
       author="yang.liu@jax.org"
 RUN apt-get update -y \
   && DEBIAN_FRONTEND=noninteractive apt-get install procps git curl -y \
@@ -30,7 +30,7 @@ RUN conda env create -f environment.yml && conda clean -a
 # Make RUN commands use the new environment:
 SHELL ["conda", "run", "-n", "nanome", "/bin/bash", "-c"]
 
-# Install megalodon, even conflicts with fast5mod, they can work
+# Install latest version for megalodon, even conflicts with fast5mod, they can work
 RUN pip install megalodon
 
 ENV PATH /opt/conda/envs/nanome/bin:$PATH
