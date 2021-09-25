@@ -18,10 +18,10 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
   * A generic configuration profile to be used with [Conda](https://docker.com/)
 * `docker`
   * A generic configuration profile to be used with [Docker](https://docker.com/)
-  * Pulls software from: liuyangzzu/nanome:v1.0
+  * Pulls software from: liuyangzzu/nanome:latest
 * `singularity`
   * A generic configuration profile to be used with [Singularity](https://sylabs.io/docs/)
-  * Pulls software from: docker://liuyangzzu/nanome:v1.0
+  * Pulls software from: docker://liuyangzzu/nanome:latest
 * `hpc`		
   * A generic configuration profile to be used on HPC cluster with [SLURM](https://slurm.schedmd.com/documentation.html) job submission support.
 * `google`	
