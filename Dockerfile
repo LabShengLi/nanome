@@ -11,7 +11,7 @@ ARG PACKAGE_VERSION=5.0.14
 ARG BUILD_PACKAGES="wget apt-transport-https"
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Install guppy-gpu version
+# Install guppy-gpu version, ref: https://github.com/GenomicParisCentre/dockerfiles
 RUN apt update && \
     apt install --yes $BUILD_PACKAGES libnvidia-compute-460-server && \ 
     cd /tmp && \
