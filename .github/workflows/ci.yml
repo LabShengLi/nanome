@@ -28,6 +28,7 @@ jobs:
       matrix:
         singularity_version: ['3.6.4']
         nxf_ver: ['20.01.0', '']
+        ci_test_ver: ['ci', 'ci_human']
     steps:
       - uses: actions/checkout@v1
       - uses: eWaterCycle/setup-singularity@v6
