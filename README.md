@@ -61,8 +61,13 @@ NANOME pipeline support running with various ways in different platforms:
 
 Therefore, NANOME pipeline can be easily executed without any installation steps:
 ```angular2html
-nextflow run https://github.com/TheJacksonLaboratory/nanome.git \
-    -profile ci,singularity,hpc
+# Run NANOME using docker
+nextflow run https://github.com/TheJacksonLaboratory/nanome.git\
+    -profile ci,docker
+
+# Run NANOME using singularity
+nextflow run https://github.com/TheJacksonLaboratory/nanome.git\
+    -profile ci,singularity
 ```
 
 For running on CloudOS platform (such as google cloud), please check [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). 
