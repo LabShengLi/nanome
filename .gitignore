@@ -17,7 +17,7 @@ src/nanocompare/.DS_Store
 /plots/
 /log/
 /debug/
-work
+/work/
 /outputs/
 hello.nf
 .nextflow*
@@ -54,3 +54,5 @@ testdemo.py
 /testpy.py
 /winter_test.sh
 /lifebit_test.sh
+/local_singularity_cache/
+/data/

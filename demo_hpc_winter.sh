@@ -40,6 +40,7 @@ rm -rf ${workDir} ${outputsDir}
 module load singularity
 set -x
 ./nextflow run main.nf -resume \
+    -with-dag nanome_dag.png \
     -profile singularity,hpc \
     -config conf/jax_hpc.config \
     -work-dir ${workDir} \
