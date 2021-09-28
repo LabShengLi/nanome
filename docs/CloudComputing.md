@@ -42,15 +42,11 @@
     gcloud auth configure-docker
     ```
 1. Submit to Private Container Registry in the project. You need to be the directory that has the Dockerfile:
-
     ```angular2html
     cd nanome
-    mkdir docker_files
-    cp Dockerfile environment.yml docker_files
-    cd docker_files
-    
     gcloud builds submit --tag us.gcr.io/jax-nanopore-01/nanome:latest --timeout=2000s
     ```
+   
     Output will be below.
     ```
     Creating temporary tarball archive of 2 file(s) totalling 4.4 KiB before compression.

@@ -56,7 +56,7 @@ NANOME pipeline support running with various ways in different platforms:
 * Singularity
     1. Pull image from docker hub: `singularity pull docker://liuyangzzu/nanome:latest`
 * HPC clusters with SLURM support
-* Google Cloud platmform with google-lifesciences support
+* Google Cloud platform with google-lifesciences support
 
 Therefore, NANOME pipeline can be easily executed without any installation steps:
 ```angular2html
@@ -64,7 +64,7 @@ Therefore, NANOME pipeline can be easily executed without any installation steps
     -profile ci,singularity,hpc
 ```
 
-For running on CloudOS platform (such as google cloud), our Nextflow pipeline supports using an Docker image (i.e., `liuyangzzu/nanome:latest`), details please check [Usage](https://github.com/liuyangzzu/nanome/blob/master/docs/Usage.md). 
+For running on CloudOS platform (such as google cloud), please check [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). 
 
 [comment]: <> (We will update more information within a short time.)
 
