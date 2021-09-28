@@ -1,7 +1,7 @@
-name: nanome pipelines for CI test
+name: NANOME pipelines for CI test
 # This workflow is triggered on pushes and PRs to the repository.
 # Hardware requirment: https://lifebit.gitbook.io/cloudos/tutorials/adding-ci-testing-in-nextflow-pipelines
-on: [pull_request]
+on: [push, pull_request]
 
 jobs:
   docker:
@@ -18,7 +18,7 @@ jobs:
           export NXF_VER=${{ matrix.nxf_ver }}
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
-      - name: Basic workflow tests by ${{ matrix.ci_test_ver }}
+      - name: Basic NANOME workflow tests by ${{ matrix.ci_test_ver }}
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.ci_test_ver }},docker
           echo "Outputs tree view:" ; tree -a outputs; ls -lh -R outputs; du -hs * 2>/dev/null | sort -h
@@ -40,7 +40,7 @@ jobs:
           export NXF_VER=${{ matrix.nxf_ver }}
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
-      - name: Basic workflow tests by ${{ matrix.ci_test_ver }}
+      - name: Basic NANOME workflow tests by ${{ matrix.ci_test_ver }}
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.ci_test_ver }},singularity --runCombine false --runMethcall false
           echo "Outputs tree view:" ; tree -a outputs; ls -lh -R outputs
