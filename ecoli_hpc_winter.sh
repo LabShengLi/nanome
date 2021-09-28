@@ -40,7 +40,7 @@ set -x
     -work-dir ${workDir} \
     --outputDir ${outputsDir} \
     -config conf/jax_hpc.config,conf/ecoli_demo.config \
-    --singularity_cache_dir "${baseDir}/singularity-cache" \
+    --singularity_cache "${baseDir}/singularity-cache" \
     --cleanCache false
 
 # Report
