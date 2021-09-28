@@ -18,17 +18,17 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
   * A generic configuration profile to be used with [Conda](https://docker.com/)
 * `docker`
   * A generic configuration profile to be used with [Docker](https://docker.com/)
-  * Pulls software from: liuyangzzu/nanome:latest
+  * Pulls from [Docker Hub](https://hub.docker.com/repository/docker/liuyangzzu/nanome): liuyangzzu/nanome:latest
 * `singularity`
   * A generic configuration profile to be used with [Singularity](https://sylabs.io/docs/)
-  * Pulls software from: docker://liuyangzzu/nanome:latest
+  * Pulls from [Docker Hub](https://hub.docker.com/repository/docker/liuyangzzu/nanome): docker://liuyangzzu/nanome:latest
 * `hpc`		
   * A generic configuration profile to be used on HPC cluster with [SLURM](https://slurm.schedmd.com/documentation.html) job submission support.
 * `google`	
-  * A generic configuration profile to be used on [Google Cloud](https://cloud.google.com/) platform with 'google-lifesciences' support.
+  * A generic configuration profile to be used on [Google Cloud](https://cloud.google.com/) platform with **google-lifesciences** support.
 
 ## Running samples
-The command for running NANOME pipeline is to run `./nextflow run https://github.com/TheJacksonLaboratory/nanome.git`. `--input` is input Fast5 file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name.
+The command for running NANOME pipeline is to run `nextflow run https://github.com/TheJacksonLaboratory/nanome.git`. `--input` is input Fast5 file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name.
 
 By default, we are using hg38 human reference genome, and you can specify other reference genome using parameter `dataType='ecoli'`. An example of how to use NANOME pipeline is given below.
 
@@ -37,26 +37,26 @@ By default, we are using hg38 human reference genome, and you can specify other 
 curl -fsSL get.nextflow.io | bash
 
 # Get command help
-./nextflow run https://github.com/TheJacksonLaboratory/nanome.git --help
+nextflow run https://github.com/TheJacksonLaboratory/nanome.git --help
 
 # Running NANOME pipeline on HPC using Singularity
-./nextflow run https://github.com/TheJacksonLaboratory/nanome.git \
-    -profile ci,singularity,hpc 
+nextflow run https://github.com/TheJacksonLaboratory/nanome.git \
+    -profile ci,singularity,hpc
 
-# Running NANOME pipeline on Nanopore data for human
-./nextflow run https://github.com/TheJacksonLaboratory/nanome.git \
+# Running NANOME pipeline for human data
+nextflow run https://github.com/TheJacksonLaboratory/nanome.git \
     -profile singularity,hpc \
     --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+    --input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt
 ```
 
 You can also running NANOME pipeline on cloud computing platform ([google cloud platform](https://cloud.google.com/) or [Lifebit CloudOS](https://lifebit.gitbook.io/cloudos/)), sample of command line is below.
 ```angular2html
 # Running on Google Cloud (https://cloud.google.com)
-./nextflow run https://github.com/TheJacksonLaboratory/nanome.git \
+nextflow run https://github.com/TheJacksonLaboratory/nanome.git \
     -profile ci,docker,google \
-    -w gs://jax-nanopore-01-project-data/TestData-work \
-    --outputDir gs://jax-nanopore-01-export-bucket/TestData-ouputs
+    -w [Google-storage-bucket]/TestData-work \
+    --outputDir [Google-storage-bucket]/TestData-ouputs
 ```
 
 Pipeline running results is below, output directory trees are [outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/outputs_demo.tree.txt) and [work](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/work_demo.tree.txt). It can also generates [timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_demo.pdf), [report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_demo.pdf) and [resource usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_demo.txt.tsv) with more Nextflow [options](https://www.nextflow.io/docs/latest/tracing.html) (e.g., `-with-report -with-timeline -with-trace -with-dag -resume`).
@@ -145,7 +145,7 @@ outputs
 
 We also support input as a file list if input is suffix like `.filelist.txt`, an example input is [inputs/test.demo.filelist.txt](https://github.com/TheJacksonLaboratory/nanome/blob/master/inputs/test.demo.filelist.txt). Please use folowings for command line help:
 ```angular2html
-./nextflow run main.nf --help
+nextflow run main.nf --help
 
 N E X T F L O W  ~  version 20.10.0
 Launching `main.nf` [maniac_babbage] - revision: deabf939f5
@@ -198,9 +198,7 @@ The NANOME pipeline supports 5mC detection by all tools on both human and Escher
 git clone https://github.com/TheJacksonLaboratory/nanome.git
 cd nanome
 
-curl -fsSL get.nextflow.io | bash
-
-./nextflow run main.nf \
+nextflow run main.nf \
     -profile singularity,hpc \
     -config conf/ecoli_demo.config
 ```
@@ -272,12 +270,11 @@ Our Nextflow pipeline can running on CloudOS. The CloudOS will use a default Doc
 ```angular2html
 git clone https://github.com/TheJacksonLaboratory/nanome.git
 cd nanome
-curl -s https://get.nextflow.io | bash
 
-./nextflow run main.nf \
+nextflow run main.nf \
     -profile ci,docker,google \
-    -w gs://jax-nanopore-01-project-data/nanome-work-ci \
-    --outputDir gs://jax-nanopore-01-project-data/nanome-outputs-ci
+    -w [Google-storage-bucket]/nanome-work-ci \
+    --outputDir [Google-storage-bucket]/nanome-outputs-ci
 ```
 
 The `jax-nanopore-01-project-data` is a sample of **Data Bucket** name that you can access on google cloud. `-w` is pipeline output working directory, `--outputDir` is the directory for methylation-calling results.
