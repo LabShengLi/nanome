@@ -67,7 +67,7 @@
    
     ```
     
-    Check the Container Regestry link like https://console.cloud.google.com/gcr/images/jax-nanopore-01?project=jax-nanopore-01&authuser=1 for above pushed Docker container.
+Check the Container Regestry link like https://console.cloud.google.com/gcr/images/jax-nanopore-01?project=jax-nanopore-01&authuser=1 for above pushed Docker container.
 
 ## Running pipeline
 

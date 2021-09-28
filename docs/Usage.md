@@ -39,11 +39,11 @@ curl -fsSL get.nextflow.io | bash
 # Get command help
 ./nextflow run https://github.com/TheJacksonLaboratory/nanome.git --help
 
-# Running nanome pipeline on HPC using Singularity
+# Running NANOME pipeline on HPC using Singularity
 ./nextflow run https://github.com/TheJacksonLaboratory/nanome.git \
     -profile ci,singularity,hpc 
 
-# Running nanome pipeline on Nanopore data for human
+# Running NANOME pipeline on Nanopore data for human
 ./nextflow run https://github.com/TheJacksonLaboratory/nanome.git \
     -profile singularity,hpc \
     --dsname TestData \
@@ -59,7 +59,7 @@ You can also running NANOME pipeline on cloud computing platform ([google cloud 
     --outputDir gs://jax-nanopore-01-export-bucket/TestData-ouputs
 ```
 
-Pipeline running results is below, output directory trees are [outputs](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/outputs_demo.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/work_demo.tree.txt). It can also generates [timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/timeline_demo.pdf), [report](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/report_demo.pdf) and [resource usage](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/trace_demo.txt.tsv) with more Nextflow [options](https://www.nextflow.io/docs/latest/tracing.html) (e.g., `-with-report -with-timeline -with-trace -with-dag -resume`).
+Pipeline running results is below, output directory trees are [outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/outputs_demo.tree.txt) and [work](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/work_demo.tree.txt). It can also generates [timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_demo.pdf), [report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_demo.pdf) and [resource usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_demo.txt.tsv) with more Nextflow [options](https://www.nextflow.io/docs/latest/tracing.html) (e.g., `-with-report -with-timeline -with-trace -with-dag -resume`).
 
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
@@ -143,7 +143,7 @@ outputs
 └── TestData-methylation-callings
 ```
 
-We also support input as a file list if input is suffix like `.filelist.txt`, an example input is [inputs/test.demo.filelist.txt](https://github.com/liuyangzzu/nanome/blob/master/inputs/test.demo.filelist.txt). Please use folowings for command line help:
+We also support input as a file list if input is suffix like `.filelist.txt`, an example input is [inputs/test.demo.filelist.txt](https://github.com/TheJacksonLaboratory/nanome/blob/master/inputs/test.demo.filelist.txt). Please use folowings for command line help:
 ```angular2html
 ./nextflow run main.nf --help
 
@@ -192,7 +192,7 @@ Other options:
 
 
 # 2. Experiment for E. coli data
-The NANOME pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--dataType` need to be set as `ecoli`. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline `-config` params [conf/ecoli_demo.config](https://github.com/liuyangzzu/nanome/blob/master/conf/ecoli_demo.config).
+The NANOME pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--dataType` need to be set as `ecoli`. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline `-config` params [conf/ecoli_demo.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/ecoli_demo.config).
 
 ```angular2html
 git clone https://github.com/TheJacksonLaboratory/nanome.git
@@ -248,11 +248,11 @@ CPU hours   : 0.1
 Succeeded   : 19
 ```
 
-The output files of pipeline on E. coli data by all tools are below, please also check the pipeline output directory tree for [outputs](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/outputs_ecoli.tree.txt) and [work](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/work_ecoli.tree.txt). The pipeline can also generate [timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/timeline_ecoli.pdf), [report](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/report_ecoli.pdf) and [resource usage](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/trace_ecoli.txt.tsv).
+The output files of pipeline on E. coli data by all tools are below, please also check the pipeline output directory tree for [outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/outputs_ecoli.tree.txt) and [work](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/work_ecoli.tree.txt). The pipeline can also generate [timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_ecoli.pdf), [report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_ecoli.pdf) and [resource usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_ecoli.txt.tsv).
 
 
 # 3. Benchmarking experiment
-We constructed a list of benchmarking datasets that contain Fast5 reads from 800 to 8,000  for NA19240. The datasets can be got by users upon request. Following command is running NANOME pipeline on our benchmarking datasets, please refer to the input parameters for pipeline `-config` params [conf/benchmarking.config](https://github.com/liuyangzzu/nanome/blob/master/conf/benchmarking.config).
+We constructed a list of benchmarking datasets that contain Fast5 reads from 800 to 8,000  for NA19240. The datasets can be got by users upon request. Following command is running NANOME pipeline on our benchmarking datasets, please refer to the input parameters for pipeline `-config` params [conf/benchmarking.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/benchmarking.config).
 
 ```angular2html
 git clone https://github.com/TheJacksonLaboratory/nanome.git
@@ -263,7 +263,7 @@ nextflow run main.nf \
     -config conf/benchmarking.config
 ```
 
-Resource usage are reported by [Nextflow](https://www.nextflow.io/) workflow reporting utilities. Please refer to the [Trace file](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/trace_benchmark.txt.tsv), [Report](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/report_benchmark.pdf) and [Timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/timeline_benchmark.pdf) of benchmarking results on our HPC.
+Resource usage are reported by [Nextflow](https://www.nextflow.io/) workflow reporting utilities. Please refer to the [Trace file](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_benchmark.txt.tsv), [Report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_benchmark.pdf) and [Timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_benchmark.pdf) of benchmarking results on our HPC.
 
 # 4. Running pipeline on cloud computing platform
 
@@ -282,6 +282,6 @@ curl -s https://get.nextflow.io | bash
 
 The `jax-nanopore-01-project-data` is a sample of **Data Bucket** name that you can access on google cloud. `-w` is pipeline output working directory, `--outputDir` is the directory for methylation-calling results.
 
-For more detail of using cloud computing, please check [Cloud computing usage](https://github.com/liuyangzzu/nanome/blob/master/docs/CloudComputing.md).
+For more detail of using cloud computing, please check [Cloud computing usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/CloudComputing.md).
 
 We will update more examples here within a short time.
