@@ -6,34 +6,41 @@
    conda install -c conda-forge google-cloud-sdk
    ```
 
-1. Authenticate.
+2. Authenticate.
    ```angular2html
    gcloud auth login --no-launch-browser
    gcloud auth application-default login
    ```
-1. Add Project Name to the config file ~/.config/gcloud/application_default_credentials.json.
+3. Add Project Name to the config file ~/.config/gcloud/application_default_credentials.json.
    ```angular2html
-   "project_id": "PROJECT-ID",
+   "project_id": "[PROJECT-ID]",
    ```
 
-1. Set project.
+4. Set project.
    ```
    gcloud config set project [PROJECT_ID]
    ```
 
-1. Export environment variables (can be put in ~/.bashrc).
+5. Export environment variables (can be put in ~/.bashrc).
    ```
    export NXF_VER="20.10.0"
    export NXF_MODE=google
    export NXF_DEBUG=3
-   export PROJECT="PROJECT_ID"
+   export PROJECT="[PROJECT_ID]"
    export GOOGLE_APPLICATION_CREDENTIALS=~/.config/gcloud/application_default_credentials.json
    ```
 
-1. Run GCP nextflow a. Make sure the below staging bucket exists b. Make sure the service account (Compute Engine default service account) used by nextflow can write to the bucket c. replace PROJECT_ID in gcp/gcp.config with your GCP Project ID.
-   ```angular2html
-   ./nextflow run main.nf -profile gls -w gs://jax-nanopore-01-project-data/nanome-work-test --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
-   ```
+6. Run GCP nextflow: 
+   1. Make sure the below staging bucket exists;
+   2. Make sure the service account (Compute Engine default service account) used by nextflow can write to the bucket at `[Google-storage-bucket]`;
+   3. Replace PROJECT_ID in google profile with your Project ID.
+   
+```angular2html
+./nextflow run main.nf\
+     -profile ci,docker,google\
+     -w [Google-storage-bucket]/nanome-work-test\
+     --outputDir [Google-storage-bucket]/nanome-outputs
+```
 
 ## Build and submit to container registry of google cloud computing
 1. Configure Docker with the following command:
@@ -41,16 +48,12 @@
     ```angular2html
     gcloud auth configure-docker
     ```
-1. Submit to Private Container Registry in the project. You need to be the directory that has the Dockerfile:
-
+1. Submit to Private Container Registry in the project. You can build the private docker image on Cloud using Dockerfile:
     ```angular2html
     cd nanome
-    mkdir docker_files
-    cp Dockerfile environment.yml docker_files
-    cd docker_files
-    
-    gcloud builds submit --tag us.gcr.io/jax-nanopore-01/nanome:latest --timeout=2000s
+    gcloud builds submit --tag us.gcr.io/[PROJECT_ID]/nanome:latest --timeout=2000s
     ```
+   
     Output will be below.
     ```
     Creating temporary tarball archive of 2 file(s) totalling 4.4 KiB before compression.
@@ -68,20 +71,19 @@
     
     ID                                    CREATE_TIME                DURATION  SOURCE                                                                                         IMAGES                                 STATUS
     13f8d02d-b806-4b8a-b87e-e423508a7373  2021-05-20T11:59:29+00:00  19M15S    gs://jax-nanopore-01_cloudbuild/source/1621511968.811599-97a1dc1027de49adba173975e5f98cb3.tgz  us.gcr.io/jax-nanopore-01/nanome:v1.0  SUCCESS
-   
     ```
     
-    Check the Container Regestry link like https://console.cloud.google.com/gcr/images/jax-nanopore-01?project=jax-nanopore-01&authuser=1 for above pushed Docker container.
+Check the Container Regestry link like https://console.cloud.google.com/gcr/images/[PROJECT_ID] for above pushed Docker container.
 
 ## Running pipeline
 
-Note that our project id is `jax-nanopore-01`, used for `[PROJECT_ID]`, **Data Bucket** name used in project is `gs://jax-nanopore-01-project-data`.
+Note that our project id is `jax-nanopore-01`, used for `[PROJECT_ID]`, **Data Bucket** `[Google-storage-bucket]` name used in our project is `gs://jax-nanopore-01-project-data`.
 
 ```angular2html
 cd nanome
-curl -s https://get.nextflow.io | bash
-
-nextflow run main.nf -profile docker,google -w gs://jax-nanopore-01-project-data/nanome-work-test --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
+nextflow run main.nf -profile ci,docker,google\
+    -w gs://jax-nanopore-01-project-data/nanome-work\
+    --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
 ```
 
 
@@ -94,5 +96,3 @@ Enable 'Private Google access' for the network/subnet.
 * Google cloud for Nextflow: https://cloud.google.com/life-sciences/docs/tutorials/nextflow  
 * Nextflow on GCP: https://www.nextflow.io/docs/latest/google.html
 * Sandeep sample codes: https://github.com/snamburi3/nextflow-starter-cloud
-
-

@@ -1,17 +1,17 @@
 # DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation
 ## --NANOME(Nanopore methylation) pipeline for evaluation of DNA methylation calling tools for Oxford Nanopore sequencing 
 
-## Methodology of nanome pipeline
+## Methodology of NANOME pipeline
 
 **Background:** Nanopore long-read sequencing technology greatly expands the capacity of long-range, single-molecule DNA-modification detection. A growing number of analytical tools have been developed to detect DNA methylation from nanopore sequencing reads. Here, we assess the performance of different methylation calling tools to provide a systematic evaluation to guide researchers performing human epigenome-wide studies.
 
 
-![Figure1A](https://github.com/liuyangzzu/nanome/blob/master/docs/Fig1A.jpg)
+![Figure1A](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Fig1A.jpg)
 
 **Fig. 1A. Survey of methylation calling tools .**  Timeline of publication and technological developments of Oxford Nanopore Technologies (ONT) methylation calling tools to detect DNA cytosine modifications. 
 
 
-![Figure1B](https://github.com/liuyangzzu/nanome/blob/master/docs/Fig1B.jpg)
+![Figure1B](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Fig1B.jpg)
 **Fig. 1B. Workflow for 5-methylcytosine (5mC) detection for nanopore sequencing.** 
 
 
@@ -24,18 +24,21 @@
 
 ### Hardware requirements
 
-The 'nanome' is based on Nextflow pipeline framework, and start with raw fast5 nanopore sequencing input data with a reference genome. The pipeline can be configured with different RAM, number of processors, GPU resources schema to parallel run all methylation calling tools. For optimal usage, we recommend using 'nanome' pipeline on HPC:
+The NANOME is based on Nextflow pipeline framework, and start with raw fast5 nanopore sequencing input data with a reference genome. The pipeline can be configured with different RAM, number of processors, CPU/GPU resources schema to parallel run methylation-calling tools. For optimal usage, we recommend using NANOME pipeline on HPC:
 * GPU or CPU with 2+ cores. 
 * RAM: 7+ GB per cpu.
 * Storage using HDD or SSD. Please ensure your storage before running the pipeline.
 
 
 ### Software requirements
+
+We provide conda, docker and singularity environments which depend on below well-known open-source packages for methylation calling for nanopore sequencing data:
+
 [nanopolish](https://github.com/jts/nanopolish) >=0.13.2  
-[ont-tombo](https://github.com/nanoporetech/tombo) >=1.5.1  
-[deepsignal](https://github.com/bioinfomaticsCSU/deepsignal) >=0.1.8  
-[deepmod](https://github.com/WGLab/DeepMod) >=0.1.3  
 [megalodon](https://github.com/nanoporetech/megalodon) >=2.2.9  
+[deepsignal](https://github.com/bioinfomaticsCSU/deepsignal) >=0.1.8
+[ont-tombo](https://github.com/nanoporetech/tombo) >=1.5.1  
+[deepmod](https://github.com/WGLab/DeepMod) >=0.1.3  
 [METEORE](https://github.com/comprna/METEORE) >=1.0.0  
 [ont-pyguppy-client-lib](https://github.com/nanoporetech/pyguppyclient) >=4.2.2  
 [fast5mod](https://github.com/nanoporetech/fast5mod) >=1.0.5
@@ -43,9 +46,42 @@ The 'nanome' is based on Nextflow pipeline framework, and start with raw fast5 n
 Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https://nanoporetech.com)
 
 
+## Installation
+Users only need to install **Nextflow** by `curl -fsSL get.nextflow.io | bash`, NANOME execution environment will be automatically configured.
+
+NANOME pipeline support running with various ways in different platforms:
+* Conda
+    1. Create conda enviroment: `conda env create -f environment.yml`
+* Docker
+    1. Docker container name from [Docker Hub](https://hub.docker.com/repository/docker/liuyangzzu/nanome): `liuyangzzu/nanome:latest`, you can also build docker image by `docker build -t liuyangzzu/nanome:latest .`
+* Singularity
+    1. Pull image from [Docker Hub](https://hub.docker.com/repository/docker/liuyangzzu/nanome): `singularity pull docker://liuyangzzu/nanome:latest`
+* HPC clusters with **SLURM** support
+* Google Cloud platform with **google-lifesciences** support
+
+Therefore, NANOME pipeline can be easily executed without any installation steps:
+```angular2html
+# Run NANOME using docker
+nextflow run https://github.com/TheJacksonLaboratory/nanome.git\
+    -profile ci,docker
+
+# Run NANOME using singularity
+nextflow run https://github.com/TheJacksonLaboratory/nanome.git\
+    -profile ci,singularity
+```
+
+For running on CloudOS platform (such as google cloud), please check [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). 
+
+[comment]: <> (We will update more information within a short time.)
+
+## Usage
+
+Please refer to [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md) for how to use NANOME pipeline.
+
+## Pipeline reports for NANOME
 ### Benchmarking reports on our HPC using [Nextflow](https://www.nextflow.io/)
 
-We constructed a set of benchmarking datasets that contain reads from 800 to 8,000 reads for NA19240, and monitored job running timeline and resource usage on our HPC, reports generated by **Nextflow** workflows are: [Trace file](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/trace_benchmark.txt.tsv), [Report](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/report_benchmark.pdf)  and [Timeline](https://github.com/liuyangzzu/nanome/blob/master/docs/resources/timeline_benchmark.pdf). 
+We constructed a set of benchmarking datasets that contain reads from 800 to 8,000 reads for NA19240, and monitored job running timeline and resource usage on our HPC, reports generated by **Nextflow** workflows are: [Trace file](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_benchmark.txt.tsv), [Report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_benchmark.pdf)  and [Timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_benchmark.pdf). 
 
 Our HPC hardware specifications are as follows:
 * CPU: Intel(R) Xeon(R) Gold 6136 CPU @ 3.00GHz
@@ -53,37 +89,18 @@ Our HPC hardware specifications are as follows:
 * RAM: 300 GB
 * Slurm manager version: 19.05.5
 
-
-## Installation
-Users only need to install Nextflow by `curl -fsSL get.nextflow.io | bash`, execution environment will be automatically configured.
-
-The 'nanome' pipeline support running with various ways in different platforms:
-* Conda
-    1. Create conda enviroment: `conda env create -f environment.yml`
-* Docker
-    1. Docker container name: `liuyangzzu/nanome:latest`
-* Singularity
-    1. Pull image from docker hub: `singularity pull docker://liuyangzzu/nanome:latest`
-* HPC clusters with SLURM support
-* Google Cloud platmform with google-lifesciences support
-
-For running on CloudOS platform (such as google cloud), our Nextflow pipeline supports using an Docker image (i.e., `liuyangzzu/nanome:latest`), details please check [Usage](https://github.com/liuyangzzu/nanome/blob/master/docs/Usage.md). 
-
-We will update more information within a short time.
-
-## Usage
-
-Please refer to [Usage](https://github.com/liuyangzzu/nanome/blob/master/docs/Usage.md) for how to use 'nanome' pipeline.
+### Pipeline DAG
+![NanomeDag](https://github.com/TheJacksonLaboratory/nanome/blob/mini_docker/docs/nanome_dag.png)
 
 ## Revision History
 
-For release history, please visit [here](https://github.com/liuyangzzu/nanome/releases). For details, please go [here](https://github.com/liuyangzzu/nanome/blob/master/README.md).
+For release history, please visit [here](https://github.com/TheJacksonLaboratory/nanome/releases). For details, please go [here](https://github.com/TheJacksonLaboratory/nanome/blob/master/README.md).
 
 ## Contact
 
-If you have any questions/issues/bugs, please post them on [GitHub](https://github.com/liuyangzzu/nanome/issues). We will regularly update the Github to support more methylation calling tools.
+If you have any questions/issues/bugs, please post them on [GitHub](https://github.com/TheJacksonLaboratory/nanome/issues). We will continuously update the Github to support famous methylation-calling tools for Oxford Nanopore sequencing.
 
 ## Reference
-Detailed results can be found in our preprint. Please cite our preprint below if you are interested in our pipeline:
+Detailed results can be found in our preprint. Please cite our preprint below if you are interested in our code repository:
 
-Yang Liu, Wojciech Rosikiewicz, Ziwei Pan, Nathaniel Jillette, Ping Wang, Aziz Taghbalout, Jonathan Foox, Christopher Mason, Martin Carroll, Albert Cheng, Sheng Li. **DNA methylation calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation.** bioRxiv, 2021. Online at https://doi.org/10.1101/2021.05.05.442849.
+ **DNA methylation calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation.** bioRxiv, 2021. Online at https://doi.org/10.1101/2021.05.05.442849.
