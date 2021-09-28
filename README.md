@@ -85,10 +85,10 @@ Our HPC hardware specifications are as follows:
 * Slurm manager version: 19.05.5
 
 ### Pipeline DAG
-<img src="https://github.com/TheJacksonLaboratory/nanome/blob/mini_docker/docs/resources/trace_benchmark.txt.tsv), [Report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/nanome_dag.png" width="600"/>
+<img src="https://github.com/TheJacksonLaboratory/nanome/blob/mini_docker/docs/nanome_dag.png" width="600"/>
 
 
-![NanomeDag](https://github.com/TheJacksonLaboratory/nanome/blob/mini_docker/docs/resources/trace_benchmark.txt.tsv), [Report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/nanome_dag.png)
+![NanomeDag](https://github.com/TheJacksonLaboratory/nanome/blob/mini_docker/docs/nanome_dag.png)
 
 ## Revision History
 
