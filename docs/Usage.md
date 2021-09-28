@@ -1,8 +1,8 @@
-**This is an explanation of how to use 'nanome' pipeline on raw Fast5 input.**
+**This is an explanation of how to use NANOME pipeline on raw Fast5 input.**
 
-The inputs of 'nanome' pipeline is a folder/tar/tar.gz or txt file list containing raw signal Fast5 files and a reference genome. We recommend allocate GPU resources to softwares such as Guppy, DeepSignal, DeepMod and Megalodon, in order to optimal running times. We integrated a latest tool METEORE's result, it is depends on other tools's read-level outputs (e.g., Megalodon and DeepSignal), and running METEORE program directly on them, detailed please check [METEORE](https://github.com/comprna/METEORE).
+The inputs of NANOME pipeline is a folder/tar/tar.gz or txt file list containing raw signal Fast5 files and a reference genome. We recommend allocate GPU resources to softwares such as Guppy, DeepSignal, DeepMod and Megalodon, in order to optimal running times. We integrated a latest tool METEORE's result, it is depends on other tools's read-level outputs (e.g., Megalodon and DeepSignal), and running METEORE program directly on them, detailed please check [METEORE](https://github.com/comprna/METEORE).
 
-# 1. Running 'nanome' for human nanopore sequencing data
+# 1. Running NANOME for human nanopore sequencing data
 
 
 ## Pre-defined pipeline profiles
@@ -28,32 +28,32 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
   * A generic configuration profile to be used on [Google Cloud](https://cloud.google.com/) platform with 'google-lifesciences' support.
 
 ## Running samples
-The command for running 'nanome' pipeline is to run `./nextflow run https://github.com/liuyangzzu/nanome.git`. `--input` is input Fast5 file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name.
+The command for running NANOME pipeline is to run `./nextflow run https://github.com/TheJacksonLaboratory/nanome.git`. `--input` is input Fast5 file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name.
 
-By default, we are using hg38 human reference genome, and you can specify other reference genome using parameter `dataType='ecoli'`. An example of how to use 'nanome' pipeline is given below.
+By default, we are using hg38 human reference genome, and you can specify other reference genome using parameter `dataType='ecoli'`. An example of how to use NANOME pipeline is given below.
 
 ```angular2html
 # Get nextflow executable file
 curl -fsSL get.nextflow.io | bash
 
 # Get command help
-./nextflow run https://github.com/liuyangzzu/nanome.git --help
+./nextflow run https://github.com/TheJacksonLaboratory/nanome.git --help
 
 # Running nanome pipeline on HPC using Singularity
-./nextflow run https://github.com/liuyangzzu/nanome.git \
+./nextflow run https://github.com/TheJacksonLaboratory/nanome.git \
     -profile ci,singularity,hpc 
 
 # Running nanome pipeline on Nanopore data for human
-./nextflow run https://github.com/liuyangzzu/nanome.git \
+./nextflow run https://github.com/TheJacksonLaboratory/nanome.git \
     -profile singularity,hpc \
     --dsname TestData \
     --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
 ```
 
-You can also running 'nanome' pipeline on cloud computing platform ([google cloud platform](https://cloud.google.com/) or [Lifebit CloudOS](https://lifebit.gitbook.io/cloudos/)), sample of command line is below.
+You can also running NANOME pipeline on cloud computing platform ([google cloud platform](https://cloud.google.com/) or [Lifebit CloudOS](https://lifebit.gitbook.io/cloudos/)), sample of command line is below.
 ```angular2html
 # Running on Google Cloud (https://cloud.google.com)
-./nextflow run https://github.com/liuyangzzu/nanome.git \
+./nextflow run https://github.com/TheJacksonLaboratory/nanome.git \
     -profile ci,docker,google \
     -w gs://jax-nanopore-01-project-data/TestData-work \
     --outputDir gs://jax-nanopore-01-export-bucket/TestData-ouputs
@@ -192,10 +192,10 @@ Other options:
 
 
 # 2. Experiment for E. coli data
-The 'nanome' pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--dataType` need to be set as `ecoli`. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline `-config` params [conf/ecoli_demo.config](https://github.com/liuyangzzu/nanome/blob/master/conf/ecoli_demo.config).
+The NANOME pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--dataType` need to be set as `ecoli`. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline `-config` params [conf/ecoli_demo.config](https://github.com/liuyangzzu/nanome/blob/master/conf/ecoli_demo.config).
 
 ```angular2html
-git clone https://github.com/liuyangzzu/nanome.git
+git clone https://github.com/TheJacksonLaboratory/nanome.git
 cd nanome
 
 curl -fsSL get.nextflow.io | bash
@@ -252,10 +252,10 @@ The output files of pipeline on E. coli data by all tools are below, please also
 
 
 # 3. Benchmarking experiment
-We constructed a list of benchmarking datasets that contain Fast5 reads from 800 to 8,000  for NA19240. The datasets can be got by users upon request. Following command is running 'nanome' pipeline on our benchmarking datasets, please refer to the input parameters for pipeline `-config` params [conf/benchmarking.config](https://github.com/liuyangzzu/nanome/blob/master/conf/benchmarking.config).
+We constructed a list of benchmarking datasets that contain Fast5 reads from 800 to 8,000  for NA19240. The datasets can be got by users upon request. Following command is running NANOME pipeline on our benchmarking datasets, please refer to the input parameters for pipeline `-config` params [conf/benchmarking.config](https://github.com/liuyangzzu/nanome/blob/master/conf/benchmarking.config).
 
 ```angular2html
-git clone https://github.com/liuyangzzu/nanome.git
+git clone https://github.com/TheJacksonLaboratory/nanome.git
 cd nanome
 
 nextflow run main.nf \
@@ -270,7 +270,7 @@ Resource usage are reported by [Nextflow](https://www.nextflow.io/) workflow rep
 Our Nextflow pipeline can running on CloudOS. The CloudOS will use a default Docker image. Below is an example.
 
 ```angular2html
-git clone https://github.com/liuyangzzu/nanome.git
+git clone https://github.com/TheJacksonLaboratory/nanome.git
 cd nanome
 curl -s https://get.nextflow.io | bash
 
