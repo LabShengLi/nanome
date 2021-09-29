@@ -877,8 +877,7 @@ process Tombo {
 	## if grep -q "BrokenPipeError: \\[Errno 32\\] Broken pipe" ${resquiggleDir.baseName}.tombo.run.log; then
 	if ! tail -n 1 ${resquiggleDir.baseName}.tombo.run.log |  grep -q "100%" ; then
 		## Grep the broken pipeline bug for Tombo
-		echo "### Tombo detect_modifications bug occur, max retry reached at \${retry} times, return error, please increase memory or decrease processors"
-		exit 32
+		echo "### Tombo seems not finish 100% after retry reached at \${retry} times, please check by yourself, it may be software or genome reference problem."
 	else
 		## Tombo was ok
 		echo "### Tombo log passed, OK"
