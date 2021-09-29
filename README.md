@@ -24,7 +24,7 @@
 
 ### Hardware requirements
 
-The NANOME is based on Nextflow pipeline framework, and start with raw fast5 nanopore sequencing input data with a reference genome. The pipeline can be configured with different RAM, number of processors, CPU/GPU resources schema to parallel run methylation-calling tools. For optimal usage, we recommend using NANOME pipeline on HPC:
+NANOME is based on Nextflow pipeline framework, and start with raw fast5 nanopore sequencing input data with a reference genome. The pipeline can be configured with different RAM, number of processors, CPU/GPU resources schema to parallel run methylation-calling tools. For optimal usage, we recommend using NANOME pipeline on HPC:
 * GPU or CPU with 2+ cores. 
 * RAM: 7+ GB per cpu.
 * Storage using HDD or SSD. Please ensure your storage before running the pipeline.
@@ -36,7 +36,7 @@ We provide conda, docker and singularity environments which depend on below well
 
 [nanopolish](https://github.com/jts/nanopolish) >=0.13.2  
 [megalodon](https://github.com/nanoporetech/megalodon) >=2.2.9  
-[deepsignal](https://github.com/bioinfomaticsCSU/deepsignal) >=0.1.8
+[deepsignal](https://github.com/bioinfomaticsCSU/deepsignal) >=0.1.8  
 [ont-tombo](https://github.com/nanoporetech/tombo) >=1.5.1  
 [deepmod](https://github.com/WGLab/DeepMod) >=0.1.3  
 [METEORE](https://github.com/comprna/METEORE) >=1.0.0  
@@ -90,7 +90,10 @@ Our HPC hardware specifications are as follows:
 * Slurm manager version: 19.05.5
 
 ### Pipeline DAG
-![NanomeDag](https://github.com/TheJacksonLaboratory/nanome/blob/mini_docker/docs/nanome_dag.png)
+![NanomeDag](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/nanome_dag.png)
+
+### NANOME report
+![NanomeReportHtml](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/nanome_report_html.png)
 
 ## Revision History
 
