@@ -45,7 +45,7 @@ def helpMessage() {
 	  hpc		A generic configuration profile to be used on HPC cluster with SLURM job submission support.
 	  google	A generic configuration profile to be used on Google Cloud platform with 'google-lifesciences' support.
 
-	Contact to https://github.com/liuyangzzu/nanome or https://nanome.jax.org for bug report.
+	Contact to https://github.com/TheJacksonLaboratory/nanome/issues or https://nanome.jax.org for bug report.
 	""".stripIndent()
 }
 
@@ -523,15 +523,16 @@ process Nanopolish {
 	### Put all fq and bam files into working dir, DO NOT affect the basecall dir
 	bamFileName="${params.dsname}.batch_${basecallDir.baseName}.sorted.bam"
 
-	## Do alignment firstly
+	## Do alignment firstly, find the combined fastq file
 	fastqFile=\$(find ${basecallDir}/ -name 'batch_basecall_combine_fq_*.fq')
 
 	## python utils/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
 
-	# Index the raw read with fastq
-	nanopolish index -d ${basecallDir}/workspace \${fastqFile}
+	# Index the raw read with fastq, we do not index in basecalled dir, in case of cache can be work
+	ln -s \${fastqFile}  \${fastqFile##*/}
+	nanopolish index -d ${basecallDir}/workspace \${fastqFile##*/}
 
-	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \${fastqFile} | \
+	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \${fastqFile##*/} | \
 		samtools sort -@ \$(( numProcessor*2 )) -T tmp -o \${bamFileName}
 	echo "### minimap2 finished"
 
@@ -539,7 +540,7 @@ process Nanopolish {
 	echo "### samtools finished"
 	echo "### Alignment step DONE"
 
-	nanopolish call-methylation -t \$(( numProcessor*2 )) -r \${fastqFile} \
+	nanopolish call-methylation -t \$(( numProcessor*2 )) -r \${fastqFile##*/} \
 		-b \${bamFileName} -g ${referenceGenome} > tmp.tsv
 
 	tail -n +2 tmp.tsv | gzip > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
@@ -1362,8 +1363,8 @@ process METEORE {
 	path naonopolish	from 	read_unify_nanopolish
 	path megalodon 		from 	read_unify_megalodon
 	path deepsignal 	from 	read_unify_deepsignal
-	each path("*") 		from 	ch_src3
-	each path("*") 		from 	ch_utils8
+	path("*") 		from 	ch_src3
+	path("*") 		from 	ch_utils8
 
 	output:
 	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz" optional true into meteore_combine_out_ch
@@ -1423,7 +1424,7 @@ meteore_combine_out_ch
 	.concat(raw_results_five_tools2.flatten(),
 			deepmod_combine_out_ch.flatten(),
 			guppy_fast5mod_combine_out_ch)
-	.toSortedList()
+	.toList()
 	.into { all_raw_results1; all_raw_results2; all_raw_results3; all_raw_results4}
 
 
@@ -1432,20 +1433,19 @@ qc_report_out_ch
 		site_unify_nanopolish, site_unify_megalodon, site_unify_deepsignal,
 		site_unify_guppy, site_unify_tombo, site_unify_deepmod, site_unify_meteore
 	)
-	.toSortedList()
+	.toList()
 	.set {report_in_ch}
 
 
 process Report {
 	tag "${params.dsname}"
 
-	publishDir "${params.outputDir}",
-	mode: "copy"
+	publishDir "${params.outputDir}", mode: "copy"
 
 	input:
 	path fileList 	from 	report_in_ch
-	each path("*") 	from 	ch_src5
-	each path("*") 	from 	ch_utils9
+	path("*") 		from 	ch_src5
+	path("*") 		from 	ch_utils9
 
 	output:
 	path "${params.dsname}_NANOME_report" 		into	report_out_ch
