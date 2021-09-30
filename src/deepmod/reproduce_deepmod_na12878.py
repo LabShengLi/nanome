@@ -3,7 +3,7 @@
 # @FileName : reproduce_deepmod.na12878.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/liuyangzzu/nanome
+# @Website  : https://github.com/TheJacksonLaboratory/nanome
 
 """
 Sanity check NA12878 for DeepMod paper.

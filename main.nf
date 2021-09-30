@@ -4,7 +4,9 @@ def helpMessage() {
 	log.info"""
 	Usage:
 	The typical command for running the pipeline is as follows:
-	nextflow run https://github.com/liuyangzzu/nanome.git -profile singularity,hpc --dsname TestData --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+
+	nextflow run TheJacksonLaboratory/nanome -profile ci,conda
+	nextflow run TheJacksonLaboratory/nanome -profile ci,singularity
 
 	Mandatory arguments:
 	  --dsname		Dataset name
@@ -39,8 +41,8 @@ def helpMessage() {
 	-profile options:
 	  Use this parameter to choose a predefined configuration profile. Profiles can give configuration presets for different compute environments.
 
-	  docker 	A generic configuration profile to be used with Docker, pulls software from Docker Hub: quay.io/liuyangzzu/nanome:v1.5
-	  singulairy	A generic configuration profile to be used with Singularity, pulls software from: docker://quay.io/liuyangzzu/nanome:v1.5
+	  docker 	A generic configuration profile to be used with Docker, pulls software from Docker Hub: liuyangzzu/nanome:latest
+	  singulairy	A generic configuration profile to be used with Singularity, pulls software from: docker://liuyangzzu/nanome:latest
 	  conda		Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Create conda enviroment by 'conda env create -f environment.yml'
 	  hpc		A generic configuration profile to be used on HPC cluster with SLURM job submission support.
 	  google	A generic configuration profile to be used on Google Cloud platform with 'google-lifesciences' support.
@@ -94,7 +96,7 @@ if (params.dataType == 'human') {
 log.info """\
 NANOME - NF PIPELINE (v$workflow.manifest.version)
 by Li Lab at The Jackson Laboratory
-https://nanome.jax.org
+https://github.com/TheJacksonLaboratory/nanome
 =================================
 dsname			:${params.dsname}
 input			:${params.input}

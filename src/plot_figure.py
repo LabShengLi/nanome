@@ -3,7 +3,7 @@
 # @FileName : plot_figure.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/liuyangzzu/nanome
+# @Website  : https://github.com/TheJacksonLaboratory/nanome
 
 """
 Plots and export data for nanome paper

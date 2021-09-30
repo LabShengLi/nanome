@@ -69,7 +69,7 @@ by Li Lab at The Jackson Laboratory
 https://nanome.jax.org
 =================================
 dsname          :TestData
-input           :https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+input           :https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt
 output          :/fastscratch/li-lab/nanome/outputs
 work            :/fastscratch/li-lab/nanome/work
 dataType        :human
@@ -151,7 +151,7 @@ N E X T F L O W  ~  version 20.10.0
 Launching `main.nf` [maniac_babbage] - revision: deabf939f5
 Usage:
 The typical command for running the pipeline is as follows:
-nextflow run main.nf -profile singularity,hpc --dsname TestData --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+nextflow run main.nf -profile singularity,hpc --dsname TestData --input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt
 
 Mandatory arguments:
   --dsname                      Dataset name
@@ -183,8 +183,8 @@ Other options:
 -profile options:
   Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments.
 
-  docker 			A generic configuration profile to be used with Docker, pulls software from Docker Hub: quay.io/liuyangzzu/nanome:v1.5
-  singulairy			A generic configuration profile to be used with Singularity, pulls software from: docker://quay.io/liuyangzzu/nanome:v1.5
+  docker 			A generic configuration profile to be used with Docker, pulls software from Docker Hub: liuyangzzu/nanome:latest
+  singulairy			A generic configuration profile to be used with Singularity, pulls software from: docker://liuyangzzu/nanome:latest
   conda				Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Create conda enviroment by 'conda env create -f environment.yml'
   hpc				A generic configuration profile to be used on HPC with SLURM job submission support.
   google			A generic configuration profile to be used on Google Cloud with 'google-lifesciences' support.
