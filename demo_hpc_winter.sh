@@ -2,13 +2,12 @@
 #SBATCH --job-name=nanome.demo.hpc
 #SBATCH -p gpu
 #SBATCH --gres=gpu:v100:1
-#SBATCH -q training
+#SBATCH -q inference
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 1 # number of cores
 #SBATCH --mem=20G # memory pool for all cores
-#SBATCH --time=1-00:00:00 # time
-#SBATCH -o %x.%j.out # STDOUT
-#SBATCH -e %x.%j.err # STDERR
+#SBATCH --time=02:00:00 # time
+#SBATCH --output=log/%x.%j.log # STDOUT & STDERR
 
 date; hostname; pwd
 
@@ -18,36 +17,24 @@ baseDir=${1:-/fastscratch/li-lab/nanome}
 workDir=${baseDir}/work
 outputsDir=${baseDir}/outputs
 
-
-########################################
-########################################
-# Get nextflow and install it
-if [ ! -f "nextflow" ]; then
-    curl -s https://get.nextflow.io | bash
-fi
-
-
 ########################################
 # Clean old results
 rm -rf ${workDir} ${outputsDir}
 
-
 ########################################
 ########################################
 # Running pipeline for demo human data
-# More options: -with-report -with-timeline -with-trace -with-dag -resume
-# https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+# More options: -with-report -with-timeline -with-trace -resume -with-dag nanome_dag.png
+# https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt
 module load singularity
 set -x
-./nextflow run main.nf -resume \
-    -with-dag nanome_dag.png \
-    -profile singularity,hpc \
-    -config conf/jax_hpc.config \
-    -work-dir ${workDir} \
-    --outputDir ${outputsDir} \
-    --singularity_cache "${baseDir}/singularity-cache" \
-    --dsname TestData \
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt \
+nextflow run main.nf\
+    -profile singularity,hpc\
+    -config conf/jax_hpc.config\
+    -work-dir ${workDir}\
+    --outputDir ${outputsDir}\
+    --dsname TestData\
+    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt\
     --cleanCache false
 
 # Report

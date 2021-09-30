@@ -36,7 +36,7 @@
    3. Replace PROJECT_ID in google profile with your Project ID.
    
 ```angular2html
-./nextflow run main.nf\
+./nextflow run TheJacksonLaboratory/nanome\
      -profile ci,docker,google\
      -w [Google-storage-bucket]/nanome-work-test\
      --outputDir [Google-storage-bucket]/nanome-outputs
@@ -81,7 +81,8 @@ Note that our project id is `jax-nanopore-01`, used for `[PROJECT_ID]`, **Data B
 
 ```angular2html
 cd nanome
-nextflow run main.nf -profile ci,docker,google\
+nextflow run TheJacksonLaboratory/nanome\
+    -profile ci,docker,google\
     -w gs://jax-nanopore-01-project-data/nanome-work\
     --outputDir gs://jax-nanopore-01-project-data/nanome-outputs
 ```

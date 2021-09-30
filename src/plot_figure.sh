@@ -6,8 +6,7 @@
 #SBATCH -n 8 # number of cores
 #SBATCH --mem 300G # memory pool for all cores
 #SBATCH -t 14-00:00:00 # time (D-HH:MM:SS)
-#SBATCH -o log/%x.%j.out # STDOUT
-#SBATCH -e log/%x.%j.err # STDERR
+#SBATCH --output=log/%x.%j.log # STDOUT & STDERR
 
 # sbatch plot_figure.sh Figs5ab-data
 # bash plot_figure.sh Step1 seven /projects/li-lab/yang/results/2021-08-14

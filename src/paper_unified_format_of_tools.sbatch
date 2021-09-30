@@ -6,8 +6,7 @@
 #SBATCH -n 8 # number of cores
 #SBATCH --mem=300g
 #SBATCH --time=72:00:00
-#SBATCH -o log/%x.%j.out
-#SBATCH -e log/%x.%j.err
+#SBATCH --output=log/%x.%j.log # STDOUT & STDERR
 
 ## Read level unified bed format (same as the METEORE input) for METEORE usage
 ## Output:  ID	Chr	Pos	Strand	Score

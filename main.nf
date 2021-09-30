@@ -372,6 +372,8 @@ process Basecall {
 
 // Collect and output QC results for basecall, and report ONT coverage
 process QCExport {
+	tag "${params.dsname}"
+
 	publishDir "${params.outputDir}/${params.dsname}-basecallings",
 		mode: "copy", enabled: params.outputQC
 
@@ -949,6 +951,8 @@ guppy_combine_in_ch = guppy_methcall_out_ch.collect()
 
 // Combine Nanopolish runs' all results together
 process NplshComb {
+	tag "${params.dsname}"
+
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy",
 		pattern: "${params.dsname}.*.combine.*.gz",
@@ -989,6 +993,8 @@ process NplshComb {
 
 // Combine Megalodon runs' all results together
 process MgldnComb {
+	tag "${params.dsname}"
+
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy",
 		pattern: "${params.dsname}.*.combine.*.gz",
@@ -1029,6 +1035,8 @@ process MgldnComb {
 
 // Combine DeepSignal runs' all results together
 process DpSigComb {
+	tag "${params.dsname}"
+
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy",
 		pattern: "${params.dsname}.*.combine.*.gz",
@@ -1068,6 +1076,8 @@ process DpSigComb {
 
 // Combine Guppy runs' all results together
 process GuppyComb {
+	tag "${params.dsname}"
+
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy", pattern: "${params.dsname}.guppy.*.combine.tsv.gz",
 		enabled: params.outputRaw
@@ -1172,6 +1182,8 @@ process GuppyComb {
 
 // Combine Tombo runs' all results together
 process TomboComb {
+	tag "${params.dsname}"
+
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy",
 		pattern: "${params.dsname}.*.combine.*.gz",
@@ -1211,6 +1223,8 @@ process TomboComb {
 
 // Combine DeepMod runs' all results together
 process DpmodComb {
+	tag "${params.dsname}"
+
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy", pattern: "${params.dsname}.deepmod.*.combine.bed.gz",
 		enabled: params.outputRaw
@@ -1330,6 +1344,8 @@ deepsignal_combine_out_ch
 
 // Read level unified output, and get METEORE output
 process METEORE {
+	tag "${params.dsname}"
+
 	publishDir "${params.outputDir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy",
 		pattern: "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz",
@@ -1421,12 +1437,9 @@ qc_report_out_ch
 
 
 process Report {
-	publishDir "${params.outputDir}",
-	pattern: "report",
-	mode: "copy"
+	tag "${params.dsname}"
 
 	publishDir "${params.outputDir}",
-	pattern: "README.txt",
 	mode: "copy"
 
 	input:
@@ -1435,8 +1448,8 @@ process Report {
 	each path("*") 	from 	ch_utils9
 
 	output:
-	path "report" 		into	report_out_ch
-	path "README.txt" 	into 	readme_out_ch
+	path "${params.dsname}_NANOME_report" 		into	report_out_ch
+	path "README_${params.dsname}.txt" 			into 	readme_out_ch
 
 	when:
 	fileList.size() >= 1
@@ -1458,22 +1471,22 @@ process Report {
 	basecallOutputFile=\$(find ${params.dsname}_QCReport/ -name "*NanoStats.txt" -type f)
 
 	## Generate report dir and html utilities
-	mkdir -p report
-	cp src/nanocompare/report/style.css report/
-	cp -rf src/nanocompare/report/icons report/
-	cp -rf src/nanocompare/report/js report/
+	mkdir -p ${params.dsname}_NANOME_report
+	cp src/nanocompare/report/style.css ${params.dsname}_NANOME_report/
+	cp -rf src/nanocompare/report/icons ${params.dsname}_NANOME_report/
+	cp -rf src/nanocompare/report/js ${params.dsname}_NANOME_report/
 
 	PYTHONPATH=src  python src/nanocompare/report/gen_html_report.py \
 		${params.dsname} \
 		running_information.tsv \
 		\${basecallOutputFile} \
 		. \
-		report
+		${params.dsname}_NANOME_report
 
 	PYTHONIOENCODING=UTF-8 python utils/gen_readme.py \
 		utils/readme.txt.template ${params.dsname} ${params.outputDir} \
 		${workflow.projectDir} ${workflow.workDir} "${workflow.commandLine}" ${workflow.runName} "${workflow.start}" \
-		> README.txt
+		> README_${params.dsname}.txt
 
 	echo "### report html DONE"
 	"""

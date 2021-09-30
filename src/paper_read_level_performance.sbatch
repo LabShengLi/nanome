@@ -6,8 +6,7 @@
 #SBATCH -n 8 # number of cores
 #SBATCH --mem=300g
 #SBATCH --time=72:00:00
-#SBATCH -o log/%x.%j.out
-#SBATCH -e log/%x.%j.err
+#SBATCH --output=log/%x.%j.log # STDOUT & STDERR
 #SBATCH --mail-user=yang.liu@jax.org
 #SBATCH --mail-type=END
 

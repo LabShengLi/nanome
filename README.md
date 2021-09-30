@@ -31,8 +31,12 @@ NANOME is based on Nextflow pipeline framework, and start with raw fast5 nanopor
 
 
 ### Software requirements
+NANOME pipeline uses Nextflow technology. Users only need to install Nextflow and one of below commonly used environment tool:
+* conda
+* docker
+* singularity
 
-We provide conda, docker and singularity environments which depend on below well-known open-source packages for methylation calling for nanopore sequencing data:
+We provide conda, docker and singularity environments which depend on below well-known open-source packages for methylation calling on nanopore sequencing data:
 
 [nanopolish](https://github.com/jts/nanopolish) >=0.13.2  
 [megalodon](https://github.com/nanoporetech/megalodon) >=2.2.9  
@@ -47,7 +51,7 @@ Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https:
 
 
 ## Installation
-Users only need to install **Nextflow** by `curl -fsSL get.nextflow.io | bash`, NANOME execution environment will be automatically configured.
+Users only need to install **Nextflow**, see [installation document](https://www.nextflow.io/docs/latest/getstarted.html#installation). NANOME execution environment will be automatically configured.
 
 NANOME pipeline support running with various ways in different platforms:
 * Conda
@@ -62,15 +66,15 @@ NANOME pipeline support running with various ways in different platforms:
 Therefore, NANOME pipeline can be easily executed without any installation steps:
 ```angular2html
 # Run NANOME using docker
-nextflow run https://github.com/TheJacksonLaboratory/nanome.git\
+nextflow run TheJacksonLaboratory/nanome\
     -profile ci,docker
 
 # Run NANOME using singularity
-nextflow run https://github.com/TheJacksonLaboratory/nanome.git\
+nextflow run TheJacksonLaboratory/nanome\
     -profile ci,singularity
 ```
 
-For running on CloudOS platform (such as google cloud), please check [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). 
+For running on CloudOS platform (such as google cloud), please check [Usage on CloudOS](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). 
 
 [comment]: <> (We will update more information within a short time.)
 
@@ -93,7 +97,11 @@ Our HPC hardware specifications are as follows:
 ![NanomeDag](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/nanome_dag.png)
 
 ### NANOME report
+Please check [NANOME report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/NANOME_report_html.pdf) for the sample report by NANOME pipeline.
+
 ![NanomeReportHtml](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/nanome_report_html.png)
+
+
 
 ## Revision History
 
@@ -104,6 +112,6 @@ For release history, please visit [here](https://github.com/TheJacksonLaboratory
 If you have any questions/issues/bugs, please post them on [GitHub](https://github.com/TheJacksonLaboratory/nanome/issues). We will continuously update the Github to support famous methylation-calling tools for Oxford Nanopore sequencing.
 
 ## Reference
-Detailed results can be found in our preprint. Please cite our preprint below if you are interested in our code repository:
+Detailed results can be found in our preprint. Please cite our preprint below if you are interested in our GitHub repository:
 
  **DNA methylation calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation.** bioRxiv, 2021. Online at https://doi.org/10.1101/2021.05.05.442849.
