@@ -16,7 +16,7 @@ def helpMessage() {
 	  --processors		Processors used for each task
 	  --outputDir		Output dir, default is 'outputs'
 	  --dataType		Data type, default is 'human', can be also 'ecoli'
-	  --chrSet		Chromosomes used in analysis, default is chr1-22, X and Y, seperated by comma. For E. coli data, it is set to 'NC_000913.3'
+	  --chrSet		Chromosomes used in analysis, default is true, means chr1-22, X and Y, seperated by comma. For E. coli data, it needs be set to 'NC_000913.3'
 
 	  --cleanCache		If clean work dir after complete, default is true
 
@@ -92,6 +92,9 @@ if (params.dataType == 'human') {
 	println "Param dataType=${params.dataType} is not support"
 	exit 1
 }
+
+// if is true or 'true' (string), using '  '
+chrSet = params.chrSet.toBoolean() ? '  ' : params.chrSet
 
 log.info """\
 NANOME - NF PIPELINE (v$workflow.manifest.version)
@@ -206,12 +209,15 @@ process EnvCheck {
 		mv ${reference_genome.name.replaceAll(".tar.gz", "")} reference_genome
 	fi
 
-	## Check reference genome
-	echo "referenceGenome=${referenceGenome}"
-	echo "chromSizesFile=${chromSizesFile}"
-
 	ls -lh ${referenceGenome}
 	ls -lh ${chromSizesFile}
+
+	echo "### Check reference genome and chrSet"
+	echo "referenceGenome=${referenceGenome}"
+	echo "chromSizesFile=${chromSizesFile}"
+	echo "chrSet=${chrSet}"
+	echo "params.dataType=${params.dataType}"
+
 	echo "### Check env DONE"
 	"""
 }
@@ -987,7 +993,7 @@ process NplshComb {
 	## Unify format output
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  Nanopolish ${params.dsname}.nanopolish.per_read.combine.tsv.gz \
-		.  \$((numProcessor))  12 ${params.chrSet}
+		.  \$((numProcessor))  12  ${chrSet}
 
 	echo "### Nanopolish combine DONE"
 	"""
@@ -1029,7 +1035,7 @@ process MgldnComb {
 	## Unify format output
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  Megalodon ${params.dsname}.megalodon.per_read.combine.bed.gz \
-		.  \$((numProcessor))  12  ${params.chrSet}
+		.  \$((numProcessor))  12  ${chrSet}
 
 	echo "### Megalodon combine DONE"
 	"""
@@ -1071,7 +1077,7 @@ process DpSigComb {
 	## Unify format output
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  DeepSignal ${params.dsname}.deepsignal.per_read.combine.tsv.gz \
-		.  \$((numProcessor))  12  ${params.chrSet}
+		.  \$((numProcessor))  12  ${chrSet}
 	echo "### DeepSignal combine DONE"
 	"""
 }
@@ -1147,12 +1153,12 @@ process GuppyComb {
 				--regions chr\$i &
 		done
 	elif [[ "${params.dataType}" == "ecoli" ]] ; then
-		echo "### For ecoli, chr=${params.chrSet}"
+		echo "### For ecoli, chr=${chrSet}"
 		fast5mod call total.meth.bam ${referenceGenome} \
-			meth.chr_${params.chrSet}.tsv \
+			meth.chr_${chrSet}.tsv \
 			--meth cpg --quiet \
-			--regions ${params.chrSet}
-		cat  meth.chr_${params.chrSet}.tsv | gzip >> ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
+			--regions ${chrSet}
+		cat  meth.chr_${chrSet}.tsv | gzip >> ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
 	fi
 
 	if [[ "${params.dataType}" == "human" ]] ; then
@@ -1168,12 +1174,12 @@ process GuppyComb {
 	## Unify format output for read level
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  Guppy.gcf52ref ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz \
-		.  \$((numProcessor))  1  ${params.chrSet}
+		.  \$((numProcessor))  1  ${chrSet}
 
 	## Unify format output for site level
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  Guppy ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz \
-		.  \$((numProcessor))  2  ${params.chrSet}
+		.  \$((numProcessor))  2  ${chrSet}
 
 	## Clean
 	rm -f meth.chr*.tsv
@@ -1218,7 +1224,7 @@ process TomboComb {
 	## Unify format output
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  Tombo ${params.dsname}.tombo.per_read.combine.bed.gz \
-		.  \$((numProcessor))  12 ${params.chrSet}
+		.  \$((numProcessor))  12 ${chrSet}
 	echo "### Tombo combine DONE"
 	"""
 }
@@ -1274,7 +1280,7 @@ process DpmodComb {
 	done
 
 	python utils/sum_chr_mod.py \
-		indir/ C ${params.dsname}.deepmod ${params.chrSet}
+		indir/ C ${params.dsname}.deepmod ${chrSet}
 
 	> ${params.dsname}.deepmod.C_per_site.combine.bed
 
@@ -1330,7 +1336,7 @@ process DpmodComb {
 	## Unify format output
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  \${encode} \${callfn} \
-		.  \$((numProcessor))  2  ${params.chrSet}
+		.  \$((numProcessor))  2  ${chrSet}
 	echo "### DeepMod combine DONE"
 	"""
 }
@@ -1412,7 +1418,7 @@ process METEORE {
 		## Unify format output for site level
 		bash src/unify_format_for_calls.sh \
 			${params.dsname}  METEORE ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz \
-			.  \$((numProcessor))  2  ${params.chrSet}
+			.  \$((numProcessor))  2  ${chrSet}
 	fi
 
 
