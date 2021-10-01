@@ -200,6 +200,9 @@ process EnvCheck {
 	which fast5mod
 	fast5mod --version
 
+	echo "### we need use pip install -U scikit-learn==0.21.3 due to METEORE"
+	pip show scikit-learn
+
 	## Get dir for reference_genome
 	if [[ "${reference_genome}" == *.tar.gz ]] ; then
 		tar -xzf ${reference_genome}
@@ -1392,8 +1395,8 @@ process METEORE {
 	wget ${params.METEOREGithub}  --no-verbose
 	tar -xzf v1.0.0.tar.gz
 
-	## Degrade sk-learn for METEORE program
-	pip install -U scikit-learn==0.21.3
+	## Degrade sk-learn for METEORE program if needed
+	## pip install -U scikit-learn==0.21.3
 
 	combineScript=utils/combination_model_prediction.py
 
