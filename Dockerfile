@@ -11,6 +11,7 @@ LABEL description="Nanome project in Li Lab at The Jackson Laboratory" \
 ARG PACKAGE_VERSION=5.0.14
 ARG BUILD_PACKAGES="wget apt-transport-https"
 ARG DEBIAN_FRONTEND=noninteractive
+ARG NANOME_DIR=/opt/nanome
 
 # Install guppy-gpu version, ref: https://github.com/GenomicParisCentre/dockerfiles
 RUN apt update && \
@@ -27,17 +28,6 @@ RUN apt update && \
 RUN apt-get update -y \
   && DEBIAN_FRONTEND=noninteractive apt-get install procps git curl -y \
   && rm -rf /var/lib/apt/lists/*
-
-# Install cuda
-# RUN apt-get update -y && \
-#     DEBIAN_FRONTEND=noninteractive apt-get install -y software-properties-common && \
-#     curl -O http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-ubuntu1604.pin && \
-#     mv cuda-ubuntu1604.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
-#     wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub && \
-#     apt-key add 7fa2af80.pub && \
-#     add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/ /" && \
-#     apt update && \
-#     DEBIAN_FRONTEND=noninteractive apt -y install cuda
 
 #Install miniconda
 RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O Miniconda.sh && \
@@ -62,19 +52,25 @@ ENV PATH /opt/conda/envs/nanome/bin:$PATH
 USER root
 WORKDIR /data/
 
+
+RUN mkdir -p ${NANOME_DIR}
+
 # Copy additonal scripts
-RUN mkdir -p /opt/nanome
-ADD inputs/ /opt/nanome/inputs
-ADD Rshiny/ /opt/nanome/Rshiny
-ADD src/ /opt/nanome/src
-ADD test_data/ /opt/nanome/test_data
-ADD utils/ /opt/nanome/utils
-RUN chmod +x /opt/nanome/utils/*
-RUN chmod +x /opt/nanome/src/*
-RUN chmod +x /opt/nanome/src/nanocompare/*
-# ENV PATH="$PATH:/opt/bin/utils"
-# ENV PATH="$PATH:/opt/bin/src"
-# ENV PATH="$PATH:/opt/bin/src/nanocompare"
-# ENV PYTHONPATH="/opt/bin/src"
+ADD inputs/ ${NANOME_DIR}/inputs
+ADD Rshiny/ ${NANOME_DIR}/Rshiny
+ADD src/ ${NANOME_DIR}/src
+ADD test_data/ ${NANOME_DIR}/test_data
+ADD utils/ ${NANOME_DIR}/utils
+
+# Copy nextflow scripts
+ADD conf/ ${NANOME_DIR}/conf
+ADD main.nf ${NANOME_DIR}/
+ADD nextflow.config ${NANOME_DIR}/
+ADD README.md ${NANOME_DIR}/
+ADD LICENSE ${NANOME_DIR}/
+
+# Change execute permissions
+RUN find ${NANOME_DIR} -name "*.py" -type f -exec chmod +x {} \;
+RUN find ${NANOME_DIR} -name "*.sh" -type f -exec chmod +x {} \;
 
 CMD ["bash"]
