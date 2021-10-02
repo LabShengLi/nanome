@@ -34,7 +34,7 @@ nextflow run main.nf\
     -work-dir ${workDir}\
     --outputDir ${outputsDir}\
     --dsname TestData\
-    --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt\
+    --input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt\
     --cleanCache false
 
 # Report

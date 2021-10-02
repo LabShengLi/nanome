@@ -3,7 +3,7 @@
 # @FileName : meth_stats_tool.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/liuyangzzu/nanome
+# @Website  : https://github.com/TheJacksonLaboratory/nanome
 
 """
 Tool for pre-processing results

@@ -3,7 +3,7 @@
 # @FileName : computeRawReadsCoverage.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/liuyangzzu/nanome
+# @Website  : https://github.com/TheJacksonLaboratory/nanome
 
 """
 Calculate nanopore raw fast5 reads coverage at each CpG sites based on genomic context for Table S1.

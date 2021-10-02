@@ -28,6 +28,6 @@ nextflow run main.nf -resume\
 	-w ${WORK_DIR_BUCKET} \
 	--outputDir ${OUTPUT_DIR_BUCKET} \
 	--dsname TestData \
-	--input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+	--input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt
 
 echo "### nanome pipeline for demo data on google DONE"

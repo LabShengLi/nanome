@@ -4,7 +4,9 @@ def helpMessage() {
 	log.info"""
 	Usage:
 	The typical command for running the pipeline is as follows:
-	nextflow run https://github.com/liuyangzzu/nanome.git -profile singularity,hpc --dsname TestData --input https://raw.githubusercontent.com/liuyangzzu/nanome/master/inputs/test.demo.filelist.txt
+
+	nextflow run TheJacksonLaboratory/nanome -profile ci,conda
+	nextflow run TheJacksonLaboratory/nanome -profile ci,singularity
 
 	Mandatory arguments:
 	  --dsname		Dataset name
@@ -14,7 +16,7 @@ def helpMessage() {
 	  --processors		Processors used for each task
 	  --outputDir		Output dir, default is 'outputs'
 	  --dataType		Data type, default is 'human', can be also 'ecoli'
-	  --chrSet		Chromosomes used in analysis, default is chr1-22, X and Y, seperated by comma. For E. coli data, it is set to 'NC_000913.3'
+	  --chrSet		Chromosomes used in analysis, default is true, means chr1-22, X and Y, seperated by comma. For E. coli data, it needs be set to 'NC_000913.3'
 
 	  --cleanCache		If clean work dir after complete, default is true
 
@@ -39,13 +41,13 @@ def helpMessage() {
 	-profile options:
 	  Use this parameter to choose a predefined configuration profile. Profiles can give configuration presets for different compute environments.
 
-	  docker 	A generic configuration profile to be used with Docker, pulls software from Docker Hub: quay.io/liuyangzzu/nanome:v1.5
-	  singulairy	A generic configuration profile to be used with Singularity, pulls software from: docker://quay.io/liuyangzzu/nanome:v1.5
+	  docker 	A generic configuration profile to be used with Docker, pulls software from Docker Hub: liuyangzzu/nanome:latest
+	  singulairy	A generic configuration profile to be used with Singularity, pulls software from: docker://liuyangzzu/nanome:latest
 	  conda		Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Create conda enviroment by 'conda env create -f environment.yml'
 	  hpc		A generic configuration profile to be used on HPC cluster with SLURM job submission support.
 	  google	A generic configuration profile to be used on Google Cloud platform with 'google-lifesciences' support.
 
-	Contact to https://github.com/liuyangzzu/nanome or https://nanome.jax.org for bug report.
+	Contact to https://github.com/TheJacksonLaboratory/nanome/issues or https://nanome.jax.org for bug report.
 	""".stripIndent()
 }
 
@@ -91,10 +93,13 @@ if (params.dataType == 'human') {
 	exit 1
 }
 
+// if is true or 'true' (string), using '  '
+chrSet = params.chrSet.toBoolean() ? '  ' : params.chrSet
+
 log.info """\
 NANOME - NF PIPELINE (v$workflow.manifest.version)
 by Li Lab at The Jackson Laboratory
-https://nanome.jax.org
+https://github.com/TheJacksonLaboratory/nanome
 =================================
 dsname			:${params.dsname}
 input			:${params.input}
@@ -195,6 +200,9 @@ process EnvCheck {
 	which fast5mod
 	fast5mod --version
 
+	echo "### we need use pip install -U scikit-learn==0.21.3 due to METEORE"
+	pip show scikit-learn
+
 	## Get dir for reference_genome
 	if [[ "${reference_genome}" == *.tar.gz ]] ; then
 		tar -xzf ${reference_genome}
@@ -204,12 +212,15 @@ process EnvCheck {
 		mv ${reference_genome.name.replaceAll(".tar.gz", "")} reference_genome
 	fi
 
-	## Check reference genome
-	echo "referenceGenome=${referenceGenome}"
-	echo "chromSizesFile=${chromSizesFile}"
-
 	ls -lh ${referenceGenome}
 	ls -lh ${chromSizesFile}
+
+	echo "### Check reference genome and chrSet"
+	echo "referenceGenome=${referenceGenome}"
+	echo "chromSizesFile=${chromSizesFile}"
+	echo "chrSet=${chrSet}"
+	echo "params.dataType=${params.dataType}"
+
 	echo "### Check env DONE"
 	"""
 }
@@ -523,15 +534,16 @@ process Nanopolish {
 	### Put all fq and bam files into working dir, DO NOT affect the basecall dir
 	bamFileName="${params.dsname}.batch_${basecallDir.baseName}.sorted.bam"
 
-	## Do alignment firstly
+	## Do alignment firstly, find the combined fastq file
 	fastqFile=\$(find ${basecallDir}/ -name 'batch_basecall_combine_fq_*.fq')
 
 	## python utils/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
 
-	# Index the raw read with fastq
-	nanopolish index -d ${basecallDir}/workspace \${fastqFile}
+	# Index the raw read with fastq, we do not index in basecalled dir, in case of cache can be work
+	ln -s \${fastqFile}  \${fastqFile##*/}
+	nanopolish index -d ${basecallDir}/workspace \${fastqFile##*/}
 
-	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \${fastqFile} | \
+	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \${fastqFile##*/} | \
 		samtools sort -@ \$(( numProcessor*2 )) -T tmp -o \${bamFileName}
 	echo "### minimap2 finished"
 
@@ -539,7 +551,7 @@ process Nanopolish {
 	echo "### samtools finished"
 	echo "### Alignment step DONE"
 
-	nanopolish call-methylation -t \$(( numProcessor*2 )) -r \${fastqFile} \
+	nanopolish call-methylation -t \$(( numProcessor*2 )) -r \${fastqFile##*/} \
 		-b \${bamFileName} -g ${referenceGenome} > tmp.tsv
 
 	tail -n +2 tmp.tsv | gzip > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
@@ -984,7 +996,7 @@ process NplshComb {
 	## Unify format output
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  Nanopolish ${params.dsname}.nanopolish.per_read.combine.tsv.gz \
-		.  \$((numProcessor))  12 ${params.chrSet}
+		.  \$((numProcessor))  12  ${chrSet}
 
 	echo "### Nanopolish combine DONE"
 	"""
@@ -1026,7 +1038,7 @@ process MgldnComb {
 	## Unify format output
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  Megalodon ${params.dsname}.megalodon.per_read.combine.bed.gz \
-		.  \$((numProcessor))  12  ${params.chrSet}
+		.  \$((numProcessor))  12  ${chrSet}
 
 	echo "### Megalodon combine DONE"
 	"""
@@ -1068,7 +1080,7 @@ process DpSigComb {
 	## Unify format output
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  DeepSignal ${params.dsname}.deepsignal.per_read.combine.tsv.gz \
-		.  \$((numProcessor))  12  ${params.chrSet}
+		.  \$((numProcessor))  12  ${chrSet}
 	echo "### DeepSignal combine DONE"
 	"""
 }
@@ -1144,12 +1156,12 @@ process GuppyComb {
 				--regions chr\$i &
 		done
 	elif [[ "${params.dataType}" == "ecoli" ]] ; then
-		echo "### For ecoli, chr=${params.chrSet}"
+		echo "### For ecoli, chr=${chrSet}"
 		fast5mod call total.meth.bam ${referenceGenome} \
-			meth.chr_${params.chrSet}.tsv \
+			meth.chr_${chrSet}.tsv \
 			--meth cpg --quiet \
-			--regions ${params.chrSet}
-		cat  meth.chr_${params.chrSet}.tsv | gzip >> ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
+			--regions ${chrSet}
+		cat  meth.chr_${chrSet}.tsv | gzip >> ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
 	fi
 
 	if [[ "${params.dataType}" == "human" ]] ; then
@@ -1165,12 +1177,12 @@ process GuppyComb {
 	## Unify format output for read level
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  Guppy.gcf52ref ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz \
-		.  \$((numProcessor))  1  ${params.chrSet}
+		.  \$((numProcessor))  1  ${chrSet}
 
 	## Unify format output for site level
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  Guppy ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz \
-		.  \$((numProcessor))  2  ${params.chrSet}
+		.  \$((numProcessor))  2  ${chrSet}
 
 	## Clean
 	rm -f meth.chr*.tsv
@@ -1215,7 +1227,7 @@ process TomboComb {
 	## Unify format output
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  Tombo ${params.dsname}.tombo.per_read.combine.bed.gz \
-		.  \$((numProcessor))  12 ${params.chrSet}
+		.  \$((numProcessor))  12 ${chrSet}
 	echo "### Tombo combine DONE"
 	"""
 }
@@ -1271,7 +1283,7 @@ process DpmodComb {
 	done
 
 	python utils/sum_chr_mod.py \
-		indir/ C ${params.dsname}.deepmod ${params.chrSet}
+		indir/ C ${params.dsname}.deepmod ${chrSet}
 
 	> ${params.dsname}.deepmod.C_per_site.combine.bed
 
@@ -1327,7 +1339,7 @@ process DpmodComb {
 	## Unify format output
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  \${encode} \${callfn} \
-		.  \$((numProcessor))  2  ${params.chrSet}
+		.  \$((numProcessor))  2  ${chrSet}
 	echo "### DeepMod combine DONE"
 	"""
 }
@@ -1362,8 +1374,8 @@ process METEORE {
 	path naonopolish	from 	read_unify_nanopolish
 	path megalodon 		from 	read_unify_megalodon
 	path deepsignal 	from 	read_unify_deepsignal
-	each path("*") 		from 	ch_src3
-	each path("*") 		from 	ch_utils8
+	path("*") 		from 	ch_src3
+	path("*") 		from 	ch_utils8
 
 	output:
 	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz" optional true into meteore_combine_out_ch
@@ -1383,8 +1395,8 @@ process METEORE {
 	wget ${params.METEOREGithub}  --no-verbose
 	tar -xzf v1.0.0.tar.gz
 
-	## Degrade sk-learn for METEORE program
-	pip install -U scikit-learn==0.21.3
+	## Degrade sk-learn for METEORE program if needed
+	## pip install -U scikit-learn==0.21.3
 
 	combineScript=utils/combination_model_prediction.py
 
@@ -1409,7 +1421,7 @@ process METEORE {
 		## Unify format output for site level
 		bash src/unify_format_for_calls.sh \
 			${params.dsname}  METEORE ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz \
-			.  \$((numProcessor))  2  ${params.chrSet}
+			.  \$((numProcessor))  2  ${chrSet}
 	fi
 
 
@@ -1423,7 +1435,7 @@ meteore_combine_out_ch
 	.concat(raw_results_five_tools2.flatten(),
 			deepmod_combine_out_ch.flatten(),
 			guppy_fast5mod_combine_out_ch)
-	.toSortedList()
+	.toList()
 	.into { all_raw_results1; all_raw_results2; all_raw_results3; all_raw_results4}
 
 
@@ -1432,20 +1444,19 @@ qc_report_out_ch
 		site_unify_nanopolish, site_unify_megalodon, site_unify_deepsignal,
 		site_unify_guppy, site_unify_tombo, site_unify_deepmod, site_unify_meteore
 	)
-	.toSortedList()
+	.toList()
 	.set {report_in_ch}
 
 
 process Report {
 	tag "${params.dsname}"
 
-	publishDir "${params.outputDir}",
-	mode: "copy"
+	publishDir "${params.outputDir}", mode: "copy"
 
 	input:
 	path fileList 	from 	report_in_ch
-	each path("*") 	from 	ch_src5
-	each path("*") 	from 	ch_utils9
+	path("*") 		from 	ch_src5
+	path("*") 		from 	ch_utils9
 
 	output:
 	path "${params.dsname}_NANOME_report" 		into	report_out_ch
