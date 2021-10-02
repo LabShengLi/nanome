@@ -19,7 +19,7 @@ from sklearn.metrics import confusion_matrix
 
 from nanocompare.eval_common import *
 from nanocompare.global_settings import nonsingletonsFile, save_done_file, singletonsFile, narrowCoordNameList, \
-    cg_density_coord_name_list, rep_coord_name_list
+    cg_density_coord_name_list, rep_coord_name_list, nanome_version
 from nanocompare.global_settings import perf_report_columns, singletonFileExtStr
 
 
@@ -315,7 +315,8 @@ def parse_arguments():
     """
     :return:
     """
-    parser = argparse.ArgumentParser(description='Read-level performance evaluation in nanome paper')
+    parser = argparse.ArgumentParser(prog='read_level_eval (NANOME)', description='Read-level performance evaluation in nanome paper')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
     parser.add_argument('--dsname', type=str, help="dataset name", default='DS')
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by space',

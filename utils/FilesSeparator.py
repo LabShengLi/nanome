@@ -106,7 +106,8 @@ def untar_file(fn, outdir):
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='File seperator for fast5/tar/tar.gz')
+    parser = argparse.ArgumentParser(prog='FileSeperator (NANOME)', description='File seperator for fast5/tar/tar.gz')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v1.0')
     parser.add_argument('-i', type=str, help="input dir/file", required=True)
     parser.add_argument('-o', type=str, help="output dir", required=True)
     parser.add_argument('-n', type=int, help="number of seperated folders", required=True)

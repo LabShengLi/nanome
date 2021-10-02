@@ -8,6 +8,8 @@ import os
 
 from nanocompare.global_config import data_base_dir
 
+nanome_version="1.3.1"
+
 # define the small error of 0 and 1, for fully-meth and unmeth eval
 epslong = 1e-5
 

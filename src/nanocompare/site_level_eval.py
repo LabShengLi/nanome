@@ -16,7 +16,7 @@ import pybedtools
 
 from nanocompare.eval_common import *
 from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, save_done_file, \
-    narrowCoordNameList, cg_density_coord_name_list, rep_coord_name_list
+    narrowCoordNameList, cg_density_coord_name_list, rep_coord_name_list, nanome_version
 
 
 def get_nsites_in_regions(callSet, bedfn, tagname):
@@ -199,7 +199,8 @@ def parse_arguments():
     """
     :return:
     """
-    parser = argparse.ArgumentParser(description='Site-level correlation analysis in nanome paper')
+    parser = argparse.ArgumentParser(prog='site_level_eval (NANOME)', description='Site-level correlation analysis in nanome paper')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces',

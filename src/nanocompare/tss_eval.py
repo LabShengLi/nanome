@@ -12,7 +12,7 @@ import argparse
 from multiprocessing import Manager
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import get_tool_name, save_done_file
+from nanocompare.global_settings import get_tool_name, save_done_file, nanome_version
 
 
 def import_and_save_meteore(callfn, callencode, outfn):
@@ -56,8 +56,9 @@ def parse_arguments():
     """
     :return:
     """
-    parser = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(prog='tss_eval (NANOME)',
         description='Export read/site level methylation results of all nanopore tools in nanome paper')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces',

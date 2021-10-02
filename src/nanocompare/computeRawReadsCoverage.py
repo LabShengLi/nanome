@@ -25,7 +25,7 @@ from nanocompare.eval_common import get_dna_seq_from_reference, open_file_gz_or_
 from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir, temp_dir, data_base_dir
 from nanocompare.global_settings import humanChrSet, location_filename_to_abbvname, \
     datasets_order, narrowCoordNameList, cg_density_coord_name_list, \
-    rep_coord_name_list, referenceGenomeFile
+    rep_coord_name_list, referenceGenomeFile, nanome_version
 
 # used for convert region bed cov to base level cov
 rawReadDir = '/pod/2/li-lab/Nanopore_compare/data/Nanopore_cov'
@@ -278,7 +278,8 @@ def report_raw_fast5_cpg_in_regions_table():
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Plot and export data for Nanocompare paper.')
+    parser = argparse.ArgumentParser(prog='comp_raw_read_cov (NANOME)',description='Plot and export data for Nanocompare paper.')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
     parser.add_argument("cmd", help="name of command")
     parser.add_argument('--bedtools-tmp', type=str, help='bedtools temp dir', default=temp_dir)
     parser.add_argument('--genome-annotation', type=str, help='genome annotation dir',
