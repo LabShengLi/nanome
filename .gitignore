@@ -26,7 +26,7 @@ nextflow
 src/nanocompare/meth_stats
 src/nanocompare/methcall
 /script/
-/test/
+/test_script/
 inputs/na12878
 .Rhistory
 dag.dot*
