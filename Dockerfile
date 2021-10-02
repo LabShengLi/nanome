@@ -49,7 +49,7 @@ ENV PATH /opt/conda/bin:$PATH
 
 # Create the environment:
 COPY environment.yml /
-RUN conda env create -f environment.yml && conda clean -a
+RUN conda env create --name nanome --file=environment.yml && conda clean -a
 
 # Make RUN commands use the new environment:
 SHELL ["conda", "run", "-n", "nanome", "/bin/bash", "-c"]
@@ -63,17 +63,18 @@ USER root
 WORKDIR /data/
 
 # Copy additonal scripts
-RUN mkdir /opt/bin
-ADD utils/ /opt/bin/utils
-ADD src/ /opt/bin/src
-ADD test_data/ /opt/bin/test_data
-ADD inputs/ /opt/bin/inputs
-RUN chmod +x /opt/bin/utils/*
-RUN chmod +x /opt/bin/src/*
-RUN chmod +x /opt/bin/src/nanocompare/*
-ENV PATH="$PATH:/opt/bin/utils"
-ENV PATH="$PATH:/opt/bin/src"
-ENV PATH="$PATH:/opt/bin/src/nanocompare"
-ENV PYTHONPATH="/opt/bin/src"
+RUN mkdir -p /opt/nanome
+ADD inputs/ /opt/nanome/inputs
+ADD Rshiny/ /opt/nanome/Rshiny
+ADD src/ /opt/nanome/src
+ADD test_data/ /opt/nanome/test_data
+ADD utils/ /opt/nanome/utils
+RUN chmod +x /opt/nanome/utils/*
+RUN chmod +x /opt/nanome/src/*
+RUN chmod +x /opt/nanome/src/nanocompare/*
+# ENV PATH="$PATH:/opt/bin/utils"
+# ENV PATH="$PATH:/opt/bin/src"
+# ENV PATH="$PATH:/opt/bin/src/nanocompare"
+# ENV PYTHONPATH="/opt/bin/src"
 
 CMD ["bash"]
