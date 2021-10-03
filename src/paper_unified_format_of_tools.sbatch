@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/bin/bash -eux
 #SBATCH --job-name=to.unified.format
 #SBATCH --partition=compute
 #SBATCH --qos=batch
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 8 # number of cores
-#SBATCH --mem=300g
-#SBATCH --time=72:00:00
+#SBATCH -n 8 # number of cpu
+#SBATCH --mem=30g
+#SBATCH --time=40:00:00
 #SBATCH --output=log/%x.%j.log # STDOUT & STDERR
 
 ## Read level unified bed format (same as the METEORE input) for METEORE usage
@@ -47,8 +47,6 @@ echo "####################"
 
 pythonFile=tss_eval.py
 
-set -x
-
 ## convert tools format to unified format (such as METEORE)
 ${pythonFile} \
     --calls \
@@ -57,7 +55,7 @@ ${pythonFile} \
         DeepSignal:${DeepSignalCalls} \
         Guppy.gcf52ref:${GuppyCalls} \
         Tombo:${TomboCalls} \
-    --runid TSS_METEORE-${dsname} \
+    --runid TSS_UNIFORMAT-${dsname} \
     --dsname ${dsname} --output-unified-format \
     --processors 8
 

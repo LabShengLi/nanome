@@ -1,15 +1,14 @@
-#!/bin/bash
+#!/bin/bash -e
 #SBATCH --job-name=nanome.google.demo
 #SBATCH -p compute
 #SBATCH -q batch
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 1 # number of cores
-#SBATCH --mem=30G # memory pool for all cores
-#SBATCH --time=72:00:00 # time
+#SBATCH -n 2 # number of cores
+#SBATCH --mem=6G # memory pool for all cores
+#SBATCH --time=05:00:00 # time
 #SBATCH --output=log/%x.%j.log # STDOUT & STDERR
 
 set -x
-
 date;hostname;pwd
 
 ###########################################
@@ -20,7 +19,7 @@ date;hostname;pwd
 WORK_DIR_BUCKET=${1:-"gs://jax-nanopore-01-project-data/NANOME-TestData-work"}
 OUTPUT_DIR_BUCKET=${2:-"gs://jax-nanopore-01-export-bucket/NANOME-TestData-ouputs"}
 
-gsutil rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET}
+gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} || true
 
 ## Run test demo on google cloud
 nextflow run main.nf -resume\

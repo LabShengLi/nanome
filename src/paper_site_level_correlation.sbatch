@@ -1,23 +1,21 @@
-#!/bin/bash
+#!/bin/bash -xeu
 #SBATCH --job-name=meth.corr
 #SBATCH --partition=compute
 #SBATCH --qos=batch
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 16 # number of cores
+#SBATCH -n 8 # number of cpu
 #SBATCH --mem=300G
 #SBATCH --time=72:00:00
 #SBATCH --output=log/%x.%j.log # STDOUT & STDERR
 #SBATCH --mail-user=yang.liu@jax.org
 #SBATCH --mail-type=END
 
-set -e
-
 dsname=${1:-HL60}
 runidSuffix=${2:-"BS"} # "RRBS_2Reps"
 command=${3:-"seven"}  # six - six tools, seven - include all tools
 bedDir=${4:-"/projects/li-lab/yang/results/2021-07-07"}
 
-genome_annotation_dir="${NanoCompareDir}/data/genome-annotation"
+genome_annotation_dir="${NANOME_DIR}/data/genome-annotation"
 baseDir="/projects/li-lab/Nanopore_compare/data"
 guppyDataDir="/projects/li-lab/Nanopore_compare/nanome_paper_result/supp_data/guppy_methcall_yang"
 METEOREDataDir="/projects/li-lab/Nanopore_compare/nanome_paper_result/supp_data/METEORE_results"
@@ -26,7 +24,6 @@ if [ ! -z "$runidSuffix" ]; then
     runidSuffix="_${runidSuffix}"
 fi
 
-set -x
 ## Detect calls by tools
 NanopolishCalls=$(find $baseDir/$dsname -name "$dsname.nanopolish.methylation_calls.combine.*.gz")
 MegalodonCalls=$(find $baseDir/$dsname -name "$dsname.megalodon.per_read.sorted.*.gz")
@@ -78,10 +75,10 @@ echo "METEORECalls=$METEORECalls"
 echo "DeepModCalls=$DeepModCalls"
 echo "####################"
 
+## pip install nanome-jax
 # Site level evaluation script
 pythonFile=site_level_eval.py
 
-set -x
 if [ "${command}" == "six" ]; then
     ## six tool
     ${pythonFile} \

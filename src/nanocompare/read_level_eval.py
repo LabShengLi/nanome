@@ -12,6 +12,7 @@ This script will generate all per-read performance results.
 """
 
 import argparse
+import os.path
 from multiprocessing import Manager
 
 import pybedtools
@@ -49,7 +50,7 @@ def report_singleton_nonsingleton_table(bgTruth, outfn, fn_concordant, fn_discor
     :param fn_discordant:
     :return:
     """
-    logger.info('Start report BS seq data, the number of sites in singletons and nonsingltons')
+    logger.debug('Start report BS seq data, the number of sites in singletons and nonsingltons')
     ret = {}
 
     if isinstance(bgTruth, dict):
@@ -93,11 +94,11 @@ def report_singleton_nonsingleton_table(bgTruth, outfn, fn_concordant, fn_discor
              'Discordant.5mC', 'Discordant.sum']]
 
     df.to_csv(outfn)
-    logger.info(f'save to {outfn}')
+    logger.debug(f'save to {outfn}')
 
 
 def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None,
-                                secondFilterBedFileName=None, cutoff_meth=1.0, outdir=None, tagname=None, test=False):
+                                secondFilterBedFileName=None, cutoff_meth=1.0, outdir=None, tagname=None):
     """
     Report performance results
     :param ontCalls: tool's call
@@ -111,18 +112,32 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     d = defaultdict(list)
 
     for coord_tuple in tqdm(narrowedCoordinatesList):
-        if coord_tuple is not None and coord_tuple[2] is None:
-            logger.warning(f"Bed region tagname={coord_tuple[1]} is not found, not evaluated")
+        if coord_tuple is not None:
+            if not args.large_mem:
+                eval_coord_tuple = get_region_bed_tuple(coord_tuple[0],
+                                                        enable_base_detection_bedfile=not args.disable_bed_check)
+            else:
+                eval_coord_tuple = coord_tuple
+        else:
+            eval_coord_tuple = None
+
+        if eval_coord_tuple is not None and eval_coord_tuple[2] is None:
+            logger.warning(
+                f"Bed region tagname={eval_coord_tuple[1]} is not found, not evaluated, check genome-annotaion dir={args.genome_annotation} for file {eval_coord_tuple[0]}")
             continue
         accuracy, roc_auc, ap, f1_macro, f1_micro, \
         precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, \
         recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, \
         F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth = \
-            computePerReadPerfStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_tuple,
+            computePerReadPerfStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=eval_coord_tuple,
                                     secondFilterBedFileName=secondFilterBedFileName,
-                                    cutoff_fully_meth=cutoff_meth, outdir=outdir, tagname=tagname)
+                                    cutoff_fully_meth=cutoff_meth, outdir=outdir,
+                                    tagname=tagname, save_curve_data=args.save_curve_data)
 
-        coord_basefn = os.path.basename(f'{coord_tuple[0] if coord_tuple is not None else "x.x.Genome-wide"}')
+        coord_basefn = os.path.basename(f'{eval_coord_tuple[0] if eval_coord_tuple is not None else "x.x.Genome-wide"}')
+        if coord_tuple is not None and not args.large_mem:
+            if eval_coord_tuple is not None:
+                del eval_coord_tuple  # clean memory if possible
 
         d["prefix"].append(analysisPrefix)
         d["coord"].append(coord_basefn)
@@ -152,9 +167,11 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
         tmpfn = os.path.join(outdir, 'performance.report.tmp.csv')
         tmpdf.to_csv(tmpfn)
     df = pd.DataFrame.from_dict(d)
+    logger.info(f"Memory report: {get_current_memory_usage()}")
     return df
 
 
+# Will be deprecated
 def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None,
                                    secondFilterBedFileName=None, cutoff_fully_meth=1.0, outdir=None, tagname=None,
                                    processors=10):
@@ -315,7 +332,8 @@ def parse_arguments():
     """
     :return:
     """
-    parser = argparse.ArgumentParser(prog='read_level_eval (NANOME)', description='Read-level performance evaluation in nanome paper')
+    parser = argparse.ArgumentParser(prog='read_level_eval (NANOME)',
+                                     description='Read-level performance evaluation in nanome paper')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
     parser.add_argument('--dsname', type=str, help="dataset name", default='DS')
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
@@ -338,12 +356,21 @@ def parse_arguments():
                         default=os.path.join(data_base_dir, 'genome-annotation'))
     parser.add_argument('--reference-genome', type=str, help='genome annotation dir',
                         default=referenceGenomeFile)
+    parser.add_argument('--save-curve-data', help="if save pred/truth points for curve plot", action='store_true')
+    parser.add_argument('--large-mem', help="if using large memory (>100GB)", action='store_true')
+    parser.add_argument('--disable-bed-check', help="if disable checking the 0/1 base format for genome annotations",
+                        action='store_true')
+    parser.add_argument('--debug', help="if output debug info", action='store_true')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
-    set_log_debug_level()
     args = parse_arguments()
+
+    if args.debug:
+        set_log_debug_level()
+    else:
+        set_log_info_level()
 
     ## Set tmp dir for bedtools
     # bedtool_tmp_dir = "/fastscratch/liuya/nanocompare/bedtools_tmp"
@@ -399,19 +426,19 @@ if __name__ == '__main__':
         # Combine multiple bgtruth together for analysis
         # We use union of two replicates as BG-Truth
         combineBGTruth = combineBGTruthList(bgTruthList, covCutoff=1)
-        logger.info("\n\n########################\n\n")
+        logger.debug("\n\n########################\n\n")
 
-        logger.info(f'Start find absolute state (100% or 0% level), take times')
+        logger.debug(f'Start find absolute state (100% or 0% level), take times')
         absoluteBGTruth = {key: combineBGTruth[key] for key in combineBGTruth if
                            satisfy_fully_meth_or_unmeth(combineBGTruth[key][0])}
-        logger.info(
+        logger.debug(
             f'Combined bgtruth sites={len(combineBGTruth):,}, Absolute bgtruth (100% and 0% level) sites={len(absoluteBGTruth):,}')
 
-        logger.info(f'Start cutoff on absolute bg-truth, take times')
+        logger.debug(f'Start cutoff on absolute bg-truth, take times')
         # This is the smallest sites we use for evaluation
         absoluteBGTruthCov = {key: absoluteBGTruth[key] for key in absoluteBGTruth if
                               absoluteBGTruth[key][1] >= cutoffBGTruth}
-        logger.info(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(absoluteBGTruthCov):,}')
+        logger.debug(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(absoluteBGTruthCov):,}')
 
         # Load all coordinate file list (full path) in this runs
         # relateCoord = list(narrowCoordFileList)  # copy the basic coordinate
@@ -423,11 +450,9 @@ if __name__ == '__main__':
         fn_concordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed.gz"
         fn_discordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed.gz"
 
-        # relateCoord.append(fn_concordant)
-        # relateCoord.append(fn_discordant)
-
         # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth) with cov>=1
         # Classify concordant and discordant based on cov>=1 bgtruth
+        logger.info(f"Generate concordant and discordant regions based on BS-seq")
         nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant,
                                     nsDisCordantFileName=fn_discordant, genome_annotation_dir=args.genome_annotation)
 
@@ -444,7 +469,8 @@ if __name__ == '__main__':
                                                 fn_discordant=fn_discordant,
                                                 genome_annotation_dir=args.genome_annotation)
 
-        logger.info("\n\n########################\n\n")
+        logger.debug("\n\n########################\n\n")
+        logger.info(f"Import BS-seq data done for fnlist={fnlist}")
     else:
         absoluteBGTruth = None
         absoluteBGTruthCov = None
@@ -480,16 +506,19 @@ if __name__ == '__main__':
         sitesDataset['BSseq-cov5-certain'].append(len(absoluteBGTruthCov))
 
         if absoluteBGTruthCov:  # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
-            logger.info(f'Filter out CpG sites not in bgtruth for {call_name}')
+            logger.debug(f'Filter out CpG sites not in bgtruth for {call_name}')
             ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(ont_call0,
                                                                   absoluteBGTruthCov)  # using absoluteBGTruthCov for even fewer sites
             sitesDataset[f'Join-tool-cov1-with-BSseq-cov{args.min_bgtruth_cov}-certain'].append(
                 len(ontCallWithinBGTruthDict[call_name]))
-            logger.info(f'{call_name} left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
+            logger.debug(f'{call_name} left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
             # Clean large size object
             del ont_call0
         else:
             ontCallWithinBGTruthDict[call_name] = ont_call0
+
+    logger.info(f"Import tools's calling done for toolist={list(ontCallWithinBGTruthDict.keys())}")
+    logger.info(f"Memory report: {get_current_memory_usage()}")
 
     ## Report each tool (cov>=1) joined with BS-seq cov>=5 certain sites(0%, 100%)
     df = pd.DataFrame.from_dict(sitesDataset)
@@ -497,7 +526,7 @@ if __name__ == '__main__':
                          f'{dsname}.tools.cov1.join.with.bsseq.cov{args.min_bgtruth_cov}.read.level.report.xlsx')
     df.to_excel(outfn)
 
-    logger.info("\n\n########################\n\n")
+    logger.debug("\n\n########################\n\n")
 
     # Study the joined CpG sites by all tools (cov>=1) with BG-Truth (cov>=5, 0% or 100% sites),
     # evaluation on joined CpG by default
@@ -511,11 +540,18 @@ if __name__ == '__main__':
             joinedCPG = set(ontCallWithinBGTruthDict[toolname].keys())
             continue
         joinedCPG = joinedCPG.intersection(set(ontCallWithinBGTruthDict[toolname].keys()))
-        logger.info(f'After joined with {toolname}, cpgs={len(joinedCPG):,}')
+        logger.debug(f'After joined with {toolname}, cpgs={len(joinedCPG):,}')
 
     # this file is the all tool (cov>=1) joined with BS-seq (cov>=5) 0%, 100% together sites BED file, for evaluation on joined sites
     bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}.Tools_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.bed.gz"
     save_keys_to_single_site_bed(joinedCPG, outfn=bedfn_tool_join_bgtruth, callBaseFormat=baseFormat, outBaseFormat=1)
+
+    ## Sort the bed file
+    bedfn_tool_join_bgtruth_sorted = f"{out_dir}/{RunPrefix}.Tools_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.sorted.bed.gz"
+    sort_bed_file(infn=bedfn_tool_join_bgtruth, outfn=bedfn_tool_join_bgtruth_sorted)
+
+    ## Delete not sorted file
+    os.remove(bedfn_tool_join_bgtruth)
 
     ## Report joined CpGs in each regions, this is the really read level evaluation sites, Table S2
     outfn = os.path.join(out_dir,
@@ -524,15 +560,15 @@ if __name__ == '__main__':
                                         fn_discordant=fn_discordant)
 
     ## Note all tools using cov>=1 for evaluation read-leval performance
-    logger.info(
+    logger.debug(
         f"Data points for joined all tools with bg-truth (if any, cov>={cutoffBGTruth}) sites={len(joinedCPG):,}\n\n")
 
     if "ecoli_metropaper_sanity" in args.analysis:
         report_ecoli_metro_paper_evaluations(ontCallWithinBGTruthDict, joinedCPG)
-        logger.info(f'Analysis:[{args.analysis}] DONE')
+        logger.debug(f'Analysis:[{args.analysis}] DONE')
 
         report_ecoli_metro_paper_evaluations(ontCallWithinBGTruthDict, None)
-        logger.info(f'Analysis:[{args.analysis}] DONE')
+        logger.debug(f'Analysis:[{args.analysis}] DONE')
 
         sys.exit(0)
 
@@ -550,7 +586,7 @@ if __name__ == '__main__':
                 cnt5C += 1
 
     logger.info(
-        f'The fully meth or unmeth sites of Joined BGTruth = {len(certainJoinedBGTruth):,}  (5C={cnt5C:,}, 5mC={cnt5mC:,}) for performance comparison')
+        f'Joined BGTruth (cov>={cutoffBGTruth}) = {len(certainJoinedBGTruth):,}  (5C={cnt5C:,}, 5mC={cnt5mC:,}) for performance comparison on fully meth or unmeth sites with tools')
 
     certainBGTruth = dict(absoluteBGTruthCov)  # not used now
     cntNoJoined5C = 0
@@ -562,15 +598,15 @@ if __name__ == '__main__':
             cntNoJoined5C += 1
 
     logger.info(
-        f'The fully meth or unmeth sites of No-Joined BGTruth (cov>={cutoffBGTruth}) = {len(certainBGTruth):,}  (5C={cntNoJoined5C:,}, 5mC={cntNoJoined5mC:,}) for performance comparison if No-joined')
+        f'No-Joined BGTruth (cov>={cutoffBGTruth}) = {len(certainBGTruth):,}  (5C={cntNoJoined5C:,}, 5mC={cntNoJoined5mC:,}) for performance comparison on fully meth or unmeth sites with tools')
 
-    logger.info("\n\n############\n\n")
+    logger.debug("\n\n############\n\n")
 
     if report_joined:  # Joined all together sites for evaluation
         perf_dir = os.path.join(out_dir, 'performance-results')
         os.makedirs(perf_dir, exist_ok=True)
         bgTruth = certainJoinedBGTruth
-        secondBedFileName = bedfn_tool_join_bgtruth  # params passed for joined sets evaluation, may be remove, due to bgtruth is now joined
+        secondBedFileName = bedfn_tool_join_bgtruth_sorted  # params passed for joined sets evaluation, may be remove, due to bgtruth is now joined
     else:  # only based on bgtruth joined with a tool
         perf_dir = os.path.join(out_dir, 'performance-results-nojoined')
         os.makedirs(perf_dir, exist_ok=True)
@@ -588,32 +624,55 @@ if __name__ == '__main__':
 
     # Create the bed list for evaluation, save time for every loading of bed region
     # None, singelton, non-singletons, ...
-    region_bedtuple_list = [None] + get_region_bed_pairs_list_mp(regions_full_filepath, processors=args.processors)
+    if args.large_mem:
+        region_bedtuple_list = [None] + get_region_bed_pairs_list_mp(regions_full_filepath, processors=args.processors,
+                                                                     enable_base_detection_bedfile=not args.disable_bed_check)
+        logger.info(f"Memory report: {get_current_memory_usage()}")
+
+    else:
+        region_bedtuple_list = [None] + [(infn, map_region_fn_to_name(infn), None,)
+                                         for infn in regions_full_filepath]
 
     if args.distribution:
-        logger.info("Report singletons/non-singletons in each genomic context regions in Fig.3 and 4")
+        logger.debug("Report singletons/non-singletons in each genomic context regions in Fig.3 and 4")
 
-        joined_bed = BedTool(bedfn_tool_join_bgtruth).sort()
+        joined_bed = BedTool(bedfn_tool_join_bgtruth_sorted).sort()
         singleton_tuple = region_bedtuple_list[1]
         nonsingleton_tuple = region_bedtuple_list[2]
         concordant_tuple = region_bedtuple_list[-2]
         discordant_tuple = region_bedtuple_list[-1]
 
-        logger.info(
+        logger.debug(
             f"Distribution based region bed files: {[singleton_tuple, nonsingleton_tuple, concordant_tuple, discordant_tuple]}")
-        singleton_bed = singleton_tuple[2]
-        nonsingleton_bed = nonsingleton_tuple[2]
-        concordant_bed = concordant_tuple[2]
-        discordant_bed = discordant_tuple[2]
+
+        if args.large_mem:  # in memory already
+            singleton_bed = singleton_tuple[2]
+            nonsingleton_bed = nonsingleton_tuple[2]
+            concordant_bed = concordant_tuple[2]
+            discordant_bed = discordant_tuple[2]
+        else:  # load on demand for limit memory
+            singleton_bed = \
+                get_region_bed_tuple(singleton_tuple[0], enable_base_detection_bedfile=not args.disable_bed_check)[2]
+            nonsingleton_bed = \
+                get_region_bed_tuple(nonsingleton_tuple[0], enable_base_detection_bedfile=not args.disable_bed_check)[2]
+            concordant_bed = \
+                get_region_bed_tuple(concordant_tuple[0], enable_base_detection_bedfile=not args.disable_bed_check)[2]
+            discordant_bed = \
+                get_region_bed_tuple(discordant_tuple[0], enable_base_detection_bedfile=not args.disable_bed_check)[2]
 
         datasets = defaultdict(list)
         sum_cg = 0
         for coord_tuple in region_bedtuple_list[:]:
             coordFn = None
             if coord_tuple is not None:  # get genomic region results
-                (coordFn, tagname, coordBed) = coord_tuple
-                if tagname in ['Singletons', 'Non-singletons', 'Concordant', 'Discordant']:
+                if coord_tuple[1] in ['Singletons', 'Non-singletons', 'Concordant', 'Discordant']:
                     continue
+                if args.large_mem:
+                    (coordFn, tagname, coordBed) = coord_tuple
+                else:
+                    (coordFn, tagname, coordBed) = get_region_bed_tuple(coord_tuple[0],
+                                                                        enable_base_detection_bedfile=not args.disable_bed_check)
+
                 if coordBed is None:
                     logger.warning(f"genomic region {tagname} is not found, not evaluated.")
                     continue
@@ -627,7 +686,7 @@ if __name__ == '__main__':
 
             if tagname.startswith('CG_'):
                 sum_cg += num_total
-                logger.info(f"sanity check sum_cg={sum_cg}")
+                logger.debug(f"sanity check sum_cg={sum_cg}")
 
             intersect_singleton_bed = intersect_coord_bed.intersect(singleton_bed, u=True, wa=True)
             num_singleton = len(intersect_singleton_bed)
@@ -649,7 +708,7 @@ if __name__ == '__main__':
             datasets['Concordant'].append(num_concordant)
             datasets['Discordant'].append(num_discordant)
 
-            logger.info(
+            logger.debug(
                 f"Coord={tagname}, Total={num_total:,}, Total={num_total:,}, Singletons={num_singleton:,}, Non-singletons={num_nonsingleton:,}, Concordant={num_concordant:,}, Discordant={num_discordant:,}")
             # Sanity check sums
             if num_total != num_singleton + num_nonsingleton:
@@ -662,7 +721,7 @@ if __name__ == '__main__':
         outfn = os.path.join(out_dir,
                              f'{dsname}.bgtruth.certain.sites.distribution.sing.nonsing.each.genomic.cov{cutoffBGTruth}.table.s6.xlsx')
         df.to_excel(outfn)
-        logger.info(f"save to {outfn}")
+        logger.debug(f"save to {outfn}")
 
     if args.mpi:  # Using mpi may cause error, not fixed, but fast running
         logger.debug('Using multi-processor function for evaluations:')
@@ -671,7 +730,7 @@ if __name__ == '__main__':
         tmpPrefix = f'{RunPrefix}.{tool}'
         logger.info(f'Evaluating: {tmpPrefix}')
 
-        if args.mpi:  # Using mpi may cause error, not fixed, but fast running
+        if args.mpi:  # Using mpi may cause memory error for large data, not fixed, but fast running on small data
             # Note: narrowedCoordinatesList - all singleton (absolute and mixed) and non-singleton generated bed. ranges
             #       secondFilterBedFileName - joined sites of four tools and bg-truth. points
             df = report_per_read_performance_mp(ontCallWithinBGTruthDict[tool], bgTruth, tmpPrefix,
@@ -704,4 +763,5 @@ if __name__ == '__main__':
         logger.info(f"save to {outfn}")
 
     save_done_file(out_dir)
+    logger.info(f"Memory report: {get_current_memory_usage()}")
     logger.info("### Read level performance analysis DONE.")
