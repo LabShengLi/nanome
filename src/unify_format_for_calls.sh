@@ -22,7 +22,8 @@ if [[ "$step" == *"1"* ]]; then
         --calls \
             ${encode}:${callfn} \
         --runid Read_Level-${dsname} \
-        --dsname ${dsname} --output-unified-format \
+        --dsname ${dsname}\
+        --read-level-format \
         --processors ${processors}	\
         -o ${outdir}   ${chr_options}
 fi

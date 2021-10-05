@@ -1434,7 +1434,7 @@ def importGroundTruth_from_5hmc_ziwei(infn, chr_col=0, start_col=1, strand_col=7
 
 
 def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False, enable_cache=False, using_cache=False,
-                filterChr=humanChrSet, save_unified_format=False, outfn=None):
+                filterChr=humanChrSet, save_unified_format=False, outfn=None, cache_dir=cache_dir):
     """
     General purpose for import any tools methylation calling input files.
 
@@ -1451,7 +1451,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
 
     if enable_cache and using_cache:
         ret = check_cache_available(infn=infn, encode=encode, baseFormat=baseFormat, include_score=include_score,
-                                    siteLevel=siteLevel)
+                                    siteLevel=siteLevel, cache_dir=cache_dir)
         if ret is not None:
             logger.debug(f'Import {encode} finished from cache, CpGs={len(ret):,}\n')
             return ret
@@ -1504,7 +1504,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     return calls0
 
 
-def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, enable_cache=False, using_cache=False):
+def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, enable_cache=False, using_cache=False, cache_dir=cache_dir):
     """
     General purpose for import BG-Truth input files.
     Import bgtruth from file fn using encode, when use new dataset, MUST check input file start baseFormat and import functions are consistent!!!
@@ -1514,7 +1514,7 @@ def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, ena
     :return:
     """
     if enable_cache and using_cache:
-        ret = check_cache_available(infn, encode=encode, cov=covCutoff, baseFormat=baseFormat, includeCov=includeCov)
+        ret = check_cache_available(infn, encode=encode, cov=covCutoff, baseFormat=baseFormat, includeCov=includeCov, cache_dir=cache_dir)
         if ret is not None:
             logger.debug(f'Import BG-Truth using encode={encode} finished from cache, CpGs={len(ret):,}\n')
             return ret
@@ -2018,14 +2018,17 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
             logger.debug(f'regionDict[regionKey]={regionDict[regionKey]}, regionKey={regionKey}')
         is_print_first = False
 
-    logger.debug(f'cntBedLines={cntBedLines:,}')
+    ## logger.debug(f'cntBedLines={cntBedLines:,}')
 
     is_print_first = print_first
     concordantList = {}  # list of (chr, start)
     discordantList = {}
     meth_cnt_dict = defaultdict(int)  # count meth states in concordant and discordant
     unmeth_cnt_dict = defaultdict(int)
-    for region in tqdm(regionDict):  # region is (chr, start, end)
+
+    bar = tqdm(regionDict)
+    bar.set_description("Scan non-singletons")
+    for region in bar:  # region is (chr, start, end)
         cpgList = regionDict[region]  # get values as the list of  (start, 0/1, cov)
         chrOut = region[0]
 
@@ -2248,14 +2251,17 @@ def sanity_check_dna_sequence(chr='chr10', start_base0=10493):
 
 def get_cache_filename(infn, params):
     """
-    Get the file name that encoded in cache based on parameters
+    Get the file name that encoded in cache based on parameters, the params must have cache_dir for searching cache files.
     :param infn:
     :param params:
     :return:
     """
     basefn = os.path.basename(infn)
     cachefn = f'cachefile.{basefn}.encode.{params["encode"]}.base.{params["baseFormat"]}'
+    if 'cache_dir' not in params:
+        raise Exception(f"cache_dir is not in params={params}")
 
+    cache_dir = params['cache_dir']
     if params["encode"] in ToolEncodeList:
         cachefn += f'.inscore.{params["include_score"]}'
         if params["encode"] in ['DeepMod.Cluster', 'DeepMod.C']:
@@ -2598,7 +2604,7 @@ def get_region_bed(infn, enable_base_detection_bedfile=enable_base_detection_bed
     """
     if not os.path.isfile(infn):
         # Can not find this file
-        logger.warning(f"Can not find region file={infn}")
+        logger.debug(f"Can not find region file={infn}")
         return None
     coordBed = BedTool(infn).sort()
     if enable_base_detection_bedfile and is_0base_region_files(infn):
@@ -2618,7 +2624,7 @@ def get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detecti
     tagname = map_region_fn_to_name(infn)
     region_bed = get_region_bed(infn, enable_base_detection_bedfile)
     if region_bed is None:
-        logger.warning(
+        logger.debug(
             f"region {tagname} file is not loaded, filename={infn}")
     return (infn, tagname, region_bed)
 
@@ -2646,6 +2652,7 @@ def get_region_bed_pairs_list_mp(infn_list, processors=1, enable_base_detection_
         # region_bed_list = pool.map(get_region_bed_pairs, infn_list)
         global progress_bar_global
         progress_bar_global = tqdm(total=len(infn_list))
+        progress_bar_global.set_description("Load all BED regions")
         for infn in infn_list:
             ret_list.append(pool.apply_async(get_region_bed_tuple, args=(infn, enable_base_detection_bedfile),
                                              callback=update_progress_bar))
@@ -2719,7 +2726,7 @@ def filter_corrdata_df_by_bedfile(df, coord_bed, coord_fn):
     return retdf
 
 
-def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, outdir=pic_base_dir, large_mem=False,
+def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=None, outdir=pic_base_dir, large_mem=False,
                                   enable_base_detection_bedfile=enable_base_detection_bedfile):
     """
     Calculate Pearson's correlation coefficient at different regions.
@@ -2734,15 +2741,17 @@ def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, outdir
     logger.debug(df)
 
     dataset = defaultdict(list)
-    for infn, tagname, coord_bed in tqdm(bed_tuple_list):
+    bar = tqdm(bed_tuple_list)
+    for infn, tagname, coord_bed in bar:
+        bar.set_description(f"PCC-compute-at-{tagname}")
         logger.debug(f'tagname={tagname}, coord_fn={infn}')
-        if not large_mem and coord_bed is None:  # load on demand
+        if not large_mem and tagname != 'Genome-wide' and coord_bed is None:  # load on demand
             eval_coord_bed = get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detection_bedfile)[2]
         else:
             eval_coord_bed = coord_bed
 
         if tagname != 'Genome-wide' and eval_coord_bed is None:
-            logger.warning(f"Region name={tagname} is not found")
+            logger.debug(f"Region name={tagname} is not found")
             continue
         newdf = filter_corrdata_df_by_bedfile(df, eval_coord_bed, infn)
 
@@ -2767,7 +2776,7 @@ def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, outdir
     outdf = pd.DataFrame.from_dict(dataset)
     logger.debug(outdf)
 
-    outfn = os.path.join(outdir, f'{dsname}.corrdata.coe.pvalue.each.regions.xlsx')
+    outfn = os.path.join(outdir, f'{runid}_{dsname}.corrdata.coe.pvalue.each.regions.xlsx')
     outdf.to_excel(outfn)
     logger.debug(f'save to {outfn}')
     return outdf

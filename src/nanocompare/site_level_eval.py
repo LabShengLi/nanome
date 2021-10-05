@@ -14,7 +14,7 @@ import argparse
 import pybedtools
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, save_done_file, \
+from nanocompare.global_settings import get_tool_name, ToolNameList, save_done_file, \
     narrowCoordNameList, cg_density_coord_name_list, rep_coord_name_list, nanome_version
 
 
@@ -29,6 +29,7 @@ def summary_cpgs_stats_results_table():
     Study and summary each tool joined with bg-truth results, make table as dataframe
     :return:
     """
+    logger.debug(f"Evaluated on regions: {region_bed_list}")
     logger.debug(f"Report number of sites by methylation calling tools in each region, take times...")
     dataset = []
     bgtruthCpGs = set(list(bgTruth.keys()))
@@ -58,13 +59,15 @@ def summary_cpgs_stats_results_table():
         callBed = calldict2bed(callSet)
 
         # Add coverage of every regions by each tool here
-        for (bedfn, tagname, region_bed) in tqdm(
-                region_bed_list):  # calculate how overlap with Singletons, Non-Singletons, etc.
-            if not args.large_mem:  # load in demand
-                region_bed = get_region_bed_tuple(bedfn, enable_base_detection_bedfile=not args.disable_bed_check)[2]
+        bar = tqdm(region_bed_list)
+        for (bedfn, tagname, region_bed) in bar:  # calculate how overlap with Singletons, Non-Singletons, etc.
+            bar.set_description(f"CPG-cov-at-region-{tagname}")
+            if not args.large_mem and region_bed is None:  # load in demand
+                region_bed = get_region_bed_tuple(bedfn,
+                                                  enable_base_detection_bedfile=not args.disable_bed_check)[2]
 
             if region_bed is None:
-                logger.warning(f"region name={tagname} is not found")
+                logger.debug(f"region name={tagname} is not found")
                 continue
             intersect_bed = intersect_bed_regions(callBed, region_bed, bedfn)
             ret = {tagname: len(intersect_bed)}
@@ -102,8 +105,7 @@ def summary_cpgs_stats_results_table():
         row_dict.update(retDict)
         dataset.append(row_dict)
         logger.debug(f'BG-Truth join with {toolname} get {len(toolOverlapBGTruthCpGs):,} CpGs')
-        # outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-bgtruth-{name1}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
-        # save_keys_to_bed(overlapCpGs, outfn)
+        logger.debug(f"Memory report: {get_current_memory_usage()}")
 
     # add additional rows for Joined count
     new_row_dict = {f'Total CpG sites by tool cov>={minToolCovCutt}': len(joinedSet)}
@@ -117,7 +119,7 @@ def summary_cpgs_stats_results_table():
     top3JointSet = None
     top3UnionSet = set()
 
-    for callname in Top3ToolNameList:
+    for callname in ToolNameList[:3]:
         toolSet = top3_cpg_set_dict[callname]
         if not top3JointSet:
             top3JointSet = toolSet
@@ -160,6 +162,7 @@ def summary_cpgs_stats_results_table():
                          f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.table.s10.xlsx')
     df.to_excel(outfn)
     logger.debug(f'save to {outfn}\n')
+    logger.debug(f"Memory report: {get_current_memory_usage()}")
 
 
 def save_meth_corr_data(callresult_dict, bgTruth, reportCpGSet, outfn):
@@ -211,40 +214,46 @@ def parse_arguments():
                                      description='Site-level correlation analysis in nanome paper')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
-    parser.add_argument('--runid', type=str, help="running prefix", required=True)
-    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces',
+    parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethCorr-DS_WGBS_2reps",
                         required=True)
-    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name1>",
+    parser.add_argument('--calls', nargs='+',
+                        help='all ONT call results <tool-name>:<file-name> seperated by spaces, tool-name can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod.Cluster',
                         required=True)
-    parser.add_argument('--beddir', type=str, help="base dir for concordant/discordant bed files",
+    parser.add_argument('--bgtruth', type=str,
+                        help="background truth file <encode-type>:<file-name1>;<file-name1>, encode-type can be 'encode' or 'bismark'",
+                        required=True)
+    parser.add_argument('--genome-annotation', type=str,
+                        help='genome annotation dir, contain BED files such as singleton, nonsingleton, etc.',
+                        required=True)
+    parser.add_argument('--beddir', type=str,
+                        help="base dir for concordant/discordant BED files generated by read-level analysis, make sure provided dsname is same",
                         default=None)
-    parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff for coverage in bg-truth", default=5)
-    parser.add_argument('--toolcov-cutoff', type=int, help="cutoff for coverage in nanopore tools", default=3)
+    parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff for coverage in bg-truth, default is >=5", default=5)
+    parser.add_argument('--toolcov-cutoff', type=int, help="cutoff for coverage in nanopore tools, default is >=3", default=3)
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
-    parser.add_argument('--processors', type=int, help="running processors", default=1)
-    parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
-    parser.add_argument('--gen-venn', help="generate CpGs for venn data analysis", action='store_true')
-    parser.add_argument('--summary-coverage', help="generate summary table for coverage at each region",
+    parser.add_argument('--processors', type=int, help="number of processors used, default is 1", default=1)
+    parser.add_argument('-o', type=str, help="output base dir", default=pic_base_dir)
+    parser.add_argument('--gen-venn', help="if generate CpGs files for venn data analysis", action='store_true')
+    parser.add_argument('--summary-coverage', help="if summarize coverage at each region",
                         action='store_true')
-    parser.add_argument('--region-coe-report', help="report table for PCC value at each region",
+    parser.add_argument('--region-coe-report', help="if report PCC value at each region",
                         action='store_true')
     parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
     parser.add_argument('--using-cache', help="if use cache files", action='store_true')
-    parser.add_argument('--plot', help="plot the correlation matrix figure", action='store_true')
-    parser.add_argument('--bedtools-tmp', type=str, help='bedtools temp dir', default=temp_dir)
-    parser.add_argument('--genome-annotation', type=str, help='genome annotation dir',
-                        default=os.path.join(data_base_dir, 'genome-annotation'))
-    parser.add_argument('--large-mem', help="if using large memory (>100GB)", action='store_true')
+    parser.add_argument('--plot', help="if plot the correlation matrix figure", action='store_true')
+    parser.add_argument('--bedtools-tmp', type=str, help=f'bedtools temp dir, default is {temp_dir}', default=temp_dir)
+    parser.add_argument('--cache-dir', type=str, help=f'loaded calls/bs-seq in cache dir (speed up running), default is {cache_dir}', default=cache_dir)
+    parser.add_argument('--large-mem', help="if using large memory (>100GB) for speed up", action='store_true')
     parser.add_argument('--disable-bed-check', help="if disable checking the 0/1 base format for genome annotations",
                         action='store_true')
-    parser.add_argument('--debug', help="if output debug info", action='store_true')
+    parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_arguments()
 
-    if args.debug:
+    if args.verbose:
         set_log_debug_level()
     else:
         set_log_info_level()
@@ -304,7 +313,7 @@ if __name__ == '__main__':
     bgTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruthCutt)
 
     logger.info(f'Combined BS-seq data (cov>={bgtruthCutt}), all methylation level sites={len(bgTruth):,}')
-
+    logger.debug(f"Memory report: {get_current_memory_usage()}")
     logger.debug(f'\n\n####################\n\n')
 
     callfn_dict = defaultdict()  # callname -> filename
@@ -356,11 +365,12 @@ if __name__ == '__main__':
                                                                      minCov=minToolCovCutt, toolname=callname)
         ## Destroy cov1 for memory saving
         del callresult_dict_cov1[callname]
+        logger.debug(f"Memory report: {get_current_memory_usage()}")
 
     logger.debug(f'\n\n####################\n\n')
 
     top3_cpg_set_dict = defaultdict()
-    for callname in Top3ToolNameList:
+    for callname in ToolNameList[:3]:
         top3_cpg_set_dict[callname] = set(callresult_dict_cov3[callname].keys())
 
     if args.gen_venn:
@@ -383,6 +393,7 @@ if __name__ == '__main__':
             outfn = os.path.join(venn_outdir,
                                  f'{args.dsname}.{callname}.cpg.sites.cov{args.toolcov_cutoff}.setsfile.txt.gz')
             ontcalls_to_setsfile_for_venn_analysis(call_keys, outfn)
+        logger.debug(f"Memory report: {get_current_memory_usage()}")
         logger.debug(f'\n\n####################\n\n')
 
     logger.debug(f"Start getting intersection (all joined) sites by tools and bgtruth")
@@ -403,11 +414,12 @@ if __name__ == '__main__':
         sitesDataset[f'Join-with-BSseq-cov{args.min_bgtruth_cov}-all'].append(len(joinBSWithEachToolSet))
     df = pd.DataFrame.from_dict(sitesDataset)
     outfn = os.path.join(out_dir,
-                         f'{args.dsname}.tools.cov{args.toolcov_cutoff}.join.with.bsseq.cov{args.min_bgtruth_cov}.site.level.report.csv')
+                         f'{RunPrefix}_{args.dsname}.tools.cov{args.toolcov_cutoff}.join.with.bsseq.cov{args.min_bgtruth_cov}.site.level.report.csv')
     df.to_csv(outfn)
 
     # Output sites report for all tools and BS-seq
-    logger.info(f"Joined {len(coveredCpGs):,} CpGs are covered by all tools (cov >= {args.toolcov_cutoff}) and BS-seq (cov >= {args.min_bgtruth_cov})")
+    logger.info(
+        f"Joined {len(coveredCpGs):,} CpGs are covered by all tools (cov >= {args.toolcov_cutoff}) and BS-seq (cov >= {args.min_bgtruth_cov})")
     logger.debug('Output data of meth-freq and coverage on joined CpG sites as datasets for correlation analysis')
     outfn_joined = os.path.join(out_dir,
                                 f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv.gz")
@@ -450,7 +462,9 @@ if __name__ == '__main__':
         # logger.debug(f"Evaluated regions: {regions_full_filepath}")
 
         if args.large_mem:  # load all in memory
-            region_bed_list = get_region_bed_pairs_list_mp(regions_full_filepath, processors=args.processors, enable_base_detection_bedfile=not args.disable_bed_check)
+            region_bed_list = get_region_bed_pairs_list_mp(regions_full_filepath, processors=args.processors,
+                                                           enable_base_detection_bedfile=not args.disable_bed_check)
+            logger.info(f"Memory report: {get_current_memory_usage()}")
         else:  # load bed coord later
             region_bed_list = [(infn, map_region_fn_to_name(infn), None,)
                                for infn in regions_full_filepath]
@@ -458,10 +472,10 @@ if __name__ == '__main__':
         if args.beddir:  # add concordant and discordant region coverage if needed
             logger.debug(f'We use Concordant and Discordant BED file at basedir={args.beddir}')
             concordantFileName = find_bed_filename(basedir=args.beddir,
-                                                   pattern=f'{args.dsname}*hg38_nonsingletons*.concordant.bed.gz')
+                                                   pattern=f'*{args.dsname}*hg38_nonsingletons*.concordant.bed.gz')
             concordant_bed = get_region_bed(concordantFileName)
             discordantFileName = find_bed_filename(basedir=args.beddir,
-                                                   pattern=f'{args.dsname}*hg38_nonsingletons*.discordant.bed.gz')
+                                                   pattern=f'*{args.dsname}*hg38_nonsingletons*.discordant.bed.gz')
             discordant_bed = get_region_bed(discordantFileName)
         else:
             concordant_bed = None
@@ -477,7 +491,8 @@ if __name__ == '__main__':
         logger.debug(f"Evaluated on regions: {eval_genomic_context_tuple}")
 
         # file like: Meth_corr_plot_data_joined-TestData_RRBS_2Reps-bsCov1-minToolCov1-baseFormat1.sorted.csv.gz
-        fnlist = glob.glob(os.path.join(out_dir, f'Meth_corr_plot_data_joined-*bsCov{args.min_bgtruth_cov}-minToolCov{args.toolcov_cutoff}*.csv.gz'))
+        fnlist = glob.glob(os.path.join(out_dir,
+                                        f'Meth_corr_plot_data_joined-*bsCov{args.min_bgtruth_cov}-minToolCov{args.toolcov_cutoff}*.csv.gz'))
         if len(fnlist) < 1:
             raise Exception(f'Found no file for fnlist={fnlist}, for dir={out_dir}')
         logger.debug(f'Find file: {fnlist}')
@@ -487,9 +502,10 @@ if __name__ == '__main__':
         dsname = tagname[:tagname.find('_')]
 
         logger.info(f"Start report PCC in difference genomic regions based on file={fnlist[0]}, dsname={dsname}")
-        correlation_report_on_regions(fnlist[0], bed_tuple_list=eval_genomic_context_tuple, dsname=dsname,
+        correlation_report_on_regions(fnlist[0], bed_tuple_list=eval_genomic_context_tuple, dsname=dsname, runid=args.runid,
                                       outdir=out_dir, large_mem=args.large_mem,
                                       enable_base_detection_bedfile=not args.disable_bed_check)
+        logger.debug(f"Memory report: {get_current_memory_usage()}")
 
     if args.summary_coverage:
         logger.info("Start summarize CPG coverage at each regions")

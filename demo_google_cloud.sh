@@ -19,10 +19,10 @@ date;hostname;pwd
 WORK_DIR_BUCKET=${1:-"gs://jax-nanopore-01-project-data/NANOME-TestData-work"}
 OUTPUT_DIR_BUCKET=${2:-"gs://jax-nanopore-01-export-bucket/NANOME-TestData-ouputs"}
 
-gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} || true
+gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} >/dev/null 2>&1 || true
 
 ## Run test demo on google cloud
-nextflow run main.nf -resume\
+nextflow run main.nf\
     -profile docker,google \
 	-w ${WORK_DIR_BUCKET} \
 	--outputDir ${OUTPUT_DIR_BUCKET} \

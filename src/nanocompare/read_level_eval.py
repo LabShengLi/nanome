@@ -54,32 +54,32 @@ def report_singleton_nonsingleton_table(bgTruth, outfn, fn_concordant, fn_discor
     ret = {}
 
     if isinstance(bgTruth, dict):
-        combineBGTruthSet = set(bgTruth.keys())
+        bgTruthSet = set(bgTruth.keys())
     elif isinstance(bgTruth, set):
-        combineBGTruthSet = bgTruth
+        bgTruthSet = bgTruth
     else:
         raise Exception(f"Not support type for bgTruth={type(bgTruth)}")
 
     singletonFileName = os.path.join(genome_annotation_dir, singletonsFile)
-    singletonSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, singletonFileName)
-    meth_unmeth = calculate_meth_unmeth(combineBGTruth, singletonSet)
+    singletonSet = filter_cpgkeys_using_bedfile(bgTruthSet, singletonFileName)
+    meth_unmeth = calculate_meth_unmeth(absoluteBGTruth, singletonSet)
     ret.update({'Singletons.5C': meth_unmeth[1], 'Singletons.5mC': meth_unmeth[0]})
 
     nonsingletonFilename = os.path.join(genome_annotation_dir, nonsingletonsFile)
-    nonsingletonSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, nonsingletonFilename)
-    meth_unmeth = calculate_meth_unmeth(combineBGTruth, nonsingletonSet)
+    nonsingletonSet = filter_cpgkeys_using_bedfile(bgTruthSet, nonsingletonFilename)
+    meth_unmeth = calculate_meth_unmeth(absoluteBGTruth, nonsingletonSet)
     ret.update({'Non-Singletons.5C': meth_unmeth[1], 'Non-Singletons.5mC': meth_unmeth[0]})
 
     # Concordant
     concordantFileName = fn_concordant  # f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed"
-    concordantSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, concordantFileName)
-    meth_unmeth = calculate_meth_unmeth(combineBGTruth, concordantSet)
+    concordantSet = filter_cpgkeys_using_bedfile(bgTruthSet, concordantFileName)
+    meth_unmeth = calculate_meth_unmeth(absoluteBGTruth, concordantSet)
     ret.update({'Concordant.5C': meth_unmeth[1], 'Concordant.5mC': meth_unmeth[0]})
 
     # Discordant
     discordantFileName = fn_discordant  # f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed"
-    discordantSet = filter_cpgkeys_using_bedfile(combineBGTruthSet, discordantFileName)
-    meth_unmeth = calculate_meth_unmeth(combineBGTruth, discordantSet)
+    discordantSet = filter_cpgkeys_using_bedfile(bgTruthSet, discordantFileName)
+    meth_unmeth = calculate_meth_unmeth(absoluteBGTruth, discordantSet)
     ret.update({'Discordant.5C': meth_unmeth[1], 'Discordant.5mC': meth_unmeth[0]})
 
     df = pd.DataFrame([ret], index=[f'{dsname}'])
@@ -110,8 +110,9 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     :return:
     """
     d = defaultdict(list)
-
-    for coord_tuple in tqdm(narrowedCoordinatesList):
+    bar = tqdm(narrowedCoordinatesList)
+    for coord_tuple in bar:
+        bar.set_description(f"Read-level-perf-at-{'Genome-wide' if coord_tuple is None else coord_tuple[1]}")
         if coord_tuple is not None:
             if not args.large_mem:
                 eval_coord_tuple = get_region_bed_tuple(coord_tuple[0],
@@ -122,7 +123,7 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
             eval_coord_tuple = None
 
         if eval_coord_tuple is not None and eval_coord_tuple[2] is None:
-            logger.warning(
+            logger.debug(
                 f"Bed region tagname={eval_coord_tuple[1]} is not found, not evaluated, check genome-annotaion dir={args.genome_annotation} for file {eval_coord_tuple[0]}")
             continue
         accuracy, roc_auc, ap, f1_macro, f1_micro, \
@@ -335,42 +336,53 @@ def parse_arguments():
     parser = argparse.ArgumentParser(prog='read_level_eval (NANOME)',
                                      description='Read-level performance evaluation in nanome paper')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
-    parser.add_argument('--dsname', type=str, help="dataset name", default='DS')
-    parser.add_argument('--runid', type=str, help="running prefix", required=True)
-    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by space',
+    parser.add_argument('--dsname', type=str, help="dataset name", required=True)
+    parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethPerf-DS_WGBS_2reps",
                         required=True)
-    parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name>;<file-name>",
-                        default=None)
-    parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff", default=5)
-    parser.add_argument('--processors', type=int, help="multi-processors", default=1)
+    parser.add_argument('--calls', nargs='+',
+                        help='all ONT call results <tool-name>:<file-name> seperated by space, tool-name can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod.C/DeepMod.Cluster',
+                        required=True)
+    parser.add_argument('--bgtruth', type=str,
+                        help="background truth file <encode-type>:<file-name>;<file-name>, encode-type can be 'encode' or 'bismark'",
+                        required=True)
+    parser.add_argument('--genome-annotation', type=str,
+                        help='genome annotation dir, contain BED files such as singleton, nonsingleton, etc.',
+                        required=True)
+    parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff, default is 5", default=5)
+    parser.add_argument('--processors', type=int, help="number of processors used, default is 1", default=1)
     parser.add_argument('--report-joined', action='store_true', help="true if report on only joined sets")
-    parser.add_argument('--chrSet', nargs='+', help='chromosome list', default=humanChrSet)
-    parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
+    parser.add_argument('--chrSet', nargs='+', help='chromosome list, default is human chr1-22, X and Y',
+                        default=humanChrSet)
+    parser.add_argument('-o', type=str, help=f"output base dir, default is {pic_base_dir}", default=pic_base_dir)
     parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
     parser.add_argument('--using-cache', help="if use cache files", action='store_true')
-    parser.add_argument('--distribution', help="report singleton/nonsingleton distributions", action='store_true')
-    parser.add_argument('--mpi', help="if using multi-processing for evaluation", action='store_true')
+    parser.add_argument('--distribution', help="if report singleton/nonsingleton distributions", action='store_true')
     parser.add_argument('--analysis', type=str, help='special analysis specifications for ecoli', default="")
-    parser.add_argument('--bedtools-tmp', type=str, help='bedtools temp dir', default=temp_dir)
-    parser.add_argument('--genome-annotation', type=str, help='genome annotation dir',
-                        default=os.path.join(data_base_dir, 'genome-annotation'))
-    parser.add_argument('--reference-genome', type=str, help='genome annotation dir',
-                        default=referenceGenomeFile)
     parser.add_argument('--save-curve-data', help="if save pred/truth points for curve plot", action='store_true')
-    parser.add_argument('--large-mem', help="if using large memory (>100GB)", action='store_true')
+    parser.add_argument('--large-mem', help="if using large memory (>100GB) for speed up", action='store_true')
+    parser.add_argument('--bedtools-tmp', type=str, help=f'bedtools temp dir, default is {temp_dir}', default=temp_dir)
+    parser.add_argument('--cache-dir', type=str,
+                        help=f'loaded calls/bs-seq in cache dir (speed up running), default is {cache_dir}',
+                        default=cache_dir)
     parser.add_argument('--disable-bed-check', help="if disable checking the 0/1 base format for genome annotations",
                         action='store_true')
-    parser.add_argument('--debug', help="if output debug info", action='store_true')
+    parser.add_argument('--mpi', help="if using multi-processing for evaluation, not available now",
+                        action='store_true')
+    parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_arguments()
 
-    if args.debug:
+    if args.verbose:
         set_log_debug_level()
     else:
         set_log_info_level()
+
+    ## Set tmp dir for bedtools
+    os.makedirs(args.bedtools_tmp, exist_ok=True)
+    pybedtools.helpers.set_tempdir(args.bedtools_tmp)
 
     ## Set tmp dir for bedtools
     # bedtool_tmp_dir = "/fastscratch/liuya/nanocompare/bedtools_tmp"
@@ -420,12 +432,17 @@ if __name__ == '__main__':
             # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
             # bgTruth1 is dict of key->value, key=(chr, start, strand), and value=[meth.freq, cov]
             bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True,
-                                      using_cache=using_cache, enable_cache=enable_cache)
+                                      using_cache=using_cache, enable_cache=enable_cache, cache_dir=args.cache_dir)
             bgTruthList.append(bgTruth1)
 
         # Combine multiple bgtruth together for analysis
         # We use union of two replicates as BG-Truth
         combineBGTruth = combineBGTruthList(bgTruthList, covCutoff=1)
+
+        # Clean bgTruthList
+        del bgTruth1
+        del bgTruthList
+
         logger.debug("\n\n########################\n\n")
 
         logger.debug(f'Start find absolute state (100% or 0% level), take times')
@@ -433,6 +450,9 @@ if __name__ == '__main__':
                            satisfy_fully_meth_or_unmeth(combineBGTruth[key][0])}
         logger.debug(
             f'Combined bgtruth sites={len(combineBGTruth):,}, Absolute bgtruth (100% and 0% level) sites={len(absoluteBGTruth):,}')
+
+        ## Clean all level combineBGTruth
+        del combineBGTruth
 
         logger.debug(f'Start cutoff on absolute bg-truth, take times')
         # This is the smallest sites we use for evaluation
@@ -447,12 +467,12 @@ if __name__ == '__main__':
         ## file name is like: K562_WGBS_2Reps.hg38_nonsingletons.concordant.bed
         ## let nonsingletonsFilePrefix = "hg38_nonsingletons"
         nonsingletonsFilePrefix = nonsingletonsFile.replace(singletonFileExtStr, '')
-        fn_concordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.concordant.bed.gz"
-        fn_discordant = f"{out_dir}/{RunPrefix}.{nonsingletonsFilePrefix}.discordant.bed.gz"
+        fn_concordant = f"{out_dir}/{RunPrefix}_{args.dsname}.{nonsingletonsFilePrefix}.concordant.bed.gz"
+        fn_discordant = f"{out_dir}/{RunPrefix}_{args.dsname}.{nonsingletonsFilePrefix}.discordant.bed.gz"
 
         # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth) with cov>=1
         # Classify concordant and discordant based on cov>=1 bgtruth
-        logger.info(f"Generate concordant and discordant regions based on BS-seq")
+        logger.info(f"Scan concordant and discordant regions based on BS-seq")
         nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant,
                                     nsDisCordantFileName=fn_discordant, genome_annotation_dir=args.genome_annotation)
 
@@ -470,6 +490,7 @@ if __name__ == '__main__':
                                                 genome_annotation_dir=args.genome_annotation)
 
         logger.debug("\n\n########################\n\n")
+        logger.debug(f"Memory report: {get_current_memory_usage()}")
         logger.info(f"Import BS-seq data done for fnlist={fnlist}")
     else:
         absoluteBGTruth = None
@@ -499,7 +520,8 @@ if __name__ == '__main__':
 
         ## MUST import read-level results, and include score for plot ROC curve and PR curve
         ont_call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, siteLevel=False,
-                                using_cache=using_cache, enable_cache=enable_cache, filterChr=filterChrSet)
+                                using_cache=using_cache, enable_cache=enable_cache, filterChr=filterChrSet,
+                                cache_dir=args.cache_dir)
         sitesDataset['Dataset'].append(dsname)
         sitesDataset['Method'].append(call_name)
         sitesDataset['Sites'].append(len(ont_call0))
@@ -516,6 +538,7 @@ if __name__ == '__main__':
             del ont_call0
         else:
             ontCallWithinBGTruthDict[call_name] = ont_call0
+        logger.debug(f"Memory report: {get_current_memory_usage()}")
 
     logger.info(f"Import tools's calling done for toolist={list(ontCallWithinBGTruthDict.keys())}")
     logger.info(f"Memory report: {get_current_memory_usage()}")
@@ -543,11 +566,11 @@ if __name__ == '__main__':
         logger.debug(f'After joined with {toolname}, cpgs={len(joinedCPG):,}')
 
     # this file is the all tool (cov>=1) joined with BS-seq (cov>=5) 0%, 100% together sites BED file, for evaluation on joined sites
-    bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}.Tools_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.bed.gz"
+    bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}_{args.dsname}.Tools_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.bed.gz"
     save_keys_to_single_site_bed(joinedCPG, outfn=bedfn_tool_join_bgtruth, callBaseFormat=baseFormat, outBaseFormat=1)
 
     ## Sort the bed file
-    bedfn_tool_join_bgtruth_sorted = f"{out_dir}/{RunPrefix}.Tools_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.sorted.bed.gz"
+    bedfn_tool_join_bgtruth_sorted = f"{out_dir}/{RunPrefix}_{args.dsname}.Tools_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.sorted.bed.gz"
     sort_bed_file(infn=bedfn_tool_join_bgtruth, outfn=bedfn_tool_join_bgtruth_sorted)
 
     ## Delete not sorted file
@@ -642,9 +665,6 @@ if __name__ == '__main__':
         concordant_tuple = region_bedtuple_list[-2]
         discordant_tuple = region_bedtuple_list[-1]
 
-        logger.debug(
-            f"Distribution based region bed files: {[singleton_tuple, nonsingleton_tuple, concordant_tuple, discordant_tuple]}")
-
         if args.large_mem:  # in memory already
             singleton_bed = singleton_tuple[2]
             nonsingleton_bed = nonsingleton_tuple[2]
@@ -659,10 +679,15 @@ if __name__ == '__main__':
                 get_region_bed_tuple(concordant_tuple[0], enable_base_detection_bedfile=not args.disable_bed_check)[2]
             discordant_bed = \
                 get_region_bed_tuple(discordant_tuple[0], enable_base_detection_bedfile=not args.disable_bed_check)[2]
-
+        logger.debug(
+            f"Singleton/nonsingleton region bed files: {[singleton_tuple, nonsingleton_tuple, concordant_tuple, discordant_tuple]}")
         datasets = defaultdict(list)
         sum_cg = 0
-        for coord_tuple in region_bedtuple_list[:]:
+
+        logging.debug(f"Region list={region_bedtuple_list[:]}")
+        bar = tqdm(region_bedtuple_list[:])
+        bar.set_description("Dist(Sing/Nonsing)-for-regions")
+        for coord_tuple in bar:
             coordFn = None
             if coord_tuple is not None:  # get genomic region results
                 if coord_tuple[1] in ['Singletons', 'Non-singletons', 'Concordant', 'Discordant']:
@@ -674,7 +699,7 @@ if __name__ == '__main__':
                                                                         enable_base_detection_bedfile=not args.disable_bed_check)
 
                 if coordBed is None:
-                    logger.warning(f"genomic region {tagname} is not found, not evaluated.")
+                    logger.debug(f"genomic region {tagname} is not found, not evaluated.")
                     continue
                 intersect_coord_bed = intersect_bed_regions(joined_bed, coordBed, coordFn)
             else:  # Genome-wide results
@@ -709,7 +734,7 @@ if __name__ == '__main__':
             datasets['Discordant'].append(num_discordant)
 
             logger.debug(
-                f"Coord={tagname}, Total={num_total:,}, Total={num_total:,}, Singletons={num_singleton:,}, Non-singletons={num_nonsingleton:,}, Concordant={num_concordant:,}, Discordant={num_discordant:,}")
+                f"Coord={tagname}, Total={num_total:,}, Singletons={num_singleton:,}, Non-singletons={num_nonsingleton:,}, Total(Sing+Nonsing)={num_singleton + num_nonsingleton:,}, Concordant={num_concordant:,}, Discordant={num_discordant:,}, Total(Con+Disc)={num_concordant + num_discordant:,}")
             # Sanity check sums
             if num_total != num_singleton + num_nonsingleton:
                 logger.error(f"Found incorrect sums at {tagname}: for num_total != num_singleton + num_nonsingleton")
@@ -728,7 +753,7 @@ if __name__ == '__main__':
 
     for tool in ontCallWithinBGTruthDict:
         tmpPrefix = f'{RunPrefix}.{tool}'
-        logger.info(f'Evaluating: {tmpPrefix}')
+        logger.info(f'Evaluating per-read performance: {tmpPrefix}')
 
         if args.mpi:  # Using mpi may cause memory error for large data, not fixed, but fast running on small data
             # Note: narrowedCoordinatesList - all singleton (absolute and mixed) and non-singleton generated bed. ranges
