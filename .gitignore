@@ -57,3 +57,7 @@ testdemo.py
 /local_singularity_cache/
 /data/
 /NANOME_trace/
+/nanome_results/
+/nanome_cache_dir/
+/nanome_temp_dir/
+

@@ -12,7 +12,7 @@ import argparse
 from multiprocessing import Manager
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import get_tool_name, save_done_file
+from nanocompare.global_settings import get_tool_name, save_done_file, nanome_version
 
 
 def import_and_save_meteore(callfn, callencode, outfn):
@@ -56,8 +56,9 @@ def parse_arguments():
     """
     :return:
     """
-    parser = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(prog='tss_eval (NANOME)',
         description='Export read/site level methylation results of all nanopore tools in nanome paper')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces',
@@ -73,14 +74,17 @@ def parse_arguments():
     parser.add_argument('--chrs', nargs='+', help='chromosome list',
                         default=humanChrSet)
     parser.add_argument('--tagname', type=str, help="output unified file tagname", default=None)
-
+    parser.add_argument('--debug', help="if output debug info", action='store_true')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
-    set_log_debug_level()
-
     args = parse_arguments()
+    if args.debug:
+        set_log_debug_level()
+    else:
+        set_log_info_level()
+
     logger.debug(f"args={args}")
 
     if args.output_unified_format:  ## if output METEORE format, must read directly
@@ -107,7 +111,7 @@ if __name__ == '__main__':
     logger.info(f'Output to dir:{out_dir}')
 
     logger.debug(args)
-    logger.info(f'\n\n####################\n\n')
+    logger.debug(f'\n\n####################\n\n')
 
     if args.output_unified_format:
         ## Output read-level unified format with 1-based start
@@ -134,7 +138,7 @@ if __name__ == '__main__':
 
     ## Convert into 0-based format site level bed CpG files, used for TSS plot
     if args.bgtruth:
-        logger.info("We are generating bed CpG results for BG-Truth")
+        logger.debug("We are generating bed CpG results for BG-Truth")
         # we import multiple (1 or 2) replicates and join them
         encode, fnlist = args.bgtruth.split(':')
         fnlist = fnlist.split(';')
@@ -156,11 +160,11 @@ if __name__ == '__main__':
         # Combine one/two replicates, using cutoff=1 or 5
         bgTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruthCutt)
         outfn = os.path.join(out_dir, f'{args.dsname}_BSseq-perSite-cov{bgtruthCutt}.bed.gz')
-        logger.info(f'Combined BS-seq data (cov>={bgtruthCutt}), all methylation level sites={len(bgTruth):,}')
+        logger.debug(f'Combined BS-seq data (cov>={bgtruthCutt}), all methylation level sites={len(bgTruth):,}')
         output_calldict_to_unified_bed_as_0base(bgTruth, outfn)
-        logger.info(f'\n\n####################\n\n')
+        logger.debug(f'\n\n####################\n\n')
 
-    logger.info("We are outputing bed CpG results for each tool")
+    logger.debug("We are outputing bed CpG results for each tool")
 
     mgr = Manager()
     ns = mgr.Namespace()
@@ -184,6 +188,6 @@ if __name__ == '__main__':
         pool.starmap(import_and_save_site_level, input_list)
 
     for key in ns.callsites.keys():
-        logger.info(f"key={key}, sites={ns.callsites[key]}")
+        logger.debug(f"tool={key}, sites={ns.callsites[key]}")
     save_done_file(out_dir)
     logger.info("TSS bed file generation DONE")

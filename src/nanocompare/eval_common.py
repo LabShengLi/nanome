@@ -13,10 +13,11 @@ Such as import_DeepSignal, import_BGTruth, etc.
 
 import glob
 import gzip
-import multiprocessing
 import pickle
 import re
+import subprocess
 import sys
+import warnings
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, wait
 from itertools import combinations
@@ -25,6 +26,7 @@ from multiprocessing import Pool
 import math
 import numpy as np
 import pandas as pd
+import psutil
 import pysam
 from Bio import SeqIO
 from pybedtools import BedTool
@@ -33,14 +35,14 @@ from sklearn.metrics import roc_curve, auc, average_precision_score, f1_score, p
 from tqdm import tqdm
 
 from nanocompare.global_config import *
-from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEncodeList, narrowCoordFileList, \
-    narrowCoordFileTag, referenceGenomeFile, cgCoordFileTag, cg_density_file_list, rep_file_list, repCoordFileTag, \
-    list_base0_bed_basefn, enable_base_detection_bedfile, location_filename_to_abbvname, region_name_to_fn_dict
+from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEncodeList, referenceGenomeFile, \
+    list_base0_bed_basefn, enable_base_detection_bedfile, location_filename_to_abbvname
 
 
 def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, readid_col=4, log_lik_ratio_col=5,
                                  sequence_col=-1, num_motifs_col=-2, baseFormat=1, llr_cutoff=2.0, output_first=False,
-                                 include_score=False, filterChr=humanChrSet, save_unified_format=False, outfn=None, stringent_cutoff=True):
+                                 include_score=False, filterChr=humanChrSet, save_unified_format=False, outfn=None,
+                                 stringent_cutoff=True):
     """
     We checked the input is 0-based for the start col
     Return dict of key='chr1\t123\t123\t+', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
@@ -181,9 +183,9 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
 
     if save_unified_format:
         outf.close()
-        logger.info(f'Save METEORE output format to {outfn}')
+        logger.debug(f'Save METEORE output format to {outfn}')
 
-    logger.info(
+    logger.debug(
         f"###\timportPredictions_Nanopolish SUCCESS: {call_cnt:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file with LLR-cutoff={llr_cutoff:.2f}")
     return cpgDict
 
@@ -275,9 +277,9 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
 
     if save_unified_format:
         outf.close()
-        logger.info(f'Save METEORE output format to {outfn}')
+        logger.debug(f'Save METEORE output format to {outfn}')
 
-    logger.info(
+    logger.debug(
         f"###\timportPredictions_DeepSignal SUCCESS: {row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
 
     return cpgDict
@@ -387,9 +389,9 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, readid_col=3, st
 
     if save_unified_format:
         outf.close()
-        logger.info(f'Save METEORE output format to {outfn}')
+        logger.debug(f'Save METEORE output format to {outfn}')
 
-    logger.info(
+    logger.debug(
         f"###\timportPredictions_Tombo SUCCESS: {row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with meth-cutoff={cutoff} from {infileName} file")
     return cpgDict
 
@@ -503,7 +505,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
 
     infile.close()
 
-    logger.info(
+    logger.debug(
         f"###\timportPredictions_DeepMod SUCCESS: {count_calls:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
     return cpgDict
 
@@ -584,7 +586,7 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
 
     infile.close()
 
-    logger.info(
+    logger.debug(
         f"###\timportDeepMod_clustered Parsing SUCCESS: {count_calls:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
 
     return cpgDict
@@ -686,9 +688,9 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
 
     if save_unified_format:
         outf.close()
-        logger.info(f'Save METEORE output format to {outfn}')
+        logger.debug(f'Save METEORE output format to {outfn}')
 
-    logger.info(
+    logger.debug(
         f"###\timportPredictions_Megalodon SUCCESS: {call_cnt:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with meth-cutoff={cutoff:.2f} from {infileName} file")
     return cpgDict
 
@@ -764,7 +766,7 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
                 logger.error(f"Parse Guppy fast5mod raw line failed: [{row}]")
                 continue
 
-        logger.info(
+        logger.debug(
             f"###\timportPredictions_Guppy (fast5mod) SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs, using default Fast5mod cutoff from {infileName} file")
 
         return cpgDict
@@ -847,10 +849,10 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
             cpgDict[key] = [1] * meth_cov + [0] * unmeth_cov
 
         if output_first:
-            logger.info(f'line={row}, key={key}, cpgDict[key]={cpgDict[key]}')
+            logger.debug(f'line={row}, key={key}, cpgDict[key]={cpgDict[key]}')
         output_first = False
 
-    logger.info(
+    logger.debug(
         f"###\timportPredictions_Guppy SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
     return cpgDict
 
@@ -935,16 +937,16 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
             cpgDict[key].append(meth_indicator)
     if save_unified_format:
         outf.close()
-        logger.info(f'Save METEORE output format to {outfn}')
+        logger.debug(f'Save METEORE output format to {outfn}')
 
     unmethcall_cnt = call_cnt - methcall_cnt
-    logger.info(
+    logger.debug(
         f"###\timportPredictions_Guppy_gcf52ref SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs, using cutoff={cutoff} from {infileName} file")
     return cpgDict
 
     ### Before df way
     df = pd.read_csv(infileName, sep=sep, header=header)
-    logger.info(df)
+    logger.debug(df)
 
     if save_unified_format:
         outf = gzip.open(outfn, 'wt')
@@ -1002,10 +1004,10 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
 
     if save_unified_format:
         outf.close()
-        logger.info(f'Save METEORE output format to {outfn}')
+        logger.debug(f'Save METEORE output format to {outfn}')
 
     unmethcall_cnt = call_cnt - methcall_cnt
-    logger.info(
+    logger.debug(
         f"###\timportPredictions_Guppy SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
     return cpgDict
 
@@ -1060,7 +1062,7 @@ def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, 
         else:
             unmeth_cnt += 1
     infile.close()
-    logger.info(
+    logger.debug(
         f"###\timportPredictions_METEORE SUCCESS: rows={row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs (include + and -) from {infileName} file")
     return cpgDict
 
@@ -1096,7 +1098,7 @@ def readLevelToSiteLevelWithCov(ontDict, minCov=1, toolname="Tool"):
             raise Exception(
                 f'Not support type of value, type(ontDict[cpg])={type(ontDict[cpg])} for toolname={toolname}')
 
-    logger.info(
+    logger.debug(
         f"###\treadLevelToSiteLevelWithCov: completed filtering with minCov={minCov}: leave {len(result):,} CpG sites left for {toolname}")
     return result
 
@@ -1293,11 +1295,11 @@ def importGroundTruth_from_Bismark(infn, chr_col=0, start_col=1, strand_col=2, m
             cpgDict[key] = meth_freq
 
         if print_first:
-            logger.info(f"key={key}, cpgDict[key]={cpgDict[key]}")
+            logger.debug(f"key={key}, cpgDict[key]={cpgDict[key]}")
             print_first = False
 
     infile.close()
-    logger.info(
+    logger.debug(
         f"###\timportGroundTruth_from_Bismark: loaded information for {len(cpgDict):,} CpGs with cutoff={covCutoff}, before cutoff={row_cnt:,}")
     return cpgDict
 
@@ -1347,7 +1349,7 @@ def importGroundTruth_from_Bismark(infn, chr_col=0, start_col=1, strand_col=2, m
             raise Exception(
                 f'In genome-wide, we found duplicate sites: for key={key} in row={row}, please check input file {infn}')
 
-    logger.info(
+    logger.debug(
         f"###\timportGroundTruth_genome_wide_from_Bismark: loaded {len(cpgDict):,} CpGs with cutoff={covCutoff} from file {infn}")
 
     return cpgDict
@@ -1422,11 +1424,11 @@ def importGroundTruth_from_5hmc_ziwei(infn, chr_col=0, start_col=1, strand_col=7
             cpgDict[key] = meth_freq
 
         if print_first:
-            logger.info(f"key={key}, cpgDict[key]={cpgDict[key]}")
+            logger.debug(f"key={key}, cpgDict[key]={cpgDict[key]}")
             print_first = False
 
     infile.close()
-    logger.info(
+    logger.debug(
         f"###\timportGroundTruth_5hmc_ziwei: loaded information for {len(cpgDict):,} CpGs with cutoff={covCutoff}, before cutoff={row_cnt:,}")
     return cpgDict
 
@@ -1464,94 +1466,6 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     elif encode == 'Nanopolish':
         calls0 = importPredictions_Nanopolish(infn, baseFormat=baseFormat, include_score=include_score,
                                               filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn)
-    elif encode == 'Megalodon':  # Original format
-        calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score,
-                                             filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn)
-    elif encode == 'Megalodon.ZW':  # Here, ziwei preprocess the raw file to this format: chr_col=0, start_col=1, strand_col=3
-        calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score, readid_col=2,
-                                             chr_col=0, start_col=1, strand_col=3, filterChr=filterChr,
-                                             save_unified_format=save_unified_format, outfn=outfn)
-    elif encode == 'DeepMod.Cluster':  # import DeepMod Clustered output for site level, itself tool reports by cluster, key->value={'freq':68, 'cov':10}
-        calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat, siteLevel=siteLevel,
-                                                     include_score=include_score, filterChr=filterChr)
-    elif encode == 'DeepMod.C':  # import DeepMod itself tool for read level
-        calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, siteLevel=siteLevel,
-                                           include_score=include_score, filterChr=filterChr)
-    elif encode == 'Guppy':  # import Guppy itself tool results by fast5mod raw results
-        calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel,
-                                         filterChr=filterChr)
-    elif encode == 'Guppy.ZW':  # import Guppy itself tool results by fast5mod processed by Ziwei
-        calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel,
-                                         filterChr=filterChr, formatSource="Guppy.ZW")
-    elif encode == 'Guppy.gcf52ref':  # import Guppy gcf52ref read level results
-        calls0 = importPredictions_Guppy_gcf52ref(infn, baseFormat=baseFormat, include_score=include_score,
-                                                  filterChr=filterChr, header=None,
-                                                  save_unified_format=save_unified_format,
-                                                  outfn=outfn)
-    elif encode == 'METEORE':  # import Guppy gcf52ref read level results
-        calls0 = importPredictions_METEORE(infn, baseFormat=baseFormat, include_score=include_score,
-                                           filterChr=filterChr)
-    else:
-        raise Exception(f'Not support {encode} for file {infn} now')
-
-    if enable_cache:
-        save_to_cache(infn, calls0, encode=encode, baseFormat=baseFormat, include_score=include_score,
-                      siteLevel=siteLevel)
-
-    logger.debug(f'Import {encode} finished!\n')
-    return calls0
-
-
-def import_call_mp(infn, encode, baseFormat=1, include_score=False, siteLevel=False, enable_cache=False,
-                   using_cache=False,
-                   filterChr=humanChrSet, save_unified_format=False, outfn=None):
-    """
-    General purpose for import any tools methylation calling input files.
-
-    Import fn based on callname and return key=(chr, start, strand) -> value=[0 0 1 1 1 1 ]
-
-    If include_score=True, then value= (0, score)
-        call0   -   original results
-    :param infn:
-    :param encode:
-    :return:
-    """
-    logger.info("\n\n####################\n\n")
-    logger.info(f"Start mp load encode={encode}, infn={infn}")
-
-    if enable_cache and using_cache:
-        ret = check_cache_available(infn=infn, encode=encode, baseFormat=baseFormat, include_score=include_score,
-                                    siteLevel=siteLevel)
-        if ret:
-            logger.debug(f'Import {encode} finished!\n')
-            return ret
-        logger.debug(f'Not cached yet, we load from raw file')
-    call0 = None
-    if encode == 'DeepSignal':
-        calls0 = importPredictions_DeepSignal(infn, baseFormat=baseFormat, include_score=include_score,
-                                              filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn)
-    elif encode == 'Tombo':
-        calls0 = importPredictions_Tombo(infn, baseFormat=baseFormat, include_score=include_score, filterChr=filterChr,
-                                         save_unified_format=save_unified_format, outfn=outfn)
-    elif encode == 'Nanopolish':
-        # multi-processing
-        retList = []
-        with Pool(processes=25) as pool:
-            for chr in filterChr:
-                ret = pool.apply_async(importPredictions_Nanopolish, (infn,),
-                                       kwds={'include_score': include_score, 'filterChr': [chr]})
-                retList.append(ret)
-            # calls0 = importPredictions_Nanopolish(infn, baseFormat=baseFormat, include_score=include_score,
-            #                                       filterChr=filterChr, saveMeteore=saveMeteore, outfn=outfn)
-            pool.close()
-            pool.join()
-        callList = [ret.get() for ret in retList]
-
-        logger.info("combine")
-        calls0 = {}
-        for call1 in callList:
-            calls0.update(call1)
-
     elif encode == 'Megalodon':  # Original format
         calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score,
                                              filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn)
@@ -1700,7 +1614,7 @@ def load_single_sites_bed_as_set(infn):
 
 
 def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, secondFilterBedFileName=None,
-                            cutoff_fully_meth=1.0, outdir=None, tagname=None, is_save=True):
+                            cutoff_fully_meth=1.0, outdir=None, tagname=None, save_curve_data=True):
     """
     Compute ontCalls with bgTruth performance results by per-read count.
     coordBedFileName        -   full file name of coordinate used to eval
@@ -1842,72 +1756,74 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
             raise Exception(f'We must see all certain sites here, but see meth_freq={bgTruth[cpgKey][0]}')
 
     ### compute all per read stats:
-    try:
-        accuracy = (TP_5mC + TN_5mC) / float(TP_5mC + FP_5mC + FN_5mC + TN_5mC)
-    except ZeroDivisionError:
-        accuracy = 0
+    with warnings.catch_warnings(record=True) as w:
 
-    #     Positive predictive value (PPV), Precision = (TP) / E(Predicted condition positive)
-    try:
-        predicted_condition_positive_5mC = float(TP_5mC + FP_5mC)
-        precision_5mC = TP_5mC / predicted_condition_positive_5mC
-    except ZeroDivisionError:
-        precision_5mC = 0
+        try:
+            accuracy = (TP_5mC + TN_5mC) / float(TP_5mC + FP_5mC + FN_5mC + TN_5mC)
+        except ZeroDivisionError:
+            accuracy = 0
 
-    try:
-        predicted_condition_positive_5C = float(TP_5C + FP_5C)
-        precision_5C = TP_5C / predicted_condition_positive_5C
-    except ZeroDivisionError:
-        precision_5C = 0
+        #     Positive predictive value (PPV), Precision = (TP) / E(Predicted condition positive)
+        try:
+            predicted_condition_positive_5mC = float(TP_5mC + FP_5mC)
+            precision_5mC = TP_5mC / predicted_condition_positive_5mC
+        except ZeroDivisionError:
+            precision_5mC = 0
 
-    #     True positive rate (TPR), Recall, Sensitivity, probability of detection = (TP) / (TP+FN)
-    try:
-        recall_5mC = TP_5mC / float(TP_5mC + FN_5mC)
-    except ZeroDivisionError:
-        recall_5mC = 0
+        try:
+            predicted_condition_positive_5C = float(TP_5C + FP_5C)
+            precision_5C = TP_5C / predicted_condition_positive_5C
+        except ZeroDivisionError:
+            precision_5C = 0
 
-    try:
-        recall_5C = TP_5C / float(TP_5C + FN_5C)
-    except ZeroDivisionError:
-        recall_5C = 0
+        #     True positive rate (TPR), Recall, Sensitivity, probability of detection = (TP) / (TP+FN)
+        try:
+            recall_5mC = TP_5mC / float(TP_5mC + FN_5mC)
+        except ZeroDivisionError:
+            recall_5mC = 0
 
-    #     F1 score:
-    f1_micro = f1_score(y_of_bgtruth, ypred_of_ont_tool, average='micro')
-    f1_macro = f1_score(y_of_bgtruth, ypred_of_ont_tool, average='macro')
+        try:
+            recall_5C = TP_5C / float(TP_5C + FN_5C)
+        except ZeroDivisionError:
+            recall_5C = 0
 
-    precision_micro = precision_score(y_of_bgtruth, ypred_of_ont_tool, average='micro')
-    precision_macro = precision_score(y_of_bgtruth, ypred_of_ont_tool, average='macro')
+        #     F1 score:
+        f1_micro = f1_score(y_of_bgtruth, ypred_of_ont_tool, average='micro')
+        f1_macro = f1_score(y_of_bgtruth, ypred_of_ont_tool, average='macro')
 
-    recall_micro = recall_score(y_of_bgtruth, ypred_of_ont_tool, average='micro')
-    recall_macro = recall_score(y_of_bgtruth, ypred_of_ont_tool, average='macro')
+        precision_micro = precision_score(y_of_bgtruth, ypred_of_ont_tool, average='micro')
+        precision_macro = precision_score(y_of_bgtruth, ypred_of_ont_tool, average='macro')
 
-    try:
-        F1_5mC = 2 * ((precision_5mC * recall_5mC) / (precision_5mC + recall_5mC))
-    except ZeroDivisionError:
-        F1_5mC = 0
+        recall_micro = recall_score(y_of_bgtruth, ypred_of_ont_tool, average='micro')
+        recall_macro = recall_score(y_of_bgtruth, ypred_of_ont_tool, average='macro')
 
-    try:
-        F1_5C = 2 * ((precision_5C * recall_5C) / (precision_5C + recall_5C))
-    except ZeroDivisionError:
-        F1_5C = 0
+        try:
+            F1_5mC = 2 * ((precision_5mC * recall_5mC) / (precision_5mC + recall_5mC))
+        except ZeroDivisionError:
+            F1_5mC = 0
 
-    fprSwitch = 1
-    try:
-        fpr, tpr, _ = roc_curve(y_of_bgtruth, yscore_of_ont_tool)
-        average_precision = average_precision_score(y_of_bgtruth, yscore_of_ont_tool)
-    except ValueError:
-        logger.error(
-            f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{ypred_of_ont_tool}, \nother settings: {title}, {region_name}, {secondFilterBedFileName}")
-        fprSwitch = 0
-        roc_auc = 0.0
-        average_precision = 0.0
+        try:
+            F1_5C = 2 * ((precision_5C * recall_5C) / (precision_5C + recall_5C))
+        except ZeroDivisionError:
+            F1_5C = 0
 
-    if fprSwitch == 1:
-        roc_auc = auc(fpr, tpr)
+        fprSwitch = 1
+        try:
+            fpr, tpr, _ = roc_curve(y_of_bgtruth, yscore_of_ont_tool)
+            average_precision = average_precision_score(y_of_bgtruth, yscore_of_ont_tool)
+        except ValueError:
+            logger.error(
+                f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{ypred_of_ont_tool}, \nother settings: {title}, {region_name}, {secondFilterBedFileName}")
+            fprSwitch = 0
+            roc_auc = 0.0
+            average_precision = 0.0
+
+        if fprSwitch == 1:
+            roc_auc = auc(fpr, tpr)
 
     ########################
 
-    if is_save:
+    if save_curve_data:
         # save y and y-pred and y-score for later plot:
         curve_data = {'yTrue': y_of_bgtruth, 'yPred': ypred_of_ont_tool, 'yScore': yscore_of_ont_tool}
 
@@ -2045,7 +1961,8 @@ def eval_concordant_within_kbp_region(cpgList, evalcpg, kbp=10):
 
 
 def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcordantFileName, nsDisCordantFileName,
-                                kbp=10, print_first=False, genome_annotation_dir=os.path.join(data_base_dir, 'genome-annotation')):
+                                kbp=10, print_first=False,
+                                genome_annotation_dir=os.path.join(data_base_dir, 'genome-annotation')):
     """
     Define concordant and discordant based on BG-Truth.
     Return 1-based Cocordant and Discordant regions in bed file
@@ -2098,10 +2015,10 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
         regionDict[regionKey].append((tmpStart, methIndicator, coverage))  # save value as (start, 0/1, cov)
 
         if is_print_first:
-            logger.info(f'regionDict[regionKey]={regionDict[regionKey]}, regionKey={regionKey}')
+            logger.debug(f'regionDict[regionKey]={regionDict[regionKey]}, regionKey={regionKey}')
         is_print_first = False
 
-    logger.info(f'cntBedLines={cntBedLines:,}')
+    logger.debug(f'cntBedLines={cntBedLines:,}')
 
     is_print_first = print_first
     concordantList = {}  # list of (chr, start)
@@ -2113,7 +2030,7 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
         chrOut = region[0]
 
         if is_print_first:
-            logger.info(f'cpgList={cpgList}')
+            logger.debug(f'cpgList={cpgList}')
 
         for k in range(len(cpgList)):  # for each CpG
             # Since before we group + - to +, now we assure use start
@@ -2138,7 +2055,7 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
                     unmeth_cnt_dict['Discordant'] += 1
             pass
         if is_print_first:
-            logger.info(f'concordantList={concordantList}, discordantList={discordantList}')
+            logger.debug(f'concordantList={concordantList}, discordantList={discordantList}')
         is_print_first = False
 
     concordantSet = list(set(concordantList) - set(discordantList))  # remove duplicate and same in discordant
@@ -2159,7 +2076,7 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
         outfile_discordant.write(region_txt)
     outfile_discordant.close()
 
-    logger.info(f'save to {[nsConcordantFileName, nsDisCordantFileName]}')
+    logger.debug(f'save to {[nsConcordantFileName, nsDisCordantFileName]}')
     # logger.debug(f'meth_cnt={meth_cnt_dict}, unmeth_cnt={unmeth_cnt_dict}')
     ret = {'Concordant.5mC': meth_cnt_dict['Concordant'], 'Concordant.5C': unmeth_cnt_dict['Concordant'],
            'Discordant.5mC': meth_cnt_dict['Discordant'], 'Discordant.5C': unmeth_cnt_dict['Discordant']}
@@ -2326,7 +2243,7 @@ def sanity_check_dna_sequence(chr='chr10', start_base0=10493):
     :return:
     """
     ret_seq = get_dna_base_from_reference(chr, start_base0, ref_fasta=refGenome)
-    logger.info(f'Report is 0-based for the input:\n{chr}:{start_base0}\n{ret_seq}\n-----^-----\n\n')
+    logger.debug(f'Report is 0-based for the input:\n{chr}:{start_base0}\n{ret_seq}\n-----^-----\n\n')
 
 
 def get_cache_filename(infn, params):
@@ -2387,7 +2304,7 @@ def check_cache_available(infn, **params):
         try:
             with open(cachefn, 'rb') as inf:
                 ret = pickle.load(inf)
-                logger.info(f'Get from cache:{cachefn}')
+                logger.debug(f'Get from cache:{cachefn}')
             return ret
         except:
             return None
@@ -2467,7 +2384,7 @@ def combineBGTruthList(bgTruthList, covCutoff=1):
     unionBGTruth = {}  # used for singleton and non-singletons detect, used for performance eval
     jointBGTruth = {}  # intersection of CpG sites
     if len(bgTruthList) == 2:  # sites must in both replicates, and
-        logger.info(f'Start study union of multiple BG-Truth, with coverage={covCutoff}')
+        logger.debug(f'Start study union of multiple BG-Truth, with coverage={covCutoff}')
         unionSet = set(bgTruthList[0].keys()).union(set(bgTruthList[1].keys()))
         jointSet = set(bgTruthList[0].keys()).intersection(set(bgTruthList[1].keys()))
 
@@ -2497,13 +2414,13 @@ def combineBGTruthList(bgTruthList, covCutoff=1):
             unionBGTruth[key] = (meth_freq, cov)
             if key in jointSet:
                 jointBGTruth[key] = (meth_freq, cov)
-        logger.info(
+        logger.debug(
             f'unionBGTruth = {len(unionBGTruth):,}, jointBGTruth={len(jointBGTruth):,}, with cov-cutoff={covCutoff}')
     elif len(bgTruthList) == 1:
         for key in bgTruthList[0]:
             if bgTruthList[0][key][1] >= covCutoff:
                 unionBGTruth[key] = bgTruthList[0][key]
-        logger.info(f'Only 1 replicates, BGTruth = {len(unionBGTruth):,}, with cov-cutoff={covCutoff}')
+        logger.debug(f'Only 1 replicates, BGTruth = {len(unionBGTruth):,}, with cov-cutoff={covCutoff}')
     else:
         raise Exception(f'len={len(bgTruthList)}, is not support now.')
 
@@ -2615,8 +2532,8 @@ def compute_and_gen_venn_data(set_dict, namelist, outdir, tagname='tagname'):
     with open(outfn, 'w') as outf:
         for num in retlist:
             outf.write(f'{num}\n')
-    logger.info(f'Note the venn data set, tool-name order must be: {namelist}')
-    logger.info(f'save {len(retlist)} points venn data for {tagname} to {outfn}')
+    logger.debug(f'Note the venn data set, tool-name order must be: {namelist}')
+    logger.debug(f'save {len(retlist)} points venn data for {tagname} to {outfn}')
 
 
 def ontcalls_to_setsfile_for_venn_analysis(call_keys, outfn):
@@ -2631,7 +2548,7 @@ def ontcalls_to_setsfile_for_venn_analysis(call_keys, outfn):
     for key in call_keys:
         outf.write(f"{key[0]}_{key[1]}_{key[2]}\n")
     outf.close()
-    logger.info(f"save to {outfn}")
+    logger.debug(f"save to {outfn}")
 
 
 def bedtool_convert_0_to_1(bed):
@@ -2673,7 +2590,7 @@ def is_0base_region_files(infn):
     return False
 
 
-def get_region_bed(infn):
+def get_region_bed(infn, enable_base_detection_bedfile=enable_base_detection_bedfile):
     """
     Get the BED file for infn, return 1-based start BED object
     :param infn:
@@ -2689,22 +2606,21 @@ def get_region_bed(infn):
     return coordBed
 
 
-def get_region_bed_pairs(infn):
+def get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detection_bedfile):
     """
-    return (basefn, tagname, bedobject) of regions file
+    return (infn, tagname, bedobject) of regions file
     :param infn:
     :return:
     """
     if infn is None:
         return (None, None, None)
 
-    basefn = os.path.basename(infn)
-    tagname = map_region_fn_to_name(basefn)
-    region_bed = get_region_bed(infn)
+    tagname = map_region_fn_to_name(infn)
+    region_bed = get_region_bed(infn, enable_base_detection_bedfile)
     if region_bed is None:
         logger.warning(
-            f"region {tagname} file is not loaded, filename={basefn}")
-    return (basefn, tagname, region_bed)
+            f"region {tagname} file is not loaded, filename={infn}")
+    return (infn, tagname, region_bed)
 
 
 def update_progress_bar(*a):
@@ -2717,44 +2633,46 @@ def update_progress_bar(*a):
     progress_bar_global.update()
 
 
-def get_region_bed_pairs_list_mp(infn_list, processors=1):
+def get_region_bed_pairs_list_mp(infn_list, processors=1, enable_base_detection_bedfile=enable_base_detection_bedfile):
     """
-    Get list of pairs [(basefn, tagname, bedobject), ...] of regions file
+    Get list of pairs [(infn, tagname, bedobject), ...] of regions file
     :param infn_list:
     :return:
     """
-    logger.info(f"get_region_bed_pairs_list_mp start, processors={processors}")
+    logger.debug(f"get_region_bed_pairs_list_mp start, processors={processors}")
     logger.debug(f"regions={infn_list}, len={len(infn_list)}")
-    ret_list=[]
+    ret_list = []
     with Pool(processors) as pool:
         # region_bed_list = pool.map(get_region_bed_pairs, infn_list)
         global progress_bar_global
         progress_bar_global = tqdm(total=len(infn_list))
         for infn in infn_list:
-            ret_list.append(pool.apply_async(get_region_bed_pairs, args=(infn,), callback=update_progress_bar))
+            ret_list.append(pool.apply_async(get_region_bed_tuple, args=(infn, enable_base_detection_bedfile),
+                                             callback=update_progress_bar))
         pool.close()
         pool.join()
         progress_bar_global.close()
     region_bed_list = [ret.get() for ret in ret_list]
-    logger.info("get_region_bed_pairs_list_mp finished")
+    logger.debug("get_region_bed_pairs_list_mp finished")
     return region_bed_list
 
 
+# Deprecated
 def get_region_bed_pairs_list_mt(infn_list, max_threads=1):
     """
     Get list of pairs [(basefn, tagname, bedobject), ...] of regions file
     :param infn_list:
     :return:
     """
-    logger.info(f"get_region_bed_pairs_list_mt start, max_threads={max_threads}")
+    logger.debug(f"get_region_bed_pairs_list_mt start, max_threads={max_threads}")
     with ThreadPoolExecutor(max_workers=max_threads) as t:
-        taskList=[]
+        taskList = []
         for infn in infn_list:
-            task = t.submit(get_region_bed_pairs, infn)
+            task = t.submit(get_region_bed_tuple, infn)
             taskList.append(task)
         wait(taskList)
-        task_ret_list=[task.result() for task in taskList]
-    logger.info("get_region_bed_pairs_list_mt finished")
+        task_ret_list = [task.result() for task in taskList]
+    logger.debug("get_region_bed_pairs_list_mt finished")
     return task_ret_list
 
 
@@ -2801,7 +2719,8 @@ def filter_corrdata_df_by_bedfile(df, coord_bed, coord_fn):
     return retdf
 
 
-def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, outdir=pic_base_dir):
+def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, outdir=pic_base_dir, large_mem=False,
+                                  enable_base_detection_bedfile=enable_base_detection_bedfile):
     """
     Calculate Pearson's correlation coefficient at different regions.
     :param corr_infn:
@@ -2812,27 +2731,20 @@ def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, outdir
     """
     logger.debug(f"Open corr data:{corr_infn}")
     df = pd.read_csv(corr_infn)
-    logger.info(df)
-
-
-    # if beddir:  ## Add more regions such as concordant, and discrdant, etc.
-    #     concordantFileName = find_bed_filename(basedir=beddir, pattern=f'{dsname}*hg38_nonsingletons.concordant.bed.gz')
-    #     discordantFileName = find_bed_filename(basedir=beddir, pattern=f'{dsname}*hg38_nonsingletons.discordant.bed.gz')
-    #
-    #     # Name like: HL60_RRBS_2Reps_METEORE.Tools_BGTruth_cov5_Joined.bed, NA19240_RRBS_2Reps.Tools_BGTruth_cov5_Joined_baseFormat1.bed.gz
-    #     readLevelCertainRegion = find_bed_filename(basedir=beddir,
-    #                                                pattern=f'{dsname}*Tools_BGTruth_cov5_Joined*.bed.gz')
-    #
-    #     location_flist.extend([concordantFileName, discordantFileName, readLevelCertainRegion])
-    #     location_ftag.extend(['Concordant', 'Discordant', 'ReadLevelCertain'])
+    logger.debug(df)
 
     dataset = defaultdict(list)
-    for basefn, tagname, coord_bed in tqdm(bed_tuple_list):
-        logger.info(f'tagname={tagname}, coord_fn={basefn}')
-        if tagname != 'Genome-wide' and coord_bed is None:
+    for infn, tagname, coord_bed in tqdm(bed_tuple_list):
+        logger.debug(f'tagname={tagname}, coord_fn={infn}')
+        if not large_mem and coord_bed is None:  # load on demand
+            eval_coord_bed = get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detection_bedfile)[2]
+        else:
+            eval_coord_bed = coord_bed
+
+        if tagname != 'Genome-wide' and eval_coord_bed is None:
             logger.warning(f"Region name={tagname} is not found")
             continue
-        newdf = filter_corrdata_df_by_bedfile(df, coord_bed, basefn)
+        newdf = filter_corrdata_df_by_bedfile(df, eval_coord_bed, infn)
 
         # Computer COE and pvalue
         newdf = newdf.filter(regex='_freq$', axis=1)
@@ -2853,11 +2765,11 @@ def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, outdir
 
     # logger.info(dataset)
     outdf = pd.DataFrame.from_dict(dataset)
-    logger.info(outdf)
+    logger.debug(outdf)
 
     outfn = os.path.join(outdir, f'{dsname}.corrdata.coe.pvalue.each.regions.xlsx')
     outdf.to_excel(outfn)
-    logger.info(f'save to {outfn}')
+    logger.debug(f'save to {outfn}')
     return outdf
 
 
@@ -2891,27 +2803,27 @@ def sanity_check_meteore_combine_sites():
     apl_megalodon_set = get_meteore_format_set(os.path.join(bdir, apl_megalodon))
     apl_meteore_set = get_meteore_format_set(apl_meteore_comb)
 
-    logger.info(
+    logger.debug(
         f"Read level: deepsignal={len(apl_deepsignal_set):,}, megalodon={len(apl_megalodon_set):,}, meteore={len(apl_meteore_set):,}")
 
     apl_deepsignal_set = get_meteore_format_set(os.path.join(bdir, apl_deepsignal), read_level=False)
     apl_megalodon_set = get_meteore_format_set(os.path.join(bdir, apl_megalodon), read_level=False)
     apl_meteore_set = get_meteore_format_set(apl_meteore_comb, read_level=False)
-    logger.info(
+    logger.debug(
         f"Site level: deepsignal={len(apl_deepsignal_set):,}, megalodon={len(apl_megalodon_set):,}, meteore={len(apl_meteore_set):,}")
 
 
 def sanity_check_merge_bedtools():
     infn = "/projects/li-lab/yang/results/2021-06-30/bed-bk/hg38.gc5Base.bin100.bed.gz"
     bin100_bed = BedTool(infn).sort().merge()
-    logger.info(f"bin100_bed={len(bin100_bed)}")
+    logger.debug(f"bin100_bed={len(bin100_bed)}")
 
     infn = "/projects/li-lab/yang/results/2021-06-30/bed-bk/hg38.gc5Base.bin20.bed.gz"
     bin20_bed = BedTool(infn).sort().merge()
-    logger.info(f"bin20_bed={len(bin20_bed)}")
+    logger.debug(f"bin20_bed={len(bin20_bed)}")
 
     merge_bin_100_20 = bin100_bed.cat(bin20_bed)
-    logger.info(f"merge_bin_100_20={len(merge_bin_100_20)}")
+    logger.debug(f"merge_bin_100_20={len(merge_bin_100_20)}")
 
 
 def sanity_check_get_dna_seq():
@@ -2932,18 +2844,66 @@ def sanity_check_get_dna_seq():
     sanity_check_dna_sequence('chr10', 10534)
     sanity_check_dna_sequence('chr10', 10557)
 
-    logger.info("DeepMod check")
+    logger.debug("DeepMod check")
     sanity_check_dna_sequence('chr10', 74169)
     sanity_check_dna_sequence('chr10', 74424)
     sanity_check_dna_sequence('chr10', 376851)
     sanity_check_dna_sequence('chr10', 376949)
 
 
+def sort_bed_file(infn, outfn, has_header=False):
+    """
+    Sort and save bed files into outfn
+    Args:
+        infn:
+        outfn:
+
+    Returns:
+    """
+    command = f"zcat {infn} | sort -V -k1,1 -k2,2 | gzip -f > {outfn}"
+    if has_header:
+        command = f"""
+        zcat {infn}  |  awk 'NR<2{{print $0;next}}{{print $0| "sort -V -k1,1 -k2,2"}}' | gzip -f  > {outfn}
+        """
+    subprocess.Popen(command, shell=True, stdout=subprocess.PIPE) \
+        .stdout.read().decode("utf-8")
+    logger.debug(f'Sort {infn} and save into {outfn}, has_header={has_header}')
+
+
+def convert_size(size_bytes):
+    """
+    Convert byte number to string
+    Args:
+        size_bytes:
+
+    Returns:
+
+    """
+    if size_bytes == 0:
+        return "0B"
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return "%s %s" % (s, size_name[i])
+
+
+def get_current_memory_usage():
+    """
+    Get the memory usage info, ref: https://github.com/dask/distributed/issues/1409
+    Returns:
+
+    """
+    process = psutil.Process(os.getpid())
+    ret = f"VMS:{convert_size(process.memory_info().vms)}, RSS:{convert_size(process.memory_info().rss)}"
+    return ret
+
+
 if __name__ == '__main__':
     set_log_debug_level()
 
     infn = '/projects/li-lab/yang/workspace/nano-compare/w3/98/1d4a2a1e155530173718d846eb7ed2/EcoliDemo.nanopolish.per_read.combine.tsv.gz'
-    call = importPredictions_Nanopolish(infn,  filterChr=['NC_000913.3'], stringent_cutoff=True)
+    call = importPredictions_Nanopolish(infn, filterChr=['NC_000913.3'], stringent_cutoff=True)
     if True:
         sys.exit(0)
 
@@ -2965,6 +2925,6 @@ if __name__ == '__main__':
 
     infn = "/projects/li-lab/yang/results/2021-07-01/hg38.repetitive.bed.gz"
     df = pd.read_csv(infn, sep='\t')
-    logger.info(df)
+    logger.debug(df)
 
-    logger.info("DONE")
+    logger.debug("DONE")

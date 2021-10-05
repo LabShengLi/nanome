@@ -447,7 +447,8 @@ def save_wide_format_performance_results(runPrefix, outdir, tagname):
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Plot and export data for Nanocompare paper.')
+    parser = argparse.ArgumentParser(prog='plot_figure (NANOME)', description='Plot and export data for Nanocompare paper.')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
     parser.add_argument("cmd", help="name of command, fig5a, export-data, etc.")
     parser.add_argument('-i', nargs='+', help='list of input files', default=[])
     parser.add_argument('-o', type=str, help="output dir",
@@ -476,7 +477,7 @@ if __name__ == '__main__':
     ## Use same font Arial for all plotting
     import matplotlib.font_manager as font_manager
 
-    font_manager._rebuild()
+    # font_manager._rebuild() # some times failed, must be sure change font
     plt.rcParams['font.sans-serif'] = ['Arial']
 
     args = parse_arguments()

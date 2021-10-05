@@ -1,7 +1,11 @@
 #!/usr/bin/env nextflow
 
-def helpMessage() {
+def helpMessage() { // print help message
 	log.info"""
+	NANOME - NF PIPELINE (v$workflow.manifest.version)
+	by Li Lab at The Jackson Laboratory
+	https://github.com/TheJacksonLaboratory/nanome
+	=================================
 	Usage:
 	The typical command for running the pipeline is as follows:
 
@@ -22,9 +26,9 @@ def helpMessage() {
 
 	Running environment options:
 	  --conda_name			Conda name used for pipeline, default is '~/anaconda3/envs/nanome'
-	  --docker_name			Docker name used for pipeline, default is 'liuyangzzu/nanome:v1.0'
-	  --singularity_name		Singularity name used for pipeline, default is 'docker://liuyangzzu/nanome:v1.0'
-	  --singularity_cache_dir	Singularity cache dir, default is '~/.singularity/cache'
+	  --docker_name			Docker name used for pipeline, default is 'liuyangzzu/nanome:latest'
+	  --singularity_name		Singularity name used for pipeline, default is 'docker://liuyangzzu/nanome:latest'
+	  --singularity_cache		Singularity cache dir, default is 'local_singularity_cache'
 
 	Platform specific options:
 	  --queueName		SLURM job submission queue name for cluster running, default is 'gpu'
@@ -36,7 +40,7 @@ def helpMessage() {
 	  --googleProjectName	Google Cloud project name for google-lifesciences task running
 
 	Other options:
-	  --guppyDir		Guppy installation dir
+	  --guppyDir		Guppy installation dir, used for conda environment
 
 	-profile options:
 	  Use this parameter to choose a predefined configuration profile. Profiles can give configuration presets for different compute environments.
@@ -47,7 +51,7 @@ def helpMessage() {
 	  hpc		A generic configuration profile to be used on HPC cluster with SLURM job submission support.
 	  google	A generic configuration profile to be used on Google Cloud platform with 'google-lifesciences' support.
 
-	Contact to https://github.com/TheJacksonLaboratory/nanome/issues or https://nanome.jax.org for bug report.
+	Contact to https://github.com/TheJacksonLaboratory/nanome/issues for bug report.
 	""".stripIndent()
 }
 
@@ -386,7 +390,7 @@ process QCExport {
 	tag "${params.dsname}"
 
 	publishDir "${params.outputDir}/${params.dsname}-basecallings",
-		mode: "copy", enabled: params.outputQC
+		mode: "copy", enabled: params.outputQC, overwrite: true
 
 	input:
 	path flist 		from 	qc_ch.collect()
@@ -425,10 +429,9 @@ process QCExport {
 		--verbose  --raw  -f pdf -p ${params.dsname}_
 
     ## Merge the bam file
-	find . -maxdepth 1 -name "*.bam" | \
-	    parallel -j8 -N4095 -m --files samtools merge -u - | \
-	    parallel --xargs samtools merge -@ \$(( numProcessor*2 )) \
-	    ${params.dsname}_merged.bam {}";" rm {}
+	find . -maxdepth 1 -name "*.basecalled.bam" | \
+	    parallel --xargs -v samtools merge -@ \$(( numProcessor*2 )) \
+	    ${params.dsname}_merged.bam {}
 
     samtools index ${params.dsname}_merged.bam  -@ \$(( numProcessor*2 ))
     echo "Samtools merging done!"
@@ -1127,15 +1130,9 @@ process GuppyComb {
 	echo "### gcf52ref combine DONE"
 
 	## fast5mod ways combine
-	if ! command -v fast5mod &> /dev/null
-	then
-		PATH="/opt/conda/envs/fast5mod/bin:\$PATH"
-	fi
-
 	## find name like batch_\${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
 	find . -name 'batch_*.guppy.fast5mod_guppy2sam.bam' -maxdepth 1 |
-	  parallel -j8 -N4095 -m --files samtools merge -u - |
-	  parallel --xargs samtools merge -@\$(( numProcessor*2 )) total.meth.bam {}
+		parallel --xargs -v samtools merge -@\$(( numProcessor*2 )) total.meth.bam {}
 
 	### sort is not used
 	### samtools sort -@ \$(( numProcessor*2 )) total.meth.bam
@@ -1144,34 +1141,32 @@ process GuppyComb {
 
 	tar -czf ${params.dsname}.guppy_fast5mod.combined.bam.tar.gz total.meth.bam*
 
-	touch ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
+
 	if [[ "${params.dataType}" == "human" ]] ; then
 		echo "### For human, extract chr1-22, X and Y"
 		## Ref: https://github.com/nanoporetech/medaka/issues/177
-		for i in {1..22} X Y
+		parallel -j0 -v \
+			"fast5mod call total.meth.bam ${referenceGenome} \
+        		meth.chr_{}.tsv  --meth cpg --quiet --regions chr{} ; \
+        		gzip -f meth.chr_{}.tsv" ::: {1..22} X Y
+
+		touch ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
+        for i in {1..22} X Y
 		do
-			fast5mod call total.meth.bam ${referenceGenome} \
-				meth.chr_\$i.tsv \
-				--meth cpg --quiet \
-				--regions chr\$i &
+			if [ -f "meth.chr_\$i.tsv.gz" ]; then
+				cat  meth.chr_\$i.tsv.gz >> \
+					${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
+			fi
 		done
+
 	elif [[ "${params.dataType}" == "ecoli" ]] ; then
 		echo "### For ecoli, chr=${chrSet}"
 		fast5mod call total.meth.bam ${referenceGenome} \
 			meth.chr_${chrSet}.tsv \
 			--meth cpg --quiet \
 			--regions ${chrSet}
-		cat  meth.chr_${chrSet}.tsv | gzip >> ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
-	fi
-
-	if [[ "${params.dataType}" == "human" ]] ; then
-		wait
-		echo "### For human, extract chr1-22, X and Y"
-		for i in {1..22} X Y
-		do
-			cat  meth.chr_\$i.tsv | \
-				gzip >> ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
-		done
+		gzip -f  meth.chr_${chrSet}.tsv && \
+			mv meth.chr_${chrSet}.tsv.gz ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
 	fi
 
 	## Unify format output for read level
@@ -1185,7 +1180,7 @@ process GuppyComb {
 		.  \$((numProcessor))  2  ${chrSet}
 
 	## Clean
-	rm -f meth.chr*.tsv
+	rm -f meth.chr*.tsv.gz
 	rm -f total.meth.bam*
 	echo "### Guppy combine DONE"
 	"""

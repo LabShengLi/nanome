@@ -11,6 +11,7 @@ LABEL description="Nanome project in Li Lab at The Jackson Laboratory" \
 ARG PACKAGE_VERSION=5.0.14
 ARG BUILD_PACKAGES="wget apt-transport-https"
 ARG DEBIAN_FRONTEND=noninteractive
+ARG NANOME_DIR=/opt/nanome
 
 # Install guppy-gpu version, ref: https://github.com/GenomicParisCentre/dockerfiles
 RUN apt update && \
@@ -28,17 +29,6 @@ RUN apt-get update -y \
   && DEBIAN_FRONTEND=noninteractive apt-get install procps git curl -y \
   && rm -rf /var/lib/apt/lists/*
 
-# Install cuda
-# RUN apt-get update -y && \
-#     DEBIAN_FRONTEND=noninteractive apt-get install -y software-properties-common && \
-#     curl -O http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-ubuntu1604.pin && \
-#     mv cuda-ubuntu1604.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
-#     wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub && \
-#     apt-key add 7fa2af80.pub && \
-#     add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/ /" && \
-#     apt update && \
-#     DEBIAN_FRONTEND=noninteractive apt -y install cuda
-
 #Install miniconda
 RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O Miniconda.sh && \
     /bin/bash Miniconda.sh -b -p /opt/conda && \
@@ -49,7 +39,7 @@ ENV PATH /opt/conda/bin:$PATH
 
 # Create the environment:
 COPY environment.yml /
-RUN conda env create -f environment.yml && conda clean -a
+RUN conda env create --name nanome --file=environment.yml && conda clean -a
 
 # Make RUN commands use the new environment:
 SHELL ["conda", "run", "-n", "nanome", "/bin/bash", "-c"]
@@ -62,18 +52,25 @@ ENV PATH /opt/conda/envs/nanome/bin:$PATH
 USER root
 WORKDIR /data/
 
+
+RUN mkdir -p ${NANOME_DIR}
+
 # Copy additonal scripts
-RUN mkdir /opt/bin
-ADD utils/ /opt/bin/utils
-ADD src/ /opt/bin/src
-ADD test_data/ /opt/bin/test_data
-ADD inputs/ /opt/bin/inputs
-RUN chmod +x /opt/bin/utils/*
-RUN chmod +x /opt/bin/src/*
-RUN chmod +x /opt/bin/src/nanocompare/*
-ENV PATH="$PATH:/opt/bin/utils"
-ENV PATH="$PATH:/opt/bin/src"
-ENV PATH="$PATH:/opt/bin/src/nanocompare"
-ENV PYTHONPATH="/opt/bin/src"
+ADD inputs/ ${NANOME_DIR}/inputs
+ADD Rshiny/ ${NANOME_DIR}/Rshiny
+ADD src/ ${NANOME_DIR}/src
+ADD test_data/ ${NANOME_DIR}/test_data
+ADD utils/ ${NANOME_DIR}/utils
+
+# Copy nextflow scripts
+ADD conf/ ${NANOME_DIR}/conf
+ADD main.nf ${NANOME_DIR}/
+ADD nextflow.config ${NANOME_DIR}/
+ADD README.md ${NANOME_DIR}/
+ADD LICENSE ${NANOME_DIR}/
+
+# Change execute permissions
+RUN find ${NANOME_DIR} -name "*.py" -type f -exec chmod +x {} \;
+RUN find ${NANOME_DIR} -name "*.sh" -type f -exec chmod +x {} \;
 
 CMD ["bash"]

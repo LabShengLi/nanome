@@ -1,10 +1,12 @@
 #!/bin/bash
 
 # bash paper_site_level_correlation_submit.sh "HL60 K562 APL NA19240 NA12878"
-# Running datasets "HL60 K562 APL NA19240 NA12878"
 
-datasetList=${1:-"HL60 K562"}
-bedDir=${2:-"/projects/li-lab/yang/results/2021-08-11"} # folder contained MethPerf concordant and discordent bed files
+# Running datasets params, default is "HL60 K562 APL NA19240 NA12878"
+datasetList=${1:-"HL60 K562 APL NA19240 NA12878"}
+
+# Read level base bed dir, folder contained MethPerf concordant and discordent bed files
+bedDir=${2:-"/projects/li-lab/yang/results/2021-08-11"}
 
 if [[ "$datasetList" == *"HL60"* ]]; then
     echo "Running HL60"

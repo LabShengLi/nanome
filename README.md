@@ -51,7 +51,7 @@ Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https:
 
 
 ## Installation
-Users only need to install **Nextflow**, see [installation document](https://www.nextflow.io/docs/latest/getstarted.html#installation). NANOME execution environment will be automatically configured.
+Users only need to install **Nextflow**, see [installation document](https://www.nextflow.io/docs/latest/getstarted.html#installation). NANOME execution environment will be automatically configured with the support of conda, docker or singularity containers.
 
 NANOME pipeline support running with various ways in different platforms:
 * Conda
@@ -63,7 +63,13 @@ NANOME pipeline support running with various ways in different platforms:
 * HPC clusters with **SLURM** support
 * Google Cloud platform with **google-lifesciences** support
 
-Therefore, NANOME pipeline can be easily executed without any installation steps:
+If you prefer using our code packages, you can also install from [PyPI](https://pypi.org/project/nanome-jax/):
+```angular2html
+pip install nanome-jax
+```
+
+## Usage
+NANOME pipeline can be directly executed without any installation steps:
 ```angular2html
 # Run NANOME using docker
 nextflow run TheJacksonLaboratory/nanome\
@@ -74,13 +80,7 @@ nextflow run TheJacksonLaboratory/nanome\
     -profile ci,singularity
 ```
 
-For running on CloudOS platform (such as google cloud), please check [Usage on CloudOS](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). 
-
-[comment]: <> (We will update more information within a short time.)
-
-## Usage
-
-Please refer to [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md) for how to use NANOME pipeline.
+Please refer to [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). 
 
 ## Pipeline reports for NANOME
 ### Benchmarking reports on our HPC using [Nextflow](https://www.nextflow.io/)

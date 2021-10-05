@@ -10,13 +10,12 @@ Generate site-level methylation correlation results in nanome paper.
 """
 
 import argparse
-import subprocess
 
 import pybedtools
 
 from nanocompare.eval_common import *
 from nanocompare.global_settings import get_tool_name, Top3ToolNameList, ToolNameList, save_done_file, \
-    narrowCoordNameList, cg_density_coord_name_list, rep_coord_name_list
+    narrowCoordNameList, cg_density_coord_name_list, rep_coord_name_list, nanome_version
 
 
 def get_nsites_in_regions(callSet, bedfn, tagname):
@@ -37,10 +36,11 @@ def summary_cpgs_stats_results_table():
     unionSet = set()
 
     retList = []
-    logger.info("Start to study coverage now:")
+    logger.debug("Start to study coverage now:")
     for toolname in loaded_callname_list:
         ## CpG sites set with cov >= cutoff(3)
-        logger.info(f'\n\nStudy tool={toolname}')
+        logger.info(f'Study CPG coverage for tool={toolname}')
+        logger.info(f"Memory report: {get_current_memory_usage()}")
         callSet = list(set(callresult_dict_cov3[toolname].keys()))
 
         if not joinedSet:
@@ -60,6 +60,9 @@ def summary_cpgs_stats_results_table():
         # Add coverage of every regions by each tool here
         for (bedfn, tagname, region_bed) in tqdm(
                 region_bed_list):  # calculate how overlap with Singletons, Non-Singletons, etc.
+            if not args.large_mem:  # load in demand
+                region_bed = get_region_bed_tuple(bedfn, enable_base_detection_bedfile=not args.disable_bed_check)[2]
+
             if region_bed is None:
                 logger.warning(f"region name={tagname} is not found")
                 continue
@@ -79,13 +82,16 @@ def summary_cpgs_stats_results_table():
         retDict = {}
         for e in retList:
             retDict.update(e)
-        logger.info(f"retDict={retDict}")
+        logger.debug(f"retDict={retDict}")
 
         ## Sanity check
         sum_sing_nonsingle = retDict['Singletons'] + retDict['Non-singletons']
-        sum_cg = retDict['CG_20'] + retDict['CG_40'] + retDict['CG_60'] + retDict['CG_80'] + retDict['CG_100']
+        if 'CG_20' in retDict and 'CG_40' in retDict and 'CG_60' in retDict and 'CG_80' in retDict and 'CG_100' in retDict:
+            sum_cg = retDict['CG_20'] + retDict['CG_40'] + retDict['CG_60'] + retDict['CG_80'] + retDict['CG_100']
+        else:
+            sum_cg = 0
         total_sites = row_dict[f'Total CpG sites by tool cov>={minToolCovCutt}']
-        logger.info(
+        logger.debug(
             f"\n\nSanity check: sum_sing_nonsingle={sum_sing_nonsingle:,}; sum_cg={sum_cg:,}; total={total_sites:,}")
 
         if sum_sing_nonsingle != total_sites:
@@ -95,7 +101,7 @@ def summary_cpgs_stats_results_table():
             logger.error(f"Updated, retDict={retDict}")
         row_dict.update(retDict)
         dataset.append(row_dict)
-        logger.info(f'BG-Truth join with {toolname} get {len(toolOverlapBGTruthCpGs):,} CpGs')
+        logger.debug(f'BG-Truth join with {toolname} get {len(toolOverlapBGTruthCpGs):,} CpGs')
         # outfn = os.path.join(out_dir, f'{RunPrefix}-joined-cpgs-bgtruth-{name1}-bsCov{bgtruthCutt}-minCov{minToolCovCutt}-baseCount{baseFormat}.bed')
         # save_keys_to_bed(overlapCpGs, outfn)
 
@@ -130,6 +136,8 @@ def summary_cpgs_stats_results_table():
     top4UnionSet = set()
 
     for callname in ToolNameList[:4]:
+        if callname not in callresult_dict_cov3:
+            continue
         toolSet = set(callresult_dict_cov3[callname].keys())
         if not top4JointSet:
             top4JointSet = toolSet
@@ -146,12 +154,12 @@ def summary_cpgs_stats_results_table():
     df = pd.DataFrame(dataset, index=loaded_callname_list +
                                      ['Joined', 'Union', 'TOP3 Joined', 'TOP3 Union', 'TOP4 Joined', 'TOP4 Union'])
 
-    logger.info(df)
+    logger.debug(df)
 
     outfn = os.path.join(out_dir,
                          f'{RunPrefix}-summary-bgtruth-tools-bsCov{bgtruthCutt}-minCov{minToolCovCutt}.table.s10.xlsx')
     df.to_excel(outfn)
-    logger.info(f'save to {outfn}\n')
+    logger.debug(f'save to {outfn}\n')
 
 
 def save_meth_corr_data(callresult_dict, bgTruth, reportCpGSet, outfn):
@@ -192,14 +200,16 @@ def save_meth_corr_data(callresult_dict, bgTruth, reportCpGSet, outfn):
         outfile.write(sep.join(row_list))
         outfile.write("\n")
     outfile.close()
-    logger.info(f"save to {outfn}\n")
+    logger.debug(f"save to {outfn}\n")
 
 
 def parse_arguments():
     """
     :return:
     """
-    parser = argparse.ArgumentParser(description='Site-level correlation analysis in nanome paper')
+    parser = argparse.ArgumentParser(prog='site_level_eval (NANOME)',
+                                     description='Site-level correlation analysis in nanome paper')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix", required=True)
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces',
@@ -224,12 +234,20 @@ def parse_arguments():
     parser.add_argument('--bedtools-tmp', type=str, help='bedtools temp dir', default=temp_dir)
     parser.add_argument('--genome-annotation', type=str, help='genome annotation dir',
                         default=os.path.join(data_base_dir, 'genome-annotation'))
+    parser.add_argument('--large-mem', help="if using large memory (>100GB)", action='store_true')
+    parser.add_argument('--disable-bed-check', help="if disable checking the 0/1 base format for genome annotations",
+                        action='store_true')
+    parser.add_argument('--debug', help="if output debug info", action='store_true')
     return parser.parse_args()
 
-    
+
 if __name__ == '__main__':
-    set_log_debug_level()
     args = parse_arguments()
+
+    if args.debug:
+        set_log_debug_level()
+    else:
+        set_log_info_level()
 
     ## Set tmp dir for bedtools
     os.makedirs(args.bedtools_tmp, exist_ok=True)
@@ -262,7 +280,7 @@ if __name__ == '__main__':
     add_logging_file(os.path.join(out_dir, 'run-results.log'))
 
     logger.debug(args)
-    logger.info(f'\n\n####################\n\n')
+    logger.debug(f'\n\n####################\n\n')
 
     # we import multiple (1 or 2) replicates and join them
     encode, fnlist = args.bgtruth.split(':')
@@ -287,7 +305,7 @@ if __name__ == '__main__':
 
     logger.info(f'Combined BS-seq data (cov>={bgtruthCutt}), all methylation level sites={len(bgTruth):,}')
 
-    logger.info(f'\n\n####################\n\n')
+    logger.debug(f'\n\n####################\n\n')
 
     callfn_dict = defaultdict()  # callname -> filename
 
@@ -328,9 +346,10 @@ if __name__ == '__main__':
         call_cov1_calls[callname] = cnt_calls
         call_cov1_cpg_sites[callname] = len(callresult_dict_cov1[callname])
 
-    logger.debug(loaded_callname_list)
+    logger.info(f"Import calls from tools done for toollist={list(call_cov1_cpg_sites.keys())}")
+    logger.info(f"Memory report: {get_current_memory_usage()}")
 
-    logger.info(f'Start apply cutoff={minToolCovCutt} to methylation calls, take time')
+    logger.debug(f'Start apply cutoff={minToolCovCutt} to methylation calls, take time')
     # Cutoff of read cov >= 1 or 3, 5 for nanopore tools
     for callname in loaded_callname_list:
         callresult_dict_cov3[callname] = readLevelToSiteLevelWithCov(callresult_dict_cov1[callname],
@@ -338,44 +357,19 @@ if __name__ == '__main__':
         ## Destroy cov1 for memory saving
         del callresult_dict_cov1[callname]
 
-    logger.info(f'\n\n####################\n\n')
+    logger.debug(f'\n\n####################\n\n')
 
     top3_cpg_set_dict = defaultdict()
     for callname in Top3ToolNameList:
         top3_cpg_set_dict[callname] = set(callresult_dict_cov3[callname].keys())
 
     if args.gen_venn:
-        logger.info('Overlapping analysis start:')
-        logger.info(
+        logger.info('CPG overlapping analysis')
+        logger.debug(
             f"Start gen venn data for each tool (cov>={minToolCovCutt}) and BS-seq (cov>={args.min_bgtruth_cov})")
-        #
-        # # Study five set venn data, no join with bgtruth, tool-cov > tool-cutoff=1 or 3
-        # if len(loaded_callname_list) >= 5:
-        #     ## Exclude DeepMod, leave only 5 tools
-        #     logger.info(f"Start gen venn data for 5 tools ('Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo')")
-        #     cpg_set_dict = defaultdict()
-        #     for callname in ToolNameList[:5]:
-        #         cpg_set_dict[callname] = set(
-        #             callresult_dict_cov3[callname].keys())  # .intersection(set(bgTruth.keys()))
-        #     gen_venn_data(cpg_set_dict, namelist=ToolNameList[:5], outdir=out_dir,
-        #                   tagname=f'{RunPrefix}.{args.dsname}.five.tools.cov{minToolCovCutt}')
-        #
-        #     ## Top 4 tools
-        #     logger.info(f"Start gen venn data for 4 tools ('Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy')")
-        #     cpg_set_dict = defaultdict()
-        #     for callname in ToolNameList[:4]:
-        #         cpg_set_dict[callname] = set(
-        #             callresult_dict_cov3[callname].keys())  # .intersection(set(bgTruth.keys()))
-        #     gen_venn_data(cpg_set_dict, namelist=ToolNameList[:4], outdir=out_dir,
-        #                   tagname=f'{RunPrefix}.{args.dsname}.four.tools.cov{minToolCovCutt}')
-        #
-        # # Study top3 tool's venn data, no join with bgtruth, tool-cov > tool-cutoff=3
-        # logger.info(f"Start gen venn data for TOP3 tools (cov>={minToolCovCutt})")
-        # gen_venn_data(top3_cpg_set_dict, namelist=Top3ToolNameList, outdir=out_dir,
-        #               tagname=f'{RunPrefix}.{args.dsname}.top3.cov{minToolCovCutt}')
 
         # Generate all tools and bsseq covered cpgs files for set evaluation
-        logger.info("We generate sets file for each tool and bg-truth")
+        logger.debug("We generate sets file for each tool and bg-truth")
         venn_outdir = os.path.join(out_dir, 'venn_data')
         os.makedirs(venn_outdir, exist_ok=True)
 
@@ -389,9 +383,9 @@ if __name__ == '__main__':
             outfn = os.path.join(venn_outdir,
                                  f'{args.dsname}.{callname}.cpg.sites.cov{args.toolcov_cutoff}.setsfile.txt.gz')
             ontcalls_to_setsfile_for_venn_analysis(call_keys, outfn)
-        logger.info(f'\n\n####################\n\n')
+        logger.debug(f'\n\n####################\n\n')
 
-    logger.info(f"Start getting intersection (all joined) sites by tools and bgtruth")
+    logger.debug(f"Start getting intersection (all joined) sites by tools and bgtruth")
     coveredCpGs = set(list(bgTruth.keys()))
     coveredCpGs001 = set(list(bgTruth.keys()))
 
@@ -399,7 +393,7 @@ if __name__ == '__main__':
 
     for name in loaded_callname_list:
         coveredCpGs = coveredCpGs.intersection(set(list(callresult_dict_cov3[name].keys())))
-        logger.info(f'Join {name} get {len(coveredCpGs):,} CpGs')
+        logger.debug(f'Join {name} get {len(coveredCpGs):,} CpGs')
 
         joinBSWithEachToolSet = coveredCpGs001.intersection(set(list(callresult_dict_cov3[name].keys())))
         sitesDataset['Dataset'].append(args.dsname)
@@ -413,31 +407,40 @@ if __name__ == '__main__':
     df.to_csv(outfn)
 
     # Output sites report for all tools and BS-seq
-    logger.info(f"Reporting {len(coveredCpGs):,} CpGs are covered by all tools and bgtruth")
-    logger.info('Output data of meth-freq and coverage on joined CpG sites as datasets for correlation analysis')
+    logger.info(f"Joined {len(coveredCpGs):,} CpGs are covered by all tools (cov >= {args.toolcov_cutoff}) and BS-seq (cov >= {args.min_bgtruth_cov})")
+    logger.debug('Output data of meth-freq and coverage on joined CpG sites as datasets for correlation analysis')
     outfn_joined = os.path.join(out_dir,
                                 f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv.gz")
     save_meth_corr_data(callresult_dict_cov3, bgTruth, coveredCpGs, outfn_joined)
-    logger.info(
+    outfn_joined_sorted = os.path.join(out_dir,
+                                       f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.sorted.csv.gz")
+    sort_bed_file(infn=outfn_joined, outfn=outfn_joined_sorted, has_header=True)
+    os.remove(outfn_joined)
+
+    logger.debug(
         'Output data of meth-freq and coverage on bgTruth related CpG sites as datasets for correlation analysis')
     outfn_bgtruth = os.path.join(out_dir,
                                  f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv.gz")
     save_meth_corr_data(callresult_dict_cov3, bgTruth, set(list(bgTruth.keys())), outfn_bgtruth)
+    outfn_bgtruth_sroted = os.path.join(out_dir,
+                                        f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.sorted.csv.gz")
+    sort_bed_file(infn=outfn_bgtruth, outfn=outfn_bgtruth_sroted, has_header=True)
+    os.remove(outfn_bgtruth)
 
     # Report correlation matrix here
-    df = pd.read_csv(outfn_joined, sep=sep)
+    df = pd.read_csv(outfn_joined_sorted, sep=sep)
     df = df.filter(regex='_freq$', axis=1)
     cordf = df.corr()
-    logger.info(f'Correlation matrix is:\n{cordf}')
+    logger.debug(f'Correlation matrix is:\n{cordf}')
     corr_outfn = os.path.join(out_dir,
                               f'Meth_corr_plot_data-{RunPrefix}-correlation-matrix-toolcov{minToolCovCutt}-bsseqcov{bgtruthCutt}.xlsx')
     cordf.to_excel(corr_outfn)
 
-    logger.info(f'\n\n####################\n\n')
+    logger.debug(f'\n\n####################\n\n')
 
     if args.region_coe_report or args.summary_coverage:
         ## load region bed list
-        logger.info("Create region bed list firstly, take times......")
+        logger.debug("Create region bed list firstly, take times......")
 
         # Evaluated all region filename lists, bed objects
         # assume all files are located in args.genome_annotation dir
@@ -445,10 +448,15 @@ if __name__ == '__main__':
                                 [os.path.join(args.genome_annotation, cofn) for cofn in cg_density_coord_name_list] + \
                                 [os.path.join(args.genome_annotation, cofn) for cofn in rep_coord_name_list]
         # logger.debug(f"Evaluated regions: {regions_full_filepath}")
-        region_bed_list = get_region_bed_pairs_list_mp(regions_full_filepath, processors=args.processors)
+
+        if args.large_mem:  # load all in memory
+            region_bed_list = get_region_bed_pairs_list_mp(regions_full_filepath, processors=args.processors, enable_base_detection_bedfile=not args.disable_bed_check)
+        else:  # load bed coord later
+            region_bed_list = [(infn, map_region_fn_to_name(infn), None,)
+                               for infn in regions_full_filepath]
 
         if args.beddir:  # add concordant and discordant region coverage if needed
-            logger.info(f'We use Concordant and Discordant BED file at basedir={args.beddir}')
+            logger.debug(f'We use Concordant and Discordant BED file at basedir={args.beddir}')
             concordantFileName = find_bed_filename(basedir=args.beddir,
                                                    pattern=f'{args.dsname}*hg38_nonsingletons*.concordant.bed.gz')
             concordant_bed = get_region_bed(concordantFileName)
@@ -462,33 +470,37 @@ if __name__ == '__main__':
     if args.region_coe_report:
         eval_genomic_context_tuple = [('x.x.Genome-wide', 'Genome-wide', None)] + region_bed_list
         if concordant_bed is not None:
-            eval_genomic_context_tuple += [(os.path.basename(concordantFileName), 'Concordant', concordant_bed,)]
+            eval_genomic_context_tuple += [(concordantFileName, 'Concordant', concordant_bed,)]
         if discordant_bed is not None:
-            eval_genomic_context_tuple += [(os.path.basename(discordantFileName), 'Discordant', discordant_bed,)]
+            eval_genomic_context_tuple += [(discordantFileName, 'Discordant', discordant_bed,)]
 
         logger.debug(f"Evaluated on regions: {eval_genomic_context_tuple}")
 
-        fnlist = glob.glob(os.path.join(out_dir, 'Meth_corr_plot_data_joined-*.csv.gz'))
+        # file like: Meth_corr_plot_data_joined-TestData_RRBS_2Reps-bsCov1-minToolCov1-baseFormat1.sorted.csv.gz
+        fnlist = glob.glob(os.path.join(out_dir, f'Meth_corr_plot_data_joined-*bsCov{args.min_bgtruth_cov}-minToolCov{args.toolcov_cutoff}*.csv.gz'))
         if len(fnlist) < 1:
             raise Exception(f'Found no file for fnlist={fnlist}, for dir={out_dir}')
-        logger.info(f'Find file: {fnlist}')
+        logger.debug(f'Find file: {fnlist}')
 
         basefn = os.path.basename(fnlist[0])
         tagname = basefn.replace('Meth_corr_plot_data_joined-', '')
         dsname = tagname[:tagname.find('_')]
+
+        logger.info(f"Start report PCC in difference genomic regions based on file={fnlist[0]}, dsname={dsname}")
         correlation_report_on_regions(fnlist[0], bed_tuple_list=eval_genomic_context_tuple, dsname=dsname,
-                                      outdir=out_dir)
+                                      outdir=out_dir, large_mem=args.large_mem,
+                                      enable_base_detection_bedfile=not args.disable_bed_check)
 
     if args.summary_coverage:
-        logger.info("Start summarize coverage at each regions")
+        logger.info("Start summarize CPG coverage at each regions")
         summary_cpgs_stats_results_table()
+        logger.info(f"Memory report: {get_current_memory_usage()}")
 
     if args.plot:
         # plot fig5a of correlation plot
-        command = f"set -x; python plot_figure.py fig5a -i {outfn_joined} -o {out_dir}"
+        command = f"set -x; plot_figure.py fig5a -i {outfn_joined_sorted} -o {out_dir}"
         subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
 
-        logger.info(f'\n\n####################\n\n')
-
     save_done_file(out_dir)
+    logger.info(f"Memory report: {get_current_memory_usage()}")
     logger.info("### Site level correlation analysis DONE")

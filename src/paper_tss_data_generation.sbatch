@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -eux
 #SBATCH --job-name=tss.paper
 #SBATCH --partition=compute
 #SBATCH --qos=batch
@@ -72,8 +72,6 @@ echo "####################"
 
 ## Running script
 pythonFile=tss_eval.py
-
-set -x
 
 ## Generate tools/bsseq site level (freq, coverage) results for tss analysis
 ${pythonFile} \

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 #SBATCH --job-name=nanome.demo.hpc
 #SBATCH -p gpu
 #SBATCH --gres=gpu:v100:1
