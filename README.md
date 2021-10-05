@@ -63,11 +63,6 @@ NANOME pipeline support running with various ways in different platforms:
 * HPC clusters with **SLURM** support
 * Google Cloud platform with **google-lifesciences** support
 
-If you prefer using our code packages, you can also install from [PyPI](https://pypi.org/project/nanome-jax/):
-```angular2html
-pip install nanome-jax
-```
-
 ## Usage
 NANOME pipeline can be directly executed without any installation steps:
 ```angular2html
@@ -81,6 +76,8 @@ nextflow run TheJacksonLaboratory/nanome\
 ```
 
 Please refer to [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). 
+
+If you prefer using our evaluation packages, please check [evaluation script usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Eval.md) for more detail.
 
 ## Pipeline reports for NANOME
 ### Benchmarking reports on our HPC using [Nextflow](https://www.nextflow.io/)

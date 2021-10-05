@@ -1,0 +1,41 @@
++ site_level_eval.py --calls Nanopolish:TestData.nanopolish.per_read.combine.tsv.gz Megalodon:TestData.megalodon.per_read.combine.bed.gz DeepSignal:TestData.deepsignal.per_read.combine.tsv.gz --bgtruth 'bismark:NA19240_RRBS_ENCFF000LZS_rep1_bismark_bt2_CpG_report.txt.gz;NA19240_RRBS_ENCFF000LZT_rep2_bismark_bt2_CpG_report.txt.gz' --runid MethCorr-TestData_RRBS_2Reps --dsname TestData --min-bgtruth-cov 3 --toolcov-cutoff 1 --processors 8 --genome-annotation /projects/li-lab/Nanopore_compare/nf_input/genome-annotation --beddir . --gen-venn --summary-coverage -o . --enable-cache --using-cache
+2021-10-04 19:31:44,904 - [site_level_eval.py:277] - INFO: Output to dir:./MethCorr-TestData_RRBS_2Reps
+2021-10-04 19:31:50,428 - [site_level_eval.py:306] - INFO: Combined BS-seq data (cov>=3), all methylation level sites=689,415
+2021-10-04 19:31:50,751 - [site_level_eval.py:349] - INFO: Import calls from tools done for toollist=['Nanopolish', 'Megalodon', 'DeepSignal']
+2021-10-04 19:31:50,752 - [site_level_eval.py:350] - INFO: Memory report: VMS:1.28 GB, RSS:809.59 MB
+2021-10-04 19:31:50,782 - [site_level_eval.py:367] - INFO: CPG overlapping analysis
+2021-10-04 19:31:54,983 - [site_level_eval.py:410] - INFO: Joined 71 CpGs are covered by all tools (cov >= 1) and BS-seq (cov >= 3)
+2021-10-04 19:32:07,684 - [site_level_eval.py:495] - INFO: Start summarize CPG coverage at each regions
+2021-10-04 19:32:08,031 - [site_level_eval.py:42] - INFO: Study CPG coverage for tool=Nanopolish
+2021-10-04 19:32:08,032 - [site_level_eval.py:43] - INFO: Memory report: VMS:1.28 GB, RSS:812.29 MB
+  0%|          | 0/19 [00:00<?, ?it/s]  5%|▌         | 1/19 [00:46<13:50, 46.14s/it] 11%|█         | 2/19 [00:54<06:43, 23.74s/it] 16%|█▌        | 3/19 [00:54<03:29, 13.09s/it] 21%|██        | 4/19 [00:55<02:05,  8.38s/it] 26%|██▋       | 5/19 [00:56<01:20,  5.77s/it] 32%|███▏      | 6/19 [00:57<00:50,  3.92s/it] 37%|███▋      | 7/19 [00:57<00:34,  2.84s/it] 42%|████▏     | 8/19 [00:58<00:22,  2.09s/it] 47%|████▋     | 9/19 [00:58<00:15,  1.57s/it] 53%|█████▎    | 10/19 [08:00<19:42, 131.42s/it] 58%|█████▊    | 11/19 [16:55<33:59, 254.88s/it] 63%|██████▎   | 12/19 [24:14<36:15, 310.85s/it] 68%|██████▊   | 13/19 [27:23<27:23, 273.97s/it] 74%|███████▎  | 14/19 [27:43<16:25, 197.08s/it] 79%|███████▉  | 15/19 [27:51<09:20, 140.18s/it] 84%|████████▍ | 16/19 [27:58<05:00, 100.13s/it] 89%|████████▉ | 17/19 [28:02<02:22, 71.12s/it]  95%|█████████▍| 18/19 [28:04<00:50, 50.58s/it]100%|██████████| 19/19 [28:09<00:00, 36.65s/it]100%|██████████| 19/19 [28:09<00:00, 88.91s/it]
+2021-10-04 20:00:17,923 - [site_level_eval.py:42] - INFO: Study CPG coverage for tool=Megalodon
+2021-10-04 20:00:17,925 - [site_level_eval.py:43] - INFO: Memory report: VMS:1.84 GB, RSS:809.64 MB
+  0%|          | 0/19 [00:00<?, ?it/s]  5%|▌         | 1/19 [00:46<14:04, 46.90s/it] 11%|█         | 2/19 [00:54<06:48, 24.00s/it] 16%|█▌        | 3/19 [00:55<03:31, 13.22s/it] 21%|██        | 4/19 [00:56<02:06,  8.47s/it] 26%|██▋       | 5/19 [00:57<01:21,  5.83s/it] 32%|███▏      | 6/19 [00:57<00:51,  3.98s/it] 37%|███▋      | 7/19 [00:58<00:33,  2.82s/it] 42%|████▏     | 8/19 [00:58<00:22,  2.07s/it] 47%|████▋     | 9/19 [00:59<00:15,  1.56s/it] 53%|█████▎    | 10/19 [07:59<19:36, 130.75s/it] 58%|█████▊    | 11/19 [16:54<33:56, 254.54s/it] 63%|██████▎   | 12/19 [24:12<36:12, 310.40s/it] 68%|██████▊   | 13/19 [27:22<27:22, 273.74s/it] 74%|███████▎  | 14/19 [27:41<16:24, 196.91s/it] 79%|███████▉  | 15/19 [27:49<09:20, 140.06s/it] 84%|████████▍ | 16/19 [27:56<05:00, 100.05s/it] 89%|████████▉ | 17/19 [28:00<02:22, 71.06s/it]  95%|█████████▍| 18/19 [28:03<00:50, 50.54s/it]100%|██████████| 19/19 [28:07<00:00, 36.64s/it]100%|██████████| 19/19 [28:07<00:00, 88.82s/it]
+2021-10-04 20:28:26,310 - [site_level_eval.py:42] - INFO: Study CPG coverage for tool=DeepSignal
+2021-10-04 20:28:26,313 - [site_level_eval.py:43] - INFO: Memory report: VMS:1.84 GB, RSS:809.54 MB
+  0%|          | 0/19 [00:00<?, ?it/s]  5%|▌         | 1/19 [00:46<14:05, 46.96s/it] 11%|█         | 2/19 [00:54<06:48, 24.05s/it] 16%|█▌        | 3/19 [00:55<03:32, 13.27s/it] 21%|██        | 4/19 [00:56<02:07,  8.50s/it] 26%|██▋       | 5/19 [00:57<01:21,  5.85s/it] 32%|███▏      | 6/19 [00:58<00:51,  3.99s/it] 37%|███▋      | 7/19 [00:58<00:33,  2.82s/it] 42%|████▏     | 8/19 [00:59<00:22,  2.08s/it] 47%|████▋     | 9/19 [00:59<00:15,  1.56s/it] 53%|█████▎    | 10/19 [07:59<19:35, 130.66s/it] 58%|█████▊    | 11/19 [16:55<33:58, 254.87s/it] 63%|██████▎   | 12/19 [24:13<36:14, 310.63s/it] 68%|██████▊   | 13/19 [27:23<27:23, 273.88s/it] 74%|███████▎  | 14/19 [27:42<16:25, 197.08s/it] 79%|███████▉  | 15/19 [27:51<09:20, 140.23s/it] 84%|████████▍ | 16/19 [27:58<05:00, 100.17s/it] 89%|████████▉ | 17/19 [28:02<02:22, 71.16s/it]  95%|█████████▍| 18/19 [28:04<00:50, 50.64s/it]100%|██████████| 19/19 [28:09<00:00, 36.70s/it]100%|██████████| 19/19 [28:09<00:00, 88.91s/it]
+2021-10-04 20:56:36,591 - [site_level_eval.py:497] - INFO: Memory report: VMS:1.84 GB, RSS:809.65 MB
+2021-10-04 20:56:36,617 - [site_level_eval.py:505] - INFO: Memory report: VMS:1.84 GB, RSS:809.65 MB
+2021-10-04 20:56:36,617 - [site_level_eval.py:506] - INFO: ### Site level correlation analysis DONE
+-------------------------------------------------------------
+SUMNER/WINTER EPILOGUE
+-------------------------------------------------------------
+Job ID: 10810187
+Cluster: slurm_cluster
+User/Group: root/jaxuser
+State: COMPLETED (exit code 0)
+Nodes: 1
+Cores per node: 8
+CPU Utilized: 01:25:03
+CPU Efficiency: 12.50% of 11:20:32 core-walltime
+Job Wall-clock time: 01:25:04
+Memory Utilized: 42.33 GB
+Memory Efficiency: 55.69% of 76.00 GB
+-------------------------------------------------------------
+       JobID  User   State    CPUTime Exit     MaxRSS        NodeList  Partition                   ReqTRES              Submit               Start                 End    Elapsed 
+------------ ----- ------- ---------- ---- ---------- --------------- ---------- ------------------------- ------------------- ------------------- ------------------- ---------- 
+10810187     liuya COMPLE+   11:20:32  0:0                  sumner045    compute billing=8,cpu=8,mem=7782+ 2021-10-04T19:31:34 2021-10-04T19:31:34 2021-10-04T20:56:38   01:25:04 
+10810187.ba+       COMPLE+   11:20:32  0:0  43342.04M       sumner045                                      2021-10-04T19:31:34 2021-10-04T19:31:34 2021-10-04T20:56:38   01:25:04 
+10810187.ex+       COMPLE+   11:20:32  0:0      1.76M       sumner045                                      2021-10-04T19:31:34 2021-10-04T19:31:34 2021-10-04T20:56:38   01:25:04 
+-------------------------------------------------------------
