@@ -30,7 +30,7 @@ module load singularity
 set -x
 nextflow run main.nf\
     -profile singularity,hpc\
-    -config conf/jax_hpc.config\
+    -config conf/executors/jaxhpc_input.config\
     -work-dir ${workDir}\
     --outputDir ${outputsDir}\
     --dsname TestData\

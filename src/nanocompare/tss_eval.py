@@ -60,51 +60,47 @@ def parse_arguments():
         description='Export read/site level methylation results of all nanopore tools in nanome paper')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
-    parser.add_argument('--runid', type=str, help="running prefix", required=True)
+    parser.add_argument('--runid', type=str, help="running prefix/output dir name", required=True)
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces',
                         required=True)
     parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name2>",
                         default=None)
+    parser.add_argument('--read-level-format',
+                        help="if true, it will output read level results (1-based start), else it will output site-level results (0-based start, 1-based end)",
+                        action='store_true')
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default='\t')
-    parser.add_argument('--processors', type=int, help="running processors", default=1)
-    parser.add_argument('-o', type=str, help="output dir", default=pic_base_dir)
+    parser.add_argument('--processors', type=int, help="running processors, default is 1", default=1)
+    parser.add_argument('-o', type=str, help="output base dir", default=pic_base_dir)
     parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
     parser.add_argument('--using-cache', help="if use cache files", action='store_true')
-    parser.add_argument('--output-unified-format', help="True:output read level results(1-based start), False: output site-level results(0-based start)", action='store_true')
     parser.add_argument('--chrs', nargs='+', help='chromosome list',
                         default=humanChrSet)
     parser.add_argument('--tagname', type=str, help="output unified file tagname", default=None)
-    parser.add_argument('--debug', help="if output debug info", action='store_true')
+    parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_arguments()
-    if args.debug:
+    if args.verbose:
         set_log_debug_level()
     else:
         set_log_info_level()
 
     logger.debug(f"args={args}")
 
-    if args.output_unified_format:  ## if output METEORE format, must read directly
+    if args.read_level_format:  ## if output read-level format, must read directly from raw file
         enable_cache = False
         using_cache = False
     else:
         enable_cache = args.enable_cache
         using_cache = args.using_cache
 
-    # runid is always like 'MethCorr-K562_WGBS_2Reps', remove first word as RunPrefix like K562_WGBS_2Reps
-    RunPrefix = args.runid.replace('TSS-', '')
-
     minToolCovCutt = 1
     bgtruthCutt = 1
 
     # Currently we only use 1-base start format, for BED of singletons, non-singletons are use 1-base format
     baseFormat = 1
-
-    # output csv seperator: , or tab
-    sep = args.sep
 
     out_dir = os.path.join(args.o, args.runid)
     os.makedirs(out_dir, exist_ok=True)
@@ -113,8 +109,8 @@ if __name__ == '__main__':
     logger.debug(args)
     logger.debug(f'\n\n####################\n\n')
 
-    if args.output_unified_format:
-        ## Output read-level unified format with 1-based start
+    if args.read_level_format:
+        ## Output read-level unified format with 1-based start for ONT tools
         logger.info(f"We are outputing each tool's unified results for read-level, same as METEORE format")
         input_list = []
         for callstr in args.calls:
@@ -133,6 +129,7 @@ if __name__ == '__main__':
             pool.starmap(import_and_save_meteore, input_list)
 
         save_done_file(out_dir)
+        logger.info(f"Memory report: {get_current_memory_usage()}")
         logger.info("### Unified format output DONE")
         sys.exit(0)
 
@@ -159,9 +156,18 @@ if __name__ == '__main__':
 
         # Combine one/two replicates, using cutoff=1 or 5
         bgTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruthCutt)
+
+        # Clean up bgTruthList
+        del bgTruthList
+
         outfn = os.path.join(out_dir, f'{args.dsname}_BSseq-perSite-cov{bgtruthCutt}.bed.gz')
         logger.debug(f'Combined BS-seq data (cov>={bgtruthCutt}), all methylation level sites={len(bgTruth):,}')
         output_calldict_to_unified_bed_as_0base(bgTruth, outfn)
+
+        # Clean up bgTruth, not used anymore
+        del bgTruth
+
+        logger.debug(f"Memory report: {get_current_memory_usage()}")
         logger.debug(f'\n\n####################\n\n')
 
     logger.debug("We are outputing bed CpG results for each tool")
@@ -190,4 +196,5 @@ if __name__ == '__main__':
     for key in ns.callsites.keys():
         logger.debug(f"tool={key}, sites={ns.callsites[key]}")
     save_done_file(out_dir)
-    logger.info("TSS bed file generation DONE")
+    logger.info(f"Memory report: {get_current_memory_usage()}")
+    logger.info("TSS unified format generation DONE")

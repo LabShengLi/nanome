@@ -149,17 +149,6 @@ if (params.input.endsWith(".filelist.txt")) {
 	Channel.fromPath( params.input, checkIfExists: true ).set{fast5_tar_ch}
 }
 
-if (params.bgTruth) {
-	Channel
-    	.from(params.bgTruth.split(';') )
-		.map { file(it) }
-		.collect().into{in_bg_ch1; in_bg_ch2}
-} else {
-	in_bg_ch1 = Channel.empty()
-	in_bg_ch2 = Channel.empty()
-}
-
-
 // Check all tools work well
 process EnvCheck {
 	tag 'EnvCheck'

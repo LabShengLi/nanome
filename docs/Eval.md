@@ -14,24 +14,23 @@ The script `read_level_eval.py` is desinged for general purpose of read-level pe
 ```angular2html
 read_level_eval.py -v
 
-read_level_eval (NANOME) v1.3.2
+read_level_eval (NANOME) v1.3.3
 ```
 
 ## Sample usage
 User needs to specify methylation-calling raw results of each tool and BS-seq replicates to execute the read-level evaluation script.
 ```angular2html
 read_level_eval.py \
+    --dsname TestData\
+    --runid MethPerf-TestData_RRBS_2Reps\
     --calls\
         Nanopolish:[Nanopolish-calls]\
         Megalodon:[Megalodon-calls]\
         DeepSignal:[DeepSignal-calls]\
-    --bgtruth bismark:[BS-seq-rep1];[BS-seq-rep2]\
-    --runid MethPerf-TestData_RRBS_2Reps\
-    --dsname TestData\
-    --min-bgtruth-cov 1\
-    --report-joined\
+    --bgtruth [encode-type]:[BS-seq-rep1];[BS-seq-rep2]\
     --genome-annotation [genome-annotation]\
-    -o .
+    --min-bgtruth-cov 1\
+    --report-joined
 ```
 Sample results can be found at [read-level outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/read_level_output.txt).
 
@@ -39,18 +38,18 @@ Sample results can be found at [read-level outputs](https://github.com/TheJackso
 ```angular2html
 read_level_eval.py -h
 
-usage: read_level_eval (NANOME) [-h] [-v] [--dsname DSNAME] --runid RUNID
-                                --calls CALLS [CALLS ...] [--bgtruth BGTRUTH]
+usage: read_level_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID
+                                --calls CALLS [CALLS ...] --bgtruth BGTRUTH
+                                --genome-annotation GENOME_ANNOTATION
                                 [--min-bgtruth-cov MIN_BGTRUTH_COV]
                                 [--processors PROCESSORS] [--report-joined]
                                 [--chrSet CHRSET [CHRSET ...]] [-o O]
                                 [--enable-cache] [--using-cache]
-                                [--distribution] [--mpi] [--analysis ANALYSIS]
-                                [--bedtools-tmp BEDTOOLS_TMP]
-                                [--genome-annotation GENOME_ANNOTATION]
-                                [--reference-genome REFERENCE_GENOME]
+                                [--distribution] [--analysis ANALYSIS]
                                 [--save-curve-data] [--large-mem]
-                                [--disable-bed-check] [--debug]
+                                [--bedtools-tmp BEDTOOLS_TMP]
+                                [--cache-dir CACHE_DIR] [--disable-bed-check]
+                                [--mpi] [--verbose]
 
 Read-level performance evaluation in nanome paper
 
@@ -58,36 +57,44 @@ optional arguments:
   -h, --help            show this help message and exit
   -v, --version         show program's version number and exit
   --dsname DSNAME       dataset name
-  --runid RUNID         running prefix
+  --runid RUNID         running prefix/output folder name, such as MethPerf-
+                        DS_WGBS_2reps
   --calls CALLS [CALLS ...]
                         all ONT call results <tool-name>:<file-name> seperated
-                        by space
+                        by space, tool-name can be Nanopolish, Megalodon,
+                        DeepSignal, Guppy, Tombo, METEORE,
+                        DeepMod.C/DeepMod.Cluster
   --bgtruth BGTRUTH     background truth file <encode-type>:<file-name>;<file-
-                        name>
+                        name>, encode-type can be 'encode' or 'bismark'
+  --genome-annotation GENOME_ANNOTATION
+                        genome annotation dir, contain BED files such as
+                        singleton, nonsingleton, etc.
   --min-bgtruth-cov MIN_BGTRUTH_COV
-                        min bg-truth coverage cutoff
+                        min bg-truth coverage cutoff, default is 5
   --processors PROCESSORS
-                        multi-processors
+                        number of processors used, default is 1
   --report-joined       true if report on only joined sets
   --chrSet CHRSET [CHRSET ...]
-                        chromosome list
-  -o O                  output dir
+                        chromosome list, default is human chr1-22, X and Y
+  -o O                  output base dir, default is /projects/li-
+                        lab/yang/results/2021-10-05
   --enable-cache        if enable cache functions
   --using-cache         if use cache files
-  --distribution        report singleton/nonsingleton distributions
-  --mpi                 if using multi-processing for evaluation
+  --distribution        if report singleton/nonsingleton distributions
   --analysis ANALYSIS   special analysis specifications for ecoli
-  --bedtools-tmp BEDTOOLS_TMP
-                        bedtools temp dir
-  --genome-annotation GENOME_ANNOTATION
-                        genome annotation dir
-  --reference-genome REFERENCE_GENOME
-                        genome annotation dir
   --save-curve-data     if save pred/truth points for curve plot
-  --large-mem           if using large memory (>100GB)
+  --large-mem           if using large memory (>100GB) for speed up
+  --bedtools-tmp BEDTOOLS_TMP
+                        bedtools temp dir, default is
+                        /fastscratch/liuya/nanome/temp_dir
+  --cache-dir CACHE_DIR
+                        loaded calls/bs-seq in cache dir (speed up running),
+                        default is /fastscratch/liuya/nanome/cache_dir
   --disable-bed-check   if disable checking the 0/1 base format for genome
                         annotations
-  --debug               if output debug info
+  --mpi                 if using multi-processing for evaluation, not
+                        available now
+  --verbose             if output verbose info
 ```
 
 # 2. Site-level performance evaluation
@@ -98,7 +105,7 @@ The script `site_level_eval.py` is desinged for general purpose of site-level pe
 ```angular2html
 site_level_eval.py -v
 
-site_level_eval (NANOME) v1.3.2
+site_level_eval (NANOME) v1.3.3
 ```
 
 
@@ -107,18 +114,17 @@ User needs to specify methylation-calling raw results of each tool and BS-seq re
 
 ```angular2html
 site_level_eval.py \
+    --dsname TestData\    
+    --runid MethCorr-TestData_RRBS_2Reps\
     --calls\
         Nanopolish:[Nanopolish-calls]\
         Megalodon:[Megalodon-calls]\
         DeepSignal:[DeepSignal-calls]\
-    --bgtruth bismark:[BS-seq-rep1];[BS-seq-rep2]\
-    --runid MethCorr-TestData_RRBS_2Reps\
-    --dsname TestData\
-    --min-bgtruth-cov 3 --toolcov-cutoff 1\
+    --bgtruth [encode-type]:[BS-seq-rep1];[BS-seq-rep2]\
     --genome-annotation [genome-annotation]\
-    --beddir .\
-    --gen-venn --summary-coverage\
-    -o . 
+    --min-bgtruth-cov 3 --toolcov-cutoff 1\
+    --beddir [read-level-analysis-dir]\
+    --gen-venn --summary-coverage
 ```
 
 Sample results can be found at [site-level outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/site_level_output.txt).
@@ -129,6 +135,7 @@ site_level_eval.py -h
 
 usage: site_level_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID
                                 --calls CALLS [CALLS ...] --bgtruth BGTRUTH
+                                --genome-annotation GENOME_ANNOTATION
                                 [--beddir BEDDIR]
                                 [--min-bgtruth-cov MIN_BGTRUTH_COV]
                                 [--toolcov-cutoff TOOLCOV_CUTOFF] [--sep SEP]
@@ -136,8 +143,8 @@ usage: site_level_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID
                                 [--summary-coverage] [--region-coe-report]
                                 [--enable-cache] [--using-cache] [--plot]
                                 [--bedtools-tmp BEDTOOLS_TMP]
-                                [--genome-annotation GENOME_ANNOTATION]
-                                [--large-mem] [--disable-bed-check] [--debug]
+                                [--cache-dir CACHE_DIR] [--large-mem]
+                                [--disable-bed-check] [--verbose]
 
 Site-level correlation analysis in nanome paper
 
@@ -145,35 +152,45 @@ optional arguments:
   -h, --help            show this help message and exit
   -v, --version         show program's version number and exit
   --dsname DSNAME       dataset name
-  --runid RUNID         running prefix
+  --runid RUNID         running prefix/output folder name, such as MethCorr-
+                        DS_WGBS_2reps
   --calls CALLS [CALLS ...]
                         all ONT call results <tool-name>:<file-name> seperated
-                        by spaces
+                        by spaces, tool-name can be Nanopolish, Megalodon,
+                        DeepSignal, Guppy, Tombo, METEORE, DeepMod.Cluster
   --bgtruth BGTRUTH     background truth file <encode-type>:<file-
-                        name1>;<file-name1>
-  --beddir BEDDIR       base dir for concordant/discordant bed files
+                        name1>;<file-name1>, encode-type can be 'encode' or
+                        'bismark'
+  --genome-annotation GENOME_ANNOTATION
+                        genome annotation dir, contain BED files such as
+                        singleton, nonsingleton, etc.
+  --beddir BEDDIR       base dir for concordant/discordant BED files generated
+                        by read-level analysis, make sure provided dsname is
+                        same
   --min-bgtruth-cov MIN_BGTRUTH_COV
-                        cutoff for coverage in bg-truth
+                        cutoff for coverage in bg-truth, default is >=5
   --toolcov-cutoff TOOLCOV_CUTOFF
-                        cutoff for coverage in nanopore tools
+                        cutoff for coverage in nanopore tools, default is >=3
   --sep SEP             seperator for output csv file
   --processors PROCESSORS
-                        running processors
-  -o O                  output dir
-  --gen-venn            generate CpGs for venn data analysis
-  --summary-coverage    generate summary table for coverage at each region
-  --region-coe-report   report table for PCC value at each region
+                        number of processors used, default is 1
+  -o O                  output base dir
+  --gen-venn            if generate CpGs files for venn data analysis
+  --summary-coverage    if summarize coverage at each region
+  --region-coe-report   if report PCC value at each region
   --enable-cache        if enable cache functions
   --using-cache         if use cache files
-  --plot                plot the correlation matrix figure
+  --plot                if plot the correlation matrix figure
   --bedtools-tmp BEDTOOLS_TMP
-                        bedtools temp dir
-  --genome-annotation GENOME_ANNOTATION
-                        genome annotation dir
-  --large-mem           if using large memory (>100GB)
+                        bedtools temp dir, default is
+                        /fastscratch/liuya/nanome/temp_dir
+  --cache-dir CACHE_DIR
+                        loaded calls/bs-seq in cache dir (speed up running),
+                        default is /fastscratch/liuya/nanome/cache_dir
+  --large-mem           if using large memory (>100GB) for speed up
   --disable-bed-check   if disable checking the 0/1 base format for genome
                         annotations
-  --debug               if output debug info
+  --verbose             if output verbose info
 ```
 
 # 3. Unified read/site level format conversion
@@ -185,18 +202,18 @@ The script `tss_eval.py` is desinged for general purpose of converting raw resul
 ```angular2html
 tss_eval.py -v
 
-tss_eval (NANOME) v1.3.2
+tss_eval (NANOME) v1.3.3
 ```
 
 ## Sample usage for read-level format unification
-The option `--output-unified-format` is used for generate unified read-level format for tools.
+The option `--read-level-format` is used for generate unified read-level format for ONT tools.
 ```angular2html
 tss_eval.py \
+    --dsname [dataset-name]\
+    --runid Read_Level-[dataset-name] \
     --calls \
         [tool-name]:[tool-call-filename] \
-    --runid Read_Level-[dataset-name] \
-    --dsname [dataset-name]\
-    --output-unified-format\
+    --read-level-format\
     -o [output-dir]
 ```
 
@@ -211,15 +228,15 @@ ID	Chr	Pos	Strand	Score
 ```
 
 ## Sample usage for site-level format unification
-Below will generate the site level unified format for tools.
+Below will generate the site level unified format for tools/BS-seq data.
 ```angular2html
 tss_eval.py \
+    --dsname [dataset-name]\
+    --runid Site_Level-[dataset-name]\
+    --bgtruth [encode-type]:[BS-seq-file1];[BS-seq-file2]\
     --calls \
         [tool-name]:[tool-call-filename]\
-    --runid Site_Level-[dataset-name]\
-    --dsname [dataset-name]\
     -o [output-dir]
-
 ```
 
 The unified format of site-level output is below, the first three columns are chr, 0-base start, 1-base end, and the last three columns are strand, methylation frequency and coverage.
@@ -236,11 +253,11 @@ chr1	11344287	11344288	.	.	-	0.0	2
 tss_eval.py -h
 
 usage: tss_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID --calls CALLS
-                         [CALLS ...] [--bgtruth BGTRUTH] [--sep SEP]
-                         [--processors PROCESSORS] [-o O] [--enable-cache]
-                         [--using-cache] [--output-unified-format]
+                         [CALLS ...] [--bgtruth BGTRUTH] [--read-level-format]
+                         [--sep SEP] [--processors PROCESSORS] [-o O]
+                         [--enable-cache] [--using-cache]
                          [--chrs CHRS [CHRS ...]] [--tagname TAGNAME]
-                         [--debug]
+                         [--verbose]
 
 Export read/site level methylation results of all nanopore tools in nanome
 paper
@@ -249,23 +266,23 @@ optional arguments:
   -h, --help            show this help message and exit
   -v, --version         show program's version number and exit
   --dsname DSNAME       dataset name
-  --runid RUNID         running prefix
+  --runid RUNID         running prefix/output dir name
   --calls CALLS [CALLS ...]
                         all ONT call results <tool-name>:<file-name> seperated
                         by spaces
   --bgtruth BGTRUTH     background truth file <encode-type>:<file-
                         name1>;<file-name2>
+  --read-level-format   if true, it will output read level results (1-based
+                        start), else it will output site-level results
+                        (0-based start, 1-based end)
   --sep SEP             seperator for output csv file
   --processors PROCESSORS
-                        running processors
-  -o O                  output dir
+                        running processors, default is 1
+  -o O                  output base dir
   --enable-cache        if enable cache functions
   --using-cache         if use cache files
-  --output-unified-format
-                        True:output read level results(1-based start), False:
-                        output site-level results(0-based start)
   --chrs CHRS [CHRS ...]
                         chromosome list
   --tagname TAGNAME     output unified file tagname
-  --debug               if output debug info
+  --verbose             if output verbose info
 ```

@@ -8,7 +8,7 @@ import os
 
 from nanocompare.global_config import data_base_dir
 
-nanome_version="1.3.2"
+nanome_version="1.3.3"
 
 # define the small error of 0 and 1, for fully-meth and unmeth eval
 epslong = 1e-5
@@ -24,8 +24,6 @@ ecoliChrSet = ['NC_000913.3']
 datasets_order = ["NA12878", "NA19240", "APL", "K562", "HL60"]
 
 ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo', 'METEORE', 'DeepMod']
-
-Top3ToolNameList = ToolNameList[:3]
 
 ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod.C', 'DeepMod.Cluster',
                   'Megalodon', 'Megalodon.ZW',
