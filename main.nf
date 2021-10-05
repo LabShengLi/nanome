@@ -390,7 +390,7 @@ process QCExport {
 	tag "${params.dsname}"
 
 	publishDir "${params.outputDir}/${params.dsname}-basecallings",
-		mode: "copy", enabled: params.outputQC
+		mode: "copy", enabled: params.outputQC, overwrite: true
 
 	input:
 	path flist 		from 	qc_ch.collect()
