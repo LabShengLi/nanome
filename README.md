@@ -75,7 +75,7 @@ nextflow run TheJacksonLaboratory/nanome\
     -profile ci,singularity
 ```
 We provide a video of how to run our pipeline in below:
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/HiNb66mwVGg/0.jpg)](https://www.youtube.com/watch?v=HiNb66mwVGg&t=8s)
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/HiNb66mwVGg/0.jpg)](https://www.youtube.com/watch?v=HiNb66mwVGg)
 
 
 Please refer to [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). 
