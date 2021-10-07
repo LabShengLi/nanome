@@ -61,3 +61,4 @@ testdemo.py
 /nanome_cache_dir/
 /nanome_temp_dir/
 /script_paper/
+/tests/test_import_deepmod.py

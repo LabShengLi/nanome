@@ -30,7 +30,6 @@ import psutil
 import pysam
 from Bio import SeqIO
 from pybedtools import BedTool
-from scipy import stats
 from sklearn.metrics import roc_curve, auc, average_precision_score, f1_score, precision_score, recall_score
 from tqdm import tqdm
 
@@ -320,7 +319,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, readid_col=3, st
     meth_cnt = 0
     unmeth_cnt = 0
 
-    for row in tqdm(infile, total=lines,desc="Import-Tombo"):
+    for row in tqdm(infile, total=lines, desc="Import-Tombo"):
         tmp = row.strip().split("\t")
 
         if tmp[chr_col] not in filterChr:
@@ -396,9 +395,9 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, readid_col=3, st
     return cpgDict
 
 
-def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-3, meth_freq_col=-2,
-                              meth_cov_col=-1, baseFormat=1, output_first=False, include_score=False,
-                              siteLevel=False, filterChr=humanChrSet, total_cols=12):
+def importPredictions_DeepMod_C(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-3, meth_freq_col=-2,
+                                meth_cov_col=-1, baseFormat=1, output_first=False, include_score=False,
+                                siteLevel=False, filterChr=humanChrSet, total_cols=12):
     """
     DeepMod RNN results format
     We treate input as 0-based format for start col.
@@ -510,7 +509,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     return cpgDict
 
 
-def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4,
+def importPredictions_DeepMod_Clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4,
                                         meth_cov_col=-2, clustered_meth_freq_col=-1, baseFormat=1,
                                         output_first=False, siteLevel=True, include_score=False, filterChr=humanChrSet,
                                         total_cols=13):
@@ -529,7 +528,7 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     Note: it is white space separated, not tab-separated file
     ============
     """
-    infile,lines = open_file_gz_or_txt(infileName)
+    infile, lines = open_file_gz_or_txt(infileName)
 
     cpgDict = defaultdict()
     count_calls = 0
@@ -592,6 +591,100 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     return cpgDict
 
 
+def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4, meth_freq_col=-3,
+                              meth_cov_col=-2, clustered_meth_freq_col=-1, baseFormat=1,
+                              output_first=False, siteLevel=True, include_score=False, filterChr=humanChrSet):
+    """
+    DeepMod RNN+Cluster results format for human genome
+    Note that DeepMod only outputs site level stats, we use DeepMod clustered results for site level evaluation only.
+    This function have three outputs:
+    1. read level ouput of [0 0 1 1 1 ]
+    2. read level output of [(0, 0.0), (1, 1.0)]
+    3. site level output of [(0.25, 25), (0.8, 12)], i.e.,  [methFrequency, coverage] such as key -> values [50 (freq 0-100), 10 (cov)]
+
+    ### Example input format from DeepMod (clustered - following Step 4 from "Example 3: Detect 5mC on Na12878" section; https://github.com/WGLab/DeepMod/blob/master/docs/Reproducibility.md):
+    chr2 241991445 241991446 C 3 -  241991445 241991446 0,0,0 3 100 3 69
+    chr2 241991475 241991476 C 3 -  241991475 241991476 0,0,0 3 33 1 75
+    chr2 241991481 241991482 C 2 -  241991481 241991482 0,0,0 2 50 1 76
+    Note: it is white space separated, not tab-separated file
+    ============
+    """
+    infile, lines = open_file_gz_or_txt(infileName)
+
+    cpgDict = defaultdict()
+    count_calls = 0
+    meth_cnt = 0
+    unmeth_cnt = 0
+    deepmod_format = None
+    for row in tqdm(infile, total=lines, desc="Import-DeepMod"):
+        tmp = row.strip().split()
+        if deepmod_format is None:
+            if len(tmp) == 12:
+                deepmod_format = "DeepMod.C"
+                # redefine DeepMod.C column
+                coverage_col = -3
+                meth_freq_col = -2
+                meth_cov_col = -1
+                clustered_meth_freq_col = None
+            elif len(tmp) == 13:
+                deepmod_format = "DeepMod.Cluster"
+            else:
+                raise Exception(f"Detect DeepMod output format error: tmp={tmp}")
+            logger.debug(f"Detect DeepMod format is:{deepmod_format}")
+
+        if tmp[chr_col] not in filterChr:
+            continue
+
+        if output_first:
+            logger.debug(f'row = {list(enumerate(tmp))}')
+            output_first = False
+
+        if baseFormat == 1:
+            start = int(tmp[start_col]) + 1
+            strand = tmp[strand_col]
+        elif baseFormat == 0:
+            start = int(tmp[start_col])
+            strand = tmp[strand_col]
+        else:
+            logger.error(
+                "###\timportPredictions_DeepMod InputValueError: baseCount value set to '{}'. It should be equal to 0 or 1".format(
+                    baseFormat))
+            sys.exit(-1)
+
+        if strand not in ['+', '-']:
+            raise Exception(f'Strand info={strand} is not correctly recognized, row={row}, in file {infileName}')
+
+        key = (tmp[chr_col], start, strand)
+
+        if clustered_meth_freq_col is not None:
+            meth_freq = int(tmp[clustered_meth_freq_col]) / 100.0
+        else:
+            meth_freq = int(tmp[meth_freq_col]) / 100.0
+        coverage = int(tmp[coverage_col])
+        meth_cov = int(tmp[meth_cov_col])
+
+        if key in cpgDict:
+            raise Exception(f'In DeepMod_Cluster results, we found duplicate key={key}, this is not correct')
+
+        if siteLevel:  # For site-level return
+            cpgDict[key] = (meth_freq, coverage)
+        elif include_score:  # For read-level include scores
+            cpgDict[key] = [(1, 1.0)] * meth_cov + [(0, 0.0)] * (coverage - meth_cov)
+        else:  # For read-level no scores
+            cpgDict[key] = [1] * meth_cov + [0] * (coverage - meth_cov)
+
+        count_calls += coverage
+        meth_cnt += meth_cov
+        unmeth_cnt += coverage - meth_cov
+
+    infile.close()
+
+    logger.debug(
+        f"###\timportDeepMod_clustered Parsing SUCCESS: {count_calls:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
+
+    return cpgDict
+
+
 def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3, strand_col=2, mod_log_prob_col=4,
                                 can_log_prob_col=5, baseFormat=1, cutoff=0.8, sep='\t', output_first=False,
                                 include_score=False, filterChr=humanChrSet, save_unified_format=False, outfn=None):
@@ -614,7 +707,7 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
     (https://github.com/nanoporetech/megalodon/issues/47#issuecomment-673742805)
     ============
     """
-    infile,lines = open_file_gz_or_txt(infileName)
+    infile, lines = open_file_gz_or_txt(infileName)
     if save_unified_format:
         outf = gzip.open(outfn, 'wt')
         outf.write(f"ID\tChr\tPos\tStrand\tScore\n")
@@ -624,7 +717,7 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
     meth_cnt = 0
     unmeth_cnt = 0
 
-    for row in tqdm(infile, total=lines,desc="Import-Megalodon"):
+    for row in tqdm(infile, total=lines, desc="Import-Megalodon"):
         tmp = row.strip().split(sep)
 
         if tmp[chr_col] not in filterChr:
@@ -719,7 +812,7 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
         call_cnt = methcall_cnt = unmethcall_cnt = 0
         infile, lines = open_file_gz_or_txt(infileName)
 
-        for row in tqdm(infile, total=lines,desc="Import-Guppy"):
+        for row in tqdm(infile, total=lines, desc="Import-Guppy"):
             tmp = row.strip().split(sep)
             if tmp[chr_col] not in filterChr:
                 continue
@@ -896,7 +989,7 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
         outf = gzip.open(outfn, 'wt')
         outf.write(f"ID\tChr\tPos\tStrand\tScore\n")
 
-    for row in tqdm(infile, total=lines,desc="Import-Guppy.gcf52ref"):
+    for row in tqdm(infile, total=lines, desc="Import-Guppy.gcf52ref"):
         tmp = row.strip().split(sep)
         if tmp[chr_col] not in filterChr:
             continue
@@ -968,7 +1061,7 @@ def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, 
     meth_cnt = 0
     unmeth_cnt = 0
 
-    for row in tqdm(infile, total=lines,desc="Import-METEORE"):
+    for row in tqdm(infile, total=lines, desc="Import-METEORE"):
         if row.startswith("ID\tChr"):  # skim header
             continue
         tmp = row.strip().split("\t")
@@ -1109,7 +1202,7 @@ def importGroundTruth_from_Encode(infileName, chr_col=0, start_col=1, methfreq_c
     infile, lines = open_file_gz_or_txt(infileName)
 
     nrow = 0
-    for row in tqdm(infile, total=lines,desc="Import-Encode"):
+    for row in tqdm(infile, total=lines, desc="Import-Encode"):
         nrow += 1
 
         tmp = row.strip().split("\t")
@@ -1415,19 +1508,24 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
         calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score, readid_col=2,
                                              chr_col=0, start_col=1, strand_col=3, filterChr=filterChr,
                                              save_unified_format=save_unified_format, outfn=outfn)
-    elif encode == 'DeepMod.Cluster':  # import DeepMod Clustered output for site level, itself tool reports by cluster, key->value={'freq':68, 'cov':10}
-        calls0 = importPredictions_DeepMod_clustered(infn, baseFormat=baseFormat, siteLevel=siteLevel,
-                                                     include_score=include_score, filterChr=filterChr)
-    elif encode == 'DeepMod.C':  # import DeepMod itself tool for read level
+    elif encode == 'DeepMod':  # import DeepMod, support both C and Cluster input format
         calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, siteLevel=siteLevel,
                                            include_score=include_score, filterChr=filterChr)
+    elif encode == 'DeepMod.Cluster':  # import DeepMod Clustered output for site level
+        calls0 = importPredictions_DeepMod_Clustered(infn, baseFormat=baseFormat, siteLevel=siteLevel,
+                                                     include_score=include_score, filterChr=filterChr)
+    elif encode == 'DeepMod.C':  # import DeepMod itself tool for read level
+        calls0 = importPredictions_DeepMod_C(infn, baseFormat=baseFormat, siteLevel=siteLevel,
+                                             include_score=include_score, filterChr=filterChr)
     elif encode == 'Guppy':  # import Guppy itself tool results by fast5mod raw results
-        calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel,
-                                         filterChr=filterChr)
+        calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, siteLevel=siteLevel,
+                                         include_score=include_score, filterChr=filterChr)
     elif encode == 'Guppy.ZW':  # import Guppy itself tool results by fast5mod processed by Ziwei
-        calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, include_score=include_score, siteLevel=siteLevel,
-                                         filterChr=filterChr, formatSource="Guppy.ZW")
+        calls0 = importPredictions_Guppy(infn, baseFormat=baseFormat, siteLevel=siteLevel,
+                                         include_score=include_score, filterChr=filterChr, formatSource="Guppy.ZW")
     elif encode == 'Guppy.gcf52ref':  # import Guppy gcf52ref read level results
+        if siteLevel:
+            raise Exception(f"Not support site-level import for gcf52ref format file={infn}")
         calls0 = importPredictions_Guppy_gcf52ref(infn, baseFormat=baseFormat, include_score=include_score,
                                                   filterChr=filterChr, header=None,
                                                   save_unified_format=save_unified_format,
@@ -1440,7 +1538,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
 
     if enable_cache:
         save_to_cache(infn, calls0, encode=encode, baseFormat=baseFormat, include_score=include_score,
-                      siteLevel=siteLevel)
+                      siteLevel=siteLevel, cache_dir=cache_dir, file_type='ont-call')
 
     logger.debug(f'Import {encode} finished!\n')
     return calls0
@@ -1477,7 +1575,8 @@ def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, ena
         raise Exception(f"encode={encode} is not supported yet, for inputfile={infn}")
 
     if enable_cache:
-        save_to_cache(infn, bgTruth, encode=encode, cov=covCutoff, baseFormat=baseFormat, includeCov=includeCov)
+        save_to_cache(infn, bgTruth, encode=encode, cov=covCutoff, baseFormat=baseFormat, includeCov=includeCov,
+                      cache_dir=cache_dir, file_type='bs-seq')
 
     logger.debug(f'Import BG-Truth using encode={encode} finished!\n')
     return bgTruth
@@ -1703,7 +1802,6 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
 
     ### compute all per read stats:
     with warnings.catch_warnings(record=True) as w:
-
         try:
             accuracy = (TP_5mC + TN_5mC) / float(TP_5mC + FP_5mC + FN_5mC + TN_5mC)
         except ZeroDivisionError:
@@ -2279,14 +2377,7 @@ def filter_cpg_dict(cpgDict, filterDict, toolname="Tool"):
     retDict = defaultdict()
     joinedKeys = set(filterDict.keys()).intersection(set(cpgDict.keys()))
     for k in tqdm(joinedKeys, desc=f"FilterCPG-{toolname}"):
-        if isinstance(cpgDict[k], list):
-            retDict[k] = list(cpgDict[k])
-        elif isinstance(cpgDict[k], tuple):
-            retDict[k] = tuple(cpgDict[k])
-        elif isinstance(cpgDict[k], int):
-            retDict[k] = int(cpgDict[k])
-        else:
-            raise Exception(f"Not correct type for cpgDict[k]={cpgDict[k]}, the type={type(cpgDict[k])}")
+        retDict[k] = cpgDict[k]
     return retDict
 
 
@@ -2346,7 +2437,7 @@ def combineBGTruthList(bgTruthList, covCutoff=1):
         unionSet = set(bgTruthList[0].keys()).union(set(bgTruthList[1].keys()))
         jointSet = set(bgTruthList[0].keys()).intersection(set(bgTruthList[1].keys()))
 
-        for key in unionSet:
+        for key in tqdm(unionSet, desc="Combine-BSseq"):
             meth1 = meth2 = 0
             cov1 = cov2 = 0
             if key in bgTruthList[0]:
@@ -2375,7 +2466,7 @@ def combineBGTruthList(bgTruthList, covCutoff=1):
         logger.debug(
             f'unionBGTruth = {len(unionBGTruth):,}, jointBGTruth={len(jointBGTruth):,}, with cov-cutoff={covCutoff}')
     elif len(bgTruthList) == 1:
-        for key in bgTruthList[0]:
+        for key in tqdm(bgTruthList[0], desc="Combine-BSseq"):
             if bgTruthList[0][key][1] >= covCutoff:
                 unionBGTruth[key] = bgTruthList[0][key]
         logger.debug(f'Only 1 replicates, BGTruth = {len(unionBGTruth):,}, with cov-cutoff={covCutoff}')
@@ -2582,8 +2673,8 @@ def get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detecti
     else:
         baseFormat = -1
     if enable_cache and using_cache:
-        ret = check_cache_available(infn=infn, file_type='genome-annotation', cache_dir=cache_dir,
-                                    baseFormat=baseFormat)
+        ret = check_cache_available(infn=infn, file_type='genome-annotation',
+                                    baseFormat=baseFormat, cache_dir=cache_dir)
         if ret is not None:
             logger.debug(f'Import {infn} finished from cache')
             return ret
@@ -2596,7 +2687,7 @@ def get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detecti
             f"region {tagname} file is not loaded, filename={infn}")
     ret = (infn, tagname, region_bed)
     if enable_cache:
-        save_to_cache(infn, ret, file_type='genome-annotation', cache_dir=cache_dir, baseFormat=baseFormat)
+        save_to_cache(infn, ret, file_type='genome-annotation', baseFormat=baseFormat, cache_dir=cache_dir)
     return ret
 
 
@@ -2697,66 +2788,6 @@ def filter_corrdata_df_by_bedfile(df, coord_bed, coord_fn):
         select_lines.append(str(line).strip())
     retdf = df[df['bedline'].isin(select_lines)]
     return retdf
-
-
-def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=None, outdir=pic_base_dir,
-                                  large_mem=False,
-                                  enable_base_detection_bedfile=enable_base_detection_bedfile,
-                                  enable_cache=False, using_cache=False, cache_dir=None):
-    """
-    Calculate Pearson's correlation coefficient at different regions.
-    :param corr_infn:
-    :param beddir:
-    :param dsname:
-    :param outdir:
-    :return:
-    """
-    logger.debug(f"Open corr data:{corr_infn}")
-    df = pd.read_csv(corr_infn)
-    logger.debug(df)
-
-    dataset = defaultdict(list)
-    bar = tqdm(bed_tuple_list)
-    for infn, tagname, coord_bed in bar:
-        bar.set_description(f"PCC-{dsname}-at-{tagname}")
-        logger.debug(f'tagname={tagname}, coord_fn={infn}')
-        if not large_mem and tagname != 'Genome-wide' and coord_bed is None:  # load on demand
-            eval_coord_bed = get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detection_bedfile,
-                                                  enable_cache=enable_cache, using_cache=using_cache,
-                                                  cache_dir=cache_dir)[2]
-        else:
-            eval_coord_bed = coord_bed
-
-        if tagname != 'Genome-wide' and eval_coord_bed is None:
-            logger.debug(f"Region name={tagname} is not found")
-            continue
-        newdf = filter_corrdata_df_by_bedfile(df, eval_coord_bed, infn)
-
-        # Computer COE and pvalue
-        newdf = newdf.filter(regex='_freq$', axis=1)
-        for i in range(1, len(newdf.columns)):
-            toolname = str(newdf.columns[i]).replace('_freq', '')
-            try:  # too few samples will fail
-                coe, pval = stats.pearsonr(newdf.iloc[:, 0], newdf.iloc[:, i])
-            except:
-                coe, pval = None, None
-
-            # report to dataset
-            dataset['dsname'].append(dsname)
-            dataset['Tool'].append(toolname)
-            dataset['Location'].append(tagname)
-            dataset['#Bases'].append(len(newdf))
-            dataset['COE'].append(coe)
-            dataset['p-value'].append(pval)
-
-    # logger.info(dataset)
-    outdf = pd.DataFrame.from_dict(dataset)
-    logger.debug(outdf)
-
-    outfn = os.path.join(outdir, f'{runid}_{dsname}.corrdata.coe.pvalue.each.regions.xlsx')
-    outdf.to_excel(outfn)
-    logger.debug(f'save to {outfn}')
-    return outdf
 
 
 def get_meteore_format_set(infn, read_level=True):

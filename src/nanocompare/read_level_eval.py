@@ -194,7 +194,7 @@ def report_per_read_performance_mpi(ontCalls, bgTruth, analysisPrefix, narrowedC
 
     global progress_bar_global_read
     progress_bar_global_read = tqdm(total=len(narrowedCoordinatesList))
-    progress_bar_global_read.set_description(f"Read-level-{analysisPrefix}")
+    progress_bar_global_read.set_description(f"MT-Read-level-{analysisPrefix}")
 
     for coord_tuple in narrowedCoordinatesList:
         if coord_tuple is not None:
@@ -312,7 +312,7 @@ def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet, threshold=0.2)
     pass
 
 
-def import_ont_calls_for_read_level(call_encode, callfn, absoluteBGTruthCov, mpi=False):
+def import_ont_calls_for_read_level(call_encode, callfn, absoluteBGTruthCov, multi_processor=False):
     call_name = call_encode.replace('.', '_')
     ## MUST import read-level results, and include score for plot ROC curve and PR curve
     ## ont_call0 is raw ont-calls, too large, it will be cut to only with bs-seq, named ont_call1
@@ -340,7 +340,7 @@ def import_ont_calls_for_read_level(call_encode, callfn, absoluteBGTruthCov, mpi
     else:
         ont_call1 = ont_call0
 
-    if not mpi:  # sequencial/multithreading running, in same process, can directly return object
+    if not multi_processor:  # sequencial/multithreading running, in same process, can directly return object
         return (call_name, ont_call1, sites_summary,)
     # Save to temp, for main process use at multi-processing
     outfn = f"tmp_ont_calls_for_read_level_{args.runid}_{os.path.basename(callfn)}.pkl"
@@ -354,7 +354,7 @@ def import_ont_calls_for_read_level(call_encode, callfn, absoluteBGTruthCov, mpi
     return (call_name, outfnmd5, sites_summary,)
 
 
-def import_bsseq_for_read_level(infn, encode, mpi=False):
+def import_bsseq_for_read_level(infn, encode, multi_processor=False):
     """
     Used by multiprocessing, import and save to tmp pkl
     Args:
@@ -368,7 +368,7 @@ def import_bsseq_for_read_level(infn, encode, mpi=False):
     # bgTruth1 is dict of key->value, key=(chr, start, strand), and value=[meth.freq, cov]
     bg1 = import_bgtruth(infn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True,
                          using_cache=using_cache, enable_cache=enable_cache, cache_dir=args.cache_dir)
-    if not mpi:  # in same process, directly return
+    if not multi_processor:  # in same process, directly return
         return bg1
     # Save to temp, for main process use, multi-processing
     outfn = f"tmp_bsseq_for_read_level_{args.runid}_{os.path.basename(infn)}.pkl"
@@ -492,9 +492,9 @@ def compute_dist_at_region_mp(joined_bed, dist_region_tuple_list, region_tuple):
         f"Coord={tagname}, Total={num_total:,}, Singletons={num_singleton:,}, Non-singletons={num_nonsingleton:,}, Total(Sing+Nonsing)={num_singleton + num_nonsingleton:,}, Concordant={num_concordant:,}, Discordant={num_discordant:,}, Total(Con+Disc)={num_concordant + num_discordant:,}")
     # Sanity check sums
     if num_total != num_singleton + num_nonsingleton:
-        logger.error(f"Found incorrect sums at {tagname}: for num_total != num_singleton + num_nonsingleton")
+        logger.debug(f"Found incorrect sums at {tagname}: for num_total != num_singleton + num_nonsingleton")
     if num_nonsingleton != num_concordant + num_discordant:
-        logger.error(
+        logger.debug(
             f"Found incorrect sums at {tagname}: for num_nonsingleton != num_concordant+ num_discordant")
     return ret
 
@@ -578,7 +578,9 @@ def parse_arguments():
                         default=cache_dir)
     parser.add_argument('--disable-bed-check', help="if disable checking the 0/1 base format for genome annotations",
                         action='store_true')
-    parser.add_argument('--mpi', help="if using multi-processing for import/evaluation, it is only in develop mode",
+    parser.add_argument('--mpi', help="if using multi-processing/threading for evaluation, it can speed-up",
+                        action='store_true')
+    parser.add_argument('--mpi-import', help="if using multi-processing/threading for import, it can speed-up, only for small size data",
                         action='store_true')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
@@ -647,7 +649,7 @@ if __name__ == '__main__':
         bgTruthList = []
         arg_list = []
         for fn in fnlist:
-            arg_list.append((fn, encode, False,))
+            arg_list.append((fn, encode,))
         if args.mpi:
             executor = ThreadPoolExecutor(max_workers=args.processors)
             all_task = [executor.submit(import_bsseq_for_read_level, *arg) for arg in arg_list]
@@ -757,39 +759,26 @@ if __name__ == '__main__':
     ## Dataframe for cpgs in tool and each tool joined with BS-seq
     sites_database_list = []  # list of dict
     ontCallWithinBGTruthDict = dict()  # callname-> call-dict
-    ontCallWithinBGTruthFileDict = dict()  # callname -> filename of call-dict
 
-    if args.mpi:
+    if args.mpi_import:
+        # Multi-thread may lead to large memory (out-of-memory) for big ont-calls
         executor = ThreadPoolExecutor(max_workers=args.processors)
         all_task = [executor.submit(import_ont_calls_for_read_level, *arg) for arg in arg_list]
         executor.shutdown()
         for future in all_task:
             ret = future.result()
             ontCallWithinBGTruthDict[ret[0]] = ret[1]
-            ontCallWithinBGTruthFileDict[ret[0]] = None
             sites_database_list.append(ret[2])
         logger.debug("MT parallel import ont calls finished")
         logger.debug(f"Memory report: {get_current_memory_usage()}")
-
-        # with Pool(args.processors) as pool:
-        #     # ret_list is list of (callname, outfn, sites_dict_summary)
-        #     ret_list = pool.starmap(import_ont_calls_for_read_level, arg_list)
-
-        # for ret in ret_list:
-        #     # read output from a sub-process
-        #     with open(ret[1], 'rb') as handle:
-        #         logger.debug(f"Load ontcall {ret[0]} from file {ret[1]}, it is from subprocess")
-        #         call_within_bgtruth = pickle.load(handle)
-        #     ontCallWithinBGTruthDict[ret[0]] = call_within_bgtruth
-        #     ontCallWithinBGTruthFileDict[ret[0]] = ret[1]
-        #     sites_database_list.append(ret[2])
     else:
+        # Sequencial import will be benefit for large data
         for arg in arg_list:
             ret = import_ont_calls_for_read_level(*arg)
             logger.debug(f"Memory report: {get_current_memory_usage()}")
             ontCallWithinBGTruthDict[ret[0]] = ret[1]
-            ontCallWithinBGTruthFileDict[ret[0]] = None
             sites_database_list.append(ret[2])
+
     logger.info(f"Import tools's calling done for toolist={list(ontCallWithinBGTruthDict.keys())}")
     logger.debug(f"sites_database_list={sites_database_list}")
     logger.info(f"Memory report: {get_current_memory_usage()}")
@@ -934,7 +923,7 @@ if __name__ == '__main__':
 
         global progress_bar_global_read
         progress_bar_global_read = tqdm(total=len(region_bedtuple_list))
-        progress_bar_global_read.set_description("Distribution(singl/nonsingle)")
+        progress_bar_global_read.set_description("MT-Distribution(singl/nonsingle)")
         all_task = []
         for reg_tuple in region_bedtuple_list:
             future = executor.submit(compute_dist_at_region_mp, joined_bed, dist_region_tuple_list, reg_tuple)
@@ -949,17 +938,7 @@ if __name__ == '__main__':
             if ret is None:
                 continue
             datasets.append(ret)
-        # with Pool(args.processors) as pool:  # MPI for distribution computing at all regions
-        #     global progress_bar_global_read
-        #     progress_bar_global_read = tqdm(total=len(region_bedtuple_list))
-        #     progress_bar_global_read.set_description("Distribution(singl/nonsingle)")
-        #     for reg_tuple in region_bedtuple_list:
-        #         ret = pool.apply_async(compute_dist_at_region_mp, args=(
-        #             joined_bed_fn, dist_region_tuple_list, reg_tuple,), callback=update_progress_bar_read_level)
-        #         ret_list.append(ret)
-        #     pool.close()
-        #     pool.join()
-        #     progress_bar_global_read.close()
+
         df = pd.DataFrame(datasets)
         outfn = os.path.join(out_dir,
                              f'{dsname}.bgtruth.certain.sites.distribution.sing.nonsing.each.genomic.cov{cutoffBGTruth}.table.s6.xlsx')
