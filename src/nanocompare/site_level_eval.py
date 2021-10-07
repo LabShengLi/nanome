@@ -61,10 +61,13 @@ def summary_cpgs_stats_results_table():
         # Add coverage of every regions by each tool here
         bar = tqdm(region_bed_list)
         for (bedfn, tagname, region_bed) in bar:  # calculate how overlap with Singletons, Non-Singletons, etc.
-            bar.set_description(f"CPG-cov-at-region-{tagname}")
+            bar.set_description(f"CPG_coverage-{toolname}-region-{tagname}")
             if not args.large_mem and region_bed is None:  # load in demand
                 region_bed = get_region_bed_tuple(bedfn,
-                                                  enable_base_detection_bedfile=not args.disable_bed_check)[2]
+                                                  enable_base_detection_bedfile=not args.disable_bed_check,
+                                                  enable_cache=args.enable_cache, using_cache=args.using_cache,
+                                                  cache_dir=args.cache_dir
+                                                  )[2]
 
             if region_bed is None:
                 logger.debug(f"region name={tagname} is not found")
@@ -98,10 +101,10 @@ def summary_cpgs_stats_results_table():
             f"\n\nSanity check: sum_sing_nonsingle={sum_sing_nonsingle:,}; sum_cg={sum_cg:,}; total={total_sites:,}")
 
         if sum_sing_nonsingle != total_sites:
-            logger.error(
+            logger.debug(
                 f"Sanity check for {toolname}, total_sites={total_sites:,}, sum_sing_nonsingle={sum_sing_nonsingle:,}, some non-singletons are not captered by bed file")
             retDict['Non-singletons'] = total_sites - retDict['Singletons']
-            logger.error(f"Updated, retDict={retDict}")
+            logger.debug(f"Updated, retDict={retDict}")
         row_dict.update(retDict)
         dataset.append(row_dict)
         logger.debug(f'BG-Truth join with {toolname} get {len(toolOverlapBGTruthCpGs):,} CpGs')
@@ -504,7 +507,9 @@ if __name__ == '__main__':
         logger.info(f"Start report PCC in difference genomic regions based on file={fnlist[0]}, dsname={dsname}")
         correlation_report_on_regions(fnlist[0], bed_tuple_list=eval_genomic_context_tuple, dsname=dsname, runid=args.runid,
                                       outdir=out_dir, large_mem=args.large_mem,
-                                      enable_base_detection_bedfile=not args.disable_bed_check)
+                                      enable_base_detection_bedfile=not args.disable_bed_check,
+                                      enable_cache=args.enable_cache, using_cache=args.using_cache,
+                                      cache_dir=args.cache_dir)
         logger.debug(f"Memory report: {get_current_memory_usage()}")
 
     if args.summary_coverage:

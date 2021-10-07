@@ -67,14 +67,14 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
     meth_cnt = 0
     unmeth_cnt = 0
 
-    infile = open_file_gz_or_txt(infileName)
+    infile, lines = open_file_gz_or_txt(infileName)
 
     if save_unified_format:
         # outf = open(outfn, 'w')
         outf = gzip.open(outfn, 'wt')
         outf.write(f"ID\tChr\tPos\tStrand\tScore\n")
 
-    for row in infile:
+    for row in tqdm(infile, total=lines, desc="Import-Nanopolish"):
         tmp = row.strip().split("\t")
 
         if tmp[chr_col] != "chromosome":
@@ -220,7 +220,7 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     - k_mer: the kmer around the targeted base
     ** by default if this probability will be higher than > 0.5, DeepSignal will tell that this is methylated site, or else is unmethylated
     """
-    infile = open_file_gz_or_txt(infileName)
+    infile, lines = open_file_gz_or_txt(infileName)
 
     if save_unified_format:
         outf = gzip.open(outfn, 'wt')
@@ -231,7 +231,7 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     meth_cnt = 0
     unmeth_cnt = 0
 
-    for row in infile:
+    for row in tqdm(infile, total=lines, desc="Import-DeepSignal"):
         tmp = row.strip().split("\t")
 
         if tmp[chr_col] not in filterChr:
@@ -309,7 +309,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, readid_col=3, st
     chr1    8447761    8447761    c9339e26-1898-4483-a312-b78c3fafc6a9    -0.8580941645036908    -    ATGGACACAGA
     ============
     """
-    infile = open_file_gz_or_txt(infileName)
+    infile, lines = open_file_gz_or_txt(infileName)
 
     if save_unified_format:
         outf = gzip.open(outfn, 'wt')
@@ -320,7 +320,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, readid_col=3, st
     meth_cnt = 0
     unmeth_cnt = 0
 
-    for row in infile:
+    for row in tqdm(infile, total=lines,desc="Import-Tombo"):
         tmp = row.strip().split("\t")
 
         if tmp[chr_col] not in filterChr:
@@ -434,7 +434,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     Note: it is space-separated in original result file, not tab-separated file
     ============
     """
-    infile = open_file_gz_or_txt(infileName)
+    infile, lines = open_file_gz_or_txt(infileName)
 
     cpgDict = defaultdict(list)
     count_calls = 0
@@ -443,7 +443,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
 
     first_row_checked = False
 
-    for row in infile:
+    for row in tqdm(infile, total=lines, desc="Import-DeepMod.C"):
         tmp = row.strip().split()
 
         if len(tmp) != total_cols:
@@ -529,14 +529,14 @@ def importPredictions_DeepMod_clustered(infileName, chr_col=0, start_col=1, stra
     Note: it is white space separated, not tab-separated file
     ============
     """
-    infile = open_file_gz_or_txt(infileName)
+    infile,lines = open_file_gz_or_txt(infileName)
 
     cpgDict = defaultdict()
     count_calls = 0
     meth_cnt = 0
     unmeth_cnt = 0
 
-    for row in infile:
+    for row in tqdm(infile, total=lines, desc="Import-DeepMod.Cluster"):
         tmp = row.strip().split()
 
         if len(tmp) != total_cols:
@@ -614,7 +614,7 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
     (https://github.com/nanoporetech/megalodon/issues/47#issuecomment-673742805)
     ============
     """
-    infile = open_file_gz_or_txt(infileName)
+    infile,lines = open_file_gz_or_txt(infileName)
     if save_unified_format:
         outf = gzip.open(outfn, 'wt')
         outf.write(f"ID\tChr\tPos\tStrand\tScore\n")
@@ -624,7 +624,7 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
     meth_cnt = 0
     unmeth_cnt = 0
 
-    for row in infile:
+    for row in tqdm(infile, total=lines,desc="Import-Megalodon"):
         tmp = row.strip().split(sep)
 
         if tmp[chr_col] not in filterChr:
@@ -717,9 +717,9 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
 
         cpgDict = defaultdict(list)
         call_cnt = methcall_cnt = unmethcall_cnt = 0
-        infile = open_file_gz_or_txt(infileName)
+        infile, lines = open_file_gz_or_txt(infileName)
 
-        for row in infile:
+        for row in tqdm(infile, total=lines,desc="Import-Guppy"):
             tmp = row.strip().split(sep)
             if tmp[chr_col] not in filterChr:
                 continue
@@ -770,7 +770,7 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
             f"###\timportPredictions_Guppy (fast5mod) SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs, using default Fast5mod cutoff from {infileName} file")
 
         return cpgDict
-    elif formatSource == 'raw-correct':  # raw results of fast5mod
+    elif formatSource == 'raw-correct':  # raw results of fast5mod, using pandas
         the_dtype = {"chrom": str, "position": int, "motif": str,
                      "fwd.meth.count": int, "rev.meth.count": int,
                      "fwd.canon.count": int, "rev.canon.count": int}
@@ -806,7 +806,7 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
         df_combined = pd.concat([fwd_methdata, rev_methdata], ignore_index=True, axis=0)
         df_combined = df_combined[
             ["chrom", "position", "strand", "motif", "meth.count", "canon.count", "coverage", "meth_freq"]]
-    else:  # our preprocessed results by Ziwei
+    else:  # our preprocessed results by ZW
         if baseFormat != 1:
             raise Exception(f"formatSource={formatSource} is not finished for base=0")
         df_combined = pd.read_csv(infileName, sep=sep, header=None,
@@ -890,13 +890,13 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
     ### Using scanner way
     cpgDict = defaultdict(list)
     call_cnt = methcall_cnt = 0
-    infile = open_file_gz_or_txt(infileName)
+    infile, lines = open_file_gz_or_txt(infileName)
 
     if save_unified_format:
         outf = gzip.open(outfn, 'wt')
         outf.write(f"ID\tChr\tPos\tStrand\tScore\n")
 
-    for row in infile:
+    for row in tqdm(infile, total=lines,desc="Import-Guppy.gcf52ref"):
         tmp = row.strip().split(sep)
         if tmp[chr_col] not in filterChr:
             continue
@@ -944,73 +944,6 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
         f"###\timportPredictions_Guppy_gcf52ref SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs, using cutoff={cutoff} from {infileName} file")
     return cpgDict
 
-    ### Before df way
-    df = pd.read_csv(infileName, sep=sep, header=header)
-    logger.debug(df)
-
-    if save_unified_format:
-        outf = gzip.open(outfn, 'wt')
-        outf.write(f"ID\tChr\tPos\tStrand\tScore\n")
-
-    ## Reduce memory usage
-    df = df.iloc[:, [chr_col, strand_col, start_col, log_lik_methylated_col, log_ratio_col, readid_col]]
-
-    ## extract cpg into dict return object
-    cpgDict = defaultdict(list)
-    call_cnt = methcall_cnt = 0
-    for index, row in tqdm(df.iterrows()):
-        chr = row.iloc[0]
-        if chr not in filterChr:  # Filter out interested chrs
-            continue
-
-        strand = row.iloc[1]
-        if strand not in ['+', '-']:
-            raise Exception(f"gcf52ref format strand parse error, row={row}")
-
-        start = int(row.iloc[2])
-        # Correct the coordinates into 1-based
-        if strand == "+":
-            start = start + baseFormat
-        elif strand == "-":
-            start = start + baseFormat + 1
-
-        log_lik_methylated = float(row.iloc[3])
-        log_ratio = row.iloc[4]
-        readid = row.iloc[5]
-
-        prob_methylated = 10 ** log_lik_methylated
-
-        if save_unified_format:
-            # output to 1-based for meteore, ref: https://github.com/comprna/METEORE/blob/master/script_in_snakemake/format_guppy.R
-            outf.write(f"{readid}\t{chr}\t{start}\t{strand}\t{log_ratio}\n")
-
-        if (prob_methylated > cutoff[0]) and (prob_methylated < cutoff[1]):
-            continue
-
-        if prob_methylated <= cutoff[0]:
-            meth_indicator = 0
-        else:
-            meth_indicator = 1
-
-        call_cnt += 1
-        methcall_cnt += meth_indicator
-
-        key = (chr, int(start), strand)
-
-        if include_score:  # For read-level include scores
-            cpgDict[key].append((meth_indicator, prob_methylated))
-        else:  # For read-level no scores
-            cpgDict[key].append(meth_indicator)
-
-    if save_unified_format:
-        outf.close()
-        logger.debug(f'Save METEORE output format to {outfn}')
-
-    unmethcall_cnt = call_cnt - methcall_cnt
-    logger.debug(
-        f"###\timportPredictions_Guppy SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
-    return cpgDict
-
 
 def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, meth_indicator_col=3, meth_prob_col=4,
                               strand_col=5, baseFormat=1, include_score=False, filterChr=humanChrSet):
@@ -1028,14 +961,14 @@ def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, 
     abcc33b7-2895-4e0e-830c-3d0ed441760d	chr1	104048	0	0.331208615558345	-
     abcc33b7-2895-4e0e-830c-3d0ed441760d	chr1	104243	0	0.3042032634832675	-
     """
-    infile = open_file_gz_or_txt(infileName)
+    infile, lines = open_file_gz_or_txt(infileName)
 
     cpgDict = defaultdict(list)
     row_count = 0
     meth_cnt = 0
     unmeth_cnt = 0
 
-    for row in infile:
+    for row in tqdm(infile, total=lines,desc="Import-METEORE"):
         if row.startswith("ID\tChr"):  # skim header
             continue
         tmp = row.strip().split("\t")
@@ -1087,7 +1020,7 @@ def readLevelToSiteLevelWithCov(ontDict, minCov=1, toolname="Tool"):
     :return:
     """
     result = defaultdict()
-    for cpg in ontDict:
+    for cpg in tqdm(ontDict, desc=f"read_to_site_{toolname}"):
         if type(ontDict[cpg]) == list:  # value is [0 0 1 1 0 ...]
             if len(ontDict[cpg]) >= minCov:
                 result[cpg] = (sum(ontDict[cpg]) / float(len(ontDict[cpg])), len(ontDict[cpg]))
@@ -1103,17 +1036,26 @@ def readLevelToSiteLevelWithCov(ontDict, minCov=1, toolname="Tool"):
     return result
 
 
-def open_file_gz_or_txt(infn):
+def open_file_gz_or_txt(infn, return_lines=True):
     """
     Open a txt or gz file, based on suffix
     :param infn:
     :return:
     """
     logger.debug(f"open file: {infn}")
+
     if infn.endswith('.gz'):
         infile = gzip.open(infn, 'rt')  # using rt option, no need to convert bytearray
+        command = f"zcat {infn} | wc -l"
     else:
         infile = open(infn, 'r')
+        command = f"wc -l  {infn}"
+
+    if return_lines:
+        ret = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
+        num_lines = int(ret.strip())
+        return (infile, num_lines)
+
     return infile
 
 
@@ -1164,10 +1106,10 @@ def importGroundTruth_from_Encode(infileName, chr_col=0, start_col=1, methfreq_c
     """
     cpgDict = {}
 
-    infile = open_file_gz_or_txt(infileName)
+    infile, lines = open_file_gz_or_txt(infileName)
 
     nrow = 0
-    for row in infile:
+    for row in tqdm(infile, total=lines,desc="Import-Encode"):
         nrow += 1
 
         tmp = row.strip().split("\t")
@@ -1257,11 +1199,11 @@ def importGroundTruth_from_Bismark(infn, chr_col=0, start_col=1, strand_col=2, m
     :return:
     """
 
-    infile = open_file_gz_or_txt(infn)
+    infile, lines = open_file_gz_or_txt(infn)
 
     cpgDict = {}
     row_cnt = 0
-    for row in infile:
+    for row in tqdm(infile, total=lines, desc="Import-Bismark"):
         tmp = row.strip().split(sep)
 
         chr = tmp[chr_col]
@@ -1451,7 +1393,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
 
     if enable_cache and using_cache:
         ret = check_cache_available(infn=infn, encode=encode, baseFormat=baseFormat, include_score=include_score,
-                                    siteLevel=siteLevel, cache_dir=cache_dir)
+                                    siteLevel=siteLevel, cache_dir=cache_dir, file_type='ont-call')
         if ret is not None:
             logger.debug(f'Import {encode} finished from cache, CpGs={len(ret):,}\n')
             return ret
@@ -1504,7 +1446,8 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     return calls0
 
 
-def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, enable_cache=False, using_cache=False, cache_dir=cache_dir):
+def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, enable_cache=False, using_cache=False,
+                   cache_dir=cache_dir):
     """
     General purpose for import BG-Truth input files.
     Import bgtruth from file fn using encode, when use new dataset, MUST check input file start baseFormat and import functions are consistent!!!
@@ -1514,7 +1457,8 @@ def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, ena
     :return:
     """
     if enable_cache and using_cache:
-        ret = check_cache_available(infn, encode=encode, cov=covCutoff, baseFormat=baseFormat, includeCov=includeCov, cache_dir=cache_dir)
+        ret = check_cache_available(infn, encode=encode, cov=covCutoff, baseFormat=baseFormat, includeCov=includeCov,
+                                    cache_dir=cache_dir, file_type='bs-seq')
         if ret is not None:
             logger.debug(f'Import BG-Truth using encode={encode} finished from cache, CpGs={len(ret):,}\n')
             return ret
@@ -1637,6 +1581,9 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
     bedFile - BED file which will be used to narrow down the list of CpGs for example to those inside CGIs or promoters etc.. By default "False" - which means no restrictions are done (i.e. genome wide)
     secondFilterBed - these should be CpGs covered in some reference list. Format: BED
     """
+    # Number of returned tuple size
+    num_tuples_ret = 21
+
     # Firstly reduce ontCalls with in bgTruth keys
     ontCallsKeySet = set(ontCalls.keys()).intersection(set(bgTruth.keys()))
 
@@ -1661,6 +1608,8 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
     else:
         bedfn_basename = 'x.x.Genome-wide'
         region_name = 'Genome-wide'
+
+    ret_none_tuple = tuple([None] * (num_tuples_ret - 1) + [bedfn_basename])
 
     ## Used for ROC data file
     # basefn = 'x.x.Genome-wide' if coordBedFileName is None else os.path.basename(bedfn_basename)
@@ -1689,21 +1638,18 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
     # We find the narrowed CpG set to evaluate, try to reduce running time
     targetedSet = ontCallsKeySet
 
-    # Number of returned tuple size
-    num_tuples_ret = 20
-
     ## ontCalls_narrow_set
     ##          - set: need to intersect
     ##          - None: no need to intersect
     if ontCalls_narrow_set is not None:
         targetedSet = targetedSet.intersection(ontCalls_narrow_set)
     if len(targetedSet) == 0:  # no cpg sites for evaluation
-        return tuple([None] * num_tuples_ret)
+        return ret_none_tuple
 
     if ontCalls_narrow_second_set is not None:
         targetedSet = targetedSet.intersection(ontCalls_narrow_second_set)
     if len(targetedSet) == 0:  # no cpg sites for evaluation
-        return tuple([None] * num_tuples_ret)
+        return ret_none_tuple
 
     for cpgKey in targetedSet:  # key = (chr, start, strand)
         ##### for each sites, we perform per read stats:
@@ -1832,10 +1778,10 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
         with open(outfn, 'wb') as handle:
             pickle.dump(curve_data, handle)
 
-    return accuracy, roc_auc, average_precision, f1_macro, f1_micro, \
-           precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, \
-           recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, \
-           F1_5mC, mCalls, referenceCpGs, Csites_BGTruth, mCsites_BGTruth
+    return (accuracy, roc_auc, average_precision, f1_macro, f1_micro, \
+            precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, \
+            recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, \
+            F1_5mC, mCalls, referenceCpGs, Csites_BGTruth, mCsites_BGTruth, bedfn_basename,)
 
 
 def save_keys_to_single_site_bed(keys, outfn, callBaseFormat=1, outBaseFormat=1, nonstr='.'):
@@ -2256,22 +2202,25 @@ def get_cache_filename(infn, params):
     :param params:
     :return:
     """
-    basefn = os.path.basename(infn)
-    cachefn = f'cachefile.{basefn}.encode.{params["encode"]}.base.{params["baseFormat"]}'
     if 'cache_dir' not in params:
         raise Exception(f"cache_dir is not in params={params}")
-
     cache_dir = params['cache_dir']
-    if params["encode"] in ToolEncodeList:
-        cachefn += f'.inscore.{params["include_score"]}'
-        if params["encode"] in ['DeepMod.Cluster', 'DeepMod.C']:
-            cachefn += f'.siteLevel.{params["siteLevel"]}'
-        elif params["encode"] in ['Guppy', 'Guppy.ZW']:
-            cachefn += f'.siteLevel.{params["siteLevel"]}'
-    elif params["encode"] in BGTruthEncodeList:
-        cachefn += f'.cov.{params["cov"]}.incov.{params["includeCov"]}'
-    else:
-        raise Exception(f'Encode {params["encode"]} is not support now')
+    basefn = os.path.basename(infn)
+
+    if params['file_type'] in ['ont-call', 'bs-seq']:  # for ont calls and bs-seq
+        cachefn = f'cachefile.{basefn}.encode.{params["encode"]}.base.{params["baseFormat"]}'
+        if params["encode"] in ToolEncodeList:
+            cachefn += f'.inscore.{params["include_score"]}'
+            if params["encode"] in ['DeepMod.Cluster', 'DeepMod.C']:
+                cachefn += f'.siteLevel.{params["siteLevel"]}'
+            elif params["encode"] in ['Guppy', 'Guppy.ZW']:
+                cachefn += f'.siteLevel.{params["siteLevel"]}'
+        elif params["encode"] in BGTruthEncodeList:
+            cachefn += f'.cov.{params["cov"]}.incov.{params["includeCov"]}'
+        else:
+            raise Exception(f'Encode {params["encode"]} is not support now')
+    elif params['file_type'] in ['genome-annotation']:
+        cachefn = f'cachefile.genome.annotation.{basefn}.base.{params["baseFormat"]}'
     cachefn = os.path.join(cache_dir, cachefn + '.pkl')
     return cachefn
 
@@ -2286,6 +2235,9 @@ def save_to_cache(infn, data, **params):
     """
     if not data:
         return
+    if 'cache_dir' not in params:
+        Exception(f"cache_dir is not in params={params}")
+    cache_dir = params['cache_dir']
     # logger.debug(f'infn={infn}, data={len(data)}, params={params}')
     cache_fn = get_cache_filename(infn, params)
 
@@ -2317,7 +2269,7 @@ def check_cache_available(infn, **params):
     return None
 
 
-def filter_cpg_dict(cpgDict, filterDict):
+def filter_cpg_dict(cpgDict, filterDict, toolname="Tool"):
     """
     Filter and keep only filterDict keys
     :param cpgDict:
@@ -2326,7 +2278,7 @@ def filter_cpg_dict(cpgDict, filterDict):
     """
     retDict = defaultdict()
     joinedKeys = set(filterDict.keys()).intersection(set(cpgDict.keys()))
-    for k in joinedKeys:
+    for k in tqdm(joinedKeys, desc=f"FilterCPG-{toolname}"):
         if isinstance(cpgDict[k], list):
             retDict[k] = list(cpgDict[k])
         elif isinstance(cpgDict[k], tuple):
@@ -2574,6 +2526,9 @@ def map_region_fn_to_name(infn):
     Mapping the region file name into region name
     :return:
     """
+    if infn is None:
+        return "None"
+
     basefn = os.path.basename(infn)
     if basefn in location_filename_to_abbvname:
         return location_filename_to_abbvname[basefn]
@@ -2612,7 +2567,8 @@ def get_region_bed(infn, enable_base_detection_bedfile=enable_base_detection_bed
     return coordBed
 
 
-def get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detection_bedfile):
+def get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detection_bedfile,
+                         enable_cache=False, using_cache=False, cache_dir=None):
     """
     return (infn, tagname, bedobject) of regions file
     :param infn:
@@ -2621,12 +2577,27 @@ def get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detecti
     if infn is None:
         return (None, None, None)
 
+    if enable_base_detection_bedfile:
+        baseFormat = 1
+    else:
+        baseFormat = -1
+    if enable_cache and using_cache:
+        ret = check_cache_available(infn=infn, file_type='genome-annotation', cache_dir=cache_dir,
+                                    baseFormat=baseFormat)
+        if ret is not None:
+            logger.debug(f'Import {infn} finished from cache')
+            return ret
+        logger.debug(f'Not cached yet, we load from raw file')
+
     tagname = map_region_fn_to_name(infn)
     region_bed = get_region_bed(infn, enable_base_detection_bedfile)
     if region_bed is None:
         logger.debug(
             f"region {tagname} file is not loaded, filename={infn}")
-    return (infn, tagname, region_bed)
+    ret = (infn, tagname, region_bed)
+    if enable_cache:
+        save_to_cache(infn, ret, file_type='genome-annotation', cache_dir=cache_dir, baseFormat=baseFormat)
+    return ret
 
 
 def update_progress_bar(*a):
@@ -2639,7 +2610,8 @@ def update_progress_bar(*a):
     progress_bar_global.update()
 
 
-def get_region_bed_pairs_list_mp(infn_list, processors=1, enable_base_detection_bedfile=enable_base_detection_bedfile):
+def get_region_bed_pairs_list_mp(infn_list, processors=1, enable_base_detection_bedfile=enable_base_detection_bedfile,
+                                 enable_cache=False, using_cache=False, cache_dir=None):
     """
     Get list of pairs [(infn, tagname, bedobject), ...] of regions file
     :param infn_list:
@@ -2654,7 +2626,8 @@ def get_region_bed_pairs_list_mp(infn_list, processors=1, enable_base_detection_
         progress_bar_global = tqdm(total=len(infn_list))
         progress_bar_global.set_description("Load all BED regions")
         for infn in infn_list:
-            ret_list.append(pool.apply_async(get_region_bed_tuple, args=(infn, enable_base_detection_bedfile),
+            ret_list.append(pool.apply_async(get_region_bed_tuple, args=(
+                infn, enable_base_detection_bedfile, enable_cache, using_cache, cache_dir,),
                                              callback=update_progress_bar))
         pool.close()
         pool.join()
@@ -2726,8 +2699,10 @@ def filter_corrdata_df_by_bedfile(df, coord_bed, coord_fn):
     return retdf
 
 
-def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=None, outdir=pic_base_dir, large_mem=False,
-                                  enable_base_detection_bedfile=enable_base_detection_bedfile):
+def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=None, outdir=pic_base_dir,
+                                  large_mem=False,
+                                  enable_base_detection_bedfile=enable_base_detection_bedfile,
+                                  enable_cache=False, using_cache=False, cache_dir=None):
     """
     Calculate Pearson's correlation coefficient at different regions.
     :param corr_infn:
@@ -2743,10 +2718,12 @@ def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=
     dataset = defaultdict(list)
     bar = tqdm(bed_tuple_list)
     for infn, tagname, coord_bed in bar:
-        bar.set_description(f"PCC-compute-at-{tagname}")
+        bar.set_description(f"PCC-{dsname}-at-{tagname}")
         logger.debug(f'tagname={tagname}, coord_fn={infn}')
         if not large_mem and tagname != 'Genome-wide' and coord_bed is None:  # load on demand
-            eval_coord_bed = get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detection_bedfile)[2]
+            eval_coord_bed = get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detection_bedfile,
+                                                  enable_cache=enable_cache, using_cache=using_cache,
+                                                  cache_dir=cache_dir)[2]
         else:
             eval_coord_bed = coord_bed
 
