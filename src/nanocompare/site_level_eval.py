@@ -364,12 +364,12 @@ def parse_arguments():
     parser.add_argument('--plot', help="if plot the correlation matrix figure", action='store_true')
     parser.add_argument('--bedtools-tmp', type=str, help=f'bedtools temp dir, default is {temp_dir}', default=temp_dir)
     parser.add_argument('--cache-dir', type=str,
-                        help=f'loaded calls/bs-seq in cache dir (speed up running), default is {cache_dir}',
+                        help=f'cache dir used for loading calls/bs-seq(speed up running), default is {cache_dir}',
                         default=cache_dir)
     parser.add_argument('--large-mem', help="if using large memory (>100GB) for speed up", action='store_true')
     parser.add_argument('--disable-bed-check', help="if disable checking the 0/1 base format for genome annotations",
                         action='store_true')
-    parser.add_argument('--mpi', help="if using multi-processing/threading for evaluation, it can speed-up",
+    parser.add_argument('--mpi', help="if using multi-processing/threading for evaluation, it can speed-up but need more memory",
                         action='store_true')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()

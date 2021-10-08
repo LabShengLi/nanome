@@ -1807,7 +1807,6 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
         except ZeroDivisionError:
             accuracy = 0
 
-        #     Positive predictive value (PPV), Precision = (TP) / E(Predicted condition positive)
         try:
             predicted_condition_positive_5mC = float(TP_5mC + FP_5mC)
             precision_5mC = TP_5mC / predicted_condition_positive_5mC
@@ -1820,7 +1819,6 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
         except ZeroDivisionError:
             precision_5C = 0
 
-        #     True positive rate (TPR), Recall, Sensitivity, probability of detection = (TP) / (TP+FN)
         try:
             recall_5mC = TP_5mC / float(TP_5mC + FN_5mC)
         except ZeroDivisionError:
@@ -1831,7 +1829,7 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
         except ZeroDivisionError:
             recall_5C = 0
 
-        #     F1 score:
+        # F1 score, precision and recall
         f1_micro = f1_score(y_of_bgtruth, ypred_of_ont_tool, average='micro')
         f1_macro = f1_score(y_of_bgtruth, ypred_of_ont_tool, average='macro')
 
@@ -1866,7 +1864,6 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
             roc_auc = auc(fpr, tpr)
 
     ########################
-
     if save_curve_data:
         # save y and y-pred and y-score for later plot:
         curve_data = {'yTrue': y_of_bgtruth, 'yPred': ypred_of_ont_tool, 'yScore': yscore_of_ont_tool}
