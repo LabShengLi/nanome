@@ -13,6 +13,7 @@ Such as import_DeepSignal, import_BGTruth, etc.
 
 import glob
 import gzip
+import os.path
 import pickle
 import re
 import subprocess
@@ -1469,7 +1470,7 @@ def importGroundTruth_from_5hmc_ziwei(infn, chr_col=0, start_col=1, strand_col=7
 
 
 def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False, enable_cache=False, using_cache=False,
-                filterChr=humanChrSet, save_unified_format=False, outfn=None, cache_dir=cache_dir):
+                filterChr=humanChrSet, save_unified_format=False, outfn=None, cache_dir=None):
     """
     General purpose for import any tools methylation calling input files.
 
@@ -1544,8 +1545,8 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     return calls0
 
 
-def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, enable_cache=False, using_cache=False,
-                   cache_dir=cache_dir):
+def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, filterChr=humanChrSet, enable_cache=False, using_cache=False,
+                   cache_dir=None):
     """
     General purpose for import BG-Truth input files.
     Import bgtruth from file fn using encode, when use new dataset, MUST check input file start baseFormat and import functions are consistent!!!
@@ -1563,10 +1564,10 @@ def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, ena
         logger.debug(f'Not cached yet, we load from raw file')
 
     if encode == "encode":  # Encode BS-seq data, 0-based start
-        bgTruth = importGroundTruth_from_Encode(infn, covCutoff=covCutoff,
+        bgTruth = importGroundTruth_from_Encode(infn, covCutoff=covCutoff, filterChr=filterChr,
                                                 baseFormat=baseFormat, includeCov=includeCov)
     elif encode == "bismark":  # for genome-wide Bismark Report ouput format, 1-based start input
-        bgTruth = importGroundTruth_from_Bismark(infn, covCutoff=covCutoff,
+        bgTruth = importGroundTruth_from_Bismark(infn, covCutoff=covCutoff, filterChr=filterChr,
                                                  baseFormat=baseFormat, includeCov=includeCov)
     elif encode == "5hmc_ziwei":  # for sanity check 5hmc
         bgTruth = importGroundTruth_from_5hmc_ziwei(infn, covCutoff=covCutoff,
@@ -2300,15 +2301,15 @@ def get_cache_filename(infn, params):
     if 'cache_dir' not in params:
         raise Exception(f"cache_dir is not in params={params}")
     cache_dir = params['cache_dir']
-    basefn = os.path.basename(infn)
+    if cache_dir is None:
+        raise Exception(f"'cache_dir is not properly set")
 
+    basefn = os.path.basename(infn)
     if params['file_type'] in ['ont-call', 'bs-seq']:  # for ont calls and bs-seq
-        cachefn = f'cachefile.{basefn}.encode.{params["encode"]}.base.{params["baseFormat"]}'
+        cachefn = f'cachefile.{params["file_type"]}.encode.{params["encode"]}.{basefn}.base.{params["baseFormat"]}'
         if params["encode"] in ToolEncodeList:
             cachefn += f'.inscore.{params["include_score"]}'
-            if params["encode"] in ['DeepMod.Cluster', 'DeepMod.C']:
-                cachefn += f'.siteLevel.{params["siteLevel"]}'
-            elif params["encode"] in ['Guppy', 'Guppy.ZW']:
+            if params["encode"] in ['DeepMod.Cluster', 'DeepMod.C', 'DeepMod', 'Guppy', 'Guppy.ZW']:
                 cachefn += f'.siteLevel.{params["siteLevel"]}'
         elif params["encode"] in BGTruthEncodeList:
             cachefn += f'.cov.{params["cov"]}.incov.{params["includeCov"]}'
@@ -2316,8 +2317,8 @@ def get_cache_filename(infn, params):
             raise Exception(f'Encode {params["encode"]} is not support now')
     elif params['file_type'] in ['genome-annotation']:
         cachefn = f'cachefile.genome.annotation.{basefn}.base.{params["baseFormat"]}'
-    cachefn = os.path.join(cache_dir, cachefn + '.pkl')
-    return cachefn
+    ret_cachefn = os.path.join(cache_dir, cachefn + '.pkl')
+    return ret_cachefn
 
 
 def save_to_cache(infn, data, **params):
@@ -2333,9 +2334,11 @@ def save_to_cache(infn, data, **params):
     if 'cache_dir' not in params:
         Exception(f"cache_dir is not in params={params}")
     cache_dir = params['cache_dir']
-    # logger.debug(f'infn={infn}, data={len(data)}, params={params}')
-    cache_fn = get_cache_filename(infn, params)
 
+    if cache_dir is None:
+        raise Exception(f"cache_dir is not properly set")
+
+    cache_fn = get_cache_filename(infn, params)
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir, exist_ok=True)
     with open(cache_fn, 'wb') as outf:
@@ -2647,7 +2650,7 @@ def get_region_bed(infn, enable_base_detection_bedfile=enable_base_detection_bed
     """
     if not os.path.isfile(infn):
         # Can not find this file
-        logger.debug(f"Can not find region file={infn}")
+        logger.debug(f"ERROR: Can not find region file={infn}")
         return None
     coordBed = BedTool(infn).sort()
     if enable_base_detection_bedfile and is_0base_region_files(infn):
@@ -2672,17 +2675,21 @@ def get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detecti
     if enable_cache and using_cache:
         ret = check_cache_available(infn=infn, file_type='genome-annotation',
                                     baseFormat=baseFormat, cache_dir=cache_dir)
-        if ret is not None:
-            logger.debug(f'Import {infn} finished from cache')
+        ## If pkl in cache is avalable, and the BED file's tempdir/filename.tmp is available, import it
+        ## or else, need to reload. Note: temp file may be released, even the cache pkl is there.
+        if ret is not None and ret[2] is not None and os.path.exists(ret[2].fn):
+            logger.debug(f'BED import {os.path.basename(infn)} finished from cache file, BED tuple={ret}')
             return ret
-        logger.debug(f'Not cached yet, we load from raw file')
+        logger.debug(f'BED file not cached yet, we load from raw file={os.path.basename(infn)}')
 
     tagname = map_region_fn_to_name(infn)
     region_bed = get_region_bed(infn, enable_base_detection_bedfile)
+
+    ret = (infn, tagname, region_bed)
     if region_bed is None:
         logger.debug(
-            f"region {tagname} file is not loaded, filename={infn}")
-    ret = (infn, tagname, region_bed)
+            f"WARN: region {tagname} file is not loaded, check if exists for filename={infn}")
+        return ret
     if enable_cache:
         save_to_cache(infn, ret, file_type='genome-annotation', baseFormat=baseFormat, cache_dir=cache_dir)
     return ret
@@ -2769,21 +2776,19 @@ def filter_corrdata_df_by_bedfile(df, coord_bed, coord_fn):
     """
     if coord_bed is None:  # No need to filter for genome wide
         return df
+    # suppress warnings /home/liuya/anaconda3/envs/nanocompare/lib/python3.6/site-packages/pybedtools/bedtool.py:3287: UserWarning: Default names for filetype bed are:
+    # ['chrom', 'start', 'end', 'name', 'score', 'strand', 'thickStart', 'thickEnd', 'itemRgb', 'blockCount', 'blockSizes', 'blockStarts']
+    # but file has 20 fields; you can supply custom names with the `names` kwarg
+    #   % (self.file_type, _names, self.field_count()))
+    warnings.filterwarnings('ignore', category=UserWarning)
+    bed_of_df = BedTool.from_dataframe(df).sort()
+    bed_of_intersect = intersect_bed_regions(bed_of_df, coord_bed, coord_fn)
 
-    ## df is the dataframe for all joined csv, df_bed is the bed object used to intersect with coord file
-    ## 'bedline' is column like 'chr1\t123\t123\t.\t.\t+', used for selection of rows for df
-    df['bedline'] = df["chr"] + '\t' + df["start"].astype(str) + '\t' + df["end"].astype(str) \
-                    + '\t.\t.\t' + df["strand"]
-    bedline_str = '\n'.join(df['bedline'].tolist())
-    bed_of_df = BedTool(bedline_str, from_string=True).sort()
-    bed_of_coord = coord_bed
-
-    bed_of_intersect = intersect_bed_regions(bed_of_df, bed_of_coord, coord_fn)
-
-    select_lines = []
-    for line in bed_of_intersect:
-        select_lines.append(str(line).strip())
-    retdf = df[df['bedline'].isin(select_lines)]
+    if len(bed_of_intersect)>0:
+        retdf = bed_of_intersect.to_dataframe()
+        retdf.columns = df.columns
+    else:
+        retdf = None
     return retdf
 
 

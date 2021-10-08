@@ -123,7 +123,7 @@ if __name__ == '__main__':
     using_cache = args.using_cache
 
     if enable_cache:
-        os.makedirs(cache_dir, exist_ok=True)
+        os.makedirs(global_cache_dir, exist_ok=True)
 
     RunPrefix = args.runid.replace('SanityCheck-', '')
 

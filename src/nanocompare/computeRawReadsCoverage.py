@@ -22,7 +22,7 @@ from tqdm import tqdm
 
 from nanocompare.eval_common import get_dna_seq_from_reference, open_file_gz_or_txt, find_bed_filename, get_ref_fasta, \
     get_region_bed, intersect_bed_regions
-from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir, temp_dir, data_base_dir
+from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir, global_temp_dir, data_base_dir
 from nanocompare.global_settings import humanChrSet, location_filename_to_abbvname, \
     datasets_order, narrowCoordNameList, cg_density_coord_name_list, \
     rep_coord_name_list, referenceGenomeFile, nanome_version
@@ -281,7 +281,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(prog='comp_raw_read_cov (NANOME)',description='Plot and export data for Nanocompare paper.')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
     parser.add_argument("cmd", help="name of command")
-    parser.add_argument('--bedtools-tmp', type=str, help='bedtools temp dir', default=temp_dir)
+    parser.add_argument('--bedtools-tmp', type=str, help='bedtools temp dir', default=global_temp_dir)
     parser.add_argument('--genome-annotation', type=str, help='genome annotation dir',
                         default=os.path.join(data_base_dir, 'genome-annotation'))
     parser.add_argument('--reference-genome', type=str, help='reference genome file',

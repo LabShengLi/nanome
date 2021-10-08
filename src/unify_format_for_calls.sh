@@ -12,7 +12,7 @@ step=${6:-'12'}
 chr_options=${7:-''}
 
 if [[ "${chr_options}" != "" ]] ; then
-		chr_options="--chrs ${chr_options}"
+		chr_options="--chrSet ${chr_options}"
 fi
 
 if [[ "$step" == *"1"* ]]; then
