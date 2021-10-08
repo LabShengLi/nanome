@@ -30,17 +30,17 @@ if hostname.startswith('winter') or hostname.startswith('sumner'):  # in JAX HPC
     username = getpass.getuser()
     if username == 'liuya':  # output to ly's dirs
         results_dir = "/projects/li-lab/yang/results"  # temp output base
-        cache_dir = '/fastscratch/liuya/nanome/cache_dir'  # cache readed object to pkl
-        temp_dir = '/fastscratch/liuya/nanome/temp_dir'
+        global_cache_dir = '/fastscratch/liuya/nanome/cache_dir'  # cache readed object to pkl
+        global_temp_dir = '/fastscratch/liuya/nanome/temp_dir'
     else:  # output to shared dirs
         results_dir = f"/fastscratch/{username}/nanome/nanome_results"  # temp output base
-        cache_dir = f'/fastscratch/{username}/nanome/nanome_cache_dir'  # cache readed object to pkl
-        temp_dir = f'/fastscratch/{username}/nanome/nanome_temp_dir'
+        global_cache_dir = f'/fastscratch/{username}/nanome/nanome_cache_dir'  # cache readed object to pkl
+        global_temp_dir = f'/fastscratch/{username}/nanome/nanome_temp_dir'
 else:
     ## Default output dir set to pwd
     results_dir = os.path.join(os.getcwd(), 'nanome_results')
-    cache_dir = os.path.join(os.getcwd(), 'nanome_cache_dir')
-    temp_dir = os.path.join(os.getcwd(), 'nanome_temp_dir')
+    global_cache_dir = os.path.join(os.getcwd(), 'nanome_cache_dir')
+    global_temp_dir = os.path.join(os.getcwd(), 'nanome_temp_dir')
 
 today_str = datetime.date.today().strftime("%Y-%m-%d")
 

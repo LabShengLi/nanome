@@ -13,7 +13,6 @@ This script will generate all per-read performance results.
 
 import argparse
 import hashlib
-import multiprocessing
 import os.path
 from concurrent.futures import as_completed
 
@@ -121,7 +120,7 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
                                          enable_base_detection_bedfile=not args.disable_bed_check,
                                          enable_cache=args.enable_cache,
                                          using_cache=args.using_cache,
-                                         cache_dir=args.cache_dir)
+                                         cache_dir=ds_cache_dir)
             else:
                 eval_coord_tuple = coord_tuple
         else:
@@ -204,7 +203,7 @@ def report_per_read_performance_mpi(ontCalls, bgTruth, analysisPrefix, narrowedC
                                          enable_base_detection_bedfile=not args.disable_bed_check,
                                          enable_cache=args.enable_cache,
                                          using_cache=args.using_cache,
-                                         cache_dir=args.cache_dir)
+                                         cache_dir=ds_cache_dir)
             else:
                 eval_coord_tuple = coord_tuple
         else:
@@ -313,17 +312,23 @@ def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet, threshold=0.2)
 
 
 def import_ont_calls_for_read_level(call_encode, callfn, absoluteBGTruthCov, multi_processor=False):
+    """
+    Import read level of ont calls
+    Args:
+        call_encode:
+        callfn:
+        absoluteBGTruthCov:
+        multi_processor:
+
+    Returns:
+
+    """
     call_name = call_encode.replace('.', '_')
     ## MUST import read-level results, and include score for plot ROC curve and PR curve
     ## ont_call0 is raw ont-calls, too large, it will be cut to only with bs-seq, named ont_call1
     ont_call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, siteLevel=False,
-                            using_cache=using_cache, enable_cache=enable_cache, filterChr=args.chrSet,
-                            cache_dir=args.cache_dir)
-    # sitesDataset['Dataset'].append(dsname)
-    # sitesDataset['Method'].append(call_name)
-    # sitesDataset['Sites'].append(len(ont_call0))
-    # sitesDataset['BSseq-cov5-certain'].append(len(absoluteBGTruthCov))
-
+                            filterChr=args.chrSet, using_cache=using_cache, enable_cache=enable_cache,
+                            cache_dir=ds_cache_dir)
     sites_summary = {'Dataset': dsname,
                      'Method': call_name,
                      'Sites': len(ont_call0),
@@ -333,7 +338,8 @@ def import_ont_calls_for_read_level(call_encode, callfn, absoluteBGTruthCov, mul
     if absoluteBGTruthCov:  # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
         logger.debug(f'Filter out CpG sites not in bgtruth for {call_name}')
         ont_call1 = filter_cpg_dict(ont_call0,
-                                    absoluteBGTruthCov, toolname=call_name)  # using absoluteBGTruthCov for even fewer sites
+                                    absoluteBGTruthCov,
+                                    toolname=call_name)  # using absoluteBGTruthCov for even fewer sites
         del ont_call0
         sites_summary.update({f'Join-tool-cov1-with-BSseq-cov{args.min_bgtruth_cov}-certain': len(ont_call1)})
         logger.debug(f'{call_name} left only sites={len(ont_call1):,}')
@@ -349,14 +355,13 @@ def import_ont_calls_for_read_level(call_encode, callfn, absoluteBGTruthCov, mul
     with open(outfnmd5, 'wb') as handle:
         pickle.dump(ont_call1, handle)
     del ont_call1
-    # ret_sites_database_queue.put(ret_sites)
     logger.debug(f"Memory report: {get_current_memory_usage()}")
     return (call_name, outfnmd5, sites_summary,)
 
 
 def import_bsseq_for_read_level(infn, encode, multi_processor=False):
     """
-    Used by multiprocessing, import and save to tmp pkl
+    Import bs-seq data
     Args:
         infn:
         encode:
@@ -367,7 +372,7 @@ def import_bsseq_for_read_level(infn, encode, multi_processor=False):
     # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
     # bgTruth1 is dict of key->value, key=(chr, start, strand), and value=[meth.freq, cov]
     bg1 = import_bgtruth(infn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True,
-                         using_cache=using_cache, enable_cache=enable_cache, cache_dir=args.cache_dir)
+                         using_cache=using_cache, enable_cache=enable_cache, cache_dir=ds_cache_dir)
     if not multi_processor:  # in same process, directly return
         return bg1
     # Save to temp, for main process use, multi-processing
@@ -392,44 +397,9 @@ def update_progress_bar_read_level(*a):
     progress_bar_global_read.update()
 
 
-def compute_dist_at_region_mp(joined_bed, dist_region_tuple_list, region_tuple):
-    # with open(joined_bed_fn, 'rb') as handle:
-    #     joined_bed = pickle.load(handle)
-
-    singleton_tuple, nonsingleton_tuple, concordant_tuple, discordant_tuple = dist_region_tuple_list
-    # logger.debug(
-    #     f"Singleton/nonsingleton region bed files: {[singleton_tuple, nonsingleton_tuple, concordant_tuple, discordant_tuple]}")
-    if args.large_mem:  # in memory already
-        singleton_bed = singleton_tuple[2]
-        nonsingleton_bed = nonsingleton_tuple[2]
-        concordant_bed = concordant_tuple[2]
-        discordant_bed = discordant_tuple[2]
-    else:  # load on demand for limit memory
-        singleton_bed = \
-            get_region_bed_tuple(singleton_tuple[0],
-                                 enable_base_detection_bedfile=not args.disable_bed_check,
-                                 enable_cache=args.enable_cache,
-                                 using_cache=args.using_cache,
-                                 cache_dir=args.cache_dir)[2]
-        nonsingleton_bed = \
-            get_region_bed_tuple(nonsingleton_tuple[0],
-                                 enable_base_detection_bedfile=not args.disable_bed_check,
-                                 enable_cache=args.enable_cache,
-                                 using_cache=args.using_cache,
-                                 cache_dir=args.cache_dir)[2]
-        concordant_bed = \
-            get_region_bed_tuple(concordant_tuple[0],
-                                 enable_base_detection_bedfile=not args.disable_bed_check,
-                                 enable_cache=args.enable_cache,
-                                 using_cache=args.using_cache,
-                                 cache_dir=args.cache_dir)[2]
-        discordant_bed = \
-            get_region_bed_tuple(discordant_tuple[0],
-                                 enable_base_detection_bedfile=not args.disable_bed_check,
-                                 enable_cache=args.enable_cache,
-                                 using_cache=args.using_cache,
-                                 cache_dir=args.cache_dir)[2]
-    logging.debug(f"Region={region_tuple}")
+def compute_dist_at_region_mp(joined_bed, four_region_bed_list, region_tuple):
+    logging.debug(f"Distribution analysis for Region={region_tuple}")
+    singleton_bed, nonsingleton_bed, concordant_bed, discordant_bed = four_region_bed_list
 
     coordFn = None  # used for intersection later
     if region_tuple is not None:
@@ -443,12 +413,11 @@ def compute_dist_at_region_mp(joined_bed, dist_region_tuple_list, region_tuple):
                                      enable_base_detection_bedfile=not args.disable_bed_check,
                                      enable_cache=args.enable_cache,
                                      using_cache=args.using_cache,
-                                     cache_dir=args.cache_dir)
+                                     cache_dir=ds_cache_dir)
         if coordBed is None:
             logger.debug(f"genomic region {tagname} is not found, not evaluated.")
             return None
         intersect_coord_bed = intersect_bed_regions(joined_bed, coordBed, coordFn)
-        del coordBed
     else:  # Genome-wide results, keep using joined
         intersect_coord_bed = joined_bed
         tagname = "Genome-wide"
@@ -471,12 +440,6 @@ def compute_dist_at_region_mp(joined_bed, dist_region_tuple_list, region_tuple):
     num_discordant = len(intersect_discordant_bed)
     del intersect_discordant_bed
     del intersect_coord_bed
-    del joined_bed
-    if not args.large_mem:
-        del singleton_bed
-        del nonsingleton_bed
-        del concordant_bed
-        del discordant_bed
 
     ret = {
         'Dataset': dsname,
@@ -492,10 +455,10 @@ def compute_dist_at_region_mp(joined_bed, dist_region_tuple_list, region_tuple):
         f"Coord={tagname}, Total={num_total:,}, Singletons={num_singleton:,}, Non-singletons={num_nonsingleton:,}, Total(Sing+Nonsing)={num_singleton + num_nonsingleton:,}, Concordant={num_concordant:,}, Discordant={num_discordant:,}, Total(Con+Disc)={num_concordant + num_discordant:,}")
     # Sanity check sums
     if num_total != num_singleton + num_nonsingleton:
-        logger.debug(f"Found incorrect sums at {tagname}: for num_total != num_singleton + num_nonsingleton")
+        logger.debug(f"WARN: Found incorrect sums at {tagname}: for num_total != num_singleton + num_nonsingleton")
     if num_nonsingleton != num_concordant + num_discordant:
         logger.debug(
-            f"Found incorrect sums at {tagname}: for num_nonsingleton != num_concordant+ num_discordant")
+            f"WARN: Found incorrect sums at {tagname}: for num_nonsingleton != num_concordant+ num_discordant")
     return ret
 
 
@@ -572,15 +535,18 @@ def parse_arguments():
     parser.add_argument('--analysis', type=str, help='special analysis specifications for ecoli', default="")
     parser.add_argument('--save-curve-data', help="if save pred/truth points for curve plot", action='store_true')
     parser.add_argument('--large-mem', help="if using large memory (>100GB) for speed up", action='store_true')
-    parser.add_argument('--bedtools-tmp', type=str, help=f'bedtools temp dir, default is {temp_dir}', default=temp_dir)
+    parser.add_argument('--bedtools-tmp', type=str, help=f'bedtools temp dir, default is {global_temp_dir}',
+                        default=global_temp_dir)
     parser.add_argument('--cache-dir', type=str,
-                        help=f'cache dir used for loading calls/bs-seq (speed up running), default is {cache_dir}',
-                        default=cache_dir)
+                        help=f'cache dir used for loading calls/bs-seq (speed up running), default is {global_cache_dir}',
+                        default=global_cache_dir)
     parser.add_argument('--disable-bed-check', help="if disable checking the 0/1 base format for genome annotations",
                         action='store_true')
-    parser.add_argument('--mpi', help="if using multi-processing/threading for evaluation, it can speed-up but may need more memory",
+    parser.add_argument('--mpi',
+                        help="if using multi-processing/threading for evaluation, it can speed-up but may need more memory",
                         action='store_true')
-    parser.add_argument('--mpi-import', help="if using multi-processing/threading for import, it can speed-up, only for small size data",
+    parser.add_argument('--mpi-import',
+                        help="if using multi-processing/threading for import, it can speed-up, only for small size data",
                         action='store_true')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
@@ -597,16 +563,20 @@ if __name__ == '__main__':
     if not os.path.isdir(args.genome_annotation):
         raise Exception(f"genome_annotation={args.genome_annotation} is not a valid dir")
 
-    ## Set tmp dir for bedtools
-    os.makedirs(args.bedtools_tmp, exist_ok=True)
-    pybedtools.helpers.set_tempdir(args.bedtools_tmp)
-
-    ## Set tmp dir for bedtools
-    # bedtool_tmp_dir = "/fastscratch/liuya/nanocompare/bedtools_tmp"
-    os.makedirs(args.bedtools_tmp, exist_ok=True)
-    pybedtools.helpers.set_tempdir(args.bedtools_tmp)
-
     dsname = args.dsname
+
+    ## Set tmp dir for bedtools, each process use a bed tmp dir
+    ## because the tmp dir files may be cleaned by the end of the process
+    bed_temp_dir = os.path.join(args.bedtools_tmp, dsname)
+    os.makedirs(bed_temp_dir, exist_ok=True)
+    pybedtools.helpers.set_tempdir(bed_temp_dir)
+
+    ## Set cache dir for each dataset
+    if args.enable_cache or args.using_cache:
+        ds_cache_dir = os.path.join(args.cache_dir, dsname)
+        os.makedirs(ds_cache_dir, exist_ok=True)
+    else:
+        ds_cache_dir = None
 
     # We use coverage >= args.min_bgtruth_cov for bg-truth, but 1x coverage for ONT calls
     cutoffBGTruth = args.min_bgtruth_cov
@@ -636,8 +606,6 @@ if __name__ == '__main__':
     # So we must import as 1-based format for our tool or bgtruth, DO NOT USE baseFormat=0
     # We import and report 1-based results in our project
     baseFormat = 1
-
-    manager = multiprocessing.Manager()
 
     if args.bgtruth:
         # We firstly parse and import bg-truth
@@ -701,12 +669,7 @@ if __name__ == '__main__':
         absoluteBGTruthCov = {key: absoluteBGTruth[key] for key in absoluteBGTruth if
                               absoluteBGTruth[key][1] >= cutoffBGTruth}
 
-        ## Shared memory as absoluteBGTruthCov
-        # absoluteBGTruthCov = manager.dict(absoluteBGTruthCov)
         logger.debug(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(absoluteBGTruthCov):,}')
-
-        # Load all coordinate file list (full path) in this runs
-        # relateCoord = list(narrowCoordFileList)  # copy the basic coordinate
 
         ## add additional two region files based on bgtruth (Concordant, Discordant):
         ## file name is like: K562_WGBS_2Reps.hg38_nonsingletons.concordant.bed
@@ -889,44 +852,75 @@ if __name__ == '__main__':
     # Create the bed list for evaluation, save time for every loading of bed region
     # None, singelton, non-singletons, ...
     if args.large_mem:
-        region_bedtuple_list = [None] + \
-                               get_region_bed_pairs_list_mp(
-                                   regions_full_filepath, processors=args.processors,
-                                   enable_base_detection_bedfile=not args.disable_bed_check,
-                                   enable_cache=args.enable_cache,
-                                   using_cache=args.using_cache,
-                                   cache_dir=args.cache_dir)
+        eval_region_tuple_list = [None] + \
+                                 get_region_bed_pairs_list_mp(
+                                     regions_full_filepath, processors=args.processors,
+                                     enable_base_detection_bedfile=not args.disable_bed_check,
+                                     enable_cache=args.enable_cache,
+                                     using_cache=args.using_cache,
+                                     cache_dir=ds_cache_dir)
         logger.info(f"Memory report: {get_current_memory_usage()}")
     else:
-        region_bedtuple_list = [None] + [(infn, map_region_fn_to_name(infn), None,)
-                                         for infn in regions_full_filepath]
+        eval_region_tuple_list = [None] + [(infn, map_region_fn_to_name(infn), None,)
+                                           for infn in regions_full_filepath]
 
     if args.distribution:
         logger.debug("Report singletons/non-singletons in each genomic context regions in Fig.3 and 4")
 
         joined_bed = BedTool(bedfn_tool_join_bgtruth_sorted).sort()
-        # joined_bed_fn = os.path.join(args.bedtools_tmp,
-        #                              f"tmp_mp_read_level_joined_eval_cpg_{args.runid}_toolcov1_bsseqcov{args.min_bgtruth_cov}.pkl")
-        # with open(joined_bed_fn, 'wb') as handle:
-        #     pickle.dump(joined_bed, handle)
 
-        singleton_tuple = region_bedtuple_list[1]
-        nonsingleton_tuple = region_bedtuple_list[2]
-        concordant_tuple = region_bedtuple_list[-2]
-        discordant_tuple = region_bedtuple_list[-1]
+        singleton_tuple = eval_region_tuple_list[1]
+        nonsingleton_tuple = eval_region_tuple_list[2]
+        concordant_tuple = eval_region_tuple_list[-2]
+        discordant_tuple = eval_region_tuple_list[-1]
 
-        dist_region_tuple_list = (singleton_tuple, nonsingleton_tuple, concordant_tuple, discordant_tuple)
+        ## Preload singleton, non-singleton, concordant and discordant for all threads usage
+        if args.large_mem:  # in memory already
+            singleton_bed = singleton_tuple[2]
+            nonsingleton_bed = nonsingleton_tuple[2]
+            concordant_bed = concordant_tuple[2]
+            discordant_bed = discordant_tuple[2]
+        else:  # load on demand for limit memory
+            singleton_bed = \
+                get_region_bed_tuple(singleton_tuple[0],
+                                     enable_base_detection_bedfile=not args.disable_bed_check,
+                                     enable_cache=args.enable_cache,
+                                     using_cache=args.using_cache,
+                                     cache_dir=ds_cache_dir)[2]
+            nonsingleton_bed = \
+                get_region_bed_tuple(nonsingleton_tuple[0],
+                                     enable_base_detection_bedfile=not args.disable_bed_check,
+                                     enable_cache=args.enable_cache,
+                                     using_cache=args.using_cache,
+                                     cache_dir=ds_cache_dir)[2]
+            concordant_bed = \
+                get_region_bed_tuple(concordant_tuple[0],
+                                     enable_base_detection_bedfile=not args.disable_bed_check,
+                                     enable_cache=args.enable_cache,
+                                     using_cache=args.using_cache,
+                                     cache_dir=ds_cache_dir)[2]
+            discordant_bed = \
+                get_region_bed_tuple(discordant_tuple[0],
+                                     enable_base_detection_bedfile=not args.disable_bed_check,
+                                     enable_cache=args.enable_cache,
+                                     using_cache=args.using_cache,
+                                     cache_dir=ds_cache_dir)[2]
+        four_region_bed_list = (singleton_bed, nonsingleton_bed, concordant_bed, discordant_bed)
+        ## Check not None for single/nonsingl, concord and discord
+        for bedk in four_region_bed_list:
+            if bedk is None:
+                raise Exception(f"Not enough bed data, dist_region_tuple_list={four_region_bed_list}")
 
         ret_list = []
 
         executor = ThreadPoolExecutor(max_workers=args.processors)
 
         global progress_bar_global_read
-        progress_bar_global_read = tqdm(total=len(region_bedtuple_list))
+        progress_bar_global_read = tqdm(total=len(eval_region_tuple_list))
         progress_bar_global_read.set_description("MT-Distribution(singl/nonsingle)")
         all_task = []
-        for reg_tuple in region_bedtuple_list:
-            future = executor.submit(compute_dist_at_region_mp, joined_bed, dist_region_tuple_list, reg_tuple)
+        for reg_tuple in eval_region_tuple_list:
+            future = executor.submit(compute_dist_at_region_mp, joined_bed, four_region_bed_list, reg_tuple)
             future.add_done_callback(update_progress_bar_read_level)
             all_task.append(future)
         executor.shutdown()
@@ -954,12 +948,12 @@ if __name__ == '__main__':
 
         if args.mpi:
             df = report_per_read_performance_mpi(ontCallWithinBGTruthDict[tool], eval_bgTruth, tmpPrefix,
-                                             narrowedCoordinatesList=region_bedtuple_list,
-                                             secondFilterBedFileName=secondBedFileName, outdir=perf_dir,
-                                             tagname=tmpPrefix)
+                                                 narrowedCoordinatesList=eval_region_tuple_list,
+                                                 secondFilterBedFileName=secondBedFileName, outdir=perf_dir,
+                                                 tagname=tmpPrefix)
         else:
             df = report_per_read_performance(ontCallWithinBGTruthDict[tool], eval_bgTruth, tmpPrefix,
-                                             narrowedCoordinatesList=region_bedtuple_list,
+                                             narrowedCoordinatesList=eval_region_tuple_list,
                                              secondFilterBedFileName=secondBedFileName, outdir=perf_dir,
                                              tagname=tmpPrefix)
 
