@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
+# @Author   : Yang Liu
+# @FileName : read_level_eval.py
+# @Software : NANOME project
+# @Organization : JAX Li Lab
+# @Website  : https://github.com/TheJacksonLaboratory/nanome
 
 """
-This tool is to clean old basecall analyses for NA12878, etc.
+This tool is to clean old basecall analyses for downloaded nanopore reads.
 """
 import argparse
 import glob
