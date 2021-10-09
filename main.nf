@@ -232,19 +232,21 @@ process Untar {
 
 	## move fast5 files in tree folders into a single folder
 	mkdir -p ${fast5_tar.baseName}.untar
-	find untarTempDir -name "*.fast5" -type f -exec mv {} ${fast5_tar.baseName}.untar/ \\;
-
-	## Clean old analyses in input fast5 files
-	if [[ "${params.cleanAnalyses}" = true ]] ; then
-		echo "### Start cleaning old analysis"
-		python -c 'import h5py; print(h5py.version.info)'
-		python utils/clean_old_basecall_in_fast5.py \
-			-i ${fast5_tar.baseName}.untar --is-indir \
-			--processor \$(( numProcessor*8 ))
-	fi
+	## find untarTempDir -name "*.fast5" -type f -exec mv {} ${fast5_tar.baseName}.untar/ \\;
+	find untarTempDir -name "*.fast5" -type f | \
+		parallel -j0  mv {}  ${fast5_tar.baseName}.untar/
 
 	## Clean unused files
 	rm -rf untarTempDir
+
+	## Clean old analyses in input fast5 files
+	if [[ "${params.cleanAnalyses}" == true ]] ; then
+		echo "### Start cleaning old analysis"
+		## python -c 'import h5py; print(h5py.version.info)'
+		python utils/clean_old_basecall_in_fast5.py \
+			-i ${fast5_tar.baseName}.untar --is-indir --verbose\
+			--processor \$(( numProcessor*4 ))
+	fi
 
 	totalFiles=\$( find ${fast5_tar.baseName}.untar -name "*.fast5" -type f | wc -l )
 	echo "### Total fast5 input files:\${totalFiles}"
@@ -300,7 +302,7 @@ process Basecall {
 			--save_path "${fast5_dir.baseName}.basecalled" \
 			--config ${params.GUPPY_BASECALL_MODEL} \
 			--num_callers \$(( numProcessor )) \
-			--fast5_out \
+			--fast5_out --compress_fastq\
 			--verbose_logs
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
@@ -308,7 +310,7 @@ process Basecall {
 			--save_path "${fast5_dir.baseName}.basecalled" \
 			--config ${params.GUPPY_BASECALL_MODEL} \
 			--num_callers \$(( numProcessor )) \
-			--fast5_out \
+			--fast5_out --compress_fastq\
 			--verbose_logs \
 			-x auto
 	else
@@ -317,10 +319,11 @@ process Basecall {
 	fi
 
 	## Combine fastq
-	touch "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq
-	for f in \$(find "${fast5_dir.baseName}.basecalled/" "${fast5_dir.baseName}.basecalled/pass/" "${fast5_dir.baseName}.basecalled/fail/" -maxdepth 1 -name '*.fastq')
+	touch "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz
+	for f in \$(find "${fast5_dir.baseName}.basecalled/" "${fast5_dir.baseName}.basecalled/pass/"\
+	 	"${fast5_dir.baseName}.basecalled/fail/" -maxdepth 1 -name '*.fastq.gz')
 	do
-		cat \$f >> "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq
+		cat \$f >> "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz
 	done
 
 	## After basecall, rename and publishe summary filenames
@@ -329,7 +332,8 @@ process Basecall {
 
 	## After basecall, we process guppy results for ONT coverage analyses
 	# align FASTQ files to reference genome, write sorted alignments to a BAM file
-	minimap2 -a -z 600,200 -x map-ont ${referenceGenome} "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq \
+	minimap2 -a -z 600,200 -x map-ont ${referenceGenome} \
+		"${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz \
 	    -t \$(( numProcessor*2 )) > ${fast5_dir.baseName}.basecalled.sam
     echo "Alignment done"
 
@@ -397,7 +401,8 @@ process QCExport {
     samtools index ${params.dsname}_merged.bam  -@ \$(( numProcessor*2 ))
     echo "Samtools merging done!"
 
-    ## calculates the sequence coverage at each position/ Reporting genome coverage for all positions in BEDGRAPH format.
+    ## calculates the sequence coverage at each position
+    ## reporting genome coverage for all positions in BEDGRAPH format.
     bedtools genomecov -ibam ${params.dsname}_merged.bam -bg -strand + |
         awk '\$4 = \$4 FS "+"' |
         gzip > ${params.dsname}.coverage.positivestrand.bed.gz
@@ -499,9 +504,7 @@ process Nanopolish {
 	bamFileName="${params.dsname}.batch_${basecallDir.baseName}.sorted.bam"
 
 	## Do alignment firstly, find the combined fastq file
-	fastqFile=\$(find ${basecallDir}/ -name 'batch_basecall_combine_fq_*.fq')
-
-	## python utils/nanopore_nanopolish_preindexing_checkDups.py \${fastqFile} \${fastqNoDupFile}
+	fastqFile=\$(find ${basecallDir}/ -name 'batch_basecall_combine_fq_*.fq.gz')
 
 	# Index the raw read with fastq, we do not index in basecalled dir, in case of cache can be work
 	ln -s \${fastqFile}  \${fastqFile##*/}
@@ -518,7 +521,7 @@ process Nanopolish {
 	nanopolish call-methylation -t \$(( numProcessor*2 )) -r \${fastqFile##*/} \
 		-b \${bamFileName} -g ${referenceGenome} > tmp.tsv
 
-	tail -n +2 tmp.tsv | gzip > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
+	tail -n +2 tmp.tsv | gzip -f > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
 
 	## Clean
 	rm -f *.sorted.bam *.sorted.bam.bai tmp.tsv
@@ -716,7 +719,7 @@ process Guppy {
 			--save_path ${fast5_dir.baseName}.methcalled \
 			--config ${params.GUPPY_METHCALL_MODEL} \
 			--num_callers \$(( numProcessor )) \
-			--fast5_out \
+			--fast5_out --compress_fastq\
 			--verbose_logs
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
@@ -724,7 +727,7 @@ process Guppy {
 			--save_path ${fast5_dir.baseName}.methcalled \
 			--config ${params.GUPPY_METHCALL_MODEL} \
 			--num_callers \$(( numProcessor )) \
-			--fast5_out \
+			--fast5_out --compress_fastq\
 			--verbose_logs \
 			--device auto
 	else
@@ -735,15 +738,16 @@ process Guppy {
 
 	## Extract guppy methylation-callings
 	## Combine fastq
-	touch batch_combine_fq.fq
-	for f in \$(find "${fast5_dir.baseName}.methcalled/" "${fast5_dir.baseName}.methcalled/pass/" "${fast5_dir.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq')
+	touch batch_combine_fq.fq.gz
+	for f in \$(find "${fast5_dir.baseName}.methcalled/" "${fast5_dir.baseName}.methcalled/pass/"\
+	 	"${fast5_dir.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq.gz')
 	do
-		cat \$f >> batch_combine_fq.fq
+		cat \$f >> batch_combine_fq.fq.gz
 	done
 
 	## gcf52ref ways
 	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \
-		batch_combine_fq.fq | \
+		batch_combine_fq.fq.gz | \
 		samtools sort -@ \$(( numProcessor*2 )) \
 		-T tmp -o gcf52ref.batch.${fast5_dir.baseName}.bam
 
@@ -788,7 +792,7 @@ process Guppy {
 
 	## Clean
 	rm -rf ${fast5_dir.baseName}.methcalled
-	rm -f gcf52ref.*.bam gcf52ref.*.bam.bai tmp*.tsv batch_combine_fq.fq
+	rm -f gcf52ref.*.bam gcf52ref.*.bam.bai tmp*.tsv batch_combine_fq.fq.gz
 
 	echo "### fast5mod DONE"
 	echo "### Guppy fast5mod and gcf52ref DONE"
@@ -1374,7 +1378,8 @@ process METEORE {
 
 		## Unify format output for site level
 		bash src/unify_format_for_calls.sh \
-			${params.dsname}  METEORE ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz \
+			${params.dsname}  METEORE\
+			${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz \
 			.  \$((numProcessor))  2  ${chrSet}
 	fi
 
@@ -1448,13 +1453,12 @@ process Report {
 		. \
 		${params.dsname}_NANOME_report
 
-	PYTHONIOENCODING=UTF-8 python utils/gen_readme.py \
-		utils/readme.txt.template ${params.dsname} ${params.outputDir} \
-		${workflow.projectDir} ${workflow.workDir} "${workflow.commandLine}" ${workflow.runName} "${workflow.start}" \
+	PYTHONIOENCODING=UTF-8 python utils/gen_readme.py\
+		utils/readme.txt.template ${params.dsname} ${params.outputDir}\
+		${workflow.projectDir} ${workflow.workDir} "${workflow.commandLine}"\
+		${workflow.runName} "${workflow.start}"\
 		> README_${params.dsname}.txt
 
 	echo "### report html DONE"
 	"""
 }
-
-

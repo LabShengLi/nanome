@@ -62,3 +62,5 @@ testdemo.py
 /nanome_temp_dir/
 /script_paper/
 /tests/test_import_deepmod.py
+/bdocker_gcp.sh
+/na12878_hpc_winter.sh
