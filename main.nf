@@ -128,7 +128,7 @@ workflow.onComplete {
 ch_utils
 	.into{	ch_utils1; ch_utils2; ch_utils3; ch_utils4;
 			ch_utils5; ch_utils6; ch_utils7; ch_utils8;
-			ch_utils9}
+			ch_utils9; ch_utils10}
 ch_src
 	.into{	ch_src1; ch_src2; ch_src3; ch_src4;
 			ch_src5; ch_src_c1;ch_src_c2;ch_src_c3;
@@ -156,6 +156,7 @@ process EnvCheck {
 
 	input:
 	path reference_genome 	from 	Channel.fromPath(params.reference_genome, type: 'any')
+	path("*") 				from 	ch_utils10
 
 	output:
 	path "reference_genome" into reference_genome_ch
@@ -164,37 +165,8 @@ process EnvCheck {
 	date; hostname; pwd
 	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
 
-	which conda
-
-	which python
-	python --version
-	which pip
-
-	which nanopolish
-	nanopolish --version
-
-	which megalodon
-	megalodon -v
-
-	which deepsignal
-	deepsignal
-	pip show deepsignal
-
-	which guppy_basecaller
-	guppy_basecaller -v
-
-	which tombo
-	tombo -v
-
-	which DeepMod.py
-	DeepMod.py
-	pip show deepmod
-
-	which fast5mod
-	fast5mod --version
-
-	echo "### we need use pip install -U scikit-learn==0.21.3 due to METEORE"
-	pip show scikit-learn
+	## Validate nanome container/environment is correct
+	bash utils/validate_nanome_container.sh
 
 	## Get dir for reference_genome
 	if [[ "${reference_genome}" == *.tar.gz ]] ; then
