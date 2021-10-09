@@ -383,7 +383,7 @@ def parse_arguments():
                         default=humanChrSet)
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
     parser.add_argument('--processors', type=int, help="number of processors used, default is 1", default=1)
-    parser.add_argument('-o', type=str, help="output base dir", default=pic_base_dir)
+    parser.add_argument('-o', type=str, help=f"output base dir, default is {pic_base_dir}", default=pic_base_dir)
     parser.add_argument('--gen-venn', help="if generate CpGs files for venn data analysis", action='store_true')
     parser.add_argument('--summary-coverage', help="if summarize coverage at each region",
                         action='store_true')
