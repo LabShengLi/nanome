@@ -540,7 +540,7 @@ def parse_arguments():
     parser.add_argument('--cache-dir', type=str,
                         help=f'cache dir used for loading calls/bs-seq (speed up running), default is {global_cache_dir}',
                         default=global_cache_dir)
-    parser.add_argument('--disable-bed-check', help="if disable checking the 0/1 base format for genome annotations",
+    parser.add_argument('--disable-bed-check', help="if disable auto-checking the 0/1 base format for genome annotations",
                         action='store_true')
     parser.add_argument('--mpi',
                         help="if using multi-processing/threading for evaluation, it can speed-up but may need more memory",
