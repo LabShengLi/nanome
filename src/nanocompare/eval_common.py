@@ -2301,8 +2301,8 @@ def get_cache_filename(infn, params):
     if 'cache_dir' not in params:
         raise Exception(f"cache_dir is not in params={params}")
     cache_dir = params['cache_dir']
-    if cache_dir is None:
-        raise Exception(f"'cache_dir is not properly set")
+    if cache_dir is None or not os.path.exists(cache_dir):
+        raise Exception(f"'cache_dir={cache_dir} is not properly set, or not exist")
 
     basefn = os.path.basename(infn)
     if params['file_type'] in ['ont-call', 'bs-seq']:  # for ont calls and bs-seq
@@ -2337,6 +2337,8 @@ def save_to_cache(infn, data, **params):
 
     if cache_dir is None:
         raise Exception(f"cache_dir is not properly set")
+
+    os.makedirs(cache_dir, exist_ok=True)
 
     cache_fn = get_cache_filename(infn, params)
     if not os.path.exists(cache_dir):

@@ -574,7 +574,7 @@ if __name__ == '__main__':
     ## Set cache dir for each dataset
     if args.enable_cache or args.using_cache:
         ds_cache_dir = os.path.join(args.cache_dir, dsname)
-        os.makedirs(ds_cache_dir, exist_ok=True)
+        # os.makedirs(ds_cache_dir, exist_ok=True)
     else:
         ds_cache_dir = None
 
