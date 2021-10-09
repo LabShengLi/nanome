@@ -12,6 +12,8 @@ Generate site-level methylation correlation results in nanome paper.
 import argparse
 
 import pybedtools
+from scipy import stats
+from scipy.stats import PearsonRConstantInputWarning
 
 from nanocompare.eval_common import *
 from nanocompare.global_settings import get_tool_name, ToolNameList, save_done_file, \
@@ -58,20 +60,56 @@ def summary_cpgs_stats_results_table():
 
         callBed = calldict2bed(callSet)
 
-        # Add coverage of every regions by each tool here
-        bar = tqdm(region_bed_list)
-        for (bedfn, tagname, region_bed) in bar:  # calculate how overlap with Singletons, Non-Singletons, etc.
-            bar.set_description(f"CPG-cov-at-region-{tagname}")
-            if not args.large_mem and region_bed is None:  # load in demand
-                region_bed = get_region_bed_tuple(bedfn,
-                                                  enable_base_detection_bedfile=not args.disable_bed_check)[2]
+        if not args.mpi:
+            # Add coverage of every regions by each tool here
+            bar = tqdm(region_bed_list)
+            for (bedfn, tagname, region_bed) in bar:  # calculate how overlap with Singletons, Non-Singletons, etc.
+                bar.set_description(f"CPG_cov-{args.dsname}-{toolname}-region-{tagname}")
+                if not args.large_mem and region_bed is None:  # load in demand
+                    region_bed = get_region_bed_tuple(bedfn,
+                                                      enable_base_detection_bedfile=not args.disable_bed_check,
+                                                      enable_cache=args.enable_cache, using_cache=args.using_cache,
+                                                      cache_dir=ds_cache_dir
+                                                      )[2]
 
-            if region_bed is None:
-                logger.debug(f"region name={tagname} is not found")
-                continue
-            intersect_bed = intersect_bed_regions(callBed, region_bed, bedfn)
-            ret = {tagname: len(intersect_bed)}
-            retList.append(ret)
+                if region_bed is None:
+                    logger.debug(f"region name={tagname} is not found")
+                    continue
+                intersect_bed = intersect_bed_regions(callBed, region_bed, bedfn)
+                ret = {tagname: len(intersect_bed)}
+                retList.append(ret)
+        else:
+            # multi-threading way
+            # if some entry is strange 0, means memory is not enough, such as 50G for HL60
+            global progress_bar_global_site
+            progress_bar_global_site = tqdm(total=len(region_bed_list))
+            progress_bar_global_site.set_description(f"MT-CPG_cov-{args.dsname}-{toolname}-all-regions")
+            executor = ThreadPoolExecutor(max_workers=args.processors)
+            all_tasks = []
+            tag_list = []
+            for (bedfn, tagname, region_bed) in region_bed_list:
+                if not args.large_mem and region_bed is None:  # load in demand
+                    region_bed = get_region_bed_tuple(bedfn,
+                                                      enable_base_detection_bedfile=not args.disable_bed_check,
+                                                      enable_cache=args.enable_cache, using_cache=args.using_cache,
+                                                      cache_dir=ds_cache_dir
+                                                      )[2]
+
+                if region_bed is None:
+                    logger.debug(f"region name={tagname} is not found")
+                    continue
+                future = executor.submit(get_num_intersect, callBed, region_bed, bedfn=bedfn, tagname=tagname)
+                future.add_done_callback(update_progress_bar_site_level)
+                all_tasks.append(future)
+                tag_list.append(tagname)
+            executor.shutdown()
+            progress_bar_global_site.close()
+
+            for future, tagname in zip(all_tasks, tag_list):
+                ret = future.result()
+                ## del bed_ret
+                retList.append(ret)
+
         if concordant_bed is not None:
             intersect_bed = intersect_bed_regions(callBed, concordant_bed)
             ret = {'Concordant': len(intersect_bed)}
@@ -98,10 +136,10 @@ def summary_cpgs_stats_results_table():
             f"\n\nSanity check: sum_sing_nonsingle={sum_sing_nonsingle:,}; sum_cg={sum_cg:,}; total={total_sites:,}")
 
         if sum_sing_nonsingle != total_sites:
-            logger.error(
+            logger.debug(
                 f"Sanity check for {toolname}, total_sites={total_sites:,}, sum_sing_nonsingle={sum_sing_nonsingle:,}, some non-singletons are not captered by bed file")
             retDict['Non-singletons'] = total_sites - retDict['Singletons']
-            logger.error(f"Updated, retDict={retDict}")
+            logger.debug(f"Updated, retDict={retDict}")
         row_dict.update(retDict)
         dataset.append(row_dict)
         logger.debug(f'BG-Truth join with {toolname} get {len(toolOverlapBGTruthCpGs):,} CpGs')
@@ -165,6 +203,50 @@ def summary_cpgs_stats_results_table():
     logger.debug(f"Memory report: {get_current_memory_usage()}")
 
 
+def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=None, outdir=None,
+                                  large_mem=False,
+                                  enable_base_detection_bedfile=enable_base_detection_bedfile,
+                                  enable_cache=False, using_cache=False):
+    """
+    Calculate Pearson's correlation coefficient at different regions.
+    :param corr_infn:
+    :param beddir:
+    :param dsname:
+    :param outdir:
+    :return:
+    """
+    global progress_bar_global_site
+    progress_bar_global_site = tqdm(total=len(bed_tuple_list))
+    progress_bar_global_site.set_description(f"MT-PCC-{dsname}-regions")
+
+    executor = ThreadPoolExecutor(max_workers=args.processors)
+    all_task = []
+    ## input: df, bed_tuple
+    ## return: list of dict [{tool1's pcc}, {toolk's pcc}]
+    for bed_tuple in bed_tuple_list:
+        future = executor.submit(compute_pcc_at_region, corr_infn, bed_tuple)
+        future.add_done_callback(update_progress_bar_site_level)
+        all_task.append(future)
+    executor.shutdown()
+    progress_bar_global_site.close()
+
+    ret_list = []  # list of dict for dataframe
+    for future in all_task:
+        ret_l1 = future.result()
+        if ret_l1 is None:
+            continue
+        ret_list.extend(ret_l1)
+
+    # logger.info(dataset)
+    outdf = pd.DataFrame(ret_list)
+    logger.debug(outdf)
+
+    outfn = os.path.join(outdir, f'{runid}_{dsname}.corrdata.coe.pvalue.each.regions.xlsx')
+    outdf.to_excel(outfn)
+    logger.debug(f'save to {outfn}')
+    return outdf
+
+
 def save_meth_corr_data(callresult_dict, bgTruth, reportCpGSet, outfn):
     """
     Save meth freq and cov results into csv file
@@ -206,6 +288,71 @@ def save_meth_corr_data(callresult_dict, bgTruth, reportCpGSet, outfn):
     logger.debug(f"save to {outfn}\n")
 
 
+def update_progress_bar_site_level(*a):
+    """
+    Update progress for multiprocessing
+    :param a:
+    :return:
+    """
+    global progress_bar_global_site
+    progress_bar_global_site.update()
+
+
+def get_num_intersect(callBed, region_bed, bedfn="", tagname=None):
+    ret_bed = intersect_bed_regions(callBed, region_bed, bedfn=bedfn)
+    if len(ret_bed) < 1:
+        logger.error(
+            f"Found 0 intersect CPG for tool with {tagname} region, callBed={callBed}, region_bed={region_bed}")
+    ret = {tagname: len(ret_bed)}
+    return ret
+
+
+def compute_pcc_at_region(corr_infn, bed_tuple):
+    infn, tagname, coord_bed = bed_tuple
+    logger.debug(f'tagname={tagname}, coord_fn={infn}')
+    if not args.large_mem and tagname != 'Genome-wide' and coord_bed is None:  # load on demand
+        eval_coord_bed = get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detection_bedfile,
+                                              enable_cache=args.enable_cache, using_cache=args.using_cache,
+                                              cache_dir=ds_cache_dir)[2]
+    else:  # large memory, or genome wide - None
+        eval_coord_bed = coord_bed
+
+    if tagname != 'Genome-wide' and eval_coord_bed is None:
+        logger.debug(f"Region name={tagname} is not found")
+        return None
+
+    df = pd.read_csv(corr_infn)
+    newdf = filter_corrdata_df_by_bedfile(df, eval_coord_bed, infn)
+    if newdf is None:
+        logger.debug(f"Found intersection=0 CPGs for tagname={tagname}, no report for PCC")
+        return None
+
+    # Computer COE and pvalue
+    newdf = newdf.filter(regex='_freq$', axis=1)
+    ret_list = []
+    for i in range(1, len(newdf.columns)):
+        toolname = str(newdf.columns[i]).replace('_freq', '')
+        try:  # too few samples will fail
+            # with warnings.catch_warnings(): # not function
+            warnings.filterwarnings('ignore', category=PearsonRConstantInputWarning)
+            coe, pval = stats.pearsonr(newdf.iloc[:, 0], newdf.iloc[:, i])
+        except:
+            coe, pval = None, None
+
+        # report to dataset
+        ret = {
+            'dsname': dsname,
+            'Tool': toolname,
+            'Location': tagname,
+            '#Bases': len(newdf),
+            'COE': coe,
+            'p-value': pval
+        }
+        ret_list.append(ret)
+    logger.debug(f"tagname={tagname}, pcc_return={ret_list}")
+    return ret_list
+
+
 def parse_arguments():
     """
     :return:
@@ -224,12 +371,16 @@ def parse_arguments():
                         required=True)
     parser.add_argument('--genome-annotation', type=str,
                         help='genome annotation dir, contain BED files such as singleton, nonsingleton, etc.',
-                        required=True)
+                        default=None)
     parser.add_argument('--beddir', type=str,
                         help="base dir for concordant/discordant BED files generated by read-level analysis, make sure provided dsname is same",
                         default=None)
-    parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff for coverage in bg-truth, default is >=5", default=5)
-    parser.add_argument('--toolcov-cutoff', type=int, help="cutoff for coverage in nanopore tools, default is >=3", default=3)
+    parser.add_argument('--min-bgtruth-cov', type=int, help="cutoff for coverage in bg-truth, default is >=5",
+                        default=5)
+    parser.add_argument('--toolcov-cutoff', type=int, help="cutoff for coverage in nanopore tools, default is >=3",
+                        default=3)
+    parser.add_argument('--chrSet', nargs='+', help='chromosome list, default is human chr1-22, X and Y',
+                        default=humanChrSet)
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
     parser.add_argument('--processors', type=int, help="number of processors used, default is 1", default=1)
     parser.add_argument('-o', type=str, help="output base dir", default=pic_base_dir)
@@ -241,10 +392,16 @@ def parse_arguments():
     parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
     parser.add_argument('--using-cache', help="if use cache files", action='store_true')
     parser.add_argument('--plot', help="if plot the correlation matrix figure", action='store_true')
-    parser.add_argument('--bedtools-tmp', type=str, help=f'bedtools temp dir, default is {temp_dir}', default=temp_dir)
-    parser.add_argument('--cache-dir', type=str, help=f'loaded calls/bs-seq in cache dir (speed up running), default is {cache_dir}', default=cache_dir)
+    parser.add_argument('--bedtools-tmp', type=str, help=f'bedtools temp dir, default is {global_temp_dir}',
+                        default=global_temp_dir)
+    parser.add_argument('--cache-dir', type=str,
+                        help=f'cache dir used for loading calls/bs-seq(speed up running), default is {global_cache_dir}',
+                        default=global_cache_dir)
     parser.add_argument('--large-mem', help="if using large memory (>100GB) for speed up", action='store_true')
-    parser.add_argument('--disable-bed-check', help="if disable checking the 0/1 base format for genome annotations",
+    parser.add_argument('--disable-bed-check', help="if disable auto-checking the 0/1 base format for genome annotations",
+                        action='store_true')
+    parser.add_argument('--mpi',
+                        help="if using multi-processing/threading for evaluation, it can speed-up but need more memory",
                         action='store_true')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
@@ -258,9 +415,19 @@ if __name__ == '__main__':
     else:
         set_log_info_level()
 
-    ## Set tmp dir for bedtools
-    os.makedirs(args.bedtools_tmp, exist_ok=True)
-    pybedtools.helpers.set_tempdir(args.bedtools_tmp)
+    dsname = args.dsname
+    ## Set tmp dir for bedtools, each process use a bed tmp dir
+    ## because the tmp dir files may be cleaned by the end of the process
+    bed_temp_dir = os.path.join(args.bedtools_tmp, dsname)
+    os.makedirs(bed_temp_dir, exist_ok=True)
+    pybedtools.helpers.set_tempdir(bed_temp_dir)
+
+    ## Set cache dir for each dataset
+    if args.enable_cache or args.using_cache:
+        ds_cache_dir = os.path.join(args.cache_dir, dsname)
+        # os.makedirs(ds_cache_dir, exist_ok=True)
+    else:
+        ds_cache_dir = None
 
     # cache function same with read level
     enable_cache = args.enable_cache
@@ -305,8 +472,8 @@ if __name__ == '__main__':
         if len(fn) == 0:  # incase of input like 'bismark:/a/b/c;'
             continue
         # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
-        bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True,
-                                  using_cache=using_cache, enable_cache=enable_cache)
+        bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True, filterChr=args.chrSet,
+                                  using_cache=using_cache, enable_cache=enable_cache, cache_dir=ds_cache_dir)
         bgTruthList.append(bgTruth1)
 
     # Combine one/two replicates, using cutoff=1 or 5
@@ -335,18 +502,13 @@ if __name__ == '__main__':
         callname = get_tool_name(callencode)
         callfn_dict[callname] = callfn
 
-        # We do now allow import DeepMod.C for site level evaluation, in current version
-        if callencode == 'DeepMod.C':
-            raise Exception(
-                f'{callencode} is not allowed for site level evaluation, please use DeepMod.Cluster file here')
-
         loaded_callname_list.append(callname)
 
         # For site level evaluation, only need (freq, cov) results, no score needed. Especially for DeepMod, we must import as freq and cov format from DeepMod.Cluster encode
         # Do not filter bgtruth, because we use later for overlapping (without bg-truth)
-        callresult_dict_cov1[callname] = import_call(callfn, callencode, baseFormat=baseFormat,
+        callresult_dict_cov1[callname] = import_call(callfn, callencode, baseFormat=baseFormat, filterChr=args.chrSet,
                                                      enable_cache=enable_cache, using_cache=using_cache,
-                                                     include_score=False, siteLevel=True)
+                                                     include_score=False, siteLevel=True, cache_dir=ds_cache_dir)
 
         # Stats the total cpgs and calls for each calls
         cnt_calls = 0
@@ -363,9 +525,9 @@ if __name__ == '__main__':
     for callname in loaded_callname_list:
         callresult_dict_cov3[callname] = readLevelToSiteLevelWithCov(callresult_dict_cov1[callname],
                                                                      minCov=minToolCovCutt, toolname=callname)
-        ## Destroy cov1 for memory saving
-        del callresult_dict_cov1[callname]
-        logger.debug(f"Memory report: {get_current_memory_usage()}")
+    ## Destroy cov1 for memory saving
+    del callresult_dict_cov1[callname]
+    logger.debug(f"Memory report: {get_current_memory_usage()}")
 
     logger.debug(f'\n\n####################\n\n')
 
@@ -397,8 +559,8 @@ if __name__ == '__main__':
         logger.debug(f'\n\n####################\n\n')
 
     logger.debug(f"Start getting intersection (all joined) sites by tools and bgtruth")
-    coveredCpGs = set(list(bgTruth.keys()))
-    coveredCpGs001 = set(list(bgTruth.keys()))
+    coveredCpGs = set(list(bgTruth.keys()))  # joined sets, start with bs-seq
+    coveredCpGs001 = set(list(bgTruth.keys()))  # no change later
 
     sitesDataset = defaultdict(list)
 
@@ -502,9 +664,11 @@ if __name__ == '__main__':
         dsname = tagname[:tagname.find('_')]
 
         logger.info(f"Start report PCC in difference genomic regions based on file={fnlist[0]}, dsname={dsname}")
-        correlation_report_on_regions(fnlist[0], bed_tuple_list=eval_genomic_context_tuple, dsname=dsname, runid=args.runid,
+        correlation_report_on_regions(fnlist[0], bed_tuple_list=eval_genomic_context_tuple, dsname=dsname,
+                                      runid=args.runid,
                                       outdir=out_dir, large_mem=args.large_mem,
-                                      enable_base_detection_bedfile=not args.disable_bed_check)
+                                      enable_base_detection_bedfile=not args.disable_bed_check,
+                                      enable_cache=args.enable_cache, using_cache=args.using_cache)
         logger.debug(f"Memory report: {get_current_memory_usage()}")
 
     if args.summary_coverage:

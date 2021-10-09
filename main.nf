@@ -1313,16 +1313,14 @@ process DpmodComb {
 		indir/batch_*_num/mod_pos.*.C.bed
 
 	if [[ "${isDeepModCluster}" == "true" ]] ; then
-		encode="DeepMod.Cluster"
 		callfn=${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed.gz
 	else
-		encode="DeepMod.C"
 		callfn=${params.dsname}.deepmod.C_per_site.combine.bed.gz
 	fi
 
 	## Unify format output
 	bash src/unify_format_for_calls.sh \
-		${params.dsname}  \${encode} \${callfn} \
+		${params.dsname}  DeepMod \${callfn} \
 		.  \$((numProcessor))  2  ${chrSet}
 	echo "### DeepMod combine DONE"
 	"""

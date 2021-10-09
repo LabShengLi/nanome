@@ -12,16 +12,16 @@ This script will generate all per-read performance results.
 """
 
 import argparse
+import hashlib
 import os.path
-from multiprocessing import Manager
+from concurrent.futures import as_completed
 
 import pybedtools
 from sklearn.metrics import confusion_matrix
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import nonsingletonsFile, save_done_file, singletonsFile, narrowCoordNameList, \
-    cg_density_coord_name_list, rep_coord_name_list, nanome_version
-from nanocompare.global_settings import perf_report_columns, singletonFileExtStr
+from nanocompare.global_settings import nonsingletonsFile, singletonsFile, nanome_version, singletonFileExtStr, \
+    narrowCoordNameList, cg_density_coord_name_list, rep_coord_name_list, perf_report_columns, save_done_file
 
 
 def calculate_meth_unmeth(bgTruth, keySet):
@@ -40,10 +40,10 @@ def calculate_meth_unmeth(bgTruth, keySet):
     return num5mc, num5c
 
 
-def report_singleton_nonsingleton_table(bgTruth, outfn, fn_concordant, fn_discordant,
-                                        genome_annotation_dir=os.path.join(data_base_dir, 'genome-annotation')):
+def report_singleton_nonsingleton_bsseq_table(bgTruth, outfn, fn_concordant, fn_discordant,
+                                              genome_annotation):
     """
-    Report the number of fully-methylated or unmethylated sites in Singletons, Non-Singletons, Concordant and Discordant.
+    Report the number of fully-methylated or unmethylated sites of BS-seq as class of Singletons, Non-Singletons, Concordant and Discordant.
     :param bgTruth:
     :param outfn:
     :param fn_concordant:
@@ -60,12 +60,12 @@ def report_singleton_nonsingleton_table(bgTruth, outfn, fn_concordant, fn_discor
     else:
         raise Exception(f"Not support type for bgTruth={type(bgTruth)}")
 
-    singletonFileName = os.path.join(genome_annotation_dir, singletonsFile)
+    singletonFileName = os.path.join(genome_annotation, singletonsFile)
     singletonSet = filter_cpgkeys_using_bedfile(bgTruthSet, singletonFileName)
     meth_unmeth = calculate_meth_unmeth(absoluteBGTruth, singletonSet)
     ret.update({'Singletons.5C': meth_unmeth[1], 'Singletons.5mC': meth_unmeth[0]})
 
-    nonsingletonFilename = os.path.join(genome_annotation_dir, nonsingletonsFile)
+    nonsingletonFilename = os.path.join(genome_annotation, nonsingletonsFile)
     nonsingletonSet = filter_cpgkeys_using_bedfile(bgTruthSet, nonsingletonFilename)
     meth_unmeth = calculate_meth_unmeth(absoluteBGTruth, nonsingletonSet)
     ret.update({'Non-Singletons.5C': meth_unmeth[1], 'Non-Singletons.5mC': meth_unmeth[0]})
@@ -112,11 +112,15 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     d = defaultdict(list)
     bar = tqdm(narrowedCoordinatesList)
     for coord_tuple in bar:
-        bar.set_description(f"Read-level-perf-at-{'Genome-wide' if coord_tuple is None else coord_tuple[1]}")
+        bar.set_description(f"Read-level-{tagname}-{'Genome-wide' if coord_tuple is None else coord_tuple[1]}")
         if coord_tuple is not None:
             if not args.large_mem:
-                eval_coord_tuple = get_region_bed_tuple(coord_tuple[0],
-                                                        enable_base_detection_bedfile=not args.disable_bed_check)
+                eval_coord_tuple = \
+                    get_region_bed_tuple(coord_tuple[0],
+                                         enable_base_detection_bedfile=not args.disable_bed_check,
+                                         enable_cache=args.enable_cache,
+                                         using_cache=args.using_cache,
+                                         cache_dir=ds_cache_dir)
             else:
                 eval_coord_tuple = coord_tuple
         else:
@@ -129,14 +133,14 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
         accuracy, roc_auc, ap, f1_macro, f1_micro, \
         precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, \
         recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, \
-        F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth = \
+        F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth, bed_fn_basename = \
             computePerReadPerfStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=eval_coord_tuple,
                                     secondFilterBedFileName=secondFilterBedFileName,
                                     cutoff_fully_meth=cutoff_meth, outdir=outdir,
                                     tagname=tagname, save_curve_data=args.save_curve_data)
 
         coord_basefn = os.path.basename(f'{eval_coord_tuple[0] if eval_coord_tuple is not None else "x.x.Genome-wide"}')
-        if coord_tuple is not None and not args.large_mem:
+        if not args.large_mem:
             if eval_coord_tuple is not None:
                 del eval_coord_tuple  # clean memory if possible
 
@@ -172,82 +176,60 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     return df
 
 
-# Will be deprecated
-def report_per_read_performance_mp(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None,
-                                   secondFilterBedFileName=None, cutoff_fully_meth=1.0, outdir=None, tagname=None,
-                                   processors=10):
+def report_per_read_performance_mpi(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None,
+                                    secondFilterBedFileName=None, cutoff_meth=1.0, outdir=None, tagname=None):
     """
-    Multi-processor version of per-read performance evaluation.
-
-    :param ontCalls:    ONT methylation call results
-    :param bgTruth:     1 or 2 replicates as bgtruth
-    :param analysisPrefix:  output file tagname for this runs
-    :param narrowedCoordinatesList: coordinate BED files for regions such as Genome-wide, Singletons, Promoters, etc.
-    :param secondFilterBedFileName: Joined of tools and bgtruth bed file, or None for not joined
-    :param cutoff_fully_meth: 1.0 means 1 is fully-meth, or 0.9 for >=0.9 is fully-meth
-    :param outdir:  output dir for curve data
-    :return: Dataframe of results
-
-    results DF:
-        referenceCpGs is number of all CpGs that is fully-methylated or unmethylated in BG-Truth
+    Report performance results, multi-thread version
+    :param ontCalls: tool's call
+    :param bgTruth:  BS seq results as bg-truth for evaluation
+    :param analysisPrefix:
+    :param narrowedCoordinatesList: The bed file list for evaluation performance at regions (Genome-wide, Singleton, non-singleton, etc.), it is a tuple (basefn, tagname, bed_of_region)
+    :param secondFilterBedFileName: None for bgTruth or Joined bed files
+    :param cutoff_meth:
+    :return:
     """
+    executor = ThreadPoolExecutor(max_workers=args.processors)
+    all_tasks = []
 
-    ret_list = []
+    global progress_bar_global_read
+    progress_bar_global_read = tqdm(total=len(narrowedCoordinatesList))
+    progress_bar_global_read.set_description(f"MT-Read-level-{analysisPrefix}")
 
-    with Manager() as manager:
-        ontCalls = manager.dict(ontCalls)
-        bgTruth = manager.dict(bgTruth)
+    for coord_tuple in narrowedCoordinatesList:
+        if coord_tuple is not None:
+            if not args.large_mem:
+                eval_coord_tuple = \
+                    get_region_bed_tuple(coord_tuple[0],
+                                         enable_base_detection_bedfile=not args.disable_bed_check,
+                                         enable_cache=args.enable_cache,
+                                         using_cache=args.using_cache,
+                                         cache_dir=ds_cache_dir)
+            else:
+                eval_coord_tuple = coord_tuple
+        else:
+            eval_coord_tuple = None
+        if eval_coord_tuple is not None and eval_coord_tuple[2] is None:
+            logger.debug(
+                f"Bed region tagname={eval_coord_tuple[1]} is not found, not evaluated, check genome-annotaion dir={args.genome_annotation} for file {eval_coord_tuple[0]}")
+            continue
+        future = executor.submit(computePerReadPerfStats, ontCalls, bgTruth, analysisPrefix,
+                                 coordBedFileName=eval_coord_tuple,
+                                 secondFilterBedFileName=secondFilterBedFileName,
+                                 cutoff_fully_meth=cutoff_meth, outdir=outdir,
+                                 tagname=tagname, save_curve_data=args.save_curve_data)
+        future.add_done_callback(update_progress_bar_read_level)
+        all_tasks.append(future)
+    executor.shutdown()
+    progress_bar_global_read.close()
 
-        with Pool(processes=processors) as pool:
-            for coord_tuple in narrowedCoordinatesList:
-                # accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = \
-                #     computePerReadStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=coord_fn, secondFilterBedFile=secondFilterBed,
-                #                         secondFilterBed_4CorrFile=secondFilterBed_4Corr,
-                #                         cutoff_meth=cutoff_meth, outdir=outdir, tagname=tagname)
-                coord_basefn = os.path.basename(f'{coord_tuple[0] if coord_tuple is not None else "x.x.Genome-wide"}')
-                ret = pool.apply_async(computePerReadPerfStats, (ontCalls, bgTruth, analysisPrefix,),
-                                       kwds={'coordBedFileName': coord_tuple,
-                                             'secondFilterBedFileName': secondFilterBedFileName,
-                                             'cutoff_fully_meth': cutoff_fully_meth, 'outdir': outdir,
-                                             'tagname': tagname})
-                ret_list.append((coord_basefn, ret))
-
-            pool.close()
-            pool.join()
-
-        d = defaultdict(list)
-        for k in range(len(ret_list)):
-            coord_basefn, ret = ret_list[k]
-
-            # logger.info(coord)
-            # logger.info(ret_list[k])
-            # logger.info(ret.get())
-            # accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, corrMix, Corr_mixedSupport, corrAll, Corr_allSupport, cSites_BGTruth, mSites_BGTruth = ret.get()
-            accuracy, roc_auc, ap, f1_macro, f1_micro, precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth = ret.get()
-            d["prefix"].append(analysisPrefix)
-            d["coord"].append(coord_basefn)
-            d["Accuracy"].append(accuracy)
-            d["Average-Precision"].append(ap)
-            d["Macro-F1"].append(f1_macro)
-            d["Micro-F1"].append(f1_micro)
-            d["Macro-Precision"].append(precision_macro)
-            d["Micro-Precision"].append(precision_micro)
-            d["Macro-Recall"].append(recall_macro)
-            d["Micro-Recall"].append(recall_micro)
-            d["ROC-AUC"].append(roc_auc)
-            d["Precision_5C"].append(precision_5C)
-            d["Recall_5C"].append(recall_5C)
-            d["F1_5C"].append(F1_5C)
-            d["Csites_called"].append(cCalls)
-            d["Csites"].append(cSites_BGTruth)
-            d["Precision_5mC"].append(precision_5mC)
-            d["Recall_5mC"].append(recall_5mC)
-            d["F1_5mC"].append(F1_5mC)
-            d["mCsites_called"].append(mCalls)
-            d["mCsites"].append(mSites_BGTruth)
-            d["referenceCpGs"].append(referenceCpGs)
-
-    df = pd.DataFrame.from_dict(d)
+    datasets = []
+    for future in all_tasks:
+        ret = future.result()
+        ret_dict = unpack_read_level_perf_ret_dict(ret)
+        ret_dict.update({"prefix": analysisPrefix})
+        datasets.append(ret_dict)
+    df = pd.DataFrame(datasets)
+    logger.info(f"Memory report: {get_current_memory_usage()}")
     return df
 
 
@@ -329,6 +311,197 @@ def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet, threshold=0.2)
     pass
 
 
+def import_ont_calls_for_read_level(call_encode, callfn, absoluteBGTruthCov, multi_processor=False):
+    """
+    Import read level of ont calls
+    Args:
+        call_encode:
+        callfn:
+        absoluteBGTruthCov:
+        multi_processor:
+
+    Returns:
+
+    """
+    call_name = call_encode.replace('.', '_')
+    ## MUST import read-level results, and include score for plot ROC curve and PR curve
+    ## ont_call0 is raw ont-calls, too large, it will be cut to only with bs-seq, named ont_call1
+    ont_call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, siteLevel=False,
+                            filterChr=args.chrSet, using_cache=using_cache, enable_cache=enable_cache,
+                            cache_dir=ds_cache_dir)
+    sites_summary = {'Dataset': dsname,
+                     'Method': call_name,
+                     'Sites': len(ont_call0),
+                     f'BSseq-cov{args.min_bgtruth_cov}-certain': len(absoluteBGTruthCov),
+                     }
+
+    if absoluteBGTruthCov:  # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
+        logger.debug(f'Filter out CpG sites not in bgtruth for {call_name}')
+        ont_call1 = filter_cpg_dict(ont_call0,
+                                    absoluteBGTruthCov,
+                                    toolname=call_name)  # using absoluteBGTruthCov for even fewer sites
+        del ont_call0
+        sites_summary.update({f'Join-tool-cov1-with-BSseq-cov{args.min_bgtruth_cov}-certain': len(ont_call1)})
+        logger.debug(f'{call_name} left only sites={len(ont_call1):,}')
+    else:
+        ont_call1 = ont_call0
+
+    if not multi_processor:  # sequencial/multithreading running, in same process, can directly return object
+        return (call_name, ont_call1, sites_summary,)
+    # Save to temp, for main process use at multi-processing
+    outfn = f"tmp_ont_calls_for_read_level_{args.runid}_{os.path.basename(callfn)}.pkl"
+    outfnmd5 = os.path.join(args.bedtools_tmp, "tmp_mp_ont_" + hashlib.md5(outfn.encode('utf-8')).hexdigest() + ".pkl")
+    logger.debug(f"[MP message] '{outfn}' is encoded into '{outfnmd5}', transfer to main process")
+    with open(outfnmd5, 'wb') as handle:
+        pickle.dump(ont_call1, handle)
+    del ont_call1
+    logger.debug(f"Memory report: {get_current_memory_usage()}")
+    return (call_name, outfnmd5, sites_summary,)
+
+
+def import_bsseq_for_read_level(infn, encode, multi_processor=False):
+    """
+    Import bs-seq data
+    Args:
+        infn:
+        encode:
+
+    Returns:
+
+    """
+    # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
+    # bgTruth1 is dict of key->value, key=(chr, start, strand), and value=[meth.freq, cov]
+    bg1 = import_bgtruth(infn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True,
+                         using_cache=using_cache, enable_cache=enable_cache, cache_dir=ds_cache_dir)
+    if not multi_processor:  # in same process, directly return
+        return bg1
+    # Save to temp, for main process use, multi-processing
+    outfn = f"tmp_bsseq_for_read_level_{args.runid}_{os.path.basename(infn)}.pkl"
+    outfnmd5 = os.path.join(args.bedtools_tmp,
+                            "tmp_mp_bsseq_" + hashlib.md5(outfn.encode('utf-8')).hexdigest() + ".pkl")
+    logger.debug(f"[MP message] '{outfn}' is encoded into '{outfnmd5}', transfer to main process")
+    with open(outfnmd5, 'wb') as handle:
+        pickle.dump(bg1, handle)
+
+    del bg1
+    return (infn, outfnmd5,)
+
+
+def update_progress_bar_read_level(*a):
+    """
+    Update progress for multiprocessing
+    :param a:
+    :return:
+    """
+    global progress_bar_global_read
+    progress_bar_global_read.update()
+
+
+def compute_dist_at_region_mp(joined_bed, four_region_bed_list, region_tuple):
+    logging.debug(f"Distribution analysis for Region={region_tuple}")
+    singleton_bed, nonsingleton_bed, concordant_bed, discordant_bed = four_region_bed_list
+
+    coordFn = None  # used for intersection later
+    if region_tuple is not None:
+        if region_tuple[1] in ['Singletons', 'Non-singletons', 'Concordant', 'Discordant']:
+            return None
+        if args.large_mem:
+            (coordFn, tagname, coordBed) = region_tuple
+        else:
+            (coordFn, tagname, coordBed) = \
+                get_region_bed_tuple(region_tuple[0],
+                                     enable_base_detection_bedfile=not args.disable_bed_check,
+                                     enable_cache=args.enable_cache,
+                                     using_cache=args.using_cache,
+                                     cache_dir=ds_cache_dir)
+        if coordBed is None:
+            logger.debug(f"genomic region {tagname} is not found, not evaluated.")
+            return None
+        intersect_coord_bed = intersect_bed_regions(joined_bed, coordBed, coordFn)
+    else:  # Genome-wide results, keep using joined
+        intersect_coord_bed = joined_bed
+        tagname = "Genome-wide"
+
+    logger.debug(f"Start study tagname={tagname}, coordFn={coordFn}")
+    num_total = len(intersect_coord_bed)
+    intersect_singleton_bed = intersect_coord_bed.intersect(singleton_bed, u=True, wa=True)
+    num_singleton = len(intersect_singleton_bed)
+    del intersect_singleton_bed
+
+    intersect_nonsingleton_bed = intersect_coord_bed.intersect(nonsingleton_bed, u=True, wa=True)
+    num_nonsingleton = len(intersect_nonsingleton_bed)
+    del intersect_nonsingleton_bed
+
+    intersect_concordant_bed = intersect_coord_bed.intersect(concordant_bed, u=True, wa=True)
+    num_concordant = len(intersect_concordant_bed)
+    del intersect_concordant_bed
+
+    intersect_discordant_bed = intersect_coord_bed.intersect(discordant_bed, u=True, wa=True)
+    num_discordant = len(intersect_discordant_bed)
+    del intersect_discordant_bed
+    del intersect_coord_bed
+
+    ret = {
+        'Dataset': dsname,
+        'Coord': tagname,
+        'Total': num_total,
+        'Singletons': num_singleton,
+        'Non-singletons': num_nonsingleton,
+        'Concordant': num_concordant,
+        'Discordant': num_discordant
+    }
+
+    logger.debug(
+        f"Coord={tagname}, Total={num_total:,}, Singletons={num_singleton:,}, Non-singletons={num_nonsingleton:,}, Total(Sing+Nonsing)={num_singleton + num_nonsingleton:,}, Concordant={num_concordant:,}, Discordant={num_discordant:,}, Total(Con+Disc)={num_concordant + num_discordant:,}")
+    # Sanity check sums
+    if num_total != num_singleton + num_nonsingleton:
+        logger.debug(f"WARN: Found incorrect sums at {tagname}: for num_total != num_singleton + num_nonsingleton")
+    if num_nonsingleton != num_concordant + num_discordant:
+        logger.debug(
+            f"WARN: Found incorrect sums at {tagname}: for num_nonsingleton != num_concordant+ num_discordant")
+    return ret
+
+
+def unpack_read_level_perf_ret_dict(ret_list):
+    """
+    parse all outputs of read-level performance function
+    Args:
+        ret_list:
+
+    Returns:
+
+    """
+    accuracy, roc_auc, ap, f1_macro, f1_micro, \
+    precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, \
+    recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, \
+    F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth, bed_fn_basename = ret_list
+
+    ret_dict = {
+        "coord": bed_fn_basename,
+        "Accuracy": accuracy,
+        "Average-Precision": ap,
+        "Macro-F1": f1_macro,
+        "Micro-F1": f1_micro,
+        "Macro-Precision": precision_macro,
+        "Micro-Precision": precision_micro,
+        "Macro-Recall": recall_macro,
+        "Micro-Recall": recall_micro,
+        "ROC-AUC": roc_auc,
+        "Precision_5C": precision_5C,
+        "Recall_5C": recall_5C,
+        "F1_5C": F1_5C,
+        "Csites_called": cCalls,
+        "Csites": cSites_BGTruth,
+        "Precision_5mC": precision_5mC,
+        "Recall_5mC": recall_5mC,
+        "F1_5mC": F1_5mC,
+        "mCsites_called": mCalls,
+        "mCsites": mSites_BGTruth,
+        "referenceCpGs": referenceCpGs
+    }
+    return ret_dict
+
+
 def parse_arguments():
     """
     :return:
@@ -356,17 +529,24 @@ def parse_arguments():
     parser.add_argument('-o', type=str, help=f"output base dir, default is {pic_base_dir}", default=pic_base_dir)
     parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
     parser.add_argument('--using-cache', help="if use cache files", action='store_true')
-    parser.add_argument('--distribution', help="if report singleton/nonsingleton distributions", action='store_true')
+    parser.add_argument('--distribution', help="if report singleton/nonsingleton distributions at all regions",
+                        action='store_true')
+    parser.add_argument('--bsseq-report', help="if report singleton/nonsingleton in bs-seq", action='store_true')
     parser.add_argument('--analysis', type=str, help='special analysis specifications for ecoli', default="")
     parser.add_argument('--save-curve-data', help="if save pred/truth points for curve plot", action='store_true')
     parser.add_argument('--large-mem', help="if using large memory (>100GB) for speed up", action='store_true')
-    parser.add_argument('--bedtools-tmp', type=str, help=f'bedtools temp dir, default is {temp_dir}', default=temp_dir)
+    parser.add_argument('--bedtools-tmp', type=str, help=f'bedtools temp dir, default is {global_temp_dir}',
+                        default=global_temp_dir)
     parser.add_argument('--cache-dir', type=str,
-                        help=f'loaded calls/bs-seq in cache dir (speed up running), default is {cache_dir}',
-                        default=cache_dir)
-    parser.add_argument('--disable-bed-check', help="if disable checking the 0/1 base format for genome annotations",
+                        help=f'cache dir used for loading calls/bs-seq (speed up running), default is {global_cache_dir}',
+                        default=global_cache_dir)
+    parser.add_argument('--disable-bed-check', help="if disable auto-checking the 0/1 base format for genome annotations",
                         action='store_true')
-    parser.add_argument('--mpi', help="if using multi-processing for evaluation, not available now",
+    parser.add_argument('--mpi',
+                        help="if using multi-processing/threading for evaluation, it can speed-up but may need more memory",
+                        action='store_true')
+    parser.add_argument('--mpi-import',
+                        help="if using multi-processing/threading for import, it can speed-up, only for small size data",
                         action='store_true')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
@@ -380,16 +560,23 @@ if __name__ == '__main__':
     else:
         set_log_info_level()
 
-    ## Set tmp dir for bedtools
-    os.makedirs(args.bedtools_tmp, exist_ok=True)
-    pybedtools.helpers.set_tempdir(args.bedtools_tmp)
-
-    ## Set tmp dir for bedtools
-    # bedtool_tmp_dir = "/fastscratch/liuya/nanocompare/bedtools_tmp"
-    os.makedirs(args.bedtools_tmp, exist_ok=True)
-    pybedtools.helpers.set_tempdir(args.bedtools_tmp)
+    if not os.path.isdir(args.genome_annotation):
+        raise Exception(f"genome_annotation={args.genome_annotation} is not a valid dir")
 
     dsname = args.dsname
+
+    ## Set tmp dir for bedtools, each process use a bed tmp dir
+    ## because the tmp dir files may be cleaned by the end of the process
+    bed_temp_dir = os.path.join(args.bedtools_tmp, dsname)
+    os.makedirs(bed_temp_dir, exist_ok=True)
+    pybedtools.helpers.set_tempdir(bed_temp_dir)
+
+    ## Set cache dir for each dataset
+    if args.enable_cache or args.using_cache:
+        ds_cache_dir = os.path.join(args.cache_dir, dsname)
+        # os.makedirs(ds_cache_dir, exist_ok=True)
+    else:
+        ds_cache_dir = None
 
     # We use coverage >= args.min_bgtruth_cov for bg-truth, but 1x coverage for ONT calls
     cutoffBGTruth = args.min_bgtruth_cov
@@ -426,21 +613,44 @@ if __name__ == '__main__':
         fnlist = fnlist.split(';')
         logger.debug(f'We are going to import BS-seq data from fnlist={fnlist}, encode={encode}')
 
-        # Load bgtruth one/two replicates
+        # Load bgtruth one/two replicates, using multiprocessing
         bgTruthList = []
+        arg_list = []
         for fn in fnlist:
-            # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
-            # bgTruth1 is dict of key->value, key=(chr, start, strand), and value=[meth.freq, cov]
-            bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True,
-                                      using_cache=using_cache, enable_cache=enable_cache, cache_dir=args.cache_dir)
-            bgTruthList.append(bgTruth1)
+            arg_list.append((fn, encode,))
+        if args.mpi:
+            executor = ThreadPoolExecutor(max_workers=args.processors)
+            all_task = [executor.submit(import_bsseq_for_read_level, *arg) for arg in arg_list]
+            executor.shutdown()
+            for future in as_completed(all_task):
+                bg1 = future.result()
+                bgTruthList.append(bg1)
+            # with Pool(args.processors) as pool:
+            #     # ret_list is list of (infn, outfn)
+            #     ret_list = pool.starmap(import_bsseq_for_read_level, arg_list)
+            #     for ret in ret_list:
+            #         # read output from a sub-process
+            #         with open(ret[1], 'rb') as handle:
+            #             logger.debug(f"Load bs-seq encode={ret[0]} from file={ret[1]}, it is from subprocess")
+            #             bg1 = pickle.load(handle)
+            #         bgTruthList.append(bg1)
+            logger.debug("MT import for bs-seq finished")
+        else:
+            for arg in arg_list:
+                bg1 = import_bsseq_for_read_level(*arg)
+                bgTruthList.append(bg1)
+            logger.debug("SEQ import for bs-seq finished")
+
+        logger.debug(f"bgTruthList={len(bgTruthList)}")
+        if len(bgTruthList) == 0:
+            logger.info(f"Found no BS-seq data provided, no need to run evalutation")
+            sys.exit(0)
 
         # Combine multiple bgtruth together for analysis
         # We use union of two replicates as BG-Truth
         combineBGTruth = combineBGTruthList(bgTruthList, covCutoff=1)
 
         # Clean bgTruthList
-        del bgTruth1
         del bgTruthList
 
         logger.debug("\n\n########################\n\n")
@@ -458,10 +668,8 @@ if __name__ == '__main__':
         # This is the smallest sites we use for evaluation
         absoluteBGTruthCov = {key: absoluteBGTruth[key] for key in absoluteBGTruth if
                               absoluteBGTruth[key][1] >= cutoffBGTruth}
-        logger.debug(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(absoluteBGTruthCov):,}')
 
-        # Load all coordinate file list (full path) in this runs
-        # relateCoord = list(narrowCoordFileList)  # copy the basic coordinate
+        logger.debug(f'After apply cutoff={cutoffBGTruth}, bgtruth sites={len(absoluteBGTruthCov):,}')
 
         ## add additional two region files based on bgtruth (Concordant, Discordant):
         ## file name is like: K562_WGBS_2Reps.hg38_nonsingletons.concordant.bed
@@ -476,75 +684,70 @@ if __name__ == '__main__':
         nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant,
                                     nsDisCordantFileName=fn_discordant, genome_annotation_dir=args.genome_annotation)
 
-        # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
-        outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov1.csv')
-        report_singleton_nonsingleton_table(absoluteBGTruth, outfn, fn_concordant=fn_concordant,
-                                            fn_discordant=fn_discordant, genome_annotation_dir=args.genome_annotation)
+        if args.bsseq_report:
+            # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
+            outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov1.csv')
+            logger.debug(f"For coverage >= 1")
+            report_singleton_nonsingleton_bsseq_table(absoluteBGTruth, outfn, fn_concordant=fn_concordant,
+                                                      fn_discordant=fn_discordant,
+                                                      genome_annotation=args.genome_annotation)
 
-        # Report singletons vs non-singletons of bgtruth with cov cutoff >= 5
-        if cutoffBGTruth > 1:
-            outfn = os.path.join(out_dir,
-                                 f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov{cutoffBGTruth}.table.s2.csv')
-            report_singleton_nonsingleton_table(absoluteBGTruthCov, outfn, fn_concordant=fn_concordant,
-                                                fn_discordant=fn_discordant,
-                                                genome_annotation_dir=args.genome_annotation)
-
+            # Report singletons vs non-singletons of bgtruth with cov cutoff >= 5
+            if cutoffBGTruth > 1:
+                outfn = os.path.join(out_dir,
+                                     f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov{cutoffBGTruth}.table.s2.csv')
+                logger.debug(f"For coverage >= {cutoffBGTruth}")
+                report_singleton_nonsingleton_bsseq_table(absoluteBGTruthCov, outfn, fn_concordant=fn_concordant,
+                                                          fn_discordant=fn_discordant,
+                                                          genome_annotation=args.genome_annotation)
         logger.debug("\n\n########################\n\n")
         logger.debug(f"Memory report: {get_current_memory_usage()}")
         logger.info(f"Import BS-seq data done for fnlist={fnlist}")
     else:
         absoluteBGTruth = None
         absoluteBGTruthCov = None
-
-    filterChrSet = args.chrSet
+        raise Exception("Can not get BS-seq")
 
     ## Narrow down to BG-Truth if there BG-Truth is available
     ontCallWithinBGTruthDict = defaultdict()  # name->call
 
-    ## Dataframe for cpgs in tool and each tool joined with BS-seq
-    sitesDataset = defaultdict(list)
-
+    arg_list = []
     for callstr in args.calls:
         call_encode, callfn = callstr.split(':')
 
         if len(callfn.strip()) == 0:  # skip empty filename
             continue
+        arg_list.append((call_encode, callfn, absoluteBGTruthCov, False,))
 
-        # Only DeepMod.C/DeepMod.Cluster will always named as DeepMod
-        # call_name = get_tool_name(call_encode)
-        call_name = call_encode.replace('.', '_')
+    ## Dataframe for cpgs in tool and each tool joined with BS-seq
+    sites_database_list = []  # list of dict
+    ontCallWithinBGTruthDict = dict()  # callname-> call-dict
 
-        # We do now allow import DeepMod.Cluster for read level evaluation
-        if call_encode == 'DeepMod.Cluster':
-            raise Exception(f'{call_encode} is not allowed for read level evaluation, please use DeepMod.C file here')
-
-        ## MUST import read-level results, and include score for plot ROC curve and PR curve
-        ont_call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, siteLevel=False,
-                                using_cache=using_cache, enable_cache=enable_cache, filterChr=filterChrSet,
-                                cache_dir=args.cache_dir)
-        sitesDataset['Dataset'].append(dsname)
-        sitesDataset['Method'].append(call_name)
-        sitesDataset['Sites'].append(len(ont_call0))
-        sitesDataset['BSseq-cov5-certain'].append(len(absoluteBGTruthCov))
-
-        if absoluteBGTruthCov:  # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
-            logger.debug(f'Filter out CpG sites not in bgtruth for {call_name}')
-            ontCallWithinBGTruthDict[call_name] = filter_cpg_dict(ont_call0,
-                                                                  absoluteBGTruthCov)  # using absoluteBGTruthCov for even fewer sites
-            sitesDataset[f'Join-tool-cov1-with-BSseq-cov{args.min_bgtruth_cov}-certain'].append(
-                len(ontCallWithinBGTruthDict[call_name]))
-            logger.debug(f'{call_name} left only sites={len(ontCallWithinBGTruthDict[call_name]):,}')
-            # Clean large size object
-            del ont_call0
-        else:
-            ontCallWithinBGTruthDict[call_name] = ont_call0
+    if args.mpi_import:
+        # Multi-thread may lead to large memory (out-of-memory) for big ont-calls
+        executor = ThreadPoolExecutor(max_workers=args.processors)
+        all_task = [executor.submit(import_ont_calls_for_read_level, *arg) for arg in arg_list]
+        executor.shutdown()
+        for future in all_task:
+            ret = future.result()
+            ontCallWithinBGTruthDict[ret[0]] = ret[1]
+            sites_database_list.append(ret[2])
+        logger.debug("MT parallel import ont calls finished")
         logger.debug(f"Memory report: {get_current_memory_usage()}")
+    else:
+        # Sequencial import will be benefit for large data
+        for arg in arg_list:
+            ret = import_ont_calls_for_read_level(*arg)
+            logger.debug(f"Memory report: {get_current_memory_usage()}")
+            ontCallWithinBGTruthDict[ret[0]] = ret[1]
+            sites_database_list.append(ret[2])
 
     logger.info(f"Import tools's calling done for toolist={list(ontCallWithinBGTruthDict.keys())}")
+    logger.debug(f"sites_database_list={sites_database_list}")
     logger.info(f"Memory report: {get_current_memory_usage()}")
 
     ## Report each tool (cov>=1) joined with BS-seq cov>=5 certain sites(0%, 100%)
-    df = pd.DataFrame.from_dict(sitesDataset)
+    df = pd.DataFrame(sites_database_list)
     outfn = os.path.join(out_dir,
                          f'{dsname}.tools.cov1.join.with.bsseq.cov{args.min_bgtruth_cov}.read.level.report.xlsx')
     df.to_excel(outfn)
@@ -576,11 +779,13 @@ if __name__ == '__main__':
     ## Delete not sorted file
     os.remove(bedfn_tool_join_bgtruth)
 
-    ## Report joined CpGs in each regions, this is the really read level evaluation sites, Table S2
-    outfn = os.path.join(out_dir,
-                         f'{RunPrefix}.summary.bsseq.cov{cutoffBGTruth}.joined.tools.singleton.nonsingleton.table.like.s2.csv')
-    report_singleton_nonsingleton_table(joinedCPG, outfn, fn_concordant=fn_concordant,
-                                        fn_discordant=fn_discordant)
+    if args.bsseq_report:
+        ## Report joined CpGs in each regions, this is the really read level evaluation sites, Table S2
+        outfn = os.path.join(out_dir,
+                             f'{RunPrefix}.summary.bsseq.cov{cutoffBGTruth}.joined.tools.singleton.nonsingleton.table.like.s2.csv')
+        logger.debug("Start report joined CPGs of BS-seq for singleton/nonsingleton")
+        report_singleton_nonsingleton_bsseq_table(joinedCPG, outfn, fn_concordant=fn_concordant,
+                                                  fn_discordant=fn_discordant, genome_annotation=args.genome_annotation)
 
     ## Note all tools using cov>=1 for evaluation read-leval performance
     logger.debug(
@@ -628,12 +833,12 @@ if __name__ == '__main__':
     if report_joined:  # Joined all together sites for evaluation
         perf_dir = os.path.join(out_dir, 'performance-results')
         os.makedirs(perf_dir, exist_ok=True)
-        bgTruth = certainJoinedBGTruth
+        eval_bgTruth = certainJoinedBGTruth  # evaluation bs-seq
         secondBedFileName = bedfn_tool_join_bgtruth_sorted  # params passed for joined sets evaluation, may be remove, due to bgtruth is now joined
     else:  # only based on bgtruth joined with a tool
         perf_dir = os.path.join(out_dir, 'performance-results-nojoined')
         os.makedirs(perf_dir, exist_ok=True)
-        bgTruth = certainBGTruth
+        eval_bgTruth = certainBGTruth  # evaluation bs-seq
         secondBedFileName = None
         raise Exception("Currently only support joined sets evaluation.")
 
@@ -643,28 +848,33 @@ if __name__ == '__main__':
                             [os.path.join(args.genome_annotation, cofn) for cofn in cg_density_coord_name_list] + \
                             [os.path.join(args.genome_annotation, cofn) for cofn in rep_coord_name_list] + \
                             [fn_concordant, fn_discordant]
-    # logger.debug(f"Evaluated regions: {regions_full_filepath}")
 
     # Create the bed list for evaluation, save time for every loading of bed region
     # None, singelton, non-singletons, ...
     if args.large_mem:
-        region_bedtuple_list = [None] + get_region_bed_pairs_list_mp(regions_full_filepath, processors=args.processors,
-                                                                     enable_base_detection_bedfile=not args.disable_bed_check)
+        eval_region_tuple_list = [None] + \
+                                 get_region_bed_pairs_list_mp(
+                                     regions_full_filepath, processors=args.processors,
+                                     enable_base_detection_bedfile=not args.disable_bed_check,
+                                     enable_cache=args.enable_cache,
+                                     using_cache=args.using_cache,
+                                     cache_dir=ds_cache_dir)
         logger.info(f"Memory report: {get_current_memory_usage()}")
-
     else:
-        region_bedtuple_list = [None] + [(infn, map_region_fn_to_name(infn), None,)
-                                         for infn in regions_full_filepath]
+        eval_region_tuple_list = [None] + [(infn, map_region_fn_to_name(infn), None,)
+                                           for infn in regions_full_filepath]
 
     if args.distribution:
         logger.debug("Report singletons/non-singletons in each genomic context regions in Fig.3 and 4")
 
         joined_bed = BedTool(bedfn_tool_join_bgtruth_sorted).sort()
-        singleton_tuple = region_bedtuple_list[1]
-        nonsingleton_tuple = region_bedtuple_list[2]
-        concordant_tuple = region_bedtuple_list[-2]
-        discordant_tuple = region_bedtuple_list[-1]
 
+        singleton_tuple = eval_region_tuple_list[1]
+        nonsingleton_tuple = eval_region_tuple_list[2]
+        concordant_tuple = eval_region_tuple_list[-2]
+        discordant_tuple = eval_region_tuple_list[-1]
+
+        ## Preload singleton, non-singleton, concordant and discordant for all threads usage
         if args.large_mem:  # in memory already
             singleton_bed = singleton_tuple[2]
             nonsingleton_bed = nonsingleton_tuple[2]
@@ -672,112 +882,90 @@ if __name__ == '__main__':
             discordant_bed = discordant_tuple[2]
         else:  # load on demand for limit memory
             singleton_bed = \
-                get_region_bed_tuple(singleton_tuple[0], enable_base_detection_bedfile=not args.disable_bed_check)[2]
+                get_region_bed_tuple(singleton_tuple[0],
+                                     enable_base_detection_bedfile=not args.disable_bed_check,
+                                     enable_cache=args.enable_cache,
+                                     using_cache=args.using_cache,
+                                     cache_dir=ds_cache_dir)[2]
             nonsingleton_bed = \
-                get_region_bed_tuple(nonsingleton_tuple[0], enable_base_detection_bedfile=not args.disable_bed_check)[2]
+                get_region_bed_tuple(nonsingleton_tuple[0],
+                                     enable_base_detection_bedfile=not args.disable_bed_check,
+                                     enable_cache=args.enable_cache,
+                                     using_cache=args.using_cache,
+                                     cache_dir=ds_cache_dir)[2]
             concordant_bed = \
-                get_region_bed_tuple(concordant_tuple[0], enable_base_detection_bedfile=not args.disable_bed_check)[2]
+                get_region_bed_tuple(concordant_tuple[0],
+                                     enable_base_detection_bedfile=not args.disable_bed_check,
+                                     enable_cache=args.enable_cache,
+                                     using_cache=args.using_cache,
+                                     cache_dir=ds_cache_dir)[2]
             discordant_bed = \
-                get_region_bed_tuple(discordant_tuple[0], enable_base_detection_bedfile=not args.disable_bed_check)[2]
-        logger.debug(
-            f"Singleton/nonsingleton region bed files: {[singleton_tuple, nonsingleton_tuple, concordant_tuple, discordant_tuple]}")
-        datasets = defaultdict(list)
-        sum_cg = 0
+                get_region_bed_tuple(discordant_tuple[0],
+                                     enable_base_detection_bedfile=not args.disable_bed_check,
+                                     enable_cache=args.enable_cache,
+                                     using_cache=args.using_cache,
+                                     cache_dir=ds_cache_dir)[2]
+        four_region_bed_list = (singleton_bed, nonsingleton_bed, concordant_bed, discordant_bed)
+        ## Check not None for single/nonsingl, concord and discord
+        for bedk in four_region_bed_list:
+            if bedk is None:
+                raise Exception(f"Not enough bed data, dist_region_tuple_list={four_region_bed_list}")
 
-        logging.debug(f"Region list={region_bedtuple_list[:]}")
-        bar = tqdm(region_bedtuple_list[:])
-        bar.set_description("Dist(Sing/Nonsing)-for-regions")
-        for coord_tuple in bar:
-            coordFn = None
-            if coord_tuple is not None:  # get genomic region results
-                if coord_tuple[1] in ['Singletons', 'Non-singletons', 'Concordant', 'Discordant']:
-                    continue
-                if args.large_mem:
-                    (coordFn, tagname, coordBed) = coord_tuple
-                else:
-                    (coordFn, tagname, coordBed) = get_region_bed_tuple(coord_tuple[0],
-                                                                        enable_base_detection_bedfile=not args.disable_bed_check)
+        ret_list = []
 
-                if coordBed is None:
-                    logger.debug(f"genomic region {tagname} is not found, not evaluated.")
-                    continue
-                intersect_coord_bed = intersect_bed_regions(joined_bed, coordBed, coordFn)
-            else:  # Genome-wide results
-                intersect_coord_bed = joined_bed
-                tagname = "Genome-wide"
-            logger.debug(f"Start study tagname={tagname}, coordFn={coordFn}")
+        executor = ThreadPoolExecutor(max_workers=args.processors)
 
-            num_total = len(intersect_coord_bed)
+        global progress_bar_global_read
+        progress_bar_global_read = tqdm(total=len(eval_region_tuple_list))
+        progress_bar_global_read.set_description("MT-Distribution(singl/nonsingle)")
+        all_task = []
+        for reg_tuple in eval_region_tuple_list:
+            future = executor.submit(compute_dist_at_region_mp, joined_bed, four_region_bed_list, reg_tuple)
+            future.add_done_callback(update_progress_bar_read_level)
+            all_task.append(future)
+        executor.shutdown()
+        progress_bar_global_read.close()
 
-            if tagname.startswith('CG_'):
-                sum_cg += num_total
-                logger.debug(f"sanity check sum_cg={sum_cg}")
+        datasets = []  # list of dict for dataframe
+        for future in all_task:
+            ret = future.result()
+            if ret is None:
+                continue
+            datasets.append(ret)
 
-            intersect_singleton_bed = intersect_coord_bed.intersect(singleton_bed, u=True, wa=True)
-            num_singleton = len(intersect_singleton_bed)
-
-            intersect_nonsingleton_bed = intersect_coord_bed.intersect(nonsingleton_bed, u=True, wa=True)
-            num_nonsingleton = len(intersect_nonsingleton_bed)
-
-            intersect_concordant_bed = intersect_coord_bed.intersect(concordant_bed, u=True, wa=True)
-            num_concordant = len(intersect_concordant_bed)
-
-            intersect_discordant_bed = intersect_coord_bed.intersect(discordant_bed, u=True, wa=True)
-            num_discordant = len(intersect_discordant_bed)
-
-            datasets['Dataset'].append(dsname)
-            datasets['Coord'].append(tagname)
-            datasets['Total'].append(num_total)
-            datasets['Singletons'].append(num_singleton)
-            datasets['Non-singletons'].append(num_nonsingleton)
-            datasets['Concordant'].append(num_concordant)
-            datasets['Discordant'].append(num_discordant)
-
-            logger.debug(
-                f"Coord={tagname}, Total={num_total:,}, Singletons={num_singleton:,}, Non-singletons={num_nonsingleton:,}, Total(Sing+Nonsing)={num_singleton + num_nonsingleton:,}, Concordant={num_concordant:,}, Discordant={num_discordant:,}, Total(Con+Disc)={num_concordant + num_discordant:,}")
-            # Sanity check sums
-            if num_total != num_singleton + num_nonsingleton:
-                logger.error(f"Found incorrect sums at {tagname}: for num_total != num_singleton + num_nonsingleton")
-            if num_nonsingleton != num_concordant + num_discordant:
-                logger.error(
-                    f"Found incorrect sums at {tagname}: for num_nonsingleton != num_concordant+ num_discordant")
-
-        df = pd.DataFrame.from_dict(datasets)
+        df = pd.DataFrame(datasets)
         outfn = os.path.join(out_dir,
                              f'{dsname}.bgtruth.certain.sites.distribution.sing.nonsing.each.genomic.cov{cutoffBGTruth}.table.s6.xlsx')
         df.to_excel(outfn)
         logger.debug(f"save to {outfn}")
 
     if args.mpi:  # Using mpi may cause error, not fixed, but fast running
-        logger.debug('Using multi-processor function for evaluations:')
+        logger.debug('Using multi-threading function for evaluations')
 
     for tool in ontCallWithinBGTruthDict:
         tmpPrefix = f'{RunPrefix}.{tool}'
         logger.info(f'Evaluating per-read performance: {tmpPrefix}')
 
-        if args.mpi:  # Using mpi may cause memory error for large data, not fixed, but fast running on small data
-            # Note: narrowedCoordinatesList - all singleton (absolute and mixed) and non-singleton generated bed. ranges
-            #       secondFilterBedFileName - joined sites of four tools and bg-truth. points
-            df = report_per_read_performance_mp(ontCallWithinBGTruthDict[tool], bgTruth, tmpPrefix,
-                                                narrowedCoordinatesList=region_bedtuple_list,
-                                                secondFilterBedFileName=secondBedFileName, outdir=perf_dir,
-                                                tagname=tmpPrefix, processors=args.processors)
-
+        if args.mpi:
+            df = report_per_read_performance_mpi(ontCallWithinBGTruthDict[tool], eval_bgTruth, tmpPrefix,
+                                                 narrowedCoordinatesList=eval_region_tuple_list,
+                                                 secondFilterBedFileName=secondBedFileName, outdir=perf_dir,
+                                                 tagname=tmpPrefix)
         else:
-            df = report_per_read_performance(ontCallWithinBGTruthDict[tool], bgTruth, tmpPrefix,
-                                             narrowedCoordinatesList=region_bedtuple_list,
+            df = report_per_read_performance(ontCallWithinBGTruthDict[tool], eval_bgTruth, tmpPrefix,
+                                             narrowedCoordinatesList=eval_region_tuple_list,
                                              secondFilterBedFileName=secondBedFileName, outdir=perf_dir,
                                              tagname=tmpPrefix)
 
             # This file will always report intermediate results, after for each tool, remove temp file
             tmpfn = os.path.join(perf_dir, 'performance.report.tmp.csv')
-            os.remove(tmpfn)
+            if os.path.exists(tmpfn):
+                os.remove(tmpfn)
 
         df['Tool'] = tool
         df['Dataset'] = dsname
 
         # Rename function need to be checked
-        # df = rename_location_from_coordinate_name(df)
         df["Location"] = df["coord"].apply(map_region_fn_to_name)
 
         # Select columns to save

@@ -25,7 +25,7 @@ datasets_order = ["NA12878", "NA19240", "APL", "K562", "HL60"]
 
 ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo', 'METEORE', 'DeepMod']
 
-ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod.C', 'DeepMod.Cluster',
+ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod','DeepMod.C', 'DeepMod.Cluster',
                   'Megalodon', 'Megalodon.ZW',
                   'Guppy', 'Guppy.ZW', 'Guppy.gcf52ref', 'METEORE']
 
