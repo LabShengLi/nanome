@@ -520,7 +520,7 @@ def parse_arguments():
                         required=True)
     parser.add_argument('--genome-annotation', type=str,
                         help='genome annotation dir, contain BED files such as singleton, nonsingleton, etc.',
-                        required=True)
+                        default=None)
     parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff, default is 5", default=5)
     parser.add_argument('--processors', type=int, help="number of processors used, default is 1", default=1)
     parser.add_argument('--report-joined', action='store_true', help="true if report on only joined sets")
@@ -540,7 +540,8 @@ def parse_arguments():
     parser.add_argument('--cache-dir', type=str,
                         help=f'cache dir used for loading calls/bs-seq (speed up running), default is {global_cache_dir}',
                         default=global_cache_dir)
-    parser.add_argument('--disable-bed-check', help="if disable auto-checking the 0/1 base format for genome annotations",
+    parser.add_argument('--disable-bed-check',
+                        help="if disable auto-checking the 0/1 base format for genome annotations",
                         action='store_true')
     parser.add_argument('--mpi',
                         help="if using multi-processing/threading for evaluation, it can speed-up but may need more memory",
@@ -559,9 +560,6 @@ if __name__ == '__main__':
         set_log_debug_level()
     else:
         set_log_info_level()
-
-    if not os.path.isdir(args.genome_annotation):
-        raise Exception(f"genome_annotation={args.genome_annotation} is not a valid dir")
 
     dsname = args.dsname
 
@@ -599,9 +597,16 @@ if __name__ == '__main__':
 
     # Add logging files also to result output dir
     add_logging_file(os.path.join(out_dir, 'run-results.log'))
-
     logger.debug(args)
 
+    ## Test if singleton/nonsinglton BED file exists
+    exists_singleton_or_nonsingleton = True
+    if args.genome_annotation is None or \
+            not os.path.exists(os.path.join(args.genome_annotation, singletonsFile)) or \
+            not os.path.exists(os.path.join(args.genome_annotation, nonsingletonsFile)):
+        exists_singleton_or_nonsingleton = False
+    logger.debug(
+        f"Detection of singleton/nonsingleton files: exists_singleton_or_nonsingleton={exists_singleton_or_nonsingleton}")
     # Note: all bed files (Singleton and NonSingleton) are 1-based start, even for "chr1  123  124" (This will conform for + or - strand).
     # So we must import as 1-based format for our tool or bgtruth, DO NOT USE baseFormat=0
     # We import and report 1-based results in our project
@@ -678,13 +683,15 @@ if __name__ == '__main__':
         fn_concordant = f"{out_dir}/{RunPrefix}_{args.dsname}.{nonsingletonsFilePrefix}.concordant.bed.gz"
         fn_discordant = f"{out_dir}/{RunPrefix}_{args.dsname}.{nonsingletonsFilePrefix}.discordant.bed.gz"
 
-        # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth) with cov>=1
-        # Classify concordant and discordant based on cov>=1 bgtruth
-        logger.info(f"Scan concordant and discordant regions based on BS-seq")
-        nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant,
-                                    nsDisCordantFileName=fn_discordant, genome_annotation_dir=args.genome_annotation)
+        if exists_singleton_or_nonsingleton:
+            # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth) with cov>=1
+            # Classify concordant and discordant based on cov>=1 bgtruth
+            logger.info(f"Scan concordant and discordant regions based on BS-seq")
+            nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant,
+                                        nsDisCordantFileName=fn_discordant,
+                                        genome_annotation_dir=args.genome_annotation)
 
-        if args.bsseq_report:
+        if args.bsseq_report and exists_singleton_or_nonsingleton:
             # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
             outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov1.csv')
             logger.debug(f"For coverage >= 1")
@@ -779,7 +786,7 @@ if __name__ == '__main__':
     ## Delete not sorted file
     os.remove(bedfn_tool_join_bgtruth)
 
-    if args.bsseq_report:
+    if args.bsseq_report and exists_singleton_or_nonsingleton:
         ## Report joined CpGs in each regions, this is the really read level evaluation sites, Table S2
         outfn = os.path.join(out_dir,
                              f'{RunPrefix}.summary.bsseq.cov{cutoffBGTruth}.joined.tools.singleton.nonsingleton.table.like.s2.csv')
@@ -844,9 +851,10 @@ if __name__ == '__main__':
 
     # Evaluated all region filename lists,
     # assume all genome annotations are in args.genome_annotation dir
-    regions_full_filepath = [os.path.join(args.genome_annotation, cofn) for cofn in narrowCoordNameList[1:]] + \
-                            [os.path.join(args.genome_annotation, cofn) for cofn in cg_density_coord_name_list] + \
-                            [os.path.join(args.genome_annotation, cofn) for cofn in rep_coord_name_list] + \
+    annot_dir = args.genome_annotation if args.genome_annotation is not None else '.'
+    regions_full_filepath = [os.path.join(annot_dir, cofn) for cofn in narrowCoordNameList[1:]] + \
+                            [os.path.join(annot_dir, cofn) for cofn in cg_density_coord_name_list] + \
+                            [os.path.join(annot_dir, cofn) for cofn in rep_coord_name_list] + \
                             [fn_concordant, fn_discordant]
 
     # Create the bed list for evaluation, save time for every loading of bed region
@@ -864,7 +872,7 @@ if __name__ == '__main__':
         eval_region_tuple_list = [None] + [(infn, map_region_fn_to_name(infn), None,)
                                            for infn in regions_full_filepath]
 
-    if args.distribution:
+    if args.distribution and exists_singleton_or_nonsingleton:
         logger.debug("Report singletons/non-singletons in each genomic context regions in Fig.3 and 4")
 
         joined_bed = BedTool(bedfn_tool_join_bgtruth_sorted).sort()
