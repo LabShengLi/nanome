@@ -5,25 +5,25 @@ channels:
 dependencies:
   - python=3.6 # need 3.6 for some software
   - pip
-  - biopython
-  - jinja2
-  - joblib
-  - matplotlib
-  - minimap2
-  - parallel
+  - biopython==1.79
+  - jinja2==3.0.2
+  - joblib==1.1.0
+  - matplotlib==3.3.4
+  - minimap2==2.22
+  - parallel==20210422
   - pillow
-  - samtools
+  - samtools==1.13
   - scipy
   - seaborn
   - numpy
   - pandas
   - statsmodels
-  - pybedtools
+  - pybedtools==0.8.2
   - rocksdb
-  - python-rocksdb
+  - python-rocksdb==0.7.0
   - cython
-  - openpyxl
-  - nanocomp
+  - openpyxl==2.4.0b1
+  - nanocomp==1.16.0
   - h5py==2.8 # due to tombo issue, must < 3.0, ref: https://github.com/nanoporetech/tombo/issues/325
   - tqdm>=4.60 # need by Megalodon, ref: https://github.com/nanoporetech/megalodon/issues/105
   - scikit-learn==0.21.3 # need by METEORE, it needs old package for model load, ref: https://github.com/comprna/METEORE/blob/master/combination_model_prediction.py#L44

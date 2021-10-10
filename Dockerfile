@@ -14,23 +14,25 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG NANOME_DIR=/opt/nanome
 
 # Install guppy-gpu version, ref: https://github.com/GenomicParisCentre/dockerfiles
-RUN apt update && \
-    apt install --yes $BUILD_PACKAGES libnvidia-compute-460-server && \ 
+RUN apt-get -q update && \
+    DEBIAN_FRONTEND="noninteractive" apt-get -q install --yes $BUILD_PACKAGES libnvidia-compute-460-server && \ 
     cd /tmp && \
     wget -q https://mirror.oxfordnanoportal.com/software/analysis/ont_guppy_${PACKAGE_VERSION}-1~bionic_amd64.deb && \
-    apt install --yes /tmp/ont_guppy_${PACKAGE_VERSION}-1~bionic_amd64.deb && \
+    DEBIAN_FRONTEND="noninteractive" apt-get -q install --yes /tmp/ont_guppy_${PACKAGE_VERSION}-1~bionic_amd64.deb && \
     rm *.deb && \
     apt-get autoremove --purge --yes && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Install useful tools, e.g., git, curl, etc.
-RUN apt-get update -y \
-  && DEBIAN_FRONTEND=noninteractive apt-get install procps git curl -y \
-  && rm -rf /var/lib/apt/lists/*
+RUN apt-get -q update -y &&\
+    DEBIAN_FRONTEND="noninteractive" apt-get install procps git curl -y &&\
+    apt-get autoremove --purge --yes && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 #Install miniconda
-RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O Miniconda.sh && \
+RUN wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O Miniconda.sh && \
     /bin/bash Miniconda.sh -b -p /opt/conda && \
     rm Miniconda.sh
 
