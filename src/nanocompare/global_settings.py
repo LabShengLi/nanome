@@ -3,14 +3,14 @@
 """
 Define names and global variables
 """
+import json
 import os
 
-import json
 import pandas as pd
 
 from nanocompare.global_config import data_base_dir, set_log_debug_level
 
-nanome_version = "1.3.3"
+nanome_version = "1.3.4"
 
 # define the small error of 0 and 1, for fully-meth and unmeth eval
 epslong = 1e-5
@@ -27,15 +27,17 @@ datasets_order = ["NA12878", "NA19240", "APL", "K562", "HL60"]
 
 ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo', 'METEORE', 'DeepMod']
 
-ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'DeepMod.C', 'DeepMod.Cluster',
-                  'Megalodon', 'Megalodon.ZW',
-                  'Guppy', 'Guppy.ZW', 'Guppy.gcf52ref', 'METEORE']
+# read format for tools
+ToolEncodeList = ['Nanopolish', 'Megalodon', 'Megalodon.ZW', 'DeepSignal',
+                  'Guppy', 'Guppy.ZW', 'Guppy.gcf52ref', 'Tombo',
+                  'METEORE', 'DeepMod', 'DeepMod.C', 'DeepMod.Cluster', ]
 
+# read format for bs-seq
 BGTruthEncodeList = ['bismark', 'encode']
 
-# ToolsColorList = ["#999999", "#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#0072B2", "#D55E00", "#F0E442"]
 ToolsColorList = ["#56B4E9", "#CC79A7", "#999999", "#009E73", "#E69F00", "#0072B2", "#D55E00"]
 
+# default reference genome file location
 referenceGenomeFile = "/projects/li-lab/Nanopore_compare/nf_input/reference_genome/hg38/hg38.fasta"
 
 singletonsFile = "hg38_singletons_10bp.bed.gz"
@@ -230,12 +232,9 @@ def load_genome_annotation_config(verbose=False):
         ret2[str(row['filename']).strip()] = (str(row['tagname']).strip(), int(row['format-0/1']),
                                               str(row['strand-sensitive']).strip().upper() == 'Y',)
     if verbose:
-        print(f"Config file loaded, results are below:")
-        print(json.dumps(ret2, indent=4))
+        print(f"Config file loaded, results are below:", flush=True)
+        print(json.dumps(ret2, indent=4), flush=True)
     return ret1, ret2
-
-
-
 
 
 genome_wide_tagname = 'Genome-wide'

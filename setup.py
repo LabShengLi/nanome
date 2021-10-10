@@ -23,11 +23,9 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/TheJacksonLaboratory/nanome",
-
     project_urls={
         'Bug Tracker': 'https://github.com/TheJacksonLaboratory/nanome/issues'
     },
-
     # packages=setuptools.find_packages(),
     packages=['nanocompare'],
     package_dir={'nanocompare': 'src/nanocompare'},
@@ -48,11 +46,9 @@ setuptools.setup(
         'utils/tombo_extract_per_read_stats.py',
         'utils/validate_nanome_container.sh',
     ],
-
     include_package_data=True,
-    package_data={'nanome_data': ['src/nanocompare/genome_annotation.csv']},
+    package_data={'': ['src/nanocompare/*.csv']},
     # data_files=[('train_deepmod', ['train_deepmod/*'])],
-
     classifiers=[
         "Programming Language :: Python :: 3",
         'Intended Audience :: Science/Research',

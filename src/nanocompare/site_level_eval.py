@@ -659,11 +659,11 @@ if __name__ == '__main__':
         if args.beddir:  # add concordant and discordant region coverage if needed
             logger.debug(f'We are finding Concordant and Discordant BED file at basedir={args.beddir}')
             concordantFileName = find_bed_filename(basedir=args.beddir,
-                                                   pattern=f'*{args.dsname}*hg38_nonsingletons*.concordant.bed.gz')
+                                                   pattern=f'*{args.dsname}*.concordant.bed.gz')
             concordant_bed = get_region_bed(concordantFileName) if concordantFileName is not None else None
 
             discordantFileName = find_bed_filename(basedir=args.beddir,
-                                                   pattern=f'*{args.dsname}*hg38_nonsingletons*.discordant.bed.gz')
+                                                   pattern=f'*{args.dsname}*.discordant.bed.gz')
             discordant_bed = get_region_bed(discordantFileName) if discordantFileName is not None else None
         else:
             concordant_bed = None
