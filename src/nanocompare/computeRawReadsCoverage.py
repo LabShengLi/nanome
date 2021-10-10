@@ -21,11 +21,10 @@ from pybedtools import BedTool
 from tqdm import tqdm
 
 from nanocompare.eval_common import get_dna_seq_from_reference, open_file_gz_or_txt, find_bed_filename, get_ref_fasta, \
-    get_region_bed, intersect_bed_regions
-from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir, global_temp_dir, data_base_dir
-from nanocompare.global_settings import humanChrSet, location_filename_to_abbvname, \
-    datasets_order, narrowCoordNameList, cg_density_coord_name_list, \
-    rep_coord_name_list, referenceGenomeFile, nanome_version
+    get_region_bed, intersect_bed_regions, get_region_tagname
+from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir, global_temp_dir, set_log_info_level
+from nanocompare.global_settings import humanChrSet, datasets_order, referenceGenomeFile, nanome_version, \
+    region_filename_dict
 
 # used for convert region bed cov to base level cov
 rawReadDir = '/pod/2/li-lab/Nanopore_compare/data/Nanopore_cov'
@@ -36,6 +35,7 @@ base_cov_dir = '/projects/li-lab/Nanopore_compare/nanome_paper_result/basecall_r
 
 # dir to newly concordant and discordant perf results bed dir
 bedDir = '/projects/li-lab/yang/results/2021-07-08'
+
 
 def convert_region_to_cpg_base(dsname):
     """
@@ -49,7 +49,7 @@ def convert_region_to_cpg_base(dsname):
     fnlist = glob.glob(os.path.join(rawReadDir, f'{dsname}*coverage.*strand.bed.gz'))
     logger.info(f'convert_region_to_cpg_base:{fnlist}')
 
-    outfn = os.path.join(pic_base_dir, f'{dsname}.rawfast5.coverage.base.bed.gz')
+    outfn = os.path.join(outdir, f'{dsname}.rawfast5.coverage.base.bed.gz')
     outfile = gzip.open(outfn, 'wt')
 
     print_first = True
@@ -122,7 +122,11 @@ def count_sites_in_coord(readBed, coordfn, tagname, cutoff_list):
     """
     ret = {}
 
-    coordBed = get_region_bed(coordfn)
+    coordBed = get_region_bed(coordfn, enable_base_detection_bedfile=not args.disable_bed_check)
+    if not coordBed:
+        logger.debug(f"ERROR: not found BED region: tagname={tagname}, coordfn={coordfn}")
+        return None
+
     intersectBed = intersect_bed_regions(readBed, coordBed, coordfn)
 
     covList = []
@@ -171,17 +175,13 @@ def save_dataset(dataset, tagname=""):
         newname_list = [the_name.replace(f'.cutoff{cutoff}', "") for the_name in oldname_list]
         outdf.columns = newname_list
 
-        # outfn = os.path.join(pic_base_dir,
-        #                      f'raw.fast5.reads.cpg.coverage.across.regions.cutoff{cutoff}.not.sorted{tagname}.xlsx')
-        # outdf.to_excel(outfn)
-
         ## Reorder columns based on list, if not exist, skit it
         selcols = [colname for colname in column_list if colname in outdf.columns]
         outdf = outdf[selcols]
 
         outdf['dsname'] = pd.Categorical(df['dsname'], datasets_order)
         outdf = outdf.sort_values(by='dsname', ascending=True)
-        outfn = os.path.join(pic_base_dir,
+        outfn = os.path.join(outdir,
                              f'raw.fast5.reads.cpg.coverage.across.regions.cutoff{cutoff}{tagname}.table.s1.xlsx')
         outdf.to_excel(outfn)
         logger.info(f'save to {outfn}')
@@ -189,7 +189,7 @@ def save_dataset(dataset, tagname=""):
 
 def combine_na12878_coverage_bed():
     baseDir = "/fastscratch/liuya/nanocompare/NA12878-coverage"
-    outfn = os.path.join(pic_base_dir, "NA12878-allChrs.coverage.bothstrand.bed.gz")
+    outfn = os.path.join(outdir, "NA12878-allChrs.coverage.bothstrand.bed.gz")
     outf = gzip.open(outfn, 'wt')
     for chrName in humanChrSet:
         logger.info(f"Processing chr={chrName}")
@@ -235,26 +235,27 @@ def report_raw_fast5_cpg_in_regions_table():
         ## we now use to_dataframe() for BedTool
         bed_df_cov_col = rawReadBed.to_dataframe().iloc[:, 3]
 
+        ## total sites
         ret1 = {}
         for cutoff in cutoff_list:
             ret1.update({f'total_cutoff.cutoff{cutoff}': (bed_df_cov_col >= cutoff).sum()})
 
-        logger.info(f"Evaluated regions: {eval_regions}")
-        with Pool(processes=16) as pool:
-            for bedfn in eval_regions:
-                tagname = location_filename_to_abbvname[os.path.basename(bedfn)]
+        logger.info(f"Evaluated regions: {eval_regions_file_path}")
+        with Pool(processes=args.processors) as pool:
+            for bedfn in eval_regions_file_path:
+                tagname = get_region_tagname(bedfn)
                 ret = pool.apply_async(count_sites_in_coord, (rawReadBed, bedfn, tagname,),
                                        kwds={'cutoff_list': cutoff_list})
                 retList.append(ret)
 
             concordantFileName = find_bed_filename(basedir=bedDir,
-                                                   pattern=f'{dsname}*hg38_nonsingletons.concordant.bed')
+                                                   pattern=f'*{dsname}*.concordant.bed')
             ret = pool.apply_async(count_sites_in_coord, (rawReadBed, concordantFileName, 'Concordant',),
                                    kwds={'cutoff_list': cutoff_list})
             retList.append(ret)
 
             discordantFileName = find_bed_filename(basedir=bedDir,
-                                                   pattern=f'{dsname}*hg38_nonsingletons.discordant.bed')
+                                                   pattern=f'*{dsname}*.discordant.bed')
             ret = pool.apply_async(count_sites_in_coord, (rawReadBed, discordantFileName, 'Discordant',),
                                    kwds={'cutoff_list': cutoff_list})
             retList.append(ret)
@@ -267,6 +268,8 @@ def report_raw_fast5_cpg_in_regions_table():
         # Update returned results into dataDict: each line of results in the table
         dataDict.update(ret1)
         for ret in retList:
+            if not ret:
+                continue
             dataDict.update(ret)
         dataset.append(dataDict)
         logger.debug(dataDict)
@@ -278,29 +281,50 @@ def report_raw_fast5_cpg_in_regions_table():
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(prog='comp_raw_read_cov (NANOME)',description='Plot and export data for Nanocompare paper.')
+    parser = argparse.ArgumentParser(prog='computeRawReadsCoverage (NANOME)',
+                                     description='compute coverage summary for raw reads in nanome paper')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
-    parser.add_argument("cmd", help="name of command")
-    parser.add_argument('--bedtools-tmp', type=str, help='bedtools temp dir', default=global_temp_dir)
-    parser.add_argument('--genome-annotation', type=str, help='genome annotation dir',
-                        default=os.path.join(data_base_dir, 'genome-annotation'))
+    parser.add_argument("cmd", required=True, help="name of command")
+    parser.add_argument('--session-name', type=str, help='run name, default is "RawReadsCompute"',
+                        default='RawReadsCompute')
+    parser.add_argument('--genome-annotation', type=str,
+                        help='genome annotation dir, contain BED files such as singleton, nonsingleton, etc.',
+                        default=None)
     parser.add_argument('--reference-genome', type=str, help='reference genome file',
                         default=referenceGenomeFile)
     parser.add_argument('--base-cov-dir', type=str, help='raw fast5 base coverage dir',
                         default=base_cov_dir)
     parser.add_argument('--bed-dir', type=str, help='bed dir for concordant and discordant',
                         default=bedDir)
+    parser.add_argument('--processors', type=int, help="number of processors used, default is 8", default=8)
+    parser.add_argument('--disable-bed-check',
+                        help="if disable auto-checking the 0/1 base format for genome annotations",
+                        action='store_true')
+    parser.add_argument('--bedtools-tmp', type=str, help=f'bedtools temp dir, default is {global_temp_dir}',
+                        default=global_temp_dir)
+    parser.add_argument('-o', type=str, help=f"output base dir, default is {pic_base_dir}", default=pic_base_dir)
+    parser.add_argument('--config', help="if print out config file for genome annotation", action='store_true')
+    parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     args = parser.parse_args()
     return args
 
 
 if __name__ == '__main__':
-    set_log_debug_level()
     args = parse_arguments()
+    if args.verbose:
+        set_log_debug_level()
+    else:
+        set_log_info_level()
+
     logger.debug(args)
 
-    os.makedirs(args.bedtools_tmp, exist_ok=True)
-    pybedtools.helpers.set_tempdir(args.bedtools_tmp)
+    bed_temp_dir = os.path.join(args.bedtools_tmp, args.session_name)
+    os.makedirs(bed_temp_dir, exist_ok=True)
+    pybedtools.helpers.set_tempdir(bed_temp_dir)
+
+    outdir = os.path.join(args.o, args.session_name)
+    os.makedirs(outdir, exist_ok=True)
+    logger.info(f"Output to dir: {outdir}")
 
     refFasta = None
 
@@ -320,12 +344,12 @@ if __name__ == '__main__':
         cutoff_list = [3]
 
         # list of evaluated regions (except for Genome-wide)
-        # eval_regions = narrowCoordFileList[1:] + cg_density_file_list + rep_file_list
-
-        eval_regions = [os.path.join(args.genome_annotation, cofn) for cofn in narrowCoordNameList[1:]] + \
-                       [os.path.join(args.genome_annotation, cofn) for cofn in
-                        cg_density_coord_name_list] + \
-                       [os.path.join(args.genome_annotation, cofn) for cofn in rep_coord_name_list]
+        # eval_regions = [os.path.join(args.genome_annotation, cofn) for cofn in narrowCoordNameList[1:]] + \
+        #                [os.path.join(args.genome_annotation, cofn) for cofn in
+        #                 cg_density_coord_name_list] + \
+        #                [os.path.join(args.genome_annotation, cofn) for cofn in rep_coord_name_list]
+        annot_dir = args.genome_annotation if args.genome_annotation is not None else '.'
+        eval_regions_file_path = [os.path.join(annot_dir, cofn) for cofn in region_filename_dict.keys()]
 
         report_raw_fast5_cpg_in_regions_table()
     logger.info("### computeRawCoverage DONE")

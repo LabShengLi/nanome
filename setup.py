@@ -26,8 +26,9 @@ setuptools.setup(
     project_urls={
         'Bug Tracker': 'https://github.com/TheJacksonLaboratory/nanome/issues'
     },
-    # packages=setuptools.find_packages(),
-    packages=['nanocompare'],
+    packages=(
+        setuptools.find_packages(where="src")
+    ),
     package_dir={'nanocompare': 'src/nanocompare'},
     scripts=[
         'src/plot_figure.py',
@@ -55,7 +56,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    ## conda install -c bioconda pybedtools
     install_requires=[
         'biopython',
         'pybedtools',

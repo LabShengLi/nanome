@@ -20,7 +20,7 @@ import pybedtools
 from sklearn.metrics import confusion_matrix
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import nonsingletonsFile, singletonsFile, nanome_version, perf_report_columns, \
+from nanocompare.global_settings import nanome_version, perf_report_columns, \
     save_done_file, \
     region_filename_dict, region_tagname_dict, sing_tagname, nonsing_tagname, concord_tagname, discord_tagname, \
     load_genome_annotation_config

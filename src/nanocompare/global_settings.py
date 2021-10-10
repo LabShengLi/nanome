@@ -178,24 +178,6 @@ def get_tool_name(encode_name):
     return encode_name
 
 
-def rename_location_from_coordinate_name(df):
-    """
-    Rename and change raw values of report df to more meaning full for display
-    :param df:
-    :return:
-    """
-    df = df.replace(to_replace=singletonsFile, value="x.x.Singletons")
-    df = df.replace(to_replace=nonsingletonsFile, value="x.x.Non-singletons")
-    df['coord'] = df['coord'].str.replace("promoterFeature.flank_",
-                                          "promoterFeature")  # merge third section together for promoter file
-
-    # coord file like: x.x.Singletons, x.x.Non-singletons, HL60_RRBS_2Reps.hg38_nonsingletons.discordant.bed
-    # we select the third of . split sections
-    df["Location"] = df["coord"].str.split(".", n=3, expand=True)[2]
-    df['Location'] = df['Location'].replace(location_name_map_raw_to_standard)
-    return df
-
-
 def save_done_file(outdir, filename="DONE.txt"):
     """
     Save a done file for finish flag
