@@ -126,20 +126,27 @@ def summary_cpgs_stats_results_table():
         logger.debug(f"retDict={retDict}")
 
         ## Sanity check
-        sum_sing_nonsingle = retDict['Singletons'] + retDict['Non-singletons']
+        if 'Singletons' in retDict and 'Non-singletons' in retDict:
+            sum_sing_nonsingle = retDict['Singletons'] + retDict['Non-singletons']
+        else:
+            sum_sing_nonsingle = None
         if 'CG_20' in retDict and 'CG_40' in retDict and 'CG_60' in retDict and 'CG_80' in retDict and 'CG_100' in retDict:
             sum_cg = retDict['CG_20'] + retDict['CG_40'] + retDict['CG_60'] + retDict['CG_80'] + retDict['CG_100']
         else:
-            sum_cg = 0
+            sum_cg = None
         total_sites = row_dict[f'Total CpG sites by tool cov>={minToolCovCutt}']
-        logger.debug(
-            f"\n\nSanity check: sum_sing_nonsingle={sum_sing_nonsingle:,}; sum_cg={sum_cg:,}; total={total_sites:,}")
 
-        if sum_sing_nonsingle != total_sites:
+        if sum_sing_nonsingle and sum_cg:
+            logger.debug(
+                f"\n\nSanity check: sum_sing_nonsingle={sum_sing_nonsingle:,}; sum_cg={sum_cg:,}; total={total_sites:,}")
+
+        if sum_sing_nonsingle is not None and sum_sing_nonsingle != total_sites:
             logger.debug(
                 f"Sanity check for {toolname}, total_sites={total_sites:,}, sum_sing_nonsingle={sum_sing_nonsingle:,}, some non-singletons are not captered by bed file")
             retDict['Non-singletons'] = total_sites - retDict['Singletons']
             logger.debug(f"Updated, retDict={retDict}")
+
+        ## add retDict into row_dict
         row_dict.update(retDict)
         dataset.append(row_dict)
         logger.debug(f'BG-Truth join with {toolname} get {len(toolOverlapBGTruthCpGs):,} CpGs')
@@ -454,7 +461,6 @@ if __name__ == '__main__':
 
     # Add logging files also to result output dir
     add_logging_file(os.path.join(out_dir, 'run-results.log'))
-
     logger.debug(args)
     logger.debug(f'\n\n####################\n\n')
 
@@ -618,10 +624,10 @@ if __name__ == '__main__':
 
         # Evaluated all region filename lists, bed objects
         # assume all files are located in args.genome_annotation dir
-        regions_full_filepath = [os.path.join(args.genome_annotation, cofn) for cofn in narrowCoordNameList[1:]] + \
-                                [os.path.join(args.genome_annotation, cofn) for cofn in cg_density_coord_name_list] + \
-                                [os.path.join(args.genome_annotation, cofn) for cofn in rep_coord_name_list]
-        # logger.debug(f"Evaluated regions: {regions_full_filepath}")
+        annot_dir = args.genome_annotation if args.genome_annotation is not None else '.'
+        regions_full_filepath = [os.path.join(annot_dir, cofn) for cofn in narrowCoordNameList[1:]] + \
+                                [os.path.join(annot_dir, cofn) for cofn in cg_density_coord_name_list] + \
+                                [os.path.join(annot_dir, cofn) for cofn in rep_coord_name_list]
 
         if args.large_mem:  # load all in memory
             region_bed_list = get_region_bed_pairs_list_mp(regions_full_filepath, processors=args.processors,
@@ -632,13 +638,14 @@ if __name__ == '__main__':
                                for infn in regions_full_filepath]
 
         if args.beddir:  # add concordant and discordant region coverage if needed
-            logger.debug(f'We use Concordant and Discordant BED file at basedir={args.beddir}')
+            logger.debug(f'We are finding Concordant and Discordant BED file at basedir={args.beddir}')
             concordantFileName = find_bed_filename(basedir=args.beddir,
                                                    pattern=f'*{args.dsname}*hg38_nonsingletons*.concordant.bed.gz')
-            concordant_bed = get_region_bed(concordantFileName)
+            concordant_bed = get_region_bed(concordantFileName) if concordantFileName is not None else None
+
             discordantFileName = find_bed_filename(basedir=args.beddir,
                                                    pattern=f'*{args.dsname}*hg38_nonsingletons*.discordant.bed.gz')
-            discordant_bed = get_region_bed(discordantFileName)
+            discordant_bed = get_region_bed(discordantFileName) if discordantFileName is not None else None
         else:
             concordant_bed = None
             discordant_bed = None

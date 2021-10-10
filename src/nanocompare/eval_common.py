@@ -2553,8 +2553,9 @@ def find_bed_filename(basedir, pattern):
     """
     fnlist = glob.glob(os.path.join(basedir, '**', pattern), recursive=True)
     if len(fnlist) < 1:
-        raise Exception(
-            f'Find no files: {fnlist}, please check the basedir={basedir} if it is correct, and the search pattern={pattern}')
+        logger.debug(
+            f'ERROR: Find no files: {fnlist}, please check the basedir={basedir} if it is correct, and the search pattern={pattern}')
+        return None
     logger.debug(f'find bed file:{fnlist[0]}, len={len(fnlist)}')
     return fnlist[0]
 
