@@ -93,15 +93,19 @@ def load_genome_annotation_config(verbose=False):
     if verbose:
         print(f"Load config from {config_filepath}", flush=True)
 
-    df = pd.read_csv(config_filepath)
     ret1 = dict()  # tagname-> (fn, 0-1 format, )
     ret2 = dict()  # fn-> (tagname, 0-1 format, strand-sensi, )
-    for index, row in df.iterrows():
-        ret1[str(row['tagname']).strip()] = (str(row['filename']).strip(), int(row['format-0/1']),)
-        ret2[str(row['filename']).strip()] = (str(row['tagname']).strip(), int(row['format-0/1']),
+
+    try:
+        df = pd.read_csv(config_filepath)
+        for index, row in df.iterrows():
+            ret1[str(row['tagname']).strip()] = (str(row['filename']).strip(), int(row['format-0/1']),)
+            ret2[str(row['filename']).strip()] = (str(row['tagname']).strip(), int(row['format-0/1']),
                                               str(row['strand-sensitive']).strip().upper() == 'Y',)
+    except:
+        print(f"ERROR: occur error when reading {config_filepath}")
     if verbose:
-        print(f"Config file loaded, results are below:", flush=True)
+        print(f"Config file loaded, results are below:")
         print(json.dumps(ret2, indent=4), flush=True)
     return ret1, ret2
 
