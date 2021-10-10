@@ -5,9 +5,10 @@ Define names and global variables
 """
 import os
 
+import json
 import pandas as pd
 
-from nanocompare.global_config import data_base_dir, logger, set_log_debug_level
+from nanocompare.global_config import data_base_dir, set_log_debug_level
 
 nanome_version = "1.3.3"
 
@@ -205,22 +206,37 @@ def save_done_file(outdir, filename="DONE.txt"):
         outf.write("DONE\n")
 
 
-default_config_name = 'genome_annotation.csv'
+default_config_name = 'nanome_genome_annotation.csv'
 
 
-def load_genome_annotation_config():
-    infn_conf = os.path.join(os.path.dirname(__file__), default_config_name)
-    if not os.path.exists(infn_conf):
-        raise Exception(f"Can not find genome annotaion config file from {infn_conf}")
-    df = pd.read_csv(infn_conf)
+def load_genome_annotation_config(verbose=False):
+    ## config file can be located at pwd, then the module dir
+    search_list = [os.getcwd(), os.path.dirname(__file__)]
 
-    ret1 = dict()  # tagname->fn
+    for bdir in search_list:
+        config_filepath = os.path.join(bdir, default_config_name)
+        if os.path.exists(config_filepath):
+            break
+    if not os.path.exists(config_filepath):
+        raise Exception(f"Can not find genome annotaion config file:{default_config_name} from {search_list}")
+    if verbose:
+        print(f"Load config from {config_filepath}", flush=True)
+
+    df = pd.read_csv(config_filepath)
+    ret1 = dict()  # tagname-> (fn, 0-1 format, )
     ret2 = dict()  # fn-> (tagname, 0-1 format, strand-sensi, )
     for index, row in df.iterrows():
         ret1[str(row['tagname']).strip()] = (str(row['filename']).strip(), int(row['format-0/1']),)
         ret2[str(row['filename']).strip()] = (str(row['tagname']).strip(), int(row['format-0/1']),
-                                              str(row['strand-sensitive']).strip().upper()=='Y',)
+                                              str(row['strand-sensitive']).strip().upper() == 'Y',)
+    if verbose:
+        print(f"Config file loaded, results are below:")
+        print(json.dumps(ret2, indent=4))
     return ret1, ret2
+
+
+
+
 
 genome_wide_tagname = 'Genome-wide'
 sing_tagname = 'Singletons'

@@ -17,7 +17,7 @@ from scipy.stats import PearsonRConstantInputWarning
 
 from nanocompare.eval_common import *
 from nanocompare.global_settings import get_tool_name, ToolNameList, save_done_file, \
-    narrowCoordNameList, cg_density_coord_name_list, rep_coord_name_list, nanome_version
+    nanome_version, load_genome_annotation_config
 
 
 def get_nsites_in_regions(callSet, bedfn, tagname):
@@ -31,8 +31,12 @@ def summary_cpgs_stats_results_table():
     Study and summary each tool joined with bg-truth results, make table as dataframe
     :return:
     """
-    logger.debug(f"Evaluated on regions: {region_bed_list}")
+
     logger.debug(f"Report number of sites by methylation calling tools in each region, take times...")
+
+    eval_cov_summary_region = region_bed_list[1:]
+    logger.debug(f"Evaluated on regions: {eval_cov_summary_region}")
+
     dataset = []
     bgtruthCpGs = set(list(bgTruth.keys()))
     joinedSet = None
@@ -62,7 +66,7 @@ def summary_cpgs_stats_results_table():
 
         if not args.mpi:
             # Add coverage of every regions by each tool here
-            bar = tqdm(region_bed_list)
+            bar = tqdm(eval_cov_summary_region)
             for (bedfn, tagname, region_bed) in bar:  # calculate how overlap with Singletons, Non-Singletons, etc.
                 bar.set_description(f"CPG_cov-{args.dsname}-{toolname}-region-{tagname}")
                 if not args.large_mem and region_bed is None:  # load in demand
@@ -82,12 +86,12 @@ def summary_cpgs_stats_results_table():
             # multi-threading way
             # if some entry is strange 0, means memory is not enough, such as 50G for HL60
             global progress_bar_global_site
-            progress_bar_global_site = tqdm(total=len(region_bed_list))
+            progress_bar_global_site = tqdm(total=len(eval_cov_summary_region))
             progress_bar_global_site.set_description(f"MT-CPG_cov-{args.dsname}-{toolname}-all-regions")
             executor = ThreadPoolExecutor(max_workers=args.processors)
             all_tasks = []
             tag_list = []
-            for (bedfn, tagname, region_bed) in region_bed_list:
+            for (bedfn, tagname, region_bed) in eval_cov_summary_region:
                 if not args.large_mem and region_bed is None:  # load in demand
                     region_bed = get_region_bed_tuple(bedfn,
                                                       enable_base_detection_bedfile=not args.disable_bed_check,
@@ -317,21 +321,22 @@ def get_num_intersect(callBed, region_bed, bedfn="", tagname=None):
 def compute_pcc_at_region(corr_infn, bed_tuple):
     infn, tagname, coord_bed = bed_tuple
     logger.debug(f'tagname={tagname}, coord_fn={infn}')
-    if not args.large_mem and tagname != 'Genome-wide' and coord_bed is None:  # load on demand
-        eval_coord_bed = get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detection_bedfile,
-                                              enable_cache=args.enable_cache, using_cache=args.using_cache,
-                                              cache_dir=ds_cache_dir)[2]
+    if not args.large_mem and tagname != genome_wide_tagname and coord_bed is None:  # load on demand
+        eval_coord_bed = get_region_bed_tuple(
+            infn, enable_base_detection_bedfile=enable_base_detection_bedfile,
+            enable_cache=args.enable_cache, using_cache=args.using_cache,
+            cache_dir=ds_cache_dir)[2]
     else:  # large memory, or genome wide - None
         eval_coord_bed = coord_bed
 
-    if tagname != 'Genome-wide' and eval_coord_bed is None:
-        logger.debug(f"Region name={tagname} is not found")
+    if tagname != genome_wide_tagname and eval_coord_bed is None:
+        logger.debug(f"Region name={tagname} is not found, not compute PCC")
         return None
 
     df = pd.read_csv(corr_infn)
     newdf = filter_corrdata_df_by_bedfile(df, eval_coord_bed, infn)
     if newdf is None:
-        logger.debug(f"Found intersection=0 CPGs for tagname={tagname}, no report for PCC")
+        logger.debug(f"Found intersection 0 CPGs for tagname={tagname}, no report for PCC")
         return None
 
     # Computer COE and pvalue
@@ -405,11 +410,13 @@ def parse_arguments():
                         help=f'cache dir used for loading calls/bs-seq(speed up running), default is {global_cache_dir}',
                         default=global_cache_dir)
     parser.add_argument('--large-mem', help="if using large memory (>100GB) for speed up", action='store_true')
-    parser.add_argument('--disable-bed-check', help="if disable auto-checking the 0/1 base format for genome annotations",
+    parser.add_argument('--disable-bed-check',
+                        help="if disable auto-checking the 0/1 base format for genome annotations",
                         action='store_true')
     parser.add_argument('--mpi',
                         help="if using multi-processing/threading for evaluation, it can speed-up but need more memory",
                         action='store_true')
+    parser.add_argument('--config', help="if print out config file for genome annotation", action='store_true')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
 
@@ -462,6 +469,9 @@ if __name__ == '__main__':
     # Add logging files also to result output dir
     add_logging_file(os.path.join(out_dir, 'run-results.log'))
     logger.debug(args)
+
+    if args.config:
+        load_genome_annotation_config(verbose=True)
     logger.debug(f'\n\n####################\n\n')
 
     # we import multiple (1 or 2) replicates and join them
@@ -478,7 +488,8 @@ if __name__ == '__main__':
         if len(fn) == 0:  # incase of input like 'bismark:/a/b/c;'
             continue
         # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
-        bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True, filterChr=args.chrSet,
+        bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True,
+                                  filterChr=args.chrSet,
                                   using_cache=using_cache, enable_cache=enable_cache, cache_dir=ds_cache_dir)
         bgTruthList.append(bgTruth1)
 
@@ -625,13 +636,21 @@ if __name__ == '__main__':
         # Evaluated all region filename lists, bed objects
         # assume all files are located in args.genome_annotation dir
         annot_dir = args.genome_annotation if args.genome_annotation is not None else '.'
-        regions_full_filepath = [os.path.join(annot_dir, cofn) for cofn in narrowCoordNameList[1:]] + \
-                                [os.path.join(annot_dir, cofn) for cofn in cg_density_coord_name_list] + \
-                                [os.path.join(annot_dir, cofn) for cofn in rep_coord_name_list]
+
+        # regions_full_filepath = [os.path.join(annot_dir, cofn) for cofn in narrowCoordNameList[1:]] + \
+        #                         [os.path.join(annot_dir, cofn) for cofn in cg_density_coord_name_list] + \
+        #                         [os.path.join(annot_dir, cofn) for cofn in rep_coord_name_list]
+        # region file path from genome-wide, singletons, to genic/intergenic, cg-density, and repetitive, the concordant and discoradnt wil be discovered later
+        regions_full_filepath = [None] + [os.path.join(annot_dir, cofn) for cofn in region_filename_dict.keys()]
 
         if args.large_mem:  # load all in memory
-            region_bed_list = get_region_bed_pairs_list_mp(regions_full_filepath, processors=args.processors,
-                                                           enable_base_detection_bedfile=not args.disable_bed_check)
+            region_bed_list = get_region_bed_pairs_list_mp(
+                regions_full_filepath,
+                processors=args.processors,
+                enable_base_detection_bedfile=not args.disable_bed_check,
+                enable_cache=args.enable_cache,
+                using_cache=args.using_cache,
+                cache_dir=ds_cache_dir)
             logger.info(f"Memory report: {get_current_memory_usage()}")
         else:  # load bed coord later
             region_bed_list = [(infn, get_region_tagname(infn), None,)
@@ -649,15 +668,16 @@ if __name__ == '__main__':
         else:
             concordant_bed = None
             discordant_bed = None
+        ## Add concordant/discordant if possible
+        if concordant_bed is not None:
+            region_bed_list += [(concordantFileName, 'Concordant', concordant_bed,)]
+        if discordant_bed is not None:
+            region_bed_list += [(discordantFileName, 'Discordant', discordant_bed,)]
+
+        logger.debug(f"Evaluated on regions: {region_bed_list}")
 
     if args.region_coe_report:
-        eval_genomic_context_tuple = [('x.x.Genome-wide', 'Genome-wide', None)] + region_bed_list
-        if concordant_bed is not None:
-            eval_genomic_context_tuple += [(concordantFileName, 'Concordant', concordant_bed,)]
-        if discordant_bed is not None:
-            eval_genomic_context_tuple += [(discordantFileName, 'Discordant', discordant_bed,)]
-
-        logger.debug(f"Evaluated on regions: {eval_genomic_context_tuple}")
+        eval_genomic_context_tuple = region_bed_list
 
         # file like: Meth_corr_plot_data_joined-TestData_RRBS_2Reps-bsCov1-minToolCov1-baseFormat1.sorted.csv.gz
         fnlist = glob.glob(os.path.join(out_dir,
@@ -671,11 +691,12 @@ if __name__ == '__main__':
         dsname = tagname[:tagname.find('_')]
 
         logger.info(f"Start report PCC in difference genomic regions based on file={fnlist[0]}, dsname={dsname}")
-        correlation_report_on_regions(fnlist[0], bed_tuple_list=eval_genomic_context_tuple, dsname=dsname,
-                                      runid=args.runid,
-                                      outdir=out_dir, large_mem=args.large_mem,
-                                      enable_base_detection_bedfile=not args.disable_bed_check,
-                                      enable_cache=args.enable_cache, using_cache=args.using_cache)
+        correlation_report_on_regions(
+            fnlist[0], bed_tuple_list=eval_genomic_context_tuple, dsname=dsname,
+            runid=args.runid,
+            outdir=out_dir, large_mem=args.large_mem,
+            enable_base_detection_bedfile=not args.disable_bed_check,
+            enable_cache=args.enable_cache, using_cache=args.using_cache)
         logger.debug(f"Memory report: {get_current_memory_usage()}")
 
     if args.summary_coverage:

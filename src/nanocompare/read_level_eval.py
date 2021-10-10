@@ -22,7 +22,8 @@ from sklearn.metrics import confusion_matrix
 from nanocompare.eval_common import *
 from nanocompare.global_settings import nonsingletonsFile, singletonsFile, nanome_version, perf_report_columns, \
     save_done_file, \
-    region_filename_dict, region_tagname_dict, sing_tagname, nonsing_tagname, concord_tagname, discord_tagname
+    region_filename_dict, region_tagname_dict, sing_tagname, nonsing_tagname, concord_tagname, discord_tagname, \
+    load_genome_annotation_config
 
 
 def calculate_meth_unmeth(bgTruth, keySet):
@@ -114,7 +115,7 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     bar = tqdm(narrowedCoordinatesList)
     for coord_tuple in bar:
         bar.set_description(f"Read-level-{prefix_name}-{'Genome-wide' if coord_tuple is None else coord_tuple[1]}")
-        if coord_tuple is not None:
+        if coord_tuple[1] != genome_wide_tagname:
             if not args.large_mem:
                 eval_coord_tuple = \
                     get_region_bed_tuple(coord_tuple[0],
@@ -124,10 +125,10 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
                                          cache_dir=ds_cache_dir)
             else:
                 eval_coord_tuple = coord_tuple
-        else:
-            eval_coord_tuple = None
+        else: #genome-wide setting
+            eval_coord_tuple = coord_tuple
 
-        if eval_coord_tuple is not None and eval_coord_tuple[2] is None:
+        if eval_coord_tuple[1] != genome_wide_tagname and eval_coord_tuple[2] is None:
             logger.debug(
                 f"Bed region tagname={eval_coord_tuple[1]} is not found, not evaluated, check genome-annotaion dir={args.genome_annotation} for file {eval_coord_tuple[0]}")
             continue
@@ -209,7 +210,7 @@ def report_per_read_performance_mpi(ontCalls, bgTruth, analysisPrefix, narrowedC
         else: # genome-wide, (None, 'Genome-wide', None)
             eval_coord_tuple = coord_tuple
         ## skip for None bed regions, except for genome-wide
-        if eval_coord_tuple!= genome_wide_tagname and eval_coord_tuple[2] is None:
+        if eval_coord_tuple[1] != genome_wide_tagname and eval_coord_tuple[2] is None:
             logger.debug(
                 f"Bed region tagname={eval_coord_tuple[1]} is not found, not evaluated, check genome-annotaion dir={args.genome_annotation} for file {eval_coord_tuple[0]}")
             continue
@@ -560,6 +561,7 @@ def parse_arguments():
     parser.add_argument('--mpi-import',
                         help="if using multi-processing/threading for import, it can speed-up, only for small size data",
                         action='store_true')
+    parser.add_argument('--config', help="if print out config file for genome annotation", action='store_true')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
 
@@ -609,6 +611,9 @@ if __name__ == '__main__':
     # Add logging files also to result output dir
     add_logging_file(os.path.join(out_dir, 'run-results.log'))
     logger.debug(args)
+
+    if args.config:
+        load_genome_annotation_config(verbose=True)
 
     singletonsFile = region_tagname_dict[sing_tagname][0]
     nonsingletonsFile = region_tagname_dict[nonsing_tagname][0]
@@ -872,10 +877,6 @@ if __name__ == '__main__':
     # assume all genome annotations are in args.genome_annotation dir
     annot_dir = args.genome_annotation if args.genome_annotation is not None else '.'
 
-    # regions_full_filepath = [os.path.join(annot_dir, cofn) for cofn in narrowCoordNameList[1:]] + \
-    #                         [os.path.join(annot_dir, cofn) for cofn in cg_density_coord_name_list] + \
-    #                         [os.path.join(annot_dir, cofn) for cofn in rep_coord_name_list] + \
-    #                         [fn_concordant, fn_discordant]
     # region file path from genome-wide, singletons, to genic/intergenic, cg-density, and repetitive, and then concordant and discordant
     regions_full_filepath = [None] + [os.path.join(annot_dir, cofn) for cofn in region_filename_dict.keys()] + \
                             [fn_concordant, fn_discordant]

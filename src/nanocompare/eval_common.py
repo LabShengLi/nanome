@@ -2775,7 +2775,7 @@ def intersect_bed_regions(bed_a, bed_region, bedfn=""):
     ## Check if need strand for intersections, repetitive regions
     strand_sensitive_bed = False  # default is not strand sensitive
     if os.path.basename(bedfn) in region_filename_dict:
-        strand_sensitive_bed = region_filename_dict[os.path.basename(bedfn)][3]
+        strand_sensitive_bed = region_filename_dict[os.path.basename(bedfn)][2]
 
     if strand_sensitive_bed:
         intersectBed = bed_a.intersect(bed_region, u=True, wa=True, s=True)
