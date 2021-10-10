@@ -1,7 +1,7 @@
 #!/bin/bash -e
 #SBATCH --job-name=nanome.demo.hpc
 #SBATCH -p gpu
-#SBATCH --gres=gpu:v100:1
+#SBATCH --gres=gpu:1
 #SBATCH -q inference
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 1 # number of cores

@@ -15,7 +15,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="nanome-jax",  # Replace with your own username
+    name="nanome-jax",
     version="1.3.4",
     author="Yang Liu",
     author_email="yang.liu@jax.org",
@@ -49,7 +49,6 @@ setuptools.setup(
     ],
     include_package_data=True,
     package_data={'': ['src/nanocompare/*.csv']},
-    # data_files=[('train_deepmod', ['train_deepmod/*'])],
     classifiers=[
         "Programming Language :: Python :: 3",
         'Intended Audience :: Science/Research',
