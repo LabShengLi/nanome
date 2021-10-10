@@ -114,7 +114,7 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     d = defaultdict(list)
     bar = tqdm(narrowedCoordinatesList)
     for coord_tuple in bar:
-        bar.set_description(f"Read-level-{prefix_name}-{'Genome-wide' if coord_tuple is None else coord_tuple[1]}")
+        bar.set_description(f"Read-level-{prefix_name}-{genome_wide_tagname if coord_tuple is None else coord_tuple[1]}")
         if coord_tuple[1] != genome_wide_tagname:
             if not args.large_mem:
                 eval_coord_tuple = \
@@ -454,10 +454,10 @@ def compute_dist_at_region_mp(joined_bed, four_region_bed_list, region_tuple):
         'Dataset': dsname,
         'Coord': tagname,
         'Total': num_total,
-        'Singletons': num_singleton,
-        'Non-singletons': num_nonsingleton,
-        'Concordant': num_concordant,
-        'Discordant': num_discordant
+        sing_tagname: num_singleton,
+        nonsing_tagname: num_nonsingleton,
+        concord_tagname: num_concordant,
+        discord_tagname: num_discordant
     }
 
     logger.debug(

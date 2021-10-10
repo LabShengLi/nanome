@@ -372,23 +372,15 @@ process QCExport {
 	firstFile=true
 	for fn in \$fnlist; do
 		if \$firstFile ; then
-			awk '(NR>=1)' \$fn | \
+			awk 'NR>=1' \$fn | \
 				gzip >> ${params.dsname}_combine_sequencing_summary.txt.gz
 			firstFile=false
 		else
-			awk '(NR>1)' \$fn | \
+			awk 'NR>1' \$fn | \
 				gzip >> ${params.dsname}_combine_sequencing_summary.txt.gz
 		fi
 	done
 
-	## QC report generation
-	if ! command -v NanoComp &> /dev/null
-	then
-		echo "NanoComp could not be found, install it..."
-		conda install -c bioconda nanocomp
-	else
-		NanoComp -v
-	fi
 	NanoComp --summary ${params.dsname}_combine_sequencing_summary.txt.gz  \
 		--names ${params.dsname} --outdir ${params.dsname}_QCReport -t \$(( numProcessor )) \
 		--verbose  --raw  -f pdf -p ${params.dsname}_
@@ -521,7 +513,7 @@ process Nanopolish {
 	nanopolish call-methylation -t \$(( numProcessor*2 )) -r \${fastqFile##*/} \
 		-b \${bamFileName} -g ${referenceGenome} > tmp.tsv
 
-	tail -n +2 tmp.tsv | gzip -f > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
+	awk 'NR>1' tmp.tsv | gzip -f > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
 
 	## Clean
 	rm -f *.sorted.bam *.sorted.bam.bai tmp.tsv
@@ -612,7 +604,7 @@ process Megalodon {
 	fi
 
 	### mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_dir.baseName}.per_read_modified_base_calls.txt
-	tail -n +2 megalodon_results/per_read_modified_base_calls.txt | gzip > \
+	awk 'NR>1' megalodon_results/per_read_modified_base_calls.txt | gzip > \
 		batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt.gz
 	echo "### Megalodon DONE"
 	"""
@@ -772,7 +764,7 @@ process Guppy {
 		-o tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv
 	echo "### gcf52ref extract to tsv DONE"
 
-	tail -n +2 tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv | gzip > \
+	awk 'NR>1' tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv | gzip > \
 		batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz
 	echo "### gcf52ref DONE"
 

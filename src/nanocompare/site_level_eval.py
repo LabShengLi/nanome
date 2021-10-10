@@ -17,7 +17,7 @@ from scipy.stats import PearsonRConstantInputWarning
 
 from nanocompare.eval_common import *
 from nanocompare.global_settings import get_tool_name, ToolNameList, save_done_file, \
-    nanome_version, load_genome_annotation_config
+    nanome_version, load_genome_annotation_config, sing_tagname, nonsing_tagname
 
 
 def get_nsites_in_regions(callSet, bedfn, tagname):
@@ -130,8 +130,8 @@ def summary_cpgs_stats_results_table():
         logger.debug(f"retDict={retDict}")
 
         ## Sanity check
-        if 'Singletons' in retDict and 'Non-singletons' in retDict:
-            sum_sing_nonsingle = retDict['Singletons'] + retDict['Non-singletons']
+        if sing_tagname in retDict and nonsing_tagname in retDict:
+            sum_sing_nonsingle = retDict[sing_tagname] + retDict[nonsing_tagname]
         else:
             sum_sing_nonsingle = None
         if 'CG_20' in retDict and 'CG_40' in retDict and 'CG_60' in retDict and 'CG_80' in retDict and 'CG_100' in retDict:
@@ -147,7 +147,7 @@ def summary_cpgs_stats_results_table():
         if sum_sing_nonsingle is not None and sum_sing_nonsingle != total_sites:
             logger.debug(
                 f"Sanity check for {toolname}, total_sites={total_sites:,}, sum_sing_nonsingle={sum_sing_nonsingle:,}, some non-singletons are not captered by bed file")
-            retDict['Non-singletons'] = total_sites - retDict['Singletons']
+            retDict[nonsing_tagname] = total_sites - retDict[sing_tagname]
             logger.debug(f"Updated, retDict={retDict}")
 
         ## add retDict into row_dict
