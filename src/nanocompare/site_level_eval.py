@@ -634,7 +634,7 @@ if __name__ == '__main__':
                                                            enable_base_detection_bedfile=not args.disable_bed_check)
             logger.info(f"Memory report: {get_current_memory_usage()}")
         else:  # load bed coord later
-            region_bed_list = [(infn, map_region_fn_to_name(infn), None,)
+            region_bed_list = [(infn, get_region_tagname(infn), None,)
                                for infn in regions_full_filepath]
 
         if args.beddir:  # add concordant and discordant region coverage if needed

@@ -3,12 +3,13 @@
 """
 Define names and global variables
 """
-
 import os
 
-from nanocompare.global_config import data_base_dir
+import pandas as pd
 
-nanome_version="1.3.3"
+from nanocompare.global_config import data_base_dir, logger, set_log_debug_level
+
+nanome_version = "1.3.3"
 
 # define the small error of 0 and 1, for fully-meth and unmeth eval
 epslong = 1e-5
@@ -25,7 +26,7 @@ datasets_order = ["NA12878", "NA19240", "APL", "K562", "HL60"]
 
 ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo', 'METEORE', 'DeepMod']
 
-ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod','DeepMod.C', 'DeepMod.Cluster',
+ToolEncodeList = ['DeepSignal', 'Tombo', 'Nanopolish', 'DeepMod', 'DeepMod.C', 'DeepMod.Cluster',
                   'Megalodon', 'Megalodon.ZW',
                   'Guppy', 'Guppy.ZW', 'Guppy.gcf52ref', 'METEORE']
 
@@ -204,5 +205,33 @@ def save_done_file(outdir, filename="DONE.txt"):
         outf.write("DONE\n")
 
 
+default_config_name = 'genome_annotation.csv'
+
+
+def load_genome_annotation_config():
+    infn_conf = os.path.join(os.path.dirname(__file__), default_config_name)
+    if not os.path.exists(infn_conf):
+        raise Exception(f"Can not find genome annotaion config file from {infn_conf}")
+    df = pd.read_csv(infn_conf)
+
+    ret1 = dict()  # tagname->fn
+    ret2 = dict()  # fn-> (tagname, 0-1 format, strand-sensi, )
+    for index, row in df.iterrows():
+        ret1[str(row['tagname']).strip()] = (str(row['filename']).strip(), int(row['format-0/1']),)
+        ret2[str(row['filename']).strip()] = (str(row['tagname']).strip(), int(row['format-0/1']),
+                                              str(row['strand-sensitive']).strip().upper()=='Y',)
+    return ret1, ret2
+
+genome_wide_tagname = 'Genome-wide'
+sing_tagname = 'Singletons'
+nonsing_tagname = 'Non-singletons'
+concord_tagname = 'Concordant'
+discord_tagname = 'Discordant'
+# key -> value, key=tagname, value = (filename, 0/1 format)
+# from singletons, non-singletons, to genetic/intergenic, cg-density and repetitive regions
+region_tagname_dict, region_filename_dict = load_genome_annotation_config()
+
 if __name__ == '__main__':
-    pass
+    set_log_debug_level()
+    print(region_tagname_dict)
+    print(region_filename_dict)

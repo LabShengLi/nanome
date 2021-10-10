@@ -36,7 +36,7 @@ from tqdm import tqdm
 
 from nanocompare.global_config import *
 from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEncodeList, referenceGenomeFile, \
-    list_base0_bed_basefn, enable_base_detection_bedfile, location_filename_to_abbvname
+    enable_base_detection_bedfile, region_filename_dict, genome_wide_tagname
 
 
 def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, readid_col=4, log_lik_ratio_col=5,
@@ -1545,7 +1545,8 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     return calls0
 
 
-def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, filterChr=humanChrSet, enable_cache=False, using_cache=False,
+def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, filterChr=humanChrSet, enable_cache=False,
+                   using_cache=False,
                    cache_dir=None):
     """
     General purpose for import BG-Truth input files.
@@ -1658,10 +1659,10 @@ def load_single_sites_bed_as_set(infn):
 
 
 def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, secondFilterBedFileName=None,
-                            cutoff_fully_meth=1.0, outdir=None, tagname=None, save_curve_data=True):
+                            cutoff_fully_meth=1.0, outdir=None, prefix_name=None, save_curve_data=True):
     """
     Compute ontCalls with bgTruth performance results by per-read count.
-    coordBedFileName        -   full file name of coordinate used to eval
+    coordBedFileName        -   full file name/ bed tuple of coordinate used to eval, this is the really region
     secondFilterBed         -   joined sets of four tools with bg-truth, or None with out joined sets
 
     Note: in our experiments, bed files of singleton, non-singleton and related files are all start 1-based format.
@@ -1688,7 +1689,7 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
     ontCallsKeySet = set(ontCalls.keys()).intersection(set(bgTruth.keys()))
 
     ontCalls_narrow_set = None  # Intersection of ontCall with coord, or None if genome-wide
-    if coordBedFileName is not None:
+    if coordBedFileName[1] != genome_wide_tagname:
         # Try ontCall intersect with coord (Genomewide, Singletons, etc.)
         # ontCalls_bed = BedTool(calldict2txt(ontCallsKeySet), from_string=True).sort()
         ontCalls_bed = calldict2bed(ontCallsKeySet)
@@ -1704,16 +1705,18 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
 
         ontCalls_intersect = intersect_bed_regions(ontCalls_bed, coordBed, bedfn_basename)
         ontCalls_narrow_set = set(bedtxt2dict(ontCalls_intersect).keys())
-        region_name = bedfn_basename
-    else:
-        bedfn_basename = 'x.x.Genome-wide'
-        region_name = 'Genome-wide'
+        tagname = get_region_tagname(bedfn_basename)
+    else:  # for genome-wide case
+        # bedfn_basename = 'x.x.Genome-wide'
+        # region_name = 'Genome-wide'
+        bedfn_basename = 'x.x.Genome-wide'  # used for intersect bed regions, strand identify
+        tagname = coordBedFileName[1]
 
-    ret_none_tuple = tuple([None] * (num_tuples_ret - 1) + [bedfn_basename])
+    # return none tuple 1. tagname is None, 2. no cpgs in intersections in the region
+    ret_none_tuple = tuple([None] * (num_tuples_ret - 1) + [tagname])
 
-    ## Used for ROC data file
-    # basefn = 'x.x.Genome-wide' if coordBedFileName is None else os.path.basename(bedfn_basename)
-    basefn = bedfn_basename
+    if tagname is None:
+        return ret_none_tuple
 
     ontCalls_narrow_second_set = None  # if using joined sites of all tools, or None for not using joined sites
     if secondFilterBedFileName is not None:
@@ -1856,7 +1859,7 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
             average_precision = average_precision_score(y_of_bgtruth, yscore_of_ont_tool)
         except ValueError:
             logger.error(
-                f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{ypred_of_ont_tool}, \nother settings: {title}, {region_name}, {secondFilterBedFileName}")
+                f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{ypred_of_ont_tool}, \nother settings: {title}, {tagname}, {secondFilterBedFileName}")
             fprSwitch = 0
             roc_auc = 0.0
             average_precision = 0.0
@@ -1870,14 +1873,14 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
         curve_data = {'yTrue': y_of_bgtruth, 'yPred': ypred_of_ont_tool, 'yScore': yscore_of_ont_tool}
 
         os.makedirs(os.path.join(outdir, 'curve_data'), exist_ok=True)
-        outfn = os.path.join(outdir, 'curve_data', f'{tagname}.{basefn}.curve_data.pkl')
+        outfn = os.path.join(outdir, 'curve_data', f'{prefix_name}.{tagname.replace(" ", "_")}.curve_data.pkl')
         with open(outfn, 'wb') as handle:
             pickle.dump(curve_data, handle)
 
     return (accuracy, roc_auc, average_precision, f1_macro, f1_micro, \
             precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, \
             recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, \
-            F1_5mC, mCalls, referenceCpGs, Csites_BGTruth, mCsites_BGTruth, bedfn_basename,)
+            F1_5mC, mCalls, referenceCpGs, Csites_BGTruth, mCsites_BGTruth, tagname,)
 
 
 def save_keys_to_single_site_bed(keys, outfn, callBaseFormat=1, outBaseFormat=1, nonstr='.'):
@@ -2615,23 +2618,29 @@ def bedtool_convert_0_to_1(bed):
     return ret
 
 
-def map_region_fn_to_name(infn):
+def get_region_tagname(infn):
     """
-    Mapping the region file name into region name
-    :return:
+    Get the infn's region name
+    Args:
+        infn: None for genome-wide
+
+    Returns: None for not recognized in config file
+
     """
-    if infn is None:
-        return "None"
+    if infn is None or infn == 'x.x.Genome-wide':
+        return genome_wide_tagname
 
     basefn = os.path.basename(infn)
-    if basefn in location_filename_to_abbvname:
-        return location_filename_to_abbvname[basefn]
-
-    if basefn.endswith('.hg38_nonsingletons.concordant.bed.gz'):
+    if basefn.endswith('.concordant.bed.gz'):
         return 'Concordant'
-    elif basefn.endswith('hg38_nonsingletons.discordant.bed.gz'):
+    elif basefn.endswith('.discordant.bed.gz'):
         return 'Discordant'
-    raise Exception(f"Not correct infn={infn}")
+
+    if basefn in region_filename_dict:
+        return region_filename_dict[basefn][0]
+
+    logger.debug(f"ERROR: Not correct infn={infn}")
+    return None
 
 
 def is_0base_region_files(infn):
@@ -2640,8 +2649,9 @@ def is_0base_region_files(infn):
     :param infn:
     :return:
     """
-    if os.path.basename(infn) in list_base0_bed_basefn:
-        return True
+    if os.path.basename(infn) in region_filename_dict:  # get from config file
+        return region_filename_dict[os.path.basename(infn)][1] == 0
+    # default is 1-based BED region
     return False
 
 
@@ -2668,8 +2678,8 @@ def get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detecti
     :param infn:
     :return:
     """
-    if infn is None:
-        return (None, None, None)
+    if infn is None:  # means genome wide
+        return (None, genome_wide_tagname, None)
 
     if enable_base_detection_bedfile:
         baseFormat = 1
@@ -2685,7 +2695,7 @@ def get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detecti
             return ret
         logger.debug(f'BED file not cached yet, we load from raw file={os.path.basename(infn)}')
 
-    tagname = map_region_fn_to_name(infn)
+    tagname = get_region_tagname(infn)
     region_bed = get_region_bed(infn, enable_base_detection_bedfile)
 
     ret = (infn, tagname, region_bed)
@@ -2763,7 +2773,11 @@ def intersect_bed_regions(bed_a, bed_region, bedfn=""):
     :return:
     """
     ## Check if need strand for intersections, repetitive regions
-    if os.path.basename(bedfn).startswith("hg38.repetitive.rep"):
+    strand_sensitive_bed = False  # default is not strand sensitive
+    if os.path.basename(bedfn) in region_filename_dict:
+        strand_sensitive_bed = region_filename_dict[os.path.basename(bedfn)][3]
+
+    if strand_sensitive_bed:
         intersectBed = bed_a.intersect(bed_region, u=True, wa=True, s=True)
     else:
         intersectBed = bed_a.intersect(bed_region, u=True, wa=True)
@@ -2787,7 +2801,7 @@ def filter_corrdata_df_by_bedfile(df, coord_bed, coord_fn):
     bed_of_df = BedTool.from_dataframe(df).sort()
     bed_of_intersect = intersect_bed_regions(bed_of_df, coord_bed, coord_fn)
 
-    if len(bed_of_intersect)>0:
+    if len(bed_of_intersect) > 0:
         retdf = bed_of_intersect.to_dataframe()
         retdf.columns = df.columns
     else:
