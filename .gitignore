@@ -53,7 +53,7 @@ testdemo.py
 /sumner_test.sh
 /testpy.py
 /winter_test.sh
-/lifebit_test.sh
+/gcp_shell_memo.sh
 /local_singularity_cache/
 /data/
 /NANOME_trace/
@@ -64,3 +64,4 @@ testdemo.py
 /tests/test_import_deepmod.py
 /bdocker_gcp.sh
 /na12878_hpc_winter.sh
+/gcp_shell_memo.sh
