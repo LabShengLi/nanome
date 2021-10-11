@@ -142,7 +142,8 @@ if (params.input.endsWith(".filelist.txt")) {
 		.map { file(it[0]) }
 		.set{ fast5_tar_ch }
 } else if(params.input.endsWith("/*")) {
-	// match all files in the folder
+	// match all files in the folder, note: input must use '', prevent expand in advance
+	// such as --input '/fastscratch/liuya/nanome/NA12878/NA12878_CHR22/input_chr22/*'
 	Channel.fromPath(params.input, type: 'any').set{fast5_tar_ch}
 } else {
 	// For single file
@@ -157,9 +158,11 @@ process EnvCheck {
 	input:
 	path reference_genome 	from 	Channel.fromPath(params.reference_genome, type: 'any')
 	path("*") 				from 	ch_utils10
+	path megalodonModelTar 	from 	Channel.fromPath(params.megalodon_model_tar)
 
 	output:
 	path "reference_genome" into reference_genome_ch
+	path "megalodon_model"	optional true into megalodon_model_ch
 
 	"""
 	date; hostname; pwd
@@ -167,6 +170,12 @@ process EnvCheck {
 
 	## Validate nanome container/environment is correct
 	bash utils/validate_nanome_container.sh
+
+	## Untar and prepare megalodon model
+	if [[ ${params.runMegalodon} == "true" ]]; then
+		tar -xzf ${megalodonModelTar}
+		ls -lh megalodon_model
+	fi
 
 	## Get dir for reference_genome
 	if [[ "${reference_genome}" == *.tar.gz ]] ; then
@@ -345,8 +354,9 @@ process Basecall {
     echo "### Samtools done"
 
     # Clean
-    rm -f ${fast5_dir.baseName}.basecalled.sam
-
+    if [[ ${params.cleanStep} == "true" ]]; then
+    	rm -f ${fast5_dir.baseName}.basecalled.sam
+    fi
 	echo "### Basecalled by Guppy DONE"
 	"""
 }
@@ -533,7 +543,10 @@ process Nanopolish {
 	awk 'NR>1' tmp.tsv | gzip -f > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
 
 	## Clean
-	rm -f *.sorted.bam *.sorted.bam.bai tmp.tsv
+	if [[ ${params.cleanStep} == "true" ]]; then
+		rm -f *.sorted.bam *.sorted.bam.bai tmp.tsv
+		rm -f *.fq.gz.index*
+	fi
 	echo "### Nanopolish methylation calling DONE"
 	"""
 }
@@ -550,7 +563,7 @@ process Megalodon {
 	input:
 	path fast5_dir 					from untar_out_ch3
 	each path(reference_genome) 	from reference_genome_ch2
-	each path(megalodonModelTar) 	from Channel.fromPath(params.megalodon_model_tar)
+	each path(megalodon_model_dir)	from megalodon_model_ch
 
 	output:
 	path "batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt.gz" into megalodon_out_ch
@@ -570,9 +583,6 @@ process Megalodon {
 		commandType='gpu'
 	fi
 
-	## Get megalodon model dir
-	tar -xzf ${megalodonModelTar}
-
 	if [[ \${commandType} == "cpu" ]]; then
 		## CPU version command
 		## Ref: https://github.com/nanoporetech/megalodon
@@ -583,7 +593,7 @@ process Megalodon {
 			--outputs per_read_mods mods per_read_refs \
 			--guppy-server-path guppy_basecall_server \
 			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-			--guppy-params "-d ./megalodon_model/ --num_callers \$(( numProcessor )) --ipc_threads 6" \
+			--guppy-params "-d ${megalodon_model_dir}/ --num_callers \$(( numProcessor )) --ipc_threads 6" \
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--samtools-executable ${params.SAMTOOLS_PATH} \
 			--sort-mappings \
@@ -623,6 +633,11 @@ process Megalodon {
 	### mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_dir.baseName}.per_read_modified_base_calls.txt
 	awk 'NR>1' megalodon_results/per_read_modified_base_calls.txt | gzip > \
 		batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt.gz
+
+	### Clean
+	if [[ ${params.cleanStep} == "true" ]]; then
+		rm -rf megalodon_results/
+	fi
 	echo "### Megalodon DONE"
 	"""
 }
@@ -638,7 +653,7 @@ process DeepSignal {
 
 	input:
 	path indir 						from deepsignal_in_ch
-	each path(deepsignal_model_tar) from Channel.fromPath(params.deepsignal_model_tar)
+	// each path(deepsignal_model_tar) from Channel.fromPath(params.deepsignal_model_tar)
 	each path(reference_genome) 	from reference_genome_ch4
 
 	output:
@@ -648,14 +663,21 @@ process DeepSignal {
 	params.runMethcall && params.runDeepSignal && !params.filterGPUTaskRuns
 
 	"""
-	tar -xzf ${deepsignal_model_tar}
+	if ls /data/${params.DEEPSIGNAL_MODEL}* 1> /dev/null 2>&1; then
+		DeepSignalModelBaseDir=/data
+	else
+		wget ${params.deepsignal_model_tar}  --no-verbose
+		tar -xzf ${params.DEEPSIGNAL_MODEL_TAR_GZ} &&
+			rm -f ${params.DEEPSIGNAL_MODEL_TAR_GZ}
+		DeepSignalModelBaseDir="."
+	fi
 
 	commandType='gpu'
 	if [[ \${commandType} == "cpu" ]]; then
 		## CPU version command
 		deepsignal call_mods \
 			--input_path ${indir}/workspace \
-			--model_path "./${params.DEEPSIGNAL_MODEL}" \
+			--model_path "\${DeepSignalModelBaseDir}/${params.DEEPSIGNAL_MODEL}" \
 			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
@@ -665,7 +687,7 @@ process DeepSignal {
 		## GPU version command
 		deepsignal call_mods \
 			--input_path ${indir}/workspace \
-			--model_path "./${params.DEEPSIGNAL_MODEL}" \
+			--model_path "\${DeepSignalModelBaseDir}/${params.DEEPSIGNAL_MODEL}" \
 			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
@@ -801,11 +823,13 @@ process Guppy {
 
 	## Clean
 	## methcalled folder is no need, keep only gcf52ref's tsv and fast5mod's bam for combine step
-	rm -rf ${fast5_dir.baseName}.methcalled
-	rm -f gcf52ref.*.bam gcf52ref.*.bam.bai tmp*.tsv batch_combine_fq.fq.gz
-	rm -rf gcf52ref/
-	rm -rf base_mods.rocksdb/
-	echo "### Clean DONE"
+	if [[ ${params.cleanStep} == "true" ]]; then
+		rm -rf ${fast5_dir.baseName}.methcalled
+		rm -f gcf52ref.*.bam gcf52ref.*.bam.bai tmp*.tsv batch_combine_fq.fq.gz
+		rm -rf gcf52ref/
+		rm -rf base_mods.rocksdb/
+		echo "### Clean DONE"
+	fi
 	echo "### Guppy fast5mod and gcf52ref DONE"
 	"""
 }
@@ -885,6 +909,11 @@ process Tombo {
 		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed"
 
 	gzip -f batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed
+
+	## Clean
+	if [[ ${params.cleanStep} == "true" ]]; then
+		rm -f *.tombo.per_read_stats   *.tombo.stats
+	fi
 	echo "### Tombo methylation calling DONE"
 	"""
 }
@@ -942,6 +971,12 @@ process DeepMod {
 			--threads \$(( numProcessor*${params.deepLearningProcessorTimes} ))  ${params.moveOption ? '--move' : ' '}
 
 	tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
+
+	## Clean
+	if [[ ${params.cleanStep} == "true" ]]; then
+		rm -f mod_output/batch_${basecallDir.baseName}_num/rnn.pred.ind.*
+		rm -rf mod_output/batch_${basecallDir.baseName}_num/0
+	fi
 	echo "### DeepMod methylation DONE"
 	"""
 }
@@ -1171,8 +1206,10 @@ process GuppyComb {
 		.  \$((numProcessor))  2  ${chrSet}
 
 	## Clean
-	rm -f meth.chr*.tsv.gz
-	rm -f total.meth.bam*
+	if [[ ${params.cleanStep} == "true" ]]; then
+		rm -f meth.chr*.tsv.gz
+		rm -f total.meth.bam*
+	fi
 	echo "### Guppy combine DONE"
 	"""
 }
@@ -1339,6 +1376,12 @@ process DpmodComb {
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  DeepMod \${callfn} \
 		.  \$((numProcessor))  2  ${chrSet}
+
+	## Clean
+	if [[ ${params.cleanStep} == "true" ]]; then
+		rm -rf indir/
+		echo "### Clean DONE"
+	fi
 	echo "### DeepMod combine DONE"
 	"""
 }
