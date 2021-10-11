@@ -283,7 +283,6 @@ process Basecall {
 	"""
 	date; hostname; pwd
 
-	## nvidia-smi
 	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
 	if [[ "\${CUDA_VISIBLE_DEVICES:-}" == "" ]] ; then
 		echo "Detect no GPU, using CPU commandType"
@@ -294,6 +293,7 @@ process Basecall {
 	fi
 
 	which guppy_basecaller
+	guppy_basecaller -v
 	mkdir -p ${fast5_dir.baseName}.basecalled
 
 	if [[ \${commandType} == "cpu" ]]; then
@@ -320,27 +320,29 @@ process Basecall {
 
 	## Combine fastq
 	touch "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz
+
+	## Below is compatable with both Guppy v4.2.2 (old) and newest directory structures
 	for f in \$(find "${fast5_dir.baseName}.basecalled/" "${fast5_dir.baseName}.basecalled/pass/"\
 	 	"${fast5_dir.baseName}.basecalled/fail/" -maxdepth 1 -name '*.fastq.gz')
 	do
 		cat \$f >> "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz
 	done
 
-	## After basecall, rename and publishe summary filenames
+	## After basecall, rename and publish summary filenames, summary may also be used by resquiggle
 	mv ${fast5_dir.baseName}.basecalled/sequencing_summary.txt \
 		${fast5_dir.baseName}.basecalled/${fast5_dir.baseName}-sequencing_summary.txt
 
-	## After basecall, we process guppy results for ONT coverage analyses
+	## After basecall, we align results for ONT coverage analyses
 	# align FASTQ files to reference genome, write sorted alignments to a BAM file
 	minimap2 -a -z 600,200 -x map-ont ${referenceGenome} \
 		"${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz \
 	    -t \$(( numProcessor*2 )) > ${fast5_dir.baseName}.basecalled.sam
-    echo "Alignment done"
+    echo "### Alignment done"
 
-    # Convert the sam files to bam (a binary sam format) using samtools’ view command
+    # Convert the sam files to sorted bam for this batch
     samtools view -u ${fast5_dir.baseName}.basecalled.sam \
         | samtools sort -@ \$(( numProcessor*2 )) -o ${fast5_dir.baseName}.basecalled.bam --output-fmt BAM
-    echo "samtools done"
+    echo "### Samtools done"
 
     # Clean
     rm -f ${fast5_dir.baseName}.basecalled.sam
@@ -385,7 +387,7 @@ process QCExport {
 		--names ${params.dsname} --outdir ${params.dsname}_QCReport -t \$(( numProcessor )) \
 		--verbose  --raw  -f pdf -p ${params.dsname}_
 
-    ## Merge the bam file
+    ## Merge the bam files
 	find . -maxdepth 1 -name "*.basecalled.bam" | \
 	    parallel --xargs -v samtools merge -@ \$(( numProcessor*2 )) \
 	    ${params.dsname}_merged.bam {}
@@ -452,18 +454,29 @@ process Resquiggle {
 	### original basecalled results will be parrallelly used by other processes
 	cp -rf ${basecallIndir}/* ${basecallIndir.baseName}.resquiggle/
 
+	### Prerocessing, using combined fq.gz
+	### ref: https://github.com/bioinfomaticsCSU/deepsignal#quick-start
+	gunzip ${basecallIndir.baseName}.resquiggle/batch_basecall_combine_fq_*.fq.gz
+	tombo preprocess annotate_raw_with_fastqs\
+	 	--fast5-basedir ${basecallIndir.baseName}.resquiggle/workspace\
+	 	--fastq-filenames ${basecallIndir.baseName}.resquiggle/batch_basecall_combine_fq_*.fq\
+	 	--basecall-group ${params.BasecallGroupName}\
+	 	--basecall-subgroup ${params.BasecallSubGroupName}\
+	 	--overwrite --processes \$(( numProcessor*2 ))  2>&1
+	echo "### tombo preprocess DONE"
+
 	### Need to check Tombo bug of BrokenPipeError, it is very fast even set to 1.
 	### ref: https://github.com/nanoporetech/tombo/issues/139
 	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
-	tombo resquiggle --dna \
+	tombo resquiggle\
 		--processes \$(( numProcessor*2 )) \
-		--corrected-group ${params.resquiggleCorrectedGroup} \
+		--corrected-group ${params.ResquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} \
 		--overwrite \
 		${basecallIndir.baseName}.resquiggle/workspace \
 		${referenceGenome} &> \
 		${basecallIndir.baseName}.resquiggle.run.log
-	echo "### Resquiggle DONE"
+	echo "### tombo resquiggle DONE"
 	"""
 }
 
@@ -511,7 +524,8 @@ process Nanopolish {
 	echo "### Alignment step: minimap2 and samtools DONE"
 
 	## Calling methylation, ref: https://nanopolish.readthedocs.io/en/latest/quickstart_call_methylation.html#calling-methylation
-	## there are segment fault issues, if set -t to large number, ref: https://github.com/jts/nanopolish/issues/872
+	## there are segment fault issues, if set -t to a large number or use low memory,
+	## ref: https://github.com/jts/nanopolish/issues/872
 	## ref: https://github.com/jts/nanopolish/issues/683, https://github.com/jts/nanopolish/issues/580
 	nanopolish call-methylation -t 1 -r \${fastqFile##*/} \
 		-b \${bamFileName} -g ${referenceGenome} > tmp.tsv
@@ -644,7 +658,7 @@ process DeepSignal {
 			--model_path "./${params.DEEPSIGNAL_MODEL}" \
 			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 			--reference_path ${referenceGenome} \
-			--corrected_group ${params.resquiggleCorrectedGroup} \
+			--corrected_group ${params.ResquiggleCorrectedGroup} \
 			--nproc \$(( numProcessor * ${params.deepLearningProcessorTimes}  )) \
 			--is_gpu no
 	elif [[ \${commandType} == "gpu" ]]; then
@@ -654,7 +668,7 @@ process DeepSignal {
 			--model_path "./${params.DEEPSIGNAL_MODEL}" \
 			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 			--reference_path ${referenceGenome} \
-			--corrected_group ${params.resquiggleCorrectedGroup} \
+			--corrected_group ${params.ResquiggleCorrectedGroup} \
 			--nproc \$(( numProcessor * ${params.deepLearningProcessorTimes}  )) \
 			--is_gpu yes
 	else
@@ -779,17 +793,19 @@ process Guppy {
 		--workers 74 --recursive --quiet \
 		| samtools sort -@ \$(( numProcessor*2 )) | \
 		samtools view -b -@ \$(( numProcessor*2 )) > \${OUTBAM}
-
 	samtools index -@ \$(( numProcessor*2 ))  \${OUTBAM}
 
 	tar -czf outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz \
 		batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
+	echo "### fast5mod DONE"
 
 	## Clean
+	## methcalled folder is no need, keep only gcf52ref's tsv and fast5mod's bam for combine step
 	rm -rf ${fast5_dir.baseName}.methcalled
 	rm -f gcf52ref.*.bam gcf52ref.*.bam.bai tmp*.tsv batch_combine_fq.fq.gz
-
-	echo "### fast5mod DONE"
+	rm -rf gcf52ref/
+	rm -rf base_mods.rocksdb/
+	echo "### Clean DONE"
 	echo "### Guppy fast5mod and gcf52ref DONE"
 	"""
 }
@@ -821,12 +837,12 @@ process Tombo {
 	## Note 1 is still fast for tombo
 	tombo detect_modifications alternative_model \
 		--fast5-basedirs ${resquiggleDir}/workspace \
-		--dna --standard-log-likelihood-ratio \
+		--dna\
 		--statistics-file-basename batch_${resquiggleDir.baseName} \
 		--per-read-statistics-basename batch_${resquiggleDir.baseName} \
 		--alternate-bases CpG \
 		--processes \$(( numProcessor )) \
-		--corrected-group ${params.resquiggleCorrectedGroup} \
+		--corrected-group ${params.ResquiggleCorrectedGroup} \
 		--multiprocess-region-size 1000 &> \
 		${resquiggleDir.baseName}.tombo.run.log
 
@@ -842,7 +858,7 @@ process Tombo {
 			--per-read-statistics-basename batch_${resquiggleDir.baseName} \
 			--alternate-bases CpG \
 			--processes \$(( numProcessor )) \
-			--corrected-group ${params.resquiggleCorrectedGroup} \
+			--corrected-group ${params.ResquiggleCorrectedGroup} \
 			--multiprocess-region-size 1000 &> \
 			${resquiggleDir.baseName}.tombo.run.log
 		retry=\$(( retry+1 ))
@@ -860,6 +876,9 @@ process Tombo {
 		echo "### Tombo log passed, OK"
 	fi
 
+	## Tombo lib need h5py lower than 3.0
+	## Error may occur with higher h5py: AttributeError: 'Dataset' object has no attribute 'value'
+	## ref: https://github.com/nanoporetech/tombo/issues/325
 	python utils/tombo_extract_per_read_stats.py \
 		${chromSizesFile} \
 		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats" \
@@ -891,9 +910,18 @@ process DeepMod {
 	params.runMethcall && params.runDeepMod && !params.filterGPUTaskRuns
 
 	"""
-	wget ${params.DeepModGithub} --no-verbose
-	tar -xzf v0.1.3.tar.gz
-	DeepModProjectDir="DeepMod-0.1.3"
+	set +u
+	source ${params.conda_base_dir}/etc/profile.d/conda.sh
+	conda activate ${params.conda_name}
+	set -u
+	echo "### Env set ok"
+	## Find the model dir
+	DeepModTrainModelDir=\$(find \$CONDA_PREFIX -name 'train_deepmod' -type d)
+	if [[ \${DeepModTrainModelDir:-} == "" ]]; then
+		wget ${params.DeepModGithub} --no-verbose
+		tar -xzf v0.1.3.tar.gz
+		DeepModTrainModelDir="DeepMod-0.1.3/train_deepmod"
+	fi
 
 	if [[ "${params.dataType}" = "human" ]] ; then
 		mod_cluster=1 ## Human will use cluster model
@@ -901,11 +929,15 @@ process DeepMod {
 		mod_cluster=0 ## Not human will skip cluser model
 	fi
 
+	## Usage ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#1-how-to-detect-modifications-from-fast5-files
+	## DeepMod depends on h5py < 3.0,
+	## issue may occur if use a greater version: AttributeError: 'Dataset' object has no attribute 'value'
 	DeepMod.py detect \
 			--wrkBase ${basecallDir}/workspace \
+			--outLevel 0\
 			--Ref ${referenceGenome} \
 			--Base C \
-			--modfile \${DeepModProjectDir}/train_deepmod/${params.DEEPMOD_RNN_MODEL} \
+			--modfile \${DeepModTrainModelDir}/${params.DEEPMOD_RNN_MODEL} \
 			--FileID batch_${basecallDir.baseName}_num \
 			--threads \$(( numProcessor*${params.deepLearningProcessorTimes} ))  ${params.moveOption ? '--move' : ' '}
 
@@ -1090,17 +1122,16 @@ process GuppyComb {
 	echo "### gcf52ref combine DONE"
 
 	## fast5mod ways combine
-	## find name like batch_\${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
+	## find name like batch_*.guppy.fast5mod_guppy2sam.bam*
 	find . -name 'batch_*.guppy.fast5mod_guppy2sam.bam' -maxdepth 1 |
 		parallel --xargs -v samtools merge -@\$(( numProcessor*2 )) total.meth.bam {}
 
-	### sort is not used
+	### sort is not used due to merge the sorted bam, ref: http://www.htslib.org/doc/samtools-merge.html
 	### samtools sort -@ \$(( numProcessor*2 )) total.meth.bam
 	samtools index -@ \$(( numProcessor*2 )) total.meth.bam
-	echo "samtool index is done"
+	echo "Samtool merge and index for fast5mod DONE"
 
 	tar -czf ${params.dsname}.guppy_fast5mod.combined.bam.tar.gz total.meth.bam*
-
 
 	if [[ "${params.dataType}" == "human" ]] ; then
 		echo "### For human, extract chr1-22, X and Y"
@@ -1225,18 +1256,31 @@ process DpmodComb {
 	x.size() >= 1 && params.runCombine
 
 	"""
-	wget ${params.DeepModGithub} --no-verbose
-	tar -xzf v0.1.3.tar.gz
-	DeepModProjectDir="DeepMod-0.1.3"
+	set +u
+	source ${params.conda_base_dir}/etc/profile.d/conda.sh
+	conda activate ${params.conda_name}
+	set -u
+	echo "### Env set ok"
+	## Find the model dir
+	DeepModTrainModelDir=\$(find \$CONDA_PREFIX -name 'train_deepmod' -type d)
+	if [[ \${DeepModTrainModelDir:-} == "" ]]; then
+		wget ${params.DeepModGithub} --no-verbose
+		tar -xzf v0.1.3.tar.gz
+		DeepModTrainModelDir="DeepMod-0.1.3/train_deepmod"
+	fi
 
 	## Copy all batch results, then summarize site level outputs by chromosome
+	## This way will no contamine DeepMod process folders for cache use of nextflow
 	mkdir -p indir
 	for dx in $x
 	do
 		mkdir -p indir/\$dx
-		cp -rf \$dx/* indir/\$dx/
+		## TODO: parallel this cp function
+		cp -rf \$dx/*.C.bed indir/\$dx/
 	done
 
+	## merge different runs of modification detection
+	## ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#2-how-to-merge-different-runs-of-modification-detection
 	python utils/sum_chr_mod.py \
 		indir/ C ${params.dsname}.deepmod ${chrSet}
 
@@ -1262,10 +1306,12 @@ process DpmodComb {
 			fi
 		fi
 
+		## consider modification cluster effect.
+		## ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#3-how-to-consider-modification-cluster-effect
 		python utils/hm_cluster_predict.py \
 			indir/${params.dsname}.deepmod \
 			./C \
-			\${DeepModProjectDir}/train_deepmod/${params.DEEPMOD_CLUSTER_MODEL} ## || true
+			\${DeepModTrainModelDir}/${params.DEEPMOD_CLUSTER_MODEL} ## || true
 
 		> ${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed
 		for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
@@ -1345,23 +1391,30 @@ process METEORE {
 	printf '%s\t%s\n' deepsignal ${deepsignal} >> \$outFileName
 	printf '%s\t%s\n' megalodon ${megalodon} >> \$outFileName
 
-	wget ${params.METEOREGithub}  --no-verbose
-	tar -xzf v1.0.0.tar.gz
+	METEOREDIR=\$(find /data -maxdepth 1 -name "${params.METEORE_Dir}")
+	if [[ \$METEOREDIR == "" ]]; then
+		wget ${params.METEOREGithub}  --no-verbose
+		tar -xzf v1.0.0.tar.gz
+		METEOREDIR=\$(find . -name "${params.METEORE_Dir}")
+	fi
 
-	## Degrade sk-learn for METEORE program if needed
+	## Degrade sk-learn for METEORE program if needed, it's model load need lower version
 	## pip install -U scikit-learn==0.21.3
-
 	combineScript=utils/combination_model_prediction.py
 
 	modelContentFileName=\$(find . -name "${params.dsname}_Megalodon_DeepSignal_combine.model_content.tsv")
 	# Use the optimized model
+	# Please note this optimized model is reported in METEORE paper, ref: https://github.com/comprna/METEORE#command
+	# paper: https://doi.org/10.1101/2020.10.14.340315, text:  random forest (RF) (parameters: max_depth=3 and n_estimator=10)
+	# therefore, we output optimized model results
 	python \${combineScript} \
-		-i \${modelContentFileName} -m optimized -b ${params.METEORE_Dir} \
+		-i \${modelContentFileName} \
+		-m optimized -b \${METEOREDIR} \
 		-o ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
 
 	# Use the default model
 	python \${combineScript} \
-		-i \${modelContentFileName} -m default -b ${params.METEORE_Dir} \
+		-i \${modelContentFileName} -m default -b \${METEOREDIR} \
 		-o ${params.dsname}.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz
 
 	# Read level and site level output
@@ -1377,10 +1430,7 @@ process METEORE {
 			${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz \
 			.  \$((numProcessor))  2  ${chrSet}
 	fi
-
-
-
-	echo "### METEORE post combine DONE"
+	echo "### METEORE consensus DONE"
 	"""
 }
 

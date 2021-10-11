@@ -24,7 +24,7 @@ dependencies:
   - cython=0.29.24
   - openpyxl=2.4.0
   - nanocomp=1.16.0
-  - h5py=2.8 # due to tombo issue, must < 3.0, ref: https://github.com/nanoporetech/tombo/issues/325
+  - h5py=2.8 # due to tombo/DeepMod issue, must < 3.0, ref: https://github.com/nanoporetech/tombo/issues/325
   - tqdm>=4.60 # need by Megalodon, ref: https://github.com/nanoporetech/megalodon/issues/105
   - scikit-learn=0.21.3 # need by METEORE, it needs old package for model load, ref: https://github.com/comprna/METEORE/blob/master/combination_model_prediction.py#L44
   - ont-fast5-api=3.0 # need by fast5mod, will upgrade by pip install for Megalodon, but it's ok for running both >3.0

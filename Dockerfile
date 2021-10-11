@@ -8,25 +8,21 @@ LABEL description="Nanome project in Li Lab at The Jackson Laboratory" \
       author="yang.liu@jax.org"
 
 # Guppy version
-ARG PACKAGE_VERSION=5.0.14
-ARG BUILD_PACKAGES="wget apt-transport-https"
-ARG DEBIAN_FRONTEND=noninteractive
+ARG GUPPY_VERSION=5.0.14
+ARG BUILD_PACKAGES="wget apt-transport-https procps git curl"
+ARG DEBIAN_FRONTEND="noninteractive"
 ARG NANOME_DIR=/opt/nanome
+ARG METEORE_GITHUB="https://github.com/comprna/METEORE/archive/refs/tags/v1.0.0.tar.gz"
+ARG DEEPSIGNAL_MODEL="https://zenodo.org/record/5513090/files/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7%2B.tar.gz"
+ARG MEGALODON_VERSION=2.3.4
 
 # Install guppy-gpu version, ref: https://github.com/GenomicParisCentre/dockerfiles
 RUN apt-get -q update && \
-    DEBIAN_FRONTEND="noninteractive" apt-get -q install --yes $BUILD_PACKAGES libnvidia-compute-460-server && \ 
+    DEBIAN_FRONTEND="noninteractive" apt-get -q install --yes ${BUILD_PACKAGES} libnvidia-compute-460-server && \
     cd /tmp && \
-    wget -q https://mirror.oxfordnanoportal.com/software/analysis/ont_guppy_${PACKAGE_VERSION}-1~bionic_amd64.deb && \
-    DEBIAN_FRONTEND="noninteractive" apt-get -q install --yes /tmp/ont_guppy_${PACKAGE_VERSION}-1~bionic_amd64.deb && \
+    wget -q https://mirror.oxfordnanoportal.com/software/analysis/ont_guppy_${GUPPY_VERSION}-1~bionic_amd64.deb && \
+    DEBIAN_FRONTEND="noninteractive" apt-get -q install --yes /tmp/ont_guppy_${GUPPY_VERSION}-1~bionic_amd64.deb && \
     rm *.deb && \
-    apt-get autoremove --purge --yes && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install useful tools, e.g., git, curl, etc.
-RUN apt-get -q update -y &&\
-    DEBIAN_FRONTEND="noninteractive" apt-get install procps git curl -y &&\
     apt-get autoremove --purge --yes && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -47,14 +43,23 @@ RUN conda env create --name nanome --file=environment.yml && conda clean -a
 SHELL ["conda", "run", "-n", "nanome", "/bin/bash", "-c"]
 
 # Install latest version for megalodon, even conflicts with fast5mod, they can work
-RUN pip install megalodon
+RUN pip install megalodon==${MEGALODON_VERSION}
 
 # Set nanome env path into PATH
 ENV PATH /opt/conda/envs/nanome/bin:$PATH
 USER root
 WORKDIR /data/
 
+# Get METEORE dir into /data/METEORE-1.0.0,
+# Get DeepSignal model into /data/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+
+RUN cd /data && wget -q ${METEORE_GITHUB} &&\
+    tar -xzf v1.0.0.tar.gz &&\
+    rm -f v1.0.0.tar.gz &&\
+    wget -q ${DEEPSIGNAL_MODEL} &&\
+    tar -xzf model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz &&\
+    rm -f model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz
 
+# Create nanome project dir
 RUN mkdir -p ${NANOME_DIR}
 
 # Copy additonal scripts
