@@ -500,17 +500,20 @@ process Nanopolish {
 
 	# Index the raw read with fastq, we do not index in basecalled dir, in case of cache can be work
 	ln -s \${fastqFile}  \${fastqFile##*/}
-	nanopolish index -d ${basecallDir}/workspace \${fastqFile##*/}
 
+	## Index, ref: https://github.com/jts/nanopolish#data-preprocessing
+	nanopolish index -d ${basecallDir}/workspace -s ${basecallDir}/${basecallDir.baseName}-sequencing_summary.txt  \${fastqFile##*/}
+
+	## Aligning reads to the reference genome, ref: https://nanopolish.readthedocs.io/en/latest/quickstart_call_methylation.html#aligning-reads-to-the-reference-genome
 	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \${fastqFile##*/} | \
 		samtools sort -@ \$(( numProcessor*2 )) -T tmp -o \${bamFileName}
-	echo "### minimap2 finished"
-
 	samtools index -@ \$(( numProcessor*2 ))  \${bamFileName}
-	echo "### samtools finished"
-	echo "### Alignment step DONE"
+	echo "### Alignment step: minimap2 and samtools DONE"
 
-	nanopolish call-methylation -t \$(( numProcessor*2 )) -r \${fastqFile##*/} \
+	## Calling methylation, ref: https://nanopolish.readthedocs.io/en/latest/quickstart_call_methylation.html#calling-methylation
+	## there are segment fault issues, if set -t to large number, ref: https://github.com/jts/nanopolish/issues/872
+	## ref: https://github.com/jts/nanopolish/issues/683, https://github.com/jts/nanopolish/issues/580
+	nanopolish call-methylation -t 1 -r \${fastqFile##*/} \
 		-b \${bamFileName} -g ${referenceGenome} > tmp.tsv
 
 	awk 'NR>1' tmp.tsv | gzip -f > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
