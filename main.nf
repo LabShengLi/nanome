@@ -243,7 +243,7 @@ process Untar {
 	mkdir -p ${fast5_tar.baseName}.untar
 	## find untarTempDir -name "*.fast5" -type f -exec mv {} ${fast5_tar.baseName}.untar/ \\;
 	find untarTempDir -name "*.fast5" -type f | \
-		parallel -j0  mv {}  ${fast5_tar.baseName}.untar/
+		parallel -j\$(( numProcessor ))  mv {}  ${fast5_tar.baseName}.untar/
 
 	## Clean unused files
 	rm -rf untarTempDir
@@ -279,12 +279,9 @@ process Basecall {
 	input:
 	path fast5_dir 				from 	untar_out_ch1
 	each path("*") 				from 	ch_utils1
-	each path(reference_genome) from 	reference_genome_ch9
 
 	output:
 	path "${fast5_dir.baseName}.basecalled" into basecall_out_ch
-	path "${fast5_dir.baseName}.basecalled/${fast5_dir.baseName}-sequencing_summary.txt" into qc_ch
-	path "${fast5_dir.baseName}.basecalled.bam" into ont_cov_bam_ch
 
 	when:
 	params.runBasecall
@@ -336,22 +333,16 @@ process Basecall {
 	do
 		cat \$f >> "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz
 	done
+	echo "### Combine fastq.gz DONE"
+
+	## Remove fastq.gz
+	find "${fast5_dir.baseName}.basecalled/"   "${fast5_dir.baseName}.basecalled/pass/"\
+	 	"${fast5_dir.baseName}.basecalled/fail/" -maxdepth 1 -name '*.fastq.gz' |\
+	 	parallel -j\$(( numProcessor )) 'rm -f {}'
 
 	## After basecall, rename and publish summary filenames, summary may also be used by resquiggle
 	mv ${fast5_dir.baseName}.basecalled/sequencing_summary.txt \
 		${fast5_dir.baseName}.basecalled/${fast5_dir.baseName}-sequencing_summary.txt
-
-	## After basecall, we align results for ONT coverage analyses
-	# align FASTQ files to reference genome, write sorted alignments to a BAM file
-	minimap2 -a -z 600,200 -x map-ont ${referenceGenome} \
-		"${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz \
-	    -t \$(( numProcessor*2 )) > ${fast5_dir.baseName}.basecalled.sam
-    echo "### Alignment done"
-
-    # Convert the sam files to sorted bam for this batch
-    samtools view -u ${fast5_dir.baseName}.basecalled.sam \
-        | samtools sort -@ \$(( numProcessor*2 )) -o ${fast5_dir.baseName}.basecalled.bam --output-fmt BAM
-    echo "### Samtools done"
 
     # Clean
     if [[ ${params.cleanStep} == "true" ]]; then
@@ -362,6 +353,11 @@ process Basecall {
 }
 
 
+// Duplicates basecall outputs
+basecall_out_ch
+	.into { qc_basecall_in_ch; resquiggle_in_ch; nanopolish_in_ch; deepmod_in_ch }
+
+
 // Collect and output QC results for basecall, and report ONT coverage
 process QCExport {
 	tag "${params.dsname}"
@@ -370,8 +366,8 @@ process QCExport {
 		mode: "copy", enabled: params.outputQC, overwrite: true
 
 	input:
-	path flist 		from 	qc_ch.collect()
-	path bamlist 	from 	ont_cov_bam_ch.collect()
+	path qc_basecall_list 		from 	qc_basecall_in_ch.collect()
+	each path(reference_genome) from 	reference_genome_ch9
 
 	output:
 	path "${params.dsname}_basecall_report.html" into qc_out_ch
@@ -380,16 +376,16 @@ process QCExport {
 	"""
 	## Combine all sequencing summary files
 	touch ${params.dsname}_combine_sequencing_summary.txt.gz
-	fnlist=\$(find . -name '*-sequencing_summary.txt')
+	fnlist=\$(find *.basecalled/ -name '*-sequencing_summary.txt')
 	firstFile=true
 	for fn in \$fnlist; do
 		if \$firstFile ; then
 			awk 'NR>=1' \$fn | \
-				gzip >> ${params.dsname}_combine_sequencing_summary.txt.gz
+				gzip -f >> ${params.dsname}_combine_sequencing_summary.txt.gz
 			firstFile=false
 		else
 			awk 'NR>1' \$fn | \
-				gzip >> ${params.dsname}_combine_sequencing_summary.txt.gz
+				gzip -f >> ${params.dsname}_combine_sequencing_summary.txt.gz
 		fi
 	done
 
@@ -397,23 +393,30 @@ process QCExport {
 		--names ${params.dsname} --outdir ${params.dsname}_QCReport -t \$(( numProcessor )) \
 		--verbose  --raw  -f pdf -p ${params.dsname}_
 
-    ## Merge the bam files
-	find . -maxdepth 1 -name "*.basecalled.bam" | \
-	    parallel --xargs -v samtools merge -@ \$(( numProcessor*2 )) \
-	    ${params.dsname}_merged.bam {}
+	## Combine all batch fq.gz
+	> merge_all_fq.fq.gz
+	cat *.basecalled/batch_basecall_combine_fq_*.fq.gz > merge_all_fq.fq.gz
+	echo "### Fastq merge from all batches done!"
 
-    samtools index ${params.dsname}_merged.bam  -@ \$(( numProcessor*2 ))
-    echo "Samtools merging done!"
+	## After basecall, we align results for ONT coverage analyses
+	# align FASTQ files to reference genome, write sorted alignments to a BAM file
+	minimap2 -t \$(( numProcessor*2 )) -a  -x map-ont \
+		${referenceGenome} \
+		merge_all_fq.fq.gz | \
+		samtools sort -@ \$(( numProcessor*2 )) -T tmp -o \
+		merge_all_bam.bam
+	samtools index -@ \$(( numProcessor*2 ))  merge_all_bam.bam
+    echo "### Samtools alignment done"
 
     ## calculates the sequence coverage at each position
     ## reporting genome coverage for all positions in BEDGRAPH format.
-    bedtools genomecov -ibam ${params.dsname}_merged.bam -bg -strand + |
+    bedtools genomecov -ibam merge_all_bam.bam -bg -strand + |
         awk '\$4 = \$4 FS "+"' |
-        gzip > ${params.dsname}.coverage.positivestrand.bed.gz
+        gzip -f > ${params.dsname}.coverage.positivestrand.bed.gz
 
-    bedtools genomecov -ibam ${params.dsname}_merged.bam -bg -strand - |
+    bedtools genomecov -ibam merge_all_bam.bam -bg -strand - |
         awk '\$4 = \$4 FS "-"' |
-        gzip > ${params.dsname}.coverage.negativestrand.bed.gz
+        gzip -f > ${params.dsname}.coverage.negativestrand.bed.gz
 
     cat ${params.dsname}.coverage.positivestrand.bed.gz > ${params.dsname}_ONT_coverage_combine.bed.gz
 	cat ${params.dsname}.coverage.negativestrand.bed.gz >> ${params.dsname}_ONT_coverage_combine.bed.gz
@@ -423,18 +426,15 @@ process QCExport {
 	mv ${params.dsname}_QCReport/${params.dsname}_NanoComp-report.html ${params.dsname}_basecall_report.html
 
 	## Clean
-	rm -f ${params.dsname}.coverage.positivestrand.bed.gz ${params.dsname}.coverage.negativestrand.bed.gz
-	rm -f ${params.dsname}_merged.bam*
-
-    echo "ONT coverage done!"
-    echo "### Basecall all DONE"
+	if [[ ${params.cleanStep} == "true" ]]; then
+		rm -f ${params.dsname}.coverage.positivestrand.bed.gz ${params.dsname}.coverage.negativestrand.bed.gz
+		rm -f ${params.dsname}_merged.bam*
+		rm -f merge_all_bam.bam*  merge_all_fq.fq.gz
+	fi
+    echo "### ONT coverage done!"
+    echo "### QCReport all DONE"
 	"""
 }
-
-
-// Duplicates basecall outputs
-basecall_out_ch
-	.into { resquiggle_in_ch; nanopolish_in_ch; deepmod_in_ch }
 
 
 // Resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
@@ -537,14 +537,13 @@ process Nanopolish {
 	## there are segment fault issues, if set -t to a large number or use low memory,
 	## ref: https://github.com/jts/nanopolish/issues/872
 	## ref: https://github.com/jts/nanopolish/issues/683, https://github.com/jts/nanopolish/issues/580
-	nanopolish call-methylation -t 1 -r \${fastqFile##*/} \
-		-b \${bamFileName} -g ${referenceGenome} > tmp.tsv
-
-	awk 'NR>1' tmp.tsv | gzip -f > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
+	nanopolish call-methylation -t \$(( numProcessor/2 )) -r \${fastqFile##*/} \
+		-b \${bamFileName} -g ${referenceGenome} | awk 'NR>1' | \
+		gzip -f > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
-		rm -f *.sorted.bam *.sorted.bam.bai tmp.tsv
+		rm -f *.sorted.bam *.sorted.bam.bai
 		rm -f *.fq.gz.index*
 	fi
 	echo "### Nanopolish methylation calling DONE"
@@ -631,12 +630,14 @@ process Megalodon {
 	fi
 
 	### mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_dir.baseName}.per_read_modified_base_calls.txt
-	awk 'NR>1' megalodon_results/per_read_modified_base_calls.txt | gzip > \
+	awk 'NR>1' megalodon_results/per_read_modified_base_calls.txt | gzip -f > \
 		batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt.gz
 
 	### Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
-		rm -rf megalodon_results/
+		### keep guppy server log, due to it may fail when remove that folder, rm -rf megalodon_results
+		find megalodon_results/  -maxdepth 1 -type f |\
+		 	parallel -j\$(( numProcessor )) 'rm {}'
 	fi
 	echo "### Megalodon DONE"
 	"""
@@ -776,6 +777,11 @@ process Guppy {
 		cat \$f >> batch_combine_fq.fq.gz
 	done
 
+	## Remove fastq.gz
+	find "${fast5_dir.baseName}.methcalled/"   "${fast5_dir.baseName}.methcalled/pass/"\
+	 	"${fast5_dir.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq.gz' |\
+	 	parallel -j\$(( numProcessor )) 'rm -f {}'
+
 	## gcf52ref ways
 	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \
 		batch_combine_fq.fq.gz | \
@@ -803,7 +809,7 @@ process Guppy {
 		-o tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv
 	echo "### gcf52ref extract to tsv DONE"
 
-	awk 'NR>1' tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv | gzip > \
+	awk 'NR>1' tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv | gzip -f > \
 		batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz
 	echo "### gcf52ref DONE"
 
@@ -1159,7 +1165,8 @@ process GuppyComb {
 	## fast5mod ways combine
 	## find name like batch_*.guppy.fast5mod_guppy2sam.bam*
 	find . -name 'batch_*.guppy.fast5mod_guppy2sam.bam' -maxdepth 1 |
-		parallel --xargs -v samtools merge -@\$(( numProcessor*2 )) total.meth.bam {}
+		parallel -j\$(( numProcessor )) --xargs -v \
+		samtools merge -@\$(( numProcessor*2 )) total.meth.bam {}
 
 	### sort is not used due to merge the sorted bam, ref: http://www.htslib.org/doc/samtools-merge.html
 	### samtools sort -@ \$(( numProcessor*2 )) total.meth.bam
@@ -1168,23 +1175,35 @@ process GuppyComb {
 
 	tar -czf ${params.dsname}.guppy_fast5mod.combined.bam.tar.gz total.meth.bam*
 
+	awk '/^>/' ${referenceGenome} | awk '{print \$1}' \
+		> rf_chr_all_list.txt
 	if [[ "${params.dataType}" == "human" ]] ; then
 		echo "### For human, extract chr1-22, X and Y"
+		> chr_all_list.txt
+		for i in {1..22} X Y
+		do
+			if cat rf_chr_all_list.txt | grep -w ">chr\${i}" -q ; then
+				echo chr\${i} >> chr_all_list.txt
+			fi
+		done
+		rm  -f rf_chr_all_list.txt
+		echo "### Chomosome list"
+		cat chr_all_list.txt
+
 		## Ref: https://github.com/nanoporetech/medaka/issues/177
-		parallel -j0 -v \
+		parallel -j\$(( numProcessor*3 )) -v \
 			"fast5mod call total.meth.bam ${referenceGenome} \
-        		meth.chr_{}.tsv  --meth cpg --quiet --regions chr{} ; \
-        		gzip -f meth.chr_{}.tsv" ::: {1..22} X Y
+        		meth.chr_{}.tsv  --meth cpg --quiet --regions {} ; \
+        		gzip -f meth.chr_{}.tsv" :::: chr_all_list.txt
 
 		touch ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
         for i in {1..22} X Y
 		do
-			if [ -f "meth.chr_\$i.tsv.gz" ]; then
-				cat  meth.chr_\$i.tsv.gz >> \
+			if [ -f "meth.chr_chr\$i.tsv.gz" ]; then
+				cat  meth.chr_chr\$i.tsv.gz >> \
 					${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
 			fi
 		done
-
 	elif [[ "${params.dataType}" == "ecoli" ]] ; then
 		echo "### For ecoli, chr=${chrSet}"
 		fast5mod call total.meth.bam ${referenceGenome} \
@@ -1312,7 +1331,6 @@ process DpmodComb {
 	for dx in $x
 	do
 		mkdir -p indir/\$dx
-		## TODO: parallel this cp function
 		cp -rf \$dx/*.C.bed indir/\$dx/
 	done
 
@@ -1328,7 +1346,7 @@ process DpmodComb {
 	do
 	  cat \$f >> ${params.dsname}.deepmod.C_per_site.combine.bed
 	done
-	gzip ${params.dsname}.deepmod.C_per_site.combine.bed
+	gzip -f ${params.dsname}.deepmod.C_per_site.combine.bed
 
 	if [[ "${params.dataType}" == "human" && "${isDeepModCluster}" == "true" ]] ; then
 		## Only apply to human genome
@@ -1356,7 +1374,7 @@ process DpmodComb {
 		  cat \$f >> ${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed
 		done
 
-		gzip ${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed
+		gzip -f ${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed
 		tar -czf ${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz \
 			indir/${params.dsname}.deepmod_clusterCpG.chr*.C.bed
 	fi
@@ -1465,7 +1483,7 @@ process METEORE {
 		mkdir -p Read_Level-${params.dsname}
 		zcat ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz | \
 			awk -F '\t' 'BEGIN {OFS = FS} {print \$1,\$2,\$3,\$6,\$5}' |
-			gzip > Read_Level-${params.dsname}/${params.dsname}_METEORE-perRead-score.tsv.gz
+			gzip -f > Read_Level-${params.dsname}/${params.dsname}_METEORE-perRead-score.tsv.gz
 
 		## Unify format output for site level
 		bash src/unify_format_for_calls.sh \
@@ -1495,6 +1513,7 @@ qc_report_out_ch
 	.set {report_in_ch}
 
 
+// Not cache due to the script contains run information, each time of resume run will need updated
 process Report {
 	tag "${params.dsname}"
 

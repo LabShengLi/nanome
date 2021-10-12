@@ -7,6 +7,8 @@
 #SBATCH --mem=6G # memory pool for all cores
 #SBATCH --time=05:00:00 # time
 #SBATCH --output=log/%x.%j.log # STDOUT & STDERR
+#SBATCH --mail-user=yang.liu@jax.org
+#SBATCH --mail-type=END
 
 set -x
 date;hostname;pwd
