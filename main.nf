@@ -97,6 +97,10 @@ if (params.dataType == 'human') {
 	exit 1
 }
 
+// If need, preload C.tar.gz file in advance
+deepmod_c_tar_ch = Channel.fromPath(deepmod_tar_file)
+
+
 // if is true or 'true' (string), using '  '
 chrSet = params.chrSet.toBoolean() ? '  ' : params.chrSet
 
@@ -328,16 +332,17 @@ process Basecall {
 	touch "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz
 
 	## Below is compatable with both Guppy v4.2.2 (old) and newest directory structures
-	for f in \$(find "${fast5_dir.baseName}.basecalled/" "${fast5_dir.baseName}.basecalled/pass/"\
-	 	"${fast5_dir.baseName}.basecalled/fail/" -maxdepth 1 -name '*.fastq.gz')
-	do
-		cat \$f >> "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz
-	done
+	find "${fast5_dir.baseName}.basecalled/" "${fast5_dir.baseName}.basecalled/pass/"\
+	 	"${fast5_dir.baseName}.basecalled/fail/" -maxdepth 1 -name '*.fastq.gz' -type f\
+	 	-print0 2>/dev/null | \
+	 	while read -d \$'\0' file ; do
+	 		cat \$file >> "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz
+	 	done
 	echo "### Combine fastq.gz DONE"
 
 	## Remove fastq.gz
 	find "${fast5_dir.baseName}.basecalled/"   "${fast5_dir.baseName}.basecalled/pass/"\
-	 	"${fast5_dir.baseName}.basecalled/fail/" -maxdepth 1 -name '*.fastq.gz' |\
+	 	"${fast5_dir.baseName}.basecalled/fail/" -maxdepth 1 -name '*.fastq.gz' -type f 2>/dev/null |\
 	 	parallel -j\$(( numProcessor )) 'rm -f {}'
 
 	## After basecall, rename and publish summary filenames, summary may also be used by resquiggle
@@ -376,22 +381,23 @@ process QCExport {
 	"""
 	## Combine all sequencing summary files
 	touch ${params.dsname}_combine_sequencing_summary.txt.gz
-	fnlist=\$(find *.basecalled/ -name '*-sequencing_summary.txt')
 	firstFile=true
-	for fn in \$fnlist; do
-		if \$firstFile ; then
-			awk 'NR>=1' \$fn | \
-				gzip -f >> ${params.dsname}_combine_sequencing_summary.txt.gz
-			firstFile=false
-		else
-			awk 'NR>1' \$fn | \
-				gzip -f >> ${params.dsname}_combine_sequencing_summary.txt.gz
-		fi
-	done
+	find *.basecalled/ -name '*-sequencing_summary.txt' -type f -print0 |\
+		while read -d \$'\0' file ; do
+			if \$firstFile ; then
+				awk 'NR>=1' \$file | \
+					gzip -f >> ${params.dsname}_combine_sequencing_summary.txt.gz
+				firstFile=false
+			else
+				awk 'NR>1' \$file | \
+					gzip -f >> ${params.dsname}_combine_sequencing_summary.txt.gz
+			fi
+		done
 
+	## Perform QC report by NanoComp
 	NanoComp --summary ${params.dsname}_combine_sequencing_summary.txt.gz  \
 		--names ${params.dsname} --outdir ${params.dsname}_QCReport -t \$(( numProcessor )) \
-		--verbose  --raw  -f pdf -p ${params.dsname}_
+		--raw  -f pdf -p ${params.dsname}_
 
 	## Combine all batch fq.gz
 	> merge_all_fq.fq.gz
@@ -404,8 +410,8 @@ process QCExport {
 		${referenceGenome} \
 		merge_all_fq.fq.gz | \
 		samtools sort -@ \$(( numProcessor*2 )) -T tmp -o \
-		merge_all_bam.bam
-	samtools index -@ \$(( numProcessor*2 ))  merge_all_bam.bam
+			merge_all_bam.bam &&\
+		samtools index -@ \$(( numProcessor*2 ))  merge_all_bam.bam
     echo "### Samtools alignment done"
 
     ## calculates the sequence coverage at each position
@@ -462,7 +468,8 @@ process Resquiggle {
 	mkdir -p ${basecallIndir.baseName}.resquiggle
 
 	### original basecalled results will be parrallelly used by other processes
-	cp -rf ${basecallIndir}/* ${basecallIndir.baseName}.resquiggle/
+	cp -f ${basecallIndir}/batch_basecall_combine_fq_*.fq.gz  ${basecallIndir.baseName}.resquiggle/
+	cp -rf ${basecallIndir}/workspace  ${basecallIndir.baseName}.resquiggle/
 
 	### Prerocessing, using combined fq.gz
 	### ref: https://github.com/bioinfomaticsCSU/deepsignal#quick-start
@@ -519,7 +526,7 @@ process Nanopolish {
 	bamFileName="${params.dsname}.batch_${basecallDir.baseName}.sorted.bam"
 
 	## Do alignment firstly, find the combined fastq file
-	fastqFile=\$(find ${basecallDir}/ -name 'batch_basecall_combine_fq_*.fq.gz')
+	fastqFile=\$(find ${basecallDir}/ -name 'batch_basecall_combine_fq_*.fq.gz' -type f)
 
 	# Index the raw read with fastq, we do not index in basecalled dir, in case of cache can be work
 	ln -s \${fastqFile}  \${fastqFile##*/}
@@ -529,8 +536,8 @@ process Nanopolish {
 
 	## Aligning reads to the reference genome, ref: https://nanopolish.readthedocs.io/en/latest/quickstart_call_methylation.html#aligning-reads-to-the-reference-genome
 	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \${fastqFile##*/} | \
-		samtools sort -@ \$(( numProcessor*2 )) -T tmp -o \${bamFileName}
-	samtools index -@ \$(( numProcessor*2 ))  \${bamFileName}
+		samtools sort -@ \$(( numProcessor*2 )) -T tmp -o \${bamFileName} &&\
+		samtools index -@ \$(( numProcessor*2 ))  \${bamFileName}
 	echo "### Alignment step: minimap2 and samtools DONE"
 
 	## Calling methylation, ref: https://nanopolish.readthedocs.io/en/latest/quickstart_call_methylation.html#calling-methylation
@@ -724,7 +731,7 @@ process Guppy {
 	each path("*") 					from 	ch_utils4
 
 	output:
-	path "outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz" into guppy_methcall_gz_out_ch
+	path "outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz" optional true into guppy_methcall_gz_out_ch
 	path "batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*" into guppy_methcall_out_ch
 	path "batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz" into guppy_gcf52ref_out_ch
 
@@ -771,31 +778,33 @@ process Guppy {
 	## Extract guppy methylation-callings
 	## Combine fastq
 	touch batch_combine_fq.fq.gz
-	for f in \$(find "${fast5_dir.baseName}.methcalled/" "${fast5_dir.baseName}.methcalled/pass/"\
-	 	"${fast5_dir.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq.gz')
-	do
-		cat \$f >> batch_combine_fq.fq.gz
-	done
+
+	find "${fast5_dir.baseName}.methcalled/" "${fast5_dir.baseName}.methcalled/pass/"\
+	 	"${fast5_dir.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq.gz' -type f\
+	 	-print0 2>/dev/null | \
+	 	while read -d \$'\0' file ; do
+	 		cat \$file >> batch_combine_fq.fq.gz
+	 	done
 
 	## Remove fastq.gz
 	find "${fast5_dir.baseName}.methcalled/"   "${fast5_dir.baseName}.methcalled/pass/"\
-	 	"${fast5_dir.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq.gz' |\
+	 	"${fast5_dir.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq.gz' \
+	 	-type f 2>/dev/null |\
 	 	parallel -j\$(( numProcessor )) 'rm -f {}'
 
 	## gcf52ref ways
 	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \
 		batch_combine_fq.fq.gz | \
 		samtools sort -@ \$(( numProcessor*2 )) \
-		-T tmp -o gcf52ref.batch.${fast5_dir.baseName}.bam
-
-	samtools index -@ \$(( numProcessor*2 )) \
-		gcf52ref.batch.${fast5_dir.baseName}.bam
-	echo "### gcf52ref minimap2 alignment is done!"
+			-T tmp -o gcf52ref.batch.${fast5_dir.baseName}.bam &&\
+		samtools index -@ \$(( numProcessor*2 )) \
+			gcf52ref.batch.${fast5_dir.baseName}.bam
+	echo "### gcf52ref minimap2 alignment is done"
 
 	## Modified version, support dir input, not all fast5 files (too long arguments)
 	python utils/extract_methylation_fast5_support_dir.py \
 		-p \$(( numProcessor*2 )) ${fast5_dir.baseName}.methcalled/workspace
-	echo "### gcf52ref extract to db DONE"
+	echo "### gcf52ref extract to db done"
 
 	## gcf52ref files preparation
 	### git clone https://github.com/kpalin/gcf52ref.git
@@ -807,11 +816,11 @@ process Guppy {
 		-a gcf52ref.batch.${fast5_dir.baseName}.bam \
 		-r ${referenceGenome} \
 		-o tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv
-	echo "### gcf52ref extract to tsv DONE"
+	echo "### gcf52ref extract to tsv done"
 
 	awk 'NR>1' tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv | gzip -f > \
 		batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz
-	echo "### gcf52ref DONE"
+	echo "### gcf52ref extraction DONE"
 
 	## fast5mod ways
 	FAST5PATH=${fast5_dir.baseName}.methcalled/workspace
@@ -820,12 +829,14 @@ process Guppy {
 	fast5mod guppy2sam \${FAST5PATH} --reference ${referenceGenome} \
 		--workers 74 --recursive --quiet \
 		| samtools sort -@ \$(( numProcessor*2 )) | \
-		samtools view -b -@ \$(( numProcessor*2 )) > \${OUTBAM}
-	samtools index -@ \$(( numProcessor*2 ))  \${OUTBAM}
+		samtools view -b -@ \$(( numProcessor*2 )) > \${OUTBAM} &&\
+		samtools index -@ \$(( numProcessor*2 ))  \${OUTBAM}
 
-	tar -czf outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz \
-		batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
-	echo "### fast5mod DONE"
+	if [[ "${params.outputIntermediate}" == true ]] ; then
+		tar -czf outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz \
+			batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
+	fi
+	echo "### fast5mod extraction DONE"
 
 	## Clean
 	## methcalled folder is no need, keep only gcf52ref's tsv and fast5mod's bam for combine step
@@ -836,7 +847,7 @@ process Guppy {
 		rm -rf base_mods.rocksdb/
 		echo "### Clean DONE"
 	fi
-	echo "### Guppy fast5mod and gcf52ref DONE"
+	echo "### Guppy methcall, extracted by fast5mod and gcf52ref DONE"
 	"""
 }
 
@@ -883,7 +894,7 @@ process Tombo {
 		echo "### Found error in tombo detect_modifications, repeat tombo running again!!!"
 		tombo detect_modifications alternative_model \
 			--fast5-basedirs ${resquiggleDir}/workspace \
-			--dna --standard-log-likelihood-ratio \
+			--dna\
 			--statistics-file-basename batch_${resquiggleDir.baseName} \
 			--per-read-statistics-basename batch_${resquiggleDir.baseName} \
 			--alternate-bases CpG \
@@ -939,7 +950,7 @@ process DeepMod {
 
 	output:
 	path "mod_output/batch_${basecallDir.baseName}_num" into deepmod_out_ch
-	path "batch_${basecallDir.baseName}_num.tar.gz" into deepmod_gz_out_ch
+	path "batch_${basecallDir.baseName}_num.tar.gz" optional true  into deepmod_gz_out_ch
 
 	when:
 	params.runMethcall && params.runDeepMod && !params.filterGPUTaskRuns
@@ -976,9 +987,11 @@ process DeepMod {
 			--FileID batch_${basecallDir.baseName}_num \
 			--threads \$(( numProcessor*${params.deepLearningProcessorTimes} ))  ${params.moveOption ? '--move' : ' '}
 
-	tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
+	if [[ "${params.outputIntermediate}" == true ]] ; then
+		tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
+	fi
 
-	## Clean
+	## Clean unused files
 	if [[ ${params.cleanStep} == "true" ]]; then
 		rm -f mod_output/batch_${basecallDir.baseName}_num/rnn.pred.ind.*
 		rm -rf mod_output/batch_${basecallDir.baseName}_num/0
@@ -1150,9 +1163,9 @@ process GuppyComb {
 	output:
 	path "${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz" into guppy_fast5mod_combine_out_ch
 	path "${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz" into guppy_gcf52ref_combine_out_ch
-	path "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz" into guppy_combine_raw_out_ch
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz" into read_unify_guppy
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz" into site_unify_guppy
+	path "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz" optional true into guppy_combine_raw_out_ch
 
 	when:
 	x.size() >= 1 && params.runCombine
@@ -1164,16 +1177,18 @@ process GuppyComb {
 
 	## fast5mod ways combine
 	## find name like batch_*.guppy.fast5mod_guppy2sam.bam*
-	find . -name 'batch_*.guppy.fast5mod_guppy2sam.bam' -maxdepth 1 |
+	find . -maxdepth 1  -name 'batch_*.guppy.fast5mod_guppy2sam.bam' |
 		parallel -j\$(( numProcessor )) --xargs -v \
 		samtools merge -@\$(( numProcessor*2 )) total.meth.bam {}
 
-	### sort is not used due to merge the sorted bam, ref: http://www.htslib.org/doc/samtools-merge.html
+	### sort is not needed due to merge the sorted bam, ref: http://www.htslib.org/doc/samtools-merge.html
 	### samtools sort -@ \$(( numProcessor*2 )) total.meth.bam
 	samtools index -@ \$(( numProcessor*2 )) total.meth.bam
 	echo "Samtool merge and index for fast5mod DONE"
 
-	tar -czf ${params.dsname}.guppy_fast5mod.combined.bam.tar.gz total.meth.bam*
+	if [[ ${params.outputIntermediate} == true ]] ; then
+		tar -czf ${params.dsname}.guppy_fast5mod.combined.bam.tar.gz total.meth.bam*
+	fi
 
 	awk '/^>/' ${referenceGenome} | awk '{print \$1}' \
 		> rf_chr_all_list.txt
@@ -1297,16 +1312,16 @@ process DpmodComb {
 
 	input:
 	path x 					from deepmod_combine_in_ch
-	path deepmod_c_tar_file from Channel.fromPath(deepmod_tar_file)
+	path deepmod_c_tar_file from deepmod_c_tar_ch
 	each path("*") 			from ch_utils6
 	path ("*")				from ch_src_c6
 
 	output:
 	path "${params.dsname}.deepmod.*.combine.bed.gz" into deepmod_combine_out_ch
-	path "${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz" into deepmod_combine_sum_chrs_mod_ch
-	path "${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz" optional true into deepmod_combine_c_cluster_all_chrs_ch
-	path "${params.dsname}.deepmod.all_batch.C.bed.tar.gz" into deepmod_combine_all_batch_c_ch
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz" into site_unify_deepmod
+	path "${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz" optional true into deepmod_combine_sum_chrs_mod_ch
+	path "${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz" optional true into deepmod_combine_c_cluster_all_chrs_ch
+	path "${params.dsname}.deepmod.all_batch.C.bed.tar.gz" optional true  into deepmod_combine_all_batch_c_ch
 
 	when:
 	x.size() >= 1 && params.runCombine
@@ -1375,14 +1390,19 @@ process DpmodComb {
 		done
 
 		gzip -f ${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed
-		tar -czf ${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz \
-			indir/${params.dsname}.deepmod_clusterCpG.chr*.C.bed
+
+		if [[ "${params.outputIntermediate}" == true ]] ; then
+			tar -czf ${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz \
+				indir/${params.dsname}.deepmod_clusterCpG.chr*.C.bed
+		fi
 	fi
 
-	tar -czf ${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz \
-		indir/${params.dsname}.deepmod.*.C.bed
-	tar -czf ${params.dsname}.deepmod.all_batch.C.bed.tar.gz \
-		indir/batch_*_num/mod_pos.*.C.bed
+	if [[ "${params.outputIntermediate}" == true ]] ; then
+		tar -czf ${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz \
+			indir/${params.dsname}.deepmod.*.C.bed
+		tar -czf ${params.dsname}.deepmod.all_batch.C.bed.tar.gz \
+			indir/batch_*_num/mod_pos.*.C.bed
+	fi
 
 	if [[ "${isDeepModCluster}" == "true" ]] ; then
 		callfn=${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed.gz
@@ -1452,18 +1472,18 @@ process METEORE {
 	printf '%s\t%s\n' deepsignal ${deepsignal} >> \$outFileName
 	printf '%s\t%s\n' megalodon ${megalodon} >> \$outFileName
 
-	METEOREDIR=\$(find /data -maxdepth 1 -name "${params.METEORE_Dir}")
+	METEOREDIR=\$(find /data -maxdepth 1 -name "${params.METEORE_Dir}" -type d)
 	if [[ \$METEOREDIR == "" ]]; then
 		wget ${params.METEOREGithub}  --no-verbose
 		tar -xzf v1.0.0.tar.gz
-		METEOREDIR=\$(find . -name "${params.METEORE_Dir}")
+		METEOREDIR=\$(find . -name "${params.METEORE_Dir}" -type d)
 	fi
 
 	## Degrade sk-learn for METEORE program if needed, it's model load need lower version
 	## pip install -U scikit-learn==0.21.3
 	combineScript=utils/combination_model_prediction.py
 
-	modelContentFileName=\$(find . -name "${params.dsname}_Megalodon_DeepSignal_combine.model_content.tsv")
+	modelContentFileName=\$(find . -name "${params.dsname}_Megalodon_DeepSignal_combine.model_content.tsv" -type f)
 	# Use the optimized model
 	# Please note this optimized model is reported in METEORE paper, ref: https://github.com/comprna/METEORE#command
 	# paper: https://doi.org/10.1101/2020.10.14.340315, text:  random forest (RF) (parameters: max_depth=3 and n_estimator=10)
