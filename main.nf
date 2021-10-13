@@ -447,10 +447,10 @@ process QCExport {
 process Resquiggle {
 	tag "${basecallIndir.baseName}"
 
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle",
-		mode: "copy",
-		pattern: "${basecallIndir.baseName}.resquiggle.run.log",
-		enabled: params.outputIntermediate
+//	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle",
+//		mode: "copy",
+//		pattern: "${basecallIndir.baseName}.resquiggle.run.log",
+//		enabled: params.outputIntermediate
 
 	input:
 	path 	basecallIndir 			from resquiggle_in_ch
@@ -458,18 +458,23 @@ process Resquiggle {
 
 	output:
 	path "${basecallIndir.baseName}.resquiggle" into resquiggle_out_ch
-	path "${basecallIndir.baseName}.resquiggle.run.log" into resquiggle_logs
+//	path "${basecallIndir.baseName}.resquiggle.run.log" optional true into resquiggle_logs
 
 	when:
 	params.runMethcall && params.runResquiggle && !params.filterGPUTaskRuns
 
 	"""
 	### copy basecall workspace files, due to tombo resquiggle modify base folder
-	mkdir -p ${basecallIndir.baseName}.resquiggle
+	mkdir -p ${basecallIndir.baseName}.resquiggle/workspace
 
 	### original basecalled results will be parrallelly used by other processes
 	cp -f ${basecallIndir}/batch_basecall_combine_fq_*.fq.gz  ${basecallIndir.baseName}.resquiggle/
-	cp -rf ${basecallIndir}/workspace  ${basecallIndir.baseName}.resquiggle/
+
+	## cp -rf ${basecallIndir}/workspace  ${basecallIndir.baseName}.resquiggle/
+	find ${basecallIndir}/workspace -name '*.fast5' -type f| \
+		parallel -j\$(( numProcessor*${params.speedProcessorTimes} ))  \
+		'cp {}   ${basecallIndir.baseName}.resquiggle/workspace/'
+	echo "### Duplicate from basecall DONE"
 
 	### Prerocessing, using combined fq.gz
 	### ref: https://github.com/bioinfomaticsCSU/deepsignal#quick-start
@@ -479,20 +484,21 @@ process Resquiggle {
 	 	--fastq-filenames ${basecallIndir.baseName}.resquiggle/batch_basecall_combine_fq_*.fq\
 	 	--basecall-group ${params.BasecallGroupName}\
 	 	--basecall-subgroup ${params.BasecallSubGroupName}\
-	 	--overwrite --processes \$(( numProcessor*2 ))  2>&1
+	 	--overwrite --processes \$(( numProcessor*${params.speedProcessorTimes} ))  2>&1
 	echo "### tombo preprocess DONE"
 
 	### Need to check Tombo bug of BrokenPipeError, it is very fast even set to 1.
 	### ref: https://github.com/nanoporetech/tombo/issues/139
 	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
 	tombo resquiggle\
-		--processes \$(( numProcessor*2 )) \
+		--processes \$(( numProcessor )) \
 		--corrected-group ${params.ResquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} \
 		--overwrite \
 		${basecallIndir.baseName}.resquiggle/workspace \
-		${referenceGenome} &> \
-		${basecallIndir.baseName}.resquiggle.run.log
+		${referenceGenome} 2>&1
+
+	### &>  ${basecallIndir.baseName}.resquiggle.run.log
 	echo "### tombo resquiggle DONE"
 	"""
 }
@@ -867,7 +873,6 @@ process Tombo {
 
 	output:
 	path "batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed.gz" into tombo_out_ch
-	path "${resquiggleDir.baseName}.tombo.run.log" into tombo_log_ch
 
 	when:
 	params.runMethcall && params.runTombo && !params.filterGPUTaskRuns
@@ -884,7 +889,7 @@ process Tombo {
 		--alternate-bases CpG \
 		--processes \$(( numProcessor )) \
 		--corrected-group ${params.ResquiggleCorrectedGroup} \
-		--multiprocess-region-size 1000 &> \
+		--multiprocess-region-size ${params.TomboMultiprocessRegionSize} &> \
 		${resquiggleDir.baseName}.tombo.run.log
 
 	retry=1
@@ -900,7 +905,7 @@ process Tombo {
 			--alternate-bases CpG \
 			--processes \$(( numProcessor )) \
 			--corrected-group ${params.ResquiggleCorrectedGroup} \
-			--multiprocess-region-size 1000 &> \
+			--multiprocess-region-size ${params.TomboMultiprocessRegionSize} &> \
 			${resquiggleDir.baseName}.tombo.run.log
 		retry=\$(( retry+1 ))
 		if (( retry >= 5 )); then
