@@ -20,8 +20,10 @@ import pybedtools
 from sklearn.metrics import confusion_matrix
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import nonsingletonsFile, singletonsFile, nanome_version, singletonFileExtStr, \
-    narrowCoordNameList, cg_density_coord_name_list, rep_coord_name_list, perf_report_columns, save_done_file
+from nanocompare.global_settings import nanome_version, perf_report_columns, \
+    save_done_file, \
+    region_filename_dict, region_tagname_dict, sing_tagname, nonsing_tagname, concord_tagname, discord_tagname, \
+    load_genome_annotation_config
 
 
 def calculate_meth_unmeth(bgTruth, keySet):
@@ -98,7 +100,7 @@ def report_singleton_nonsingleton_bsseq_table(bgTruth, outfn, fn_concordant, fn_
 
 
 def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None,
-                                secondFilterBedFileName=None, cutoff_meth=1.0, outdir=None, tagname=None):
+                                secondFilterBedFileName=None, cutoff_meth=1.0, outdir=None, prefix_name=None):
     """
     Report performance results
     :param ontCalls: tool's call
@@ -112,8 +114,8 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     d = defaultdict(list)
     bar = tqdm(narrowedCoordinatesList)
     for coord_tuple in bar:
-        bar.set_description(f"Read-level-{tagname}-{'Genome-wide' if coord_tuple is None else coord_tuple[1]}")
-        if coord_tuple is not None:
+        bar.set_description(f"Read-level-{prefix_name}-{genome_wide_tagname if coord_tuple is None else coord_tuple[1]}")
+        if coord_tuple[1] != genome_wide_tagname:
             if not args.large_mem:
                 eval_coord_tuple = \
                     get_region_bed_tuple(coord_tuple[0],
@@ -123,29 +125,27 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
                                          cache_dir=ds_cache_dir)
             else:
                 eval_coord_tuple = coord_tuple
-        else:
-            eval_coord_tuple = None
+        else: #genome-wide setting
+            eval_coord_tuple = coord_tuple
 
-        if eval_coord_tuple is not None and eval_coord_tuple[2] is None:
+        if eval_coord_tuple[1] != genome_wide_tagname and eval_coord_tuple[2] is None:
             logger.debug(
                 f"Bed region tagname={eval_coord_tuple[1]} is not found, not evaluated, check genome-annotaion dir={args.genome_annotation} for file {eval_coord_tuple[0]}")
             continue
         accuracy, roc_auc, ap, f1_macro, f1_micro, \
         precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, \
         recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, \
-        F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth, bed_fn_basename = \
+        F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth, tagname = \
             computePerReadPerfStats(ontCalls, bgTruth, analysisPrefix, coordBedFileName=eval_coord_tuple,
                                     secondFilterBedFileName=secondFilterBedFileName,
                                     cutoff_fully_meth=cutoff_meth, outdir=outdir,
-                                    tagname=tagname, save_curve_data=args.save_curve_data)
+                                    prefix_name=prefix_name, save_curve_data=args.save_curve_data)
 
-        coord_basefn = os.path.basename(f'{eval_coord_tuple[0] if eval_coord_tuple is not None else "x.x.Genome-wide"}')
-        if not args.large_mem:
-            if eval_coord_tuple is not None:
-                del eval_coord_tuple  # clean memory if possible
+        if tagname is None:
+            continue
 
         d["prefix"].append(analysisPrefix)
-        d["coord"].append(coord_basefn)
+        d["coord"].append(tagname)
         d["Accuracy"].append(accuracy)
         d["Average-Precision"].append(ap)
         d["Macro-F1"].append(f1_macro)
@@ -177,7 +177,7 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
 
 
 def report_per_read_performance_mpi(ontCalls, bgTruth, analysisPrefix, narrowedCoordinatesList=None,
-                                    secondFilterBedFileName=None, cutoff_meth=1.0, outdir=None, tagname=None):
+                                    secondFilterBedFileName=None, cutoff_meth=1.0, outdir=None, prefix_name=None):
     """
     Report performance results, multi-thread version
     :param ontCalls: tool's call
@@ -196,7 +196,8 @@ def report_per_read_performance_mpi(ontCalls, bgTruth, analysisPrefix, narrowedC
     progress_bar_global_read.set_description(f"MT-Read-level-{analysisPrefix}")
 
     for coord_tuple in narrowedCoordinatesList:
-        if coord_tuple is not None:
+        ## Load bed
+        if coord_tuple[1] != genome_wide_tagname:
             if not args.large_mem:
                 eval_coord_tuple = \
                     get_region_bed_tuple(coord_tuple[0],
@@ -204,19 +205,21 @@ def report_per_read_performance_mpi(ontCalls, bgTruth, analysisPrefix, narrowedC
                                          enable_cache=args.enable_cache,
                                          using_cache=args.using_cache,
                                          cache_dir=ds_cache_dir)
-            else:
+            else: # already in memory
                 eval_coord_tuple = coord_tuple
-        else:
-            eval_coord_tuple = None
-        if eval_coord_tuple is not None and eval_coord_tuple[2] is None:
+        else: # genome-wide, (None, 'Genome-wide', None)
+            eval_coord_tuple = coord_tuple
+        ## skip for None bed regions, except for genome-wide
+        if eval_coord_tuple[1] != genome_wide_tagname and eval_coord_tuple[2] is None:
             logger.debug(
                 f"Bed region tagname={eval_coord_tuple[1]} is not found, not evaluated, check genome-annotaion dir={args.genome_annotation} for file {eval_coord_tuple[0]}")
             continue
+        ## compute read-level performance for a bed tuple of a region
         future = executor.submit(computePerReadPerfStats, ontCalls, bgTruth, analysisPrefix,
                                  coordBedFileName=eval_coord_tuple,
                                  secondFilterBedFileName=secondFilterBedFileName,
                                  cutoff_fully_meth=cutoff_meth, outdir=outdir,
-                                 tagname=tagname, save_curve_data=args.save_curve_data)
+                                 prefix_name=prefix_name, save_curve_data=args.save_curve_data)
         future.add_done_callback(update_progress_bar_read_level)
         all_tasks.append(future)
     executor.shutdown()
@@ -226,6 +229,8 @@ def report_per_read_performance_mpi(ontCalls, bgTruth, analysisPrefix, narrowedC
     for future in all_tasks:
         ret = future.result()
         ret_dict = unpack_read_level_perf_ret_dict(ret)
+        if ret_dict is None: # skip None tagname results
+            continue
         ret_dict.update({"prefix": analysisPrefix})
         datasets.append(ret_dict)
     df = pd.DataFrame(datasets)
@@ -401,9 +406,9 @@ def compute_dist_at_region_mp(joined_bed, four_region_bed_list, region_tuple):
     logging.debug(f"Distribution analysis for Region={region_tuple}")
     singleton_bed, nonsingleton_bed, concordant_bed, discordant_bed = four_region_bed_list
 
-    coordFn = None  # used for intersection later
-    if region_tuple is not None:
-        if region_tuple[1] in ['Singletons', 'Non-singletons', 'Concordant', 'Discordant']:
+    coordFn = None  # will be used for intersection later, None for genome-wide
+    if region_tuple[1] != genome_wide_tagname:
+        if region_tuple[1] in [sing_tagname, nonsing_tagname, concord_tagname, discord_tagname]:
             return None
         if args.large_mem:
             (coordFn, tagname, coordBed) = region_tuple
@@ -420,7 +425,11 @@ def compute_dist_at_region_mp(joined_bed, four_region_bed_list, region_tuple):
         intersect_coord_bed = intersect_bed_regions(joined_bed, coordBed, coordFn)
     else:  # Genome-wide results, keep using joined
         intersect_coord_bed = joined_bed
-        tagname = "Genome-wide"
+        tagname = region_tuple[1]
+
+    if tagname is None:
+        logger.debug(f"ERROR: No region registered in config file for region_tuple={region_tuple}")
+        return None
 
     logger.debug(f"Start study tagname={tagname}, coordFn={coordFn}")
     num_total = len(intersect_coord_bed)
@@ -445,10 +454,10 @@ def compute_dist_at_region_mp(joined_bed, four_region_bed_list, region_tuple):
         'Dataset': dsname,
         'Coord': tagname,
         'Total': num_total,
-        'Singletons': num_singleton,
-        'Non-singletons': num_nonsingleton,
-        'Concordant': num_concordant,
-        'Discordant': num_discordant
+        sing_tagname: num_singleton,
+        nonsing_tagname: num_nonsingleton,
+        concord_tagname: num_concordant,
+        discord_tagname: num_discordant
     }
 
     logger.debug(
@@ -474,10 +483,13 @@ def unpack_read_level_perf_ret_dict(ret_list):
     accuracy, roc_auc, ap, f1_macro, f1_micro, \
     precision_macro, precision_micro, recall_macro, recall_micro, precision_5C, \
     recall_5C, F1_5C, cCalls, precision_5mC, recall_5mC, \
-    F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth, bed_fn_basename = ret_list
+    F1_5mC, mCalls, referenceCpGs, cSites_BGTruth, mSites_BGTruth, tagname = ret_list
+
+    if tagname is None:
+        return None
 
     ret_dict = {
-        "coord": bed_fn_basename,
+        "coord": tagname,
         "Accuracy": accuracy,
         "Average-Precision": ap,
         "Macro-F1": f1_macro,
@@ -520,7 +532,7 @@ def parse_arguments():
                         required=True)
     parser.add_argument('--genome-annotation', type=str,
                         help='genome annotation dir, contain BED files such as singleton, nonsingleton, etc.',
-                        required=True)
+                        default=None)
     parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff, default is 5", default=5)
     parser.add_argument('--processors', type=int, help="number of processors used, default is 1", default=1)
     parser.add_argument('--report-joined', action='store_true', help="true if report on only joined sets")
@@ -540,7 +552,8 @@ def parse_arguments():
     parser.add_argument('--cache-dir', type=str,
                         help=f'cache dir used for loading calls/bs-seq (speed up running), default is {global_cache_dir}',
                         default=global_cache_dir)
-    parser.add_argument('--disable-bed-check', help="if disable auto-checking the 0/1 base format for genome annotations",
+    parser.add_argument('--disable-bed-check',
+                        help="if disable auto-checking the 0/1 base format for genome annotations",
                         action='store_true')
     parser.add_argument('--mpi',
                         help="if using multi-processing/threading for evaluation, it can speed-up but may need more memory",
@@ -548,6 +561,7 @@ def parse_arguments():
     parser.add_argument('--mpi-import',
                         help="if using multi-processing/threading for import, it can speed-up, only for small size data",
                         action='store_true')
+    parser.add_argument('--config', help="if print out config file for genome annotation", action='store_true')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
 
@@ -559,9 +573,6 @@ if __name__ == '__main__':
         set_log_debug_level()
     else:
         set_log_info_level()
-
-    if not os.path.isdir(args.genome_annotation):
-        raise Exception(f"genome_annotation={args.genome_annotation} is not a valid dir")
 
     dsname = args.dsname
 
@@ -599,9 +610,23 @@ if __name__ == '__main__':
 
     # Add logging files also to result output dir
     add_logging_file(os.path.join(out_dir, 'run-results.log'))
-
     logger.debug(args)
 
+    if args.config:
+        load_genome_annotation_config(verbose=True)
+
+    singletonsFile = region_tagname_dict[sing_tagname][0]
+    nonsingletonsFile = region_tagname_dict[nonsing_tagname][0]
+    logger.debug(f"singletonsFile={singletonsFile}, nonsingletonsFile={nonsingletonsFile}")
+
+    ## Test if singleton/nonsinglton BED file exists
+    exists_singleton_or_nonsingleton = True
+    if args.genome_annotation is None or \
+            not os.path.exists(os.path.join(args.genome_annotation, singletonsFile)) or \
+            not os.path.exists(os.path.join(args.genome_annotation, nonsingletonsFile)):
+        exists_singleton_or_nonsingleton = False
+    logger.debug(
+        f"Detection of singleton/nonsingleton files: exists_singleton_or_nonsingleton={exists_singleton_or_nonsingleton}")
     # Note: all bed files (Singleton and NonSingleton) are 1-based start, even for "chr1  123  124" (This will conform for + or - strand).
     # So we must import as 1-based format for our tool or bgtruth, DO NOT USE baseFormat=0
     # We import and report 1-based results in our project
@@ -674,17 +699,23 @@ if __name__ == '__main__':
         ## add additional two region files based on bgtruth (Concordant, Discordant):
         ## file name is like: K562_WGBS_2Reps.hg38_nonsingletons.concordant.bed
         ## let nonsingletonsFilePrefix = "hg38_nonsingletons"
-        nonsingletonsFilePrefix = nonsingletonsFile.replace(singletonFileExtStr, '')
+        nonsingletonsFilePrefix = nonsingletonsFile.replace('.bed.gz',
+                                                            '')  # TODO: check all conco/disco file name and tag mapping
+
+        # concordant and discordant file are dataset dependent
+        # file like: HL60_RRBS_2Reps_HL60.hg38_nonsingletons_10bp.concordant.bed.gz
         fn_concordant = f"{out_dir}/{RunPrefix}_{args.dsname}.{nonsingletonsFilePrefix}.concordant.bed.gz"
         fn_discordant = f"{out_dir}/{RunPrefix}_{args.dsname}.{nonsingletonsFilePrefix}.discordant.bed.gz"
 
-        # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth) with cov>=1
-        # Classify concordant and discordant based on cov>=1 bgtruth
-        logger.info(f"Scan concordant and discordant regions based on BS-seq")
-        nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant,
-                                    nsDisCordantFileName=fn_discordant, genome_annotation_dir=args.genome_annotation)
+        if exists_singleton_or_nonsingleton:
+            # Define concordant and discordant based on bg-truth (only 100% and 0% sites in BG-Truth) with cov>=1
+            # Classify concordant and discordant based on cov>=1 bgtruth
+            logger.info(f"Scan concordant and discordant regions based on BS-seq")
+            nonSingletonsPostprocessing(absoluteBGTruth, nonsingletonsFile, nsConcordantFileName=fn_concordant,
+                                        nsDisCordantFileName=fn_discordant,
+                                        genome_annotation_dir=args.genome_annotation)
 
-        if args.bsseq_report:
+        if args.bsseq_report and exists_singleton_or_nonsingleton:
             # Report singletons vs non-singletons of bgtruth with cov cutoff >= 1
             outfn = os.path.join(out_dir, f'{RunPrefix}.summary.bsseq.singleton.nonsingleton.cov1.csv')
             logger.debug(f"For coverage >= 1")
@@ -779,7 +810,7 @@ if __name__ == '__main__':
     ## Delete not sorted file
     os.remove(bedfn_tool_join_bgtruth)
 
-    if args.bsseq_report:
+    if args.bsseq_report and exists_singleton_or_nonsingleton:
         ## Report joined CpGs in each regions, this is the really read level evaluation sites, Table S2
         outfn = os.path.join(out_dir,
                              f'{RunPrefix}.summary.bsseq.cov{cutoffBGTruth}.joined.tools.singleton.nonsingleton.table.like.s2.csv')
@@ -844,27 +875,27 @@ if __name__ == '__main__':
 
     # Evaluated all region filename lists,
     # assume all genome annotations are in args.genome_annotation dir
-    regions_full_filepath = [os.path.join(args.genome_annotation, cofn) for cofn in narrowCoordNameList[1:]] + \
-                            [os.path.join(args.genome_annotation, cofn) for cofn in cg_density_coord_name_list] + \
-                            [os.path.join(args.genome_annotation, cofn) for cofn in rep_coord_name_list] + \
+    annot_dir = args.genome_annotation if args.genome_annotation is not None else '.'
+
+    # region file path from genome-wide, singletons, to genic/intergenic, cg-density, and repetitive, and then concordant and discordant
+    regions_full_filepath = [None] + [os.path.join(annot_dir, cofn) for cofn in region_filename_dict.keys()] + \
                             [fn_concordant, fn_discordant]
 
     # Create the bed list for evaluation, save time for every loading of bed region
-    # None, singelton, non-singletons, ...
+    # Genome-wide, singelton, non-singletons, ...
     if args.large_mem:
-        eval_region_tuple_list = [None] + \
-                                 get_region_bed_pairs_list_mp(
-                                     regions_full_filepath, processors=args.processors,
-                                     enable_base_detection_bedfile=not args.disable_bed_check,
-                                     enable_cache=args.enable_cache,
-                                     using_cache=args.using_cache,
-                                     cache_dir=ds_cache_dir)
+        eval_region_tuple_list = get_region_bed_pairs_list_mp(
+            regions_full_filepath, processors=args.processors,
+            enable_base_detection_bedfile=not args.disable_bed_check,
+            enable_cache=args.enable_cache,
+            using_cache=args.using_cache,
+            cache_dir=ds_cache_dir)
         logger.info(f"Memory report: {get_current_memory_usage()}")
     else:
-        eval_region_tuple_list = [None] + [(infn, map_region_fn_to_name(infn), None,)
-                                           for infn in regions_full_filepath]
+        eval_region_tuple_list = [(infn, get_region_tagname(infn), None,)
+                                  for infn in regions_full_filepath]
 
-    if args.distribution:
+    if args.distribution and exists_singleton_or_nonsingleton:
         logger.debug("Report singletons/non-singletons in each genomic context regions in Fig.3 and 4")
 
         joined_bed = BedTool(bedfn_tool_join_bgtruth_sorted).sort()
@@ -950,12 +981,12 @@ if __name__ == '__main__':
             df = report_per_read_performance_mpi(ontCallWithinBGTruthDict[tool], eval_bgTruth, tmpPrefix,
                                                  narrowedCoordinatesList=eval_region_tuple_list,
                                                  secondFilterBedFileName=secondBedFileName, outdir=perf_dir,
-                                                 tagname=tmpPrefix)
+                                                 prefix_name=tmpPrefix)
         else:
             df = report_per_read_performance(ontCallWithinBGTruthDict[tool], eval_bgTruth, tmpPrefix,
                                              narrowedCoordinatesList=eval_region_tuple_list,
                                              secondFilterBedFileName=secondBedFileName, outdir=perf_dir,
-                                             tagname=tmpPrefix)
+                                             prefix_name=tmpPrefix)
 
             # This file will always report intermediate results, after for each tool, remove temp file
             tmpfn = os.path.join(perf_dir, 'performance.report.tmp.csv')
@@ -966,7 +997,7 @@ if __name__ == '__main__':
         df['Dataset'] = dsname
 
         # Rename function need to be checked
-        df["Location"] = df["coord"].apply(map_region_fn_to_name)
+        df["Location"] = df["coord"]
 
         # Select columns to save
         df = df[perf_report_columns]

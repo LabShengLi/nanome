@@ -253,12 +253,11 @@ The output files of pipeline on E. coli data by all tools are below, please also
 We constructed a list of benchmarking datasets that contain Fast5 reads from 800 to 8,000  for NA19240. The datasets can be got by users upon request. Following command is running NANOME pipeline on our benchmarking datasets, please refer to the input parameters for pipeline `-config` params [conf/benchmarking.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/benchmarking.config).
 
 ```angular2html
-git clone https://github.com/TheJacksonLaboratory/nanome.git
-cd nanome
-
 nextflow run TheJacksonLaboratory/nanome\
     -profile singularity,hpc  \
-    -config conf/benchmarking.config
+    -config conf/examples/benchmarking.config\
+    --dsname  'BenchmarkData'\
+	--input  "inputs/benchmark.filelist.txt"\
 ```
 
 Resource usage are reported by [Nextflow](https://www.nextflow.io/) workflow reporting utilities. Please refer to the [Trace file](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_benchmark.txt.tsv), [Report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_benchmark.pdf) and [Timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_benchmark.pdf) of benchmarking results on our HPC.

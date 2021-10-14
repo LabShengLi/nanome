@@ -1,13 +1,15 @@
 #!/bin/bash -e
 #SBATCH --job-name=nanome.demo.hpc
 #SBATCH -p gpu
-#SBATCH --gres=gpu:v100:1
+#SBATCH --gres=gpu:1
 #SBATCH -q inference
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 1 # number of cores
-#SBATCH --mem=20G # memory pool for all cores
-#SBATCH --time=02:00:00 # time
+#SBATCH -n 3 # number of cores
+#SBATCH --mem=10G # memory pool for all cores
+#SBATCH --time=01:30:00 # time
 #SBATCH --output=log/%x.%j.log # STDOUT & STDERR
+#SBATCH --mail-user=yang.liu@jax.org
+#SBATCH --mail-type=END
 
 date; hostname; pwd
 

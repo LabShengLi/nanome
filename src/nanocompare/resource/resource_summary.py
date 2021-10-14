@@ -11,9 +11,6 @@ from tqdm import tqdm
 
 from nanocompare.global_config import set_log_debug_level, pic_base_dir, logger
 
-## TODO: not use anymore
-
-
 run_log_dir = '/projects/li-lab/Nanopore_compare/result/running-logs'
 basedir = run_log_dir
 
@@ -71,7 +68,8 @@ def winter_task_summary():
 
         ## Tool methcall collection
         for tool in tool_list_on_winter:
-            methcall_logdir = os.path.join(basedir, f'{dsname}-Runs', f'{dsname}-{tool}-N{ntarget_dict[dsname]}', f'{dsname}-{tool}-N{ntarget_dict[dsname]}-methcall', 'log')
+            methcall_logdir = os.path.join(basedir, f'{dsname}-Runs', f'{dsname}-{tool}-N{ntarget_dict[dsname]}',
+                                           f'{dsname}-{tool}-N{ntarget_dict[dsname]}-methcall', 'log')
             pat_fns = os.path.join(methcall_logdir, '*.mcal.*.batch*.*.out')
             fnlist = glob.glob(pat_fns)
             logging.info(f'Methcall of {tool} collect: {len(fnlist)}')
@@ -130,7 +128,8 @@ def winter_task_summary_na19240():
 
     ## Tool methcall collection
     for tool in tool_list_on_winter:
-        methcall_logdir = os.path.join(basedir, f'{dsname}-Runs', f'{dsname}-{tool}-N{ntarget_dict[dsname]}', f'{dsname}-{tool}-N{ntarget_dict[dsname]}-methcall', 'log')
+        methcall_logdir = os.path.join(basedir, f'{dsname}-Runs', f'{dsname}-{tool}-N{ntarget_dict[dsname]}',
+                                       f'{dsname}-{tool}-N{ntarget_dict[dsname]}-methcall', 'log')
         pat_fns = os.path.join(methcall_logdir, '*.mcal.*.batch*.*.out')
         fnlist = glob.glob(pat_fns)
         logging.info(f'Methcall of {tool} collect: {len(fnlist)}')
@@ -169,7 +168,8 @@ def winter_megalodon_task_summary():
     dataset = defaultdict(list)
     for dsname in ntarget_dict:
         logging.info(dsname)
-        methdir = os.path.join(basedir, f'{dsname}-Runs', f'{dsname}-Megalodon-N{ntarget_dict[dsname]}', f'{dsname}-Megalodon-N{ntarget_dict[dsname]}-methcall', 'log')
+        methdir = os.path.join(basedir, f'{dsname}-Runs', f'{dsname}-Megalodon-N{ntarget_dict[dsname]}',
+                               f'{dsname}-Megalodon-N{ntarget_dict[dsname]}-methcall', 'log')
 
         pat_fns = os.path.join(methdir, '*.mcal.*.out')
         fnlist = glob.glob(pat_fns)
@@ -196,11 +196,14 @@ def winter_megalodon_task_summary():
         df2 = pd.read_pickle(batch_fast5_pkl)
         df = df1.merge(df2, on=['dsname', 'batchid'], how='left')
 
-        dfout = df[['dsname', 'tool', 'batchid', 'jobid', 'array.jobid', 'fast5', 'running.time.seconds', 'mem.usage.gb', 'job.results']]
+        dfout = df[
+            ['dsname', 'tool', 'batchid', 'jobid', 'array.jobid', 'fast5', 'running.time.seconds', 'mem.usage.gb',
+             'job.results']]
         outfn = os.path.join(pic_base_dir, 'recalculate.running.summary.Megalodon.xlsx')
         dfout.to_excel(outfn)
 
-        dfout = df[['dsname', 'tool', 'batchid', 'jobid', 'array.jobid', 'fast5', 'running.time.seconds', 'mem.usage.gb']]
+        dfout = df[
+            ['dsname', 'tool', 'batchid', 'jobid', 'array.jobid', 'fast5', 'running.time.seconds', 'mem.usage.gb']]
         outfn = os.path.join(pic_base_dir, 'recalculate.running.summary.Megalodon.csv')
         dfout.to_csv(outfn)
 
@@ -231,7 +234,8 @@ def sunmer_task_summary():
         ## Tool methcall collection
         for tool in tool_list_on_sumner:
             # HL60-Runs/HL60-Nanopolish-N50/HL60-Nanopolish-N50-methcall/log
-            methcall_logdir = os.path.join(basedir, f'{dsname}-Runs', f'{dsname}-{tool}-N{ntarget_dict[dsname]}', f'{dsname}-{tool}-N{ntarget_dict[dsname]}-methcall', 'log')
+            methcall_logdir = os.path.join(basedir, f'{dsname}-Runs', f'{dsname}-{tool}-N{ntarget_dict[dsname]}',
+                                           f'{dsname}-{tool}-N{ntarget_dict[dsname]}-methcall', 'log')
             # logging.debug(meth_logdir)
 
             pat_fns = os.path.join(methcall_logdir, '*.mcal.*.batch*.*.out')
@@ -292,7 +296,8 @@ def sunmer_task_summary_na19240():
     ## Tool methcall collection
     for tool in tool_list_on_sumner:
         # HL60-Runs/HL60-Nanopolish-N50/HL60-Nanopolish-N50-methcall/log
-        methcall_logdir = os.path.join(basedir, f'{dsname}-Runs', f'{dsname}-{tool}-N{ntarget_dict[dsname]}', f'{dsname}-{tool}-N{ntarget_dict[dsname]}-methcall', 'log')
+        methcall_logdir = os.path.join(basedir, f'{dsname}-Runs', f'{dsname}-{tool}-N{ntarget_dict[dsname]}',
+                                       f'{dsname}-{tool}-N{ntarget_dict[dsname]}-methcall', 'log')
         # logging.debug(meth_logdir)
 
         pat_fns = os.path.join(methcall_logdir, '*.mcal.*.batch*.*.out')
@@ -431,7 +436,8 @@ def running_resouce_extraction(row):
     jobret = row['job.results']
     cpu_time, wall_clock_time, mem_gb, jobid = str_extract_time_mem(jobret)
 
-    return pd.Series([cpu_time / 60 / 60, wall_clock_time / 60 / 60, mem_gb, jobid], index=['cpu.time', 'wall.clock.time', 'mem.usage', 'jobid'])
+    return pd.Series([cpu_time / 60 / 60, wall_clock_time / 60 / 60, mem_gb, jobid],
+                     index=['cpu.time', 'wall.clock.time', 'mem.usage', 'jobid'])
 
 
 def unify_data_df():
@@ -442,13 +448,15 @@ def unify_data_df():
 
     df = df.merge(df3, on=['dsname', 'batchid'], how='left')
 
-    df[['running.time', 'mem.usage', 'running.time.seconds', 'mem.usage.gb']] = df.apply(running_resouce_extraction, axis=1)
+    df[['running.time', 'mem.usage', 'running.time.seconds', 'mem.usage.gb']] = df.apply(running_resouce_extraction,
+                                                                                         axis=1)
 
     logger.info(df)
 
     logger.info(list(df.columns))
 
-    run_report_columns = ['dsname', 'batchid', 'type', 'fast5', 'running.time', 'mem.usage', 'running.time.seconds', 'mem.usage.gb', 'job.results']
+    run_report_columns = ['dsname', 'batchid', 'type', 'fast5', 'running.time', 'mem.usage', 'running.time.seconds',
+                          'mem.usage.gb', 'job.results']
     outdf = df[run_report_columns]
     outfn = os.path.join(pic_base_dir, 'running.summary.table.xlsx')
     outdf.to_excel(outfn)
@@ -480,7 +488,8 @@ def recalculate(fnlist=['na19240.sumner.task.resource.summary.pkl', 'na19240.win
         memg = row['mem.usage.gb']
 
         basecall_row = df[(df['dsname'] == dsname) & (df['batchid'] == batchid) & (df['tool'] == 'basecall')].iloc[0, :]
-        resquiggle_row = df[(df['dsname'] == dsname) & (df['batchid'] == batchid) & (df['tool'] == 'resquiggle')].iloc[0, :]
+        resquiggle_row = df[(df['dsname'] == dsname) & (df['batchid'] == batchid) & (df['tool'] == 'resquiggle')].iloc[
+                         0, :]
 
         if row['tool'] in ['DeepSignal', 'Tombo']:
             runt += basecall_row['running.time.seconds'] + resquiggle_row['running.time.seconds']
@@ -572,7 +581,8 @@ if __name__ == '__main__':
         outfn = os.path.join(pic_base_dir, 'running.logs.on.four.datasets.step1.extracted.fields.xlsx')
         outdf.to_excel(outfn)
 
-        outdf = outdf.groupby(by=['dsname', 'tool']).agg({'cpu.time': 'sum', 'wall.clock.time': 'max', 'mem.usage': 'max'})
+        outdf = outdf.groupby(by=['dsname', 'tool']).agg(
+            {'cpu.time': 'sum', 'wall.clock.time': 'max', 'mem.usage': 'max'})
 
         # Recalculate the total time and mem usage
         # add basecall to DeepSignal, Tombo, DeepMod, and Nanopolish
@@ -605,9 +615,11 @@ if __name__ == '__main__':
                 outdf.at[index, 'wall.clock.time'] += resquiggleRow['wall.clock.time']
                 outdf.at[index, 'mem.usage'] = max(outdf.at[index, 'mem.usage'], resquiggleRow['mem.usage'])
 
-        outdf = outdf.rename(columns={"cpu.time": "CPU Utilized", 'wall.clock.time': "Job Wall-clock Time", "mem.usage": "Memory Utilized"})
+        outdf = outdf.rename(columns={"cpu.time": "CPU Utilized", 'wall.clock.time': "Job Wall-clock Time",
+                                      "mem.usage": "Memory Utilized"})
         outdf = outdf.reset_index()
-        outdf.loc[outdf.dsname == 'NA19240', 'Job Wall-clock Time'] = outdf.loc[outdf.dsname == 'NA19240', 'Job Wall-clock Time'] * 6
+        outdf.loc[outdf.dsname == 'NA19240', 'Job Wall-clock Time'] = outdf.loc[
+                                                                          outdf.dsname == 'NA19240', 'Job Wall-clock Time'] * 6
         outdf = outdf[outdf['tool'].isin(tool_names)]
 
         outfn = os.path.join(pic_base_dir, 'running.logs.on.four.datasets.step3.five.tools.xlsx')

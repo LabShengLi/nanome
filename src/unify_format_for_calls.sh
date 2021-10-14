@@ -18,7 +18,7 @@ fi
 if [[ "$step" == *"1"* ]]; then
     ## Read level unify
     echo "### Read level unify"
-    PYTHONPATH=src python src/nanocompare/tss_eval.py \
+    tss_eval.py \
         --calls \
             ${encode}:${callfn} \
         --runid Read_Level-${dsname} \
@@ -31,7 +31,7 @@ fi
 if [[ "$step" == *"2"* ]]; then
     ## Site level unify
     echo "### Site level unify"
-    PYTHONPATH=src python src/nanocompare/tss_eval.py \
+    tss_eval.py \
         --calls \
             ${encode}:${callfn} \
         --runid Site_Level-${dsname} \

@@ -1,0 +1,20 @@
+tagname,filename,format-0/1,strand-sensitive
+Singletons,hg38_singletons_10bp.bed.gz,1,
+Non-singletons,hg38_nonsingletons_10bp.bed.gz,1,
+Promoters,ONT.hg38.promoterFeature.flank_2000.bed.gz,1,
+Exons,ONT.hg38.exonFeature.bed.gz,1,
+Introns,ONT.hg38.intronFeature.bed.gz,1,
+Intergenic,ONT.hg38.intergenic.bed.gz,1,
+CpG islands,ONT.hg38.cpgIslandExt.bed.gz,0,
+CpG shores,ONT.hg38.cpgShoresExt.bed.gz,0,
+CpG shelves,ONT.hg38.cpgShelvesExt.bed.gz,0,
+CG_20,hg38.gc5Base_merged.cg_bin20.bed.gz,0,
+CG_40,hg38.gc5Base_merged.cg_bin40.bed.gz,0,
+CG_60,hg38.gc5Base_merged.cg_bin60.bed.gz,0,
+CG_80,hg38.gc5Base_merged.cg_bin80.bed.gz,0,
+CG_100,hg38.gc5Base_merged.cg_bin100.bed.gz,0,
+rep_SINE,hg38.repetitive.rep_SINE.bed.gz,0,Y
+rep_LINE,hg38.repetitive.rep_LINE.bed.gz,0,Y
+rep_LTR,hg38.repetitive.rep_LTR.bed.gz,0,Y
+rep_DNA,hg38.repetitive.rep_DNA.bed.gz,0,Y
+rep_Others,hg38.repetitive.rep_Others.bed.gz,0,Y
