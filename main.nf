@@ -491,7 +491,7 @@ process Resquiggle {
 	### ref: https://github.com/nanoporetech/tombo/issues/139
 	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
 	tombo resquiggle\
-		--processes \$(( numProcessor )) \
+		--processes ${params.tomboProcessors} \
 		--corrected-group ${params.ResquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} \
 		--overwrite \
