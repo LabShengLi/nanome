@@ -90,8 +90,7 @@ Our HPC hardware specifications are as follows:
 * RAM: 300 GB
 * Slurm manager version: 19.05.5
 
-Sample timeline figure:
-
+Timeline figure for benchmarking experiments are below:
 ![Bench-timeline](https://github.com/TheJacksonLaboratory/nanome/blob/enhance2/docs/resources/timeline_benchmark.jpg)
 
 
