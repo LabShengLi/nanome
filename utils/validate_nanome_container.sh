@@ -46,6 +46,7 @@ echo "### we need use pip install -U scikit-learn==0.21.3 due to METEORE"
 pip show scikit-learn | awk 'NR<=2' | awk -vRS="" -vOFS='  ' '$1=$1'
 
 printf "====================\n"
+echo inliner version = `inliner -V`
 pip show nanome-jax | awk 'NR<=2' | awk -vRS="" -vOFS='  ' '$1=$1'
 
 printf "### Nanome container check end\n"

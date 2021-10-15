@@ -73,12 +73,12 @@ ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: fals
 // Reference genome, deepmod cluster settings
 deepmod_tar_file = "${projectDir}/README.md"
 if (params.dataType == 'human') {
-	if (!params.refGenomePath) { // default
+	if (!params.refGenomePath) { // false - default
 		referenceGenome="reference_genome/hg38/hg38.fasta"
 	} else {
 		referenceGenome="reference_genome/${params.refGenomePath}"
 	}
-	if (!params.chromSizesPath) { // default
+	if (!params.chromSizesPath) { // false - default
 		chromSizesFile="reference_genome/hg38/hg38.chrom.sizes"
 	} else {
 		chromSizesFile="reference_genome/${params.chromSizesPath}"
@@ -258,7 +258,7 @@ process Untar {
 		## python -c 'import h5py; print(h5py.version.info)'
 		python utils/clean_old_basecall_in_fast5.py \
 			-i ${fast5_tar.baseName}.untar --is-indir --verbose\
-			--processor \$(( numProcessor*4 ))
+			--processor \$(( numProcessor * ${params.highProcTimes} ))
 	fi
 
 	totalFiles=\$( find ${fast5_tar.baseName}.untar -name "*.fast5" -type f | wc -l )
@@ -406,12 +406,12 @@ process QCExport {
 
 	## After basecall, we align results for ONT coverage analyses
 	# align FASTQ files to reference genome, write sorted alignments to a BAM file
-	minimap2 -t \$(( numProcessor*2 )) -a  -x map-ont \
+	minimap2 -t \$(( numProcessor * ${params.mediumProcTimes} )) -a  -x map-ont \
 		${referenceGenome} \
 		merge_all_fq.fq.gz | \
-		samtools sort -@ \$(( numProcessor*2 )) -T tmp -o \
+		samtools sort -@ \$(( numProcessor * ${params.mediumProcTimes} )) -T tmp -o \
 			merge_all_bam.bam &&\
-		samtools index -@ \$(( numProcessor*2 ))  merge_all_bam.bam
+		samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} ))  merge_all_bam.bam
     echo "### Samtools alignment done"
 
     ## calculates the sequence coverage at each position
@@ -465,6 +465,7 @@ process Resquiggle {
 
 	"""
 	### copy basecall workspace files, due to tombo resquiggle modify base folder
+	rm -rf ${basecallIndir.baseName}.resquiggle
 	mkdir -p ${basecallIndir.baseName}.resquiggle/workspace
 
 	### original basecalled results will be parrallelly used by other processes
@@ -472,7 +473,7 @@ process Resquiggle {
 
 	## cp -rf ${basecallIndir}/workspace  ${basecallIndir.baseName}.resquiggle/
 	find ${basecallIndir}/workspace -name '*.fast5' -type f| \
-		parallel -j\$(( numProcessor*${params.speedProcessorTimes} ))  \
+		parallel -j\$(( numProcessor * ${params.mediumProcTimes} ))  \
 		'cp {}   ${basecallIndir.baseName}.resquiggle/workspace/'
 	echo "### Duplicate from basecall DONE"
 
@@ -484,16 +485,19 @@ process Resquiggle {
 	 	--fastq-filenames ${basecallIndir.baseName}.resquiggle/batch_basecall_combine_fq_*.fq\
 	 	--basecall-group ${params.BasecallGroupName}\
 	 	--basecall-subgroup ${params.BasecallSubGroupName}\
-	 	--overwrite --processes \$(( numProcessor*${params.speedProcessorTimes} ))  2>&1
+	 	--overwrite --processes \$(( numProcessor * ${params.mediumProcTimes} ))  2>&1
 	echo "### tombo preprocess DONE"
 
-	### Need to check Tombo bug of BrokenPipeError, it is very fast even set to 1.
-	### ref: https://github.com/nanoporetech/tombo/issues/139
+	### Need to check Tombo resquiggle bugs, lots of users report long runtime and hang at nearly completion for large data
+	### ref: https://github.com/nanoporetech/tombo/issues/139, https://github.com/nanoporetech/tombo/issues/111
+	### ref: https://github.com/nanoporetech/tombo/issues/365, https://github.com/nanoporetech/tombo/issues/167
 	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
 	tombo resquiggle\
-		--processes ${params.tomboProcessors} \
+		--processes \$(( numProcessor * ${params.lowProcTimes} )) \
 		--corrected-group ${params.ResquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} \
+		--basecall-subgroup ${params.BasecallSubGroupName}\
+		--ignore-read-locks ${params.tomboResquiggleOptions}\
 		--overwrite \
 		${basecallIndir.baseName}.resquiggle/workspace \
 		${referenceGenome} 2>&1
@@ -541,9 +545,9 @@ process Nanopolish {
 	nanopolish index -d ${basecallDir}/workspace -s ${basecallDir}/${basecallDir.baseName}-sequencing_summary.txt  \${fastqFile##*/}
 
 	## Aligning reads to the reference genome, ref: https://nanopolish.readthedocs.io/en/latest/quickstart_call_methylation.html#aligning-reads-to-the-reference-genome
-	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \${fastqFile##*/} | \
-		samtools sort -@ \$(( numProcessor*2 )) -T tmp -o \${bamFileName} &&\
-		samtools index -@ \$(( numProcessor*2 ))  \${bamFileName}
+	minimap2 -t \$(( numProcessor * ${params.mediumProcTimes} )) -a -x map-ont ${referenceGenome} \${fastqFile##*/} | \
+		samtools sort -@ \$(( numProcessor * ${params.mediumProcTimes} )) -T tmp -o \${bamFileName} &&\
+		samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} ))  \${bamFileName}
 	echo "### Alignment step: minimap2 and samtools DONE"
 
 	## Calling methylation, ref: https://nanopolish.readthedocs.io/en/latest/quickstart_call_methylation.html#calling-methylation
@@ -635,7 +639,7 @@ process Megalodon {
 			--mod-output-formats bedmethyl wiggle \
 			--write-mods-text \
 			--write-mod-log-probs \
-			--processes \$(( numProcessor*2 )) \
+			--processes \$(( numProcessor * ${params.mediumProcTimes} )) \
 			--devices 0
 	else
 		echo "### error value for commandType=\${commandType}"
@@ -695,7 +699,7 @@ process DeepSignal {
 			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
-			--nproc \$(( numProcessor * ${params.deepLearningProcessorTimes}  )) \
+			--nproc \$(( numProcessor * ${params.highProcTimes}  )) \
 			--is_gpu no
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
@@ -705,7 +709,7 @@ process DeepSignal {
 			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
-			--nproc \$(( numProcessor * ${params.deepLearningProcessorTimes}  )) \
+			--nproc \$(( numProcessor * ${params.highProcTimes}  )) \
 			--is_gpu yes
 	else
 		echo "### error value for commandType=\${commandType}"
@@ -799,17 +803,17 @@ process Guppy {
 	 	parallel -j\$(( numProcessor )) 'rm -f {}'
 
 	## gcf52ref ways
-	minimap2 -t \$(( numProcessor*2 )) -a -x map-ont ${referenceGenome} \
+	minimap2 -t \$(( numProcessor * ${params.mediumProcTimes} )) -a -x map-ont ${referenceGenome} \
 		batch_combine_fq.fq.gz | \
-		samtools sort -@ \$(( numProcessor*2 )) \
+		samtools sort -@ \$(( numProcessor * ${params.mediumProcTimes} )) \
 			-T tmp -o gcf52ref.batch.${fast5_dir.baseName}.bam &&\
-		samtools index -@ \$(( numProcessor*2 )) \
+		samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} )) \
 			gcf52ref.batch.${fast5_dir.baseName}.bam
 	echo "### gcf52ref minimap2 alignment is done"
 
 	## Modified version, support dir input, not all fast5 files (too long arguments)
 	python utils/extract_methylation_fast5_support_dir.py \
-		-p \$(( numProcessor*2 )) ${fast5_dir.baseName}.methcalled/workspace
+		-p \$(( numProcessor * ${params.mediumProcTimes} )) ${fast5_dir.baseName}.methcalled/workspace
 	echo "### gcf52ref extract to db done"
 
 	## gcf52ref files preparation
@@ -833,10 +837,10 @@ process Guppy {
 	OUTBAM=batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam
 
 	fast5mod guppy2sam \${FAST5PATH} --reference ${referenceGenome} \
-		--workers 74 --recursive --quiet \
-		| samtools sort -@ \$(( numProcessor*2 )) | \
-		samtools view -b -@ \$(( numProcessor*2 )) > \${OUTBAM} &&\
-		samtools index -@ \$(( numProcessor*2 ))  \${OUTBAM}
+		--workers \$(( numProcessor * ${params.highProcTimes} )) --recursive --quiet \
+		| samtools sort -@ \$(( numProcessor * ${params.mediumProcTimes} )) | \
+		samtools view -b -@ \$(( numProcessor * ${params.mediumProcTimes} )) > \${OUTBAM} &&\
+		samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} ))  \${OUTBAM}
 
 	if [[ "${params.outputIntermediate}" == true ]] ; then
 		tar -czf outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz \
@@ -889,7 +893,7 @@ process Tombo {
 		--alternate-bases CpG \
 		--processes \$(( numProcessor )) \
 		--corrected-group ${params.ResquiggleCorrectedGroup} \
-		--multiprocess-region-size ${params.TomboMultiprocessRegionSize} &> \
+		--multiprocess-region-size ${params.tomboMultiprocessRegionSize} &> \
 		${resquiggleDir.baseName}.tombo.run.log
 
 	retry=1
@@ -905,7 +909,7 @@ process Tombo {
 			--alternate-bases CpG \
 			--processes \$(( numProcessor )) \
 			--corrected-group ${params.ResquiggleCorrectedGroup} \
-			--multiprocess-region-size ${params.TomboMultiprocessRegionSize} &> \
+			--multiprocess-region-size ${params.tomboMultiprocessRegionSize} &> \
 			${resquiggleDir.baseName}.tombo.run.log
 		retry=\$(( retry+1 ))
 		if (( retry >= 5 )); then
@@ -990,7 +994,7 @@ process DeepMod {
 			--Base C \
 			--modfile \${DeepModTrainModelDir}/${params.DEEPMOD_RNN_MODEL} \
 			--FileID batch_${basecallDir.baseName}_num \
-			--threads \$(( numProcessor*${params.deepLearningProcessorTimes} ))  ${params.moveOption ? '--move' : ' '}
+			--threads \$(( numProcessor * ${params.highProcTimes} ))  ${params.moveOption ? '--move' : ' '}
 
 	if [[ "${params.outputIntermediate}" == true ]] ; then
 		tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
@@ -1184,11 +1188,11 @@ process GuppyComb {
 	## find name like batch_*.guppy.fast5mod_guppy2sam.bam*
 	find . -maxdepth 1  -name 'batch_*.guppy.fast5mod_guppy2sam.bam' |
 		parallel -j\$(( numProcessor )) --xargs -v \
-		samtools merge -@\$(( numProcessor*2 )) total.meth.bam {}
+		samtools merge -@\$(( numProcessor * ${params.mediumProcTimes} )) total.meth.bam {}
 
 	### sort is not needed due to merge the sorted bam, ref: http://www.htslib.org/doc/samtools-merge.html
-	### samtools sort -@ \$(( numProcessor*2 )) total.meth.bam
-	samtools index -@ \$(( numProcessor*2 )) total.meth.bam
+	### samtools sort -@ \$(( numProcessor * ${params.mediumProcTimes} )) total.meth.bam
+	samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} )) total.meth.bam
 	echo "Samtool merge and index for fast5mod DONE"
 
 	if [[ ${params.outputIntermediate} == true ]] ; then
@@ -1211,7 +1215,7 @@ process GuppyComb {
 		cat chr_all_list.txt
 
 		## Ref: https://github.com/nanoporetech/medaka/issues/177
-		parallel -j\$(( numProcessor*3 )) -v \
+		parallel -j\$(( numProcessor * ${params.highProcTimes} )) -v \
 			"fast5mod call total.meth.bam ${referenceGenome} \
         		meth.chr_{}.tsv  --meth cpg --quiet --regions {} ; \
         		gzip -f meth.chr_{}.tsv" :::: chr_all_list.txt
@@ -1489,7 +1493,7 @@ process METEORE {
 	combineScript=utils/combination_model_prediction.py
 
 	modelContentFileName=\$(find . -name "${params.dsname}_Megalodon_DeepSignal_combine.model_content.tsv" -type f)
-	# Use the optimized model
+	# Use the optimized model (n_estimator = 3 and max_dep = 10)
 	# Please note this optimized model is reported in METEORE paper, ref: https://github.com/comprna/METEORE#command
 	# paper: https://doi.org/10.1101/2020.10.14.340315, text:  random forest (RF) (parameters: max_depth=3 and n_estimator=10)
 	# therefore, we output optimized model results
@@ -1498,7 +1502,7 @@ process METEORE {
 		-m optimized -b \${METEOREDIR} \
 		-o ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
 
-	# Use the default model
+	# Use default parameters from the sklearn library (n_estimator = 100 and max_dep = None)
 	python \${combineScript} \
 		-i \${modelContentFileName} -m default -b \${METEOREDIR} \
 		-o ${params.dsname}.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz
