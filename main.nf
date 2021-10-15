@@ -1550,7 +1550,7 @@ process Report {
 	path("*") 		from 	ch_utils9
 
 	output:
-	path "${params.dsname}_NANOME_report" 		into	report_out_ch
+	path "${params.dsname}_nanome_report.html" 	into	report_out_ch
 	path "README_${params.dsname}.txt" 			into 	readme_out_ch
 
 	when:
@@ -1584,6 +1584,9 @@ process Report {
 		\${basecallOutputFile} \
 		. \
 		${params.dsname}_NANOME_report
+
+	## No tty usage, ref: https://github.com/remy/inliner/issues/151
+	script -qec "inliner ${params.dsname}_NANOME_report/nanome_report.html" /dev/null  > ${params.dsname}_nanome_report.html
 
 	PYTHONIOENCODING=UTF-8 python utils/gen_readme.py\
 		utils/readme.txt.template ${params.dsname} ${params.outputDir}\
