@@ -90,6 +90,11 @@ Our HPC hardware specifications are as follows:
 * RAM: 300 GB
 * Slurm manager version: 19.05.5
 
+Sample timeline figure:
+
+![Bench-timeline](https://github.com/TheJacksonLaboratory/nanome/blob/enhance2/docs/resources/timeline_benchmark.jpg)
+
+
 ### Pipeline DAG
 ![NanomeDag](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/nanome_dag.png)
 
