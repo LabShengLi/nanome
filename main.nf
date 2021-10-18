@@ -987,6 +987,7 @@ process DeepMod {
 	## Usage ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#1-how-to-detect-modifications-from-fast5-files
 	## DeepMod depends on h5py < 3.0,
 	## issue may occur if use a greater version: AttributeError: 'Dataset' object has no attribute 'value'
+	rm -rf mod_output
 	DeepMod.py detect \
 			--wrkBase ${basecallDir}/workspace \
 			--outLevel 0\
@@ -994,7 +995,7 @@ process DeepMod {
 			--Base C \
 			--modfile \${DeepModTrainModelDir}/${params.DEEPMOD_RNN_MODEL} \
 			--FileID batch_${basecallDir.baseName}_num \
-			--threads \$(( numProcessor * ${params.highProcTimes} ))  ${params.moveOption ? '--move' : ' '}
+			--threads \$(( numProcessor * ${params.mediumProcTimes} ))  ${params.moveOption ? '--move' : ' '}
 
 	if [[ "${params.outputIntermediate}" == true ]] ; then
 		tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
