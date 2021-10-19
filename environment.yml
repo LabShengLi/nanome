@@ -5,6 +5,7 @@ channels:
 dependencies:
   - python=3.6.13 # need 3.6 for some software
   - pip
+  - nodejs  
   - biopython=1.79
   - jinja2=3.0.2
   - joblib=1.1.0
@@ -44,3 +45,4 @@ dependencies:
 # wget https://files.pythonhosted.org/packages/b6/e2/10e19c4daa0609f527d74f49bdfb63ac8e05e5bc4ec1e87713cf8385eef4/fast5mod-1.0.5-cp36-cp36m-manylinux1_x86_64.whl
 # pip install fast5mod-1.0.5-cp36-cp36m-manylinux1_x86_64.whl
 # pip install megalodon==2.3.4
+

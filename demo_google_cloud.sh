@@ -10,7 +10,7 @@
 #SBATCH --mail-user=yang.liu@jax.org
 #SBATCH --mail-type=END
 
-set -x
+set -ex
 date;hostname;pwd
 
 ###########################################
