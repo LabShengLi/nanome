@@ -14,7 +14,7 @@ The script `read_level_eval.py` is desinged for general purpose of read-level pe
 ```angular2html
 read_level_eval.py -v
 
-read_level_eval (NANOME) v1.3.3
+read_level_eval (NANOME) v1.3.4
 ```
 
 ## Sample usage
@@ -40,16 +40,16 @@ read_level_eval.py -h
 
 usage: read_level_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID
                                 --calls CALLS [CALLS ...] --bgtruth BGTRUTH
-                                --genome-annotation GENOME_ANNOTATION
+                                [--genome-annotation GENOME_ANNOTATION]
                                 [--min-bgtruth-cov MIN_BGTRUTH_COV]
                                 [--processors PROCESSORS] [--report-joined]
                                 [--chrSet CHRSET [CHRSET ...]] [-o O]
                                 [--enable-cache] [--using-cache]
-                                [--distribution] [--analysis ANALYSIS]
-                                [--save-curve-data] [--large-mem]
-                                [--bedtools-tmp BEDTOOLS_TMP]
+                                [--distribution] [--bsseq-report]
+                                [--analysis ANALYSIS] [--save-curve-data]
+                                [--large-mem] [--bedtools-tmp BEDTOOLS_TMP]
                                 [--cache-dir CACHE_DIR] [--disable-bed-check]
-                                [--mpi] [--verbose]
+                                [--mpi] [--mpi-import] [--config] [--verbose]
 
 Read-level performance evaluation in nanome paper
 
@@ -77,10 +77,12 @@ optional arguments:
   --chrSet CHRSET [CHRSET ...]
                         chromosome list, default is human chr1-22, X and Y
   -o O                  output base dir, default is /projects/li-
-                        lab/yang/results/2021-10-05
+                        lab/yang/results/2021-10-19
   --enable-cache        if enable cache functions
   --using-cache         if use cache files
-  --distribution        if report singleton/nonsingleton distributions
+  --distribution        if report singleton/nonsingleton distributions at all
+                        regions
+  --bsseq-report        if report singleton/nonsingleton in bs-seq
   --analysis ANALYSIS   special analysis specifications for ecoli
   --save-curve-data     if save pred/truth points for curve plot
   --large-mem           if using large memory (>100GB) for speed up
@@ -88,12 +90,16 @@ optional arguments:
                         bedtools temp dir, default is
                         /fastscratch/liuya/nanome/temp_dir
   --cache-dir CACHE_DIR
-                        loaded calls/bs-seq in cache dir (speed up running),
-                        default is /fastscratch/liuya/nanome/cache_dir
-  --disable-bed-check   if disable checking the 0/1 base format for genome
-                        annotations
-  --mpi                 if using multi-processing for evaluation, not
-                        available now
+                        cache dir used for loading calls/bs-seq (speed up
+                        running), default is
+                        /fastscratch/liuya/nanome/cache_dir
+  --disable-bed-check   if disable auto-checking the 0/1 base format for
+                        genome annotations
+  --mpi                 if using multi-processing/threading for evaluation, it
+                        can speed-up but may need more memory
+  --mpi-import          if using multi-processing/threading for import, it can
+                        speed-up, only for small size data
+  --config              if print out config file for genome annotation
   --verbose             if output verbose info
 ```
 
@@ -105,7 +111,7 @@ The script `site_level_eval.py` is desinged for general purpose of site-level pe
 ```angular2html
 site_level_eval.py -v
 
-site_level_eval (NANOME) v1.3.3
+site_level_eval (NANOME) v1.3.4
 ```
 
 
@@ -135,16 +141,18 @@ site_level_eval.py -h
 
 usage: site_level_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID
                                 --calls CALLS [CALLS ...] --bgtruth BGTRUTH
-                                --genome-annotation GENOME_ANNOTATION
+                                [--genome-annotation GENOME_ANNOTATION]
                                 [--beddir BEDDIR]
                                 [--min-bgtruth-cov MIN_BGTRUTH_COV]
-                                [--toolcov-cutoff TOOLCOV_CUTOFF] [--sep SEP]
+                                [--toolcov-cutoff TOOLCOV_CUTOFF]
+                                [--chrSet CHRSET [CHRSET ...]] [--sep SEP]
                                 [--processors PROCESSORS] [-o O] [--gen-venn]
                                 [--summary-coverage] [--region-coe-report]
                                 [--enable-cache] [--using-cache] [--plot]
                                 [--bedtools-tmp BEDTOOLS_TMP]
                                 [--cache-dir CACHE_DIR] [--large-mem]
-                                [--disable-bed-check] [--verbose]
+                                [--disable-bed-check] [--mpi] [--config]
+                                [--verbose]
 
 Site-level correlation analysis in nanome paper
 
@@ -171,10 +179,13 @@ optional arguments:
                         cutoff for coverage in bg-truth, default is >=5
   --toolcov-cutoff TOOLCOV_CUTOFF
                         cutoff for coverage in nanopore tools, default is >=3
+  --chrSet CHRSET [CHRSET ...]
+                        chromosome list, default is human chr1-22, X and Y
   --sep SEP             seperator for output csv file
   --processors PROCESSORS
                         number of processors used, default is 1
-  -o O                  output base dir
+  -o O                  output base dir, default is /projects/li-
+                        lab/yang/results/2021-10-19
   --gen-venn            if generate CpGs files for venn data analysis
   --summary-coverage    if summarize coverage at each region
   --region-coe-report   if report PCC value at each region
@@ -185,11 +196,15 @@ optional arguments:
                         bedtools temp dir, default is
                         /fastscratch/liuya/nanome/temp_dir
   --cache-dir CACHE_DIR
-                        loaded calls/bs-seq in cache dir (speed up running),
-                        default is /fastscratch/liuya/nanome/cache_dir
+                        cache dir used for loading calls/bs-seq(speed up
+                        running), default is
+                        /fastscratch/liuya/nanome/cache_dir
   --large-mem           if using large memory (>100GB) for speed up
-  --disable-bed-check   if disable checking the 0/1 base format for genome
-                        annotations
+  --disable-bed-check   if disable auto-checking the 0/1 base format for
+                        genome annotations
+  --mpi                 if using multi-processing/threading for evaluation, it
+                        can speed-up but need more memory
+  --config              if print out config file for genome annotation
   --verbose             if output verbose info
 ```
 
@@ -202,7 +217,7 @@ The script `tss_eval.py` is desinged for general purpose of converting raw resul
 ```angular2html
 tss_eval.py -v
 
-tss_eval (NANOME) v1.3.3
+tss_eval (NANOME) v1.3.4
 ```
 
 ## Sample usage for read-level format unification
@@ -256,7 +271,8 @@ usage: tss_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID --calls CALLS
                          [CALLS ...] [--bgtruth BGTRUTH] [--read-level-format]
                          [--sep SEP] [--processors PROCESSORS] [-o O]
                          [--enable-cache] [--using-cache]
-                         [--chrs CHRS [CHRS ...]] [--tagname TAGNAME]
+                         [--cache-dir CACHE_DIR]
+                         [--chrSet CHRSET [CHRSET ...]] [--tagname TAGNAME]
                          [--verbose]
 
 Export read/site level methylation results of all nanopore tools in nanome
@@ -275,14 +291,20 @@ optional arguments:
   --read-level-format   if true, it will output read level results (1-based
                         start), else it will output site-level results
                         (0-based start, 1-based end)
-  --sep SEP             seperator for output csv file
+  --sep SEP             seperator for output csv file, default is tab
+                        character
   --processors PROCESSORS
                         running processors, default is 1
   -o O                  output base dir
   --enable-cache        if enable cache functions
   --using-cache         if use cache files
-  --chrs CHRS [CHRS ...]
-                        chromosome list
-  --tagname TAGNAME     output unified file tagname
+  --cache-dir CACHE_DIR
+                        cache dir used for loading calls/bs-seq (speed up
+                        running), default is
+                        /fastscratch/liuya/nanome/cache_dir
+  --chrSet CHRSET [CHRSET ...]
+                        chromosome list, default is human chromosome chr1-22,
+                        X and Y
+  --tagname TAGNAME     output unified file's tagname
   --verbose             if output verbose info
 ```

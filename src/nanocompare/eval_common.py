@@ -2863,28 +2863,18 @@ def sanity_check_merge_bedtools():
 
 
 def sanity_check_get_dna_seq():
-    # refGenome = get_ref_fasta()
-    sanity_check_dna_sequence('chr2', 20953875)
-    sanity_check_dna_sequence('chr2', 20953876)
+    # sanity_check_dna_sequence('chr1', 202108456)
+    # sanity_check_dna_sequence('chr1', 202108476)
+    #
+    # sanity_check_dna_sequence('chr19', 40957177)
+    # sanity_check_dna_sequence('chr19', 40958725)
 
-    sanity_check_dna_sequence('chr3', 16902883)
-    sanity_check_dna_sequence('chr3', 16902884)
-
-    sanity_check_dna_sequence('chr9', 89884096)
-    sanity_check_dna_sequence('chr9', 89884247)
-
-    sanity_check_dna_sequence('chr10', 124122080)
-    sanity_check_dna_sequence('chr10', 124121819)
+    # sanity_check_dna_sequence('NC_000913.3', 3503572)
+    # sanity_check_dna_sequence('NC_000913.3', 3503591)
+    #
+    # sanity_check_dna_sequence('NC_000913.3', 3507107)
+    # sanity_check_dna_sequence('NC_000913.3', 3507083)
     return
-    sanity_check_dna_sequence('chr10', 10522)
-    sanity_check_dna_sequence('chr10', 10534)
-    sanity_check_dna_sequence('chr10', 10557)
-
-    logger.debug("DeepMod check")
-    sanity_check_dna_sequence('chr10', 74169)
-    sanity_check_dna_sequence('chr10', 74424)
-    sanity_check_dna_sequence('chr10', 376851)
-    sanity_check_dna_sequence('chr10', 376949)
 
 
 def sort_bed_file(infn, outfn, has_header=False):
@@ -2937,30 +2927,8 @@ def get_current_memory_usage():
 
 if __name__ == '__main__':
     set_log_debug_level()
-
-    infn = '/projects/li-lab/yang/workspace/nano-compare/w3/98/1d4a2a1e155530173718d846eb7ed2/EcoliDemo.nanopolish.per_read.combine.tsv.gz'
-    call = importPredictions_Nanopolish(infn, filterChr=['NC_000913.3'], stringent_cutoff=True)
-    if True:
-        sys.exit(0)
-
-    refGenome = get_ref_fasta()
-    sanity_check_get_dna_seq()
-    sys.exit(0)
-
-    refGenome = None
-
-    do_singleton_nonsingleton_scanner()
-    sys.exit(0)
-
-    refGenome = get_ref_fasta()
-    sanity_check_get_dna_seq()
-
-    sys.exit(0)
-
-    #  refGenome = get_ref_fasta()
-
-    infn = "/projects/li-lab/yang/results/2021-07-01/hg38.repetitive.bed.gz"
-    df = pd.read_csv(infn, sep='\t')
-    logger.debug(df)
-
+    # refGenome = get_ref_fasta('/projects/li-lab/Nanopore_compare/nf_input/reference_genome/ecoli/Ecoli_k12_mg1655.fasta')
+    # sanity_check_get_dna_seq()
+    # refGenome = get_ref_fasta()
+    # sanity_check_get_dna_seq()
     logger.debug("DONE")
