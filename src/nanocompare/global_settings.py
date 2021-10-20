@@ -10,7 +10,7 @@ import pandas as pd
 
 from nanocompare.global_config import set_log_debug_level
 
-nanome_version = "1.3.4"
+nanome_version = "1.3.5"
 
 # define the small error of 0 and 1, for fully-meth and unmeth eval
 epslong = 1e-5

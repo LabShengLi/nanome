@@ -25,7 +25,8 @@ def helpMessage() { // print help message
 	  --cleanCache		If clean work dir after complete, default is true
 
 	Running environment options:
-	  --conda_name			Conda name used for pipeline, default is '~/anaconda3/envs/nanome'
+	  --conda_name			Conda name used for pipeline, default is 'nanome'
+	  --conda_base_dir		Conda base directory, default is '/opt/conda'
 	  --docker_name			Docker name used for pipeline, default is 'liuyangzzu/nanome:latest'
 	  --singularity_name		Singularity name used for pipeline, default is 'docker://liuyangzzu/nanome:latest'
 	  --singularity_cache		Singularity cache dir, default is 'local_singularity_cache'
@@ -40,7 +41,7 @@ def helpMessage() { // print help message
 	  --googleProjectName	Google Cloud project name for google-lifesciences task running
 
 	Other options:
-	  --guppyDir		Guppy installation dir, used for conda environment
+	  --guppyDir		Guppy installation local directory, used only for conda environment
 
 	-profile options:
 	  Use this parameter to choose a predefined configuration profile. Profiles can give configuration presets for different compute environments.
@@ -609,7 +610,7 @@ process Megalodon {
 			--outputs per_read_mods mods per_read_refs \
 			--guppy-server-path guppy_basecall_server \
 			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-			--guppy-params "-d ${megalodon_model_dir}/ --num_callers \$(( numProcessor )) --ipc_threads 6" \
+			--guppy-params "-d ${megalodon_model_dir}/ --num_callers \$(( numProcessor )) --ipc_threads \$(( numProcessor * ${params.lowProcTimes} ))" \
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--samtools-executable ${params.SAMTOOLS_PATH} \
 			--sort-mappings \
@@ -629,7 +630,7 @@ process Megalodon {
 			--outputs per_read_mods mods per_read_refs \
 			--guppy-server-path guppy_basecall_server \
 			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-			--guppy-params "-d ./megalodon_model/ --num_callers \$(( numProcessor )) --ipc_threads 80" \
+			--guppy-params "-d ${megalodon_model_dir}/ --num_callers \$(( numProcessor )) --ipc_threads \$(( numProcessor * ${params.highProcTimes} ))" \
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--samtools-executable ${params.SAMTOOLS_PATH} \
 			--sort-mappings \
