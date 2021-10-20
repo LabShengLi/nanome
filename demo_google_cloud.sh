@@ -33,7 +33,7 @@ nextflow run main.nf\
 	--dsname na12878_chr20_p5 \
 	--input 'http://s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr20.part05.tar'\
 	--cleanAnalyses true\
-	--echo true
+	--tomboResquiggleOptions '--signal-length-range 0 500000  --sequence-length-range 0 50000'
 
 echo "### nanome pipeline for NA12878 chr20 p5 data on google DONE"
 exit 0

@@ -493,6 +493,7 @@ process Resquiggle {
 	### ref: https://github.com/nanoporetech/tombo/issues/139, https://github.com/nanoporetech/tombo/issues/111
 	### ref: https://github.com/nanoporetech/tombo/issues/365, https://github.com/nanoporetech/tombo/issues/167
 	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
+	### Out of memory solution for large data: --tomboResquiggleOptions '--signal-length-range 0 500000  --sequence-length-range 0 50000'
 	tombo resquiggle\
 		--processes \$(( numProcessor * ${params.lowProcTimes} )) \
 		--corrected-group ${params.ResquiggleCorrectedGroup} \
