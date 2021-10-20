@@ -31,15 +31,16 @@
    ```
 
 6. Run GCP nextflow: 
-   1. Make sure the below staging bucket exists;
+   1. Make sure the below storage bucket exists;
    2. Make sure the service account (Compute Engine default service account) used by nextflow can write to the bucket at `[Google-storage-bucket]`;
    3. Replace PROJECT_ID in google profile with your Project ID.
    
 ```angular2html
-./nextflow run TheJacksonLaboratory/nanome\
+nextflow run TheJacksonLaboratory/nanome\
      -profile ci,docker,google\
      -w [Google-storage-bucket]/nanome-work-test\
-     --outputDir [Google-storage-bucket]/nanome-outputs
+     --outputDir [Google-storage-bucket]/nanome-outputs\
+     --googleProjectName  [PROJECT_ID]
 ```
 
 ## Build and submit to container registry of google cloud computing
@@ -64,12 +65,12 @@ nextflow run TheJacksonLaboratory/nanome\
     -profile ci,docker,google\
     -w gs://jax-nanopore-01-project-data/nanome-work\
     --outputDir gs://jax-nanopore-01-project-data/nanome-outputs\
-    --googleProjectName  [PROJECT_ID]
+    --googleProjectName  jax-nanopore-01
 ```
 
 
 ## Troubleshooting
-Make sure the network and subnet is 'default' with 'auto' mode
+Make sure the network and subnet is 'default' with 'auto' mode.  
 Enable 'Private Google access' for the network/subnet.
 
 
