@@ -37,7 +37,8 @@ nextflow run main.nf\
     --outputDir ${outputsDir}\
     --dsname TestData\
     --input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt\
-    --cleanCache false
+    --cleanCache false\
+    --processors 8
 
 # Report
 tree ${workDir} > ${baseDir}/work_demo_filetree.txt

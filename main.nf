@@ -73,25 +73,17 @@ ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: fals
 
 // Reference genome, deepmod cluster settings
 deepmod_tar_file = "${projectDir}/README.md"
-if (params.dataType == 'human') {
-	if (!params.refGenomePath) { // false - default
-		referenceGenome="reference_genome/hg38/hg38.fasta"
-	} else {
-		referenceGenome="reference_genome/${params.refGenomePath}"
-	}
-	if (!params.chromSizesPath) { // false - default
-		chromSizesFile="reference_genome/hg38/hg38.chrom.sizes"
-	} else {
-		chromSizesFile="reference_genome/${params.chromSizesPath}"
-	}
 
+referenceGenome = 'reference_genome/ref.fasta'
+chromSizesFile = 'reference_genome/chrom.sizes'
+
+// TODO: auto detect based on ref.fasta
+if (params.dataType == 'human') {
 	isDeepModCluster = params.useDeepModCluster
 	if (isDeepModCluster) {
 		deepmod_tar_file = params.deepmod_ctar
 	}
 } else if (params.dataType == 'ecoli') {
-	referenceGenome="reference_genome/ecoli/Ecoli_k12_mg1655.fasta"
-	chromSizesFile="reference_genome/ecoli/Ecoli_k12_mg1655.fasta.genome.sizes"
 	isDeepModCluster = false
 } else {
 	println "Param dataType=${params.dataType} is not support"
@@ -183,13 +175,21 @@ process EnvCheck {
 	fi
 
 	## Get dir for reference_genome
-	if [[ "${reference_genome}" == *.tar.gz ]] ; then
-		tar -xzf ${reference_genome}
+	mkdir -p reference_genome
+	find_dir="\$PWD/reference_genome"
+	if [[ ${reference_genome} == *.tar.gz ]] ; then
+		tar -xzf ${reference_genome} -C reference_genome
+	elif [[ ${reference_genome} == *.tar ]] ; then
+		tar -xf ${reference_genome} -C reference_genome
+	else
+		## for folder, use ln, note this is a symbolic link to a folder
+		find_dir=\$( readlink -f ${reference_genome} )
 	fi
-	if [ ! -d "reference_genome" ]  ; then
-		mkdir reference_genome
-		mv ${reference_genome.name.replaceAll(".tar.gz", "")} reference_genome
-	fi
+
+	find \${find_dir} -name '*.fasta*' | \
+		 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/\${fn/*.fasta/ref.fasta}'
+	find \${find_dir} -name '*.sizes' | \
+			parallel -j1 -v ln -s -f {} reference_genome/chrom.sizes
 
 	ls -lh ${referenceGenome}
 	ls -lh ${chromSizesFile}
@@ -997,7 +997,8 @@ process DeepMod {
 			--Base C \
 			--modfile \${DeepModTrainModelDir}/${params.DEEPMOD_RNN_MODEL} \
 			--FileID batch_${basecallDir.baseName}_num \
-			--threads \$(( numProcessor * ${params.mediumProcTimes} ))  ${params.moveOption ? '--move' : ' '}
+			--threads \$(( numProcessor * ${params.mediumProcTimes} )) \
+			${params.moveOption ? '--move' : ' '} &>> DeepMod.run.log
 
 	if [[ "${params.outputIntermediate}" == true ]] ; then
 		tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
@@ -1364,7 +1365,7 @@ process DpmodComb {
 	## merge different runs of modification detection
 	## ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#2-how-to-merge-different-runs-of-modification-detection
 	python utils/sum_chr_mod.py \
-		indir/ C ${params.dsname}.deepmod ${chrSet}
+		indir/ C ${params.dsname}.deepmod ${chrSet}  &>> DpmodComb.run.log
 
 	> ${params.dsname}.deepmod.C_per_site.combine.bed
 
@@ -1393,7 +1394,7 @@ process DpmodComb {
 		python utils/hm_cluster_predict.py \
 			indir/${params.dsname}.deepmod \
 			./C \
-			\${DeepModTrainModelDir}/${params.DEEPMOD_CLUSTER_MODEL} ## || true
+			\${DeepModTrainModelDir}/${params.DEEPMOD_CLUSTER_MODEL} &>> DpmodComb.run.log
 
 		> ${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed
 		for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
@@ -1425,7 +1426,7 @@ process DpmodComb {
 	## Unify format output
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  DeepMod \${callfn} \
-		.  \$((numProcessor))  2  ${chrSet}
+		.  \$((numProcessor))  2  ${chrSet}  &>> DpmodComb.run.log
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then

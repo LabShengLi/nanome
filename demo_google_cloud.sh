@@ -19,10 +19,10 @@ date;hostname;pwd
 ###########################################
 ### Run Test pipeline on google 12878
 ## working and outputs dir
-WORK_DIR_BUCKET=${1:-"gs://jax-nanopore-01-project-data/NANOME-na12878_chr20_p5-work"}
-OUTPUT_DIR_BUCKET=${2:-"gs://jax-nanopore-01-export-bucket/NANOME-na12878_chr20_p5-ouputs"}
+WORK_DIR_BUCKET=${1:-"gs://jax-nanopore-01-project-data/NANOME-na12878_chr17_p6-work"}
+OUTPUT_DIR_BUCKET=${2:-"gs://jax-nanopore-01-export-bucket/NANOME-na12878_chr17_p6-ouputs"}
 
-#gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} >/dev/null 2>&1 || true
+gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} >/dev/null 2>&1 || true
 
 ## Run test demo on google cloud
 nextflow run main.nf\
@@ -30,12 +30,12 @@ nextflow run main.nf\
     -config conf/executors/gcp_input.config\
 	-w ${WORK_DIR_BUCKET} \
 	--outputDir ${OUTPUT_DIR_BUCKET} \
-	--dsname na12878_chr20_p5 \
-	--input 'http://s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr20.part05.tar'\
+	--dsname na12878_chr17_p6 \
+	--input 'http://s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr17.part06.tar'\
 	--cleanAnalyses true\
 	--tomboResquiggleOptions '--signal-length-range 0 500000  --sequence-length-range 0 50000'
 
-echo "### nanome pipeline for NA12878 chr20 p5 data on google DONE"
+echo "### nanome pipeline for NA12878 some chr and part file on google DONE"
 exit 0
 
 
