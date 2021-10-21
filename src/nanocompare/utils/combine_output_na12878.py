@@ -1,5 +1,5 @@
 """
-We combine all chr methylation-calling results into a file for each tool
+Combine all chr methylation-calling results into a file for each tool
 """
 import glob
 import gzip

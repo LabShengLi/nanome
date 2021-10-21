@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+# @Author   : Yang Liu
+# @FileName : global_config.py
+# @Software : NANOME project
+# @Organization : JAX Li Lab
+# @Website  : https://github.com/TheJacksonLaboratory/nanome
 
 """
 =================================================================

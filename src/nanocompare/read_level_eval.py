@@ -337,7 +337,7 @@ def import_ont_calls_for_read_level(call_encode, callfn, absoluteBGTruthCov, mul
     sites_summary = {'Dataset': dsname,
                      'Method': call_name,
                      'Sites': len(ont_call0),
-                     f'BSseq-cov{args.min_bgtruth_cov}-certain': len(absoluteBGTruthCov),
+                     f'BSseq-cov{args.min_bgtruth_cov}-certain': len(absoluteBGTruthCov) if absoluteBGTruthCov else None,
                      }
 
     if absoluteBGTruthCov:  # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
@@ -529,7 +529,7 @@ def parse_arguments():
                         required=True)
     parser.add_argument('--bgtruth', type=str,
                         help="background truth file <encode-type>:<file-name>;<file-name>, encode-type can be 'encode' or 'bismark'",
-                        required=True)
+                        default=None)
     parser.add_argument('--genome-annotation', type=str,
                         help='genome annotation dir, contain BED files such as singleton, nonsingleton, etc.',
                         default=None)
@@ -737,7 +737,7 @@ if __name__ == '__main__':
     else:
         absoluteBGTruth = None
         absoluteBGTruthCov = None
-        raise Exception("Can not get BS-seq")
+        logger.info("WARN: Can not get BS-seq")
 
     ## Narrow down to BG-Truth if there BG-Truth is available
     ontCallWithinBGTruthDict = defaultdict()  # name->call

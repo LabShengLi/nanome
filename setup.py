@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # @Author   : Yang Liu
-# @FileName : read_level_eval.py
+# @FileName : setup.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
@@ -16,7 +16,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="nanome-jax",
-    version="1.3.5",
+    version="1.3.6",
     author="Yang Liu",
     author_email="yang.liu@jax.org",
     description="NANOME (Nanopore methylation) pipeline developed by Li Lab at The Jackson Laboratory",

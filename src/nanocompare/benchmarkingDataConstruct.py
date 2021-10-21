@@ -14,7 +14,7 @@ from pandas.api.types import CategoricalDtype
 
 from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir
 
-base_input = '/projects/li-lab/Nanopore_compare/nanopore_fast5/NA19240-N300-sept/10'
+base_input = '/projects/li-lab/Nanopore_compare/nanopore_fast5/NA19240-sept/10'
 out_dir = os.path.join(pic_base_dir, 'BenchmarkingData')
 
 # trace_fn = '/projects/li-lab/Nanopore_compare/suppdata/benchmarking/benchmarking-trace.txt'

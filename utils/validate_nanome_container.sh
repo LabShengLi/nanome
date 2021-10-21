@@ -1,4 +1,9 @@
 #!/bin/bash
+# @Author   : Yang Liu
+# @FileName : validate_nanome_container.sh
+# @Software : NANOME project
+# @Organization : JAX Li Lab
+# @Website  : https://github.com/TheJacksonLaboratory/nanome
 printf "### Nanome container check start\n"
 printf "====================\n"
 which conda

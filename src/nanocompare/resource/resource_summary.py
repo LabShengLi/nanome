@@ -18,7 +18,7 @@ tool_names = ['Tombo', 'DeepMod', 'DeepSignal', 'Nanopolish', 'Megalodon']
 tool_list_on_sumner = ['Tombo', 'DeepMod', 'DeepSignal', 'Nanopolish']
 tool_list_on_winter = ['Guppy', 'Megalodon']
 
-ntarget_dict = {'HL60': 50, 'K562': 50, 'APL': 50, 'NA19240': 300}  # , 'NA19240': 300
+ntarget_dict = {'HL60': 50, 'K562': 50, 'APL': 50, 'NA19240': 50, 'NA12878': 168}
 
 pkldir = '/projects/li-lab/yang/results/share_prj/result/running-logs'
 sunmer_pkl = os.path.join(pkldir, 'sumner.task.resource.summary.pkl')
@@ -618,8 +618,8 @@ if __name__ == '__main__':
         outdf = outdf.rename(columns={"cpu.time": "CPU Utilized", 'wall.clock.time': "Job Wall-clock Time",
                                       "mem.usage": "Memory Utilized"})
         outdf = outdf.reset_index()
-        outdf.loc[outdf.dsname == 'NA19240', 'Job Wall-clock Time'] = outdf.loc[
-                                                                          outdf.dsname == 'NA19240', 'Job Wall-clock Time'] * 6
+        # outdf.loc[outdf.dsname == 'NA19240', 'Job Wall-clock Time'] = outdf.loc[
+        #                                                                   outdf.dsname == 'NA19240', 'Job Wall-clock Time']
         outdf = outdf[outdf['tool'].isin(tool_names)]
 
         outfn = os.path.join(pic_base_dir, 'running.logs.on.four.datasets.step3.five.tools.xlsx')

@@ -9,4 +9,4 @@
 #SBATCH -o %x.%j.out # STDOUT
 #SBATCH -e %x.%j.err # STDERR
 
-python FilesSeparator.py $@
+FilesSeparator.py $@

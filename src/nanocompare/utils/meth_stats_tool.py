@@ -159,7 +159,7 @@ def filter_noncg_sites_ref_seq(df, tagname, ntask=1, ttask=1, num_seq=5, chr_col
     df = df.loc[cpg_pattern_index, :]
 
     # tagname is like 'K562.tombo.perReadsStats.combine'
-    # then outfn is like 'K562.tombo.perReadsStats.combine-with-seq-info-n300-t001-chr1.tsv'
+    # then outfn is like 'K562.tombo.perReadsStats.combine-with-seq-info-t001-chr1.tsv'
     outfn = os.path.join(args.o, f'{tagname}-with-seq-info-n{ntask}-t{ttask:03d}-{rep_chr}.tsv')
     df.to_csv(outfn, sep='\t', header=False, index=False)
     logger.info(f"save to {outfn}")
@@ -212,7 +212,7 @@ def filter_noncg_sites_ref_seq_mpi(df, tagname, ntask=1, ttask=1, num_dna_seq=5,
     df = df.loc[only_cpg_pattern_index, :]
 
     # tagname is like 'K562.tombo.perReadsStats.combine'
-    # then outfn is like 'K562.tombo.perReadsStats.combine-with-seq-info-n300-t001-chr1.tsv'
+    # then outfn is like 'K562.tombo.perReadsStats.combine-with-seq-info-t001-chr1.tsv'
     # outfn = os.path.join(args.o, f'{tagname}-with-seq-info-n{ntask}-t{ttask:03d}-{rep_chr}.tsv')
     # df.to_csv(outfn, sep='\t', header=False, index=False)
     # logger.info(f"save to {outfn}")

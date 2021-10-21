@@ -11,21 +11,21 @@
 
 #sbatch sanity_check_ecoli.sh
 
-set -x
+set -xe
 
-callsDir=${1:-"/projects/li-lab/Nanopore_compare/suppdata/ecoli-sanity-check/ECOLI_METROPAPER-methylation-callings"}
+callsDir=${1:-"/projects/li-lab/Nanopore_compare/nanome_paper_result/supp_data/ecoli-sanity-check/ECOLI_METROPAPER-methylation-callings"}
 
-DeepSignal_calls=$(find $callsDir -name "*.DeepSignal.combine.tsv.gz")
-Tombo_calls=$(find $callsDir -name "*.Tombo.combine.tsv.gz")
-Nanopolish_calls=$(find $callsDir -name "*.Nanopolish.combine.tsv.gz")
-DeepMod_calls=$(find $callsDir -name "*.DeepModC.combine.*.gz")
-Megalodon_calls=$(find $callsDir -name "*.Megalodon.combine.*.gz")
-Guppy_calls=$(find $callsDir -name "*.guppy.fast5mod_site_level.combine.*.gz")
-METEORE_calls=$(find /projects/li-lab/Nanopore_compare/suppdata/METEORE_results -name "Ecoli.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
+DeepSignal_calls=$(find $callsDir -maxdepth 1 -name "*.DeepSignal.combine.tsv.gz")
+Tombo_calls=$(find $callsDir  -maxdepth 1 -name "*.Tombo.combine.tsv.gz")
+Nanopolish_calls=$(find $callsDir  -maxdepth 1 -name "*.Nanopolish.combine.tsv.gz")
+DeepMod_calls=$(find $callsDir  -maxdepth 1 -name "*.DeepModC.combine.*.gz")
+Megalodon_calls=$(find $callsDir  -maxdepth 1 -name "*.Megalodon.combine.*.gz")
+Guppy_calls=$(find $callsDir  -maxdepth 1 -name "*.guppy.fast5mod_site_level.combine.*.gz")
+METEORE_calls=$(find $callsDir  -maxdepth 1 -name "Ecoli.METEORE.megalodon_deepsignal-optimized-model-perRead.combine.tsv.gz")
 
-pythonFn=${NanoCompareDir}/src/nanocompare/read_level_eval.py
+pythonFn=read_level_eval.py
 
-python ${pythonFn} \
+${pythonFn} \
 	--calls \
 		Nanopolish:${Nanopolish_calls} \
 		Megalodon:${Megalodon_calls} \
@@ -33,8 +33,8 @@ python ${pythonFn} \
 		Guppy:${Guppy_calls} \
     	Tombo:${Tombo_calls} \
     	METEORE:${METEORE_calls} \
-    	DeepMod.C:${DeepMod_calls} \
+    	DeepMod:${DeepMod_calls} \
 	--runid MethPerf-ECOLI_SANITY \
-    --dsname ECOLI_METROPAPER \
+    --dsname ECOLI_Test \
     --chrSet NC_000913.3 \
     --analysis "ecoli ecoli_metropaper_sanity"

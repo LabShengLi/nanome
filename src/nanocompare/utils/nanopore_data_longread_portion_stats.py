@@ -36,7 +36,6 @@ print(f"save to {outfn}")
 """
 dsname=NA19240, total_reads=6,219,931, total_longreads=2,286,093, portion_longreads=36.75%
 dsname=NA12878, total_reads=14,791,249, total_longreads=4,776,148, portion_longreads=32.29%
-dsname=HL60, total_reads=189,105, total_longreads=63,665, portion_longreads=33.67%
 dsname=APL, total_reads=1,154,349, total_longreads=204,778, portion_longreads=17.74%
 dsname=K562, total_reads=263,019, total_longreads=82,727, portion_longreads=31.45%
 """

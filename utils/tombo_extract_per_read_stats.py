@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-# @Author   : Yang Liu
-# @FileName : read_level_eval.py
-# @Software : NANOME project
-# @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
 
 from sys import argv
 
@@ -14,7 +9,6 @@ from tombo import tombo_helper, tombo_stats
 """
 Ouput format:
 
-head K562-Tombo-N100/K562-Tombo-N100-meth-call/K562-Tombo-N100.batch_98.perReadsStats.bed
 chr14	19118837	19118837	18eacd99-d2b9-48d8-a16c-cf28b351c66b	2.610044548594933	+
 chr14	19118838	19118838	18eacd99-d2b9-48d8-a16c-cf28b351c66b	2.7027532865530004	+
 chr14	19118852	19118852	18eacd99-d2b9-48d8-a16c-cf28b351c66b	5.296365664897572	+
