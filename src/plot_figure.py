@@ -640,7 +640,7 @@ if __name__ == '__main__':
                 plot_ROC_PR_curves(ret, outdir, tagname=bn)
     elif args.cmd == 'guppy-qos':
         ## collect basecall output for summary results, used for qos
-        ## python plot_figure.py guppy-qos -i /fastscratch/liuya/nanocompare/HL60-Runs/HL60-N50-basecall /fastscratch/liuya/nanocompare/K562-Runs/K562-N50-basecall /projects/li-lab/Nanopore_compare/nanopore_fast5/NA19240-N300-basecall /fastscratch/liuya/nanocompare/APL-Runs/APL-N50-basecall
+        ## python plot_figure.py guppy-qos -i /fastscratch/liuya/nanocompare/HL60-Runs/HL60-N50-basecall /fastscratch/liuya/nanocompare/K562-Runs/K562-N50-basecall /projects/li-lab/Nanopore_compare/nanopore_fast5/NA19240-N50-basecall /fastscratch/liuya/nanocompare/APL-Runs/APL-N50-basecall
         for basedir in args.i:
             fpatstr = os.path.join(basedir, '*', 'sequencing_summary.txt')
             flist = glob.glob(fpatstr)
