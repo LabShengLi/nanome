@@ -26,7 +26,7 @@ We use CI Automation Tools to enable the automated testing on every commit and o
 
 ### Hardware requirements
 
-NANOME is based on Nextflow pipeline framework, and start with raw fast5 nanopore sequencing input data with a reference genome. The pipeline can be configured with different RAM, CPU/GPU resources schema to parallelly run methylation-calling tools. For optimal usage, we recommend running NANOME pipeline on HPC or cloud computing platform, e.g., google cloud platform (GCP):
+NANOME is based on [Nextflow](https://www.nextflow.io/) pipeline framework, and start with raw fast5 nanopore sequencing input data with a reference genome. The pipeline can be configured with different RAM, CPU/GPU resources schema to parallelly run methylation-calling tools. For optimal usage, we recommend running NANOME pipeline on HPC or cloud computing platform, e.g., google cloud platform (GCP):
 * GPU or CPU with 2+ cores. 
 * RAM: 7+ GB per cpu.
 * Storage using HDD or SSD. Please ensure your storage before running the pipeline.
