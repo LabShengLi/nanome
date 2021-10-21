@@ -448,18 +448,12 @@ process QCExport {
 process Resquiggle {
 	tag "${basecallIndir.baseName}"
 
-//	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle",
-//		mode: "copy",
-//		pattern: "${basecallIndir.baseName}.resquiggle.run.log",
-//		enabled: params.outputIntermediate
-
 	input:
 	path 	basecallIndir 			from resquiggle_in_ch
 	each 	path(reference_genome) 	from reference_genome_ch3
 
 	output:
 	path "${basecallIndir.baseName}.resquiggle" into resquiggle_out_ch
-//	path "${basecallIndir.baseName}.resquiggle.run.log" optional true into resquiggle_logs
 
 	when:
 	params.runMethcall && params.runResquiggle && !params.filterGPUTaskRuns
@@ -486,7 +480,7 @@ process Resquiggle {
 	 	--fastq-filenames ${basecallIndir.baseName}.resquiggle/batch_basecall_combine_fq_*.fq\
 	 	--basecall-group ${params.BasecallGroupName}\
 	 	--basecall-subgroup ${params.BasecallSubGroupName}\
-	 	--overwrite --processes \$(( numProcessor * ${params.mediumProcTimes} ))  2>&1
+	 	--overwrite --processes \$(( numProcessor * ${params.mediumProcTimes} ))  &>> Resquiggle.run.log
 	echo "### tombo preprocess DONE"
 
 	### Need to check Tombo resquiggle bugs, lots of users report long runtime and hang at nearly completion for large data
@@ -502,9 +496,8 @@ process Resquiggle {
 		--ignore-read-locks ${params.tomboResquiggleOptions}\
 		--overwrite \
 		${basecallIndir.baseName}.resquiggle/workspace \
-		${referenceGenome} 2>&1
+		${referenceGenome} &>> Resquiggle.run.log
 
-	### &>  ${basecallIndir.baseName}.resquiggle.run.log
 	echo "### tombo resquiggle DONE"
 	"""
 }
@@ -621,7 +614,7 @@ process Megalodon {
 			--mod-output-formats bedmethyl wiggle \
 			--write-mods-text \
 			--write-mod-log-probs \
-			--processes \$(( numProcessor ))
+			--processes \$(( numProcessor ))  &>> Megalodon.run.log
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		## Ref: https://github.com/nanoporetech/megalodon
@@ -642,13 +635,12 @@ process Megalodon {
 			--write-mods-text \
 			--write-mod-log-probs \
 			--processes \$(( numProcessor * ${params.mediumProcTimes} )) \
-			--devices 0
+			--devices 0  &>> Megalodon.run.log
 	else
 		echo "### error value for commandType=\${commandType}"
 		exit 255
 	fi
 
-	### mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_dir.baseName}.per_read_modified_base_calls.txt
 	awk 'NR>1' megalodon_results/per_read_modified_base_calls.txt | gzip -f > \
 		batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt.gz
 
@@ -896,11 +888,11 @@ process Tombo {
 		--processes \$(( numProcessor )) \
 		--corrected-group ${params.ResquiggleCorrectedGroup} \
 		--multiprocess-region-size ${params.tomboMultiprocessRegionSize} &> \
-		${resquiggleDir.baseName}.tombo.run.log
+		${resquiggleDir.baseName}.Tombo.run.log
 
 	retry=1
-	## while grep -q "BrokenPipeError:" ${resquiggleDir.baseName}.tombo.run.log
-	while ! tail -n 1 ${resquiggleDir.baseName}.tombo.run.log |  grep -q "100%"
+	## while grep -q "BrokenPipeError:" ${resquiggleDir.baseName}.Tombo.run.log
+	while ! tail -n 1 ${resquiggleDir.baseName}.Tombo.run.log |  grep -q "100%"
 	do
 		echo "### Found error in tombo detect_modifications, repeat tombo running again!!!"
 		tombo detect_modifications alternative_model \
@@ -912,15 +904,15 @@ process Tombo {
 			--processes \$(( numProcessor )) \
 			--corrected-group ${params.ResquiggleCorrectedGroup} \
 			--multiprocess-region-size ${params.tomboMultiprocessRegionSize} &> \
-			${resquiggleDir.baseName}.tombo.run.log
+			${resquiggleDir.baseName}.Tombo.run.log
 		retry=\$(( retry+1 ))
 		if (( retry >= 5 )); then
 			break
 		fi
 	done
 
-	## if grep -q "BrokenPipeError: \\[Errno 32\\] Broken pipe" ${resquiggleDir.baseName}.tombo.run.log; then
-	if ! tail -n 1 ${resquiggleDir.baseName}.tombo.run.log |  grep -q "100%" ; then
+	## if grep -q "BrokenPipeError: \\[Errno 32\\] Broken pipe" ${resquiggleDir.baseName}.Tombo.run.log; then
+	if ! tail -n 1 ${resquiggleDir.baseName}.Tombo.run.log |  grep -q "100%" ; then
 		## Grep the broken pipeline bug for Tombo
 		echo "### Tombo seems not finish 100% after retry reached at \${retry} times, please check by yourself, it may be software or genome reference problem."
 	else
@@ -929,7 +921,7 @@ process Tombo {
 	fi
 
 	## Tombo lib need h5py lower than 3.0
-	## Error may occur with higher h5py: AttributeError: 'Dataset' object has no attribute 'value'
+	## Error may occur with higher version of h5py: AttributeError: 'Dataset' object has no attribute 'value'
 	## ref: https://github.com/nanoporetech/tombo/issues/325
 	python utils/tombo_extract_per_read_stats.py \
 		${chromSizesFile} \
