@@ -35,7 +35,7 @@ options = parser.parse_args()
 
 def mod_file(data_file_path):
     data_file = pd.read_csv(data_file_path, header=0, sep="\t")
-    name = data_file_path.split("/")[-1].split(".")[0]  # HL60_DeepSignal-METEORE-perRead-score
+    name = data_file_path.split("/")[-1].split(".")[0]
     data_file.drop_duplicates(subset=['Chr', "ID", "Pos", "Strand"], inplace=True)  # add chr
     data_file.reset_index(inplace=True, drop=True)
 
@@ -48,7 +48,6 @@ def mod_file(data_file_path):
     data_file.rename(columns={"Score": name}, inplace=True)
     data_file.reset_index(inplace=True, drop=True)
 
-    # print(data_file)
     return (data_file, df_id_strand)
 
 
@@ -64,7 +63,7 @@ def main(mp, combine_file, combine_id_strand):
     prediction.rename(columns={0: "Prediction"}, inplace=True)
     prediction_prob = prediction_prob[[1]]
     prediction_prob.rename(columns={1: "Prob_methylation"}, inplace=True)
-    final_output = pd.concat([combine_file[combine_file.columns[:3]], prediction, prediction_prob], axis=1)  #:2
+    final_output = pd.concat([combine_file[combine_file.columns[:3]], prediction, prediction_prob], axis=1)
 
     final_output.dropna(inplace=True)
     import numpy as np
@@ -77,7 +76,6 @@ def main(mp, combine_file, combine_id_strand):
 
 
 if __name__ == '__main__':
-    # Used to find the randome forest model in Github
     METEORE_Dir = options.model_base_dir
     df_file = pd.read_csv(options.methodsfile, header=None, sep='\t')
     if options.model == "default":
@@ -93,19 +91,13 @@ if __name__ == '__main__':
         dfs.append(df)
         dfs_id_strand.append(df_id_strand)
     combine_file = reduce(lambda left, right: pd.merge(left, right, how='inner', on=["ID", "Chr", "Pos"]),
-                          dfs)  # add chr
-    combine_file.drop_duplicates(subset=["ID", "Chr", "Pos"], inplace=True)  # add chr
+                          dfs)
+    combine_file.drop_duplicates(subset=["ID", "Chr", "Pos"], inplace=True)
     combine_file.reset_index(inplace=True, drop=True)
-    # print(combine_file)
 
-    # outfn = options.output.replace('-perRead.combine.tsv.gz', '-intermediate.combinedf.tsv.gz')
-    # combine_file.to_csv(outfn, sep='\t')
-    #
-    # print(f"save to {outfn}")
-
-    # Used for add strand later
+    # add strand, no need to combine strand since report read level outputs
     combine_id_strand = pd.concat(dfs_id_strand)
     combine_id_strand.drop_duplicates(inplace=True)
-    # print(combine_id_strand)
+
     if len(combine_file) > 0:
-        main(mp, combine_file, combine_id_strand)  ##
+        main(mp, combine_file, combine_id_strand)

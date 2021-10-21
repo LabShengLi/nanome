@@ -14,7 +14,7 @@ The script `read_level_eval.py` is desinged for general purpose of read-level pe
 ```angular2html
 read_level_eval.py -v
 
-read_level_eval (NANOME) v1.3.4
+read_level_eval (NANOME) v1.3.5
 ```
 
 ## Sample usage
@@ -111,7 +111,7 @@ The script `site_level_eval.py` is desinged for general purpose of site-level pe
 ```angular2html
 site_level_eval.py -v
 
-site_level_eval (NANOME) v1.3.4
+site_level_eval (NANOME) v1.3.5
 ```
 
 
@@ -217,7 +217,7 @@ The script `tss_eval.py` is desinged for general purpose of converting raw resul
 ```angular2html
 tss_eval.py -v
 
-tss_eval (NANOME) v1.3.4
+tss_eval (NANOME) v1.3.5
 ```
 
 ## Sample usage for read-level format unification

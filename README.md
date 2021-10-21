@@ -15,16 +15,18 @@
 **Fig. 1B. Workflow for 5-methylcytosine (5mC) detection for nanopore sequencing.** 
 
 
-**Results:** We compared seven analytic tools for detecting DNA modifications from nanopore long-read sequencing data. We evaluated the CpG methylation-detection accuracy, CpG site coverage, and running time using nanopore sequencing data across different genomic contexts, using natural human DNA. Furthermore, we provide an online DNA methylation database (https://nanome.jax.org) with which to display the DNA methylation levels detected by nanopore sequencing and bisulfite sequencing data across different genomic contexts.
+**Results:** We compared several analytic tools for detecting DNA modifications from nanopore long-read sequencing data. We evaluated the CpG methylation-detection accuracy, CpG site coverage, and running time using nanopore sequencing data across different genomic contexts, using natural human DNA. Furthermore, we provide an online DNA methylation database (https://nanome.jax.org) with which to display the DNA methylation levels detected by nanopore sequencing and bisulfite sequencing data across different genomic contexts.
 
 
-**Conclusions:** Our study is the first benchmark of computational methods for detection of mammalian whole-genome DNA-modifications in nanopore sequencing. We provide a broad foundation for cross-platform standardization, and an evaluation of analytical tools designed for genome-scale modified-base detection using nanopore sequencing. 
+**Conclusions:** Our study is the first benchmark of state-of-the-art methods for detection of mammalian whole-genome DNA-modifications in nanopore sequencing. We provide a broad foundation for cross-platform standardization, and an evaluation of analytical tools designed for genome-scale modified-base detection using nanopore sequencing. 
 
 ## System Requirements
+### CI/CD features of NANOME
+We use CI Automation Tools to enable the automated testing on every commit and on PRs to make sure that updates are not introducing bugs. Please check testing results on [Github](https://github.com/TheJacksonLaboratory/nanome/actions).
 
 ### Hardware requirements
 
-NANOME is based on Nextflow pipeline framework, and start with raw fast5 nanopore sequencing input data with a reference genome. The pipeline can be configured with different RAM, number of processors, CPU/GPU resources schema to parallel run methylation-calling tools. For optimal usage, we recommend using NANOME pipeline on HPC:
+NANOME is based on [Nextflow](https://www.nextflow.io/) pipeline framework, and start with raw fast5 nanopore sequencing input data with a reference genome. The pipeline can be configured with different RAM, CPU/GPU resources schema to parallelly run methylation-calling tools. For optimal usage, we recommend running NANOME pipeline on HPC or cloud computing platform, e.g., google cloud platform (GCP):
 * GPU or CPU with 2+ cores. 
 * RAM: 7+ GB per cpu.
 * Storage using HDD or SSD. Please ensure your storage before running the pipeline.
@@ -36,7 +38,7 @@ NANOME pipeline uses Nextflow technology. Users only need to install Nextflow an
 * docker
 * singularity
 
-We provide conda, docker and singularity environments which depend on below well-known open-source packages for methylation calling on nanopore sequencing data:
+We provide conda, docker and singularity environments that depend on below well-known open-source packages for methylation calling on nanopore sequencing data:
 
 [nanopolish](https://github.com/jts/nanopolish) >=0.13.2  
 [megalodon](https://github.com/nanoporetech/megalodon) >=2.2.9  
@@ -63,7 +65,7 @@ NANOME pipeline support running with various ways in different platforms:
 * HPC clusters with **SLURM** support
 * Google Cloud platform with **google-lifesciences** support
 
-## Usage
+## Simple usage
 NANOME pipeline can be directly executed without any other additional installation steps:
 ```angular2html
 # Run NANOME using docker
@@ -91,7 +93,7 @@ Our HPC hardware specifications are as follows:
 * Slurm manager version: 19.05.5
 
 Timeline figure for benchmarking experiments are below:
-![Bench-timeline](https://github.com/TheJacksonLaboratory/nanome/blob/enhance2/docs/resources/timeline_benchmark.jpg)
+![Bench-timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_benchmark.jpg)
 
 
 ### Pipeline DAG

@@ -1,6 +1,6 @@
 **This is an explanation of how to use NANOME pipeline on raw Fast5 input.**
 
-The inputs of NANOME pipeline is a folder/tar/tar.gz or txt file list containing raw signal Fast5 files and a reference genome. We recommend allocate GPU resources to softwares such as Guppy, DeepSignal, DeepMod and Megalodon, in order to optimal running times. We integrated a latest tool METEORE, it depends on other tools's read-level outputs (e.g., Megalodon and DeepSignal), and running METEORE program directly on them, detailed please check [METEORE](https://github.com/comprna/METEORE).
+The inputs of NANOME pipeline is a folder/tar/tar.gz or txt file list containing raw signal Fast5 files and a reference genome. We recommend allocate GPU resources to softwares such as Guppy, DeepSignal, DeepMod and Megalodon, in order to optimal running times. We integrated a latest tool METEORE, it depends on other tools' read-level outputs (e.g., Megalodon and DeepSignal), and running METEORE program directly on them, detailed please check [METEORE](https://github.com/comprna/METEORE).
 
 # 1. Running NANOME for human nanopore sequencing data
 
@@ -102,7 +102,7 @@ Succeeded   : 28
 ```
 
 
-All tools's methlation calling and evaluation results will be output to `outputs` folder by default below.
+All tools' methlation calling and evaluation results will be output to `outputs` folder by default below.
 
 ```angular2html
 tree outputs/TestData-methylation-callings/
@@ -142,13 +142,13 @@ outputs
 └── TestData-methylation-callings
 ```
 
-We also support input as a file list if input is suffix like `.filelist.txt`, an example input is [inputs/test.demo.filelist.txt](https://github.com/TheJacksonLaboratory/nanome/blob/master/inputs/test.demo.filelist.txt). Please use folowings for pipeline command help:
+We also support input as a file list if input file name is suffixed like `.filelist.txt`, an example input is [test.demo.filelist.txt](https://github.com/TheJacksonLaboratory/nanome/blob/master/inputs/test.demo.filelist.txt). Please use folowings for pipeline command help:
 ```angular2html
 nextflow run TheJacksonLaboratory/nanome --help
 ```
 
 # 2. Experiment for E. coli data
-The NANOME pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--dataType` need to be set as `ecoli`. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline `-config` params [conf/ecoli_demo.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/ecoli_demo.config).
+The NANOME pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--dataType` need to be set as `ecoli`. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline params' config file [ecoli_demo.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/examples/ecoli_demo.config).
 
 ```angular2html
 nextflow run TheJacksonLaboratory/nanome\
@@ -203,21 +203,21 @@ The output files of pipeline on E. coli data by all tools are below, please also
 
 
 # 3. Benchmarking experiment
-We constructed a list of benchmarking datasets that contain Fast5 reads from 800 to 7,200  for NA19240. The datasets can be got by users upon request. Following command is running NANOME pipeline on our benchmarking datasets, please refer to the input parameters for pipeline `-config` params [conf/executors/benchmarking_hpc.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/executors/benchmarking_hpc.config).
+We constructed a list of benchmarking datasets that contain Fast5 reads from 800 to 7,200  for NA19240. The datasets can be got by users upon request. Following command is running NANOME pipeline on our benchmarking datasets, please refer to the input parameters for config file [benchmarking_hpc.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/executors/benchmarking_hpc.config).
 
 ```angular2html
 nextflow run TheJacksonLaboratory/nanome\
     -profile singularity,hpc  \
     -config  conf/executors/benchmarking_hpc.config\
-    --dsname  'BenchmarkData'\
-    --input  "inputs/benchmark.filelist.txt"
+    --dsname  BenchmarkData\
+    --input  inputs/benchmark.filelist.txt
 ```
 
 Resource usage are reported by [Nextflow](https://www.nextflow.io/) workflow reporting utilities. Please refer to the [Trace file](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_benchmark.txt.tsv), [Report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_benchmark.pdf) and [Timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_benchmark.pdf) of benchmarking results on our HPC.
 
 # 4. Running pipeline on cloud computing platform
 
-Our Nextflow pipeline can running on CloudOS. The CloudOS will use a default Docker image. Below is an example.
+Our Nextflow pipeline can running on CloudOS. The CloudOS recommend using the Docker image. Below is an example.
 
 ```angular2html
 nextflow run TheJacksonLaboratory/nanome\
@@ -227,6 +227,6 @@ nextflow run TheJacksonLaboratory/nanome\
     --googleProjectName  [Google-project-name]
 ```
 
-The `[Google-project-name]` is the google project name, and `[Google-storage-bucket]` is the **Data Bucket** name that you can access on google cloud. `-w` is pipeline output working directory, `--outputDir` is the directory for methylation-calling results.
+The `[Google-project-name]` is your google project name, and `[Google-storage-bucket]` is the **Data Bucket** name that you can access on google cloud. `-w` is pipeline output working directory, `--outputDir` is the directory for methylation-calling results.
 
 For more detail of using cloud computing, please check [Cloud computing usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/CloudComputing.md).

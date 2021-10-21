@@ -25,7 +25,8 @@ def helpMessage() { // print help message
 	  --cleanCache		If clean work dir after complete, default is true
 
 	Running environment options:
-	  --conda_name			Conda name used for pipeline, default is '~/anaconda3/envs/nanome'
+	  --conda_name			Conda name used for pipeline, default is 'nanome'
+	  --conda_base_dir		Conda base directory, default is '/opt/conda'
 	  --docker_name			Docker name used for pipeline, default is 'liuyangzzu/nanome:latest'
 	  --singularity_name		Singularity name used for pipeline, default is 'docker://liuyangzzu/nanome:latest'
 	  --singularity_cache		Singularity cache dir, default is 'local_singularity_cache'
@@ -40,7 +41,7 @@ def helpMessage() { // print help message
 	  --googleProjectName	Google Cloud project name for google-lifesciences task running
 
 	Other options:
-	  --guppyDir		Guppy installation dir, used for conda environment
+	  --guppyDir		Guppy installation local directory, used only for conda environment
 
 	-profile options:
 	  Use this parameter to choose a predefined configuration profile. Profiles can give configuration presets for different compute environments.
@@ -72,25 +73,17 @@ ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: fals
 
 // Reference genome, deepmod cluster settings
 deepmod_tar_file = "${projectDir}/README.md"
-if (params.dataType == 'human') {
-	if (!params.refGenomePath) { // false - default
-		referenceGenome="reference_genome/hg38/hg38.fasta"
-	} else {
-		referenceGenome="reference_genome/${params.refGenomePath}"
-	}
-	if (!params.chromSizesPath) { // false - default
-		chromSizesFile="reference_genome/hg38/hg38.chrom.sizes"
-	} else {
-		chromSizesFile="reference_genome/${params.chromSizesPath}"
-	}
 
+referenceGenome = 'reference_genome/ref.fasta'
+chromSizesFile = 'reference_genome/chrom.sizes'
+
+// TODO: auto detect based on ref.fasta
+if (params.dataType == 'human') {
 	isDeepModCluster = params.useDeepModCluster
 	if (isDeepModCluster) {
 		deepmod_tar_file = params.deepmod_ctar
 	}
 } else if (params.dataType == 'ecoli') {
-	referenceGenome="reference_genome/ecoli/Ecoli_k12_mg1655.fasta"
-	chromSizesFile="reference_genome/ecoli/Ecoli_k12_mg1655.fasta.genome.sizes"
 	isDeepModCluster = false
 } else {
 	println "Param dataType=${params.dataType} is not support"
@@ -182,13 +175,21 @@ process EnvCheck {
 	fi
 
 	## Get dir for reference_genome
-	if [[ "${reference_genome}" == *.tar.gz ]] ; then
-		tar -xzf ${reference_genome}
+	mkdir -p reference_genome
+	find_dir="\$PWD/reference_genome"
+	if [[ ${reference_genome} == *.tar.gz ]] ; then
+		tar -xzf ${reference_genome} -C reference_genome
+	elif [[ ${reference_genome} == *.tar ]] ; then
+		tar -xf ${reference_genome} -C reference_genome
+	else
+		## for folder, use ln, note this is a symbolic link to a folder
+		find_dir=\$( readlink -f ${reference_genome} )
 	fi
-	if [ ! -d "reference_genome" ]  ; then
-		mkdir reference_genome
-		mv ${reference_genome.name.replaceAll(".tar.gz", "")} reference_genome
-	fi
+
+	find \${find_dir} -name '*.fasta*' | \
+		 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/\${fn/*.fasta/ref.fasta}'
+	find \${find_dir} -name '*.sizes' | \
+			parallel -j1 -v ln -s -f {} reference_genome/chrom.sizes
 
 	ls -lh ${referenceGenome}
 	ls -lh ${chromSizesFile}
@@ -447,18 +448,12 @@ process QCExport {
 process Resquiggle {
 	tag "${basecallIndir.baseName}"
 
-//	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/resquiggle",
-//		mode: "copy",
-//		pattern: "${basecallIndir.baseName}.resquiggle.run.log",
-//		enabled: params.outputIntermediate
-
 	input:
 	path 	basecallIndir 			from resquiggle_in_ch
 	each 	path(reference_genome) 	from reference_genome_ch3
 
 	output:
 	path "${basecallIndir.baseName}.resquiggle" into resquiggle_out_ch
-//	path "${basecallIndir.baseName}.resquiggle.run.log" optional true into resquiggle_logs
 
 	when:
 	params.runMethcall && params.runResquiggle && !params.filterGPUTaskRuns
@@ -485,13 +480,14 @@ process Resquiggle {
 	 	--fastq-filenames ${basecallIndir.baseName}.resquiggle/batch_basecall_combine_fq_*.fq\
 	 	--basecall-group ${params.BasecallGroupName}\
 	 	--basecall-subgroup ${params.BasecallSubGroupName}\
-	 	--overwrite --processes \$(( numProcessor * ${params.mediumProcTimes} ))  2>&1
+	 	--overwrite --processes \$(( numProcessor * ${params.mediumProcTimes} ))  &>> Resquiggle.run.log
 	echo "### tombo preprocess DONE"
 
 	### Need to check Tombo resquiggle bugs, lots of users report long runtime and hang at nearly completion for large data
 	### ref: https://github.com/nanoporetech/tombo/issues/139, https://github.com/nanoporetech/tombo/issues/111
 	### ref: https://github.com/nanoporetech/tombo/issues/365, https://github.com/nanoporetech/tombo/issues/167
 	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
+	### Out of memory solution for large data: --tomboResquiggleOptions '--signal-length-range 0 500000  --sequence-length-range 0 50000'
 	tombo resquiggle\
 		--processes \$(( numProcessor * ${params.lowProcTimes} )) \
 		--corrected-group ${params.ResquiggleCorrectedGroup} \
@@ -500,9 +496,8 @@ process Resquiggle {
 		--ignore-read-locks ${params.tomboResquiggleOptions}\
 		--overwrite \
 		${basecallIndir.baseName}.resquiggle/workspace \
-		${referenceGenome} 2>&1
+		${referenceGenome} &>> Resquiggle.run.log
 
-	### &>  ${basecallIndir.baseName}.resquiggle.run.log
 	echo "### tombo resquiggle DONE"
 	"""
 }
@@ -609,7 +604,7 @@ process Megalodon {
 			--outputs per_read_mods mods per_read_refs \
 			--guppy-server-path guppy_basecall_server \
 			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-			--guppy-params "-d ${megalodon_model_dir}/ --num_callers \$(( numProcessor )) --ipc_threads 6" \
+			--guppy-params "-d ${megalodon_model_dir}/ --num_callers \$(( numProcessor )) --ipc_threads \$(( numProcessor * ${params.lowProcTimes} ))" \
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--samtools-executable ${params.SAMTOOLS_PATH} \
 			--sort-mappings \
@@ -619,7 +614,7 @@ process Megalodon {
 			--mod-output-formats bedmethyl wiggle \
 			--write-mods-text \
 			--write-mod-log-probs \
-			--processes \$(( numProcessor ))
+			--processes \$(( numProcessor ))  &>> Megalodon.run.log
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		## Ref: https://github.com/nanoporetech/megalodon
@@ -629,7 +624,7 @@ process Megalodon {
 			--outputs per_read_mods mods per_read_refs \
 			--guppy-server-path guppy_basecall_server \
 			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-			--guppy-params "-d ./megalodon_model/ --num_callers \$(( numProcessor )) --ipc_threads 80" \
+			--guppy-params "-d ${megalodon_model_dir}/ --num_callers \$(( numProcessor )) --ipc_threads \$(( numProcessor * ${params.highProcTimes} ))" \
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--samtools-executable ${params.SAMTOOLS_PATH} \
 			--sort-mappings \
@@ -640,13 +635,12 @@ process Megalodon {
 			--write-mods-text \
 			--write-mod-log-probs \
 			--processes \$(( numProcessor * ${params.mediumProcTimes} )) \
-			--devices 0
+			--devices 0  &>> Megalodon.run.log
 	else
 		echo "### error value for commandType=\${commandType}"
 		exit 255
 	fi
 
-	### mv megalodon_results/per_read_modified_base_calls.txt batch_${fast5_dir.baseName}.per_read_modified_base_calls.txt
 	awk 'NR>1' megalodon_results/per_read_modified_base_calls.txt | gzip -f > \
 		batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt.gz
 
@@ -894,11 +888,11 @@ process Tombo {
 		--processes \$(( numProcessor )) \
 		--corrected-group ${params.ResquiggleCorrectedGroup} \
 		--multiprocess-region-size ${params.tomboMultiprocessRegionSize} &> \
-		${resquiggleDir.baseName}.tombo.run.log
+		${resquiggleDir.baseName}.Tombo.run.log
 
 	retry=1
-	## while grep -q "BrokenPipeError:" ${resquiggleDir.baseName}.tombo.run.log
-	while ! tail -n 1 ${resquiggleDir.baseName}.tombo.run.log |  grep -q "100%"
+	## while grep -q "BrokenPipeError:" ${resquiggleDir.baseName}.Tombo.run.log
+	while ! tail -n 1 ${resquiggleDir.baseName}.Tombo.run.log |  grep -q "100%"
 	do
 		echo "### Found error in tombo detect_modifications, repeat tombo running again!!!"
 		tombo detect_modifications alternative_model \
@@ -910,15 +904,15 @@ process Tombo {
 			--processes \$(( numProcessor )) \
 			--corrected-group ${params.ResquiggleCorrectedGroup} \
 			--multiprocess-region-size ${params.tomboMultiprocessRegionSize} &> \
-			${resquiggleDir.baseName}.tombo.run.log
+			${resquiggleDir.baseName}.Tombo.run.log
 		retry=\$(( retry+1 ))
 		if (( retry >= 5 )); then
 			break
 		fi
 	done
 
-	## if grep -q "BrokenPipeError: \\[Errno 32\\] Broken pipe" ${resquiggleDir.baseName}.tombo.run.log; then
-	if ! tail -n 1 ${resquiggleDir.baseName}.tombo.run.log |  grep -q "100%" ; then
+	## if grep -q "BrokenPipeError: \\[Errno 32\\] Broken pipe" ${resquiggleDir.baseName}.Tombo.run.log; then
+	if ! tail -n 1 ${resquiggleDir.baseName}.Tombo.run.log |  grep -q "100%" ; then
 		## Grep the broken pipeline bug for Tombo
 		echo "### Tombo seems not finish 100% after retry reached at \${retry} times, please check by yourself, it may be software or genome reference problem."
 	else
@@ -927,7 +921,7 @@ process Tombo {
 	fi
 
 	## Tombo lib need h5py lower than 3.0
-	## Error may occur with higher h5py: AttributeError: 'Dataset' object has no attribute 'value'
+	## Error may occur with higher version of h5py: AttributeError: 'Dataset' object has no attribute 'value'
 	## ref: https://github.com/nanoporetech/tombo/issues/325
 	python utils/tombo_extract_per_read_stats.py \
 		${chromSizesFile} \
@@ -995,7 +989,8 @@ process DeepMod {
 			--Base C \
 			--modfile \${DeepModTrainModelDir}/${params.DEEPMOD_RNN_MODEL} \
 			--FileID batch_${basecallDir.baseName}_num \
-			--threads \$(( numProcessor * ${params.mediumProcTimes} ))  ${params.moveOption ? '--move' : ' '}
+			--threads \$(( numProcessor * ${params.mediumProcTimes} )) \
+			${params.moveOption ? '--move' : ' '} &>> DeepMod.run.log
 
 	if [[ "${params.outputIntermediate}" == true ]] ; then
 		tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
@@ -1362,7 +1357,7 @@ process DpmodComb {
 	## merge different runs of modification detection
 	## ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#2-how-to-merge-different-runs-of-modification-detection
 	python utils/sum_chr_mod.py \
-		indir/ C ${params.dsname}.deepmod ${chrSet}
+		indir/ C ${params.dsname}.deepmod ${chrSet}  &>> DpmodComb.run.log
 
 	> ${params.dsname}.deepmod.C_per_site.combine.bed
 
@@ -1391,7 +1386,7 @@ process DpmodComb {
 		python utils/hm_cluster_predict.py \
 			indir/${params.dsname}.deepmod \
 			./C \
-			\${DeepModTrainModelDir}/${params.DEEPMOD_CLUSTER_MODEL} ## || true
+			\${DeepModTrainModelDir}/${params.DEEPMOD_CLUSTER_MODEL} &>> DpmodComb.run.log
 
 		> ${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed
 		for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
@@ -1423,7 +1418,7 @@ process DpmodComb {
 	## Unify format output
 	bash src/unify_format_for_calls.sh \
 		${params.dsname}  DeepMod \${callfn} \
-		.  \$((numProcessor))  2  ${chrSet}
+		.  \$((numProcessor))  2  ${chrSet}  &>> DpmodComb.run.log
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
