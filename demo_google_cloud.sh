@@ -13,6 +13,27 @@
 set -ex
 date;hostname;pwd
 
+###########################################
+###########################################
+###########################################
+### Run Test pipeline on google cloud
+## working and outputs dir
+WORK_DIR_BUCKET=${1:-"gs://jax-nanopore-01-project-data/NANOME-TestData-work"}
+OUTPUT_DIR_BUCKET=${2:-"gs://jax-nanopore-01-export-bucket/NANOME-TestData-ouputs"}
+
+gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} >/dev/null 2>&1 || true
+
+## Run test demo on google cloud
+nextflow run main.nf\
+    -profile docker,google \
+	-w ${WORK_DIR_BUCKET} \
+	--outputDir ${OUTPUT_DIR_BUCKET} \
+	--dsname TestData \
+	--input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt
+
+echo "### nanome pipeline for demo data on google DONE"
+
+exit 0
 
 ###########################################
 ###########################################
@@ -37,24 +58,3 @@ nextflow run main.nf\
 
 echo "### nanome pipeline for NA12878 some chr and part file on google DONE"
 exit 0
-
-
-###########################################
-###########################################
-###########################################
-### Run Test pipeline on google cloud
-## working and outputs dir
-WORK_DIR_BUCKET=${1:-"gs://jax-nanopore-01-project-data/NANOME-TestData-work"}
-OUTPUT_DIR_BUCKET=${2:-"gs://jax-nanopore-01-export-bucket/NANOME-TestData-ouputs"}
-
-gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} >/dev/null 2>&1 || true
-
-## Run test demo on google cloud
-nextflow run main.nf\
-    -profile docker,google \
-	-w ${WORK_DIR_BUCKET} \
-	--outputDir ${OUTPUT_DIR_BUCKET} \
-	--dsname TestData \
-	--input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt
-
-echo "### nanome pipeline for demo data on google DONE"
