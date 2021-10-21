@@ -6,6 +6,7 @@
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
 """
 Build package command:
+    find . -name '*.egg-info' -type d | parallel -j1 -v rm -r {}
     rm -rf dist/*  && python -m build
 """
 
@@ -27,7 +28,7 @@ setuptools.setup(
         'Bug Tracker': 'https://github.com/TheJacksonLaboratory/nanome/issues'
     },
     packages=(
-        setuptools.find_packages(where="src")
+        setuptools.find_packages(where="src", exclude=("*.resource", "*.*.saniti_ecoli",))
     ),
     package_dir={'nanocompare': 'src/nanocompare'},
     scripts=[

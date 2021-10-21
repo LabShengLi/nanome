@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # @Author   : Yang Liu
-# @FileName : read_level_eval.py
+# @FileName : clean_old_basecall_in_fast5.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
 # @Website  : https://github.com/TheJacksonLaboratory/nanome

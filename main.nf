@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 // @Author   : Yang Liu
-// @FileName : eval_common.py
+// @FileName : main.nf
 // @Software : NANOME project
 // @Organization : JAX Li Lab
 // @Website  : https://github.com/TheJacksonLaboratory/nanome
