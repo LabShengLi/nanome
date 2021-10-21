@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # @Author   : Yang Liu
-# @FileName : read_level_eval.py
+# @FileName : setup.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
 # @Website  : https://github.com/TheJacksonLaboratory/nanome

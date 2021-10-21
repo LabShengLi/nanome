@@ -1,3 +1,8 @@
+# @Author   : Yang Liu
+# @FileName : environment.yml
+# @Software : NANOME project
+# @Organization : JAX Li Lab
+# @Website  : https://github.com/TheJacksonLaboratory/nanome
 name: nanome
 channels:
   - bioconda

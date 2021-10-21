@@ -1,4 +1,9 @@
 #!/usr/bin/env nextflow
+// @Author   : Yang Liu
+// @FileName : eval_common.py
+// @Software : NANOME project
+// @Organization : JAX Li Lab
+// @Website  : https://github.com/TheJacksonLaboratory/nanome
 
 def helpMessage() { // print help message
 	log.info"""

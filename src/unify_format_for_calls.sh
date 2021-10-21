@@ -1,8 +1,14 @@
 #!/bin/bash
+# @Author   : Yang Liu
+# @FileName : unify_format_for_calls.sh
+# @Software : NANOME project
+# @Organization : JAX Li Lab
+# @Website  : https://github.com/TheJacksonLaboratory/nanome
+
 # Generate unified read-level and/or site-level format of calls
 # Usage:
-# prog  <dsname> <call-encode> <call-fn> <outd-dir> <num-processors> <step12> <chr-options>
-#           1       2               3       4               5            6          7
+# [prog]  <dsname> <call-encode> <call-fn> <outd-dir> <num-processors> <step12> <chr-options>
+#             1       2               3       4               5            6          7
 dsname=${1}
 encode=${2}
 callfn=${3}
