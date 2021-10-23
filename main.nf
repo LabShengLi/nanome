@@ -494,7 +494,7 @@ process Resquiggle {
 	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
 	### Out of memory solution for large data: --tomboResquiggleOptions '--signal-length-range 0 500000  --sequence-length-range 0 50000'
 	tombo resquiggle\
-		--processes \$(( numProcessor * ${params.lowProcTimes} )) \
+		--processes \$( echo "print(int( \$numProcessor * ${params.reduceProcTimes} ))" | python3 ) \
 		--corrected-group ${params.ResquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} \
 		--basecall-subgroup ${params.BasecallSubGroupName}\
@@ -554,8 +554,8 @@ process Nanopolish {
 	## there are segment fault issues, if set -t to a large number or use low memory,
 	## ref: https://github.com/jts/nanopolish/issues/872
 	## ref: https://github.com/jts/nanopolish/issues/683, https://github.com/jts/nanopolish/issues/580
-	nanopolish call-methylation -t \$(( numProcessor/2 )) -r \${fastqFile##*/} \
-		-b \${bamFileName} -g ${referenceGenome} | awk 'NR>1' | \
+	nanopolish call-methylation -t \$( echo "print(int( \$numProcessor * ${params.reduceProcTimes} ))" | python3 ) -r \${fastqFile##*/} \
+		-b \${bamFileName} -g ${referenceGenome} -q cpg | awk 'NR>1' | \
 		gzip -f > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
 
 	## Clean
