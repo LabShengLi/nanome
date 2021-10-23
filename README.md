@@ -20,13 +20,20 @@
 
 **Conclusions:** Our study is the first benchmark of state-of-the-art methods for detection of mammalian whole-genome DNA-modifications in nanopore sequencing. We provide a broad foundation for cross-platform standardization, and an evaluation of analytical tools designed for genome-scale modified-base detection using nanopore sequencing. 
 
-## System Requirements
-### CI/CD features of NANOME
+## Highlights of NANOME pipeline
+### Several first highlights for NANOME
+* Enables users to process **terabasescale** Oxford Nanopore sequencing datasets.
+* Provide a one command line, **end-to-end pipeline** for analyzing Nanopore sequencing data for all methylation-calling tools.
+* Support **various platform** executions: local, HPC and CloudOS, **without needs for tools' installation** (NANOME support docker and singularity).
+* **First standardized whole genome-wide evaluation framework**, considering per-read and per-site performance for singletons/non-singleonts, genic and intergenic regions, CpG islands/shores/shelves, differenct CG densities regions and repetitive regions. 
+* The **first Nextflow based DNA methylation-calling pipeline**. Please check more articles about Nextflow based workflow technology from Nature Biotechnology: https://doi.org/10.1038/s41587-020-0439-x and https://doi.org/10.1038/nbt.3820.
 
-We use  <span style="color:red">CI Automation Tools to **enable the automated testing on every commit and on PRs** </span>to make sure that updates are not introducing bugs. Please check the automatic testing results on [Github](https://github.com/TheJacksonLaboratory/nanome/actions).
+### CI/CD features
+We use  CI Automation Tools to **enable the automated testing on every commit and on PRs** to make sure that updates are not introducing bugs. Please check the automatic testing results on [Github](https://github.com/TheJacksonLaboratory/nanome/actions).
+
+## System Requirements
 
 ### Hardware requirements
-
 NANOME pipeline can be easily configured with different RAM, CPU/GPU resources schema to parallelly run methylation-calling tools. For optimal usage, we recommend running NANOME pipeline on HPC or cloud computing platform, e.g., google cloud platform (GCP). The basic hardware requirements are below:
 * GPU or CPU with 2+ cores. 
 * RAM: 7+ GB per cpu.
