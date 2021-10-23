@@ -25,7 +25,7 @@
 * Enables users to process **terabasescale** Oxford Nanopore sequencing datasets.
 * Provide a one command line, **end-to-end pipeline** for analyzing Nanopore sequencing data for all methylation-calling tools.
 * Support **various platform** executions: local, HPC and CloudOS, **without needs for tools' installation** (NANOME support docker and singularity).
-* **First standardized whole genome-wide evaluation framework**, considering per-read and per-site performance for singletons/non-singleonts, genic and intergenic regions, CpG islands/shores/shelves, differenct CG densities regions and repetitive regions. 
+* **First standardized whole genome-wide evaluation framework**, considering per-read and per-site performance for singletons/non-singletons, genic and intergenic regions, CpG islands/shores/shelves, differenct CG densities regions and repetitive regions. 
 * The **first Nextflow based DNA methylation-calling pipeline**. Please check more articles about Nextflow based workflow technology from Nature Biotechnology: https://doi.org/10.1038/s41587-020-0439-x and https://doi.org/10.1038/nbt.3820.
 
 ### CI/CD features
@@ -126,4 +126,5 @@ If you have any questions/issues/bugs, please post them on [GitHub](https://gith
 ## Reference
 Detailed results can be found in our publication. Please cite our article below if you are interested in our GitHub repository:
 
-**DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation.** Genome Biology 22, 295 (2021). https://genomebiology.biomedcentral.com/articles/10.1186/s13059-021-02510-z 
+**DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation.** Genome Biology 22, 295 (2021). https://doi.org/10.1186/s13059-021-02510-z  
+https://genomebiology.biomedcentral.com/articles/10.1186/s13059-021-02510-z 
