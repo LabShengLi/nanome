@@ -9,6 +9,15 @@ You can install NANOME standardized genome-wide evaluation tool from [PyPI](http
 pip install nanome-jax
 ```
 
+If your system support docker or singularity, you can directly running evaluation tool without any installations:
+```angular2html
+## Check nanome-jax package in docker
+docker run -v $PWD:$PWD -w $PWD -it liuyangzzu/nanome:latest pip show nanome-jax
+
+## Check nanome-jax package in singularity 
+singularity exec -e docker://liuyangzzu/nanome:latest pip show nanome-jax
+```
+
 # 1. Read-level performance evaluation
 ## Script for read-level evaluation
 The script `read_level_eval.py` is desinged for general purpose of read-level performance evaluation for all kinds of tools.
@@ -16,7 +25,7 @@ The script `read_level_eval.py` is desinged for general purpose of read-level pe
 ```angular2html
 read_level_eval.py -v
 
-read_level_eval (NANOME) v1.3.5
+read_level_eval (NANOME) v1.3.7
 ```
 
 ## Sample usage
@@ -35,6 +44,15 @@ read_level_eval.py \
     --report-joined
 ```
 Sample results can be found at [read-level outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/read_level_output.txt).
+
+For using docker or singularity, the command prefix is like below:
+```angular2html
+# Docker style usage
+docker run -v $PWD:$PWD -w $PWD -it liuyangzzu/nanome:latest read_level_eval.py
+
+# Singularity style usage
+singularity exec -e docker://liuyangzzu/nanome:latest read_level_eval.py
+```
 
 ## Command options
 ```angular2html
@@ -113,7 +131,7 @@ The script `site_level_eval.py` is desinged for general purpose of site-level pe
 ```angular2html
 site_level_eval.py -v
 
-site_level_eval (NANOME) v1.3.5
+site_level_eval (NANOME) v1.3.7
 ```
 
 
@@ -219,7 +237,7 @@ The script `tss_eval.py` is desinged for general purpose of converting raw resul
 ```angular2html
 tss_eval.py -v
 
-tss_eval (NANOME) v1.3.5
+tss_eval (NANOME) v1.3.7
 ```
 
 ## Sample usage for read-level format unification
