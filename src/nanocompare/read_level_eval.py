@@ -525,13 +525,13 @@ def parse_arguments():
     parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethPerf-DS_WGBS_2reps",
                         required=True)
     parser.add_argument('--calls', nargs='+',
-                        help='all ONT call results <tool-name>:<file-name> seperated by space, tool-name can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod.C/DeepMod.Cluster',
+                        help='all ONT call results <tool-name>:<file-name> seperated by space, tool-name can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod',
                         required=True)
     parser.add_argument('--bgtruth', type=str,
                         help="background truth file <encode-type>:<file-name>;<file-name>, encode-type can be 'encode' or 'bismark'",
                         default=None)
     parser.add_argument('--genome-annotation', type=str,
-                        help='genome annotation dir, contain BED files such as singleton, nonsingleton, etc.',
+                        help='genome annotation dir, contain BED files',
                         default=None)
     parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff, default is 5", default=5)
     parser.add_argument('--processors', type=int, help="number of processors used, default is 1", default=1)

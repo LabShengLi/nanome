@@ -1,8 +1,10 @@
 **This is an explanation of how to use script to perform read-level and site-level performance evaluation.**
 
-User needs to provide ONT tools's methylation-calling raw outputs and BS-seq data before he can perform evaluations. The genome-annotation files may needed if the performance at specific genomic regions is interested.
+User needs to provide ONT tools's methylation-calling raw outputs and BS-seq data before evaluations. The genome-annotation files may needed if performances at specific genomic regions are interested. 
 
-You can install NANOME evaluation script from [PyPI](https://pypi.org/project/nanome-jax/):
+**Please note that we strongly suggest providing the whole genome-wide CpGs for performance comparison across tools, we do not suggest selecting a portion of CpGs for comparison**.
+
+You can install NANOME standardized genome-wide evaluation tool from [PyPI](https://pypi.org/project/nanome-jax/):
 ```angular2html
 pip install nanome-jax
 ```
