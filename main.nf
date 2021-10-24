@@ -319,7 +319,7 @@ process Basecall {
 			--config ${params.GUPPY_BASECALL_MODEL} \
 			--num_callers \$(( numProcessor )) \
 			--fast5_out --compress_fastq\
-			--verbose_logs
+			--verbose_logs  &>> Basecall.run.log
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		guppy_basecaller --input_path ${fast5_dir} \
@@ -328,7 +328,7 @@ process Basecall {
 			--num_callers \$(( numProcessor )) \
 			--fast5_out --compress_fastq\
 			--verbose_logs \
-			-x auto
+			-x auto  &>> Basecall.run.log
 	else
 		echo "### error value for commandType=\${commandType}"
 		exit 255
@@ -403,7 +403,7 @@ process QCExport {
 	## Perform QC report by NanoComp
 	NanoComp --summary ${params.dsname}_combine_sequencing_summary.txt.gz  \
 		--names ${params.dsname} --outdir ${params.dsname}_QCReport -t \$(( numProcessor )) \
-		--raw  -f pdf -p ${params.dsname}_
+		--raw  -f pdf -p ${params.dsname}_   &>> QCReport.run.log
 
 	## Combine all batch fq.gz
 	> merge_all_fq.fq.gz
@@ -768,7 +768,7 @@ process Guppy {
 			--config ${params.GUPPY_METHCALL_MODEL} \
 			--num_callers \$(( numProcessor )) \
 			--fast5_out --compress_fastq\
-			--verbose_logs
+			--verbose_logs  &>> Guppy.run.log
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		guppy_basecaller --input_path ${fast5_dir} \
@@ -777,7 +777,7 @@ process Guppy {
 			--num_callers \$(( numProcessor )) \
 			--fast5_out --compress_fastq\
 			--verbose_logs \
-			--device auto
+			--device auto  &>> Guppy.run.log
 	else
 		echo "### error value for commandType=\${commandType}"
 		exit 255
@@ -1501,12 +1501,14 @@ process METEORE {
 	python \${combineScript} \
 		-i \${modelContentFileName} \
 		-m optimized -b \${METEOREDIR} \
-		-o ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
+		-o ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz\
+		&>> METEORE.run.log
 
 	# Use default parameters from the sklearn library (n_estimator = 100 and max_dep = None)
 	python \${combineScript} \
 		-i \${modelContentFileName} -m default -b \${METEOREDIR} \
-		-o ${params.dsname}.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz
+		-o ${params.dsname}.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz\
+		&>> METEORE.run.log
 
 	# Read level and site level output
 	if [ -f ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz ] ; then
@@ -1519,7 +1521,8 @@ process METEORE {
 		bash src/unify_format_for_calls.sh \
 			${params.dsname}  METEORE\
 			${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz \
-			.  \$((numProcessor))  2  ${chrSet}
+			.  \$((numProcessor))  2  ${chrSet}\
+			&>> METEORE.run.log
 	fi
 	echo "### METEORE consensus DONE"
 	"""
@@ -1573,6 +1576,9 @@ process Report {
 	printf '%s\t%s\n' start ${workflow.start} >> running_information.tsv
 	printf '%s\t%s\n' input "${params.input}" >> running_information.tsv
 	printf '%s\t%s\n' outputDir ${params.outputDir} >> running_information.tsv
+
+	## Note that the reason of report process can not be cached, is due to
+	## Above script codes will be changed each time, so report can not apply old cached script
 
 	## Get basecalling results from NanoComp
 	basecallOutputFile=\$(find ${params.dsname}_QCReport/ -name "*NanoStats.txt" -type f)

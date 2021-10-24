@@ -38,7 +38,7 @@ def summary_cpgs_stats_results_table():
     logger.debug(f"Evaluated on regions: {eval_cov_summary_region}")
 
     dataset = []
-    bgtruthCpGs = set(list(bgTruth.keys()))
+    bgtruthCpGs = set(list(bgTruth.keys())) if bgTruth else set()
     joinedSet = None
     unionSet = set()
 
@@ -382,7 +382,7 @@ def parse_arguments():
                         required=True)
     parser.add_argument('--bgtruth', type=str,
                         help="background truth file <encode-type>:<file-name1>;<file-name1>, encode-type can be 'encode' or 'bismark'",
-                        required=True)
+                        default=None)
     parser.add_argument('--genome-annotation', type=str,
                         help='genome annotation dir, contain BED files',
                         default=None)
@@ -476,31 +476,34 @@ if __name__ == '__main__':
         load_genome_annotation_config(verbose=True)
     logger.debug(f'\n\n####################\n\n')
 
-    # we import multiple (1 or 2) replicates and join them
-    encode, fnlist = args.bgtruth.split(':')
-    fnlist = fnlist.split(';')
+    if args.bgtruth:
+        # we import multiple (1 or 2) replicates and join them
+        encode, fnlist = args.bgtruth.split(':')
+        fnlist = fnlist.split(';')
 
-    if len(fnlist) > 2:
-        raise Exception(f'Currently only support the number of bgtruth upto two, but found more: {fnlist}')
+        if len(fnlist) > 2:
+            raise Exception(f'Currently only support the number of bgtruth upto two, but found more: {fnlist}')
 
-    logger.debug(f'BGTruth fnlist={fnlist}, encode={encode}')
+        logger.debug(f'BGTruth fnlist={fnlist}, encode={encode}')
 
-    bgTruthList = []
-    for fn in fnlist:
-        if len(fn) == 0:  # incase of input like 'bismark:/a/b/c;'
-            continue
-        # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
-        bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True,
-                                  filterChr=args.chrSet,
-                                  using_cache=using_cache, enable_cache=enable_cache, cache_dir=ds_cache_dir)
-        bgTruthList.append(bgTruth1)
+        bgTruthList = []
+        for fn in fnlist:
+            if len(fn) == 0:  # incase of input like 'bismark:/a/b/c;'
+                continue
+            # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
+            bgTruth1 = import_bgtruth(fn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True,
+                                      filterChr=args.chrSet,
+                                      using_cache=using_cache, enable_cache=enable_cache, cache_dir=ds_cache_dir)
+            bgTruthList.append(bgTruth1)
 
-    # Combine one/two replicates, using cutoff=1 or 5
-    bgTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruthCutt)
+        # Combine one/two replicates, using cutoff=1 or 5
+        bgTruth = combineBGTruthList(bgTruthList, covCutoff=bgtruthCutt)
 
-    logger.info(f'Combined BS-seq data (cov>={bgtruthCutt}), all methylation level sites={len(bgTruth):,}')
-    logger.debug(f"Memory report: {get_current_memory_usage()}")
-    logger.debug(f'\n\n####################\n\n')
+        logger.info(f'Combined BS-seq data (cov>={bgtruthCutt}), all methylation level sites={len(bgTruth):,}')
+        logger.debug(f"Memory report: {get_current_memory_usage()}")
+        logger.debug(f'\n\n####################\n\n')
+    else:
+        bgTruth = None
 
     callfn_dict = defaultdict()  # callname -> filename
 
@@ -565,9 +568,11 @@ if __name__ == '__main__':
         venn_outdir = os.path.join(out_dir, 'venn_data')
         os.makedirs(venn_outdir, exist_ok=True)
 
-        bg_cpgs = bgTruth.keys()
-        outfn = os.path.join(venn_outdir, f'{args.dsname}.bgtruth.cpg.sites.cov{args.min_bgtruth_cov}.setsfile.txt.gz')
-        ontcalls_to_setsfile_for_venn_analysis(bg_cpgs, outfn)
+        if bgTruth:
+            bg_cpgs = bgTruth.keys()
+            outfn = os.path.join(venn_outdir, f'{args.dsname}.bgtruth.cpg.sites.cov{args.min_bgtruth_cov}.setsfile.txt.gz')
+            ontcalls_to_setsfile_for_venn_analysis(bg_cpgs, outfn)
+
         for callname in ToolNameList:
             if callname not in callresult_dict_cov3:
                 continue
@@ -578,59 +583,60 @@ if __name__ == '__main__':
         logger.debug(f"Memory report: {get_current_memory_usage()}")
         logger.debug(f'\n\n####################\n\n')
 
-    logger.debug(f"Start getting intersection (all joined) sites by tools and bgtruth")
-    coveredCpGs = set(list(bgTruth.keys()))  # joined sets, start with bs-seq
-    coveredCpGs001 = set(list(bgTruth.keys()))  # no change later
+    if bgTruth: # Having bgtruth params, then report PCC performance
+        logger.debug(f"Start getting intersection (all joined) sites by tools and bgtruth")
+        coveredCpGs = set(list(bgTruth.keys()))  # joined sets, start with bs-seq
+        coveredCpGs001 = set(list(bgTruth.keys()))  # no change later
 
-    sitesDataset = defaultdict(list)
+        sitesDataset = defaultdict(list)
 
-    for name in loaded_callname_list:
-        coveredCpGs = coveredCpGs.intersection(set(list(callresult_dict_cov3[name].keys())))
-        logger.debug(f'Join {name} get {len(coveredCpGs):,} CpGs')
+        for name in loaded_callname_list:
+            coveredCpGs = coveredCpGs.intersection(set(list(callresult_dict_cov3[name].keys())))
+            logger.debug(f'Join {name} get {len(coveredCpGs):,} CpGs')
 
-        joinBSWithEachToolSet = coveredCpGs001.intersection(set(list(callresult_dict_cov3[name].keys())))
-        sitesDataset['Dataset'].append(args.dsname)
-        sitesDataset['Method'].append(name)
-        sitesDataset[f'Sites-cov{args.toolcov_cutoff}'].append(len(callresult_dict_cov3[name]))
-        sitesDataset[f'BS-seq-cov{args.min_bgtruth_cov}-all'].append(len(coveredCpGs001))
-        sitesDataset[f'Join-with-BSseq-cov{args.min_bgtruth_cov}-all'].append(len(joinBSWithEachToolSet))
-    df = pd.DataFrame.from_dict(sitesDataset)
-    outfn = os.path.join(out_dir,
-                         f'{RunPrefix}_{args.dsname}.tools.cov{args.toolcov_cutoff}.join.with.bsseq.cov{args.min_bgtruth_cov}.site.level.report.csv')
-    df.to_csv(outfn)
+            joinBSWithEachToolSet = coveredCpGs001.intersection(set(list(callresult_dict_cov3[name].keys())))
+            sitesDataset['Dataset'].append(args.dsname)
+            sitesDataset['Method'].append(name)
+            sitesDataset[f'Sites-cov{args.toolcov_cutoff}'].append(len(callresult_dict_cov3[name]))
+            sitesDataset[f'BS-seq-cov{args.min_bgtruth_cov}-all'].append(len(coveredCpGs001))
+            sitesDataset[f'Join-with-BSseq-cov{args.min_bgtruth_cov}-all'].append(len(joinBSWithEachToolSet))
+        df = pd.DataFrame.from_dict(sitesDataset)
+        outfn = os.path.join(out_dir,
+                             f'{RunPrefix}_{args.dsname}.tools.cov{args.toolcov_cutoff}.join.with.bsseq.cov{args.min_bgtruth_cov}.site.level.report.csv')
+        df.to_csv(outfn)
 
-    # Output sites report for all tools and BS-seq
-    logger.info(
-        f"Joined {len(coveredCpGs):,} CpGs are covered by all tools (cov >= {args.toolcov_cutoff}) and BS-seq (cov >= {args.min_bgtruth_cov})")
-    logger.debug('Output data of meth-freq and coverage on joined CpG sites as datasets for correlation analysis')
-    outfn_joined = os.path.join(out_dir,
-                                f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv.gz")
-    save_meth_corr_data(callresult_dict_cov3, bgTruth, coveredCpGs, outfn_joined)
-    outfn_joined_sorted = os.path.join(out_dir,
-                                       f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.sorted.csv.gz")
-    sort_bed_file(infn=outfn_joined, outfn=outfn_joined_sorted, has_header=True)
-    os.remove(outfn_joined)
+        # Output sites report for all tools and BS-seq
+        logger.info(
+            f"Joined {len(coveredCpGs):,} CpGs are covered by all tools (cov >= {args.toolcov_cutoff}) and BS-seq (cov >= {args.min_bgtruth_cov})")
+        logger.debug('Output data of meth-freq and coverage on joined CpG sites as datasets for correlation analysis')
+        outfn_joined = os.path.join(out_dir,
+                                    f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv.gz")
+        save_meth_corr_data(callresult_dict_cov3, bgTruth, coveredCpGs, outfn_joined)
+        outfn_joined_sorted = os.path.join(out_dir,
+                                           f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.sorted.csv.gz")
+        sort_bed_file(infn=outfn_joined, outfn=outfn_joined_sorted, has_header=True)
+        os.remove(outfn_joined)
 
-    logger.debug(
-        'Output data of meth-freq and coverage on bgTruth related CpG sites as datasets for correlation analysis')
-    outfn_bgtruth = os.path.join(out_dir,
-                                 f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv.gz")
-    save_meth_corr_data(callresult_dict_cov3, bgTruth, set(list(bgTruth.keys())), outfn_bgtruth)
-    outfn_bgtruth_sroted = os.path.join(out_dir,
-                                        f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.sorted.csv.gz")
-    sort_bed_file(infn=outfn_bgtruth, outfn=outfn_bgtruth_sroted, has_header=True)
-    os.remove(outfn_bgtruth)
+        logger.debug(
+            'Output data of meth-freq and coverage on bgTruth related CpG sites as datasets for correlation analysis')
+        outfn_bgtruth = os.path.join(out_dir,
+                                     f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv.gz")
+        save_meth_corr_data(callresult_dict_cov3, bgTruth, set(list(bgTruth.keys())), outfn_bgtruth)
+        outfn_bgtruth_sroted = os.path.join(out_dir,
+                                            f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.sorted.csv.gz")
+        sort_bed_file(infn=outfn_bgtruth, outfn=outfn_bgtruth_sroted, has_header=True)
+        os.remove(outfn_bgtruth)
 
-    # Report correlation matrix here
-    df = pd.read_csv(outfn_joined_sorted, sep=sep)
-    df = df.filter(regex='_freq$', axis=1)
-    cordf = df.corr()
-    logger.debug(f'Correlation matrix is:\n{cordf}')
-    corr_outfn = os.path.join(out_dir,
-                              f'Meth_corr_plot_data-{RunPrefix}-correlation-matrix-toolcov{minToolCovCutt}-bsseqcov{bgtruthCutt}.xlsx')
-    cordf.to_excel(corr_outfn)
+        # Report correlation matrix here
+        df = pd.read_csv(outfn_joined_sorted, sep=sep)
+        df = df.filter(regex='_freq$', axis=1)
+        cordf = df.corr()
+        logger.debug(f'Correlation matrix is:\n{cordf}')
+        corr_outfn = os.path.join(out_dir,
+                                  f'Meth_corr_plot_data-{RunPrefix}-correlation-matrix-toolcov{minToolCovCutt}-bsseqcov{bgtruthCutt}.xlsx')
+        cordf.to_excel(corr_outfn)
 
-    logger.debug(f'\n\n####################\n\n')
+        logger.debug(f'\n\n####################\n\n')
 
     if args.region_coe_report or args.summary_coverage:
         ## load region bed list
@@ -679,7 +685,7 @@ if __name__ == '__main__':
 
         logger.debug(f"Evaluated on regions: {region_bed_list}")
 
-    if args.region_coe_report:
+    if args.region_coe_report and bgTruth:
         eval_genomic_context_tuple = region_bed_list
 
         # file like: Meth_corr_plot_data_joined-TestData_RRBS_2Reps-bsCov1-minToolCov1-baseFormat1.sorted.csv.gz
