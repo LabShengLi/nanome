@@ -148,7 +148,7 @@ if (params.input.endsWith(".filelist.txt")) {
 	// such as --input '/fastscratch/liuya/nanome/NA12878/NA12878_CHR22/input_chr22/*'
 	Channel.fromPath(params.input, type: 'any').set{fast5_tar_ch}
 } else {
-	// For single file
+	// For single file/wildcard mathced files
 	Channel.fromPath( params.input, checkIfExists: true ).set{fast5_tar_ch}
 }
 
