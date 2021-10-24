@@ -49,12 +49,12 @@ for chrm in chromSizes:
     if isinstance(reg_per_read_stats_plus, np.ndarray):
         """
         Structure of each cpg is as:
-         (50214, 2.95450765, "b'3526811b-6958-49f8-b78c-a205c1b5fc6e'")
+         (3505579, -0.54981702, '21a26cb9-0be2-4670-8694-a3cee91d49b8')
         """
         for cpg in reg_per_read_stats_plus:
             if verbose:
                 print(cpg)
-            outfile.write("{}\t{}\t{}\t{}\t{}\t{}\n".format(chrm, cpg[0], cpg[0], cpg[2][2:-1], cpg[1], "+"))
+            outfile.write("{}\t{}\t{}\t{}\t{}\t{}\n".format(chrm, cpg[0], cpg[0], cpg[2][:], cpg[1], "+"))
             total_reads += 1
 
     ####save minus strand
@@ -64,7 +64,7 @@ for chrm in chromSizes:
         print(reg_per_read_stats_minus)
     if isinstance(reg_per_read_stats_minus, np.ndarray):
         for cpg in reg_per_read_stats_minus:
-            outfile.write("{}\t{}\t{}\t{}\t{}\t{}\n".format(chrm, cpg[0] - 1, cpg[0] - 1, cpg[2][2:-1], cpg[1], "-"))
+            outfile.write("{}\t{}\t{}\t{}\t{}\t{}\n".format(chrm, cpg[0] - 1, cpg[0] - 1, cpg[2][:], cpg[1], "-"))
             total_reads += 1
 
 outfile.close()
