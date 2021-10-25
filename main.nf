@@ -69,8 +69,8 @@ if (params.help){
 }
 
 // Check mandatory params
-assert params.dsname != null : "Missing --dsname option, for command help use --help"
-assert params.input != null : "Missing --input option, for command help use --help"
+assert params.dsname != false : "Missing --dsname option, for command help use --help"
+assert params.input != false : "Missing --input option, for command help use --help"
 
 projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
@@ -101,7 +101,6 @@ if (params.dataType == 'human') {
 
 // If need, preload C.tar.gz file in advance
 deepmod_c_tar_ch = Channel.fromPath(deepmod_tar_file)
-
 
 // if is true or 'true' (string), using '  '
 chrSet = params.chrSet.toBoolean() ? '  ' : params.chrSet
