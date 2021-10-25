@@ -75,6 +75,7 @@ if __name__ == '__main__':
     infn_basecall_info = sys.argv[3]
     indir_methcall = sys.argv[4]
     outdir = sys.argv[5]
+    basedir = sys.argv[6]
 
     ## Running information summary
     df_running_info = pd.read_csv(infn_running_info, sep='\t', )
@@ -101,7 +102,7 @@ if __name__ == '__main__':
     df_methcall_info = get_methcall_report_df(indir_methcall, outdir)
     print(df_methcall_info)
 
-    env = Environment(loader=FileSystemLoader('src/nanocompare/report'))
+    env = Environment(loader=FileSystemLoader(basedir))
     template = env.get_template('index.html')
 
     filename = os.path.join(outdir, 'nanome_report.html')

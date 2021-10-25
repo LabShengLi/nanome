@@ -17,7 +17,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="nanome-jax",
-    version="1.3.8",
+    version="1.3.9",
     author="Yang Liu",
     author_email="yang.liu@jax.org",
     description="NANOME (Nanopore methylation) pipeline developed by Li Lab at The Jackson Laboratory",
@@ -47,6 +47,7 @@ setuptools.setup(
         'utils/sum_chr_mod.py',
         'utils/tombo_extract_per_read_stats.py',
         'utils/validate_nanome_container.sh',
+        'utils/unify_format_for_calls.sh',
     ],
     include_package_data=True,
     package_data={'': ['src/nanocompare/*.csv']},
