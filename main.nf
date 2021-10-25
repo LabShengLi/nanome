@@ -1464,7 +1464,11 @@ process METEORE {
 	printf '%s\t%s\n' deepsignal ${deepsignal} >> \$outFileName
 	printf '%s\t%s\n' megalodon ${megalodon} >> \$outFileName
 
-	METEOREDIR=\$(find /data -maxdepth 1 -name "${params.METEORE_Dir}" -type d)
+ 	if [ -d /data ]; then
+		METEOREDIR=\$(find /data -maxdepth 1 -name "${params.METEORE_Dir}" -type d)
+	else
+		METEOREDIR=""
+	fi
 	if [[ \$METEOREDIR == "" ]]; then
 		wget ${params.METEOREGithub}  --no-verbose
 		tar -xzf v1.0.0.tar.gz
@@ -1480,14 +1484,14 @@ process METEORE {
 	# Please note this optimized model is reported in METEORE paper, ref: https://github.com/comprna/METEORE#command
 	# paper: https://doi.org/10.1101/2020.10.14.340315, text:  random forest (RF) (parameters: max_depth=3 and n_estimator=10)
 	# therefore, we output optimized model results
-	python \$(which \${combineScript}) \
+	\${combineScript}\
 		-i \${modelContentFileName} \
 		-m optimized -b \${METEOREDIR} \
 		-o ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz\
 		&>> METEORE.run.log
 
 	# Use default parameters from the sklearn library (n_estimator = 100 and max_dep = None)
-	python \$(which \${combineScript}) \
+	\${combineScript}\
 		-i \${modelContentFileName} -m default -b \${METEOREDIR} \
 		-o ${params.dsname}.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz\
 		&>> METEORE.run.log
@@ -1566,13 +1570,17 @@ process Report {
 	basecallOutputFile=\$(find ${params.dsname}_QCReport/ -name "*NanoStats.txt" -type f)
 
 	## Generate report dir and html utilities
-	nanome_dir=/opt/nanome
+	if [ -d /opt/nanome ]; then
+		nanome_dir=/opt/nanome
+	else
+		nanome_dir="."
+	fi
 	mkdir -p ${params.dsname}_NANOME_report
 	cp \${nanome_dir}/src/nanocompare/report/style.css ${params.dsname}_NANOME_report/
 	cp -rf \${nanome_dir}/src/nanocompare/report/icons ${params.dsname}_NANOME_report/
 	cp -rf \${nanome_dir}/src/nanocompare/report/js ${params.dsname}_NANOME_report/
 
-	src/nanocompare/report/gen_html_report.py \
+	gen_html_report.py \
 		${params.dsname} \
 		running_information.tsv \
 		\${basecallOutputFile} \
