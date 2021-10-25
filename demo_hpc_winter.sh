@@ -29,7 +29,7 @@ rm -rf ${workDir} ${outputsDir}
 # More options: -with-report -with-timeline -with-trace -resume -with-dag nanome_dag.png
 #
 module load singularity
-set -x
+set -ex
 nextflow run main.nf\
     -profile singularity,hpc\
     -config conf/executors/jaxhpc_input.config\

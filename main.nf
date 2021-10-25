@@ -955,10 +955,14 @@ process DeepMod {
 	params.runMethcall && params.runDeepMod && !params.filterGPUTaskRuns
 
 	"""
-	set +u
-	source ${params.conda_base_dir}/etc/profile.d/conda.sh
-	conda activate ${params.conda_name}
-	set -u
+	## Activate nanome conda env if possible
+	if [ -d ${params.conda_base_dir} ]; then
+		set +u
+		source ${params.conda_base_dir}/etc/profile.d/conda.sh
+		conda activate ${params.conda_name}
+		set -u
+	fi
+
 	echo "### Env set ok"
 	## Find the model dir
 	DeepModTrainModelDir=\$(find \$CONDA_PREFIX -name 'train_deepmod' -type d)
@@ -1321,10 +1325,13 @@ process DpmodComb {
 	x.size() >= 1 && params.runCombine
 
 	"""
-	set +u
-	source ${params.conda_base_dir}/etc/profile.d/conda.sh
-	conda activate ${params.conda_name}
-	set -u
+	## Activate nanome conda env if possible
+	if [ -d ${params.conda_base_dir} ]; then
+		set +u
+		source ${params.conda_base_dir}/etc/profile.d/conda.sh
+		conda activate ${params.conda_name}
+		set -u
+	fi
 	echo "### Env set ok"
 	## Find the model dir
 	DeepModTrainModelDir=\$(find \$CONDA_PREFIX -name 'train_deepmod' -type d)

@@ -10,11 +10,9 @@
 #SBATCH --output=log/%x.%j.log # STDOUT & STDERR
 #SBATCH --mail-user=yang.liu@jax.org
 #SBATCH --mail-type=END
-set -xe
+date; hostname; pwd
 # run on winter: chr22
 #             sbatch teradata_demo_hpc.sh
-
-date; hostname; pwd
 
 # Base directory of running and output for nanome
 baseDir=${1:-/fastscratch/li-lab/nanome}
@@ -31,7 +29,7 @@ rm -rf ${workDir} ${outputsDir} &&\
 # Running pipeline for tera data, more options:  -with-report -with-timeline -with-trace -with-dag
 module load singularity
 echo "### Start test on teradata"
-set -x
+set -ex
 nextflow run main.nf -resume\
         -profile singularity,hpc \
         -config conf/executors/jaxhpc_input.config,conf/executors/na12878_hpc.config\
