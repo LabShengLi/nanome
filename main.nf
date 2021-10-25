@@ -86,7 +86,6 @@ deepmod_tar_file = "${projectDir}/README.md"
 referenceGenome = 'reference_genome/ref.fasta'
 chromSizesFile = 'reference_genome/chrom.sizes'
 
-// TODO: auto detect based on ref.fasta
 if (params.dataType == 'human') {
 	isDeepModCluster = params.useDeepModCluster
 	if (isDeepModCluster) {
