@@ -27,11 +27,12 @@ rm -rf ${workDir} ${outputsDir}
 ########################################
 # Running pipeline for demo human data
 # More options: -with-report -with-timeline -with-trace -resume -with-dag nanome_dag.png
-#     -config conf/executors/jaxhpc_input.config\
+#
 module load singularity
-set -x
+set -ex
 nextflow run main.nf\
     -profile singularity,hpc\
+    -config conf/executors/jaxhpc_input.config\
     -work-dir ${workDir}\
     --outputDir ${outputsDir}\
     --dsname TestData\

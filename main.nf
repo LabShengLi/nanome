@@ -69,12 +69,16 @@ if (params.help){
 }
 
 // Check mandatory params
-assert params.dsname != null : "Missing --dsname option, for command help use --help"
-assert params.input != null : "Missing --input option, for command help use --help"
+assert params.dsname != false : "Missing --dsname option, for command help use --help"
+assert params.input != false : "Missing --input option, for command help use --help"
 
 projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
+
+// Channel for utils/ and src/ folders
+ch_utils
+	.into{	ch_utils1; ch_utils2;}
 
 // Reference genome, deepmod cluster settings
 deepmod_tar_file = "${projectDir}/README.md"
@@ -82,7 +86,6 @@ deepmod_tar_file = "${projectDir}/README.md"
 referenceGenome = 'reference_genome/ref.fasta'
 chromSizesFile = 'reference_genome/chrom.sizes'
 
-// TODO: auto detect based on ref.fasta
 if (params.dataType == 'human') {
 	isDeepModCluster = params.useDeepModCluster
 	if (isDeepModCluster) {
@@ -97,7 +100,6 @@ if (params.dataType == 'human') {
 
 // If need, preload C.tar.gz file in advance
 deepmod_c_tar_ch = Channel.fromPath(deepmod_tar_file)
-
 
 // if is true or 'true' (string), using '  '
 chrSet = params.chrSet.toBoolean() ? '  ' : params.chrSet
@@ -126,15 +128,6 @@ workflow.onComplete {
 	}
 }
 
-// Channel for utils/ and src/ folders
-ch_utils
-	.into{	ch_utils1; ch_utils2; ch_utils3; ch_utils4;
-			ch_utils5; ch_utils6; ch_utils7; ch_utils8;
-			ch_utils9; ch_utils10}
-ch_src
-	.into{	ch_src1; ch_src2; ch_src3; ch_src4;
-			ch_src5; ch_src_c1;ch_src_c2;ch_src_c3;
-			ch_src_c4;ch_src_c5;ch_src_c6}
 
 // Collect all folders of fast5 files, and send into Channels for pipelines
 if (params.input.endsWith(".filelist.txt")) {
@@ -159,7 +152,6 @@ process EnvCheck {
 
 	input:
 	path reference_genome 	from 	Channel.fromPath(params.reference_genome, type: 'any')
-	path("*") 				from 	ch_utils10
 	path megalodonModelTar 	from 	Channel.fromPath(params.megalodon_model_tar)
 
 	output:
@@ -171,7 +163,7 @@ process EnvCheck {
 	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
 
 	## Validate nanome container/environment is correct
-	bash utils/validate_nanome_container.sh
+	validate_nanome_container.sh
 
 	## Untar and prepare megalodon model
 	if [[ ${params.runMegalodon} == "true" ]]; then
@@ -225,7 +217,6 @@ process Untar {
 
 	input:
 	path fast5_tar from 	fast5_tar_ch
-	each path("*") from 	ch_utils5
 
 	output:
 	path "${fast5_tar.baseName}.untar" optional true into untar_out_ch
@@ -262,7 +253,7 @@ process Untar {
 	if [[ "${params.cleanAnalyses}" == true ]] ; then
 		echo "### Start cleaning old analysis"
 		## python -c 'import h5py; print(h5py.version.info)'
-		python utils/clean_old_basecall_in_fast5.py \
+		clean_old_basecall_in_fast5.py \
 			-i ${fast5_tar.baseName}.untar --is-indir --verbose\
 			--processor \$(( numProcessor * ${params.highProcTimes} ))
 	fi
@@ -288,7 +279,7 @@ process Basecall {
 
 	input:
 	path fast5_dir 				from 	untar_out_ch1
-	each path("*") 				from 	ch_utils1
+	// each path("*") 				from 	ch_utils1
 
 	output:
 	path "${fast5_dir.baseName}.basecalled" into basecall_out_ch
@@ -523,7 +514,6 @@ process Nanopolish {
 	input:
 	path basecallDir 			from nanopolish_in_ch
 	each path(reference_genome) from reference_genome_ch7
-	each path("*") 				from ch_utils3
 
 	output:
 	path "batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz" into nanopolish_out_ch
@@ -737,7 +727,7 @@ process Guppy {
 	input:
 	path fast5_dir 					from 	untar_out_ch2
 	each path(reference_genome) 	from 	reference_genome_ch1
-	each path("*") 					from 	ch_utils4
+	each path("*") 					from 	ch_utils1
 
 	output:
 	path "outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz" optional true into guppy_methcall_gz_out_ch
@@ -811,7 +801,7 @@ process Guppy {
 	echo "### gcf52ref minimap2 alignment is done"
 
 	## Modified version, support dir input, not all fast5 files (too long arguments)
-	python utils/extract_methylation_fast5_support_dir.py \
+	extract_methylation_fast5_support_dir.py \
 		-p \$(( numProcessor * ${params.mediumProcTimes} )) ${fast5_dir.baseName}.methcalled/workspace
 	echo "### gcf52ref extract to db done"
 
@@ -871,7 +861,6 @@ process Tombo {
 
 	input:
 	each path(reference_genome) from reference_genome_ch5
-	each path("*") 				from ch_utils2
 	path resquiggleDir	 		from tombo_in_ch
 
 	output:
@@ -928,7 +917,7 @@ process Tombo {
 	## Tombo lib need h5py lower than 3.0
 	## Error may occur with higher version of h5py: AttributeError: 'Dataset' object has no attribute 'value'
 	## ref: https://github.com/nanoporetech/tombo/issues/325
-	python utils/tombo_extract_per_read_stats.py \
+	tombo_extract_per_read_stats.py \
 		${chromSizesFile} \
 		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats" \
 		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed"
@@ -964,10 +953,14 @@ process DeepMod {
 	params.runMethcall && params.runDeepMod && !params.filterGPUTaskRuns
 
 	"""
-	set +u
-	source ${params.conda_base_dir}/etc/profile.d/conda.sh
-	conda activate ${params.conda_name}
-	set -u
+	## Activate nanome conda env if possible
+	if [ -d ${params.conda_base_dir} ]; then
+		set +u
+		source ${params.conda_base_dir}/etc/profile.d/conda.sh
+		conda activate ${params.conda_name}
+		set -u
+	fi
+
 	echo "### Env set ok"
 	## Find the model dir
 	DeepModTrainModelDir=\$(find \$CONDA_PREFIX -name 'train_deepmod' -type d)
@@ -1038,7 +1031,6 @@ process NplshComb {
 
 	input:
 	path x 		from nanopolish_combine_in_ch
-	path ("*")	from ch_src_c1
 
 	output:
 	path "${params.dsname}.nanopolish.per_read.combine.tsv.gz" into nanopolish_combine_out_ch
@@ -1053,7 +1045,7 @@ process NplshComb {
 	cat ${x} > ${params.dsname}.nanopolish.per_read.combine.tsv.gz
 
 	## Unify format output
-	bash src/unify_format_for_calls.sh \
+	unify_format_for_calls.sh \
 		${params.dsname}  Nanopolish ${params.dsname}.nanopolish.per_read.combine.tsv.gz \
 		.  \$((numProcessor))  12  ${chrSet}
 
@@ -1080,7 +1072,6 @@ process MgldnComb {
 
 	input:
 	path x from megalodon_combine_in_ch
-	path ("*")	from ch_src_c2
 
 	output:
 	path "${params.dsname}.megalodon.per_read.combine.bed.gz" into megalodon_combine_out_ch
@@ -1095,7 +1086,7 @@ process MgldnComb {
 	cat ${x} > ${params.dsname}.megalodon.per_read.combine.bed.gz
 
 	## Unify format output
-	bash src/unify_format_for_calls.sh \
+	unify_format_for_calls.sh \
 		${params.dsname}  Megalodon ${params.dsname}.megalodon.per_read.combine.bed.gz \
 		.  \$((numProcessor))  12  ${chrSet}
 
@@ -1122,7 +1113,6 @@ process DpSigComb {
 
 	input:
 	path x from deepsignal_combine_in_ch
-	path ("*")	from ch_src_c3
 
 	output:
 	path "${params.dsname}.deepsignal.per_read.combine.tsv.gz" into deepsignal_combine_out_ch
@@ -1137,7 +1127,7 @@ process DpSigComb {
 	cat ${x} > ${params.dsname}.deepsignal.per_read.combine.tsv.gz
 
 	## Unify format output
-	bash src/unify_format_for_calls.sh \
+	unify_format_for_calls.sh \
 		${params.dsname}  DeepSignal ${params.dsname}.deepsignal.per_read.combine.tsv.gz \
 		.  \$((numProcessor))  12  ${chrSet}
 	echo "### DeepSignal combine DONE"
@@ -1168,7 +1158,6 @@ process GuppyComb {
 	path x 					from guppy_combine_in_ch
 	path y 					from guppy_gcf52ref_out_ch.collect()
 	path reference_genome 	from reference_genome_ch8
-	path ("*")				from ch_src_c4
 
 	output:
 	path "${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz" into guppy_fast5mod_combine_out_ch
@@ -1240,12 +1229,12 @@ process GuppyComb {
 	fi
 
 	## Unify format output for read level
-	bash src/unify_format_for_calls.sh \
+	unify_format_for_calls.sh \
 		${params.dsname}  Guppy.gcf52ref ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz \
 		.  \$((numProcessor))  1  ${chrSet}
 
 	## Unify format output for site level
-	bash src/unify_format_for_calls.sh \
+	unify_format_for_calls.sh \
 		${params.dsname}  Guppy ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz \
 		.  \$((numProcessor))  2  ${chrSet}
 
@@ -1277,7 +1266,6 @@ process TomboComb {
 
 	input:
 	path x from tombo_combine_in_ch // list of tombo bed files
-	path ("*")	from ch_src_c5
 
 	output:
 	path "${params.dsname}.tombo.per_read.combine.bed.gz" into tombo_combine_out_ch
@@ -1292,7 +1280,7 @@ process TomboComb {
 	cat ${x} > ${params.dsname}.tombo.per_read.combine.bed.gz
 
 	## Unify format output
-	bash src/unify_format_for_calls.sh \
+	unify_format_for_calls.sh \
 		${params.dsname}  Tombo ${params.dsname}.tombo.per_read.combine.bed.gz \
 		.  \$((numProcessor))  12 ${chrSet}
 	echo "### Tombo combine DONE"
@@ -1323,8 +1311,6 @@ process DpmodComb {
 	input:
 	path x 					from deepmod_combine_in_ch
 	path deepmod_c_tar_file from deepmod_c_tar_ch
-	each path("*") 			from ch_utils6
-	path ("*")				from ch_src_c6
 
 	output:
 	path "${params.dsname}.deepmod.*.combine.bed.gz" into deepmod_combine_out_ch
@@ -1337,10 +1323,13 @@ process DpmodComb {
 	x.size() >= 1 && params.runCombine
 
 	"""
-	set +u
-	source ${params.conda_base_dir}/etc/profile.d/conda.sh
-	conda activate ${params.conda_name}
-	set -u
+	## Activate nanome conda env if possible
+	if [ -d ${params.conda_base_dir} ]; then
+		set +u
+		source ${params.conda_base_dir}/etc/profile.d/conda.sh
+		conda activate ${params.conda_name}
+		set -u
+	fi
 	echo "### Env set ok"
 	## Find the model dir
 	DeepModTrainModelDir=\$(find \$CONDA_PREFIX -name 'train_deepmod' -type d)
@@ -1361,7 +1350,7 @@ process DpmodComb {
 
 	## merge different runs of modification detection
 	## ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#2-how-to-merge-different-runs-of-modification-detection
-	python utils/sum_chr_mod.py \
+	sum_chr_mod.py \
 		indir/ C ${params.dsname}.deepmod ${chrSet}  &>> DpmodComb.run.log
 
 	> ${params.dsname}.deepmod.C_per_site.combine.bed
@@ -1388,7 +1377,7 @@ process DpmodComb {
 
 		## consider modification cluster effect.
 		## ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#3-how-to-consider-modification-cluster-effect
-		python utils/hm_cluster_predict.py \
+		hm_cluster_predict.py \
 			indir/${params.dsname}.deepmod \
 			./C \
 			\${DeepModTrainModelDir}/${params.DEEPMOD_CLUSTER_MODEL} &>> DpmodComb.run.log
@@ -1421,7 +1410,7 @@ process DpmodComb {
 	fi
 
 	## Unify format output
-	bash src/unify_format_for_calls.sh \
+	unify_format_for_calls.sh \
 		${params.dsname}  DeepMod \${callfn} \
 		.  \$((numProcessor))  2  ${chrSet}  &>> DpmodComb.run.log
 
@@ -1464,8 +1453,6 @@ process METEORE {
 	path naonopolish	from 	read_unify_nanopolish
 	path megalodon 		from 	read_unify_megalodon
 	path deepsignal 	from 	read_unify_deepsignal
-	path("*") 		from 	ch_src3
-	path("*") 		from 	ch_utils8
 
 	output:
 	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz" optional true into meteore_combine_out_ch
@@ -1482,7 +1469,11 @@ process METEORE {
 	printf '%s\t%s\n' deepsignal ${deepsignal} >> \$outFileName
 	printf '%s\t%s\n' megalodon ${megalodon} >> \$outFileName
 
-	METEOREDIR=\$(find /data -maxdepth 1 -name "${params.METEORE_Dir}" -type d)
+ 	if [ -d /data ]; then
+		METEOREDIR=\$(find /data -maxdepth 1 -name "${params.METEORE_Dir}" -type d)
+	else
+		METEOREDIR=""
+	fi
 	if [[ \$METEOREDIR == "" ]]; then
 		wget ${params.METEOREGithub}  --no-verbose
 		tar -xzf v1.0.0.tar.gz
@@ -1491,21 +1482,21 @@ process METEORE {
 
 	## Degrade sk-learn for METEORE program if needed, it's model load need lower version
 	## pip install -U scikit-learn==0.21.3
-	combineScript=utils/combination_model_prediction.py
+	combineScript=combination_model_prediction.py
 
 	modelContentFileName=\$(find . -name "${params.dsname}_Megalodon_DeepSignal_combine.model_content.tsv" -type f)
 	# Use the optimized model (n_estimator = 3 and max_dep = 10)
 	# Please note this optimized model is reported in METEORE paper, ref: https://github.com/comprna/METEORE#command
 	# paper: https://doi.org/10.1101/2020.10.14.340315, text:  random forest (RF) (parameters: max_depth=3 and n_estimator=10)
 	# therefore, we output optimized model results
-	python \${combineScript} \
+	\${combineScript}\
 		-i \${modelContentFileName} \
 		-m optimized -b \${METEOREDIR} \
 		-o ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz\
 		&>> METEORE.run.log
 
 	# Use default parameters from the sklearn library (n_estimator = 100 and max_dep = None)
-	python \${combineScript} \
+	\${combineScript}\
 		-i \${modelContentFileName} -m default -b \${METEOREDIR} \
 		-o ${params.dsname}.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz\
 		&>> METEORE.run.log
@@ -1518,7 +1509,7 @@ process METEORE {
 			gzip -f > Read_Level-${params.dsname}/${params.dsname}_METEORE-perRead-score.tsv.gz
 
 		## Unify format output for site level
-		bash src/unify_format_for_calls.sh \
+		unify_format_for_calls.sh \
 			${params.dsname}  METEORE\
 			${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz \
 			.  \$((numProcessor))  2  ${chrSet}\
@@ -1554,8 +1545,8 @@ process Report {
 
 	input:
 	path fileList 	from 	report_in_ch
-	path("*") 		from 	ch_src5
-	path("*") 		from 	ch_utils9
+	path("*")		from 	ch_src
+	path("*")		from 	ch_utils2
 
 	output:
 	path "${params.dsname}_nanome_report.html" 	into	report_out_ch
@@ -1584,22 +1575,28 @@ process Report {
 	basecallOutputFile=\$(find ${params.dsname}_QCReport/ -name "*NanoStats.txt" -type f)
 
 	## Generate report dir and html utilities
+	if [ -d /opt/nanome ]; then
+		nanome_dir=/opt/nanome
+	else
+		nanome_dir="."
+	fi
 	mkdir -p ${params.dsname}_NANOME_report
-	cp src/nanocompare/report/style.css ${params.dsname}_NANOME_report/
-	cp -rf src/nanocompare/report/icons ${params.dsname}_NANOME_report/
-	cp -rf src/nanocompare/report/js ${params.dsname}_NANOME_report/
+	cp \${nanome_dir}/src/nanocompare/report/style.css ${params.dsname}_NANOME_report/
+	cp -rf \${nanome_dir}/src/nanocompare/report/icons ${params.dsname}_NANOME_report/
+	cp -rf \${nanome_dir}/src/nanocompare/report/js ${params.dsname}_NANOME_report/
 
-	PYTHONPATH=src  python src/nanocompare/report/gen_html_report.py \
+	gen_html_report.py \
 		${params.dsname} \
 		running_information.tsv \
 		\${basecallOutputFile} \
 		. \
-		${params.dsname}_NANOME_report
+		${params.dsname}_NANOME_report \
+		\${nanome_dir}/src/nanocompare/report
 
 	## No tty usage, ref: https://github.com/remy/inliner/issues/151
 	script -qec "inliner ${params.dsname}_NANOME_report/nanome_report.html" /dev/null  > ${params.dsname}_nanome_report.html
 
-	PYTHONIOENCODING=UTF-8 python utils/gen_readme.py\
+	PYTHONIOENCODING=UTF-8 gen_readme.py\
 		utils/readme.txt.template ${params.dsname} ${params.outputDir}\
 		${workflow.projectDir} ${workflow.workDir} "${workflow.commandLine}"\
 		${workflow.runName} "${workflow.start}"\

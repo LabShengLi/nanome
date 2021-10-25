@@ -8,7 +8,8 @@
 #SBATCH --mem=20G # memory pool for all cores
 #SBATCH --time=02:00:00 # time
 #SBATCH --output=log/%x.%j.log # STDOUT & STDERR
-
+#SBATCH --mail-user=yang.liu@jax.org
+#SBATCH --mail-type=END
 date; hostname; pwd
 
 # Base directory of running and output for nanome
@@ -26,12 +27,12 @@ rm -rf ${workDir} ${outputsDir}
 ########################################
 # Running pipeline for E. coli data
 module load singularity
-set -x
+set -ex
 nextflow run main.nf\
     -profile singularity,hpc\
+    -config conf/executors/jaxhpc_input.config,conf/examples/ecoli_demo.config\
     -work-dir ${workDir}\
     --outputDir ${outputsDir}\
-    -config conf/executors/jaxhpc_input.config,conf/examples/ecoli_demo.config\
     --cleanCache false
 
 # Report
