@@ -30,18 +30,18 @@ def helpMessage() { // print help message
 	  --cleanCache		If clean work dir after complete, default is true
 
 	Running environment options:
-	  --conda_name			Conda name used for pipeline, default is 'nanome'
-	  --conda_base_dir		Conda base directory, default is '/opt/conda'
-	  --docker_name			Docker name used for pipeline, default is 'liuyangzzu/nanome:latest'
-	  --singularity_name		Singularity name used for pipeline, default is 'docker://liuyangzzu/nanome:latest'
-	  --singularity_cache		Singularity cache dir, default is 'local_singularity_cache'
+	  --conda_name		Conda name used for pipeline, default is 'nanome'
+	  --conda_base_dir	Conda base directory, default is '/opt/conda'
+	  --docker_name		Docker name used for pipeline, default is 'liuyangzzu/nanome:latest'
+	  --singularity_name	Singularity name used for pipeline, default is 'docker://liuyangzzu/nanome:latest'
+	  --singularity_cache	Singularity cache dir, default is 'local_singularity_cache'
 
 	Platform specific options:
-	  --queueName		SLURM job submission queue name for cluster running, default is 'gpu'
-	  --qosName		SLURM job submission qos name for cluster running, default is 'inference'
-	  --gresGPUOptions	SLURM job submission GPU allocation options for cluster running, default is '--gres=gpu:v100:1'
-	  --jobMaxTime		SLURM job submission time allocation options for cluster running, default is '05:00:00'
-	  --jobMaxMem		SLURM job submission memory allocation options for cluster running, default is '32G'
+	  --queue		SLURM job submission queue name for cluster running, default is 'gpu'
+	  --qos			SLURM job submission qos name for cluster running, default is 'inference'
+	  --gresOptions		SLURM job submission GPU allocation options for cluster running, default is 'gpu:v100:1'
+	  --time		SLURM job submission time allocation options for cluster running, default is '2h'
+	  --memory		SLURM job submission memory allocation options for cluster running, default is '32GB'
 
 	  --googleProjectName	Google Cloud project name for google-lifesciences task running
 
