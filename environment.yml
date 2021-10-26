@@ -42,6 +42,7 @@ dependencies:
     - deepsignal==0.1.8
     - fast5mod==1.0.5
     - nanome-jax
+    - megalodon
 #The conflict is caused by:
 #    fast5mod 1.0.5 depends on ont-fast5-api==3.0.0, but it can be use higher
 #    megalodon 2.3.4 depends on ont-fast5-api>=3.2, it must be higher, so later install it
