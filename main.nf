@@ -151,7 +151,7 @@ process EnvCheck {
 	errorStrategy 'terminate'
 
 	input:
-	path reference_genome 	from 	Channel.fromPath(params.reference_genome, type: 'any')
+	path reference_genome 	from 	Channel.fromPath(params.genome, type: 'any')
 	path megalodonModelTar 	from 	Channel.fromPath(params.megalodon_model_tar)
 
 	output:
