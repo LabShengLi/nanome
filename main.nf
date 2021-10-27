@@ -1569,19 +1569,26 @@ process Report {
 
 	"""
 	## NANOME consensus method
-	NanopolishSiteReport=\$(find . -maxdepth 1 -name '*Nanopolish-perSite-*.sort.bed.gz')
-	MegalodonSiteReport=\$(find . -maxdepth 1 -name '*Megalodon-perSite-*.sort.bed.gz')
-	DeepSignalSiteReport=\$(find . -maxdepth 1 -name '*DeepSignal-perSite-*.sort.bed.gz')
-	GuppySiteReport=\$(find . -maxdepth 1 -name '*Guppy-perSite-*.sort.bed.gz')
-
+	if [[ ${params.nanomeNanopolish} == true ]]; then
+		NanopolishSiteReport=\$(find . -maxdepth 1 -name '*Nanopolish-perSite-*.sort.bed.gz')
+	fi
+	if [[ ${params.nanomeMegalodon} == true ]]; then
+		MegalodonSiteReport=\$(find . -maxdepth 1 -name '*Megalodon-perSite-*.sort.bed.gz')
+	fi
+	if [[ ${params.nanomeDeepSignal} == true ]]; then
+		DeepSignalSiteReport=\$(find . -maxdepth 1 -name '*DeepSignal-perSite-*.sort.bed.gz')
+	fi
+	if [[ ${params.nanomeGuppy} == true ]]; then
+		GuppySiteReport=\$(find . -maxdepth 1 -name '*Guppy-perSite-*.sort.bed.gz')
+	fi
 	PYTHONPATH=src python src/nanocompare/nanome_consensus.py\
-	 	--site-reports   \${NanopolishSiteReport} \${MegalodonSiteReport}\
-	 		\${DeepSignalSiteReport} \${GuppySiteReport}\
+	 	--site-reports   \${NanopolishSiteReport:-} \${MegalodonSiteReport:-}\
+	 		\${DeepSignalSiteReport:-} \${GuppySiteReport:-}\
 	 	--union -o ${params.dsname}_NANOMEUnion-perSite-cov1.sort.bed.gz &>> Report.run.log  || true
 
 	PYTHONPATH=src python src/nanocompare/nanome_consensus.py\
-	 	--site-reports   \${NanopolishSiteReport} \${MegalodonSiteReport}\
-	 		\${DeepSignalSiteReport} \${GuppySiteReport}\
+	 	--site-reports   \${NanopolishSiteReport:-} \${MegalodonSiteReport:-}\
+	 		\${DeepSignalSiteReport:-} \${GuppySiteReport:-}\
 	 	--join -o ${params.dsname}_NANOMEJoin-perSite-cov1.sort.bed.gz  &>> Report.run.log  || true
 
 	## Generate running information tsv
