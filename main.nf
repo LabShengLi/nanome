@@ -1631,7 +1631,7 @@ process Report {
 		utils/readme.txt.template ${params.dsname} ${params.outputDir}\
 		${workflow.projectDir} ${workflow.workDir} "${workflow.commandLine}"\
 		${workflow.runName} "${workflow.start}"\
-		> README_${params.dsname}.txt   &>> Report.run.log
+		> README_${params.dsname}.txt   2>> Report.run.log
 
 	echo "### report html DONE"
 	"""
