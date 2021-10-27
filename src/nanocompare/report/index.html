@@ -43,7 +43,7 @@
         <div class="line"></div>
         <h3 id="Running_summary_table">Running summary</h3>
         <h3>
-            {{df_running_info.to_html(index=False)}}
+            {{df_running_info.to_html(index=False, justify='left')}}
         </h3>
         <br/><br/>
 
@@ -52,7 +52,7 @@
 
         <h3 id="Basecalling_table">Base-calling report</h3>
         <h3>
-            {{df_basecall_info.to_html(index=False)}}
+            {{df_basecall_info.to_html(index=False, justify='left')}}
         </h3>
         <br/><br/>
 
@@ -61,85 +61,24 @@
 
         <h3 id="Methylation_calling_table">Methylation-calling report</h3>
         <h3>
-            {{df_methcall_info.to_html(index=False)}}
+            {{df_methcall_info.to_html(index=False, justify='left')}}
         </h3>
 
         <h3 id="Methylation_calling_plots">Methylation-calling plots</h3>
-        <h4 id="dist_plot_nanopolish">Methylation % and coverage distribution for Nanopolish</h4>
-        <h4>
-            <table>
-                <tr>
-                    <td><img src="images/dist_Nanopolish.png" width="100%" height="100%" /></td>
-                    <td><img src="images/cov_Nanopolish.png" width="100%" height="100%" /></td>
-                </tr>
-            </table>
-        </h4>
 
-        <h4 id="dist_plot_megalodon">Methylation % and coverage distribution for Megalodon</h4>
-        <h4>
-            <table>
-                <tr>
-                    <td><img src="images/dist_Megalodon.png" width="100%" height="100%" /></td>
-                    <td><img src="images/cov_Megalodon.png" width="100%" height="100%" /></td>
-                </tr>
-            </table>
-        </h4>
-
-        <h4 id="dist_plot_deepsignal">Methylation % and coverage distribution for DeepSignal</h4>
-        <h4>
-             <table>
-                <tr>
-                    <td><img src="images/dist_DeepSignal.png" width="100%" height="100%" /></td>
-                    <td><img src="images/cov_DeepSignal.png" width="100%" height="100%" /></td>
-                </tr>
-            </table>
-        </h4>
-
-        <h4 id="dist_plot_guppy">Methylation % and coverage distribution for Guppy</h4>
-        <h4>
-            <table>
-                <tr>
-                    <td><img src="images/dist_Guppy.png" width="100%" height="100%" /></td>
-                    <td><img src="images/cov_Guppy.png" width="100%" height="100%" /></td>
-                </tr>
-            </table>
-        </h4>
-
-        <h4 id="dist_plot_tombo">Methylation % and coverage distribution for Tombo</h4>
-        <h4>
-            <table>
-                <tr>
-                    <td><img src="images/dist_Tombo.png" width="100%" height="100%" /></td>
-                    <td><img src="images/cov_Tombo.png" width="100%" height="100%" /></td>
-                </tr>
-            </table>
-
-        </h4>
-
-        <h4 id="dist_plot_meteore">Methylation % and coverage distribution for METEORE</h4>
-        <h4>
-            <table>
-                <tr>
-                    <td><img src="images/dist_METEORE.png" width="100%" height="100%" /></td>
-                    <td><img src="images/cov_METEORE.png" width="100%" height="100%" /></td>
-                </tr>
-            </table>
-
-        </h4>
-
-        <h4 id="dist_plot_deepmod">Methylation % and coverage distribution for DeepMod</h4>
-        <h4>
-            <table>
-                <tr>
-                    <td><img src="images/dist_DeepMod.png" width="100%" height="100%" /></td>
-                    <td><img src="images/cov_DeepMod.png" width="100%" height="100%" /></td>
-                </tr>
-            </table>
-
-        </h4>
+        {% for tool in df_methcall_info['Tool'] %}
+             <h4 id="dist_plot_{{ tool }}">Methylation % and coverage distribution for {{ tool }}</h4>
+                <h4>
+                    <table>
+                        <tr>
+                            <td> <img src="images/dist_{{ tool }}.png" width="100%" height="100%" /> </td>
+                            <td> <img src="images/cov_{{ tool }}.png" width="100%" height="100%" /> </td>
+                        </tr>
+                    </table>
+             </h4>
+        {% endfor %}
 
         <br/>
-
         <div id="footer">
             <p>1. Please use Chrome, Firefox or Safari for better browsing experience.</p>
             <p>2. Contact and report any bugs to <a href="https://github.com/TheJacksonLaboratory/nanome/issues"

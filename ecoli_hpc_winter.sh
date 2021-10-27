@@ -32,7 +32,7 @@ nextflow run main.nf\
     -profile singularity,hpc\
     -config conf/executors/jaxhpc_input.config,conf/examples/ecoli_demo.config\
     -work-dir ${workDir}\
-    --outputDir ${outputsDir}\
+    --outputs ${outputsDir}\
     --cleanCache false
 
 # Report

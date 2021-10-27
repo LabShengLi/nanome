@@ -29,7 +29,7 @@ nextflow run main.nf\
     -profile docker,google \
     -config conf/executors/gcp_input.config\
 	-w ${WORK_DIR_BUCKET} \
-	--outputDir ${OUTPUT_DIR_BUCKET} \
+	--outputs ${OUTPUT_DIR_BUCKET} \
 	--dsname TestData \
 	--input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt
 
@@ -52,7 +52,7 @@ nextflow run main.nf\
     -profile docker,google -resume\
     -config conf/executors/gcp_input.config\
 	-w ${WORK_DIR_BUCKET} \
-	--outputDir ${OUTPUT_DIR_BUCKET} \
+	--outputs ${OUTPUT_DIR_BUCKET} \
 	--dsname na12878_chr17_p6 \
 	--input 'http://s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr17.part06.tar'\
 	--cleanAnalyses true\

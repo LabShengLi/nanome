@@ -46,12 +46,12 @@ def get_methcall_report_df(baseDir, outDir):
     :return:
     """
     ret_dict = defaultdict(list)
-    for tool in ToolNameList:
+    for tool in ToolNameList + ['NANOME']:
         fnlist = glob.glob(os.path.join(baseDir, f'*_{tool}-perSite-cov1.sort.bed.gz'))
         if len(fnlist) < 1:
             print(f"Not found file in baseDir={baseDir}, pattern={f'*_{tool}-perSite-cov1.sort.bed.gz'}")
             ret_dict['Tool'].append(tool)
-            ret_dict['CpGs'].append(f"0")
+            ret_dict['CpGs'].append(None)
             continue
         try:
             df_site_level = pd.read_csv(fnlist[0], sep='\t', header=None, index_col=False)
@@ -59,13 +59,13 @@ def get_methcall_report_df(baseDir, outDir):
             ret_dict['CpGs'].append(f"{len(df_site_level):,}")
 
             outfn = os.path.join(outDir, 'images', f'dist_{tool}.png')
-            density_plot(df_site_level, outfn, tool, bins=10, the_range=(0,1), x_label='Methylation %')
+            density_plot(df_site_level, outfn, tool, bins=10, the_range=(0, 1), x_label='Methylation %')
 
             outfn = os.path.join(outDir, 'images', f'cov_{tool}.png')
             density_plot(df_site_level, outfn, tool, col_index=7, x_label='Coverage')
         except:  # can not call any results
             ret_dict['Tool'].append(tool)
-            ret_dict['CpGs'].append(f"0")
+            ret_dict['CpGs'].append(None)
     return pd.DataFrame.from_dict(ret_dict)
 
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     df_basecall_info = pd.DataFrame.from_dict(dataset_basecall)
     print(df_basecall_info)
 
-    df_methcall_info = get_methcall_report_df(indir_methcall, outdir)
+    df_methcall_info = get_methcall_report_df(indir_methcall, outdir).dropna()
     print(df_methcall_info)
 
     env = Environment(loader=FileSystemLoader(basedir))
