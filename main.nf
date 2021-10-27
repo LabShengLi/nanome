@@ -92,7 +92,7 @@ chromSizesFile = 'reference_genome/chrom.sizes'
 
 if (params.type == 'human') {
 	isDeepModCluster = params.useDeepModCluster
-	if (isDeepModCluster && params.runDeepmod) {
+	if (isDeepModCluster && params.runDeepMod) {
 		deepmod_tar_file = params.deepmod_ctar
 	}
 } else if (params.type == 'ecoli') {
@@ -453,7 +453,7 @@ process Resquiggle {
 	path "${basecallIndir.baseName}.resquiggle" into resquiggle_out_ch
 
 	when:
-	params.runMethcall && params.runResquiggle && !params.filterGPUTaskRuns
+	params.runMethcall && (params.runDeepSignal || params.runTombo)
 
 	"""
 	### copy basecall workspace files, due to tombo resquiggle modify base folder
@@ -520,7 +520,7 @@ process Nanopolish {
 	path "batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz" into nanopolish_out_ch
 
 	when:
-	params.runMethcall && params.runNanopolish && !params.filterGPUTaskRuns
+	params.runMethcall && params.runNanopolish
 
 	"""
 	### Put all fq and bam files into working dir, DO NOT affect the basecall dir
@@ -668,7 +668,7 @@ process DeepSignal {
 	path "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv.gz" into deepsignal_out_ch
 
 	when:
-	params.runMethcall && params.runDeepSignal && !params.filterGPUTaskRuns
+	params.runMethcall && params.runDeepSignal
 
 	"""
 	if ls /data/${params.DEEPSIGNAL_MODEL}* 1> /dev/null 2>&1; then
@@ -868,7 +868,7 @@ process Tombo {
 	path "batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed.gz" into tombo_out_ch
 
 	when:
-	params.runMethcall && params.runTombo && !params.filterGPUTaskRuns
+	params.runMethcall && params.runTombo
 
 	"""
 	## Check if there is a BrokenPipeError: [Errno 32] Broken pipe
@@ -951,7 +951,7 @@ process DeepMod {
 	path "batch_${basecallDir.baseName}_num.tar.gz" optional true  into deepmod_gz_out_ch
 
 	when:
-	params.runMethcall && params.runDeepMod && !params.filterGPUTaskRuns
+	params.runMethcall && params.runDeepMod
 
 	"""
 	## Activate nanome conda env if possible
@@ -1461,7 +1461,7 @@ process METEORE {
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz" optional true into site_unify_meteore
 
 	when:
-	params.runMETEORE && ! params.filterGPUTaskRuns
+	params.runMethcall && params.runMETEORE
 
 	"""
 	## METEORE outputs by combining other tools
