@@ -64,9 +64,9 @@ def parse_arguments():
                         help="if union all site level results",
                         action='store_true')
     parser.add_argument('--method',
-                        help="consensus method: average",
+                        help="consensus method, default is average",
                         default='average')
-    parser.add_argument('-o', type=str, help=f"output file name", required=True)
+    parser.add_argument('-o', type=str, help=f"output file name, output format is gzipped file", required=True)
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
 
@@ -102,7 +102,9 @@ if __name__ == '__main__':
         raise Exception(f"No actions yet, please use --join or --union")
 
     outdf = consensus(comb_df)
+    ## Save to a gzip output file
     outdf.to_csv(f"{args.o}.tmp.gz", sep='\t', index=False, header=False)
+    ## Sort into output file
     sort_bed_file(f"{args.o}.tmp.gz", args.o)
     os.remove(f"{args.o}.tmp.gz")
     logger.info(f"Save to {args.o}")
