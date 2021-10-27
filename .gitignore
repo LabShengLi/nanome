@@ -63,8 +63,9 @@ testdemo.py
 /script_paper/
 /tests/test_import_deepmod.py
 /bdocker_gcp.sh
-/na12878_hpc_winter.sh
+/na12878_hpc_winter_top4.sh
 /gcp_shell_memo.sh
 /benchmark_hpc_winter.sh
 /hello_test.sh
 /results/
+/na12878_hpc_winter.sh

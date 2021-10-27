@@ -1541,7 +1541,17 @@ qc_report_out_ch
 process Report {
 	tag "${params.dsname}"
 
-	publishDir "${params.outputDir}", mode: "copy"
+	publishDir "${params.outputDir}",
+		mode: "copy", pattern: "README_${params.dsname}.txt"
+
+	publishDir "${params.outputDir}",
+		mode: "copy", pattern: "${params.dsname}_nanome_report.html"
+
+	publishDir "${params.outputDir}/${params.dsname}-methylation-callings/Site_Level-${params.dsname}",
+		mode: "copy", pattern: "*-perSite-cov1.sort.bed.gz"
+
+	publishDir "${params.outputDir}/MultiQC",
+		mode: "copy", pattern: "multiqc_report.html"
 
 	input:
 	path fileList 	from 	report_in_ch
@@ -1551,11 +1561,29 @@ process Report {
 	output:
 	path "${params.dsname}_nanome_report.html" 	into	report_out_ch
 	path "README_${params.dsname}.txt" 			into 	readme_out_ch
+	path "${params.dsname}_NANOME*.sort.bed.gz" into 	nanome_consensus_ch
+	path "multiqc_report.html"					into 	lbt_report_ch
 
 	when:
 	fileList.size() >= 1
 
 	"""
+	## NANOME consensus method
+	NanopolishSiteReport=\$(find . -maxdepth 1 -name '*Nanopolish-perSite-*.sort.bed.gz')
+	MegalodonSiteReport=\$(find . -maxdepth 1 -name '*Megalodon-perSite-*.sort.bed.gz')
+	DeepSignalSiteReport=\$(find . -maxdepth 1 -name '*DeepSignal-perSite-*.sort.bed.gz')
+	GuppySiteReport=\$(find . -maxdepth 1 -name '*Guppy-perSite-*.sort.bed.gz')
+
+	PYTHONPATH=src src/nanocompare/nanome_consensus.py\
+	 	--site-reports   \${NanopolishSiteReport} \${MegalodonSiteReport}\
+	 		\${DeepSignalSiteReport} \${GuppySiteReport}\
+	 	--union -o ${params.dsname}_NANOMEUnion-perSite-cov1.sort.bed.gz
+
+	PYTHONPATH=src src/nanocompare/nanome_consensus.py\
+	 	--site-reports   \${NanopolishSiteReport} \${MegalodonSiteReport}\
+	 		\${DeepSignalSiteReport} \${GuppySiteReport}\
+	 	--join -o ${params.dsname}_NANOMEJoin-perSite-cov1.sort.bed.gz
+
 	## Generate running information tsv
 	> running_information.tsv
 	printf '%s\t%s\n' Title Information >> running_information.tsv
@@ -1595,6 +1623,9 @@ process Report {
 
 	## No tty usage, ref: https://github.com/remy/inliner/issues/151
 	script -qec "inliner ${params.dsname}_NANOME_report/nanome_report.html" /dev/null  > ${params.dsname}_nanome_report.html
+
+	## Test on lifebit only
+	cp ${params.dsname}_nanome_report.html   multiqc_report.html
 
 	PYTHONIOENCODING=UTF-8 gen_readme.py\
 		utils/readme.txt.template ${params.dsname} ${params.outputDir}\
