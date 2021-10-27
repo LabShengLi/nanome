@@ -1577,12 +1577,12 @@ process Report {
 	PYTHONPATH=src python src/nanocompare/nanome_consensus.py\
 	 	--site-reports   \${NanopolishSiteReport} \${MegalodonSiteReport}\
 	 		\${DeepSignalSiteReport} \${GuppySiteReport}\
-	 	--union -o ${params.dsname}_NANOMEUnion-perSite-cov1.sort.bed.gz &>> Report.run.log
+	 	--union -o ${params.dsname}_NANOMEUnion-perSite-cov1.sort.bed.gz &>> Report.run.log  || true
 
 	PYTHONPATH=src python src/nanocompare/nanome_consensus.py\
 	 	--site-reports   \${NanopolishSiteReport} \${MegalodonSiteReport}\
 	 		\${DeepSignalSiteReport} \${GuppySiteReport}\
-	 	--join -o ${params.dsname}_NANOMEJoin-perSite-cov1.sort.bed.gz  &>> Report.run.log
+	 	--join -o ${params.dsname}_NANOMEJoin-perSite-cov1.sort.bed.gz  &>> Report.run.log  || true
 
 	## Generate running information tsv
 	> running_information.tsv
