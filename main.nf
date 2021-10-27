@@ -142,7 +142,7 @@ if (params.input.endsWith(".filelist.txt")) {
 	// such as --input '/fastscratch/liuya/nanome/NA12878/NA12878_CHR22/input_chr22/*'
 	Channel.fromPath(params.input, type: 'any').set{fast5_tar_ch}
 } else {
-	// For single file/wildcard mathced files
+	// For single file/wildcard matched files
 	Channel.fromPath( params.input, checkIfExists: true ).set{fast5_tar_ch}
 }
 
@@ -1582,12 +1582,12 @@ process Report {
 	if [[ ${params.nanomeGuppy} == true ]]; then
 		GuppySiteReport=\$(find . -maxdepth 1 -name '*Guppy-perSite-*.sort.bed.gz')
 	fi
-	PYTHONPATH=src python src/nanocompare/nanome_consensus.py\
+	nanome_consensus.py\
 	 	--site-reports   \${NanopolishSiteReport:-} \${MegalodonSiteReport:-}\
 	 		\${DeepSignalSiteReport:-} \${GuppySiteReport:-}\
 	 	--union -o ${params.dsname}_NANOME-perSite-cov1.sort.bed.gz &>> Report.run.log  || true
 
-	PYTHONPATH=src python src/nanocompare/nanome_consensus.py\
+	nanome_consensus.py\
 	 	--site-reports   \${NanopolishSiteReport:-} \${MegalodonSiteReport:-}\
 	 		\${DeepSignalSiteReport:-} \${GuppySiteReport:-}\
 	 	--join -o ${params.dsname}_NANOMEJoin-perSite-cov1.sort.bed.gz  &>> Report.run.log  || true
@@ -1622,7 +1622,7 @@ process Report {
 	cp -rf \${nanome_dir}/src/nanocompare/report/js ${params.dsname}_NANOME_report/
 
 	## Generate html report
-	python src/nanocompare/report/gen_html_report.py \
+	gen_html_report.py \
 		${params.dsname} \
 		running_information.tsv \
 		\${basecallOutputFile} \
