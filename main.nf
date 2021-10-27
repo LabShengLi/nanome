@@ -1561,7 +1561,7 @@ process Report {
 	output:
 	path "${params.dsname}_nanome_report.html" 	into	report_out_ch
 	path "README_${params.dsname}.txt" 			into 	readme_out_ch
-	path "${params.dsname}_NANOME*.sort.bed.gz" into 	nanome_consensus_ch
+	path "${params.dsname}_NANOME*.sort.bed.gz" optional true 	into 	nanome_consensus_ch
 	path "multiqc_report.html"					into 	lbt_report_ch
 
 	when:
@@ -1574,15 +1574,15 @@ process Report {
 	DeepSignalSiteReport=\$(find . -maxdepth 1 -name '*DeepSignal-perSite-*.sort.bed.gz')
 	GuppySiteReport=\$(find . -maxdepth 1 -name '*Guppy-perSite-*.sort.bed.gz')
 
-	PYTHONPATH=src src/nanocompare/nanome_consensus.py\
+	PYTHONPATH=src python src/nanocompare/nanome_consensus.py\
 	 	--site-reports   \${NanopolishSiteReport} \${MegalodonSiteReport}\
 	 		\${DeepSignalSiteReport} \${GuppySiteReport}\
-	 	--union -o ${params.dsname}_NANOMEUnion-perSite-cov1.sort.bed.gz
+	 	--union -o ${params.dsname}_NANOMEUnion-perSite-cov1.sort.bed.gz &>> Report.run.log
 
-	PYTHONPATH=src src/nanocompare/nanome_consensus.py\
+	PYTHONPATH=src python src/nanocompare/nanome_consensus.py\
 	 	--site-reports   \${NanopolishSiteReport} \${MegalodonSiteReport}\
 	 		\${DeepSignalSiteReport} \${GuppySiteReport}\
-	 	--join -o ${params.dsname}_NANOMEJoin-perSite-cov1.sort.bed.gz
+	 	--join -o ${params.dsname}_NANOMEJoin-perSite-cov1.sort.bed.gz  &>> Report.run.log
 
 	## Generate running information tsv
 	> running_information.tsv
@@ -1619,7 +1619,7 @@ process Report {
 		\${basecallOutputFile} \
 		. \
 		${params.dsname}_NANOME_report \
-		\${nanome_dir}/src/nanocompare/report
+		\${nanome_dir}/src/nanocompare/report  &>> Report.run.log
 
 	## No tty usage, ref: https://github.com/remy/inliner/issues/151
 	script -qec "inliner ${params.dsname}_NANOME_report/nanome_report.html" /dev/null  > ${params.dsname}_nanome_report.html
@@ -1631,7 +1631,7 @@ process Report {
 		utils/readme.txt.template ${params.dsname} ${params.outputDir}\
 		${workflow.projectDir} ${workflow.workDir} "${workflow.commandLine}"\
 		${workflow.runName} "${workflow.start}"\
-		> README_${params.dsname}.txt
+		> README_${params.dsname}.txt   &>> Report.run.log
 
 	echo "### report html DONE"
 	"""
