@@ -5,7 +5,7 @@ on: [push, pull_request, release]
 
 jobs:
   docker:
-    name: Run NANOME tests using Docker
+    name: Docker
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -26,7 +26,7 @@ jobs:
             nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.ci_test_name }},docker  ${{ matrix.using_tools_option }}
           echo "Outputs tree view:" ; tree -a outputs; ls -lh -R outputs; du -hs * 2>/dev/null | sort -h
   singularity:
-    name: Run NANOME tests using Singularity
+    name: Singularity
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
