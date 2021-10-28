@@ -34,7 +34,7 @@ nextflow run main.nf\
     -profile singularity,hpc\
     -config conf/executors/jaxhpc_input.config\
     -work-dir ${workDir}\
-    --outputs ${outputsDir}\
+    --outdir ${outputsDir}\
     --dsname TestData\
     --input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt\
     --cleanCache false\

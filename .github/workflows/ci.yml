@@ -1,16 +1,18 @@
 name: NANOME pipelines for CI test
 # This workflow is triggered on pushes and PRs to the repository.
 # Hardware requirment: https://lifebit.gitbook.io/cloudos/tutorials/adding-ci-testing-in-nextflow-pipelines
-on: [push, pull_request]
+on: [push, pull_request, release]
 
 jobs:
   docker:
+    name: Run NANOME tests using Docker
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         nxf_ver: ['20.01.0', '']
-        ci_test_ver: ['ci', 'ci_human']
+        ci_test_name: ['test', 'test_human']
+        using_tools_option: ['', '--runTombo --runDeepMod --runMETEORE']
     steps:
       - uses: actions/checkout@v1
       - name: Install Nextflow ${{ matrix.nxf_ver }}
@@ -18,18 +20,20 @@ jobs:
           export NXF_VER=${{ matrix.nxf_ver }}
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
-      - name: Basic NANOME workflow tests by ${{ matrix.ci_test_ver }}
+      - name: Basic NANOME workflow tests by ${{ matrix.ci_test_name }}
         run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.ci_test_ver }},docker
+          nextflow -v &&\
+            nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.ci_test_name }},docker  ${{ matrix.using_tools_option }}
           echo "Outputs tree view:" ; tree -a outputs; ls -lh -R outputs; du -hs * 2>/dev/null | sort -h
   singularity:
+    name: Run NANOME tests using Singularity
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         singularity_version: ['3.6.4']
-        nxf_ver: ['20.01.0', '']
-        ci_test_ver: ['ci', 'ci_human']
+        nxf_ver: ['']
+        ci_test_name: ['test', 'test_human']
     steps:
       - uses: actions/checkout@v1
       - uses: eWaterCycle/setup-singularity@v6
@@ -40,7 +44,8 @@ jobs:
           export NXF_VER=${{ matrix.nxf_ver }}
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
-      - name: Basic NANOME workflow tests by ${{ matrix.ci_test_ver }}
+      - name: Basic NANOME workflow tests by ${{ matrix.ci_test_name }}
         run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.ci_test_ver }},singularity --runMethcall false --runCombine false
+          nextflow -v &&\
+            nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.ci_test_name }},singularity --runMethcall false
           echo "Outputs tree view:" ; tree -a outputs; ls -lh -R outputs

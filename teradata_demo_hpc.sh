@@ -34,7 +34,7 @@ nextflow run main.nf -resume\
         -profile singularity,hpc \
         -config conf/executors/jaxhpc_input.config,conf/executors/na12878_hpc.config\
         -work-dir ${workDir} \
-        --outputDir ${outputsDir} \
+        --outdir ${outputsDir} \
         --dsname NA12878_CHR22 \
         --input 'https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/na12878_chr22.filelist.txt'
 
