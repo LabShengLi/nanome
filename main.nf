@@ -20,7 +20,7 @@ def helpMessage() { // print help message
 	Mandatory arguments:
 	  --dsname		Dataset name
 	  --input		Input path for raw fast5 folders/tar/tar.gz files
-	  --genome		Genome reference directory or tar.gz file
+	  --genome		Genome reference name (hg38, hg38_chr22, or ecoli), a directory or a tar.gz file
 
 	General options:
 	  --processors		Processors used for each task
@@ -76,6 +76,19 @@ if (params.help){
 assert params.dsname != false : "Missing --dsname option, for command help use --help"
 assert params.input != false : "Missing --input option, for command help use --help"
 
+// Get genome
+zenodo_base = "https://zenodo.org/record/${params.zenodoNumber}/files"
+genome_map = [	'hg38': 		"${zenodo_base}/hg38.tar.gz",
+				'hg38_chr22': 	"${zenodo_base}/hg38_chr22.tar.gz",
+				'ecoli': 		"${zenodo_base}/ecoli.tar.gz"]
+
+if (genome_map[params.genome] != null) {
+	genome_path = genome_map[params.genome]
+} else {
+	genome_path = params.genome
+}
+
+// Get src and utils dir
 projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
@@ -112,9 +125,9 @@ https://github.com/TheJacksonLaboratory/nanome
 =================================
 dsname		:${params.dsname}
 input		:${params.input}
+genome		:${params.genome}
 outputs		:${params.outputs}
 work-dir	:${workflow.workDir}
-type		:${params.type}
 runBasecall	:${params.runBasecall}
 runMethcall	:${params.runMethcall}
 =================================
@@ -152,8 +165,8 @@ process EnvCheck {
 	errorStrategy 'terminate'
 
 	input:
-	path reference_genome 	from 	Channel.fromPath(params.genome, type: 'any')
-	path megalodonModelTar 	from 	Channel.fromPath(params.megalodon_model_tar)
+	path reference_genome 	from 	Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
+	path megalodonModelTar 	from 	Channel.fromPath(params.megalodon_model_tar, checkIfExists: true)
 
 	output:
 	path "reference_genome" into reference_genome_ch
