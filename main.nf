@@ -218,13 +218,14 @@ process EnvCheck {
 	errorStrategy 'terminate'
 
 	input:
-	path reference_genome 	from 	Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
-	path megalodonModelTar 	from 	Channel.fromPath(params.megalodon_model_tar, checkIfExists: true)
+	path reference_genome 	from 	Channel.fromPath(genome_path, type: 'any', checkIfExists: false)
+	path megalodonModelTar 	from 	Channel.fromPath(params.megalodon_model_tar, type: 'any', checkIfExists: false)
 
 	output:
 	path "reference_genome" into reference_genome_ch
 	path "megalodon_model"	optional true into megalodon_model_ch
 
+	script:
 	"""
 	date; hostname; pwd
 	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
@@ -235,6 +236,7 @@ process EnvCheck {
 	## Untar and prepare megalodon model
 	if [[ ${params.runMegalodon} == "true" ]]; then
 		tar -xzf ${megalodonModelTar}
+		## Check Megalodon model
 		ls -lh megalodon_model
 	fi
 
