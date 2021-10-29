@@ -86,7 +86,7 @@ if (params.input == false) { exit 1, "Missing --input option for input data, che
 
 // Parse genome params
 def zenodo_base = "https://zenodo.org/record/${params.zenodoNumber}/files"
-if ((workflow.profile.contains('docker') || workflow.profile.contains('singularity')) && !workflow.profile.contains('google') && !params.config.contains('lifebit')) {
+if (workflow.profile.contains('singularity') && !workflow.profile.contains('google') && !params.config.contains('lifebit')) {
 	// Get small genome from docker and singularity /data dir
 	// Note google life-science will stage the file instead of create the link
 	genome_map = [	'hg38': 		"${zenodo_base}/hg38.tar.gz",
@@ -242,6 +242,8 @@ process EnvCheck {
 
 	## Untar and prepare megalodon model
 	if [[ ${params.runMegalodon} == "true" ]]; then
+		ls -lh ${megalodonModelTar}
+
 		tar -xzf ${megalodonModelTar}
 		## Check Megalodon model
 		ls -lh megalodon_model
