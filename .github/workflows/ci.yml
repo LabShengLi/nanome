@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        nxf_ver: ['20.01.0', '']
+        nxf_ver: ['20.07.1', '']
         ci_test_name: ['test', 'test_human']
         using_tools_option: ['', '--runTombo --runDeepMod --runMETEORE']
     steps:
