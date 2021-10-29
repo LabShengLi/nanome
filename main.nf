@@ -86,18 +86,20 @@ if (params.input == false) { exit 1, "Missing --input option for input data, che
 
 // Parse genome params
 def zenodo_base = "https://zenodo.org/record/${params.zenodoNumber}/files"
-if (workflow.profile.contains('singularity') && !workflow.profile.contains('google') && !params.config.contains('lifebit')) {
-	// Get small genome from docker and singularity /data dir
-	// Note google life-science will stage the file instead of create the link
-	genome_map = [	'hg38': 		"${zenodo_base}/hg38.tar.gz",
-					'hg38_chr22': 	"/data/hg38_chr22.tar.gz",
-					'ecoli': 		"/data/ecoli.tar.gz"]
-	megalodon_model_tar = "/data/megalodon_model.tar.gz"
-} else { // conda, GCP, Lifebit, not available for /data dir
-	genome_map = params.genome_map
-	// online input, or google storage input
-	megalodon_model_tar = params.megalodon_model_tar
-}
+genome_map = params.genome_map
+// online input, or google storage input
+megalodon_model_tar = params.megalodon_model_tar
+
+//if (workflow.profile.contains('singularity') && !workflow.profile.contains('google') && !params.config.contains('lifebit')) {
+//	// Get small genome from docker and singularity /data dir
+//	// Note google life-science will stage the file instead of create the link
+//	genome_map = [	'hg38': 		"${zenodo_base}/hg38.tar.gz",
+//					'hg38_chr22': 	"/data/hg38_chr22.tar.gz",
+//					'ecoli': 		"/data/ecoli.tar.gz"]
+//	megalodon_model_tar = "/data/megalodon_model.tar.gz"
+//} else { // conda, GCP, Lifebit, not available for /data dir
+//
+//}
 
 if (genome_map[params.genome] != null) { genome_path = genome_map[params.genome] } else { 	genome_path = params.genome }
 
