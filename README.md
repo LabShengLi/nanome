@@ -79,11 +79,11 @@ When you have Nextflow software, NANOME pipeline can be directly executed withou
 ```angular2html
 # Run NANOME using docker
 nextflow run TheJacksonLaboratory/nanome\
-    -profile ci,docker
+    -profile test,docker
 
 # Run NANOME using singularity
 nextflow run TheJacksonLaboratory/nanome\
-    -profile ci,singularity
+    -profile test,singularity
 ```
 Please note that above two commands are integrated in our **CI/CD test cases**. Our Github will automatically test and report results on every commit and PRs (https://github.com/TheJacksonLaboratory/nanome/actions). Please refer to [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). 
 

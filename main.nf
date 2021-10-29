@@ -93,10 +93,8 @@ if ((workflow.profile.contains('docker') || workflow.profile.contains('singulari
 					'hg38_chr22': 	"/data/hg38_chr22.tar.gz",
 					'ecoli': 		"/data/ecoli.tar.gz"]
 	megalodon_model_tar = "/data/megalodon_model.tar.gz"
-} else { // online genome reference
-	genome_map = [	'hg38': 		"${zenodo_base}/hg38.tar.gz",
-					'hg38_chr22': 	"${zenodo_base}/hg38_chr22.tar.gz",
-					'ecoli': 		"${zenodo_base}/ecoli.tar.gz"]
+} else { // conda, GCP, Lifebit, not available for /data dir
+	genome_map = params.genome_map
 	// online input, or google storage input
 	megalodon_model_tar = params.megalodon_model_tar
 }
