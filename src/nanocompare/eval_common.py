@@ -1621,7 +1621,7 @@ def calldict2txt(inputDict):
 
 def bedtxt2dict(pybed, strand_col=5):
     """
-    convert bed txt to a dict with keys in bed file
+    convert bed object to a dict with keys in bed file
 
     From
     chr123  123  123 +
