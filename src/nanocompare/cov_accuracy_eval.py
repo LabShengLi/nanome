@@ -204,7 +204,7 @@ def pcc_mse_evaluation(call, bgTruth, bed_tuple=None, tool=None, down_sample_cov
         freq_list.append(bgTruth[cpg][0])
     cpg_df = pd.DataFrame({'cpg': cpg_list, 'freq': freq_list})
 
-    ## Bin is [1,0.1], (0.1, 0.2], ..., (0.9, 1]
+    ## Bin is [1,0.1], (0.1, 0.2], ..., (0.9, 1], class are 1-10
     cpg_df['bin_cat'] = pd.cut(cpg_df['freq'], bins=np.linspace(0, 1, args.bin_num + 1),
                                labels=list(range(1, args.bin_num + 1)), include_lowest=True)
     logger.debug(cpg_df)
@@ -228,6 +228,11 @@ def pcc_mse_evaluation(call, bgTruth, bed_tuple=None, tool=None, down_sample_cov
         bin_bg_freq[bin_cat].append(freq1)
         bin_pd_freq[bin_cat].append(freq2)
 
+        bin_bg_freq[0].append(freq1)
+        bin_pd_freq[0].append(freq2)
+
+    logger.debug(f"bin_bg_freq key= {bin_bg_freq.keys()}, bin_pd_freq key={bin_pd_freq.keys()}")
+
     pcc, pcc_pvalue = pearsonr(bg_freq, pd_freq)
     mse = mean_squared_error(bg_freq, pd_freq)
     r2 = r2_score(bg_freq, pd_freq)
@@ -247,10 +252,8 @@ def pcc_mse_evaluation(call, bgTruth, bed_tuple=None, tool=None, down_sample_cov
     }
 
     ## Note, 0 - whole sets, 1-10, 10 bin results
-    ret1 = dict(ret)
-    ret1.update({'Bin-cat': 0})
-    ret_bin_cat = [ret1]
-    for k in range(1, args.bin_num + 1):
+    ret_bin_cat = []
+    for k in range(0, args.bin_num + 1):
         bg_freqk = bin_bg_freq[k]
         pd_freqk = bin_pd_freq[k]
         try:
@@ -441,7 +444,7 @@ if __name__ == '__main__':
         # Do not filter bgtruth, because we use later for overlapping (without bg-truth)
         call1 = import_call(callfn, callencode, baseFormat=baseFormat, filterChr=args.chrSet,
                             enable_cache=enable_cache, using_cache=using_cache,
-                            include_score=False, siteLevel=True, cache_dir=ds_cache_dir)
+                            include_score=False, siteLevel=False, cache_dir=ds_cache_dir)
         call3 = filter_cpg_dict_by_cov(call1, coverage=minToolCovCutt)
         callresult_dict_cov3[callname] = call3
         logger.info(f"Tool={callname}, cov=1, CPG={len(call1):,}; cov={minToolCovCutt}, CPG={len(call3):,}; ")
@@ -481,6 +484,7 @@ if __name__ == '__main__':
                 if not ret:
                     continue
                 logger.debug(f"Tool={tool}, tagname={tagname}, down-sample cov={down_sample_cov}, ret={ret}")
+                logger.debug(f"\n\nbin_cat results: ret_bin_cat_list={ret_bin_cat_list}")
                 dataset.append(ret)
                 dataset_bin_cat += ret_bin_cat_list
 
@@ -489,15 +493,13 @@ if __name__ == '__main__':
 
     outdf2 = pd.DataFrame(dataset_bin_cat)
     logger.info(outdf2)
-    if args.o:
-        outdir = args.o
-    else:
-        outdir = pic_base_dir
-    outfn = os.path.join(outdir, f"Coverage_vs_accuracy_{args.dsname}_bgtruth{bgtruthCutt}_toolcov{minToolCovCutt}.csv")
+
+    outfn = os.path.join(out_dir,
+                         f"Coverage_vs_accuracy_{args.dsname}_bgtruth{bgtruthCutt}_toolcov{minToolCovCutt}.csv")
     outdf.to_csv(outfn)
     logger.info(f"save to {outfn}")
 
-    outfn2 = os.path.join(outdir,
+    outfn2 = os.path.join(out_dir,
                           f"Coverage_vs_accuracy_{args.dsname}_bgtruth{bgtruthCutt}_toolcov{minToolCovCutt}_bincat{args.bin_num}.csv")
     outdf2.to_csv(outfn2)
     logger.info(f"save to {outfn2}")
