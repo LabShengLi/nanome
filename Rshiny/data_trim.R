@@ -62,11 +62,11 @@ summary(as.factor(df$Chrom))
 <b>Citation</b><br>
   If you used the dataset for your research, please cite the following publication:
   <br>
-  Wojciech Rosikiewicz, Yang Liu, Ziwei Pan, Sheng Li,
-A  comprehensive comparison of tools for detecting DNA methylation using Nanopore long-read sequencing data,
-Genome Biology, btz877, 
+  Liu, Y., Rosikiewicz, W., Pan, Z. et al. 
+DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation. 
+Genome Biol 22, 295 (2021).,
 <a href=paperlink title="DOI" target="_blank">
-  https://doi.org/xxxx</a><br>
+  https://doi.org/10.1186/s13059-021-02510-z</a><br>
   <br>
 
   <br/>
