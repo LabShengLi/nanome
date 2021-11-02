@@ -12,7 +12,7 @@ column_names <-c('Chrom', 'Start', 'End', 'Strand', 'Dataset', 'BSseq_freq', 'BS
 df <- data.table::fread(input='./data/total.unique.tsv.bz2', sep="\t")
 
 data.table::setnames(df, column_names)
-df
+#df
 
 chr_order <- factor(df$Chrom, levels = c(paste("chr",1:22,sep=""),"chrX","chrY"))
 dataset_order <- factor(df$Dataset, levels = c("NA19240", "NA12878", "APL","K562"))

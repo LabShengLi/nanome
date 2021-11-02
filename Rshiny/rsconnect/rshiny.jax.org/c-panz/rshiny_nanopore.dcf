@@ -5,10 +5,10 @@ account: c-panz
 server: rshiny.jax.org
 hostUrl: https://rshiny.jax.org/__api__
 appId: 162
-bundleId: 1105
+bundleId: 1172
 url: https://rshiny.jax.org/content/162/
-when: 1628389430.52753
-lastSyncTime: 1628389430.52763
+when: 1634676735.22697
+lastSyncTime: 1634676735.227
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: data/total.tsv.bz2|data/total.unique.tsv|data_trim.R
