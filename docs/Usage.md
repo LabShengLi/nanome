@@ -15,7 +15,7 @@ nextflow run TheJacksonLaboratory/nanome --help
 
 # Running NANOME pipeline for E. coli data
 nextflow run TheJacksonLaboratory/nanome\
-    -profile ci,singularity
+    -profile test,singularity
 
 # Running NANOME pipeline for human data on HPC clusters
 nextflow run TheJacksonLaboratory/nanome\
@@ -50,7 +50,7 @@ You can also running NANOME pipeline on cloud computing platform ([google cloud 
 ```angular2html
 # Running on Google Cloud (https://cloud.google.com)
 nextflow run TheJacksonLaboratory/nanome\
-    -profile ci,docker,google \
+    -profile test,docker,google \
     -w [Google-storage-bucket]/TestData-work \
     --outputDir [Google-storage-bucket]/TestData-ouputs\
     --googleProjectName  [Google-project-name]
@@ -221,7 +221,7 @@ Our Nextflow pipeline can running on CloudOS. The CloudOS recommend using the Do
 
 ```angular2html
 nextflow run TheJacksonLaboratory/nanome\
-    -profile ci,docker,google \
+    -profile test,docker,google \
     -w [Google-storage-bucket]/nanome-work-ci \
     --outputDir [Google-storage-bucket]/nanome-outputs-ci\
     --googleProjectName  [Google-project-name]
