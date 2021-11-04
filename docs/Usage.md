@@ -7,7 +7,7 @@ The inputs of NANOME pipeline is a folder/tar/tar.gz or txt file list containing
 ## Running samples
 The command for running NANOME pipeline is to run `nextflow run TheJacksonLaboratory/nanome`. `--input` is input Fast5 file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name.
 
-By default, we are using hg38 human reference genome, and you can specify other reference genome using parameter `dataType='ecoli'`. We defined a bunch of predefined running configuration params in profile in next section. An example of how to use NANOME pipeline is given below.
+By default, we are using hg38 human reference genome, and you can specify other reference genome using parameter `type='ecoli'`. We defined a bunch of predefined running configuration params in profile in next section. An example of how to use NANOME pipeline is given below.
 
 ```angular2html
 # Get pipeline help
@@ -71,7 +71,7 @@ dsname          :TestData
 input           :https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt
 output          :/fastscratch/li-lab/nanome/outputs
 work            :/fastscratch/li-lab/nanome/work
-dataType        :human
+type        :human
 runBasecall     :true
 runMethcall     :true
 =================================
@@ -148,7 +148,7 @@ nextflow run TheJacksonLaboratory/nanome --help
 ```
 
 # 2. Experiment for E. coli data
-The NANOME pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--dataType` need to be set as `ecoli`. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline params' config file [ecoli_demo.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/examples/ecoli_demo.config).
+The NANOME pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--type` need to be set as `ecoli`. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline params' config file [ecoli_demo.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/examples/ecoli_demo.config).
 
 ```angular2html
 nextflow run TheJacksonLaboratory/nanome\
@@ -169,7 +169,7 @@ dsname          :EcoliDemo
 input           :https://zenodo.org/record/5483859/files/ecoli_data_from_meteore.tar.gz
 output          :/fastscratch/li-lab/nanome/outputs-ecoli
 work            :/fastscratch/li-lab/nanome/work-ecoli
-dataType        :ecoli
+type        :ecoli
 runBasecall     :true
 runMethcall     :true
 =================================

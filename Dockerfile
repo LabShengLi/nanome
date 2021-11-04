@@ -20,6 +20,10 @@ ARG DEBIAN_FRONTEND="noninteractive"
 ARG NANOME_DIR=/opt/nanome
 ARG METEORE_GITHUB="https://github.com/comprna/METEORE/archive/refs/tags/v1.0.0.tar.gz"
 ARG DEEPSIGNAL_MODEL="https://zenodo.org/record/5513090/files/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7%2B.tar.gz"
+ARG MEGALODON_MODEL="https://zenodo.org/record/5513090/files/megalodon_model.tar.gz"
+ARG ECOLI_GENOME="https://zenodo.org/record/5513090/files/ecoli.tar.gz"
+ARG HG38_CHR22_GENOME="https://zenodo.org/record/5513090/files/hg38_chr22.tar.gz"
+
 ARG MEGALODON_VERSION=2.3.4
 
 # Install guppy-gpu version, ref: https://github.com/GenomicParisCentre/dockerfiles
@@ -59,12 +63,14 @@ WORKDIR /data/
 
 # Get METEORE dir into /data/METEORE-1.0.0,
 # Get DeepSignal model into /data/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+
+# Get E. coli and hg38 chr22 regenome into /data
 RUN cd /data && wget -q ${METEORE_GITHUB} &&\
     tar -xzf v1.0.0.tar.gz &&\
     rm -f v1.0.0.tar.gz &&\
     wget -q ${DEEPSIGNAL_MODEL} &&\
     tar -xzf model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz &&\
-    rm -f model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz
+    rm -f model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz &&\
+    wget -q ${ECOLI_GENOME} && wget -q ${HG38_CHR22_GENOME} && wget -q ${MEGALODON_MODEL}
 
 # Create nanome project dir
 RUN mkdir -p ${NANOME_DIR}

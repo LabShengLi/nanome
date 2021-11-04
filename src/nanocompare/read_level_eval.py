@@ -350,9 +350,10 @@ def import_ont_calls_for_read_level(call_encode, callfn, absoluteBGTruthCov, mul
         logger.debug(f'{call_name} left only sites={len(ont_call1):,}')
     else:
         ont_call1 = ont_call0
+    ont_call2 = filter_cpg_dict_by_cov(ont_call1, coverage=args.toolcov_cutoff)
 
     if not multi_processor:  # sequencial/multithreading running, in same process, can directly return object
-        return (call_name, ont_call1, sites_summary,)
+        return (call_name, ont_call2, sites_summary,)
     # Save to temp, for main process use at multi-processing
     outfn = f"tmp_ont_calls_for_read_level_{args.runid}_{os.path.basename(callfn)}.pkl"
     outfnmd5 = os.path.join(args.bedtools_tmp, "tmp_mp_ont_" + hashlib.md5(outfn.encode('utf-8')).hexdigest() + ".pkl")
@@ -534,6 +535,8 @@ def parse_arguments():
                         help='genome annotation dir, contain BED files',
                         default=None)
     parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff, default is 5", default=5)
+    parser.add_argument('--toolcov-cutoff', type=int, help="cutoff for coverage in nanopore tools, default is >=1",
+                        default=1)
     parser.add_argument('--processors', type=int, help="number of processors used, default is 1", default=1)
     parser.add_argument('--report-joined', action='store_true', help="true if report on only joined sets")
     parser.add_argument('--chrSet', nargs='+', help='chromosome list, default is human chr1-22, X and Y',
@@ -615,9 +618,12 @@ if __name__ == '__main__':
     if args.config:
         load_genome_annotation_config(verbose=True)
 
-    singletonsFile = region_tagname_dict[sing_tagname][0]
-    nonsingletonsFile = region_tagname_dict[nonsing_tagname][0]
-    logger.debug(f"singletonsFile={singletonsFile}, nonsingletonsFile={nonsingletonsFile}")
+    if sing_tagname in region_tagname_dict and nonsing_tagname in region_tagname_dict:
+        singletonsFile = region_tagname_dict[sing_tagname][0]
+        nonsingletonsFile = region_tagname_dict[nonsing_tagname][0]
+        logger.debug(f"singletonsFile={singletonsFile}, nonsingletonsFile={nonsingletonsFile}")
+    else:
+        singletonsFile = nonsingletonsFile = "None-file"
 
     ## Test if singleton/nonsinglton BED file exists
     exists_singleton_or_nonsingleton = True

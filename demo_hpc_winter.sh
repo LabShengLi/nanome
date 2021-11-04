@@ -34,10 +34,11 @@ nextflow run main.nf\
     -profile singularity,hpc\
     -config conf/executors/jaxhpc_input.config\
     -work-dir ${workDir}\
-    --outputDir ${outputsDir}\
+    --outdir ${outputsDir}\
     --dsname TestData\
     --input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt\
-    --cleanCache false
+    --cleanCache false\
+	--runTombo --runMETEORE --runDeepMod
 
 # Report
 tree ${workDir} > ${baseDir}/work_demo_filetree.txt

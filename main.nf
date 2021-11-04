@@ -1,49 +1,62 @@
 #!/usr/bin/env nextflow
-// @Author   : Yang Liu
-// @FileName : main.nf
-// @Software : NANOME project
-// @Organization : JAX Li Lab
-// @Website  : https://github.com/TheJacksonLaboratory/nanome
+/*
+=========================================================================================
+  		NANOME(Nanopore methylation) pipeline for Oxford Nanopore sequencing
+=========================================================================================
+ NANOME Analysis Pipeline.
+ #### Homepage / Documentation
+ https://github.com/TheJacksonLaboratory/nanome
+ @Author   : Yang Liu
+ @FileName : main.nf
+ @Software : NANOME project
+ @Organization : JAX Li Lab
+----------------------------------------------------------------------------------------
+*/
+nextflow.enable.dsl=2
 
-def helpMessage() { // print help message
+def helpMessage() {
 	log.info"""
-	NANOME - NF PIPELINE (v$workflow.manifest.version)
+	NANOME - Nextflow PIPELINE (v$workflow.manifest.version)
 	by Li Lab at The Jackson Laboratory
 	https://github.com/TheJacksonLaboratory/nanome
 	=================================
 	Usage:
 	The typical command for running the pipeline is as follows:
 
-	nextflow run TheJacksonLaboratory/nanome -profile ci,conda
+	nextflow run TheJacksonLaboratory/nanome -profile ci,docker
 	nextflow run TheJacksonLaboratory/nanome -profile ci,singularity
 
 	Mandatory arguments:
 	  --dsname		Dataset name
 	  --input		Input path for raw fast5 folders/tar/tar.gz files
+	  --genome		Genome reference name ('hg38', 'hg38_chr22', or 'ecoli'), or a directory, or a tar.gz file
 
 	General options:
 	  --processors		Processors used for each task
-	  --outputDir		Output dir, default is 'outputs'
-	  --dataType		Data type, default is 'human', can be also 'ecoli'
+	  --outdir		Output dir, default is 'outputs'
+	  --type		Data type, default is 'human', can be also 'ecoli'
 	  --chrSet		Chromosomes used in analysis, default is true, means chr1-22, X and Y, seperated by comma. For E. coli data, it needs be set to 'NC_000913.3'
 
 	  --cleanCache		If clean work dir after complete, default is true
 
 	Running environment options:
-	  --conda_name			Conda name used for pipeline, default is 'nanome'
-	  --conda_base_dir		Conda base directory, default is '/opt/conda'
-	  --docker_name			Docker name used for pipeline, default is 'liuyangzzu/nanome:latest'
-	  --singularity_name		Singularity name used for pipeline, default is 'docker://liuyangzzu/nanome:latest'
-	  --singularity_cache		Singularity cache dir, default is 'local_singularity_cache'
+	  --docker_name		Docker name used for pipeline, default is 'liuyangzzu/nanome:latest'
+	  --singularity_name	Singularity name used for pipeline, default is 'docker://liuyangzzu/nanome:latest'
+	  --singularity_cache	Singularity cache dir, default is 'local_singularity_cache'
+	  --conda_name		Conda name used for pipeline, default is 'nanome'
+	  --conda_base_dir	Conda base directory, default is '/opt/conda'
 
 	Platform specific options:
-	  --queueName		SLURM job submission queue name for cluster running, default is 'gpu'
-	  --qosName		SLURM job submission qos name for cluster running, default is 'inference'
-	  --gresGPUOptions	SLURM job submission GPU allocation options for cluster running, default is '--gres=gpu:v100:1'
-	  --jobMaxTime		SLURM job submission time allocation options for cluster running, default is '05:00:00'
-	  --jobMaxMem		SLURM job submission memory allocation options for cluster running, default is '32G'
+	  --queue		SLURM job submission queue name for cluster running, default is 'gpu'
+	  --qos			SLURM job submission qos name for cluster running, default is 'inference'
+	  --gresOptions		SLURM job submission GPU allocation options for cluster running, default is 'gpu:v100:1'
+	  --time		SLURM job submission time allocation options for cluster running, default is '2h'
+	  --memory		SLURM job submission memory allocation options for cluster running, default is '32GB'
 
 	  --googleProjectName	Google Cloud project name for google-lifesciences task running
+
+	Tools's specific configurations:
+	  --run[Tool-name]	Default we run top four performers in nanome paper, specify '--run[Tool-name]' can include other tool, supported tools: Megalodon, Nanopolish, DeepSignal, Guppy, Tombo, METEORE, and DeepMod
 
 	Other options:
 	  --guppyDir		Guppy installation local directory, used only for conda environment
@@ -62,64 +75,54 @@ def helpMessage() { // print help message
 }
 
 // Show help emssage
-params.help = false
 if (params.help){
     helpMessage()
     exit 0
 }
 
 // Check mandatory params
-assert params.dsname != false : "Missing --dsname option, for command help use --help"
-assert params.input != false : "Missing --input option, for command help use --help"
+if (params.dsname == false) { exit 1, "Missing --dsname option for dataset name, check command help use --help" }
+if (params.input == false) { exit 1, "Missing --input option for input data, check command help use --help" }
 
+// Parse genome params
+def zenodo_base = "https://zenodo.org/record/${params.zenodoNumber}/files"
+genome_map = params.genome_map
+// online input, or google storage input
+megalodon_model_tar = params.megalodon_model_tar
+
+//if (workflow.profile.contains('singularity') && !workflow.profile.contains('google') && !params.config.contains('lifebit')) {
+//	// Get small genome from docker and singularity /data dir
+//	// Note google life-science will stage the file instead of create the link
+//	genome_map = [	'hg38': 		"${zenodo_base}/hg38.tar.gz",
+//					'hg38_chr22': 	"/data/hg38_chr22.tar.gz",
+//					'ecoli': 		"/data/ecoli.tar.gz"]
+//	megalodon_model_tar = "/data/megalodon_model.tar.gz"
+//} else { // conda, GCP, Lifebit, not available for /data dir
+//
+//}
+
+if (genome_map[params.genome] != null) { genome_path = genome_map[params.genome] } else { 	genome_path = params.genome }
+
+// Get src and utils dir
 projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
 
-// Channel for utils/ and src/ folders
-ch_utils
-	.into{	ch_utils1; ch_utils2;}
-
 // Reference genome, deepmod cluster settings
-deepmod_tar_file = "${projectDir}/README.md"
+def deepmod_tar_file = "${projectDir}/README.md"
+def referenceGenome = 'reference_genome/ref.fasta'
+def chromSizesFile = 'reference_genome/chrom.sizes'
 
-referenceGenome = 'reference_genome/ref.fasta'
-chromSizesFile = 'reference_genome/chrom.sizes'
-
-if (params.dataType == 'human') {
+if (params.type == 'human') {
 	isDeepModCluster = params.useDeepModCluster
-	if (isDeepModCluster) {
+	if (isDeepModCluster && params.runDeepMod) {
 		deepmod_tar_file = params.deepmod_ctar
 	}
-} else if (params.dataType == 'ecoli') {
-	isDeepModCluster = false
-} else {
-	println "Param dataType=${params.dataType} is not support"
-	exit 1
-}
-
-// If need, preload C.tar.gz file in advance
-deepmod_c_tar_ch = Channel.fromPath(deepmod_tar_file)
+} else if (params.type == 'ecoli') { isDeepModCluster = false }
+else { 	exit 1, "Param type=${params.type} is not support" }
 
 // if is true or 'true' (string), using '  '
 chrSet = params.chrSet.toBoolean() ? '  ' : params.chrSet
-
-log.info """\
-NANOME - NF PIPELINE (v$workflow.manifest.version)
-by Li Lab at The Jackson Laboratory
-https://github.com/TheJacksonLaboratory/nanome
-=================================
-dsname			:${params.dsname}
-input			:${params.input}
-output			:${params.outputDir}
-work			:${workflow.workDir}
-dataType		:${params.dataType}
-runBasecall		:${params.runBasecall}
-runMethcall		:${params.runMethcall}
-=================================
-"""
-.stripIndent()
-
 
 workflow.onComplete {
 	if (workflow.success && params.cleanCache) {
@@ -139,11 +142,84 @@ if (params.input.endsWith(".filelist.txt")) {
 } else if(params.input.endsWith("/*")) {
 	// match all files in the folder, note: input must use '', prevent expand in advance
 	// such as --input '/fastscratch/liuya/nanome/NA12878/NA12878_CHR22/input_chr22/*'
-	Channel.fromPath(params.input, type: 'any').set{fast5_tar_ch}
+	Channel.fromPath(params.input, type: 'any').set{ fast5_tar_ch }
 } else {
-	// For single file/wildcard mathced files
-	Channel.fromPath( params.input, checkIfExists: true ).set{fast5_tar_ch}
+	// For single file/wildcard matched files
+	Channel.fromPath( params.input, checkIfExists: true ).set{ fast5_tar_ch }
 }
+
+// Header log info
+def summary = [:]
+summary['dsname'] 			= params.dsname
+summary['input'] 			= params.input
+summary['genome'] 			= params.genome
+
+summary['\nRunning settings']         = "--------"
+summary['processors'] 		= params.processors
+if (params.runNanopolish) summary['runNanopolish'] = 'Yes'
+if (params.runMegalodon) summary['runMegalodon'] = 'Yes'
+if (params.runDeepSignal) summary['runDeepSignal'] = 'Yes'
+if (params.runGuppy) summary['runGuppy'] = 'Yes'
+if (params.runTombo) summary['runTombo'] = 'Yes'
+if (params.runMETEORE) summary['runMETEORE'] = 'Yes'
+if (params.runDeepMod) summary['runDeepMod'] = 'Yes'
+
+summary['\nPipeline settings']         = "--------"
+summary['Working dir'] 		= workflow.workDir
+summary['Output dir']       = params.outdir
+summary['Launch dir']       = workflow.launchDir
+summary['Working dir']      = workflow.workDir
+summary['Script dir']       = workflow.projectDir
+summary['User']             = workflow.userName
+summary['Profile']          = workflow.profile
+summary['Config Files'] 	= workflow.configFiles.join(',')
+if (workflow.revision) summary['Pipeline Release'] = workflow.revision
+if (workflow.containerEngine) summary['Container'] = "$workflow.containerEngine - $workflow.container"
+if (workflow.profile.contains('hpc') || workflow.profile.contains('winter') || workflow.profile.contains('sumner') ) {
+	summary['\nHPC settings']         = "--------"
+    summary['queue']         = params.queue
+    summary['qos']          = params.qos
+    summary['memory']            = params.memory
+    summary['time']            = params.time
+    if (params.gresOptions != false) {summary['gresOptions'] = params.gresOptions }
+}
+if (workflow.profile.contains('google') || params.config.contains('lifebit')) {
+	summary['\nGCP settings']         = "--------"
+	if (!params.config.contains('lifebit')) {
+		summary['googleProjectName']    = params.googleProjectName
+	} else { // lifebit specific settings
+		summary['config']       		= params.config
+		summary['zoneCloud']       		= params.zoneCloud
+		summary['networkLifebit']       = params.networkLifebit
+		summary['subnetworkLifebit']	= params.subnetworkLifebit
+	}
+    summary['googleLocation']          = params.googleLocation
+    summary['googleRegion']            = params.googleRegion
+    summary['bootDiskSizeCloud']       = params.bootDiskSizeCloud
+
+	summary['machineType']         	= params.machineType
+	summary['highmemMachineType']  	= params.highmemMachineType
+	summary['gpuType']         	= params.gpuType
+	summary['gpuNumber']        = params.gpuNumber
+
+	summary['lowDiskSize']      = params.lowDiskSize
+	summary['midDiskSize']      = params.midDiskSize
+	summary['highDiskSize']     = params.highDiskSize
+
+	summary['errorStrategy']    = params.errorStrategy
+	summary['maxRetries']       = params.maxRetries
+	summary['echo']         	= params.echo
+}
+
+log.info """\
+NANOME - NF PIPELINE (v$workflow.manifest.version)
+by Li Lab at The Jackson Laboratory
+https://github.com/TheJacksonLaboratory/nanome
+================================="""
+.stripIndent()
+
+log.info summary.collect { k,v -> "${k.padRight(20)}: $v" }.join("\n")
+log.info "================================="
 
 // Check all tools work well
 process EnvCheck {
@@ -151,13 +227,14 @@ process EnvCheck {
 	errorStrategy 'terminate'
 
 	input:
-	path reference_genome 	from 	Channel.fromPath(params.reference_genome, type: 'any')
-	path megalodonModelTar 	from 	Channel.fromPath(params.megalodon_model_tar)
+	path reference_genome
+	path megalodonModelTar
 
 	output:
-	path "reference_genome" into reference_genome_ch
-	path "megalodon_model"	optional true into megalodon_model_ch
+	path "reference_genome",	emit: reference_genome
+	path "megalodon_model",		emit: megalodon_model, optional: true
 
+	script:
 	"""
 	date; hostname; pwd
 	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
@@ -167,7 +244,10 @@ process EnvCheck {
 
 	## Untar and prepare megalodon model
 	if [[ ${params.runMegalodon} == "true" ]]; then
+		ls -lh ${megalodonModelTar}
+
 		tar -xzf ${megalodonModelTar}
+		## Check Megalodon model
 		ls -lh megalodon_model
 	fi
 
@@ -195,20 +275,11 @@ process EnvCheck {
 	echo "referenceGenome=${referenceGenome}"
 	echo "chromSizesFile=${chromSizesFile}"
 	echo "chrSet=${chrSet}"
-	echo "params.dataType=${params.dataType}"
+	echo "params.type=${params.type}"
 
 	echo "### Check env DONE"
 	"""
 }
-
-
-//duplicate reference_genome dir to all other processes' input
-reference_genome_ch.into{
-	reference_genome_ch1; reference_genome_ch2;
-	reference_genome_ch3; reference_genome_ch4;
-	reference_genome_ch5; reference_genome_ch6;
-	reference_genome_ch7; reference_genome_ch8;
-	reference_genome_ch9 }
 
 
 // Untar of subfolders named 'M1', ..., 'M10', etc.
@@ -216,10 +287,10 @@ process Untar {
 	tag "${fast5_tar.baseName}"
 
 	input:
-	path fast5_tar from 	fast5_tar_ch
+	path fast5_tar
 
 	output:
-	path "${fast5_tar.baseName}.untar" optional true into untar_out_ch
+	path "${fast5_tar.baseName}.untar", emit:untar,  optional: true
 
 	"""
 	date; hostname; pwd
@@ -269,20 +340,15 @@ process Untar {
 }
 
 
-// Untar output will be used by basecall, megalodon and guppy
-untar_out_ch.into{ untar_out_ch1; untar_out_ch2; untar_out_ch3 }
-
-
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
 	tag "${fast5_dir.baseName}"
 
 	input:
-	path fast5_dir 				from 	untar_out_ch1
-	// each path("*") 				from 	ch_utils1
+	path fast5_dir
 
 	output:
-	path "${fast5_dir.baseName}.basecalled" into basecall_out_ch
+	path "${fast5_dir.baseName}.basecalled", 	emit: basecall
 
 	when:
 	params.runBasecall
@@ -355,25 +421,20 @@ process Basecall {
 }
 
 
-// Duplicates basecall outputs
-basecall_out_ch
-	.into { qc_basecall_in_ch; resquiggle_in_ch; nanopolish_in_ch; deepmod_in_ch }
-
-
 // Collect and output QC results for basecall, and report ONT coverage
 process QCExport {
 	tag "${params.dsname}"
 
-	publishDir "${params.outputDir}/${params.dsname}-basecallings",
+	publishDir "${params.outdir}/${params.dsname}-basecallings",
 		mode: "copy", enabled: params.outputQC, overwrite: true
 
 	input:
-	path qc_basecall_list 		from 	qc_basecall_in_ch.collect()
-	each path(reference_genome) from 	reference_genome_ch9
+	path qc_basecall_list
+	each reference_genome
 
 	output:
-	path "${params.dsname}_basecall_report.html" into qc_out_ch
-	path "${params.dsname}_QCReport" into qc_report_out_ch
+	path "${params.dsname}_basecall_report.html",	emit: qc_html
+	path "${params.dsname}_QCReport",				emit: qc_report
 
 	"""
 	## Combine all sequencing summary files
@@ -445,14 +506,14 @@ process Resquiggle {
 	tag "${basecallIndir.baseName}"
 
 	input:
-	path 	basecallIndir 			from resquiggle_in_ch
-	each 	path(reference_genome) 	from reference_genome_ch3
+	path 	basecallIndir
+	each 	path(reference_genome)
 
 	output:
-	path "${basecallIndir.baseName}.resquiggle" into resquiggle_out_ch
+	path "${basecallIndir.baseName}.resquiggle", 	emit: resquiggle
 
 	when:
-	params.runMethcall && params.runResquiggle && !params.filterGPUTaskRuns
+	params.runMethcall && (params.runDeepSignal || params.runTombo)
 
 	"""
 	### copy basecall workspace files, due to tombo resquiggle modify base folder
@@ -472,11 +533,11 @@ process Resquiggle {
 	### ref: https://github.com/bioinfomaticsCSU/deepsignal#quick-start
 	gunzip ${basecallIndir.baseName}.resquiggle/batch_basecall_combine_fq_*.fq.gz
 	tombo preprocess annotate_raw_with_fastqs\
-	 	--fast5-basedir ${basecallIndir.baseName}.resquiggle/workspace\
-	 	--fastq-filenames ${basecallIndir.baseName}.resquiggle/batch_basecall_combine_fq_*.fq\
-	 	--basecall-group ${params.BasecallGroupName}\
-	 	--basecall-subgroup ${params.BasecallSubGroupName}\
-	 	--overwrite --processes \$(( numProcessor * ${params.mediumProcTimes} ))  &>> Resquiggle.run.log
+		--fast5-basedir ${basecallIndir.baseName}.resquiggle/workspace\
+		--fastq-filenames ${basecallIndir.baseName}.resquiggle/batch_basecall_combine_fq_*.fq\
+		--basecall-group ${params.BasecallGroupName}\
+		--basecall-subgroup ${params.BasecallSubGroupName}\
+		--overwrite --processes \$(( numProcessor * ${params.mediumProcTimes} ))  &>> Resquiggle.run.log
 	echo "### tombo preprocess DONE"
 
 	### Need to check Tombo resquiggle bugs, lots of users report long runtime and hang at nearly completion for large data
@@ -499,27 +560,23 @@ process Resquiggle {
 }
 
 
-// duplicate resquiggle results for DeepSignal and Tombo
-resquiggle_out_ch.into { deepsignal_in_ch; tombo_in_ch }
-
-
 // Nanopolish runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Nanopolish {
 	tag "${basecallDir.baseName}"
 
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/nanopolish",
+	publishDir "${params.outdir}/${params.dsname}_raw_outputs/nanopolish",
 		mode: "copy",
 		enabled: params.outputIntermediate
 
 	input:
-	path basecallDir 			from nanopolish_in_ch
-	each path(reference_genome) from reference_genome_ch7
+	path basecallDir
+	each path(reference_genome)
 
 	output:
-	path "batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz" into nanopolish_out_ch
+	path "batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz", 	emit: nanopolish_out
 
 	when:
-	params.runMethcall && params.runNanopolish && !params.filterGPUTaskRuns
+	params.runMethcall && params.runNanopolish
 
 	"""
 	### Put all fq and bam files into working dir, DO NOT affect the basecall dir
@@ -558,21 +615,62 @@ process Nanopolish {
 }
 
 
+// Combine Nanopolish runs' all results together
+process NplshComb {
+	tag "${params.dsname}"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
+		mode: "copy",
+		pattern: "${params.dsname}.*.combine.*.gz",
+		enabled: params.outputRaw
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy",
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
+
+	input:
+	path x
+
+	output:
+	path "${params.dsname}.nanopolish.per_read.combine.tsv.gz",	emit: nanopolish_combine_out_ch
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify
+	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify
+
+	when:
+	x.size() >= 1 && params.runCombine
+
+	"""
+	> ${params.dsname}.nanopolish.per_read.combine.tsv.gz
+	cat ${x} > ${params.dsname}.nanopolish.per_read.combine.tsv.gz
+
+	## Unify format output
+	unify_format_for_calls.sh \
+		${params.dsname}  Nanopolish ${params.dsname}.nanopolish.per_read.combine.tsv.gz \
+		.  \$((numProcessor))  12  ${chrSet}
+
+	echo "### Nanopolish combine DONE"
+	"""
+}
+
+
 // Megalodon runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Megalodon {
 	tag "${fast5_dir.baseName}"
 
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/megalodon",
+	publishDir "${params.outdir}/${params.dsname}_raw_outputs/megalodon",
 		mode: "copy",
 		enabled: params.outputIntermediate
 
 	input:
-	path fast5_dir 					from untar_out_ch3
-	each path(reference_genome) 	from reference_genome_ch2
-	each path(megalodon_model_dir)	from megalodon_model_ch
+	path fast5_dir
+	each path(reference_genome)
+	each path(megalodon_model_dir)
 
 	output:
-	path "batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt.gz" into megalodon_out_ch
+	path "batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt.gz", emit: megalodon_out
 
 	when:
 	params.runMethcall && params.runMegalodon
@@ -650,24 +748,64 @@ process Megalodon {
 }
 
 
+// Combine Megalodon runs' all results together
+process MgldnComb {
+	tag "${params.dsname}"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
+		mode: "copy",
+		pattern: "${params.dsname}.*.combine.*.gz",
+		enabled: params.outputRaw
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy",
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
+
+	input:
+	path x
+
+	output:
+	path "${params.dsname}.megalodon.per_read.combine.bed.gz",	emit: megalodon_combine
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify
+	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify
+
+	when:
+	x.size() >= 1  && params.runCombine
+
+	"""
+	> ${params.dsname}.megalodon.per_read.combine.bed.gz
+	cat ${x} > ${params.dsname}.megalodon.per_read.combine.bed.gz
+
+	## Unify format output
+	unify_format_for_calls.sh \
+		${params.dsname}  Megalodon ${params.dsname}.megalodon.per_read.combine.bed.gz \
+		.  \$((numProcessor))  12  ${chrSet}
+
+	echo "### Megalodon combine DONE"
+	"""
+}
+
+
 // DeepSignal runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepSignal {
 	tag "${indir.baseName}"
 
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepsignal",
+	publishDir "${params.outdir}/${params.dsname}_raw_outputs/deepsignal",
 		mode: "copy",
 		enabled: params.outputIntermediate
 
 	input:
-	path indir 						from deepsignal_in_ch
-	// each path(deepsignal_model_tar) from Channel.fromPath(params.deepsignal_model_tar)
-	each path(reference_genome) 	from reference_genome_ch4
+	path indir
+	each path(reference_genome)
 
 	output:
-	path "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv.gz" into deepsignal_out_ch
+	path "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv.gz",	emit: deepsignal_out
 
 	when:
-	params.runMethcall && params.runDeepSignal && !params.filterGPUTaskRuns
+	params.runMethcall && params.runDeepSignal
 
 	"""
 	if ls /data/${params.DEEPSIGNAL_MODEL}* 1> /dev/null 2>&1; then
@@ -711,28 +849,68 @@ process DeepSignal {
 }
 
 
+// Combine DeepSignal runs' all results together
+process DpSigComb {
+	tag "${params.dsname}"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
+		mode: "copy",
+		pattern: "${params.dsname}.*.combine.*.gz",
+		enabled: params.outputRaw
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy",
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
+
+	input:
+	path x
+
+	output:
+	path "${params.dsname}.deepsignal.per_read.combine.tsv.gz",	emit: deepsignal_combine_out
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify
+	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify
+
+	when:
+	x.size() >= 1 && params.runCombine
+
+	"""
+	touch ${params.dsname}.deepsignal.per_read.combine.tsv.gz
+	cat ${x} > ${params.dsname}.deepsignal.per_read.combine.tsv.gz
+
+	## Unify format output
+	unify_format_for_calls.sh \
+		${params.dsname}  DeepSignal ${params.dsname}.deepsignal.per_read.combine.tsv.gz \
+		.  \$((numProcessor))  12  ${chrSet}
+	echo "### DeepSignal combine DONE"
+	"""
+}
+
+
 // methylation calling for Guppy
 process Guppy {
 	tag "${fast5_dir.baseName}"
 
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy",
+	publishDir "${params.outdir}/${params.dsname}_raw_outputs/guppy",
 		mode: "copy",
 		pattern: "outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz",
 		enabled: params.outputIntermediate
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy",
+	publishDir "${params.outdir}/${params.dsname}_raw_outputs/guppy",
 		mode: "copy",
 		pattern: "batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz",
 		enabled: params.outputIntermediate
 
 	input:
-	path fast5_dir 					from 	untar_out_ch2
-	each path(reference_genome) 	from 	reference_genome_ch1
-	each path("*") 					from 	ch_utils1
+	path fast5_dir
+	each path(reference_genome)
+	each path(utils)
 
 	output:
-	path "outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz" optional true into guppy_methcall_gz_out_ch
-	path "batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*" into guppy_methcall_out_ch
-	path "batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz" into guppy_gcf52ref_out_ch
+	path "outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz",	optional: true,	emit: guppy_fast5mod_bam_gz
+	path "batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*",	emit: guppy_fast5mod_bam
+	path "batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz",	emit: guppy_gcf52ref_tsv
 
 	when:
 	params.runMethcall && params.runGuppy
@@ -779,17 +957,17 @@ process Guppy {
 	touch batch_combine_fq.fq.gz
 
 	find "${fast5_dir.baseName}.methcalled/" "${fast5_dir.baseName}.methcalled/pass/"\
-	 	"${fast5_dir.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq.gz' -type f\
-	 	-print0 2>/dev/null | \
-	 	while read -d \$'\0' file ; do
-	 		cat \$file >> batch_combine_fq.fq.gz
-	 	done
+		"${fast5_dir.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq.gz' -type f\
+		-print0 2>/dev/null | \
+		while read -d \$'\0' file ; do
+			cat \$file >> batch_combine_fq.fq.gz
+		done
 
 	## Remove fastq.gz
 	find "${fast5_dir.baseName}.methcalled/"   "${fast5_dir.baseName}.methcalled/pass/"\
-	 	"${fast5_dir.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq.gz' \
-	 	-type f 2>/dev/null |\
-	 	parallel -j\$(( numProcessor )) 'rm -f {}'
+		"${fast5_dir.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq.gz' \
+		-type f 2>/dev/null |\
+		parallel -j\$(( numProcessor )) 'rm -f {}'
 
 	## gcf52ref ways
 	minimap2 -t \$(( numProcessor * ${params.mediumProcTimes} )) -a -x map-ont ${referenceGenome} \
@@ -851,23 +1029,137 @@ process Guppy {
 }
 
 
+// Combine Guppy runs' all results together
+process GuppyComb {
+	tag "${params.dsname}"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
+		mode: "copy", pattern: "${params.dsname}.guppy.*.combine.tsv.gz",
+		enabled: params.outputRaw
+
+	publishDir "${params.outdir}/${params.dsname}_raw_outputs/guppy",
+		mode: "copy", pattern: "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz",
+		enabled: params.outputIntermediate
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy",
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
+
+	input:
+	path x
+	path y
+	path reference_genome
+
+	output:
+	path "${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz", emit: guppy_fast5mod_combine_out
+	path "${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz", emit: guppy_gcf52ref_combine_out
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz", emit: read_unify
+	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz", emit: site_unify
+	path "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz", emit: guppy_combine_raw_out_ch,  optional: true
+
+	when:
+	x.size() >= 1 && params.runCombine
+
+	"""
+	## gcf52ref ways
+	cat batch_*.guppy.gcf52ref_per_read.tsv.gz > ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz
+	echo "### gcf52ref combine DONE"
+
+	## fast5mod ways combine
+	## find name like batch_*.guppy.fast5mod_guppy2sam.bam*
+	find . -maxdepth 1  -name 'batch_*.guppy.fast5mod_guppy2sam.bam' |
+		parallel -j\$(( numProcessor )) --xargs -v \
+		samtools merge -@\$(( numProcessor * ${params.mediumProcTimes} )) total.meth.bam {}
+
+	### sort is not needed due to merge the sorted bam, ref: http://www.htslib.org/doc/samtools-merge.html
+	### samtools sort -@ \$(( numProcessor * ${params.mediumProcTimes} )) total.meth.bam
+	samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} )) total.meth.bam
+	echo "Samtool merge and index for fast5mod DONE"
+
+	if [[ ${params.outputIntermediate} == true ]] ; then
+		tar -czf ${params.dsname}.guppy_fast5mod.combined.bam.tar.gz total.meth.bam*
+	fi
+
+	awk '/^>/' ${referenceGenome} | awk '{print \$1}' \
+		> rf_chr_all_list.txt
+	if [[ "${params.type}" == "human" ]] ; then
+		echo "### For human, extract chr1-22, X and Y"
+		> chr_all_list.txt
+		for i in {1..22} X Y
+		do
+			if cat rf_chr_all_list.txt | grep -w ">chr\${i}" -q ; then
+				echo chr\${i} >> chr_all_list.txt
+			fi
+		done
+		rm  -f rf_chr_all_list.txt
+		echo "### Chomosome list"
+		cat chr_all_list.txt
+
+		## Ref: https://github.com/nanoporetech/medaka/issues/177
+		parallel -j\$(( numProcessor * ${params.highProcTimes} )) -v \
+			"fast5mod call total.meth.bam ${referenceGenome} \
+				meth.chr_{}.tsv  --meth cpg --quiet --regions {} ; \
+				gzip -f meth.chr_{}.tsv" :::: chr_all_list.txt
+
+		touch ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
+		for i in {1..22} X Y
+		do
+			if [ -f "meth.chr_chr\$i.tsv.gz" ]; then
+				cat  meth.chr_chr\$i.tsv.gz >> \
+					${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
+			fi
+		done
+	elif [[ "${params.type}" == "ecoli" ]] ; then
+		echo "### For ecoli, chr=${chrSet}"
+		fast5mod call total.meth.bam ${referenceGenome} \
+			meth.chr_${chrSet}.tsv \
+			--meth cpg --quiet \
+			--regions ${chrSet}
+		gzip -f  meth.chr_${chrSet}.tsv && \
+			mv meth.chr_${chrSet}.tsv.gz ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
+	fi
+
+	## Unify format output for read level
+	unify_format_for_calls.sh \
+		${params.dsname}  Guppy.gcf52ref ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz \
+		.  \$((numProcessor))  1  ${chrSet}
+
+	## Unify format output for site level
+	unify_format_for_calls.sh \
+		${params.dsname}  Guppy ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz \
+		.  \$((numProcessor))  2  ${chrSet}
+
+	## Clean
+	if [[ ${params.cleanStep} == "true" ]]; then
+		rm -f meth.chr*.tsv.gz
+		rm -f total.meth.bam*
+	fi
+	echo "### Guppy combine DONE"
+	"""
+}
+
+
 // Tombo runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Tombo {
 	tag "${resquiggleDir.baseName}"
 
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/tombo",
+	publishDir "${params.outdir}/${params.dsname}_raw_outputs/tombo",
 		mode: "copy",
 		enabled: params.outputIntermediate
 
 	input:
-	each path(reference_genome) from reference_genome_ch5
-	path resquiggleDir	 		from tombo_in_ch
+	path resquiggleDir
+	each path(reference_genome)
+
 
 	output:
-	path "batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed.gz" into tombo_out_ch
+	path "batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed.gz",	emit: tombo_out
 
 	when:
-	params.runMethcall && params.runTombo && !params.filterGPUTaskRuns
+	params.runMethcall && params.runTombo
 
 	"""
 	## Check if there is a BrokenPipeError: [Errno 32] Broken pipe
@@ -933,24 +1225,64 @@ process Tombo {
 }
 
 
+// Combine Tombo runs' all results together
+process TomboComb {
+	tag "${params.dsname}"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
+		mode: "copy",
+		pattern: "${params.dsname}.*.combine.*.gz",
+		enabled: params.outputRaw
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy",
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
+
+	input:
+	path x
+
+	output:
+	path "${params.dsname}.tombo.per_read.combine.bed.gz",	emit: tombo_combine_out
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify
+	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify
+
+	when:
+	x.size() >= 1 && params.runCombine
+
+	"""
+	touch ${params.dsname}.tombo.per_read.combine.bed.gz
+	cat ${x} > ${params.dsname}.tombo.per_read.combine.bed.gz
+
+	## Unify format output
+	unify_format_for_calls.sh \
+		${params.dsname}  Tombo ${params.dsname}.tombo.per_read.combine.bed.gz \
+		.  \$((numProcessor))  12 ${chrSet}
+	echo "### Tombo combine DONE"
+	"""
+}
+
+
 // DeepMod runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process DeepMod {
 	tag "${basecallDir.baseName}"
 
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod",
+	publishDir "${params.outdir}/${params.dsname}_raw_outputs/deepmod",
 		mode: "copy", pattern: "batch_${basecallDir.baseName}_num.tar.gz",
 		enabled: params.outputIntermediate
 
 	input:
-	each path(reference_genome) from reference_genome_ch6
-	path basecallDir 			from deepmod_in_ch
+	path basecallDir
+	each path(reference_genome)
 
 	output:
-	path "mod_output/batch_${basecallDir.baseName}_num" into deepmod_out_ch
-	path "batch_${basecallDir.baseName}_num.tar.gz" optional true  into deepmod_gz_out_ch
+	path "mod_output/batch_${basecallDir.baseName}_num", emit: deepmod_out
+	path "batch_${basecallDir.baseName}_num.tar.gz", emit: deepmod_out_gz,	 optional: true
 
 	when:
-	params.runMethcall && params.runDeepMod && !params.filterGPUTaskRuns
+	params.runMethcall && params.runDeepMod
 
 	"""
 	## Activate nanome conda env if possible
@@ -970,7 +1302,7 @@ process DeepMod {
 		DeepModTrainModelDir="DeepMod-0.1.3/train_deepmod"
 	fi
 
-	if [[ "${params.dataType}" = "human" ]] ; then
+	if [[ "${params.type}" = "human" ]] ; then
 		mod_cluster=1 ## Human will use cluster model
 	else
 		mod_cluster=0 ## Not human will skip cluser model
@@ -1004,320 +1336,36 @@ process DeepMod {
 }
 
 
-// prepare combining results
-nanopolish_combine_in_ch = nanopolish_out_ch.toList()
-deepmod_combine_in_ch=deepmod_out_ch.toList()
-megalodon_combine_in_ch = megalodon_out_ch.toList()
-tombo_combine_in_ch = tombo_out_ch.toList()
-deepsignal_combine_in_ch = deepsignal_out_ch.toList()
-guppy_combine_in_ch = guppy_methcall_out_ch.collect()
-
-
-// Combine Nanopolish runs' all results together
-process NplshComb {
-	tag "${params.dsname}"
-
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
-		mode: "copy",
-		pattern: "${params.dsname}.*.combine.*.gz",
-		enabled: params.outputRaw
-
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings",
-		mode: "copy",
-		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
-
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings",
-		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
-
-	input:
-	path x 		from nanopolish_combine_in_ch
-
-	output:
-	path "${params.dsname}.nanopolish.per_read.combine.tsv.gz" into nanopolish_combine_out_ch
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz" into read_unify_nanopolish
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz" into site_unify_nanopolish
-
-	when:
-	x.size() >= 1 && params.runCombine
-
-	"""
-	> ${params.dsname}.nanopolish.per_read.combine.tsv.gz
-	cat ${x} > ${params.dsname}.nanopolish.per_read.combine.tsv.gz
-
-	## Unify format output
-	unify_format_for_calls.sh \
-		${params.dsname}  Nanopolish ${params.dsname}.nanopolish.per_read.combine.tsv.gz \
-		.  \$((numProcessor))  12  ${chrSet}
-
-	echo "### Nanopolish combine DONE"
-	"""
-}
-
-
-// Combine Megalodon runs' all results together
-process MgldnComb {
-	tag "${params.dsname}"
-
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
-		mode: "copy",
-		pattern: "${params.dsname}.*.combine.*.gz",
-		enabled: params.outputRaw
-
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings",
-		mode: "copy",
-		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
-
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings",
-		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
-
-	input:
-	path x from megalodon_combine_in_ch
-
-	output:
-	path "${params.dsname}.megalodon.per_read.combine.bed.gz" into megalodon_combine_out_ch
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz" into read_unify_megalodon
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz" into site_unify_megalodon
-
-	when:
-	x.size() >= 1  && params.runCombine
-
-	"""
-	> ${params.dsname}.megalodon.per_read.combine.bed.gz
-	cat ${x} > ${params.dsname}.megalodon.per_read.combine.bed.gz
-
-	## Unify format output
-	unify_format_for_calls.sh \
-		${params.dsname}  Megalodon ${params.dsname}.megalodon.per_read.combine.bed.gz \
-		.  \$((numProcessor))  12  ${chrSet}
-
-	echo "### Megalodon combine DONE"
-	"""
-}
-
-
-// Combine DeepSignal runs' all results together
-process DpSigComb {
-	tag "${params.dsname}"
-
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
-		mode: "copy",
-		pattern: "${params.dsname}.*.combine.*.gz",
-		enabled: params.outputRaw
-
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings",
-		mode: "copy",
-		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
-
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings",
-		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
-
-	input:
-	path x from deepsignal_combine_in_ch
-
-	output:
-	path "${params.dsname}.deepsignal.per_read.combine.tsv.gz" into deepsignal_combine_out_ch
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz" into read_unify_deepsignal
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz" into site_unify_deepsignal
-
-	when:
-	x.size() >= 1 && params.runCombine
-
-	"""
-	touch ${params.dsname}.deepsignal.per_read.combine.tsv.gz
-	cat ${x} > ${params.dsname}.deepsignal.per_read.combine.tsv.gz
-
-	## Unify format output
-	unify_format_for_calls.sh \
-		${params.dsname}  DeepSignal ${params.dsname}.deepsignal.per_read.combine.tsv.gz \
-		.  \$((numProcessor))  12  ${chrSet}
-	echo "### DeepSignal combine DONE"
-	"""
-}
-
-
-// Combine Guppy runs' all results together
-process GuppyComb {
-	tag "${params.dsname}"
-
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
-		mode: "copy", pattern: "${params.dsname}.guppy.*.combine.tsv.gz",
-		enabled: params.outputRaw
-
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/guppy",
-		mode: "copy", pattern: "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz",
-		enabled: params.outputIntermediate
-
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings",
-		mode: "copy",
-		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
-
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings",
-		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
-
-	input:
-	path x 					from guppy_combine_in_ch
-	path y 					from guppy_gcf52ref_out_ch.collect()
-	path reference_genome 	from reference_genome_ch8
-
-	output:
-	path "${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz" into guppy_fast5mod_combine_out_ch
-	path "${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz" into guppy_gcf52ref_combine_out_ch
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz" into read_unify_guppy
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz" into site_unify_guppy
-	path "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz" optional true into guppy_combine_raw_out_ch
-
-	when:
-	x.size() >= 1 && params.runCombine
-
-	"""
-	## gcf52ref ways
-	cat batch_*.guppy.gcf52ref_per_read.tsv.gz > ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz
-	echo "### gcf52ref combine DONE"
-
-	## fast5mod ways combine
-	## find name like batch_*.guppy.fast5mod_guppy2sam.bam*
-	find . -maxdepth 1  -name 'batch_*.guppy.fast5mod_guppy2sam.bam' |
-		parallel -j\$(( numProcessor )) --xargs -v \
-		samtools merge -@\$(( numProcessor * ${params.mediumProcTimes} )) total.meth.bam {}
-
-	### sort is not needed due to merge the sorted bam, ref: http://www.htslib.org/doc/samtools-merge.html
-	### samtools sort -@ \$(( numProcessor * ${params.mediumProcTimes} )) total.meth.bam
-	samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} )) total.meth.bam
-	echo "Samtool merge and index for fast5mod DONE"
-
-	if [[ ${params.outputIntermediate} == true ]] ; then
-		tar -czf ${params.dsname}.guppy_fast5mod.combined.bam.tar.gz total.meth.bam*
-	fi
-
-	awk '/^>/' ${referenceGenome} | awk '{print \$1}' \
-		> rf_chr_all_list.txt
-	if [[ "${params.dataType}" == "human" ]] ; then
-		echo "### For human, extract chr1-22, X and Y"
-		> chr_all_list.txt
-		for i in {1..22} X Y
-		do
-			if cat rf_chr_all_list.txt | grep -w ">chr\${i}" -q ; then
-				echo chr\${i} >> chr_all_list.txt
-			fi
-		done
-		rm  -f rf_chr_all_list.txt
-		echo "### Chomosome list"
-		cat chr_all_list.txt
-
-		## Ref: https://github.com/nanoporetech/medaka/issues/177
-		parallel -j\$(( numProcessor * ${params.highProcTimes} )) -v \
-			"fast5mod call total.meth.bam ${referenceGenome} \
-        		meth.chr_{}.tsv  --meth cpg --quiet --regions {} ; \
-        		gzip -f meth.chr_{}.tsv" :::: chr_all_list.txt
-
-		touch ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
-        for i in {1..22} X Y
-		do
-			if [ -f "meth.chr_chr\$i.tsv.gz" ]; then
-				cat  meth.chr_chr\$i.tsv.gz >> \
-					${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
-			fi
-		done
-	elif [[ "${params.dataType}" == "ecoli" ]] ; then
-		echo "### For ecoli, chr=${chrSet}"
-		fast5mod call total.meth.bam ${referenceGenome} \
-			meth.chr_${chrSet}.tsv \
-			--meth cpg --quiet \
-			--regions ${chrSet}
-		gzip -f  meth.chr_${chrSet}.tsv && \
-			mv meth.chr_${chrSet}.tsv.gz ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
-	fi
-
-	## Unify format output for read level
-	unify_format_for_calls.sh \
-		${params.dsname}  Guppy.gcf52ref ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz \
-		.  \$((numProcessor))  1  ${chrSet}
-
-	## Unify format output for site level
-	unify_format_for_calls.sh \
-		${params.dsname}  Guppy ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz \
-		.  \$((numProcessor))  2  ${chrSet}
-
-	## Clean
-	if [[ ${params.cleanStep} == "true" ]]; then
-		rm -f meth.chr*.tsv.gz
-		rm -f total.meth.bam*
-	fi
-	echo "### Guppy combine DONE"
-	"""
-}
-
-
-// Combine Tombo runs' all results together
-process TomboComb {
-	tag "${params.dsname}"
-
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
-		mode: "copy",
-		pattern: "${params.dsname}.*.combine.*.gz",
-		enabled: params.outputRaw
-
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings",
-		mode: "copy",
-		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
-
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings",
-		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
-
-	input:
-	path x from tombo_combine_in_ch // list of tombo bed files
-
-	output:
-	path "${params.dsname}.tombo.per_read.combine.bed.gz" into tombo_combine_out_ch
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz" into read_unify_tombo
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz" into site_unify_tombo
-
-	when:
-	x.size() >= 1 && params.runCombine
-
-	"""
-	touch ${params.dsname}.tombo.per_read.combine.bed.gz
-	cat ${x} > ${params.dsname}.tombo.per_read.combine.bed.gz
-
-	## Unify format output
-	unify_format_for_calls.sh \
-		${params.dsname}  Tombo ${params.dsname}.tombo.per_read.combine.bed.gz \
-		.  \$((numProcessor))  12 ${chrSet}
-	echo "### Tombo combine DONE"
-	"""
-}
-
-
 // Combine DeepMod runs' all results together
 process DpmodComb {
 	tag "${params.dsname}"
 
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy", pattern: "${params.dsname}.deepmod.*.combine.bed.gz",
 		enabled: params.outputRaw
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod",
+	publishDir "${params.outdir}/${params.dsname}_raw_outputs/deepmod",
 		mode: "copy", pattern: "${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz",
 		enabled: params.outputIntermediate
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod",
+	publishDir "${params.outdir}/${params.dsname}_raw_outputs/deepmod",
 		mode: "copy", pattern: "${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz",
 		enabled: params.outputIntermediate
-	publishDir "${params.outputDir}/${params.dsname}_raw_outputs/deepmod",
+	publishDir "${params.outdir}/${params.dsname}_raw_outputs/deepmod",
 		mode: "copy", pattern: "${params.dsname}.deepmod.all_batch.C.bed.tar.gz",
 		enabled: params.outputIntermediate
 
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings",
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
 		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
 
 	input:
-	path x 					from deepmod_combine_in_ch
-	path deepmod_c_tar_file from deepmod_c_tar_ch
+	path x
+	path deepmod_c_tar_file
 
 	output:
-	path "${params.dsname}.deepmod.*.combine.bed.gz" into deepmod_combine_out_ch
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz" into site_unify_deepmod
-	path "${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz" optional true into deepmod_combine_sum_chrs_mod_ch
-	path "${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz" optional true into deepmod_combine_c_cluster_all_chrs_ch
-	path "${params.dsname}.deepmod.all_batch.C.bed.tar.gz" optional true  into deepmod_combine_all_batch_c_ch
+	path "${params.dsname}.deepmod.*.combine.bed.gz",	emit: deepmod_combine_out
+	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify
+	path "${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz",	emit: deepmod_combine_sum_chrs_mod_ch,	optional: true
+	path "${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz",	emit: deepmod_combine_c_cluster_all_chrs_ch,	optional: true
+	path "${params.dsname}.deepmod.all_batch.C.bed.tar.gz",	emit: deepmod_combine_all_batch_c_ch,	optional: true
 
 	when:
 	x.size() >= 1 && params.runCombine
@@ -1362,7 +1410,7 @@ process DpmodComb {
 	done
 	gzip -f ${params.dsname}.deepmod.C_per_site.combine.bed
 
-	if [[ "${params.dataType}" == "human" && "${isDeepModCluster}" == "true" ]] ; then
+	if [[ "${params.type}" == "human" && "${isDeepModCluster}" == "true" ]] ; then
 		## Only apply to human genome
 		echo "### For human, apply cluster model of DeepMod"
 
@@ -1424,43 +1472,34 @@ process DpmodComb {
 }
 
 
-deepsignal_combine_out_ch
-	.concat(tombo_combine_out_ch,
-			megalodon_combine_out_ch,
-			nanopolish_combine_out_ch,
-			guppy_gcf52ref_combine_out_ch)
-	.toSortedList()
-	.into { raw_results_five_tools1; raw_results_five_tools2 }
-
-
 // Read level unified output, and get METEORE output
 process METEORE {
 	tag "${params.dsname}"
 
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy",
 		pattern: "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz",
 		enabled: params.outputRaw
 
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings",
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
 		mode: "copy",
 		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
 
-	publishDir "${params.outputDir}/${params.dsname}-methylation-callings",
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
 		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
 
 	input:
-	path naonopolish	from 	read_unify_nanopolish
-	path megalodon 		from 	read_unify_megalodon
-	path deepsignal 	from 	read_unify_deepsignal
+	path naonopolish
+	path megalodon
+	path deepsignal
 
 	output:
-	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz" optional true into meteore_combine_out_ch
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz" optional true into read_unify_meteore
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz" optional true into site_unify_meteore
+	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz",	emit: meteore_combine_out, optional: true
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify, 	optional: true
+	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify,	optional: true
 
 	when:
-	params.runMETEORE && ! params.filterGPUTaskRuns
+	params.runMethcall && params.runMETEORE
 
 	"""
 	## METEORE outputs by combining other tools
@@ -1469,7 +1508,7 @@ process METEORE {
 	printf '%s\t%s\n' deepsignal ${deepsignal} >> \$outFileName
 	printf '%s\t%s\n' megalodon ${megalodon} >> \$outFileName
 
- 	if [ -d /data ]; then
+	if [ -d /data ]; then
 		METEOREDIR=\$(find /data -maxdepth 1 -name "${params.METEORE_Dir}" -type d)
 	else
 		METEOREDIR=""
@@ -1520,42 +1559,61 @@ process METEORE {
 }
 
 
-meteore_combine_out_ch
-	.concat(raw_results_five_tools2.flatten(),
-			deepmod_combine_out_ch.flatten(),
-			guppy_fast5mod_combine_out_ch)
-	.toList()
-	.into { all_raw_results1; all_raw_results2; all_raw_results3; all_raw_results4}
-
-
-qc_report_out_ch
-	.concat(
-		site_unify_nanopolish, site_unify_megalodon, site_unify_deepsignal,
-		site_unify_guppy, site_unify_tombo, site_unify_deepmod, site_unify_meteore
-	)
-	.toList()
-	.set {report_in_ch}
-
-
 // Not cache due to the script contains run information, each time of resume run will need updated
 process Report {
 	tag "${params.dsname}"
 
-	publishDir "${params.outputDir}", mode: "copy"
+	publishDir "${params.outdir}",
+		mode: "copy", pattern: "README_${params.dsname}.txt"
+
+	publishDir "${params.outdir}",
+		mode: "copy", pattern: "${params.dsname}_nanome_report.html"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Site_Level-${params.dsname}",
+		mode: "copy", pattern: "${params.dsname}_NANOME-*.sort.bed.gz"
+
+	publishDir "${params.outdir}/MultiQC",
+		mode: "copy", pattern: "multiqc_report.html"
 
 	input:
-	path fileList 	from 	report_in_ch
-	path("*")		from 	ch_src
-	path("*")		from 	ch_utils2
+	path fileList
+	path qc_report
+	path src
+	path utils
 
 	output:
-	path "${params.dsname}_nanome_report.html" 	into	report_out_ch
-	path "README_${params.dsname}.txt" 			into 	readme_out_ch
+	path "${params.dsname}_nanome_report.html",	emit:	report_out_ch
+	path "README_${params.dsname}.txt",	emit: 	readme_out_ch
+	path "${params.dsname}_NANOME-*.sort.bed.gz",	emit: 	nanome_consensus_ch, optional: true
+	path "multiqc_report.html",	emit: 	lbt_report_ch
 
 	when:
 	fileList.size() >= 1
 
 	"""
+	## NANOME consensus method
+	if [[ ${params.nanomeNanopolish} == true ]]; then
+		NanopolishSiteReport=\$(find . -maxdepth 1 -name '*Nanopolish-perSite-*.sort.bed.gz')
+	fi
+	if [[ ${params.nanomeMegalodon} == true ]]; then
+		MegalodonSiteReport=\$(find . -maxdepth 1 -name '*Megalodon-perSite-*.sort.bed.gz')
+	fi
+	if [[ ${params.nanomeDeepSignal} == true ]]; then
+		DeepSignalSiteReport=\$(find . -maxdepth 1 -name '*DeepSignal-perSite-*.sort.bed.gz')
+	fi
+	if [[ ${params.nanomeGuppy} == true ]]; then
+		GuppySiteReport=\$(find . -maxdepth 1 -name '*Guppy-perSite-*.sort.bed.gz')
+	fi
+	nanome_consensus.py\
+	 	--site-reports   \${NanopolishSiteReport:-} \${MegalodonSiteReport:-}\
+	 		\${DeepSignalSiteReport:-} \${GuppySiteReport:-}\
+	 	--union -o ${params.dsname}_NANOME-perSite-cov1.sort.bed.gz &>> Report.run.log  || true
+
+	nanome_consensus.py\
+	 	--site-reports   \${NanopolishSiteReport:-} \${MegalodonSiteReport:-}\
+	 		\${DeepSignalSiteReport:-} \${GuppySiteReport:-}\
+	 	--join -o ${params.dsname}_NANOMEJoin-perSite-cov1.sort.bed.gz  &>> Report.run.log  || true
+
 	## Generate running information tsv
 	> running_information.tsv
 	printf '%s\t%s\n' Title Information >> running_information.tsv
@@ -1566,7 +1624,7 @@ process Report {
 	printf '%s\t%s\n' runName ${workflow.runName} >> running_information.tsv
 	printf '%s\t%s\n' start ${workflow.start} >> running_information.tsv
 	printf '%s\t%s\n' input "${params.input}" >> running_information.tsv
-	printf '%s\t%s\n' outputDir ${params.outputDir} >> running_information.tsv
+	printf '%s\t%s\n' outputs ${params.outdir} >> running_information.tsv
 
 	## Note that the reason of report process can not be cached, is due to
 	## Above script codes will be changed each time, so report can not apply old cached script
@@ -1585,23 +1643,120 @@ process Report {
 	cp -rf \${nanome_dir}/src/nanocompare/report/icons ${params.dsname}_NANOME_report/
 	cp -rf \${nanome_dir}/src/nanocompare/report/js ${params.dsname}_NANOME_report/
 
+	## Generate html report
 	gen_html_report.py \
 		${params.dsname} \
 		running_information.tsv \
 		\${basecallOutputFile} \
 		. \
 		${params.dsname}_NANOME_report \
-		\${nanome_dir}/src/nanocompare/report
+		./src/nanocompare/report  &>> Report.run.log
 
+	## Combine a single html report
 	## No tty usage, ref: https://github.com/remy/inliner/issues/151
 	script -qec "inliner ${params.dsname}_NANOME_report/nanome_report.html" /dev/null  > ${params.dsname}_nanome_report.html
 
+	## Test on lifebit only
+	cp ${params.dsname}_nanome_report.html   multiqc_report.html
+
 	PYTHONIOENCODING=UTF-8 gen_readme.py\
-		utils/readme.txt.template ${params.dsname} ${params.outputDir}\
+		utils/readme.txt.template ${params.dsname} ${params.outdir}\
 		${workflow.projectDir} ${workflow.workDir} "${workflow.commandLine}"\
 		${workflow.runName} "${workflow.start}"\
-		> README_${params.dsname}.txt
+		> README_${params.dsname}.txt   2>> Report.run.log
 
 	echo "### report html DONE"
 	"""
+}
+
+
+workflow {
+	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: false)
+	megalodon_model_ch = Channel.fromPath(megalodon_model_tar, type: 'any', checkIfExists: false)
+
+	EnvCheck(genome_ch, megalodon_model_ch)
+	Untar(fast5_tar_ch)
+	if (params.runBasecall) {
+		Basecall(Untar.out.untar)
+		QCExport(Basecall.out.basecall.collect(), EnvCheck.out.reference_genome)
+	}
+
+	// Resquiggle running if use Tombo or DeepSignal
+	if ((params.runDeepSignal || params.runTombo) && params.runMethcall) {
+		Resquiggle(Basecall.out.basecall, EnvCheck.out.reference_genome)
+	}
+
+	if (params.runNanopolish && params.runMethcall) {
+		Nanopolish(Basecall.out.basecall, EnvCheck.out.reference_genome)
+		comb_nanopolish = NplshComb(Nanopolish.out.nanopolish_out.collect())
+		s1 = comb_nanopolish.site_unify
+		r1 = comb_nanopolish.read_unify
+	} else {
+		s1 = Channel.empty()
+		r1 = Channel.empty()
+	}
+
+	if (params.runMegalodon && params.runMethcall) {
+		Megalodon(Untar.out.untar, EnvCheck.out.reference_genome, EnvCheck.out.megalodon_model)
+		comb_megalodon = MgldnComb(Megalodon.out.megalodon_out.collect())
+		s2 = comb_megalodon.site_unify
+		r2 = comb_megalodon.read_unify
+	} else {
+		s2 = Channel.empty()
+		r2 = Channel.empty()
+	}
+
+	if (params.runDeepSignal && params.runMethcall) {
+		DeepSignal(Resquiggle.out.resquiggle, EnvCheck.out.reference_genome)
+		comb_deepsignal = DpSigComb(DeepSignal.out.deepsignal_out.collect())
+		s3 = comb_deepsignal.site_unify
+		r3 = comb_deepsignal.read_unify
+	} else {
+		s3 = Channel.empty()
+		r3 = Channel.empty()
+	}
+
+	if (params.runGuppy && params.runMethcall) {
+		Guppy(Untar.out.untar, EnvCheck.out.reference_genome, ch_utils)
+		comb_guppy = GuppyComb(Guppy.out.guppy_fast5mod_bam.collect(), Guppy.out.guppy_gcf52ref_tsv.collect(), EnvCheck.out.reference_genome)
+		s4 = comb_guppy.site_unify
+		r4 = comb_guppy.read_unify
+	} else {
+		s4 = Channel.empty()
+		r4 = Channel.empty()
+	}
+
+	if (params.runTombo && params.runMethcall) {
+		Tombo(Resquiggle.out.resquiggle, EnvCheck.out.reference_genome)
+		comb_tombo = TomboComb(Tombo.out.tombo_out.collect())
+		s5 = comb_tombo.site_unify
+		r5 = comb_tombo.read_unify
+	} else {
+		s5 = Channel.empty()
+		r5 = Channel.empty()
+	}
+
+	if (params.runDeepMod && params.runMethcall) {
+		DeepMod(Basecall.out.basecall, EnvCheck.out.reference_genome)
+		comb_deepmod = DpmodComb(DeepMod.out.deepmod_out.collect(), Channel.fromPath(deepmod_tar_file))
+		s6 = comb_deepmod.site_unify
+	} else {
+		s6 = Channel.empty()
+	}
+
+	if (params.runMETEORE && params.runMethcall) {
+		// Read level combine a list for top3 used by METEORE
+		METEORE(r1, r2, r3)
+		s7 = METEORE.out.site_unify
+		r7 = METEORE.out.read_unify
+	} else {
+		s7 = Channel.empty()
+		r7 = Channel.empty()
+	}
+
+	// Site level combine a list
+	Channel.fromPath("${projectDir}/README.md").concat(
+		s1, s2, s3, s4, s5, s6, s7
+		).toList().set { tools_site_unify }
+	Report(tools_site_unify, QCExport.out.qc_report, ch_src, ch_utils)
 }

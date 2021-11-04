@@ -1621,7 +1621,7 @@ def calldict2txt(inputDict):
 
 def bedtxt2dict(pybed, strand_col=5):
     """
-    convert bed txt to a dict with keys in bed file
+    convert bed object to a dict with keys in bed file
 
     From
     chr123  123  123 +
@@ -2282,6 +2282,7 @@ def get_ref_fasta(ref_fn=referenceGenomeFile):
     logger.debug(f'load ref file from {ref_fn}')
     return ref_fasta
 
+refGenome=None
 
 def sanity_check_dna_sequence(chr='chr10', start_base0=10493):
     """
@@ -2383,6 +2384,25 @@ def filter_cpg_dict(cpgDict, filterDict, toolname="Tool"):
     joinedKeys = set(filterDict.keys()).intersection(set(cpgDict.keys()))
     for k in tqdm(joinedKeys, desc=f"FilterCPG-{toolname}"):
         retDict[k] = cpgDict[k]
+    return retDict
+
+
+def filter_cpg_dict_by_cov(cpgDict, coverage=1):
+    """
+    Filter cpg with coverage
+    Args:
+        cpgDict:
+        coverage:
+
+    Returns:
+
+    """
+    if coverage <=1:
+        return cpgDict
+    retDict = {}
+    for key in cpgDict:
+        if len(cpgDict[key]) >= coverage:
+            retDict[key] = cpgDict[key]
     return retDict
 
 

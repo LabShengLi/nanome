@@ -14,6 +14,7 @@ import gzip
 import os.path
 import pickle
 import re
+import sys
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
@@ -451,6 +452,7 @@ def parse_arguments():
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
     parser.add_argument("cmd", help="name of command, fig5a, export-data, etc.")
     parser.add_argument('-i', nargs='+', help='list of input files', default=[])
+    parser.add_argument('--dsname', type=str, help="dataset name", default=None)
     parser.add_argument('-o', type=str, help="output dir",
                         default=None)  # TODO: check all correct when change this to None
     parser.add_argument('--tagname', type=str, help="tagname of files", default=None)
@@ -707,6 +709,56 @@ if __name__ == '__main__':
         logger.info(f'save to {outfn}')
 
         pass
+    elif args.cmd == 'cov-accuracy':
+        ## Evaluate the coverage vs. accuracy
+
+        ## Step 1: get all PCC results
+        site_report_list = []
+        for basedir in args.i:
+            site_report_list += glob.glob(os.path.join(basedir, '**', f'*-{args.dsname}_*_cov*_{args.dsname}.corrdata.coe.pvalue.each.regions.xlsx'), recursive=True)
+
+        df_list = []
+        for site_fn in site_report_list:
+            basefn = os.path.basename(site_fn)
+            ## Extract cov number from 'MethCorr-NA12878_WGBS_2Reps_cov30_NA12878.corrdata.coe.pvalue.each.regions'
+            cov_search = re.search(f'cov(\d+)_{args.dsname}', basefn, re.IGNORECASE)
+            cov = int(cov_search.group(1))
+            logger.debug(f"cov={cov}, basefn={basefn}")
+            df = pd.read_excel(site_fn, engine='openpyxl')
+            df['cov-cutoff'] = cov
+            df_list.append(df)
+        site_df = pd.concat(df_list)
+        logger.debug(site_df)
+        logger.debug(site_df.columns)
+
+        ## Step 2: get all tools' coverage results
+        cov_report_list = []
+        for basedir in args.i:
+            cov_report_list += glob.glob(os.path.join(basedir, '**',
+                                                       f'*{args.dsname}_*_cov*-summary-bgtruth-tools-bsCov5-minCov*.table.s10.xlsx'),
+                                          recursive=True)
+        logger.debug(cov_report_list)
+
+        for fn in cov_report_list:
+            basefn = os.path.basename(fn)
+            ## Extract cov number from 'MethCorr-NA12878_WGBS_2Reps_cov30_NA12878.corrdata.coe.pvalue.each.regions'
+            cov_search = re.search(f'minCov(\d+)\\.table.s10', basefn, re.IGNORECASE)
+            cov = int(cov_search.group(1))
+            logger.debug(f"cov={cov}, basefn={basefn}")
+            df = pd.read_excel(fn, engine='openpyxl')
+
+
+            # Index(['Unnamed: 0', 'CpG sites in BG-Truth cov>=5',
+            #        'Total CpG sites by Nanopore tool', 'Total CpG sites by tool cov>=15',
+            #        'Joined CpG sites with BG-Truth', 'Total calls by Nanopore reads',
+            #        'Promoters'],
+            #       dtype='object')
+
+            df = df.iloc[[0,1,2,3], [0, 3, 6]]
+            df.columns = ['Tool', genome_wide_tagname, 'Promoters']
+            df['cov-cutoff'] = cov
+            logger.debug(df)
+            logger.debug(df.columns)
     else:
         raise Exception(f'Command={args.cmd} is not support')
 
