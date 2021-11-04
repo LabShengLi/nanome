@@ -29,7 +29,7 @@ gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} >/dev/null 2>&1 || tru
 ### Run pipeline on google for NA12878
 echo "### nanome pipeline for NA12878 some chr and part file on google START"
 nextflow run main.nf\
-    -profile docker,google -resume\
+    -profile docker,google -resume -with-report -with-timeline -with-trace -with-dag\
     -config conf/executors/gcp_input.config\
 	-w ${WORK_DIR_BUCKET} \
 	--outdir ${OUTPUT_DIR_BUCKET} \
@@ -37,6 +37,7 @@ nextflow run main.nf\
 	--input 'gs://jax-nanopore-01-project-data/na12878/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr22.part03.tar'\
 	--cleanAnalyses true\
 	--tomboResquiggleOptions '--signal-length-range 0 500000  --sequence-length-range 0 50000'\
-	--reduceProcTimes  0.5
+	--reduceProcTimes  0.5\
+	--midDiskSize "350 GB" --highDiskSize "880 GB"
 
 echo "### nanome pipeline for NA12878 some chr and part file on google DONE"
