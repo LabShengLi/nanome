@@ -1,2 +1,1 @@
 https://github.com/TheJacksonLaboratory/nanome/raw/master/test_data/demo1.fast5.reads.tar.gz
-test_data/human_ci_test_fast5.tar.gz
