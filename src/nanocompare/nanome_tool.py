@@ -29,6 +29,8 @@ def parse_arguments():
     parser.add_argument('--scale', type=float, help="track name in BED file",
                         default=100)
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
+    parser.add_argument('--score-type', type=str, help="track name in BED file",
+                        default='int')
     args = parser.parse_args()
     return args
 
@@ -48,7 +50,16 @@ if __name__ == '__main__':
         infile, nlines = open_file_gz_or_txt(args.i)
         for row in tqdm(infile, total=nlines, desc=f"{args.cmd}"):
             tmp = row.strip().split('\t')
-            outfile.write(f"{tmp[0]}\t{tmp[1]}\t{tmp[2]}\t{args.track_name}\t{int(float(tmp[6]) * args.scale)}\t{tmp[5]}\n")
+            if args.score_type == 'int':
+                score = int(float(tmp[6]) * args.scale)
+                outfile.write(
+                    f"{tmp[0]}\t{tmp[1]}\t{tmp[2]}\t{args.track_name}\t{score}\t{tmp[5]}\n")
+            else:
+                # float results
+                score = float(float(tmp[6]) * args.scale)
+                outfile.write(
+                    f"{tmp[0]}\t{tmp[1]}\t{tmp[2]}\t{args.track_name}\t{score:.3f}\t{tmp[5]}\n")
+
         infile.close()
         outfile.close()
     else:
