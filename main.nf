@@ -1597,7 +1597,7 @@ process Report {
 	path "README_${params.dsname}.txt",	emit: 	readme_out_ch
 	path "${params.dsname}_NANOME-*.sort.bed.gz",	emit: 	nanome_consensus_ch, optional: true
 	path "multiqc_report.html",	emit: 	lbt_report_ch
-	path "GenomeBrowser-${params.dsname}", emit:  genome_browser_ch
+	path "GenomeBrowser-${params.dsname}", emit:  genome_browser_ch, optional: true
 
 	when:
 	fileList.size() >= 1
@@ -1677,20 +1677,21 @@ process Report {
 		${workflow.runName} "${workflow.start}"\
 		> README_${params.dsname}.txt   2>> Report.run.log
 
-	mkdir -p GenomeBrowser-${params.dsname}
-	find . -name '*-perSite-cov1.sort.bed.gz' | \
-		parallel -j\$((numProcessor)) -v \
-			"basefn={/}  && \
-				zcat {} | \
-				awk '{printf \\"%s\\t%d\\t%d\\t%2.3f\\n\\" , \\\$1,\\\$2,\\\$3,\\\$7}' > \
-				GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bedgraph} && \
-				LC_COLLATE=C sort -u -k1,1 -k2,2n \
-					GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bedgraph} > \
-						GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.sorted.bedgraph} && \
-				bedGraphToBigWig GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.sorted.bedgraph} \
-					reference_genome/chrom.sizes   GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bw} && \
-					rm -f GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bedgraph}"
-
+	if [[ ${params.outputGenomeBrowser} == true ]]; then
+		mkdir -p GenomeBrowser-${params.dsname}
+		find . -name '*-perSite-cov1.sort.bed.gz' | \
+			parallel -j\$((numProcessor)) -v \
+				"basefn={/}  && \
+					zcat {} | \
+					awk '{printf \\"%s\\t%d\\t%d\\t%2.3f\\n\\" , \\\$1,\\\$2,\\\$3,\\\$7}' > \
+					GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bedgraph} && \
+					LC_COLLATE=C sort -u -k1,1 -k2,2n \
+						GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bedgraph} > \
+							GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.sorted.bedgraph} && \
+					bedGraphToBigWig GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.sorted.bedgraph} \
+						reference_genome/chrom.sizes   GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bw} && \
+						rm -f GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bedgraph}"
+	fi
 	echo "### report html DONE"
 	"""
 }
