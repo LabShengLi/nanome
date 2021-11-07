@@ -70,7 +70,10 @@ RUN cd /data && wget -q ${METEORE_GITHUB} &&\
     wget -q ${DEEPSIGNAL_MODEL} &&\
     tar -xzf model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz &&\
     rm -f model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz &&\
-    wget -q ${ECOLI_GENOME} && wget -q ${HG38_CHR22_GENOME} && wget -q ${MEGALODON_MODEL}
+    wget -q ${ECOLI_GENOME} && wget -q ${HG38_CHR22_GENOME} && wget -q ${MEGALODON_MODEL} &&\
+    wget -q http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bedGraphToBigWig &&\
+    chmod +x bedGraphToBigWig &&\
+    mv bedGraphToBigWig  /usr/local/bin/
 
 # Create nanome project dir
 RUN mkdir -p ${NANOME_DIR}
