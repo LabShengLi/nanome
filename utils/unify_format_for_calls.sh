@@ -49,7 +49,7 @@ if [[ "$step" == *"2"* ]]; then
     fnlist=$(find Site_Level-${dsname} -name '*-perSite-cov1.bed.gz')
     for fn in $fnlist ; do
         outfn=${fn/cov1.bed.gz/cov1.sort.bed.gz}
-        bedtools sort -i ${fn} | gzip -f > ${outfn}
+        zcat ${fn} | sort -u -k1,1 -k2,2n | gzip -f > ${outfn}
         rm ${fn}
     done
 fi
