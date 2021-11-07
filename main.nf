@@ -12,7 +12,14 @@
  @Organization : JAX Li Lab
 ----------------------------------------------------------------------------------------
 */
-nextflow.enable.dsl=2
+// We now support both latest and lower versions, due to Lifebit CloudOS is only support 21.04
+// Note: NXF_VER=20.04.1 nextflow run main.nf -profile test,singularity
+if( ! nextflow.version.matches(">= 20.07.1") ){
+	nextflow.preview.dsl=2
+} else {
+	// Support lower version of nextflow
+	nextflow.enable.dsl=2
+}
 
 def helpMessage() {
 	log.info"""
@@ -23,8 +30,8 @@ def helpMessage() {
 	Usage:
 	The typical command for running the pipeline is as follows:
 
-	nextflow run TheJacksonLaboratory/nanome -profile ci,docker
-	nextflow run TheJacksonLaboratory/nanome -profile ci,singularity
+	nextflow run TheJacksonLaboratory/nanome -profile test,docker
+	nextflow run TheJacksonLaboratory/nanome -profile test,singularity
 
 	Mandatory arguments:
 	  --dsname		Dataset name

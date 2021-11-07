@@ -33,7 +33,8 @@ nextflow run main.nf\
     -config conf/executors/jaxhpc_input.config,conf/examples/ecoli_demo.config\
     -work-dir ${workDir}\
     --outdir ${outputsDir}\
-    --cleanCache false
+    --cleanCache false \
+    --runDeepMod --runTombo --runMETEORE
 
 # Report
 tree ${workDir} > ${baseDir}/work_ecoli_filetree.txt
