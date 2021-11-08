@@ -1582,17 +1582,22 @@ process Report {
 	publishDir "${params.outdir}/MultiQC",
 		mode: "copy", pattern: "multiqc_report.html"
 
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy", pattern: "GenomeBrowser-${params.dsname}"
+
 	input:
 	path fileList
 	path qc_report
 	path src
 	path utils
+	path reference_genome
 
 	output:
 	path "${params.dsname}_nanome_report.html",	emit:	report_out_ch
 	path "README_${params.dsname}.txt",	emit: 	readme_out_ch
 	path "${params.dsname}_NANOME-*.sort.bed.gz",	emit: 	nanome_consensus_ch, optional: true
 	path "multiqc_report.html",	emit: 	lbt_report_ch
+	path "GenomeBrowser-${params.dsname}", emit:  genome_browser_ch, optional: true
 
 	when:
 	fileList.size() >= 1
@@ -1616,10 +1621,10 @@ process Report {
 	 		\${DeepSignalSiteReport:-} \${GuppySiteReport:-}\
 	 	--union -o ${params.dsname}_NANOME-perSite-cov1.sort.bed.gz &>> Report.run.log  || true
 
-	nanome_consensus.py\
-	 	--site-reports   \${NanopolishSiteReport:-} \${MegalodonSiteReport:-}\
-	 		\${DeepSignalSiteReport:-} \${GuppySiteReport:-}\
-	 	--join -o ${params.dsname}_NANOMEJoin-perSite-cov1.sort.bed.gz  &>> Report.run.log  || true
+	##nanome_consensus.py\
+	## 	--site-reports   \${NanopolishSiteReport:-} \${MegalodonSiteReport:-}\
+	## 		\${DeepSignalSiteReport:-} \${GuppySiteReport:-}\
+	## 	--join -o ${params.dsname}_NANOMEJoin-perSite-cov1.sort.bed.gz  &>> Report.run.log  || true
 
 	## Generate running information tsv
 	> running_information.tsv
@@ -1672,6 +1677,21 @@ process Report {
 		${workflow.runName} "${workflow.start}"\
 		> README_${params.dsname}.txt   2>> Report.run.log
 
+	if [[ ${params.outputGenomeBrowser} == true ]]; then
+		mkdir -p GenomeBrowser-${params.dsname}
+		find . -name '*-perSite-cov1.sort.bed.gz' | \
+			parallel -j\$((numProcessor)) -v \
+				"basefn={/}  && \
+					zcat {} | \
+					awk '{printf \\"%s\\t%d\\t%d\\t%2.3f\\n\\" , \\\$1,\\\$2,\\\$3,\\\$7}' > \
+					GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bedgraph} && \
+					LC_COLLATE=C sort -u -k1,1 -k2,2n \
+						GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bedgraph} > \
+							GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.sorted.bedgraph} && \
+					bedGraphToBigWig GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.sorted.bedgraph} \
+						reference_genome/chrom.sizes   GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bw} && \
+						rm -f GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bedgraph}"
+	fi
 	echo "### report html DONE"
 	"""
 }
@@ -1765,5 +1785,5 @@ workflow {
 	Channel.fromPath("${projectDir}/README.md").concat(
 		s1, s2, s3, s4, s5, s6, s7
 		).toList().set { tools_site_unify }
-	Report(tools_site_unify, QCExport.out.qc_report, ch_src, ch_utils)
+	Report(tools_site_unify, QCExport.out.qc_report, ch_src, ch_utils, EnvCheck.out.reference_genome)
 }
