@@ -92,21 +92,9 @@ if (params.dsname == false) { exit 1, "Missing --dsname option for dataset name,
 if (params.input == false) { exit 1, "Missing --input option for input data, check command help use --help" }
 
 // Parse genome params
-def zenodo_base = "https://zenodo.org/record/${params.zenodoNumber}/files"
 genome_map = params.genome_map
 // online input, or google storage input
 megalodon_model_tar = params.megalodon_model_tar
-
-//if (workflow.profile.contains('singularity') && !workflow.profile.contains('google') && !params.config.contains('lifebit')) {
-//	// Get small genome from docker and singularity /data dir
-//	// Note google life-science will stage the file instead of create the link
-//	genome_map = [	'hg38': 		"${zenodo_base}/hg38.tar.gz",
-//					'hg38_chr22': 	"/data/hg38_chr22.tar.gz",
-//					'ecoli': 		"/data/ecoli.tar.gz"]
-//	megalodon_model_tar = "/data/megalodon_model.tar.gz"
-//} else { // conda, GCP, Lifebit, not available for /data dir
-//
-//}
 
 if (genome_map[params.genome] != null) { genome_path = genome_map[params.genome] } else { 	genome_path = params.genome }
 
@@ -170,6 +158,8 @@ if (params.runGuppy) summary['runGuppy'] = 'Yes'
 if (params.runTombo) summary['runTombo'] = 'Yes'
 if (params.runMETEORE) summary['runMETEORE'] = 'Yes'
 if (params.runDeepMod) summary['runDeepMod'] = 'Yes'
+
+// summary['megalodon_model_tar'] = megalodon_model_tar
 
 summary['\nPipeline settings']         = "--------"
 summary['Working dir'] 		= workflow.workDir
@@ -439,11 +429,12 @@ process QCExport {
 
 	input:
 	path qc_basecall_list
-	each reference_genome
+	path reference_genome
 
 	output:
 	path "${params.dsname}_basecall_report.html",	emit: qc_html
 	path "${params.dsname}_QCReport",				emit: qc_report
+	path "${params.dsname}_merge_all_bam.bam*",		optional: true,	 emit: merge_all_bam
 
 	"""
 	## Combine all sequencing summary files
@@ -466,43 +457,50 @@ process QCExport {
 		--names ${params.dsname} --outdir ${params.dsname}_QCReport -t \$(( numProcessor )) \
 		--raw  -f pdf -p ${params.dsname}_   &>> QCReport.run.log
 
-	## Combine all batch fq.gz
-	> merge_all_fq.fq.gz
-	cat *.basecalled/batch_basecall_combine_fq_*.fq.gz > merge_all_fq.fq.gz
-	echo "### Fastq merge from all batches done!"
+	if [[ ${params.outputBam} == true  || ${params.outputONTCoverage} == true ]]; then
+		## Combine all batch fq.gz
+		> merge_all_fq.fq.gz
+		cat *.basecalled/batch_basecall_combine_fq_*.fq.gz > merge_all_fq.fq.gz
+		echo "### Fastq merge from all batches done!"
 
-	## After basecall, we align results for ONT coverage analyses
-	# align FASTQ files to reference genome, write sorted alignments to a BAM file
-	minimap2 -t \$(( numProcessor * ${params.mediumProcTimes} )) -a  -x map-ont \
-		${referenceGenome} \
-		merge_all_fq.fq.gz | \
-		samtools sort -@ \$(( numProcessor * ${params.mediumProcTimes} )) -T tmp -o \
-			merge_all_bam.bam &&\
-		samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} ))  merge_all_bam.bam
-    echo "### Samtools alignment done"
+		## After basecall, we align results to merged, sorted bam, can be for ONT coverage analyses/output bam
+		# align FASTQ files to reference genome, write sorted alignments to a BAM file
+		minimap2 -t \$(( numProcessor * ${params.mediumProcTimes} )) -a  -x map-ont \
+			${referenceGenome} \
+			merge_all_fq.fq.gz | \
+			samtools sort -@ \$(( numProcessor * ${params.mediumProcTimes} )) -T tmp -o \
+				${params.dsname}_merge_all_bam.bam &&\
+			samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} ))  ${params.dsname}_merge_all_bam.bam
+		echo "### Samtools alignment done"
+	fi
 
-    ## calculates the sequence coverage at each position
-    ## reporting genome coverage for all positions in BEDGRAPH format.
-    bedtools genomecov -ibam merge_all_bam.bam -bg -strand + |
-        awk '\$4 = \$4 FS "+"' |
-        gzip -f > ${params.dsname}.coverage.positivestrand.bed.gz
+	if [[ ${params.outputONTCoverage} == true ]]; then
+		## calculates the sequence coverage at each position
+		## reporting genome coverage for all positions in BEDGRAPH format.
+		bedtools genomecov -ibam ${params.dsname}_merge_all_bam.bam -bg -strand + |
+			awk '\$4 = \$4 FS "+"' |
+			gzip -f > ${params.dsname}.coverage.positivestrand.bed.gz
 
-    bedtools genomecov -ibam merge_all_bam.bam -bg -strand - |
-        awk '\$4 = \$4 FS "-"' |
-        gzip -f > ${params.dsname}.coverage.negativestrand.bed.gz
+		bedtools genomecov -ibam ${params.dsname}_merge_all_bam.bam -bg -strand - |
+			awk '\$4 = \$4 FS "-"' |
+			gzip -f > ${params.dsname}.coverage.negativestrand.bed.gz
 
-    cat ${params.dsname}.coverage.positivestrand.bed.gz > ${params.dsname}_ONT_coverage_combine.bed.gz
-	cat ${params.dsname}.coverage.negativestrand.bed.gz >> ${params.dsname}_ONT_coverage_combine.bed.gz
+		cat ${params.dsname}.coverage.positivestrand.bed.gz > ${params.dsname}_ONT_coverage_combine.bed.gz
+		cat ${params.dsname}.coverage.negativestrand.bed.gz >> ${params.dsname}_ONT_coverage_combine.bed.gz
 
-	mv ${params.dsname}_ONT_coverage_combine.bed.gz ${params.dsname}_QCReport/
+		mv ${params.dsname}_ONT_coverage_combine.bed.gz ${params.dsname}_QCReport/
+	fi
+
 	mv ${params.dsname}_combine_sequencing_summary.txt.gz ${params.dsname}_QCReport/
 	mv ${params.dsname}_QCReport/${params.dsname}_NanoComp-report.html ${params.dsname}_basecall_report.html
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
 		rm -f ${params.dsname}.coverage.positivestrand.bed.gz ${params.dsname}.coverage.negativestrand.bed.gz
-		rm -f ${params.dsname}_merged.bam*
-		rm -f merge_all_bam.bam*  merge_all_fq.fq.gz
+		rm -f merge_all_fq.fq.gz
+		if [[ ${params.outputBam} == false ]]; then
+			rm -f ${params.dsname}_merge_all_bam.bam*
+		fi
 	fi
     echo "### ONT coverage done!"
     echo "### QCReport all DONE"
@@ -1700,8 +1698,8 @@ process Report {
 
 
 workflow {
-	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: false)
-	megalodon_model_ch = Channel.fromPath(megalodon_model_tar, type: 'any', checkIfExists: false)
+	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
+	megalodon_model_ch = Channel.fromPath(megalodon_model_tar, type: 'any', checkIfExists: true)
 
 	EnvCheck(genome_ch, megalodon_model_ch)
 	Untar(fast5_tar_ch)
