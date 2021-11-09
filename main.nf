@@ -313,7 +313,9 @@ process Untar {
 		tar -xzf \${infn} -C untarTempDir
 	elif [[ -d ${fast5_tar} ]]; then
 		## Copy files, do not change original files such as old analyses data
-		cp -rf ${fast5_tar}/* untarTempDir/  || true # failed means nothing in this folder
+		## cp -rf ${fast5_tar}/* untarTempDir/  || true # failed means nothing in this folder
+		find ${fast5_tar}/ -name '*.fast5' | \
+			parallel -j\$(( numProcessor ))  cp {} untarTempDir/
 	else
 		echo "### Untar error for input=${fast5_tar}"
 	fi
