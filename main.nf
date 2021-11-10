@@ -434,7 +434,7 @@ process QCExport {
 	output:
 	path "${params.dsname}_basecall_report.html",	emit: qc_html
 	path "${params.dsname}_QCReport",				emit: qc_report
-	path "${params.dsname}_merge_all_bam.bam*",		optional: true,	 emit: merge_all_bam
+	path "${params.dsname}_bam_data",		optional: true,	 emit: bam_data
 
 	"""
 	## Combine all sequencing summary files
@@ -500,6 +500,9 @@ process QCExport {
 		rm -f merge_all_fq.fq.gz
 		if [[ ${params.outputBam} == false ]]; then
 			rm -f ${params.dsname}_merge_all_bam.bam*
+		else
+			mkdir -p ${params.dsname}_bam_data
+			mv  ${params.dsname}_merge_all_bam.bam*  ${params.dsname}_bam_data/
 		fi
 	fi
     echo "### ONT coverage done!"
