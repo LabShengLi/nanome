@@ -41,7 +41,6 @@ def helpMessage() {
 	General options:
 	  --processors		Processors used for each task
 	  --outdir		Output dir, default is 'outputs'
-	  --type		Data type, default is 'human', can be also 'ecoli'
 	  --chrSet		Chromosomes used in analysis, default is true, means chr1-22, X and Y, seperated by comma. For E. coli data, it needs be set to 'NC_000913.3'
 
 	  --cleanCache		If clean work dir after complete, default is true
@@ -98,6 +97,16 @@ megalodon_model_tar = params.megalodon_model_tar
 
 if (genome_map[params.genome] != null) { genome_path = genome_map[params.genome] } else { 	genome_path = params.genome }
 
+// infer dataType based on reference genome name, hg - human, ecoli - ecoli
+if (params.genome.contains('hg')) {
+	dataType = "human"
+} else if (params.genome.contains('ecoli')) {
+	dataType = "ecoli"
+} else {
+	exit 1, "Not supported reference genome name, please use hg38, or ecoli"
+}
+
+
 // Get src and utils dir
 projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
@@ -108,13 +117,13 @@ def deepmod_tar_file = "${projectDir}/README.md"
 def referenceGenome = 'reference_genome/ref.fasta'
 def chromSizesFile = 'reference_genome/chrom.sizes'
 
-if (params.type == 'human') {
+if (dataType == 'human') {
 	isDeepModCluster = params.useDeepModCluster
 	if (isDeepModCluster && params.runDeepMod) {
 		deepmod_tar_file = params.deepmod_ctar
 	}
-} else if (params.type == 'ecoli') { isDeepModCluster = false }
-else { 	exit 1, "Param type=${params.type} is not support" }
+} else if (dataType == 'ecoli') { isDeepModCluster = false }
+else { 	exit 1, "Param type=${dataType} is not support" }
 
 // if is true or 'true' (string), using '  '
 chrSet = params.chrSet.toBoolean() ? '  ' : params.chrSet
@@ -151,15 +160,17 @@ summary['genome'] 			= params.genome
 
 summary['\nRunning settings']         = "--------"
 summary['processors'] 		= params.processors
-if (params.runNanopolish) summary['runNanopolish'] = 'Yes'
-if (params.runMegalodon) summary['runMegalodon'] = 'Yes'
-if (params.runDeepSignal) summary['runDeepSignal'] = 'Yes'
-if (params.runGuppy) summary['runGuppy'] = 'Yes'
-if (params.runTombo) summary['runTombo'] = 'Yes'
-if (params.runMETEORE) summary['runMETEORE'] = 'Yes'
-if (params.runDeepMod) summary['runDeepMod'] = 'Yes'
 
-// summary['megalodon_model_tar'] = megalodon_model_tar
+if (params.runBasecall) summary['runBasecall'] = 'Yes'
+if (params.runMethcall) {
+	if (params.runNanopolish) summary['runNanopolish'] = 'Yes'
+	if (params.runMegalodon) summary['runMegalodon'] = 'Yes'
+	if (params.runDeepSignal) summary['runDeepSignal'] = 'Yes'
+	if (params.runGuppy) summary['runGuppy'] = 'Yes'
+	if (params.runTombo) summary['runTombo'] = 'Yes'
+	if (params.runMETEORE) summary['runMETEORE'] = 'Yes'
+	if (params.runDeepMod) summary['runDeepMod'] = 'Yes'
+}
 
 summary['\nPipeline settings']         = "--------"
 summary['Working dir'] 		= workflow.workDir
@@ -272,7 +283,7 @@ process EnvCheck {
 	echo "referenceGenome=${referenceGenome}"
 	echo "chromSizesFile=${chromSizesFile}"
 	echo "chrSet=${chrSet}"
-	echo "params.type=${params.type}"
+	echo "dataType=${dataType}"
 
 	echo "### Check env DONE"
 	"""
@@ -1095,7 +1106,7 @@ process GuppyComb {
 
 	awk '/^>/' ${referenceGenome} | awk '{print \$1}' \
 		> rf_chr_all_list.txt
-	if [[ "${params.type}" == "human" ]] ; then
+	if [[ "${dataType}" == "human" ]] ; then
 		echo "### For human, extract chr1-22, X and Y"
 		> chr_all_list.txt
 		for i in {1..22} X Y
@@ -1122,7 +1133,7 @@ process GuppyComb {
 					${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
 			fi
 		done
-	elif [[ "${params.type}" == "ecoli" ]] ; then
+	elif [[ "${dataType}" == "ecoli" ]] ; then
 		echo "### For ecoli, chr=${chrSet}"
 		fast5mod call total.meth.bam ${referenceGenome} \
 			meth.chr_${chrSet}.tsv \
@@ -1312,7 +1323,7 @@ process DeepMod {
 		DeepModTrainModelDir="DeepMod-0.1.3/train_deepmod"
 	fi
 
-	if [[ "${params.type}" = "human" ]] ; then
+	if [[ "${dataType}" = "human" ]] ; then
 		mod_cluster=1 ## Human will use cluster model
 	else
 		mod_cluster=0 ## Not human will skip cluser model
@@ -1420,7 +1431,7 @@ process DpmodComb {
 	done
 	gzip -f ${params.dsname}.deepmod.C_per_site.combine.bed
 
-	if [[ "${params.type}" == "human" && "${isDeepModCluster}" == "true" ]] ; then
+	if [[ "${dataType}" == "human" && "${isDeepModCluster}" == "true" ]] ; then
 		## Only apply to human genome
 		echo "### For human, apply cluster model of DeepMod"
 
