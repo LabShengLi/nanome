@@ -9,7 +9,7 @@ Created on Thu Jul  9 18:03:39 2020
 import argparse
 import warnings
 from functools import reduce
-
+import numpy as np
 import joblib
 import pandas as pd
 import sklearn
@@ -29,7 +29,7 @@ parser.add_argument('--output', '-o', type=str, required=True,
                     help='Where to store the outputs')
 
 parser.add_argument('--model-base-dir', '-b', type=str, required=True,
-                    help='Where is the model dir', default='/projects/li-lab/yang/test/METEORE')
+                    help='Where is the model dir', default='.')
 
 options = parser.parse_args()
 
@@ -37,11 +37,12 @@ options = parser.parse_args()
 def mod_file(data_file_path):
     data_file = pd.read_csv(data_file_path, header=0, sep="\t")
     name = data_file_path.split("/")[-1].split(".")[0]
+    data_file['Pos'] = data_file['Pos'].astype(np.int64)
     data_file.drop_duplicates(subset=['Chr', "ID", "Pos", "Strand"], inplace=True)  # add chr
     data_file.reset_index(inplace=True, drop=True)
 
-    df_id_strand = data_file[["ID", "Strand"]]
-    df_id_strand.drop_duplicates(subset=["ID", "Strand"], inplace=True)
+    df_id_strand = data_file[["ID", 'Chr', 'Pos', "Strand"]]
+    df_id_strand.drop_duplicates(subset=["ID", 'Chr', 'Pos', "Strand"], inplace=True)
 
     # mask = data_file.index[data_file.Strand == "-"].tolist() # select negative strand
     # data_file["Pos"][mask] = data_file["Pos"][mask] - 1 # merge to positive strand
@@ -54,26 +55,28 @@ def mod_file(data_file_path):
 
 def main(mp, combine_file, combine_id_strand):
     loaded_model = joblib.load(open(mp, 'rb'))
-    print(loaded_model)
+    print(f"model file: {mp}")
+    print(f"loaded_model={loaded_model}", flush=True)
 
     combine_file.dropna(inplace=True)
     X = combine_file[combine_file.columns[3:]]  # 2:
     X = sklearn.preprocessing.MinMaxScaler().fit_transform(X)
+
     prediction = pd.DataFrame(loaded_model.predict(X))  ##
-    prediction_prob = pd.DataFrame(loaded_model.predict_proba(X))
     prediction.rename(columns={0: "Prediction"}, inplace=True)
+
+    prediction_prob = pd.DataFrame(loaded_model.predict_proba(X))
     prediction_prob = prediction_prob[[1]]
     prediction_prob.rename(columns={1: "Prob_methylation"}, inplace=True)
-    final_output = pd.concat([combine_file[combine_file.columns[:3]], prediction, prediction_prob], axis=1)
 
+    final_output = pd.concat([combine_file[combine_file.columns[:3]], prediction, prediction_prob], axis=1)
     final_output.dropna(inplace=True)
-    import numpy as np
     final_output['Pos'] = final_output['Pos'].astype(np.int64)
     final_output['Prediction'] = final_output['Prediction'].astype(int)
-    outdf = final_output.merge(combine_id_strand, how='left', on='ID')
+    outdf = final_output.merge(combine_id_strand, how='left', on=['ID', 'Chr', 'Pos'])
 
-    outdf.to_csv(options.output, header=True, index=None, sep='\t')
-    print(f"save to {options.output}")
+    outdf.to_csv(options.output, header=True, index=False, sep='\t')
+    print(f"save to {options.output}", flush=True)
 
 
 if __name__ == '__main__':
@@ -95,6 +98,9 @@ if __name__ == '__main__':
                           dfs)
     combine_file.drop_duplicates(subset=["ID", "Chr", "Pos"], inplace=True)
     combine_file.reset_index(inplace=True, drop=True)
+
+    # print(f"combine_file={combine_file}")
+    # print(f"combine_file.columns={combine_file.columns}", flush=True)
 
     # add strand, no need to combine strand since report read level outputs
     combine_id_strand = pd.concat(dfs_id_strand)

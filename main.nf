@@ -1524,6 +1524,7 @@ process METEORE {
 	path naonopolish
 	path megalodon
 	path deepsignal
+	path utils
 
 	output:
 	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz",	emit: meteore_combine_out, optional: true
@@ -1535,10 +1536,10 @@ process METEORE {
 
 	"""
 	## METEORE outputs by combining other tools
-	outFileName=${params.dsname}_Megalodon_DeepSignal_combine.model_content.tsv
-	> \$outFileName
-	printf '%s\t%s\n' deepsignal ${deepsignal} >> \$outFileName
-	printf '%s\t%s\n' megalodon ${megalodon} >> \$outFileName
+	modelContentFileName=${params.dsname}_Megalodon_DeepSignal_combine.model_content.tsv
+	> \$modelContentFileName
+	printf '%s\t%s\n' deepsignal ${deepsignal} >> \$modelContentFileName
+	printf '%s\t%s\n' megalodon ${megalodon} >> \$modelContentFileName
 
 	if [ -d /data ]; then
 		METEOREDIR=\$(find /data -maxdepth 1 -name "${params.METEORE_Dir}" -type d)
@@ -1553,9 +1554,8 @@ process METEORE {
 
 	## Degrade sk-learn for METEORE program if needed, it's model load need lower version
 	## pip install -U scikit-learn==0.21.3
-	combineScript=combination_model_prediction.py
+	combineScript="python utils/combination_model_prediction.py"
 
-	modelContentFileName=\$(find . -name "${params.dsname}_Megalodon_DeepSignal_combine.model_content.tsv" -type f)
 	# Use the optimized model (n_estimator = 3 and max_dep = 10)
 	# Please note this optimized model is reported in METEORE paper, ref: https://github.com/comprna/METEORE#command
 	# paper: https://doi.org/10.1101/2020.10.14.340315, text:  random forest (RF) (parameters: max_depth=3 and n_estimator=10)
@@ -1567,10 +1567,10 @@ process METEORE {
 		&>> METEORE.run.log
 
 	# Use default parameters from the sklearn library (n_estimator = 100 and max_dep = None)
-	\${combineScript}\
-		-i \${modelContentFileName} -m default -b \${METEOREDIR} \
-		-o ${params.dsname}.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz\
-		&>> METEORE.run.log
+	##\${combineScript}\
+	##	-i \${modelContentFileName} -m default -b \${METEOREDIR} \
+	##	-o ${params.dsname}.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz\
+	##	&>> METEORE.run.log
 
 	# Read level and site level output
 	if [ -f ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz ] ; then
@@ -1815,7 +1815,7 @@ workflow {
 
 	if (params.runMETEORE && params.runMethcall) {
 		// Read level combine a list for top3 used by METEORE
-		METEORE(r1, r2, r3)
+		METEORE(r1, r2, r3, ch_utils)
 		s7 = METEORE.out.site_unify
 		r7 = METEORE.out.read_unify
 	} else {
