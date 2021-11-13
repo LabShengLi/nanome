@@ -41,7 +41,7 @@ def helpMessage() {
 	General options:
 	  --processors		Processors used for each task
 	  --outdir		Output dir, default is 'outputs'
-	  --chrSet		Chromosomes used in analysis, default is true, means chr1-22, X and Y, seperated by comma. For E. coli data, it needs be set to 'NC_000913.3'
+	  --chrSet		Chromosomes used in analysis, default is chr1-22, X and Y, for human. For E. coli data, it is default as 'NC_000913.3'
 
 	  --cleanCache		If clean work dir after complete, default is true
 
@@ -97,11 +97,23 @@ megalodon_model_tar = params.megalodon_model_tar
 
 if (genome_map[params.genome] != null) { genome_path = genome_map[params.genome] } else { 	genome_path = params.genome }
 
-// infer dataType based on reference genome name, hg - human, ecoli - ecoli
+// infer dataType, chrSet based on reference genome name, hg - human, ecoli - ecoli
 if (params.genome.contains('hg')) {
 	dataType = "human"
+	if (params.chrSet == true || params.chrSet == 'true') {
+		// default for human, if true or 'true' (string), using '  '
+		chrSet = '  '
+	} else {
+		chrSet = params.chrSet
+	}
 } else if (params.genome.contains('ecoli')) {
 	dataType = "ecoli"
+	if (params.chrSet == true || params.chrSet == 'true') {
+		// default for ecoli
+		chrSet = 'NC_000913.3'
+	} else {
+		chrSet = params.chrSet
+	}
 } else {
 	exit 1, "Not supported reference genome name, please use hg38, or ecoli"
 }
@@ -124,9 +136,6 @@ if (dataType == 'human') {
 	}
 } else if (dataType == 'ecoli') { isDeepModCluster = false }
 else { 	exit 1, "Param type=${dataType} is not support" }
-
-// if is true or 'true' (string), using '  '
-chrSet = params.chrSet.toBoolean() ? '  ' : params.chrSet
 
 workflow.onComplete {
 	if (workflow.success && params.cleanCache) {
@@ -160,6 +169,8 @@ summary['genome'] 			= params.genome
 
 summary['\nRunning settings']         = "--------"
 summary['processors'] 		= params.processors
+summary['chrSet'] 			= chrSet
+summary['dataType'] 		= dataType
 
 if (params.runBasecall) summary['runBasecall'] = 'Yes'
 if (params.runMethcall) {
