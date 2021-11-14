@@ -1681,7 +1681,7 @@ process Report {
 	cp -rf \${nanome_dir}/src/nanocompare/report/js ${params.dsname}_NANOME_report/
 
 	## Generate html report
-	gen_html_report.py \
+	python src/nanocompare/report/gen_html_report.py \
 		${params.dsname} \
 		running_information.tsv \
 		\${basecallOutputFile} \
