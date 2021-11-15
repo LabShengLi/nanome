@@ -14,7 +14,7 @@ LABEL description="Nanome project in Li Lab at The Jackson Laboratory" \
       author="yang.liu@jax.org"
 
 # Guppy version
-ARG GUPPY_VERSION=5.0.14
+ARG GUPPY_VERSION=5.0.16
 ARG BUILD_PACKAGES="wget apt-transport-https procps git curl"
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG NANOME_DIR=/opt/nanome
