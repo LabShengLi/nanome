@@ -247,11 +247,11 @@ process EnvCheck {
 
 	input:
 	path reference_genome
-	path megalodonModelTar
 
 	output:
 	path "reference_genome",	emit: reference_genome
-	path "megalodon_model",		emit: megalodon_model, optional: true
+	path "${params.MEGALODON_MODEL_DIR}",		emit: megalodon_model, optional: true
+	path "${params.DEEPSIGNAL_MODEL_DIR}",	emit: deepsignal_model, optional: true
 
 	script:
 	"""
@@ -262,12 +262,29 @@ process EnvCheck {
 	validate_nanome_container.sh
 
 	## Untar and prepare megalodon model
-	if [[ ${params.runMegalodon} == "true" ]]; then
-		ls -lh ${megalodonModelTar}
-
-		tar -xzf ${megalodonModelTar}
+	if [[ ${params.runMegalodon} == true ]]; then
+		if [[ -f "/data/${params.MEGALODON_MODEL_TAR_GZ}" ]] ; then
+			tar -xzf /data/${params.MEGALODON_MODEL_TAR_GZ} -C .
+		else
+			wget ${params.megalodon_model_tar} --no-verbose &&\
+				tar -xzf ${params.MEGALODON_MODEL_TAR_GZ} &&\
+				rm -f ${params.MEGALODON_MODEL_TAR_GZ}
+		fi
 		## Check Megalodon model
-		ls -lh megalodon_model
+		ls -lh ${params.MEGALODON_MODEL_DIR}
+	fi
+
+	## Untar and prepare megalodon model
+	if [[ ${params.runDeepSignal} == true ]]; then
+		if [[ -f "/data/${params.DEEPSIGNAL_MODEL_TAR_GZ}" ]] ; then
+			tar -xzf /data/${params.DEEPSIGNAL_MODEL_TAR_GZ} -C .
+		else
+			wget ${params.deepsignal_model_tar} --no-verbose &&\
+				tar -xzf ${params.DEEPSIGNAL_MODEL_TAR_GZ} &&\
+				rm -f ${params.DEEPSIGNAL_MODEL_TAR_GZ}
+		fi
+		## Check DeepSignal model
+		ls -lh ${params.DEEPSIGNAL_MODEL_DIR}
 	fi
 
 	## Get dir for reference_genome
@@ -832,6 +849,7 @@ process DeepSignal {
 	input:
 	path indir
 	each path(reference_genome)
+	each path(deepsignal_model_dir)
 
 	output:
 	path "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv.gz",	emit: deepsignal_out
@@ -840,21 +858,13 @@ process DeepSignal {
 	params.runMethcall && params.runDeepSignal
 
 	"""
-	if ls /data/${params.DEEPSIGNAL_MODEL}* 1> /dev/null 2>&1; then
-		DeepSignalModelBaseDir=/data
-	else
-		wget ${params.deepsignal_model_tar}  --no-verbose
-		tar -xzf ${params.DEEPSIGNAL_MODEL_TAR_GZ} &&
-			rm -f ${params.DEEPSIGNAL_MODEL_TAR_GZ}
-		DeepSignalModelBaseDir="."
-	fi
-
+	DeepSignalModelBaseDir="."
 	commandType='gpu'
 	if [[ \${commandType} == "cpu" ]]; then
 		## CPU version command
 		deepsignal call_mods \
 			--input_path ${indir}/workspace \
-			--model_path "\${DeepSignalModelBaseDir}/${params.DEEPSIGNAL_MODEL}" \
+			--model_path "\${DeepSignalModelBaseDir}/${params.DEEPSIGNAL_MODEL_DIR}/${params.DEEPSIGNAL_MODEL}" \
 			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
@@ -864,7 +874,7 @@ process DeepSignal {
 		## GPU version command
 		deepsignal call_mods \
 			--input_path ${indir}/workspace \
-			--model_path "\${DeepSignalModelBaseDir}/${params.DEEPSIGNAL_MODEL}" \
+			--model_path "\${DeepSignalModelBaseDir}/${params.DEEPSIGNAL_MODEL_DIR}/${params.DEEPSIGNAL_MODEL}" \
 			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
@@ -1535,22 +1545,20 @@ process METEORE {
 	params.runMethcall && params.runMETEORE
 
 	"""
+	if [[ -d "/data/${params.METEORE_Dir}" ]] ; then
+		METEOREDIR="/data/${params.METEORE_Dir}"
+	else
+		wget ${params.METEOREGithub}  --no-verbose &&\
+			tar -xzf v1.0.0.tar.gz &&\
+			rm -f v1.0.0.tar.gz
+		METEOREDIR="${params.METEORE_Dir}"
+	fi
+
 	## METEORE outputs by combining other tools
 	modelContentFileName=${params.dsname}_Megalodon_DeepSignal_combine.model_content.tsv
 	> \$modelContentFileName
 	printf '%s\t%s\n' deepsignal ${deepsignal} >> \$modelContentFileName
 	printf '%s\t%s\n' megalodon ${megalodon} >> \$modelContentFileName
-
-	if [ -d /data ]; then
-		METEOREDIR=\$(find /data -maxdepth 1 -name "${params.METEORE_Dir}" -type d)
-	else
-		METEOREDIR=""
-	fi
-	if [[ \$METEOREDIR == "" ]]; then
-		wget ${params.METEOREGithub}  --no-verbose
-		tar -xzf v1.0.0.tar.gz
-		METEOREDIR=\$(find . -name "${params.METEORE_Dir}" -type d)
-	fi
 
 	## Degrade sk-learn for METEORE program if needed, it's model load need lower version
 	## pip install -U scikit-learn==0.21.3
@@ -1743,9 +1751,8 @@ process Report {
 
 workflow {
 	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
-	megalodon_model_ch = Channel.fromPath(megalodon_model_tar, type: 'any', checkIfExists: true)
 
-	EnvCheck(genome_ch, megalodon_model_ch)
+	EnvCheck(genome_ch)
 	Untar(fast5_tar_ch)
 	if (params.runBasecall) {
 		Basecall(Untar.out.untar)
@@ -1778,7 +1785,7 @@ workflow {
 	}
 
 	if (params.runDeepSignal && params.runMethcall) {
-		DeepSignal(Resquiggle.out.resquiggle, EnvCheck.out.reference_genome)
+		DeepSignal(Resquiggle.out.resquiggle, EnvCheck.out.reference_genome, EnvCheck.out.deepsignal_model)
 		comb_deepsignal = DpSigComb(DeepSignal.out.deepsignal_out.collect())
 		s3 = comb_deepsignal.site_unify
 		r3 = comb_deepsignal.read_unify
