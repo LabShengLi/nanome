@@ -30,7 +30,6 @@ OUTPUT_DIR_BUCKET=${2:-"gs://jax-nanopore-01-export-bucket/NANOME_tera_ouputs"}
 echo "### nanome pipeline for NA12878 some chr and part file on google START"
 nextflow run main.nf\
     -profile docker,google -resume -with-report -with-timeline -with-trace -with-dag\
-    -config conf/executors/gcp_input.config\
 	-w ${WORK_DIR_BUCKET} \
 	--outdir ${OUTPUT_DIR_BUCKET}\
 	--dsname NA12878_CHR22\

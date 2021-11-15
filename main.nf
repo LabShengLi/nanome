@@ -1554,7 +1554,8 @@ process METEORE {
 
 	## Degrade sk-learn for METEORE program if needed, it's model load need lower version
 	## pip install -U scikit-learn==0.21.3
-	combineScript="python utils/combination_model_prediction.py"
+	## combineScript="python utils/combination_model_prediction.py"
+	combineScript="combination_model_prediction.py"
 
 	# Use the optimized model (n_estimator = 3 and max_dep = 10)
 	# Please note this optimized model is reported in METEORE paper, ref: https://github.com/comprna/METEORE#command
@@ -1681,7 +1682,8 @@ process Report {
 	cp -rf \${nanome_dir}/src/nanocompare/report/js ${params.dsname}_NANOME_report/
 
 	## Generate html report
-	python src/nanocompare/report/gen_html_report.py \
+	### python src/nanocompare/report/gen_html_report.py
+	gen_html_report.py \
 		${params.dsname} \
 		running_information.tsv \
 		\${basecallOutputFile} \
