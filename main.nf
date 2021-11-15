@@ -1334,7 +1334,7 @@ process DeepMod {
 		DeepModTrainModelDir="DeepMod-0.1.3/train_deepmod"
 	fi
 
-	if [[ "${dataType}" = "human" ]] ; then
+	if [[ "${dataType}" == "human" ]] ; then
 		mod_cluster=1 ## Human will use cluster model
 	else
 		mod_cluster=0 ## Not human will skip cluser model
