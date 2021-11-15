@@ -34,9 +34,9 @@ def helpMessage() {
 	nextflow run TheJacksonLaboratory/nanome -profile test,singularity
 
 	Mandatory arguments:
-	  --dsname		Dataset name
-	  --input		Input path for raw fast5 folders/tar/tar.gz files
-	  --genome		Genome reference name ('hg38', 'hg38_chr22', or 'ecoli'), or a directory, or a tar.gz file
+	  --dsname		Dataset/analysis name
+	  --input		Input path for raw fast5 files (folders, tar/tar.gz files)
+	  --genome		Genome reference name ('hg38', 'ecoli', or 'hg38_chr22')
 
 	General options:
 	  --processors		Processors used for each task
@@ -59,7 +59,8 @@ def helpMessage() {
 	  --time		SLURM job submission time allocation options for cluster running, default is '2h'
 	  --memory		SLURM job submission memory allocation options for cluster running, default is '32GB'
 
-	  --googleProjectName	Google Cloud project name for google-lifesciences task running
+	  --googleProjectName	Google Cloud Platform (GCP) project name for google-lifesciences task running
+	  --config		Lifebit CloudOS config file, please set to 'conf/executors/lifebit.config'
 
 	Tools's specific configurations:
 	  --run[Tool-name]	Default we run top four performers in nanome paper, specify '--run[Tool-name]' can include other tool, supported tools: Megalodon, Nanopolish, DeepSignal, Guppy, Tombo, METEORE, and DeepMod
