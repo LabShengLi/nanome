@@ -67,9 +67,8 @@ WORKDIR /data/
 RUN cd /data && wget -q ${METEORE_GITHUB} &&\
     tar -xzf v1.0.0.tar.gz &&\
     rm -f v1.0.0.tar.gz &&\
+    rm -rf METEORE-1.0.0/example_results METEORE-1.0.0/data &&\ 
     wget -q ${DEEPSIGNAL_MODEL} &&\
-    tar -xzf model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz &&\
-    rm -f model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz &&\
     wget -q ${ECOLI_GENOME} && wget -q ${HG38_CHR22_GENOME} && wget -q ${MEGALODON_MODEL} &&\
     wget -q http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bedGraphToBigWig &&\
     chmod +x bedGraphToBigWig &&\
