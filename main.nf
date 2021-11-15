@@ -614,7 +614,7 @@ process Resquiggle {
 process Nanopolish {
 	tag "${basecallDir.baseName}"
 
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/nanopolish",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/nanopolish",
 		mode: "copy",
 		enabled: params.outputIntermediate
 
@@ -710,7 +710,7 @@ process NplshComb {
 process Megalodon {
 	tag "${fast5_dir.baseName}"
 
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/megalodon",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/megalodon",
 		mode: "copy",
 		enabled: params.outputIntermediate
 
@@ -843,7 +843,7 @@ process MgldnComb {
 process DeepSignal {
 	tag "${indir.baseName}"
 
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/deepsignal",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/deepsignal",
 		mode: "copy",
 		enabled: params.outputIntermediate
 
@@ -936,11 +936,11 @@ process DpSigComb {
 process Guppy {
 	tag "${fast5_dir.baseName}"
 
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/guppy",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/guppy",
 		mode: "copy",
 		pattern: "outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz",
 		enabled: params.outputIntermediate
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/guppy",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/guppy",
 		mode: "copy",
 		pattern: "batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz",
 		enabled: params.outputIntermediate
@@ -1080,7 +1080,7 @@ process GuppyComb {
 		mode: "copy", pattern: "${params.dsname}.guppy.*.combine.tsv.gz",
 		enabled: params.outputRaw
 
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/guppy",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/guppy",
 		mode: "copy", pattern: "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz",
 		enabled: params.outputIntermediate
 
@@ -1189,7 +1189,7 @@ process GuppyComb {
 process Tombo {
 	tag "${resquiggleDir.baseName}"
 
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/tombo",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/tombo",
 		mode: "copy",
 		enabled: params.outputIntermediate
 
@@ -1312,7 +1312,7 @@ process TomboComb {
 process DeepMod {
 	tag "${basecallDir.baseName}"
 
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/deepmod",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/deepmod",
 		mode: "copy", pattern: "batch_${basecallDir.baseName}_num.tar.gz",
 		enabled: params.outputIntermediate
 
@@ -1386,13 +1386,13 @@ process DpmodComb {
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy", pattern: "${params.dsname}.deepmod.*.combine.bed.gz",
 		enabled: params.outputRaw
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/deepmod",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/deepmod",
 		mode: "copy", pattern: "${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz",
 		enabled: params.outputIntermediate
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/deepmod",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/deepmod",
 		mode: "copy", pattern: "${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz",
 		enabled: params.outputIntermediate
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/deepmod",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/deepmod",
 		mode: "copy", pattern: "${params.dsname}.deepmod.all_batch.C.bed.tar.gz",
 		enabled: params.outputIntermediate
 

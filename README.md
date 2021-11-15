@@ -62,14 +62,19 @@ Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https:
 
 ## Installation
 Users only need to install **Nextflow** (https://nf-co.re/usage/installation). NANOME execution environment will be automatically configured with the support of conda, docker or singularity containers.
+```angular2html
+# Add channel and install nextflow
+conda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
+conda install nextflow
+conda update nextflow
+nextflow -v
+```
 
 NANOME pipeline support running with various ways in different platforms:
-* Conda
-    1. Create conda enviroment: `conda env create -f environment.yml`
 * Docker
-    1. Docker container is in [Docker Hub](https://hub.docker.com/repository/docker/liuyangzzu/nanome): `liuyangzzu/nanome:latest`, you can also build docker image by `docker build -t liuyangzzu/nanome:latest .`
 * Singularity
-    1. Pull singularity image from [Docker Hub](https://hub.docker.com/repository/docker/liuyangzzu/nanome): `singularity pull docker://liuyangzzu/nanome:latest`
 * **Local** execution: running directly on default platform
 * HPC clusters with **SLURM** support
 * Google Cloud Platform (GCP) with **google-lifesciences** support
