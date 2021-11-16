@@ -70,7 +70,7 @@ Pipeline running results is below, output directory trees are [outputs](https://
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
 Launching `main.nf` [wise_crick] - revision: efbaa90697
-NANOME - NF PIPELINE (v1.3.5)
+NANOME - NF PIPELINE (v1.3.6)
 by Li Lab at The Jackson Laboratory
 https://nanome.jax.org
 =================================
@@ -168,7 +168,7 @@ Pipeline results for E. coli data is below.
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
 Launching `main.nf` [drunk_carlsson] - revision: efbaa90697
-NANOME - NF PIPELINE (v1.3.5)
+NANOME - NF PIPELINE (v1.3.6)
 by Li Lab at The Jackson Laboratory
 https://nanome.jax.org
 =================================
