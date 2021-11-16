@@ -80,6 +80,11 @@ NANOME pipeline support running with various ways in different platforms:
 * Google Cloud Platform (GCP) with **google-lifesciences** support
 
 ## Simple usage
+
+We provide a **tutorial video** for running NANOME pipeline:
+
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/xwk1zRU42_4/0.jpg)](https://www.youtube.com/watch?v=xwk1zRU42_4)
+
 When you have Nextflow software, NANOME pipeline can be directly executed without any other additional installation steps:
 ```angular2html
 # Run NANOME using docker
