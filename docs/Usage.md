@@ -5,9 +5,12 @@ The inputs of NANOME pipeline is a folder/tar/tar.gz or txt file list containing
 # 1. Running NANOME for human nanopore sequencing data
 
 ## Running samples
-The command for running NANOME pipeline is to run `nextflow run TheJacksonLaboratory/nanome`. `--input` is input Fast5 file locations, our pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders. `--dsname` is output dataset name.
+The command for running NANOME pipeline is to run `nextflow run TheJacksonLaboratory/nanome`.
+- `--dsname` is dataset/analysis name.
+- `--input` is input Fast5 files path. Nanome pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders.
+- `--genome` is reference genome.
 
-By default, we are using hg38 human reference genome, and you can specify other reference genome using parameter `type='ecoli'`. We defined a bunch of predefined running configuration params in profile in next section. An example of how to use NANOME pipeline is given below.
+By default, we are using `--genome=hg38` for human reference genome, and you can specify other reference genome using parameter `--genome=ecoli`. We defined a bunch of predefined running configuration params in profile in next section. An example of how to use NANOME pipeline is given below.
 
 ```angular2html
 # Get pipeline help
@@ -15,13 +18,17 @@ nextflow run TheJacksonLaboratory/nanome --help
 
 # Running NANOME pipeline for E. coli data
 nextflow run TheJacksonLaboratory/nanome\
-    -profile test,singularity
+    -profile singularity,hpc\
+    --dsname EcoliData\
+    --input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli_data_from_meteore.tar.gz\
+    --genome ecoli
 
-# Running NANOME pipeline for human data on HPC clusters
+# Running NANOME pipeline for human data
 nextflow run TheJacksonLaboratory/nanome\
-    -profile singularity,hpc \
-    --dsname TestData \
-    --input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt
+    -profile singularity,hpc\
+    --dsname TestData\
+    --input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt\
+    --genome hg38
 ```
 
 ## Pre-defined pipeline profiles
@@ -33,14 +40,14 @@ Note that multiple profiles can be loaded, for example: `-profile singularity,hp
 
 If `-profile` is not specified, the pipeline will run locally and expect all software to be installed and available on the PATH. This is not recommended.
 
-* `conda`
-  * A generic configuration profile to be used with [Conda](https://docker.com/)
 * `docker`
   * A generic configuration profile to be used with [Docker](https://docker.com/)
   * Pulls from [Docker Hub](https://hub.docker.com/repository/docker/liuyangzzu/nanome): liuyangzzu/nanome:latest
 * `singularity`
   * A generic configuration profile to be used with [Singularity](https://sylabs.io/docs/)
   * Pulls from [Docker Hub](https://hub.docker.com/repository/docker/liuyangzzu/nanome): docker://liuyangzzu/nanome:latest
+* `conda`
+  * A generic configuration profile to be used with [Conda](https://docker.com/)
 * `hpc`		
   * A generic configuration profile to be used on HPC cluster with [SLURM](https://slurm.schedmd.com/documentation.html) job submission support.
 * `google`	
@@ -63,7 +70,7 @@ Pipeline running results is below, output directory trees are [outputs](https://
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
 Launching `main.nf` [wise_crick] - revision: efbaa90697
-NANOME - NF PIPELINE (v1.3.5)
+NANOME - NF PIPELINE (v1.3.6)
 by Li Lab at The Jackson Laboratory
 https://nanome.jax.org
 =================================
@@ -161,7 +168,7 @@ Pipeline results for E. coli data is below.
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
 Launching `main.nf` [drunk_carlsson] - revision: efbaa90697
-NANOME - NF PIPELINE (v1.3.5)
+NANOME - NF PIPELINE (v1.3.6)
 by Li Lab at The Jackson Laboratory
 https://nanome.jax.org
 =================================

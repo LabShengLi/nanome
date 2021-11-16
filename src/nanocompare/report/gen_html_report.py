@@ -27,7 +27,7 @@ def density_plot(df, outfn, tool, col_index=6, bins=None, the_range=None, x_labe
 
     # Add labels
     if the_range:
-        plt.xlim([0, 1])
+        plt.xlim(the_range)
     plt.title(f'{tool} = {len(df):,} CpGs')
     plt.xlabel(x_label)
     plt.ylabel('# CpGs')
@@ -45,6 +45,22 @@ def get_methcall_report_df(baseDir, outDir):
     :param baseDir:
     :return:
     """
+    ## Pre-check the max-coverage
+    max_cov = None
+    for tool in ToolNameList + ['NANOME']:
+        fnlist = glob.glob(os.path.join(baseDir, f'*_{tool}-perSite-cov1.sort.bed.gz'))
+        if len(fnlist) < 1:
+            print(f"Not found file in baseDir={baseDir}, pattern={f'*_{tool}-perSite-cov1.sort.bed.gz'}")
+            continue
+        try:
+            df_site_level = pd.read_csv(fnlist[0], sep='\t', header=None, index_col=False)
+            the_max_cov = max(df_site_level.iloc[:, 7])
+            if max_cov is None or max_cov < the_max_cov:
+                max_cov = the_max_cov
+        except:
+            pass
+    print(f"max_cov={max_cov}")
+
     ret_dict = defaultdict(list)
     for tool in ToolNameList + ['NANOME']:
         fnlist = glob.glob(os.path.join(baseDir, f'*_{tool}-perSite-cov1.sort.bed.gz'))
@@ -62,7 +78,8 @@ def get_methcall_report_df(baseDir, outDir):
             density_plot(df_site_level, outfn, tool, bins=10, the_range=(0, 1), x_label='Methylation %')
 
             outfn = os.path.join(outDir, 'images', f'cov_{tool}.png')
-            density_plot(df_site_level, outfn, tool, col_index=7, x_label='Coverage')
+            density_plot(df_site_level, outfn, tool, bins=10,
+                         col_index=7, x_label='Coverage', the_range=(0, max_cov + 1))
         except:  # can not call any results
             ret_dict['Tool'].append(tool)
             ret_dict['CpGs'].append(None)

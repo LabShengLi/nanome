@@ -1,0 +1,3 @@
+gs://jax-nanopore-01-project-data/na12878/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr22.part01.tar
+gs://jax-nanopore-01-project-data/na12878/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr22.part02.tar
+gs://jax-nanopore-01-project-data/na12878/s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr22.part03.tar

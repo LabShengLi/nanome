@@ -14,11 +14,11 @@
 */
 // We now support both latest and lower versions, due to Lifebit CloudOS is only support 21.04
 // Note: NXF_VER=20.04.1 nextflow run main.nf -profile test,singularity
-if( ! nextflow.version.matches(">= 20.07.1") ){
-	nextflow.preview.dsl=2
+if( nextflow.version.matches(">= 20.07.1") ){
+	nextflow.enable.dsl=2
 } else {
 	// Support lower version of nextflow
-	nextflow.enable.dsl=2
+	nextflow.preview.dsl=2
 }
 
 def helpMessage() {
@@ -34,15 +34,14 @@ def helpMessage() {
 	nextflow run TheJacksonLaboratory/nanome -profile test,singularity
 
 	Mandatory arguments:
-	  --dsname		Dataset name
-	  --input		Input path for raw fast5 folders/tar/tar.gz files
-	  --genome		Genome reference name ('hg38', 'hg38_chr22', or 'ecoli'), or a directory, or a tar.gz file
+	  --dsname		Dataset/analysis name
+	  --input		Input path for raw fast5 files (folders, tar/tar.gz files)
+	  --genome		Genome reference name ('hg38', 'ecoli', or 'hg38_chr22')
 
 	General options:
 	  --processors		Processors used for each task
 	  --outdir		Output dir, default is 'outputs'
-	  --type		Data type, default is 'human', can be also 'ecoli'
-	  --chrSet		Chromosomes used in analysis, default is true, means chr1-22, X and Y, seperated by comma. For E. coli data, it needs be set to 'NC_000913.3'
+	  --chrSet		Chromosomes used in analysis, default is chr1-22, X and Y, for human. For E. coli data, it is default as 'NC_000913.3'
 
 	  --cleanCache		If clean work dir after complete, default is true
 
@@ -60,7 +59,8 @@ def helpMessage() {
 	  --time		SLURM job submission time allocation options for cluster running, default is '2h'
 	  --memory		SLURM job submission memory allocation options for cluster running, default is '32GB'
 
-	  --googleProjectName	Google Cloud project name for google-lifesciences task running
+	  --googleProjectName	Google Cloud Platform (GCP) project name for google-lifesciences task running
+	  --config		Lifebit CloudOS config file, please set to 'conf/executors/lifebit.config'
 
 	Tools's specific configurations:
 	  --run[Tool-name]	Default we run top four performers in nanome paper, specify '--run[Tool-name]' can include other tool, supported tools: Megalodon, Nanopolish, DeepSignal, Guppy, Tombo, METEORE, and DeepMod
@@ -92,23 +92,33 @@ if (params.dsname == false) { exit 1, "Missing --dsname option for dataset name,
 if (params.input == false) { exit 1, "Missing --input option for input data, check command help use --help" }
 
 // Parse genome params
-def zenodo_base = "https://zenodo.org/record/${params.zenodoNumber}/files"
 genome_map = params.genome_map
 // online input, or google storage input
 megalodon_model_tar = params.megalodon_model_tar
 
-//if (workflow.profile.contains('singularity') && !workflow.profile.contains('google') && !params.config.contains('lifebit')) {
-//	// Get small genome from docker and singularity /data dir
-//	// Note google life-science will stage the file instead of create the link
-//	genome_map = [	'hg38': 		"${zenodo_base}/hg38.tar.gz",
-//					'hg38_chr22': 	"/data/hg38_chr22.tar.gz",
-//					'ecoli': 		"/data/ecoli.tar.gz"]
-//	megalodon_model_tar = "/data/megalodon_model.tar.gz"
-//} else { // conda, GCP, Lifebit, not available for /data dir
-//
-//}
-
 if (genome_map[params.genome] != null) { genome_path = genome_map[params.genome] } else { 	genome_path = params.genome }
+
+// infer dataType, chrSet based on reference genome name, hg - human, ecoli - ecoli
+if (params.genome.contains('hg')) {
+	dataType = "human"
+	if (params.chrSet == true || params.chrSet == 'true') {
+		// default for human, if true or 'true' (string), using '  '
+		chrSet = '  '
+	} else {
+		chrSet = params.chrSet
+	}
+} else if (params.genome.contains('ecoli')) {
+	dataType = "ecoli"
+	if (params.chrSet == true || params.chrSet == 'true') {
+		// default for ecoli
+		chrSet = 'NC_000913.3'
+	} else {
+		chrSet = params.chrSet
+	}
+} else {
+	exit 1, "Not supported reference genome name, please use hg38, or ecoli"
+}
+
 
 // Get src and utils dir
 projectDir = workflow.projectDir
@@ -120,16 +130,13 @@ def deepmod_tar_file = "${projectDir}/README.md"
 def referenceGenome = 'reference_genome/ref.fasta'
 def chromSizesFile = 'reference_genome/chrom.sizes'
 
-if (params.type == 'human') {
+if (dataType == 'human') {
 	isDeepModCluster = params.useDeepModCluster
 	if (isDeepModCluster && params.runDeepMod) {
 		deepmod_tar_file = params.deepmod_ctar
 	}
-} else if (params.type == 'ecoli') { isDeepModCluster = false }
-else { 	exit 1, "Param type=${params.type} is not support" }
-
-// if is true or 'true' (string), using '  '
-chrSet = params.chrSet.toBoolean() ? '  ' : params.chrSet
+} else if (dataType == 'ecoli') { isDeepModCluster = false }
+else { 	exit 1, "Param type=${dataType} is not support" }
 
 workflow.onComplete {
 	if (workflow.success && params.cleanCache) {
@@ -163,13 +170,19 @@ summary['genome'] 			= params.genome
 
 summary['\nRunning settings']         = "--------"
 summary['processors'] 		= params.processors
-if (params.runNanopolish) summary['runNanopolish'] = 'Yes'
-if (params.runMegalodon) summary['runMegalodon'] = 'Yes'
-if (params.runDeepSignal) summary['runDeepSignal'] = 'Yes'
-if (params.runGuppy) summary['runGuppy'] = 'Yes'
-if (params.runTombo) summary['runTombo'] = 'Yes'
-if (params.runMETEORE) summary['runMETEORE'] = 'Yes'
-if (params.runDeepMod) summary['runDeepMod'] = 'Yes'
+summary['chrSet'] 			= chrSet
+summary['dataType'] 		= dataType
+
+if (params.runBasecall) summary['runBasecall'] = 'Yes'
+if (params.runMethcall) {
+	if (params.runNanopolish) summary['runNanopolish'] = 'Yes'
+	if (params.runMegalodon) summary['runMegalodon'] = 'Yes'
+	if (params.runDeepSignal) summary['runDeepSignal'] = 'Yes'
+	if (params.runGuppy) summary['runGuppy'] = 'Yes'
+	if (params.runTombo) summary['runTombo'] = 'Yes'
+	if (params.runMETEORE) summary['runMETEORE'] = 'Yes'
+	if (params.runDeepMod) summary['runDeepMod'] = 'Yes'
+}
 
 summary['\nPipeline settings']         = "--------"
 summary['Working dir'] 		= workflow.workDir
@@ -235,11 +248,11 @@ process EnvCheck {
 
 	input:
 	path reference_genome
-	path megalodonModelTar
 
 	output:
 	path "reference_genome",	emit: reference_genome
-	path "megalodon_model",		emit: megalodon_model, optional: true
+	path "${params.MEGALODON_MODEL_DIR}",		emit: megalodon_model, optional: true
+	path "${params.DEEPSIGNAL_MODEL_DIR}",	emit: deepsignal_model, optional: true
 
 	script:
 	"""
@@ -250,12 +263,29 @@ process EnvCheck {
 	validate_nanome_container.sh
 
 	## Untar and prepare megalodon model
-	if [[ ${params.runMegalodon} == "true" ]]; then
-		ls -lh ${megalodonModelTar}
-
-		tar -xzf ${megalodonModelTar}
+	if [[ ${params.runMegalodon} == true ]]; then
+		if [[ -f "/data/${params.MEGALODON_MODEL_TAR_GZ}" ]] ; then
+			tar -xzf /data/${params.MEGALODON_MODEL_TAR_GZ} -C .
+		else
+			wget ${params.megalodon_model_tar} --no-verbose &&\
+				tar -xzf ${params.MEGALODON_MODEL_TAR_GZ} &&\
+				rm -f ${params.MEGALODON_MODEL_TAR_GZ}
+		fi
 		## Check Megalodon model
-		ls -lh megalodon_model
+		ls -lh ${params.MEGALODON_MODEL_DIR}
+	fi
+
+	## Untar and prepare megalodon model
+	if [[ ${params.runDeepSignal} == true ]]; then
+		if [[ -f "/data/${params.DEEPSIGNAL_MODEL_TAR_GZ}" ]] ; then
+			tar -xzf /data/${params.DEEPSIGNAL_MODEL_TAR_GZ} -C .
+		else
+			wget ${params.deepsignal_model_tar} --no-verbose &&\
+				tar -xzf ${params.DEEPSIGNAL_MODEL_TAR_GZ} &&\
+				rm -f ${params.DEEPSIGNAL_MODEL_TAR_GZ}
+		fi
+		## Check DeepSignal model
+		ls -lh ${params.DEEPSIGNAL_MODEL_DIR}
 	fi
 
 	## Get dir for reference_genome
@@ -282,7 +312,7 @@ process EnvCheck {
 	echo "referenceGenome=${referenceGenome}"
 	echo "chromSizesFile=${chromSizesFile}"
 	echo "chrSet=${chrSet}"
-	echo "params.type=${params.type}"
+	echo "dataType=${dataType}"
 
 	echo "### Check env DONE"
 	"""
@@ -313,7 +343,9 @@ process Untar {
 		tar -xzf \${infn} -C untarTempDir
 	elif [[ -d ${fast5_tar} ]]; then
 		## Copy files, do not change original files such as old analyses data
-		cp -rf ${fast5_tar}/* untarTempDir/  || true # failed means nothing in this folder
+		## cp -rf ${fast5_tar}/* untarTempDir/  || true # failed means nothing in this folder
+		find ${fast5_tar}/ -name '*.fast5' | \
+			parallel -j\$(( numProcessor ))  cp {} untarTempDir/
 	else
 		echo "### Untar error for input=${fast5_tar}"
 	fi
@@ -437,11 +469,12 @@ process QCExport {
 
 	input:
 	path qc_basecall_list
-	each reference_genome
+	path reference_genome
 
 	output:
 	path "${params.dsname}_basecall_report.html",	emit: qc_html
 	path "${params.dsname}_QCReport",				emit: qc_report
+	path "${params.dsname}_bam_data",		optional: true,	 emit: bam_data
 
 	"""
 	## Combine all sequencing summary files
@@ -464,43 +497,53 @@ process QCExport {
 		--names ${params.dsname} --outdir ${params.dsname}_QCReport -t \$(( numProcessor )) \
 		--raw  -f pdf -p ${params.dsname}_   &>> QCReport.run.log
 
-	## Combine all batch fq.gz
-	> merge_all_fq.fq.gz
-	cat *.basecalled/batch_basecall_combine_fq_*.fq.gz > merge_all_fq.fq.gz
-	echo "### Fastq merge from all batches done!"
+	if [[ ${params.outputBam} == true  || ${params.outputONTCoverage} == true ]]; then
+		## Combine all batch fq.gz
+		> merge_all_fq.fq.gz
+		cat *.basecalled/batch_basecall_combine_fq_*.fq.gz > merge_all_fq.fq.gz
+		echo "### Fastq merge from all batches done!"
 
-	## After basecall, we align results for ONT coverage analyses
-	# align FASTQ files to reference genome, write sorted alignments to a BAM file
-	minimap2 -t \$(( numProcessor * ${params.mediumProcTimes} )) -a  -x map-ont \
-		${referenceGenome} \
-		merge_all_fq.fq.gz | \
-		samtools sort -@ \$(( numProcessor * ${params.mediumProcTimes} )) -T tmp -o \
-			merge_all_bam.bam &&\
-		samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} ))  merge_all_bam.bam
-    echo "### Samtools alignment done"
+		## After basecall, we align results to merged, sorted bam, can be for ONT coverage analyses/output bam
+		# align FASTQ files to reference genome, write sorted alignments to a BAM file
+		minimap2 -t \$(( numProcessor * ${params.mediumProcTimes} )) -a  -x map-ont \
+			${referenceGenome} \
+			merge_all_fq.fq.gz | \
+			samtools sort -@ \$(( numProcessor * ${params.mediumProcTimes} )) -T tmp -o \
+				${params.dsname}_merge_all_bam.bam &&\
+			samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} ))  ${params.dsname}_merge_all_bam.bam
+		echo "### Samtools alignment done"
+	fi
 
-    ## calculates the sequence coverage at each position
-    ## reporting genome coverage for all positions in BEDGRAPH format.
-    bedtools genomecov -ibam merge_all_bam.bam -bg -strand + |
-        awk '\$4 = \$4 FS "+"' |
-        gzip -f > ${params.dsname}.coverage.positivestrand.bed.gz
+	if [[ ${params.outputONTCoverage} == true ]]; then
+		## calculates the sequence coverage at each position
+		## reporting genome coverage for all positions in BEDGRAPH format.
+		bedtools genomecov -ibam ${params.dsname}_merge_all_bam.bam -bg -strand + |
+			awk '\$4 = \$4 FS "+"' |
+			gzip -f > ${params.dsname}.coverage.positivestrand.bed.gz
 
-    bedtools genomecov -ibam merge_all_bam.bam -bg -strand - |
-        awk '\$4 = \$4 FS "-"' |
-        gzip -f > ${params.dsname}.coverage.negativestrand.bed.gz
+		bedtools genomecov -ibam ${params.dsname}_merge_all_bam.bam -bg -strand - |
+			awk '\$4 = \$4 FS "-"' |
+			gzip -f > ${params.dsname}.coverage.negativestrand.bed.gz
 
-    cat ${params.dsname}.coverage.positivestrand.bed.gz > ${params.dsname}_ONT_coverage_combine.bed.gz
-	cat ${params.dsname}.coverage.negativestrand.bed.gz >> ${params.dsname}_ONT_coverage_combine.bed.gz
+		cat ${params.dsname}.coverage.positivestrand.bed.gz > ${params.dsname}_ONT_coverage_combine.bed.gz
+		cat ${params.dsname}.coverage.negativestrand.bed.gz >> ${params.dsname}_ONT_coverage_combine.bed.gz
 
-	mv ${params.dsname}_ONT_coverage_combine.bed.gz ${params.dsname}_QCReport/
+		mv ${params.dsname}_ONT_coverage_combine.bed.gz ${params.dsname}_QCReport/
+	fi
+
 	mv ${params.dsname}_combine_sequencing_summary.txt.gz ${params.dsname}_QCReport/
 	mv ${params.dsname}_QCReport/${params.dsname}_NanoComp-report.html ${params.dsname}_basecall_report.html
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
 		rm -f ${params.dsname}.coverage.positivestrand.bed.gz ${params.dsname}.coverage.negativestrand.bed.gz
-		rm -f ${params.dsname}_merged.bam*
-		rm -f merge_all_bam.bam*  merge_all_fq.fq.gz
+		rm -f merge_all_fq.fq.gz
+		if [[ ${params.outputBam} == false ]]; then
+			rm -f ${params.dsname}_merge_all_bam.bam*
+		else
+			mkdir -p ${params.dsname}_bam_data
+			mv  ${params.dsname}_merge_all_bam.bam*  ${params.dsname}_bam_data/
+		fi
 	fi
     echo "### ONT coverage done!"
     echo "### QCReport all DONE"
@@ -571,7 +614,7 @@ process Resquiggle {
 process Nanopolish {
 	tag "${basecallDir.baseName}"
 
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/nanopolish",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/nanopolish",
 		mode: "copy",
 		enabled: params.outputIntermediate
 
@@ -667,7 +710,7 @@ process NplshComb {
 process Megalodon {
 	tag "${fast5_dir.baseName}"
 
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/megalodon",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/megalodon",
 		mode: "copy",
 		enabled: params.outputIntermediate
 
@@ -800,13 +843,14 @@ process MgldnComb {
 process DeepSignal {
 	tag "${indir.baseName}"
 
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/deepsignal",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/deepsignal",
 		mode: "copy",
 		enabled: params.outputIntermediate
 
 	input:
 	path indir
 	each path(reference_genome)
+	each path(deepsignal_model_dir)
 
 	output:
 	path "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv.gz",	emit: deepsignal_out
@@ -815,21 +859,13 @@ process DeepSignal {
 	params.runMethcall && params.runDeepSignal
 
 	"""
-	if ls /data/${params.DEEPSIGNAL_MODEL}* 1> /dev/null 2>&1; then
-		DeepSignalModelBaseDir=/data
-	else
-		wget ${params.deepsignal_model_tar}  --no-verbose
-		tar -xzf ${params.DEEPSIGNAL_MODEL_TAR_GZ} &&
-			rm -f ${params.DEEPSIGNAL_MODEL_TAR_GZ}
-		DeepSignalModelBaseDir="."
-	fi
-
+	DeepSignalModelBaseDir="."
 	commandType='gpu'
 	if [[ \${commandType} == "cpu" ]]; then
 		## CPU version command
 		deepsignal call_mods \
 			--input_path ${indir}/workspace \
-			--model_path "\${DeepSignalModelBaseDir}/${params.DEEPSIGNAL_MODEL}" \
+			--model_path "\${DeepSignalModelBaseDir}/${params.DEEPSIGNAL_MODEL_DIR}/${params.DEEPSIGNAL_MODEL}" \
 			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
@@ -839,7 +875,7 @@ process DeepSignal {
 		## GPU version command
 		deepsignal call_mods \
 			--input_path ${indir}/workspace \
-			--model_path "\${DeepSignalModelBaseDir}/${params.DEEPSIGNAL_MODEL}" \
+			--model_path "\${DeepSignalModelBaseDir}/${params.DEEPSIGNAL_MODEL_DIR}/${params.DEEPSIGNAL_MODEL}" \
 			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
@@ -900,11 +936,11 @@ process DpSigComb {
 process Guppy {
 	tag "${fast5_dir.baseName}"
 
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/guppy",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/guppy",
 		mode: "copy",
 		pattern: "outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz",
 		enabled: params.outputIntermediate
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/guppy",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/guppy",
 		mode: "copy",
 		pattern: "batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz",
 		enabled: params.outputIntermediate
@@ -1044,7 +1080,7 @@ process GuppyComb {
 		mode: "copy", pattern: "${params.dsname}.guppy.*.combine.tsv.gz",
 		enabled: params.outputRaw
 
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/guppy",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/guppy",
 		mode: "copy", pattern: "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz",
 		enabled: params.outputIntermediate
 
@@ -1092,7 +1128,7 @@ process GuppyComb {
 
 	awk '/^>/' ${referenceGenome} | awk '{print \$1}' \
 		> rf_chr_all_list.txt
-	if [[ "${params.type}" == "human" ]] ; then
+	if [[ "${dataType}" == "human" ]] ; then
 		echo "### For human, extract chr1-22, X and Y"
 		> chr_all_list.txt
 		for i in {1..22} X Y
@@ -1119,7 +1155,7 @@ process GuppyComb {
 					${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
 			fi
 		done
-	elif [[ "${params.type}" == "ecoli" ]] ; then
+	elif [[ "${dataType}" == "ecoli" ]] ; then
 		echo "### For ecoli, chr=${chrSet}"
 		fast5mod call total.meth.bam ${referenceGenome} \
 			meth.chr_${chrSet}.tsv \
@@ -1153,7 +1189,7 @@ process GuppyComb {
 process Tombo {
 	tag "${resquiggleDir.baseName}"
 
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/tombo",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/tombo",
 		mode: "copy",
 		enabled: params.outputIntermediate
 
@@ -1276,7 +1312,7 @@ process TomboComb {
 process DeepMod {
 	tag "${basecallDir.baseName}"
 
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/deepmod",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/deepmod",
 		mode: "copy", pattern: "batch_${basecallDir.baseName}_num.tar.gz",
 		enabled: params.outputIntermediate
 
@@ -1309,7 +1345,7 @@ process DeepMod {
 		DeepModTrainModelDir="DeepMod-0.1.3/train_deepmod"
 	fi
 
-	if [[ "${params.type}" = "human" ]] ; then
+	if [[ "${dataType}" == "human" ]] ; then
 		mod_cluster=1 ## Human will use cluster model
 	else
 		mod_cluster=0 ## Not human will skip cluser model
@@ -1350,13 +1386,13 @@ process DpmodComb {
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy", pattern: "${params.dsname}.deepmod.*.combine.bed.gz",
 		enabled: params.outputRaw
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/deepmod",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/deepmod",
 		mode: "copy", pattern: "${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz",
 		enabled: params.outputIntermediate
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/deepmod",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/deepmod",
 		mode: "copy", pattern: "${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz",
 		enabled: params.outputIntermediate
-	publishDir "${params.outdir}/${params.dsname}_raw_outputs/deepmod",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/deepmod",
 		mode: "copy", pattern: "${params.dsname}.deepmod.all_batch.C.bed.tar.gz",
 		enabled: params.outputIntermediate
 
@@ -1417,7 +1453,7 @@ process DpmodComb {
 	done
 	gzip -f ${params.dsname}.deepmod.C_per_site.combine.bed
 
-	if [[ "${params.type}" == "human" && "${isDeepModCluster}" == "true" ]] ; then
+	if [[ "${dataType}" == "human" && "${isDeepModCluster}" == "true" ]] ; then
 		## Only apply to human genome
 		echo "### For human, apply cluster model of DeepMod"
 
@@ -1499,6 +1535,7 @@ process METEORE {
 	path naonopolish
 	path megalodon
 	path deepsignal
+	path utils
 
 	output:
 	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz",	emit: meteore_combine_out, optional: true
@@ -1509,28 +1546,26 @@ process METEORE {
 	params.runMethcall && params.runMETEORE
 
 	"""
-	## METEORE outputs by combining other tools
-	outFileName=${params.dsname}_Megalodon_DeepSignal_combine.model_content.tsv
-	> \$outFileName
-	printf '%s\t%s\n' deepsignal ${deepsignal} >> \$outFileName
-	printf '%s\t%s\n' megalodon ${megalodon} >> \$outFileName
-
-	if [ -d /data ]; then
-		METEOREDIR=\$(find /data -maxdepth 1 -name "${params.METEORE_Dir}" -type d)
+	if [[ -d "/data/${params.METEORE_Dir}" ]] ; then
+		METEOREDIR="/data/${params.METEORE_Dir}"
 	else
-		METEOREDIR=""
+		wget ${params.METEOREGithub}  --no-verbose &&\
+			tar -xzf v1.0.0.tar.gz &&\
+			rm -f v1.0.0.tar.gz
+		METEOREDIR="${params.METEORE_Dir}"
 	fi
-	if [[ \$METEOREDIR == "" ]]; then
-		wget ${params.METEOREGithub}  --no-verbose
-		tar -xzf v1.0.0.tar.gz
-		METEOREDIR=\$(find . -name "${params.METEORE_Dir}" -type d)
-	fi
+
+	## METEORE outputs by combining other tools
+	modelContentFileName=${params.dsname}_Megalodon_DeepSignal_combine.model_content.tsv
+	> \$modelContentFileName
+	printf '%s\t%s\n' deepsignal ${deepsignal} >> \$modelContentFileName
+	printf '%s\t%s\n' megalodon ${megalodon} >> \$modelContentFileName
 
 	## Degrade sk-learn for METEORE program if needed, it's model load need lower version
 	## pip install -U scikit-learn==0.21.3
-	combineScript=combination_model_prediction.py
+	## combineScript="python utils/combination_model_prediction.py"
+	combineScript="combination_model_prediction.py"
 
-	modelContentFileName=\$(find . -name "${params.dsname}_Megalodon_DeepSignal_combine.model_content.tsv" -type f)
 	# Use the optimized model (n_estimator = 3 and max_dep = 10)
 	# Please note this optimized model is reported in METEORE paper, ref: https://github.com/comprna/METEORE#command
 	# paper: https://doi.org/10.1101/2020.10.14.340315, text:  random forest (RF) (parameters: max_depth=3 and n_estimator=10)
@@ -1542,10 +1577,10 @@ process METEORE {
 		&>> METEORE.run.log
 
 	# Use default parameters from the sklearn library (n_estimator = 100 and max_dep = None)
-	\${combineScript}\
-		-i \${modelContentFileName} -m default -b \${METEOREDIR} \
-		-o ${params.dsname}.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz\
-		&>> METEORE.run.log
+	##\${combineScript}\
+	##	-i \${modelContentFileName} -m default -b \${METEOREDIR} \
+	##	-o ${params.dsname}.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz\
+	##	&>> METEORE.run.log
 
 	# Read level and site level output
 	if [ -f ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz ] ; then
@@ -1656,6 +1691,7 @@ process Report {
 	cp -rf \${nanome_dir}/src/nanocompare/report/js ${params.dsname}_NANOME_report/
 
 	## Generate html report
+	### python src/nanocompare/report/gen_html_report.py
 	gen_html_report.py \
 		${params.dsname} \
 		running_information.tsv \
@@ -1679,18 +1715,35 @@ process Report {
 
 	if [[ ${params.outputGenomeBrowser} == true ]]; then
 		mkdir -p GenomeBrowser-${params.dsname}
+		## generate meth freq bigwig data
 		find . -name '*-perSite-cov1.sort.bed.gz' | \
 			parallel -j\$((numProcessor)) -v \
 				"basefn={/}  && \
 					zcat {} | \
-					awk '{printf \\"%s\\t%d\\t%d\\t%2.3f\\n\\" , \\\$1,\\\$2,\\\$3,\\\$7}' > \
-					GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bedgraph} && \
+					awk '{printf \\"%s\\t%d\\t%d\\t%2.5f\\n\\" , \\\$1,\\\$2,\\\$3,\\\$7}' > \
+					GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_methfreq.bedgraph} && \
 					LC_COLLATE=C sort -u -k1,1 -k2,2n \
-						GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bedgraph} > \
-							GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.sorted.bedgraph} && \
-					bedGraphToBigWig GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.sorted.bedgraph} \
-						reference_genome/chrom.sizes   GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bw} && \
-						rm -f GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/.bedgraph}"
+						GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_methfreq.bedgraph} > \
+							GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_methfreq.sorted.bedgraph} && \
+					bedGraphToBigWig GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_methfreq.sorted.bedgraph} \
+						reference_genome/chrom.sizes   GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_methfreq.bw} && \
+						rm -f GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_methfreq.bedgraph}  \
+							GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_methfreq.sorted.bedgraph}"
+
+		## generate coverage bigwig data
+		find . -name '*-perSite-cov1.sort.bed.gz' | \
+			parallel -j\$((numProcessor)) -v \
+				"basefn={/}  && \
+					zcat {} | \
+					awk '{printf \\"%s\\t%d\\t%d\\t%d\\n\\" , \\\$1,\\\$2,\\\$3,\\\$8}' > \
+					GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_coverage.bedgraph} && \
+					LC_COLLATE=C sort -u -k1,1 -k2,2n \
+						GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_coverage.bedgraph} > \
+							GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_coverage.sorted.bedgraph} && \
+					bedGraphToBigWig GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_coverage.sorted.bedgraph} \
+						reference_genome/chrom.sizes   GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_coverage.bw} && \
+						rm -f GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_coverage.bedgraph}  \
+							GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_coverage.sorted.bedgraph}"
 	fi
 	echo "### report html DONE"
 	"""
@@ -1698,10 +1751,9 @@ process Report {
 
 
 workflow {
-	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: false)
-	megalodon_model_ch = Channel.fromPath(megalodon_model_tar, type: 'any', checkIfExists: false)
+	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
 
-	EnvCheck(genome_ch, megalodon_model_ch)
+	EnvCheck(genome_ch)
 	Untar(fast5_tar_ch)
 	if (params.runBasecall) {
 		Basecall(Untar.out.untar)
@@ -1734,7 +1786,7 @@ workflow {
 	}
 
 	if (params.runDeepSignal && params.runMethcall) {
-		DeepSignal(Resquiggle.out.resquiggle, EnvCheck.out.reference_genome)
+		DeepSignal(Resquiggle.out.resquiggle, EnvCheck.out.reference_genome, EnvCheck.out.deepsignal_model)
 		comb_deepsignal = DpSigComb(DeepSignal.out.deepsignal_out.collect())
 		s3 = comb_deepsignal.site_unify
 		r3 = comb_deepsignal.read_unify
@@ -1773,7 +1825,7 @@ workflow {
 
 	if (params.runMETEORE && params.runMethcall) {
 		// Read level combine a list for top3 used by METEORE
-		METEORE(r1, r2, r3)
+		METEORE(r1, r2, r3, ch_utils)
 		s7 = METEORE.out.site_unify
 		r7 = METEORE.out.read_unify
 	} else {

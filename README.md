@@ -61,27 +61,38 @@ Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https:
 
 
 ## Installation
-Users only need to install **Nextflow** (https://nf-co.re/usage/installation). NANOME execution environment will be automatically configured with the support of conda, docker or singularity containers.
+Users only need to install **Nextflow** (https://nf-co.re/usage/installation). NANOME execution environment will be automatically configured with the support of conda, docker or singularity containers. Below is steps for installing Nextflow:
+```angular2html
+# Add channel and install nextflow
+conda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
+conda install nextflow
+conda update nextflow
+nextflow -v
+```
 
 NANOME pipeline support running with various ways in different platforms:
-* Conda
-    1. Create conda enviroment: `conda env create -f environment.yml`
 * Docker
-    1. Docker container is in [Docker Hub](https://hub.docker.com/repository/docker/liuyangzzu/nanome): `liuyangzzu/nanome:latest`, you can also build docker image by `docker build -t liuyangzzu/nanome:latest .`
 * Singularity
-    1. Pull singularity image from [Docker Hub](https://hub.docker.com/repository/docker/liuyangzzu/nanome): `singularity pull docker://liuyangzzu/nanome:latest`
+* Conda
 * **Local** execution: running directly on default platform
 * HPC clusters with **SLURM** support
 * Google Cloud Platform (GCP) with **google-lifesciences** support
 
 ## Simple usage
+
+We provide a **tutorial video** for running NANOME pipeline:
+
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/xwk1zRU42_4/0.jpg)](https://www.youtube.com/watch?v=xwk1zRU42_4)
+
 When you have Nextflow software, NANOME pipeline can be directly executed without any other additional installation steps:
 ```angular2html
-# Run NANOME using docker
+# Run NANOME via docker
 nextflow run TheJacksonLaboratory/nanome\
     -profile test,docker
 
-# Run NANOME using singularity
+# Run NANOME via singularity
 nextflow run TheJacksonLaboratory/nanome\
     -profile test,singularity
 ```

@@ -27,7 +27,6 @@ gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} >/dev/null 2>&1 || tru
 echo "### nanome pipeline for demo data on google START"
 nextflow run main.nf\
     -profile docker,google \
-    -config conf/executors/gcp_input.config\
 	-w ${WORK_DIR_BUCKET} \
 	--outdir ${OUTPUT_DIR_BUCKET} \
 	--dsname TestData \
@@ -50,7 +49,6 @@ gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} >/dev/null 2>&1 || tru
 echo "### nanome pipeline for NA12878 some chr and part file on google START"
 nextflow run main.nf\
     -profile docker,google -resume\
-    -config conf/executors/gcp_input.config\
 	-w ${WORK_DIR_BUCKET} \
 	--outdir ${OUTPUT_DIR_BUCKET} \
 	--dsname na12878_chr17_p6 \
