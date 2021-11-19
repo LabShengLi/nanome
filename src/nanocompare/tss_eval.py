@@ -148,7 +148,7 @@ if __name__ == '__main__':
                 continue
             callname = get_tool_name(callencode)
             # Consider tools have read-level outputs, except for DeepMod
-            if callname not in ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo']:
+            if callname not in ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo', 'METEORE', 'NANOME']:
                 continue
             outfn = os.path.join(out_dir,
                                  f"{args.dsname}_{callname}{f'-{args.tagname}' if args.tagname else ''}-perRead-score.tsv.gz")

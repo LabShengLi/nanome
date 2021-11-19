@@ -1622,6 +1622,10 @@ process Report {
 
 	input:
 	path fileList
+	path naonopolish
+	path megalodon
+	path deepsignal
+
 	path qc_report
 	path src
 	path utils
@@ -1638,6 +1642,22 @@ process Report {
 	fileList.size() >= 1
 
 	"""
+	## NANOME XGBoost method
+	NanopolishReadReport=\$(find . -maxdepth 1 -name '*Nanopolish-perRead-score.tsv.gz')
+	MegalodonReadReport=\$(find . -maxdepth 1 -name '*Megalodon-perRead-score.tsv.gz')
+	DeepSignalReadReport=\$(find . -maxdepth 1 -name '*DeepSignal-perRead-score.tsv.gz')
+
+	modelContentFileName=${params.dsname}_Megalodon_DeepSignal_combine.nanome_model_content.tsv
+	> \$modelContentFileName
+	printf '%s\t%s\n' megalodon \${MegalodonReadReport} >> \$modelContentFileName
+	printf '%s\t%s\n' deepsignal \${DeepSignalReadReport} >> \$modelContentFileName
+
+	pip install xgboost
+	PYTHONPATH=src python src/nanocompare/xgboost/xgboost_predict.py \
+		--verbose  --contain-na --tsv-input\
+		--dsname ${params.dsname} -i \${modelContentFileName}\
+		-m APL -o ${params.dsname}.nanome.per_read.combine.tsv.gz
+
 	## NANOME consensus method
 	if [[ ${params.nanomeNanopolish} == true ]]; then
 		NanopolishSiteReport=\$(find . -maxdepth 1 -name '*Nanopolish-perSite-*.sort.bed.gz')
@@ -1837,5 +1857,5 @@ workflow {
 	Channel.fromPath("${projectDir}/README.md").concat(
 		s1, s2, s3, s4, s5, s6, s7
 		).toList().set { tools_site_unify }
-	Report(tools_site_unify, QCExport.out.qc_report, ch_src, ch_utils, EnvCheck.out.reference_genome)
+	Report(tools_site_unify, r1, r2, r3, QCExport.out.qc_report, ch_src, ch_utils, EnvCheck.out.reference_genome)
 }
