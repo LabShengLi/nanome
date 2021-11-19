@@ -1659,25 +1659,30 @@ process Report {
 	MegalodonReadReport=\$(find . -maxdepth 1 -name '*Megalodon-perRead-score.tsv.gz')
 	DeepSignalReadReport=\$(find . -maxdepth 1 -name '*DeepSignal-perRead-score.tsv.gz')
 
-	modelContentTSVFileName=${params.dsname}_Megalodon_DeepSignal_combine.nanome_model_content.tsv
-	> \$modelContentTSVFileName
-	printf '%s\t%s\n' megalodon \${MegalodonReadReport} >> \$modelContentTSVFileName
-	printf '%s\t%s\n' deepsignal \${DeepSignalReadReport} >> \$modelContentTSVFileName
+	if [[ ! -z \$MegalodonReadReport && ! -z \$DeepSignalReadReport ]] ; then
+		## NANOME XGBoost model results, if two model results exists
+		echo "### NANOME XGBoost predictions"
+		modelContentTSVFileName=${params.dsname}_Megalodon_DeepSignal_combine.nanome_model_content.tsv
+		> \$modelContentTSVFileName
+		printf '%s\t%s\n' megalodon \${MegalodonReadReport} >> \$modelContentTSVFileName
+		printf '%s\t%s\n' deepsignal \${DeepSignalReadReport} >> \$modelContentTSVFileName
 
-	## pip install xgboost
-	PYTHONPATH=src python src/nanocompare/xgboost/xgboost_predict.py \
-		--verbose  --contain-na --tsv-input\
-		--dsname ${params.dsname} -i \${modelContentTSVFileName}\
-		-m APL -o ${params.dsname}.nanome.per_read.combine.tsv.gz &>> Report.run.log  || true
+		## pip install xgboost
+		xgboost_predict.py \
+			--verbose  --contain-na --tsv-input\
+			--dsname ${params.dsname} -i \${modelContentTSVFileName}\
+			-m APL -o ${params.dsname}.nanome.per_read.combine.tsv.gz &>> Report.run.log  || true
 
-	## Unify format output
-	unify_format_for_calls.sh \
-		${params.dsname}  NANOME ${params.dsname}.nanome.per_read.combine.tsv.gz \
-		.  \$((numProcessor))  12  ${chrSet}
-	ln -s Site_Level-${params.dsname}/${params.dsname}_NANOME-perSite-cov1.sort.bed.gz\
-	  	${params.dsname}_NANOME-perSite-cov1.sort.bed.gz
+		## Unify format output
+		echo "### NANOME read/site level results"
+		unify_format_for_calls.sh \
+			${params.dsname}  NANOME ${params.dsname}.nanome.per_read.combine.tsv.gz \
+			.  \$((numProcessor))  12  ${chrSet}
+		ln -s Site_Level-${params.dsname}/${params.dsname}_NANOME-perSite-cov1.sort.bed.gz\
+			${params.dsname}_NANOME-perSite-cov1.sort.bed.gz
+	fi
 
-	## Generate running information tsv
+	## Generate NF pipeline running information tsv
 	> running_information.tsv
 	printf '%s\t%s\n' Title Information >> running_information.tsv
 	printf '%s\t%s\n' dsname ${params.dsname} >> running_information.tsv
