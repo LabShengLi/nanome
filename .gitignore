@@ -72,4 +72,4 @@ testdemo.py
 /google_cloud_test.sh
 /jupyter_codes/
 /na19240_hpc_winter.sh
-/src/xgboost/
+/xgboost_model/

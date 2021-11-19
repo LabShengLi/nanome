@@ -10,12 +10,13 @@ Define names and global variables
 """
 import json
 import os
+from pathlib import Path
 
 import pandas as pd
 
 from nanocompare.global_config import set_log_debug_level
 
-NANOME_VERSION = "1.3.12"
+NANOME_VERSION = "1.3.13"
 
 # define the small error of 0 and 1, for fully-meth and unmeth eval
 EPSLONG = 1e-5
@@ -24,7 +25,7 @@ EPSLONG = 1e-5
 CHUNKSIZE = 500000
 
 # can be 1.0, or 0.9 for the level of fully-meth definition
-FULLY_METH_LEVEL = 1.0
+FULLY_METH_LEVEL = 1.00
 
 # chr 1-22 X and Y
 HUMAN_CHR_SET = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
@@ -86,6 +87,19 @@ concord_tagname = 'Concordant'
 discord_tagname = 'Discordant'
 
 default_config_name = 'nanome_genome_annotation.csv'
+
+nanome_apl_model_fn = os.path.join(
+    Path(__file__).parent, 'xgboost', 'trained_model',
+    'NANOME_APL_Train_train0.20_megalodon_deepsignal_xgboost_model.pkl')
+
+nanome_na12878_model_fn = os.path.join(
+    Path(__file__).parent, 'xgboost', 'trained_model',
+    'NANOME_NA12878_Train_train0.20_megalodon_deepsignal_xgboost_model.pkl')
+
+nanome_model_dict = {
+    "APL": nanome_apl_model_fn,
+    "NA12878": nanome_na12878_model_fn,
+}
 
 
 def load_genome_annotation_config(verbose=False):

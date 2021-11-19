@@ -17,7 +17,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="nanome-jax",
-    version="1.3.12",
+    version="1.3.13",
     author="Yang Liu",
     author_email="yang.liu@jax.org",
     description="NANOME (Nanopore methylation) pipeline developed by Li Lab at The Jackson Laboratory",
@@ -49,9 +49,12 @@ setuptools.setup(
         'utils/tombo_extract_per_read_stats.py',
         'utils/validate_nanome_container.sh',
         'utils/unify_format_for_calls.sh',
+        'src/nanocompare/xgboost/xgboost_train.py',
+        'src/nanocompare/xgboost/xgboost_predict.py',
+        'src/nanocompare/xgboost/xgboost_prepdata.py',
     ],
     include_package_data=True,
-    package_data={'': ['src/nanocompare/*.csv']},
+    package_data={'': ['src/nanocompare/*.csv', 'src/nanocompare/xgboost/trained_model/*.pkl']},
     classifiers=[
         "Programming Language :: Python :: 3",
         'Intended Audience :: Science/Research',
@@ -66,13 +69,14 @@ setuptools.setup(
         'scipy',
         'numpy',
         'statsmodels',
-        'scikit-learn',
+        'scikit-learn==0.21.3',
         'matplotlib',
         'jinja2',
         'openpyxl',
         'h5py',
         'tqdm',
         'joblib',
-        'psutil'
+        'psutil',
+        'xgboost'
     ]
 )
