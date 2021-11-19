@@ -58,7 +58,7 @@ def report_meth_unmeth_table_by_chr(chr):
 
 
 def report_meth_unmeth_table():
-    chrSet = list(humanChrSet)
+    chrSet = list(HUMAN_CHR_SET)
     chrSet.remove('chrY')
     chrSet.remove('chr22')
     logger.debug(f'chrSet={chrSet}')

@@ -20,7 +20,7 @@ import pybedtools
 from sklearn.metrics import confusion_matrix
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import nanome_version, perf_report_columns, \
+from nanocompare.global_settings import NANOME_VERSION, perf_report_columns, \
     save_done_file, \
     region_filename_dict, region_tagname_dict, sing_tagname, nonsing_tagname, concord_tagname, discord_tagname, \
     load_genome_annotation_config
@@ -521,7 +521,7 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(prog='read_level_eval (NANOME)',
                                      description='Read-level performance evaluation in nanome paper')
-    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethPerf-DS_WGBS_2reps",
                         required=True)
@@ -540,7 +540,7 @@ def parse_arguments():
     parser.add_argument('--processors', type=int, help="number of processors used, default is 1", default=1)
     parser.add_argument('--report-joined', action='store_true', help="true if report on only joined sets")
     parser.add_argument('--chrSet', nargs='+', help='chromosome list, default is human chr1-22, X and Y',
-                        default=humanChrSet)
+                        default=HUMAN_CHR_SET)
     parser.add_argument('-o', type=str, help=f"output base dir, default is {pic_base_dir}", default=pic_base_dir)
     parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
     parser.add_argument('--using-cache', help="if use cache files", action='store_true')

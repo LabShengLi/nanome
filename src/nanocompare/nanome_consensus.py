@@ -16,7 +16,7 @@ import pandas as pd
 
 from nanocompare.eval_common import sort_bed_file
 from nanocompare.global_config import logger, set_log_debug_level, set_log_info_level
-from nanocompare.global_settings import nanome_version
+from nanocompare.global_settings import NANOME_VERSION
 
 
 def consensus(df):
@@ -54,7 +54,7 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(prog='consensus (NANOME)',
                                      description='Consensus site level methylation results of top performers')
-    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('--site-reports', nargs='+', help='all site level reports need to be consensus', required=True)
     parser.add_argument('--tools', nargs='+', help="tools' names list", default=None)
     parser.add_argument('--join',

@@ -25,7 +25,7 @@ from tqdm import tqdm
 from nanocompare.eval_common import load_tombo_df, load_deepmod_df, get_dna_base_from_reference, \
     load_sam_as_strand_info_df, load_nanopolish_df
 from nanocompare.global_config import *
-from nanocompare.global_settings import humanChrSet
+from nanocompare.global_settings import HUMAN_CHR_SET
 
 
 def add_strand_info_for_nanopolish(
@@ -720,7 +720,7 @@ if __name__ == '__main__':
         # bash meth_stats_tool.sh repetitive-bed
         infn = "/projects/li-lab/yang/results/2021-07-01/hg38.repetitive.bed.gz"
         df = pd.read_csv(infn, sep='\t')
-        df = df[df['genoName'].isin(humanChrSet)]
+        df = df[df['genoName'].isin(HUMAN_CHR_SET)]
         df['n1'] = '.'
         df['n2'] = '.'
         logger.info(df)

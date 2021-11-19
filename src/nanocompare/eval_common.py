@@ -13,6 +13,7 @@ Such as import_DeepSignal, import_BGTruth, etc.
 
 import glob
 import gzip
+import math
 import os.path
 import pickle
 import re
@@ -24,7 +25,6 @@ from concurrent.futures import ThreadPoolExecutor, wait
 from itertools import combinations
 from multiprocessing import Pool
 
-import math
 import numpy as np
 import pandas as pd
 import psutil
@@ -35,13 +35,13 @@ from sklearn.metrics import roc_curve, auc, average_precision_score, f1_score, p
 from tqdm import tqdm
 
 from nanocompare.global_config import *
-from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEncodeList, referenceGenomeFile, \
-    enable_base_detection_bedfile, region_filename_dict, genome_wide_tagname
+from nanocompare.global_settings import HUMAN_CHR_SET, ToolEncodeList, BGTruthEncodeList, reference_genome_hg38_fn, \
+    enable_base_detection_bedfile, region_filename_dict, genome_wide_tagname, EPSLONG, CHUNKSIZE
 
 
 def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, readid_col=4, log_lik_ratio_col=5,
                                  sequence_col=-1, num_motifs_col=-2, baseFormat=1, llr_cutoff=2.0, output_first=False,
-                                 include_score=False, filterChr=humanChrSet, save_unified_format=False, outfn=None,
+                                 include_score=False, filterChr=HUMAN_CHR_SET, save_unified_format=False, outfn=None,
                                  stringent_cutoff=True):
     """
     We checked the input is 0-based for the start col
@@ -191,7 +191,7 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
 
 
 def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=2, readid_col=4, meth_prob_col=7,
-                                 meth_col=8, baseFormat=1, include_score=False, filterChr=humanChrSet,
+                                 meth_col=8, baseFormat=1, include_score=False, filterChr=HUMAN_CHR_SET,
                                  save_unified_format=False, outfn=None):
     """
     We checked input as 0-based format for start col.
@@ -286,7 +286,7 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
 
 
 def importPredictions_Tombo(infileName, chr_col=0, start_col=1, readid_col=3, strand_col=5, meth_col=4, baseFormat=1,
-                            cutoff=(-1.5, 2.5), output_first=False, include_score=False, filterChr=humanChrSet,
+                            cutoff=(-1.5, 2.5), output_first=False, include_score=False, filterChr=HUMAN_CHR_SET,
                             save_unified_format=False, outfn=None):
     """
     We checked input as 0-based start format.
@@ -398,7 +398,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, readid_col=3, st
 
 def importPredictions_DeepMod_C(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-3, meth_freq_col=-2,
                                 meth_cov_col=-1, baseFormat=1, output_first=False, include_score=False,
-                                siteLevel=False, filterChr=humanChrSet, total_cols=12):
+                                siteLevel=False, filterChr=HUMAN_CHR_SET, total_cols=12):
     """
     DeepMod RNN results format
     We treate input as 0-based format for start col.
@@ -512,7 +512,7 @@ def importPredictions_DeepMod_C(infileName, chr_col=0, start_col=1, strand_col=5
 
 def importPredictions_DeepMod_Clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4,
                                         meth_cov_col=-2, clustered_meth_freq_col=-1, baseFormat=1,
-                                        output_first=False, siteLevel=True, include_score=False, filterChr=humanChrSet,
+                                        output_first=False, siteLevel=True, include_score=False, filterChr=HUMAN_CHR_SET,
                                         total_cols=13):
     """
     DeepMod RNN+Cluster results format for human genome
@@ -594,7 +594,7 @@ def importPredictions_DeepMod_Clustered(infileName, chr_col=0, start_col=1, stra
 
 def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4, meth_freq_col=-3,
                               meth_cov_col=-2, clustered_meth_freq_col=-1, baseFormat=1,
-                              output_first=False, siteLevel=True, include_score=False, filterChr=humanChrSet):
+                              output_first=False, siteLevel=True, include_score=False, filterChr=HUMAN_CHR_SET):
     """
     DeepMod RNN+Cluster results format for human genome
     Note that DeepMod only outputs site level stats, we use DeepMod clustered results for site level evaluation only.
@@ -688,7 +688,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
 
 def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3, strand_col=2, mod_log_prob_col=4,
                                 can_log_prob_col=5, baseFormat=1, cutoff=0.8, sep='\t', output_first=False,
-                                include_score=False, filterChr=humanChrSet, save_unified_format=False, outfn=None):
+                                include_score=False, filterChr=HUMAN_CHR_SET, save_unified_format=False, outfn=None):
     """
     0-based start for Magelodon：
         1.  baseFormat=0， start=Megalondon start；
@@ -790,7 +790,7 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
 
 
 def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=False, include_score=False,
-                            siteLevel=False, filterChr=humanChrSet, formatSource="raw"):
+                            siteLevel=False, filterChr=HUMAN_CHR_SET, formatSource="raw"):
     """
     Import Guppy results by Fast5mod from ONT developed tools, it can report read-level or site-level results.
     Start is 0-based, and combined + and - CpGs together.
@@ -953,7 +953,7 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
 
 def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand_col=1, start_col=2, readid_col=4,
                                      log_ratio_col=5, log_lik_methylated_col=6, cutoff=(0.25, 0.5), header=None,
-                                     sep='\t', output_first=False, include_score=False, filterChr=humanChrSet,
+                                     sep='\t', output_first=False, include_score=False, filterChr=HUMAN_CHR_SET,
                                      save_unified_format=False, outfn=None):
     """
     Parse read level gcf52ref format, start position is 0-base, end is 1-base
@@ -1029,6 +1029,7 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
             cpgDict[key].append((meth_indicator, prob_methylated))
         else:  # For read-level no scores
             cpgDict[key].append(meth_indicator)
+    infile.close()
     if save_unified_format:
         outf.close()
         logger.debug(f'Save METEORE output format to {outfn}')
@@ -1039,8 +1040,9 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
     return cpgDict
 
 
-def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, meth_indicator_col=3, meth_prob_col=4,
-                              strand_col=5, baseFormat=1, include_score=False, filterChr=humanChrSet):
+def importPredictions_METEORE(infileName, readid_col=0, chr_col=1, start_col=2, meth_indicator_col=3, meth_prob_col=4,
+                              strand_col=5, baseFormat=1, include_score=False, filterChr=HUMAN_CHR_SET,
+                              save_unified_format=False, outfn=None):
     """
     We checked input as 1-based format for start col.
     Return dict of key='chr1\t123\t123\t+', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
@@ -1062,7 +1064,11 @@ def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, 
     meth_cnt = 0
     unmeth_cnt = 0
 
-    for row in tqdm(infile, total=lines, desc="Import-METEORE"):
+    if save_unified_format:
+        outf = gzip.open(outfn, 'wt')
+        outf.write(f"ID\tChr\tPos\tStrand\tScore\n")
+
+    for row in tqdm(infile, total=lines, desc="Import-METEORE/NANOME"):
         if row.startswith("ID\tChr"):  # skim header
             continue
         tmp = row.strip().split("\t")
@@ -1070,10 +1076,16 @@ def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, 
         if tmp[chr_col] not in filterChr:
             continue
 
+        readid = tmp[readid_col]
         start_1_base = int(tmp[start_col])
         meth_indicator = int(tmp[meth_indicator_col])
         meth_prob = float(tmp[meth_prob_col])
         strand = tmp[strand_col]
+
+        if save_unified_format:
+            # output to 1-based readl-level format
+            log_ratio_score = math.log2((meth_prob + EPSLONG) / (1 - meth_prob + EPSLONG))
+            outf.write(f"{readid}\t{tmp[chr_col]}\t{start_1_base}\t{strand}\t{log_ratio_score}\n")
 
         ## Since METEORE report chr pos (1-based), strand
         ## pos is point to CG' C in +, and CG's G in -
@@ -1089,8 +1101,11 @@ def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, 
         else:
             unmeth_cnt += 1
     infile.close()
+    if save_unified_format:
+        outf.close()
+        logger.debug(f'Save METEORE/NANOME output format to {outfn}')
     logger.debug(
-        f"###\timportPredictions_METEORE SUCCESS: rows={row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs (include + and -) from {infileName} file")
+        f"###\timportPredictions_METEORE/NANOME SUCCESS: rows={row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs (include + and -) from {infileName} file")
     return cpgDict
 
 
@@ -1155,7 +1170,7 @@ def open_file_gz_or_txt(infn, return_lines=True):
 
 # encode format
 def importGroundTruth_from_Encode(infileName, chr_col=0, start_col=1, methfreq_col=-1, cov_col=4, strand_col=5,
-                                  covCutoff=1, baseFormat=1, filterChr=humanChrSet, includeCov=True):
+                                  covCutoff=1, baseFormat=1, filterChr=HUMAN_CHR_SET, includeCov=True):
     """
     ### Description of the columns in this format (https://www.encodeproject.org/data-standards/wgbs/):
 
@@ -1254,7 +1269,7 @@ def importGroundTruth_from_Encode(infileName, chr_col=0, start_col=1, methfreq_c
 
 # bismark format, Deal with file name like 'bismark_bt2.CpG_report.txt.gz'
 def importGroundTruth_from_Bismark(infn, chr_col=0, start_col=1, strand_col=2, meth_col=3, unmeth_col=4, covCutoff=1,
-                                   baseFormat=1, filterChr=humanChrSet, includeCov=True, sep='\t', print_first=False):
+                                   baseFormat=1, filterChr=HUMAN_CHR_SET, includeCov=True, sep='\t', print_first=False):
     """
     We checked the input file is start using 1-based format.
     We use this format than others in Bismark due to it contains strand info.
@@ -1365,7 +1380,7 @@ def importGroundTruth_from_Bismark(infn, chr_col=0, start_col=1, strand_col=2, m
     for index, row in df.iterrows():
         chr = row['chr']
 
-        if chr not in humanChrSet:  # Filter out non-human chrs
+        if chr not in HUMAN_CHR_SET:  # Filter out non-human chrs
             continue
 
         start = int(row['start'])
@@ -1393,7 +1408,7 @@ def importGroundTruth_from_Bismark(infn, chr_col=0, start_col=1, strand_col=2, m
 
 def importGroundTruth_from_5hmc_ziwei(infn, chr_col=0, start_col=1, strand_col=7, meth_freq_col=3,
                                       meth_5hmc_freq_col=4, sep='\t', covCutoff=1, baseFormat=1, includeCov=True,
-                                      filterChr=humanChrSet, cov_col=(8, 9), provided_cov=5, print_first=False):
+                                      filterChr=HUMAN_CHR_SET, cov_col=(8, 9), provided_cov=5, print_first=False):
     """
     Input format is below, start is 1-based:
     chr1	10542	10543	1	0	0	0	+	2	1
@@ -1470,7 +1485,7 @@ def importGroundTruth_from_5hmc_ziwei(infn, chr_col=0, start_col=1, strand_col=7
 
 
 def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False, enable_cache=False, using_cache=False,
-                filterChr=humanChrSet, save_unified_format=False, outfn=None, cache_dir=None):
+                filterChr=HUMAN_CHR_SET, save_unified_format=False, outfn=None, cache_dir=None):
     """
     General purpose for import any tools methylation calling input files.
 
@@ -1531,9 +1546,14 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
                                                   filterChr=filterChr, header=None,
                                                   save_unified_format=save_unified_format,
                                                   outfn=outfn)
-    elif encode == 'METEORE':  # import Guppy gcf52ref read level results
-        calls0 = importPredictions_METEORE(infn, baseFormat=baseFormat, include_score=include_score,
-                                           filterChr=filterChr)
+    elif encode == 'METEORE':
+        calls0 = importPredictions_METEORE(infn,
+                                           baseFormat=baseFormat, include_score=include_score,
+                                           filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn)
+    elif encode == 'NANOME':
+        calls0 = importPredictions_METEORE(infn, strand_col=3, meth_indicator_col=-2, meth_prob_col=-1,
+                                           baseFormat=baseFormat, include_score=include_score,
+                                           filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn)
     else:
         raise Exception(f'Not support {encode} for file {infn} now')
 
@@ -1545,7 +1565,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     return calls0
 
 
-def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, filterChr=humanChrSet, enable_cache=False,
+def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, filterChr=HUMAN_CHR_SET, enable_cache=False,
                    using_cache=False,
                    cache_dir=None):
     """
@@ -1913,12 +1933,12 @@ def do_singleton_nonsingleton_scanner():
     kbp = 5
     singletonFilename = os.path.join(pic_base_dir, f'hg38_singletons_{kbp}bp.bed.gz')
     nonsingletonFilename = os.path.join(pic_base_dir, f'hg38_nonsingletons_{kbp}bp.bed.gz')
-    SingletonsAndNonSingletonsScanner(referenceGenomeFile, singletonFilename, nonsingletonFilename, kbp=kbp)
+    SingletonsAndNonSingletonsScanner(reference_genome_hg38_fn, singletonFilename, nonsingletonFilename, kbp=kbp)
 
     kbp = 10
     singletonFilename = os.path.join(pic_base_dir, f'hg38_singletons_{kbp}bp.bed.gz')
     nonsingletonFilename = os.path.join(pic_base_dir, f'hg38_nonsingletons_{kbp}bp.bed.gz')
-    SingletonsAndNonSingletonsScanner(referenceGenomeFile, singletonFilename, nonsingletonFilename, kbp=kbp)
+    SingletonsAndNonSingletonsScanner(reference_genome_hg38_fn, singletonFilename, nonsingletonFilename, kbp=kbp)
 
 
 def SingletonsAndNonSingletonsScanner(referenceGenomeFile, outfileName_s, outfileName_ns, kbp=10):
@@ -1938,7 +1958,7 @@ def SingletonsAndNonSingletonsScanner(referenceGenomeFile, outfileName_s, outfil
     outfile_ns = gzip.open(outfileName_ns, "wt")  # "ns" stands for Non-Singletons
 
     for chromosome in list(reference.keys()):
-        if chromosome not in humanChrSet:
+        if chromosome not in HUMAN_CHR_SET:
             continue
         idxs = re.finditer('CG', str(reference[chromosome].seq).upper())
 
@@ -2277,12 +2297,14 @@ def get_dna_seq_from_reference(chr, start, end, ref_fasta=None):
     return short_seq
 
 
-def get_ref_fasta(ref_fn=referenceGenomeFile):
+def get_ref_fasta(ref_fn=reference_genome_hg38_fn):
     ref_fasta = SeqIO.to_dict(SeqIO.parse(open(ref_fn), 'fasta'))
     logger.debug(f'load ref file from {ref_fn}')
     return ref_fasta
 
-refGenome=None
+
+refGenome = None
+
 
 def sanity_check_dna_sequence(chr='chr10', start_base0=10493):
     """
@@ -2397,7 +2419,7 @@ def filter_cpg_dict_by_cov(cpgDict, coverage=1):
     Returns:
 
     """
-    if coverage <=1:
+    if coverage <= 1:
         return cpgDict
     retDict = {}
     for key in cpgDict:
@@ -2501,7 +2523,7 @@ def combineBGTruthList(bgTruthList, covCutoff=1):
     return unionBGTruth
 
 
-def combineBGTruthList_by_DeepModPaper(bgTruthList, freqCutoff=0.9, covCutoff=1, filterChrs=humanChrSet):
+def combineBGTruthList_by_DeepModPaper(bgTruthList, freqCutoff=0.9, covCutoff=1, filterChrs=HUMAN_CHR_SET):
     """
     Combine two replicates by DeepMod, >90% in both as methylated, =0% in both as unmethylated, remove others
     :param bgTruthList:
@@ -2943,6 +2965,66 @@ def get_current_memory_usage():
     process = psutil.Process(os.getpid())
     ret = f"VMS:{convert_size(process.memory_info().vms)}, RSS:{convert_size(process.memory_info().rss)}"
     return ret
+
+
+def freq_to_label(freq, fully_cutoff=1.0, eps=EPSLONG):
+    """
+    Convert methylation frequency value into 5mC class label
+    Args:
+        freq:
+        fully_cutoff:
+        eps:
+
+    Returns:
+
+    """
+    if freq <= eps:
+        return 0
+    if freq >= fully_cutoff - eps:
+        return 1
+    raise Exception(f"Encounter not fully meth or unmeth value, freq={freq}")
+
+
+def tool_pred_class_label(log_likelyhood):
+    """
+    Infer class label based on log-likelyhood
+    Args:
+        log_likelyhood:
+
+    Returns:
+
+    """
+    if log_likelyhood > 0 + EPSLONG:
+        return 1
+    return 0
+
+
+def load_tool_read_level_unified_as_df(data_file_path, toolname, filterChrs=[], chunksize=CHUNKSIZE):
+    """
+    Load read-level unified input
+    Args:
+        data_file_path:
+        toolname:
+        filterChrs:
+
+    Returns:
+
+    """
+    print(f"Load {toolname}:{data_file_path}", flush=True)
+
+    if len(filterChrs) >= 1:
+        iter_df = pd.read_csv(data_file_path, header=0, index_col=False, sep="\t", iterator=True,
+                              chunksize=chunksize)
+        data_file = pd.concat([chunk[chunk['Chr'].isin(filterChrs)] for chunk in iter_df])
+    else:
+        data_file = pd.read_csv(data_file_path, header=0, index_col=False, sep="\t")
+
+    data_file['Pos'] = data_file['Pos'].astype(np.int64)
+    data_file.drop_duplicates(subset=['Chr', "ID", "Pos", "Strand"], inplace=True)
+    data_file.rename(columns={"Score": toolname}, inplace=True)
+    data_file.dropna(inplace=True)
+    data_file.reset_index(inplace=True, drop=True)
+    return data_file
 
 
 if __name__ == '__main__':

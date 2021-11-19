@@ -38,6 +38,7 @@ dependencies:
   - ont-tombo=1.5.1
   - nanopolish=0.13.2
   - pip:
+    - xgboost
     - ont-pyguppy-client-lib
     - deepsignal==0.1.8
     - fast5mod==1.0.5

@@ -15,18 +15,21 @@ import pandas as pd
 
 from nanocompare.global_config import set_log_debug_level
 
-nanome_version = "1.3.12"
+NANOME_VERSION = "1.3.12"
 
 # define the small error of 0 and 1, for fully-meth and unmeth eval
-epslong = 1e-5
+EPSLONG = 1e-5
+
+# dataframe loading chuncksize default
+CHUNKSIZE = 500000
 
 # can be 1.0, or 0.9 for the level of fully-meth definition
-fully_meth_level = 1.0
+FULLY_METH_LEVEL = 1.0
 
 # chr 1-22 X and Y
-humanChrSet = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
+HUMAN_CHR_SET = [f'chr{k}' for k in range(1, 23)] + ['chrX', 'chrY']
 
-ecoliChrSet = ['NC_000913.3']
+ECOLI_CHR_SET = ['NC_000913.3']
 
 datasets_order = ["NA12878", "NA19240", "APL", "K562", "HL60"]
 
@@ -35,7 +38,7 @@ ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo', 'METE
 # read format for tools
 ToolEncodeList = ['Nanopolish', 'Megalodon', 'Megalodon.ZW', 'DeepSignal',
                   'Guppy', 'Guppy.ZW', 'Guppy.gcf52ref', 'Tombo',
-                  'METEORE', 'DeepMod', 'DeepMod.C', 'DeepMod.Cluster', ]
+                  'METEORE', 'DeepMod', 'DeepMod.C', 'DeepMod.Cluster', 'NANOME']
 
 # read format for bs-seq
 BGTruthEncodeList = ['bismark', 'encode']
@@ -43,7 +46,7 @@ BGTruthEncodeList = ['bismark', 'encode']
 ToolsColorList = ["#56B4E9", "#CC79A7", "#999999", "#009E73", "#E69F00", "#0072B2", "#D55E00"]
 
 # default reference genome file location
-referenceGenomeFile = "/projects/li-lab/Nanopore_compare/nf_input/reference_genome/hg38/hg38.fasta"
+reference_genome_hg38_fn = "/projects/li-lab/Nanopore_compare/nf_input/reference_genome/hg38/hg38.fasta"
 
 enable_base_detection_bedfile = True
 # enable_base_detection_bedfile = False
@@ -106,7 +109,7 @@ def load_genome_annotation_config(verbose=False):
         for index, row in df.iterrows():
             ret1[str(row['tagname']).strip()] = (str(row['filename']).strip(), int(row['format-0/1']),)
             ret2[str(row['filename']).strip()] = (str(row['tagname']).strip(), int(row['format-0/1']),
-                                              str(row['strand-sensitive']).strip().upper() == 'Y',)
+                                                  str(row['strand-sensitive']).strip().upper() == 'Y',)
     except:
         print(f"ERROR: occur error when reading {config_filepath}")
     if verbose:

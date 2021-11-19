@@ -17,7 +17,7 @@ from scipy.stats import PearsonRConstantInputWarning
 
 from nanocompare.eval_common import *
 from nanocompare.global_settings import get_tool_name, ToolNameList, save_done_file, \
-    nanome_version, load_genome_annotation_config, sing_tagname, nonsing_tagname
+    NANOME_VERSION, load_genome_annotation_config, sing_tagname, nonsing_tagname
 
 
 def get_nsites_in_regions(callSet, bedfn, tagname):
@@ -373,7 +373,7 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(prog='site_level_eval (NANOME)',
                                      description='Site-level correlation analysis in nanome paper')
-    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethCorr-DS_WGBS_2reps",
                         required=True)
@@ -394,7 +394,7 @@ def parse_arguments():
     parser.add_argument('--toolcov-cutoff', type=int, help="cutoff for coverage in nanopore tools, default is >=3",
                         default=3)
     parser.add_argument('--chrSet', nargs='+', help='chromosome list, default is human chr1-22, X and Y',
-                        default=humanChrSet)
+                        default=HUMAN_CHR_SET)
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
     parser.add_argument('--processors', type=int, help="number of processors used, default is 1", default=1)
     parser.add_argument('-o', type=str, help=f"output base dir, default is {pic_base_dir}", default=pic_base_dir)

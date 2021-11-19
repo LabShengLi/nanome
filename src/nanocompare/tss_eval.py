@@ -11,7 +11,7 @@ Export read/site-level methylation results for TSS/METEORE analysis in nanome pa
 import argparse
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import get_tool_name, save_done_file, nanome_version
+from nanocompare.global_settings import get_tool_name, save_done_file, NANOME_VERSION
 
 
 def import_and_save_read_level(callfn, callencode, outfn):
@@ -78,7 +78,7 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(prog='tss_eval (NANOME)',
                                      description='Export read/site level methylation results of all nanopore tools in nanome paper')
-    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix/output dir name", required=True)
     parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces',
@@ -97,7 +97,7 @@ def parse_arguments():
                         help=f'cache dir used for loading calls/bs-seq (speed up running), default is {global_cache_dir}',
                         default=global_cache_dir)
     parser.add_argument('--chrSet', nargs='+', help='chromosome list, default is human chromosome chr1-22, X and Y',
-                        default=humanChrSet)
+                        default=HUMAN_CHR_SET)
     parser.add_argument('--tagname', type=str, help="output unified file's tagname", default=None)
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
