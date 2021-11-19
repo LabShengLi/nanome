@@ -43,11 +43,11 @@ search_cv_params = {
     'reg_lambda': [0.5, 1, 2],
 }
 
-search_cv_params = {
-    'learning_rate': [0.1],
-    'n_estimators': [100],
-    'max_depth': [6],
-}
+# search_cv_params = {
+#     'learning_rate': [0.1],
+#     'n_estimators': [100],
+#     'max_depth': [6],
+# }
 
 
 def train_xgboost_model(datadf):
