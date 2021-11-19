@@ -5,7 +5,6 @@
 # @Organization : JAX Li Lab
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
 import argparse
-import os.path
 
 import joblib
 import numpy as np
@@ -16,7 +15,7 @@ from sklearn.model_selection import train_test_split, StratifiedKFold
 from xgboost import XGBClassifier
 
 from nanocompare.eval_common import tool_pred_class_label, freq_to_label
-from nanocompare.global_config import pic_base_dir, set_log_debug_level, set_log_info_level, logger
+from nanocompare.global_config import set_log_debug_level, set_log_info_level, logger
 from nanocompare.global_settings import EPSLONG, NANOME_VERSION
 
 default_params = {
@@ -44,20 +43,28 @@ search_cv_params = {
     'reg_lambda': [0.5, 1, 2],
 }
 
-
-# search_cv_params = {
-#     'learning_rate': [0.1],
-#     'n_estimators': [100],
-#     'max_depth': [6],
-# }
+search_cv_params = {
+    'learning_rate': [0.1],
+    'n_estimators': [100],
+    'max_depth': [6],
+}
 
 
 def train_xgboost_model(datadf):
-    ## Read level to site level df
+    """
+    Train xgboost model, tune the params
+    Args:
+        datadf:
+
+    Returns:
+
+    """
+    ## read level to site level df
     sitedf = datadf[["Chr", "Pos", "Strand", "Truth_label"]].drop_duplicates()
     sitedf.reset_index(inplace=True, drop=True)
     logger.info(f"Sites={len(sitedf)}, class_distribution={sitedf['Truth_label'].value_counts()}")
 
+    ## split sites into train and test
     siteX = sitedf.loc[:, ["Chr", "Pos", "Strand"]]
     siteY = sitedf.loc[:, "Truth_label"]
     X_train_site, X_test_site, y_train_site, y_test_site = \
@@ -77,7 +84,7 @@ def train_xgboost_model(datadf):
         class_freq={y_test_site.value_counts(normalize=True)}
         """)
 
-    ## Select reads based on sites split
+    ## select predictions (read) based on sites split
     traindf = datadf.merge(X_train_site, on=["Chr", "Pos", "Strand"], how='inner')
     X_train = traindf[tool_list]
     y_train = traindf['Truth_label']
@@ -103,6 +110,7 @@ def train_xgboost_model(datadf):
 
     logger.info(f"\n\nDefault params={default_params}\n\nSearch parameters={search_cv_params}")
 
+    ## train model using CV and search best params
     xgb_model = XGBClassifier(**default_params)
     # clf = GridSearchCV(xgb_model, search_cv_params, n_jobs=args.processors,
     #                    cv=StratifiedKFold(n_splits=args.cv, shuffle=True,
@@ -120,19 +128,21 @@ def train_xgboost_model(datadf):
     logger.info(f"best_params={clf.best_params_}")
     logger.info(f"best_score={clf.best_score_}")
 
+    ## save cv results
     perf_df = pd.DataFrame(clf.cv_results_)
-    outfn = os.path.join(args.o, f"{args.runid}_{'_'.join(tool_list)}_xgboost_cv_results.xlsx")
+    outfn = args.o.replace('.pkl', '') + '_cv_results.xlsx'
     perf_df.to_excel(outfn)
     logger.info(f"save to {outfn}")
 
-    outfn = os.path.join(args.o,
-                         f"NANOME_{args.runid}_train{1 - args.test_size:.2f}_{'_'.join(tool_list)}_xgboost_model.pkl")
-    joblib.dump(clf, outfn)
-    logger.info(f"save to {outfn}")
+    ## save model
+    joblib.dump(clf, args.o)
+    logger.info(f"save model to {args.o}")
 
+    ## make prediction on test data
     y_pred = clf.predict(X_test)
     y_pred_prob = pd.DataFrame(clf.predict_proba(X_test))[[1]]
 
+    ## evaluate XGBoost model
     accuracy = accuracy_score(y_test, y_pred)
     f1 = f1_score(y_test, y_pred)
     roc_auc = roc_auc_score(y_test, y_pred_prob)
@@ -148,7 +158,7 @@ def train_xgboost_model(datadf):
     conf_matrix = confusion_matrix(y_test, y_pred)
     logger.info(f"conf_matrix={conf_matrix}")
 
-    ## Compare base model performance
+    ## evaluate for base model performance
     for tool in tool_list:
         y_pred_tool = X_test[tool].apply(tool_pred_class_label)
         y_score_tool = X_test[tool].fillna(value=0)
@@ -165,8 +175,8 @@ def parse_arguments():
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('-i', type=str, required=True,
                         help='input data for training')
-    parser.add_argument('--runid', type=str, required=True,
-                        help='running name')
+    parser.add_argument('-o', type=str, required=True,
+                        help='output trained model file name, suggest suffixed with .pkl')
     parser.add_argument('--bsseq-cov', type=int, default=5,
                         help='coverage cutoff for BS-seq data, default is 5')
     parser.add_argument('--random-state', type=int, default=42,
@@ -181,8 +191,7 @@ def parse_arguments():
                         help='test data ratio: 0.0-1.0, default is 0.5')
     parser.add_argument('--fully-meth-threshold', type=float, default=1.0,
                         help='fully methylated threshold, default is 1.0')
-    parser.add_argument('-o', type=str, default=pic_base_dir,
-                        help='output dir')
+
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
 
     args = parser.parse_args()
@@ -239,3 +248,5 @@ if __name__ == '__main__':
         f"Assert all-values+NA-values=total: {num_all_value_read_level + sum(list(num_na_value_for_tool.values()))} == {len(datadf)}")
 
     train_xgboost_model(datadf)
+
+    logger.info(f"### xgboost DONE")

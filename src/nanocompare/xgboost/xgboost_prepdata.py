@@ -11,7 +11,6 @@ from functools import reduce
 import pandas as pd
 
 from nanocompare.eval_common import load_tool_read_level_unified_as_df
-from nanocompare.global_config import pic_base_dir
 from nanocompare.global_settings import NANOME_VERSION
 
 parser = argparse.ArgumentParser(prog='xgboost_prepdata (NANOME)', description='XGBoost preparation of data')
@@ -25,8 +24,8 @@ parser.add_argument('--bsseq', type=str, required=True,
 parser.add_argument('--contain-na', help="if allow merge with NA values", action='store_true')
 parser.add_argument('--verbose', help="if output verbose info", action='store_true')
 
-parser.add_argument('-o', type=str, default=pic_base_dir,
-                    help='Where to store the outputs')
+parser.add_argument('-o', type=str, required=True,
+                    help='output combine file name')
 args = parser.parse_args()
 print(f"args={args}", flush=True)
 
@@ -54,9 +53,8 @@ if __name__ == '__main__':
         raise Exception(f"The combined results are empty, for tool_list={tool_list}, fn_list={df_tsvfile[1]}")
     ## Save combined of prediction by tools
     print(f"combine_df={pred_combine_df}")
-    outfn = os.path.join(args.o, f'{args.dsname}_{tool_list}_pred{"_containNA" if args.contain_na else ""}.tsv.gz')
-    pred_combine_df.to_csv(outfn, sep='\t', index=False)
-    print(f"Save to {outfn}", flush=True)
+    pred_combine_df.to_csv(args.o, sep='\t', index=False)
+    print(f"Save to {args.o}", flush=True)
 
     ## Load bsseq, note site level input is 0-start, 1-end
     print(f"Load bsseq data:{args.bsseq}")
@@ -71,7 +69,8 @@ if __name__ == '__main__':
     else:
         pred_bsseq_combine_df = pred_combine_df.merge(bsseq_df, how='inner', on=['Chr', 'Pos', 'Strand'])
     print(f"pred_bsseq_combine_df={pred_bsseq_combine_df}")
-    outfn = os.path.join(args.o,
-                         f'{args.dsname}_{tool_list}_pred_bsseq_combine{"_containNA" if args.contain_na else ""}.tsv.gz')
+    outfn = args.o.replace('_pred','_pred_bsseq_combine')
     pred_bsseq_combine_df.to_csv(outfn, sep='\t', index=False)
     print(f"Save to {outfn}", flush=True)
+
+    print(f"### xgboost_prepdata Done")
