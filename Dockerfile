@@ -53,8 +53,8 @@ RUN conda env create --name nanome --file=environment.yml && conda clean -a
 SHELL ["conda", "run", "-n", "nanome", "/bin/bash", "-c"]
 
 # Install latest version for megalodon, even conflicts with fast5mod, they can work
-RUN pip install megalodon==${MEGALODON_VERSION}
-RUN npm install -g inliner
+RUN pip install megalodon==${MEGALODON_VERSION} && pip cache purge
+RUN npm install -g inliner && npm cache clean --force
 
 # Set nanome env path into PATH
 ENV PATH /opt/conda/envs/nanome/bin:$PATH

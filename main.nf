@@ -1625,6 +1625,11 @@ process Report {
 		mode: "copy",
 		pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
 
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
+		mode: "copy",
+		pattern: "${params.dsname}.nanome.per_read.combine.tsv.gz",
+		enabled: params.outputRaw
+
 	input:
 	path fileList
 	path naonopolish
@@ -1643,6 +1648,7 @@ process Report {
 	path "GenomeBrowser-${params.dsname}", emit:  genome_browser_ch, optional: true
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify, optional: true
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify, optional: true
+	path "${params.dsname}.nanome.per_read.combine.tsv.gz", emit: nanome_combine_out, optional: true
 
 	when:
 	fileList.size() >= 1
@@ -1653,15 +1659,15 @@ process Report {
 	MegalodonReadReport=\$(find . -maxdepth 1 -name '*Megalodon-perRead-score.tsv.gz')
 	DeepSignalReadReport=\$(find . -maxdepth 1 -name '*DeepSignal-perRead-score.tsv.gz')
 
-	modelContentFileName=${params.dsname}_Megalodon_DeepSignal_combine.nanome_model_content.tsv
-	> \$modelContentFileName
-	printf '%s\t%s\n' megalodon \${MegalodonReadReport} >> \$modelContentFileName
-	printf '%s\t%s\n' deepsignal \${DeepSignalReadReport} >> \$modelContentFileName
+	modelContentTSVFileName=${params.dsname}_Megalodon_DeepSignal_combine.nanome_model_content.tsv
+	> \$modelContentTSVFileName
+	printf '%s\t%s\n' megalodon \${MegalodonReadReport} >> \$modelContentTSVFileName
+	printf '%s\t%s\n' deepsignal \${DeepSignalReadReport} >> \$modelContentTSVFileName
 
 	## pip install xgboost
 	PYTHONPATH=src python src/nanocompare/xgboost/xgboost_predict.py \
 		--verbose  --contain-na --tsv-input\
-		--dsname ${params.dsname} -i \${modelContentFileName}\
+		--dsname ${params.dsname} -i \${modelContentTSVFileName}\
 		-m APL -o ${params.dsname}.nanome.per_read.combine.tsv.gz &>> Report.run.log  || true
 
 	## Unify format output

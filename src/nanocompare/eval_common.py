@@ -3010,7 +3010,7 @@ def load_tool_read_level_unified_as_df(data_file_path, toolname, filterChrs=[], 
     Returns:
 
     """
-    print(f"Load {toolname}:{data_file_path}", flush=True)
+    logger.debug(f"Load {toolname}:{data_file_path}")
 
     if len(filterChrs) >= 1:
         iter_df = pd.read_csv(data_file_path, header=0, index_col=False, sep="\t", iterator=True,

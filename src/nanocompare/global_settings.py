@@ -90,11 +90,11 @@ default_config_name = 'nanome_genome_annotation.csv'
 
 nanome_apl_model_fn = os.path.join(
     Path(__file__).parent, 'xgboost', 'trained_model',
-    'NANOME_APL_Train_train0.20_megalodon_deepsignal_xgboost_model.pkl')
+    'NANOME_APL_train0.20_megalodon_deepsignal_xgboost_model.pkl')
 
 nanome_na12878_model_fn = os.path.join(
     Path(__file__).parent, 'xgboost', 'trained_model',
-    'NANOME_NA12878_Train_train0.20_megalodon_deepsignal_xgboost_model.pkl')
+    'NANOME_NA12878_train0.20_megalodon_deepsignal_xgboost_model.pkl')
 
 nanome_model_dict = {
     "APL": nanome_apl_model_fn,
