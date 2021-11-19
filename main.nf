@@ -1611,14 +1611,19 @@ process Report {
 	publishDir "${params.outdir}",
 		mode: "copy", pattern: "${params.dsname}_nanome_report.html"
 
-	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Site_Level-${params.dsname}",
-		mode: "copy", pattern: "${params.dsname}_NANOME-*.sort.bed.gz"
-
 	publishDir "${params.outdir}/MultiQC",
 		mode: "copy", pattern: "multiqc_report.html"
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
 		mode: "copy", pattern: "GenomeBrowser-${params.dsname}"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy",
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy",
+		pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
 
 	input:
 	path fileList
@@ -1634,9 +1639,10 @@ process Report {
 	output:
 	path "${params.dsname}_nanome_report.html",	emit:	report_out_ch
 	path "README_${params.dsname}.txt",	emit: 	readme_out_ch
-	path "${params.dsname}_NANOME-*.sort.bed.gz",	emit: 	nanome_consensus_ch, optional: true
 	path "multiqc_report.html",	emit: 	lbt_report_ch
 	path "GenomeBrowser-${params.dsname}", emit:  genome_browser_ch, optional: true
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify, optional: true
+	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify, optional: true
 
 	when:
 	fileList.size() >= 1
@@ -1652,34 +1658,18 @@ process Report {
 	printf '%s\t%s\n' megalodon \${MegalodonReadReport} >> \$modelContentFileName
 	printf '%s\t%s\n' deepsignal \${DeepSignalReadReport} >> \$modelContentFileName
 
-	pip install xgboost
+	## pip install xgboost
 	PYTHONPATH=src python src/nanocompare/xgboost/xgboost_predict.py \
 		--verbose  --contain-na --tsv-input\
 		--dsname ${params.dsname} -i \${modelContentFileName}\
-		-m APL -o ${params.dsname}.nanome.per_read.combine.tsv.gz
+		-m APL -o ${params.dsname}.nanome.per_read.combine.tsv.gz &>> Report.run.log  || true
 
-	## NANOME consensus method
-	if [[ ${params.nanomeNanopolish} == true ]]; then
-		NanopolishSiteReport=\$(find . -maxdepth 1 -name '*Nanopolish-perSite-*.sort.bed.gz')
-	fi
-	if [[ ${params.nanomeMegalodon} == true ]]; then
-		MegalodonSiteReport=\$(find . -maxdepth 1 -name '*Megalodon-perSite-*.sort.bed.gz')
-	fi
-	if [[ ${params.nanomeDeepSignal} == true ]]; then
-		DeepSignalSiteReport=\$(find . -maxdepth 1 -name '*DeepSignal-perSite-*.sort.bed.gz')
-	fi
-	if [[ ${params.nanomeGuppy} == true ]]; then
-		GuppySiteReport=\$(find . -maxdepth 1 -name '*Guppy-perSite-*.sort.bed.gz')
-	fi
-	nanome_consensus.py\
-	 	--site-reports   \${NanopolishSiteReport:-} \${MegalodonSiteReport:-}\
-	 		\${DeepSignalSiteReport:-} \${GuppySiteReport:-}\
-	 	--union -o ${params.dsname}_NANOME-perSite-cov1.sort.bed.gz &>> Report.run.log  || true
-
-	##nanome_consensus.py\
-	## 	--site-reports   \${NanopolishSiteReport:-} \${MegalodonSiteReport:-}\
-	## 		\${DeepSignalSiteReport:-} \${GuppySiteReport:-}\
-	## 	--join -o ${params.dsname}_NANOMEJoin-perSite-cov1.sort.bed.gz  &>> Report.run.log  || true
+	## Unify format output
+	unify_format_for_calls.sh \
+		${params.dsname}  NANOME ${params.dsname}.nanome.per_read.combine.tsv.gz \
+		.  \$((numProcessor))  12  ${chrSet}
+	ln -s Site_Level-${params.dsname}/${params.dsname}_NANOME-perSite-cov1.sort.bed.gz\
+	  	${params.dsname}_NANOME-perSite-cov1.sort.bed.gz
 
 	## Generate running information tsv
 	> running_information.tsv
@@ -1736,7 +1726,7 @@ process Report {
 	if [[ ${params.outputGenomeBrowser} == true ]]; then
 		mkdir -p GenomeBrowser-${params.dsname}
 		## generate meth freq bigwig data
-		find . -name '*-perSite-cov1.sort.bed.gz' | \
+		find . -maxdepth 1 -name '*-perSite-cov1.sort.bed.gz' | \
 			parallel -j\$((numProcessor)) -v \
 				"basefn={/}  && \
 					zcat {} | \
@@ -1751,7 +1741,7 @@ process Report {
 							GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_methfreq.sorted.bedgraph}"
 
 		## generate coverage bigwig data
-		find . -name '*-perSite-cov1.sort.bed.gz' | \
+		find . -maxdepth 1 -name '*-perSite-cov1.sort.bed.gz' | \
 			parallel -j\$((numProcessor)) -v \
 				"basefn={/}  && \
 					zcat {} | \
