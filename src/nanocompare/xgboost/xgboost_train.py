@@ -5,11 +5,13 @@
 # @Organization : JAX Li Lab
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
 import argparse
+import sys
 
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, roc_auc_score
+from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, roc_auc_score, precision_score, recall_score, \
+    classification_report
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from xgboost import XGBClassifier
@@ -43,11 +45,11 @@ search_cv_params = {
     'reg_lambda': [0.5, 1, 2],
 }
 
-# search_cv_params = {
-#     'learning_rate': [0.1],
-#     'n_estimators': [100],
-#     'max_depth': [6],
-# }
+search_cv_params = {
+    'learning_rate': [0.1],
+    'n_estimators': [100],
+    'max_depth': [6],
+}
 
 
 def train_xgboost_model(datadf):
@@ -62,7 +64,7 @@ def train_xgboost_model(datadf):
     ## read level to site level df
     sitedf = datadf[["Chr", "Pos", "Strand", "Truth_label"]].drop_duplicates()
     sitedf.reset_index(inplace=True, drop=True)
-    logger.info(f"Sites={len(sitedf)}, class_distribution={sitedf['Truth_label'].value_counts()}")
+    logger.info(f"Sites={len(sitedf)}, class_distribution=\n{sitedf['Truth_label'].value_counts()}")
 
     ## split sites into train and test
     siteX = sitedf.loc[:, ["Chr", "Pos", "Strand"]]
@@ -76,12 +78,12 @@ def train_xgboost_model(datadf):
         Train:Test={train_test_array / np.sum(train_test_array)}
         
         Train data:Sites={len(y_train_site):,}
-        class_distribution={y_train_site.value_counts()}
-        class_freq={y_train_site.value_counts(normalize=True)}
+        class_distribution=\n{y_train_site.value_counts()}
+        class_freq=\n{y_train_site.value_counts(normalize=True)}
         
         Test data:Sites={len(y_test_site):,}
-        class_distribution={y_test_site.value_counts()}
-        class_freq={y_test_site.value_counts(normalize=True)}
+        class_distribution=\n{y_test_site.value_counts()}
+        class_freq=\n{y_test_site.value_counts(normalize=True)}
         """)
 
     ## select predictions (read) based on sites split
@@ -100,12 +102,12 @@ def train_xgboost_model(datadf):
             Train:Test={train_test_array / np.sum(train_test_array)}
 
             Train data:Reads_pred={len(y_train):,}
-            class_distribution={y_train.value_counts()}
-            class_freq={y_train.value_counts(normalize=True)}
+            class_distribution=\n{y_train.value_counts()}
+            class_freq=\n{y_train.value_counts(normalize=True)}
 
             Test data:Reads_pred={len(y_test):,}
-            class_distribution={y_test.value_counts()}
-            class_freq={y_test.value_counts(normalize=True)}
+            class_distribution=\n{y_test.value_counts()}
+            class_freq=\n{y_test.value_counts(normalize=True)}
             """)
 
     logger.info(f"\n\nDefault params={default_params}\n\nSearch parameters={search_cv_params}")
@@ -124,6 +126,8 @@ def train_xgboost_model(datadf):
                              scoring='f1', verbose=10, refit=True,
                              return_train_score=True)
     clf.fit(X_train, y_train)
+    sys.stdout.flush()
+    sys.stderr.flush()
 
     logger.info(f"best_params={clf.best_params_}")
     logger.info(f"best_score={clf.best_score_}")
@@ -144,6 +148,8 @@ def train_xgboost_model(datadf):
 
     ## evaluate XGBoost model
     accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
     f1 = f1_score(y_test, y_pred)
     roc_auc = roc_auc_score(y_test, y_pred_prob)
 
@@ -153,10 +159,14 @@ def train_xgboost_model(datadf):
         logger.info(f"Number of predictions (read-level): {tool}={X_test[tool].notna().sum():,}")
     logger.info(f"Number of predictions (read-level): METEORE={len(X_test.dropna(subset=tool_list)):,}")
 
-    logger.info(f"XGBoost accuracy={accuracy:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}")
-
     conf_matrix = confusion_matrix(y_test, y_pred)
-    logger.info(f"conf_matrix={conf_matrix}")
+    logger.info(f"\nconf_matrix=\n{conf_matrix}")
+
+    class_report = classification_report(y_test, y_pred)
+    logger.info(f"\nclass_report=\n{class_report}")
+
+    logger.info(
+        f"XGBoost accuracy={accuracy:.3f}, precision={precision:.3f}, recall={recall:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}")
 
     ## evaluate for base model performance
     for tool in tool_list:
@@ -165,9 +175,12 @@ def train_xgboost_model(datadf):
 
         ## DeepSignal may be np.nan, since its original results contains NAN
         accuracy = accuracy_score(y_test, y_pred_tool)
+        precision = precision_score(y_test, y_pred_tool)
+        recall = recall_score(y_test, y_pred_tool)
         f1 = f1_score(y_test, y_pred_tool)
         roc_auc = roc_auc_score(y_test, y_score_tool)
-        logger.info(f"{tool} accuracy={accuracy:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}")
+        logger.info(
+            f"{tool} accuracy={accuracy:.3f}, precision={precision:.3f}, recall={recall:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}")
 
 
 def parse_arguments():
@@ -229,10 +242,10 @@ if __name__ == '__main__':
     datadf['Truth_label'] = datadf['Freq'].apply(freq_to_label, args=(args.fully_meth_threshold, EPSLONG))
 
     ## Output read-level, site-level distributions
-    logger.info(f"Read stats: total={len(datadf):,}, distribution={datadf['Truth_label'].value_counts()}")
+    logger.info(f"Read stats: total={len(datadf):,}, distribution=\n{datadf['Truth_label'].value_counts()}")
 
     sitedf = datadf[["Chr", "Pos", "Strand", "Truth_label"]].drop_duplicates()
-    logger.info(f"Site stats: total={len(sitedf):,}, distribution={sitedf['Truth_label'].value_counts()}")
+    logger.info(f"Site stats: total={len(sitedf):,}, distribution=\n{sitedf['Truth_label'].value_counts()}")
     sitedf = None
 
     ## use all-value data, NA for tool1, and tool2 value data
