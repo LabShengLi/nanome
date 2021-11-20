@@ -1042,7 +1042,7 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
 
 def importPredictions_METEORE(infileName, readid_col=0, chr_col=1, start_col=2, meth_indicator_col=3, meth_prob_col=4,
                               strand_col=5, baseFormat=1, include_score=False, filterChr=HUMAN_CHR_SET,
-                              save_unified_format=False, outfn=None):
+                              save_unified_format=False, outfn=None, toolname="METEORE"):
     """
     We checked input as 1-based format for start col.
     Return dict of key='chr1\t123\t123\t+', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
@@ -1068,7 +1068,7 @@ def importPredictions_METEORE(infileName, readid_col=0, chr_col=1, start_col=2, 
         outf = gzip.open(outfn, 'wt')
         outf.write(f"ID\tChr\tPos\tStrand\tScore\n")
 
-    for row in tqdm(infile, total=lines, desc="Import-METEORE/NANOME"):
+    for row in tqdm(infile, total=lines, desc=f"Import-{toolname}"):
         if row.startswith("ID\tChr"):  # skim header
             continue
         tmp = row.strip().split("\t")
@@ -1103,9 +1103,9 @@ def importPredictions_METEORE(infileName, readid_col=0, chr_col=1, start_col=2, 
     infile.close()
     if save_unified_format:
         outf.close()
-        logger.debug(f'Save METEORE/NANOME output format to {outfn}')
+        logger.debug(f'Save {toolname} output format to {outfn}')
     logger.debug(
-        f"###\timportPredictions_METEORE/NANOME SUCCESS: rows={row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs (include + and -) from {infileName} file")
+        f"###\timportPredictions_{toolname} SUCCESS: rows={row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs (include + and -) from {infileName} file")
     return cpgDict
 
 
@@ -1553,7 +1553,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     elif encode == 'NANOME':
         calls0 = importPredictions_METEORE(infn, strand_col=3, meth_indicator_col=-2, meth_prob_col=-1,
                                            baseFormat=baseFormat, include_score=include_score,
-                                           filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn)
+                                           filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn, toolname="NANOME")
     else:
         raise Exception(f'Not support {encode} for file {infn} now')
 
