@@ -2928,10 +2928,10 @@ def sort_bed_file(infn, outfn, has_header=False):
 
     Returns:
     """
-    command = f"zcat {infn} | sort -V -k1,1 -k2,2 | gzip -f > {outfn}"
+    command = f"zcat {infn} | sort -V -k1,1 -k2,2n | gzip -f > {outfn}"
     if has_header:
         command = f"""
-        zcat {infn}  |  awk 'NR<2{{print $0;next}}{{print $0| "sort -V -k1,1 -k2,2"}}' | gzip -f  > {outfn}
+        zcat {infn}  |  awk 'NR<2{{print $0;next}}{{print $0| "sort -V -k1,1 -k2,2n"}}' | gzip -f  > {outfn}
         """
     subprocess.Popen(command, shell=True, stdout=subprocess.PIPE) \
         .stdout.read().decode("utf-8")

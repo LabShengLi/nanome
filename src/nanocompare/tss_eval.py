@@ -93,6 +93,7 @@ def parse_arguments():
     parser.add_argument('-o', type=str, help="output base dir", default=pic_base_dir)
     parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
     parser.add_argument('--using-cache', help="if use cache files", action='store_true')
+    parser.add_argument('--sort', help="if sort bed output", action='store_true')
     parser.add_argument('--cache-dir', type=str,
                         help=f'cache dir used for loading calls/bs-seq (speed up running), default is {global_cache_dir}',
                         default=global_cache_dir)
@@ -196,6 +197,12 @@ if __name__ == '__main__':
         logger.debug(f'Combined BS-seq data (cov>={bs_cutoff}), all methylation level sites={len(combine_bsdata):,}')
         output_calldict_to_unified_bed_as_0base(combine_bsdata, outfn)
 
+        if args.sort:
+            ## Sort bed file
+            sort_outfn = os.path.join(out_dir, f'{args.dsname}_BSseq-perSite-cov{bs_cutoff}.sort.bed.gz')
+            sort_bed_file(outfn, sort_outfn)
+            os.remove(outfn)
+
         # Clean up bgTruth, not used anymore
         del combine_bsdata
 
@@ -208,13 +215,18 @@ if __name__ == '__main__':
     ontcall_tools_dict = dict()
 
     input_list = []
+    outfn_list = []
     for callstr in args.calls:
         callencode, callfn = callstr.split(':')
         if len(callfn) == 0:
             continue
         callname = get_tool_name(callencode)
 
+        if callname not in ToolEncodeList:
+            raise Exception(f"Not correct encode for tool param: callencode={callencode}, callfn={callfn}")
+
         outfn = os.path.join(out_dir, f'{args.dsname}_{callname}-perSite-cov{tool_cutoff}.bed.gz')
+        outfn_list.append(outfn)
         input1 = (callfn, callname, callencode, tool_cutoff, outfn,)
         input_list.append(input1)
 
@@ -222,6 +234,14 @@ if __name__ == '__main__':
     for arg in input_list:
         executor.submit(import_and_save_site_level, *arg)
     executor.shutdown()
+
+    if args.sort:
+        ## sort BED files
+        for outfn in outfn_list:
+            sort_outfn = outfn.replace(f'cov{tool_cutoff}.bed.gz', f'cov{tool_cutoff}.sort.bed.gz')
+            logger.debug(f"sort from fn={outfn}, to sort_outfn={sort_outfn}")
+            sort_bed_file(outfn, sort_outfn)
+            os.remove(outfn)
 
     for key in ontcall_tools_dict.keys():
         logger.debug(f"tool={key}, sites={ontcall_tools_dict[key]}")
