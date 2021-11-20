@@ -13,11 +13,10 @@ import argparse
 
 import pybedtools
 from scipy import stats
-from scipy.stats import PearsonRConstantInputWarning
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import get_tool_name, ToolNameList, save_done_file, \
-    NANOME_VERSION, load_genome_annotation_config, sing_tagname, nonsing_tagname
+from nanocompare.global_settings import ToolNameList, NANOME_VERSION, load_genome_annotation_config, sing_tagname, \
+    nonsing_tagname, save_done_file, get_tool_name
 
 
 def get_nsites_in_regions(callSet, bedfn, tagname):
@@ -216,10 +215,7 @@ def summary_cpgs_stats_results_table():
     logger.debug(f"Memory report: {get_current_memory_usage()}")
 
 
-def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=None, outdir=None,
-                                  large_mem=False,
-                                  enable_base_detection_bedfile=enable_base_detection_bedfile,
-                                  enable_cache=False, using_cache=False):
+def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=None, outdir=None, join_tag="join"):
     """
     Calculate Pearson's correlation coefficient at different regions.
     :param corr_infn:
@@ -254,7 +250,7 @@ def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=
     outdf = pd.DataFrame(ret_list)
     logger.debug(outdf)
 
-    outfn = os.path.join(outdir, f'{runid}_{dsname}.corrdata.coe.pvalue.each.regions.xlsx')
+    outfn = os.path.join(outdir, f'{runid}_{dsname}.corrdata.coe.pvalue.each.regions_{join_tag}.xlsx')
     outdf.to_excel(outfn)
     logger.debug(f'save to {outfn}')
     return outdf
@@ -347,10 +343,10 @@ def compute_pcc_at_region(corr_infn, bed_tuple):
     for i in range(1, len(newdf.columns)):
         toolname = str(newdf.columns[i]).replace('_freq', '')
         try:  # too few samples will fail
-            # with warnings.catch_warnings(): # not function
-            warnings.filterwarnings('ignore', category=PearsonRConstantInputWarning)
-            coe, pval = stats.pearsonr(newdf.iloc[:, 0], newdf.iloc[:, i])
-        except:
+            # warnings.filterwarnings('ignore', category=PearsonRConstantInputWarning)
+            mask_notna = newdf.iloc[:, i].notna().values
+            coe, pval = stats.pearsonr(newdf.iloc[mask_notna, 0], newdf.iloc[mask_notna, i].astype(np.float64))
+        except:  ## May be pearsonr function failed
             coe, pval = None, None
 
         # report to dataset
@@ -358,7 +354,7 @@ def compute_pcc_at_region(corr_infn, bed_tuple):
             'dsname': dsname,
             'Tool': toolname,
             'Location': tagname,
-            '#Bases': len(newdf),
+            '#Bases': newdf.iloc[:, i].notna().sum(),
             'COE': coe,
             'p-value': pval
         }
@@ -403,6 +399,7 @@ def parse_arguments():
                         action='store_true')
     parser.add_argument('--region-coe-report', help="if report PCC value at each region",
                         action='store_true')
+    parser.add_argument('--report-no-join', help="if output no-join report also", action='store_true')
     parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
     parser.add_argument('--using-cache', help="if use cache files", action='store_true')
     parser.add_argument('--plot', help="if plot the correlation matrix figure", action='store_true')
@@ -570,7 +567,8 @@ if __name__ == '__main__':
 
         if bgTruth:
             bg_cpgs = bgTruth.keys()
-            outfn = os.path.join(venn_outdir, f'{args.dsname}.bgtruth.cpg.sites.cov{args.min_bgtruth_cov}.setsfile.txt.gz')
+            outfn = os.path.join(venn_outdir,
+                                 f'{args.dsname}.bgtruth.cpg.sites.cov{args.min_bgtruth_cov}.setsfile.txt.gz')
             ontcalls_to_setsfile_for_venn_analysis(bg_cpgs, outfn)
 
         for callname in ToolNameList:
@@ -583,7 +581,7 @@ if __name__ == '__main__':
         logger.debug(f"Memory report: {get_current_memory_usage()}")
         logger.debug(f'\n\n####################\n\n')
 
-    if bgTruth: # Having bgtruth params, then report PCC performance
+    if bgTruth:  # Having bgtruth params, then report PCC performance
         logger.debug(f"Start getting intersection (all joined) sites by tools and bgtruth")
         coveredCpGs = set(list(bgTruth.keys()))  # joined sets, start with bs-seq
         coveredCpGs001 = set(list(bgTruth.keys()))  # no change later
@@ -622,19 +620,42 @@ if __name__ == '__main__':
         outfn_bgtruth = os.path.join(out_dir,
                                      f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv.gz")
         save_meth_corr_data(callresult_dict_cov3, bgTruth, set(list(bgTruth.keys())), outfn_bgtruth)
-        outfn_bgtruth_sroted = os.path.join(out_dir,
+        outfn_bgtruth_sorted = os.path.join(out_dir,
                                             f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.sorted.csv.gz")
-        sort_bed_file(infn=outfn_bgtruth, outfn=outfn_bgtruth_sroted, has_header=True)
+        sort_bed_file(infn=outfn_bgtruth, outfn=outfn_bgtruth_sorted, has_header=True)
         os.remove(outfn_bgtruth)
 
-        # Report correlation matrix here
+        # Report correlation matrix for joined results
         df = pd.read_csv(outfn_joined_sorted, sep=sep)
         df = df.filter(regex='_freq$', axis=1)
         cordf = df.corr()
-        logger.debug(f'Correlation matrix is:\n{cordf}')
+        # Count CpGs
+        num_join_with_bsseq = [len(df.iloc[:, 0])] * len(df.columns)
+        cordf = pd.concat(
+            [cordf, pd.Series(num_join_with_bsseq, index=cordf.index).rename('CpGs_all_tools_with_BSseq')],
+            axis=1)
+
+        logger.debug(f'Correlation matrix (joined CpGs) is:\n{cordf}')
         corr_outfn = os.path.join(out_dir,
-                                  f'Meth_corr_plot_data-{RunPrefix}-correlation-matrix-toolcov{minToolCovCutt}-bsseqcov{bgtruthCutt}.xlsx')
+                                  f'Meth_corr_plot_data_joined-{RunPrefix}-correlation-matrix-toolcov{minToolCovCutt}-bsseqcov{bgtruthCutt}.xlsx')
         cordf.to_excel(corr_outfn)
+
+        if args.report_no_join:
+            # Report correlation matrix for no-join results
+            df = pd.read_csv(outfn_bgtruth_sorted, sep=sep)
+            df = df.filter(regex='_freq$', axis=1)
+            cordf = df.corr()
+            # Count CpGs
+            num_join_with_bsseq = [len(df.iloc[:, 0])]
+            for k in range(1, len(df.columns)):
+                num_join_with_bsseq.append(df.iloc[:, k].notna().sum())
+            cordf = pd.concat([cordf, pd.Series(num_join_with_bsseq, index=cordf.index).rename('CpGs_with_BSseq')],
+                              axis=1)
+
+            logger.debug(f'Correlation matrix (No-joined CpGs) is:\n{cordf}')
+            corr_outfn = os.path.join(out_dir,
+                                      f'Meth_corr_plot_data_no_join-{RunPrefix}-correlation-matrix-toolcov{minToolCovCutt}-bsseqcov{bgtruthCutt}.xlsx')
+            cordf.to_excel(corr_outfn)
 
         logger.debug(f'\n\n####################\n\n')
 
@@ -703,10 +724,29 @@ if __name__ == '__main__':
         correlation_report_on_regions(
             fnlist[0], bed_tuple_list=eval_genomic_context_tuple, dsname=dsname,
             runid=args.runid,
-            outdir=out_dir, large_mem=args.large_mem,
-            enable_base_detection_bedfile=not args.disable_bed_check,
-            enable_cache=args.enable_cache, using_cache=args.using_cache)
+            outdir=out_dir)
         logger.debug(f"Memory report: {get_current_memory_usage()}")
+
+        if args.report_no_join:
+            # file like: Meth_corr_plot_data_bgtruth-HL60_RRBS_2Reps_NANOME-bsCov5-minToolCov3-baseFormat1.sorted.csv.gz
+            fnlist = glob.glob(os.path.join(out_dir,
+                                            f'Meth_corr_plot_data_bgtruth-*bsCov{args.min_bgtruth_cov}-minToolCov{args.toolcov_cutoff}*.csv.gz'))
+            if len(fnlist) < 1:
+                raise Exception(f'Found no file for fnlist={fnlist}, for dir={out_dir}')
+            logger.debug(f'Find file: {fnlist}')
+
+            basefn = os.path.basename(fnlist[0])
+            tagname = basefn.replace('Meth_corr_plot_data_bgtruth-', '')
+            dsname = tagname[:tagname.find('_')]
+
+            logger.info(
+                f"Start report no-joined sites PCC in difference genomic regions based on file={fnlist[0]}, dsname={dsname}")
+            correlation_report_on_regions(
+                fnlist[0], bed_tuple_list=eval_genomic_context_tuple, dsname=dsname,
+                runid=args.runid,
+                outdir=out_dir,
+                join_tag="no_join")
+            logger.debug(f"Memory report: {get_current_memory_usage()}")
 
     if args.summary_coverage:
         logger.info("Start summarize CPG coverage at each regions")

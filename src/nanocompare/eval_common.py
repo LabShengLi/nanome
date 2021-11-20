@@ -512,7 +512,8 @@ def importPredictions_DeepMod_C(infileName, chr_col=0, start_col=1, strand_col=5
 
 def importPredictions_DeepMod_Clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4,
                                         meth_cov_col=-2, clustered_meth_freq_col=-1, baseFormat=1,
-                                        output_first=False, siteLevel=True, include_score=False, filterChr=HUMAN_CHR_SET,
+                                        output_first=False, siteLevel=True, include_score=False,
+                                        filterChr=HUMAN_CHR_SET,
                                         total_cols=13):
     """
     DeepMod RNN+Cluster results format for human genome
@@ -1553,7 +1554,8 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     elif encode == 'NANOME':
         calls0 = importPredictions_METEORE(infn, strand_col=3, meth_indicator_col=-2, meth_prob_col=-1,
                                            baseFormat=baseFormat, include_score=include_score,
-                                           filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn, toolname="NANOME")
+                                           filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn,
+                                           toolname="NANOME")
     else:
         raise Exception(f'Not support {encode} for file {infn} now')
 
@@ -1565,7 +1567,8 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     return calls0
 
 
-def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, filterChr=HUMAN_CHR_SET, enable_cache=False,
+def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, filterChr=HUMAN_CHR_SET,
+                   enable_cache=False,
                    using_cache=False,
                    cache_dir=None):
     """
@@ -2840,11 +2843,14 @@ def filter_corrdata_df_by_bedfile(df, coord_bed, coord_fn):
     # but file has 20 fields; you can supply custom names with the `names` kwarg
     #   % (self.file_type, _names, self.field_count()))
     warnings.filterwarnings('ignore', category=UserWarning)
-    bed_of_df = BedTool.from_dataframe(df).sort()
+
+    ## In order to support NaN in dataframe
+    ## Need replace NaN to ., then for sort, or else will encounter error: Differing number of BED fields encountered at line: 1339
+    bed_of_df = BedTool.from_dataframe(df.fillna('.')).sort()
     bed_of_intersect = intersect_bed_regions(bed_of_df, coord_bed, coord_fn)
 
     if len(bed_of_intersect) > 0:
-        retdf = bed_of_intersect.to_dataframe()
+        retdf = bed_of_intersect.to_dataframe().replace('.', np.NaN)
         retdf.columns = df.columns
     else:
         retdf = None
