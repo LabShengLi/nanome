@@ -16,7 +16,7 @@ import pandas as pd
 
 from nanocompare.global_config import set_log_debug_level
 
-NANOME_VERSION = "1.3.15"
+NANOME_VERSION = "1.3.16"
 
 # define the small error of 0 and 1, for fully-meth and unmeth eval
 EPSLONG = 1e-5
@@ -36,13 +36,14 @@ datasets_order = ["NA12878", "NA19240", "APL", "K562", "HL60"]
 
 ToolNameList = ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo', 'METEORE', 'DeepMod']
 
-# read format for tools
+# read/site format encode name for tools
 ToolEncodeList = ['Nanopolish', 'Megalodon', 'Megalodon.ZW', 'DeepSignal',
                   'Guppy', 'Guppy.ZW', 'Guppy.gcf52ref', 'Tombo',
-                  'METEORE', 'DeepMod', 'DeepMod.C', 'DeepMod.Cluster', 'NANOME']
+                  'METEORE', 'DeepMod', 'DeepMod.C', 'DeepMod.Cluster',
+                  'NANOME', 'UNIREAD', 'UNISITE']
 
-# read format for bs-seq
-BGTruthEncodeList = ['bismark', 'encode']
+# format for bs-seq
+BGTruthEncodeList = ['bismark', 'encode', 'UNISITE']
 
 ToolsColorList = ["#56B4E9", "#CC79A7", "#999999", "#009E73", "#E69F00", "#0072B2", "#D55E00"]
 

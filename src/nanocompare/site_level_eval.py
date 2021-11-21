@@ -16,7 +16,7 @@ from scipy import stats
 
 from nanocompare.eval_common import *
 from nanocompare.global_settings import ToolNameList, NANOME_VERSION, load_genome_annotation_config, sing_tagname, \
-    nonsing_tagname, save_done_file, get_tool_name
+    nonsing_tagname, save_done_file
 
 
 def get_nsites_in_regions(callSet, bedfn, tagname):
@@ -387,7 +387,7 @@ def parse_arguments():
     parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethCorr-DS_WGBS_2reps",
                         required=True)
     parser.add_argument('--calls', nargs='+',
-                        help='all ONT call results <tool-name>:<file-name> seperated by spaces, tool-name can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod',
+                        help='all ONT call results <tool-name>:<encode>:<file-name> seperated by spaces, tool-name can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod',
                         required=True)
     parser.add_argument('--bgtruth', type=str,
                         help="background truth file <encode-type>:<file-name1>;<file-name1>, encode-type can be 'encode' or 'bismark'",
@@ -526,28 +526,39 @@ if __name__ == '__main__':
     loaded_callname_list = []
 
     for callstr in args.calls:
-        callencode, callfn = callstr.split(':')
+        try:
+            if len(callstr.split(':')) == 3:
+                toolname, callencode, callfn = callstr.split(':')
+                score_cutoff = None
+            elif len(callstr.split(':')) == 5:
+                toolname, callencode, callfn, cutoff1, cutoff2 = callstr.split(':')
+                cutoff1 = float(cutoff1)
+                cutoff2 = float(cutoff1)
+                score_cutoff = (cutoff1, cutoff2)
+        except:
+            raise Exception(f"--calls params is not correct: {callstr}")
 
         if len(callfn) == 0:
             continue
 
-        callname = get_tool_name(callencode)
-        callfn_dict[callname] = callfn
+        callfn_dict[toolname] = callfn
 
-        loaded_callname_list.append(callname)
+        loaded_callname_list.append(toolname)
 
         # For site level evaluation, only need (freq, cov) results, no score needed. Especially for DeepMod, we must import as freq and cov format from DeepMod.Cluster encode
         # Do not filter bgtruth, because we use later for overlapping (without bg-truth)
-        callresult_dict_cov1[callname] = import_call(callfn, callencode, baseFormat=baseFormat, filterChr=args.chrSet,
-                                                     enable_cache=enable_cache, using_cache=using_cache,
-                                                     include_score=False, siteLevel=True, cache_dir=ds_cache_dir)
+        callresult_dict_cov1[toolname] = import_call(
+            callfn, callencode, baseFormat=baseFormat, filterChr=args.chrSet,
+            enable_cache=enable_cache, using_cache=using_cache,
+            include_score=False, siteLevel=True, cache_dir=ds_cache_dir,
+            toolname=toolname, score_cutoff=score_cutoff)
 
         # Stats the total cpgs and calls for each calls
         cnt_calls = 0
-        for cpg in callresult_dict_cov1[callname]:
-            cnt_calls += len(callresult_dict_cov1[callname][cpg])
-        call_cov1_calls[callname] = cnt_calls
-        call_cov1_cpg_sites[callname] = len(callresult_dict_cov1[callname])
+        for cpg in callresult_dict_cov1[toolname]:
+            cnt_calls += len(callresult_dict_cov1[toolname][cpg])
+        call_cov1_calls[toolname] = cnt_calls
+        call_cov1_cpg_sites[toolname] = len(callresult_dict_cov1[toolname])
 
     logger.info(f"Import calls from tools done for toollist={list(call_cov1_cpg_sites.keys())}")
     logger.info(f"Memory report: {get_current_memory_usage()}")
@@ -558,7 +569,7 @@ if __name__ == '__main__':
         callresult_dict_cov3[callname] = readLevelToSiteLevelWithCov(callresult_dict_cov1[callname],
                                                                      minCov=minToolCovCutt, toolname=callname)
     ## Destroy cov1 for memory saving
-    del callresult_dict_cov1[callname]
+    del callresult_dict_cov1
     logger.debug(f"Memory report: {get_current_memory_usage()}")
 
     logger.debug(f'\n\n####################\n\n')
