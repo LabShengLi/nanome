@@ -215,7 +215,8 @@ def summary_cpgs_stats_results_table():
     logger.debug(f"Memory report: {get_current_memory_usage()}")
 
 
-def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=None, outdir=None, join_tag="join"):
+def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=None, outdir=None, join_tag="join",
+                                  mpi=True):
     """
     Calculate Pearson's correlation coefficient at different regions.
     :param corr_infn:
@@ -226,14 +227,18 @@ def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=
     """
     global progress_bar_global_site
     progress_bar_global_site = tqdm(total=len(bed_tuple_list))
-    progress_bar_global_site.set_description(f"MT-PCC-{dsname}-regions")
+    progress_bar_global_site.set_description(f"MT-PCC-{join_tag}-{dsname}-regions")
 
-    executor = ThreadPoolExecutor(max_workers=args.processors)
+    if mpi:
+        executor = ThreadPoolExecutor(max_workers=args.processors)
+    else:
+        executor = ThreadPoolExecutor(max_workers=1)
     all_task = []
     ## input: df, bed_tuple
     ## return: list of dict [{tool1's pcc}, {toolk's pcc}]
+    df = pd.read_csv(corr_infn)
     for bed_tuple in bed_tuple_list:
-        future = executor.submit(compute_pcc_at_region, corr_infn, bed_tuple)
+        future = executor.submit(compute_pcc_at_region, df, bed_tuple)
         future.add_done_callback(update_progress_bar_site_level)
         all_task.append(future)
     executor.shutdown()
@@ -316,7 +321,16 @@ def get_num_intersect(callBed, region_bed, bedfn="", tagname=None):
     return ret
 
 
-def compute_pcc_at_region(corr_infn, bed_tuple):
+def compute_pcc_at_region(df, bed_tuple):
+    """
+    Compute PCC of input DF with respect to bed region tuple
+    Args:
+        df:
+        bed_tuple:
+
+    Returns:
+
+    """
     infn, tagname, coord_bed = bed_tuple
     logger.debug(f'tagname={tagname}, coord_fn={infn}')
     if not args.large_mem and tagname != genome_wide_tagname and coord_bed is None:  # load on demand
@@ -331,7 +345,6 @@ def compute_pcc_at_region(corr_infn, bed_tuple):
         logger.debug(f"Region name={tagname} is not found, not compute PCC")
         return None
 
-    df = pd.read_csv(corr_infn)
     newdf = filter_corrdata_df_by_bedfile(df, eval_coord_bed, infn)
     if newdf is None:
         logger.debug(f"Found intersection 0 CPGs for tagname={tagname}, no report for PCC")
@@ -741,11 +754,12 @@ if __name__ == '__main__':
 
             logger.info(
                 f"Start report no-joined sites PCC in difference genomic regions based on file={fnlist[0]}, dsname={dsname}")
+            ## Due to large memory for no-joined, using non-mpi method
             correlation_report_on_regions(
                 fnlist[0], bed_tuple_list=eval_genomic_context_tuple, dsname=dsname,
                 runid=args.runid,
                 outdir=out_dir,
-                join_tag="no_join")
+                join_tag="no_join", mpi=False)
             logger.debug(f"Memory report: {get_current_memory_usage()}")
 
     if args.summary_coverage:

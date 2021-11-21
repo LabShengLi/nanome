@@ -35,7 +35,7 @@ default_params = {
     'reg_lambda': 1,
 }
 
-search_cv_params = {
+gridcv_search_params = {
     'learning_rate': [0.01, 0.05, 0.1, 0.2],
     'n_estimators': [50, 100, 200, 500],
     'max_depth': [3, 6, 9],
@@ -45,11 +45,11 @@ search_cv_params = {
     'reg_lambda': [0.5, 1, 2],
 }
 
-search_cv_params = {
-    'learning_rate': [0.1],
-    'n_estimators': [100],
-    'max_depth': [6],
-}
+# gridcv_search_params = {
+#     'learning_rate': [0.1],
+#     'n_estimators': [100],
+#     'max_depth': [6],
+# }
 
 
 def train_xgboost_model(datadf):
@@ -110,7 +110,7 @@ def train_xgboost_model(datadf):
             class_freq=\n{y_test.value_counts(normalize=True)}
             """)
 
-    logger.info(f"\n\nDefault params={default_params}\n\nSearch parameters={search_cv_params}")
+    logger.info(f"\n\nDefault params={default_params}\n\nSearch parameters={gridcv_search_params}")
 
     ## train model using CV and search best params
     xgb_model = XGBClassifier(**default_params)
@@ -119,7 +119,7 @@ def train_xgboost_model(datadf):
     #                                       random_state=args.random_state),
     #                    scoring='f1', verbose=10, refit=True, return_train_score=True)
 
-    clf = RandomizedSearchCV(xgb_model, search_cv_params, n_iter=args.niter,
+    clf = RandomizedSearchCV(xgb_model, gridcv_search_params, n_iter=args.niter,
                              random_state=args.random_state, n_jobs=args.processors,
                              cv=StratifiedKFold(n_splits=args.cv, shuffle=True,
                                                 random_state=args.random_state),
