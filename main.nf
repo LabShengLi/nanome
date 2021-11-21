@@ -1638,10 +1638,8 @@ process Report {
 		enabled: params.outputRaw
 
 	input:
-	path fileList
-	path naonopolish
-	path megalodon
-	path deepsignal
+	path site_fileList
+	path read_fileList
 
 	path qc_report
 	path src
@@ -1656,9 +1654,6 @@ process Report {
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify, optional: true
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify, optional: true
 	path "${params.dsname}.nanome.per_read.combine.tsv.gz", emit: nanome_combine_out, optional: true
-
-	when:
-	fileList.size() >= 1
 
 	"""
 	## NANOME XGBoost method
@@ -1678,7 +1673,7 @@ process Report {
 		xgboost_predict.py \
 			--verbose  --contain-na --tsv-input\
 			--dsname ${params.dsname} -i \${modelContentTSVFileName}\
-			-m APL -o ${params.dsname}.nanome.per_read.combine.tsv.gz &>> Report.run.log  || true
+			-m NA12878 -o ${params.dsname}.nanome.per_read.combine.tsv.gz &>> Report.run.log  || true
 
 		## Unify format output
 		echo "### NANOME read/site level results"
@@ -1866,5 +1861,10 @@ workflow {
 	Channel.fromPath("${projectDir}/README.md").concat(
 		s1, s2, s3, s4, s5, s6, s7
 		).toList().set { tools_site_unify }
-	Report(tools_site_unify, r1, r2, r3, QCExport.out.qc_report, ch_src, ch_utils, EnvCheck.out.reference_genome)
+
+	Channel.fromPath("${projectDir}/LICENSE").concat(
+		r1, r2, r3
+		).toList().set { tools_read_unify }
+
+	Report(tools_site_unify, tools_read_unify, QCExport.out.qc_report, ch_src, ch_utils, EnvCheck.out.reference_genome)
 }
