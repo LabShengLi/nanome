@@ -527,7 +527,7 @@ def parse_arguments():
                                      description='Read-level performance evaluation in nanome paper')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
-    parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethPerf-DS_WGBS_2reps",
+    parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethPerf-Dataset_WGBS_2Reps",
                         required=True)
     parser.add_argument('--calls', nargs='+',
                         help='all ONT call results <tool-name>:<file-name> seperated by space, tool-name can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod',

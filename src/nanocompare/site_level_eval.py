@@ -237,6 +237,9 @@ def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=
     ## input: df, bed_tuple
     ## return: list of dict [{tool1's pcc}, {toolk's pcc}]
     df = pd.read_csv(corr_infn)
+    if df.isnull().values.any():
+        df.fillna('.', inplace=True)
+
     for bed_tuple in bed_tuple_list:
         future = executor.submit(compute_pcc_at_region, df, bed_tuple)
         future.add_done_callback(update_progress_bar_site_level)
@@ -384,7 +387,7 @@ def parse_arguments():
                                      description='Site-level correlation analysis in nanome paper')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
-    parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethCorr-DS_WGBS_2reps",
+    parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethCorr-Dataset_WGBS_2Reps",
                         required=True)
     parser.add_argument('--calls', nargs='+',
                         help='all ONT call results <tool-name>:<encode>:<file-name> seperated by spaces, tool-name can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod',
@@ -406,6 +409,7 @@ def parse_arguments():
                         default=HUMAN_CHR_SET)
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
     parser.add_argument('--processors', type=int, help="number of processors used, default is 1", default=1)
+
     parser.add_argument('-o', type=str, help=f"output base dir, default is {pic_base_dir}", default=pic_base_dir)
     parser.add_argument('--gen-venn', help="if generate CpGs files for venn data analysis", action='store_true')
     parser.add_argument('--summary-coverage', help="if summarize coverage at each region",

@@ -13,7 +13,6 @@ Such as import_DeepSignal, import_BGTruth, etc.
 
 import glob
 import gzip
-import math
 import os.path
 import pickle
 import re
@@ -25,6 +24,7 @@ from concurrent.futures import ThreadPoolExecutor, wait
 from itertools import combinations
 from multiprocessing import Pool
 
+import math
 import numpy as np
 import pandas as pd
 import psutil
@@ -2558,7 +2558,7 @@ def check_cache_available(infn, **params):
     cachefn = get_cache_filename(infn, params)
 
     if os.path.exists(cachefn):
-        logger.debug(f'Start to get from cache:{cachefn}')
+        # logger.debug(f'Start to get from cache:{cachefn}')
         try:
             with open(cachefn, 'rb') as inf:
                 ret = pickle.load(inf)
@@ -2907,7 +2907,7 @@ def get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detecti
         ## If pkl in cache is avalable, and the BED file's tempdir/filename.tmp is available, import it
         ## or else, need to reload. Note: temp file may be released, even the cache pkl is there.
         if ret is not None and ret[2] is not None and os.path.exists(ret[2].fn):
-            logger.debug(f'BED import {os.path.basename(infn)} finished from cache file, BED tuple={ret}')
+            # logger.debug(f'BED import {os.path.basename(infn)} finished from cache file, BED tuple={ret}')
             return ret
         logger.debug(f'BED file not cached yet, we load from raw file={os.path.basename(infn)}')
 
@@ -3017,7 +3017,8 @@ def filter_corrdata_df_by_bedfile(df, coord_bed, coord_fn):
 
     ## In order to support NaN in dataframe
     ## Need replace NaN to ., then for sort, or else will encounter error: Differing number of BED fields encountered at line: 1339
-    bed_of_df = BedTool.from_dataframe(df.fillna('.')).sort()
+    ## Ref: NA values https://github.com/daler/pybedtools/issues/257
+    bed_of_df = BedTool.from_dataframe(df).sort()
     bed_of_intersect = intersect_bed_regions(bed_of_df, coord_bed, coord_fn)
 
     if len(bed_of_intersect) > 0:

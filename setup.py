@@ -36,6 +36,7 @@ setuptools.setup(
         'src/nanocompare/read_level_eval.py',
         'src/nanocompare/site_level_eval.py',
         'src/nanocompare/tss_eval.py',
+        'src/nanocompare/pcc_region_eval.py',
         'src/nanocompare/nanome_consensus.py',
         'src/nanocompare/computeRawReadsCoverage.py',
         'src/nanocompare/report/gen_html_report.py',
