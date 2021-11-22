@@ -46,12 +46,23 @@ gridcv_search_params = {
     'reg_lambda': [0.5, 1, 2],
 }
 
+APL_best_params = {
+    'subsample': [0.8], 'reg_lambda': [1],
+    'reg_alpha': [0], 'n_estimators': [200],
+    'max_depth': [6], 'learning_rate': [0.05],
+    'colsample_bytree': [1]
+}
 
-# gridcv_search_params = {
-#     'learning_rate': [0.1],
-#     'n_estimators': [100],
-#     'max_depth': [6],
-# }
+NA12878_best_params = {
+    'subsample': [0.8], 'reg_lambda': [1],
+    'reg_alpha': [0], 'n_estimators': [200],
+    'max_depth': [6], 'learning_rate': [0.05],
+    'colsample_bytree': [1]
+}
+
+
+# gridcv_search_params = APL_best_params
+gridcv_search_params = NA12878_best_params
 
 
 def train_xgboost_model(datadf):
@@ -218,7 +229,8 @@ def parse_arguments():
                         help='test data ratio: 0.0-1.0, default is 0.5')
     parser.add_argument('--fully-meth-threshold', type=float, default=1.0,
                         help='fully methylated threshold, default is 1.0')
-    parser.add_argument('--gen-data', type=str, default=None, help='generate train and test data if specified its name, such as APL, NA12878')
+    parser.add_argument('--gen-data', type=str, default=None,
+                        help='generate train and test data if specified its name, such as APL, NA12878')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
 
     args = parser.parse_args()
