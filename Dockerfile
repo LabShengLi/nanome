@@ -69,31 +69,9 @@ RUN cd /data && wget -q ${METEORE_GITHUB} &&\
     rm -f v1.0.0.tar.gz &&\
     rm -rf METEORE-1.0.0/example_results METEORE-1.0.0/data &&\ 
     wget -q ${DEEPSIGNAL_MODEL} &&\
-    wget -q ${ECOLI_GENOME} && wget -q ${HG38_CHR22_GENOME} && wget -q ${MEGALODON_MODEL} &&\
+    wget -q ${MEGALODON_MODEL} &&\
     wget -q http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bedGraphToBigWig &&\
     chmod +x bedGraphToBigWig &&\
     mv bedGraphToBigWig  /usr/local/bin/
 
-# Create nanome project dir
-RUN mkdir -p ${NANOME_DIR}
-
-# Copy additonal scripts
-ADD inputs/ ${NANOME_DIR}/inputs
-ADD Rshiny/ ${NANOME_DIR}/Rshiny
-ADD src/ ${NANOME_DIR}/src
-ADD test_data/ ${NANOME_DIR}/test_data
-ADD utils/ ${NANOME_DIR}/utils
-
-# Copy nextflow scripts
-ADD conf/ ${NANOME_DIR}/conf
-ADD main.nf ${NANOME_DIR}/
-ADD nextflow.config ${NANOME_DIR}/
-ADD README.md ${NANOME_DIR}/
-ADD LICENSE ${NANOME_DIR}/
-
-# Change execute permissions
-RUN find ${NANOME_DIR} -name "*.py" -type f -exec chmod +x {} \;
-RUN find ${NANOME_DIR} -name "*.sh" -type f -exec chmod +x {} \;
-
 CMD ["bash"]
-

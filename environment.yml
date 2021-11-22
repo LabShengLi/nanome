@@ -24,7 +24,7 @@ dependencies:
   - numpy=1.18.5
   - pandas=1.1.5
   - statsmodels=0.12.2
-  - pybedtools=0.8.2
+  - pybedtools=0.8.2 # nanome need upper version of pybedtools, deal with NAs
   - rocksdb=6.13.3
   - python-rocksdb=0.7.0
   - cython=0.29.24
