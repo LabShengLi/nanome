@@ -126,7 +126,7 @@ def load_genome_annotation_config(verbose=False):
             ret2[str(row['filename']).strip()] = (str(row['tagname']).strip(), int(row['format-0/1']),
                                                   str(row['strand-sensitive']).strip().upper() == 'Y',)
     except:
-        print(f"ERROR: occur error when reading {config_filepath}")
+        print(f"ERROR: occur error when reading {config_filepath}", flush=True)
     if verbose:
         print(f"Config file loaded, results are below:")
         print(json.dumps(ret2, indent=4), flush=True)

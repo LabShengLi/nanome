@@ -5,6 +5,7 @@
 # @Organization : JAX Li Lab
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
 import argparse
+import os.path
 import sys
 
 import joblib
@@ -96,8 +97,20 @@ def train_xgboost_model(datadf):
     X_test = testdf[tool_list]
     y_test = testdf['Truth_label']
 
-    train_test_array = [len(y_train), len(y_test)]
+    ## save train and test data
+    if args.gen_data is not None:
+        outdir = os.path.dirname(args.o)
 
+        outfn = os.path.join(outdir, f"{args.gen_data}_NANOME_train{1 - args.test_size:.2f}_data.csv.gz")
+        traindf.to_csv(outfn, index=False)
+        logger.info(f"save to {outfn}")
+
+        outfn = os.path.join(outdir, f"{args.gen_data}_NANOME_test{args.test_size:.2f}_data.csv.gz")
+        testdf.to_csv(outfn, index=False)
+        logger.info(f"save to {outfn}")
+        pass
+
+    train_test_array = [len(y_train), len(y_test)]
     logger.info(
         f"""Split, read level report:
             Train:Test={train_test_array / np.sum(train_test_array)}
@@ -205,7 +218,7 @@ def parse_arguments():
                         help='test data ratio: 0.0-1.0, default is 0.5')
     parser.add_argument('--fully-meth-threshold', type=float, default=1.0,
                         help='fully methylated threshold, default is 1.0')
-
+    parser.add_argument('--gen-data', type=str, default=None, help='generate train and test data if specified its name, such as APL, NA12878')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
 
     args = parser.parse_args()
