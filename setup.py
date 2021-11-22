@@ -62,9 +62,8 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.6, <3.9",
+    python_requires=">=3.6",
     install_requires=[
-        'Cython',
         'biopython',
         'pybedtools >=0.8.2',
         'pandas',
