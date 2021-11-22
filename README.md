@@ -63,12 +63,8 @@ Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https:
 ## Installation
 Users only need to install **Nextflow** (https://nf-co.re/usage/installation). NANOME execution environment will be automatically configured with the support of conda, docker or singularity containers. Below is steps for installing Nextflow:
 ```angular2html
-# Add channel and install nextflow
-conda config --add channels defaults
-conda config --add channels bioconda
-conda config --add channels conda-forge
-conda install nextflow
-conda update nextflow
+# Install nextflow
+conda install --channel conda-forge --channel bioconda nextflow
 nextflow -v
 ```
 
@@ -81,8 +77,7 @@ NANOME pipeline support running with various ways in different platforms:
 * Google Cloud Platform (GCP) with **google-lifesciences** support
 
 ## Simple usage
-
-We provide a **tutorial video** for running NANOME pipeline:
+Please refer to [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). We provide a **tutorial video** for running NANOME pipeline:
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/xwk1zRU42_4/0.jpg)](https://www.youtube.com/watch?v=xwk1zRU42_4)
 
@@ -96,7 +91,7 @@ nextflow run TheJacksonLaboratory/nanome\
 nextflow run TheJacksonLaboratory/nanome\
     -profile test,singularity
 ```
-Please note that above two commands are integrated in our **CI/CD test cases**. Our Github will automatically test and report results on every commit and PRs (https://github.com/TheJacksonLaboratory/nanome/actions). Please refer to [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). 
+Please note that above two commands are integrated in our **CI/CD test cases**. Our Github will automatically test and report results on every commit and PRs (https://github.com/TheJacksonLaboratory/nanome/actions). 
 
 We firstly proposed the **standardized whole genome-wide evaluation packages**, check [standardized evaluation tool usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Eval.md) for more detail. We do not suggest evaluating on a portion of CpGs for performance comparisons.
 

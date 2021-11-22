@@ -63,7 +63,7 @@ def helpMessage() {
 	  --config		Lifebit CloudOS config file, please set to 'conf/executors/lifebit.config'
 
 	Tools's specific configurations:
-	  --run[Tool-name]	Default we run top four performers in nanome paper, specify '--run[Tool-name]' can include other tool, supported tools: Megalodon, Nanopolish, DeepSignal, Guppy, Tombo, METEORE, and DeepMod
+	  --run[Tool-name]	By default, we run top four performers in nanome paper, specify '--run[Tool-name]' can include other tool, supported tools: Megalodon, Nanopolish, DeepSignal, Guppy, Tombo, METEORE, and DeepMod
 
 	Other options:
 	  --guppyDir		Guppy installation local directory, used only for conda environment

@@ -16,20 +16,25 @@ By default, we are using `--genome=hg38` for human reference genome, and you can
 # Get pipeline help
 nextflow run TheJacksonLaboratory/nanome --help
 
-# Running NANOME pipeline for E. coli data
-nextflow run TheJacksonLaboratory/nanome\
-    -profile singularity,hpc\
-    --dsname EcoliData\
-    --input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli_data_from_meteore.tar.gz\
-    --genome ecoli
-
 # Running NANOME pipeline for human data
 nextflow run TheJacksonLaboratory/nanome\
     -profile singularity,hpc\
     --dsname TestData\
     --input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt\
     --genome hg38
+
+# Running NANOME pipeline for E. coli data
+nextflow run TheJacksonLaboratory/nanome\
+    -profile singularity,hpc\
+    --dsname EcoliData\
+    --input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli_data_from_meteore.tar.gz\
+    --genome ecoli
 ```
+
+## Methylation-calling tool configuration
+By default, NANOME pipeline will execute top four performers: **Nanopolish, Megalodon, DeepSignal and Guppy**, we also provide a **NANOME concensus results** using XGBoost model trained on 20% fully methylated and unmethylated CpGs based on Megalodon and DeepSignal outputs.
+
+The NANOME concensus results can cover more CpGs than any single tool, and perform a slightly better performance. User can supply params `--run[tool-name]` with values `true` or `false` to configure if running a specific tool. 
 
 ## Pre-defined pipeline profiles
 `-profile` is the name of execution configuration, we support various of  configurations, e.g., `conda`, `docker`, `singularity`, `hpc` and `google`. Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments.
