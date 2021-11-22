@@ -64,7 +64,7 @@ Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https:
 Users only need to install **Nextflow** (https://nf-co.re/usage/installation). NANOME execution environment will be automatically configured with the support of conda, docker or singularity containers. Below is steps for installing Nextflow:
 ```angular2html
 # Install nextflow
-conda install --channel conda-forge --channel bioconda nextflow
+conda install -c conda-forge -c bioconda nextflow
 nextflow -v
 ```
 

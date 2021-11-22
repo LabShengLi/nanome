@@ -71,7 +71,7 @@ setuptools.setup(
         'scipy',
         'numpy',
         'statsmodels',
-        'scikit-learn ==0.21.3',
+        'scikit-learn',
         'matplotlib',
         'jinja2',
         'openpyxl',

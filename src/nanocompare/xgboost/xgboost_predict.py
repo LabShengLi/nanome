@@ -56,7 +56,11 @@ if __name__ == '__main__':
         infn = args.m
     logger.debug(f"Model file: {infn}")
     xgboost_cls = joblib.load(infn)
-    logger.debug(f"Model info: xgboost_cls={xgboost_cls}, best_params={xgboost_cls.best_params_}")
+    try:
+        logger.debug(f"Model info: xgboost_cls={xgboost_cls}")
+        logger.debug(f"best_params={xgboost_cls.best_params_}")
+    except:
+        logger.debug(f"WARNNING: print params encounter problem")
 
     if args.tsv_input:
         df_tsvfile = pd.read_csv(args.i, header=None, sep='\t')
@@ -109,6 +113,7 @@ if __name__ == '__main__':
     logger.debug(f"Site stats: total={len(sitedf):,}")
     sitedf = None
 
+    logger.debug(f"Start predict by XGBoost......")
     predX = datadf.loc[:, tool_list]
     prediction = pd.DataFrame(xgboost_cls.predict(predX))
     prediction.rename(columns={0: "Prediction"}, inplace=True)
@@ -124,3 +129,4 @@ if __name__ == '__main__':
     ## APL.nanopolish.methylation_calls.combine.tsv.gz
     nanome_df.to_csv(args.o, sep='\t', index=False)
     logger.info(f"save to {args.o}")
+    logger.info("Done for XGBoost predict")
