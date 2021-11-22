@@ -276,7 +276,7 @@ def save_meth_corr_data(callresult_dict, bgTruth, reportCpGSet, outfn):
     # outfile = open(outfn, 'w')
     outfile = gzip.open(outfn, 'wt')
 
-    header_list = ['chr', 'start', 'end', 'BGTruth_freq', 'BGTruth_cov', 'strand']
+    header_list = ['Chr', 'Start', 'End', 'BGTruth_freq', 'BGTruth_cov', 'Strand']
 
     # Output header
     for name in loaded_callname_list:

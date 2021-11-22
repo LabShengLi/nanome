@@ -817,11 +817,11 @@ if __name__ == '__main__':
         logger.debug(f'After joined with {toolname}, cpgs={len(joinedCPG):,}')
 
     # this file is the all tool (cov>=1) joined with BS-seq (cov>=5) 0%, 100% together sites BED file, for evaluation on joined sites
-    bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}_{args.dsname}.Tools_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.bed.gz"
+    bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}_{args.dsname}.Tools_Certain_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.bed.gz"
     save_keys_to_single_site_bed(joinedCPG, outfn=bedfn_tool_join_bgtruth, callBaseFormat=baseFormat, outBaseFormat=1)
 
     ## Sort the bed file
-    bedfn_tool_join_bgtruth_sorted = f"{out_dir}/{RunPrefix}_{args.dsname}.Tools_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.sorted.bed.gz"
+    bedfn_tool_join_bgtruth_sorted = f"{out_dir}/{RunPrefix}_{args.dsname}.Tools_Certain_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.sorted.bed.gz"
     sort_bed_file(infn=bedfn_tool_join_bgtruth, outfn=bedfn_tool_join_bgtruth_sorted)
 
     ## Delete not sorted file
