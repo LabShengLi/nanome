@@ -21,11 +21,11 @@ parser.add_argument('--methodsfile', '-i', type=str, required=True,
                     help='TSV file containing name and path of the method output tsv file. The output tsv file from the method should be in the format [ID, Pos, Strand, Score]. Can be compressed in gz.')
 parser.add_argument('--bsseq', type=str, required=True,
                     help='BS-seq data of sorted bed file')
+parser.add_argument('-o', type=str, required=True,
+                    help='output combine file name')
 parser.add_argument('--contain-na', help="if allow merge with NA values", action='store_true')
 parser.add_argument('--verbose', help="if output verbose info", action='store_true')
 
-parser.add_argument('-o', type=str, required=True,
-                    help='output combine file name')
 args = parser.parse_args()
 print(f"args={args}", flush=True)
 

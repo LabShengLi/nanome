@@ -25,14 +25,14 @@ def parse_arguments():
                         help=f'model file, existing model list: {",".join(list(nanome_model_dict.keys()))}')
     parser.add_argument('--dsname', type=str, required=True,
                         help='dataset name')
+    parser.add_argument('-o', type=str, required=True,
+                        help='output file name')
     parser.add_argument('--random-state', type=int, default=42,
                         help='random state, default is 42')
     parser.add_argument('--processors', type=int, default=8,
                         help='num of processors, default is 8')
     parser.add_argument('--chunksize', type=int, default=CHUNKSIZE,
                         help=f'chunk size for load large data, default is {CHUNKSIZE}')
-    parser.add_argument('-o', type=str, required=True,
-                        help='output file name')
     parser.add_argument('--contain-na', help="if make prediction on NA values", action='store_true')
     parser.add_argument('--tsv-input', help="if input is tsv for tools' read-level format, or else is combined input",
                         action='store_true')
