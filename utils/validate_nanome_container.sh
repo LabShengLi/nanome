@@ -4,7 +4,9 @@
 # @Software : NANOME project
 # @Organization : JAX Li Lab
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
-versionFilename=${1:-"tools_version_table.tsv"}
+
+#versionFilename=${1:-"tools_version_table.tsv"}
+versionFilename=${1:-}
 
 printf "### Nanome container check start\n"
 printf "====================\n"
@@ -67,17 +69,29 @@ printf "====================\n"
 echo inliner version = `inliner -V`
 pip show nanome-jax | awk 'NR<=2' | awk -vRS="" -vOFS='  ' '$1=$1'
 
-> ${versionFilename}
-printf '%s\t%s\n' Tool Version >> ${versionFilename}
-printf '%s\t%s\n' Nanopolish ${nanopolish_version} >> ${versionFilename}
-printf '%s\t%s\n' Megalodon ${megalodon_version} >> ${versionFilename}
-printf '%s\t%s\n' DeepSignal ${deepsignal_version} >> ${versionFilename}
-printf '%s\t%s\n' Guppy ${guppy_version} >> ${versionFilename}
-printf '%s\t%s\n' Tombo ${tombo_version} >> ${versionFilename}
-printf '%s\t%s\n' DeepMod ${deepmod_version} >> ${versionFilename}
-printf '%s\t%s\n' METEORE 1.0.0 >> ${versionFilename}
+printf "====================\n"
+printf '### Tools version list\n'
+if [[ -z "${versionFilename}" ]] ; then
+    printf '%s\t%s\n' Tool Version
+    printf '%s\t%s\n' Nanopolish ${nanopolish_version} 
+    printf '%s\t%s\n' Megalodon ${megalodon_version} 
+    printf '%s\t%s\n' DeepSignal ${deepsignal_version} 
+    printf '%s\t%s\n' Guppy ${guppy_version} 
+    printf '%s\t%s\n' Tombo ${tombo_version} 
+    printf '%s\t%s\n' DeepMod ${deepmod_version} 
+    printf '%s\t%s\n' METEORE 1.0.0 
+else
+    > ${versionFilename}
+    printf '%s\t%s\n' Tool Version >> ${versionFilename}
+    printf '%s\t%s\n' Nanopolish ${nanopolish_version} >> ${versionFilename}
+    printf '%s\t%s\n' Megalodon ${megalodon_version} >> ${versionFilename}
+    printf '%s\t%s\n' DeepSignal ${deepsignal_version} >> ${versionFilename}
+    printf '%s\t%s\n' Guppy ${guppy_version} >> ${versionFilename}
+    printf '%s\t%s\n' Tombo ${tombo_version} >> ${versionFilename}
+    printf '%s\t%s\n' DeepMod ${deepmod_version} >> ${versionFilename}
+    printf '%s\t%s\n' METEORE 1.0.0 >> ${versionFilename}
 
-echo "### check tools version file:${versionFilename}"
-cat ${versionFilename}
-
+    echo "### check tools version file:${versionFilename}"
+    cat ${versionFilename}
+fi
 printf "### Nanome container check end\n"

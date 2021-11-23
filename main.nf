@@ -265,7 +265,7 @@ process EnvCheck {
 	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
 
 	## Validate nanome container/environment is correct
-	bash utils/validate_nanome_container.sh
+	bash utils/validate_nanome_container.sh  tools_version_table.tsv
 
 	## Untar and prepare megalodon model
 	if [[ ${params.runMegalodon} == true ]]; then
