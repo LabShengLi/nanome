@@ -73,3 +73,5 @@ testdemo.py
 /jupyter_codes/
 /na19240_hpc_winter.sh
 /xgboost_model/
+/dist/
+/*.egg-info/

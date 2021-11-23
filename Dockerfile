@@ -17,14 +17,10 @@ LABEL description="Nanome project in Li Lab at The Jackson Laboratory" \
 ARG GUPPY_VERSION=5.0.16
 ARG BUILD_PACKAGES="wget apt-transport-https procps git curl"
 ARG DEBIAN_FRONTEND="noninteractive"
-ARG NANOME_DIR=/opt/nanome
 ARG METEORE_GITHUB="https://github.com/comprna/METEORE/archive/refs/tags/v1.0.0.tar.gz"
 ARG DEEPSIGNAL_MODEL="https://zenodo.org/record/5513090/files/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7%2B.tar.gz"
 ARG MEGALODON_MODEL="https://zenodo.org/record/5513090/files/megalodon_model.tar.gz"
-ARG ECOLI_GENOME="https://zenodo.org/record/5513090/files/ecoli.tar.gz"
-ARG HG38_CHR22_GENOME="https://zenodo.org/record/5513090/files/hg38_chr22.tar.gz"
-
-ARG MEGALODON_VERSION=2.3.4
+ARG MEGALODON_VERSION=2.3.5
 
 # Install guppy-gpu version, ref: https://github.com/GenomicParisCentre/dockerfiles
 RUN apt-get -q update && \
@@ -53,8 +49,8 @@ RUN conda env create --name nanome --file=environment.yml && conda clean -a
 SHELL ["conda", "run", "-n", "nanome", "/bin/bash", "-c"]
 
 # Install latest version for megalodon, even conflicts with fast5mod, they can work
-RUN pip install megalodon==${MEGALODON_VERSION} && pip cache purge
-RUN npm install -g inliner && npm cache clean --force
+RUN pip install megalodon==${MEGALODON_VERSION} && pip cache purge &&\
+    npm install -g inliner && npm cache clean --force
 
 # Set nanome env path into PATH
 ENV PATH /opt/conda/envs/nanome/bin:$PATH

@@ -17,7 +17,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="nanome-jax",
-    version="1.3.17",
+    version="1.3.18",
     author="Yang Liu",
     author_email="yang.liu@jax.org",
     description="NANOME (Nanopore methylation) pipeline developed by Li Lab at The Jackson Laboratory",
@@ -65,13 +65,13 @@ setuptools.setup(
     python_requires=">=3.6",
     install_requires=[
         'biopython',
-        'pybedtools >=0.8.2',
+        'pybedtools >=0.8.2', # lower version, NA values have issues, ref: https://daler.github.io/pybedtools/changes.html#changes-in-v0-8-0
         'pandas',
         'seaborn',
         'scipy',
         'numpy',
         'statsmodels',
-        'scikit-learn',
+        'scikit-learn <=0.23.2', # upper version may not load model success, ref: https://github.com/EpistasisLab/tpot/issues/1171
         'matplotlib',
         'jinja2',
         'openpyxl',
