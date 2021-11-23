@@ -1674,8 +1674,7 @@ process Report {
 		printf '%s\t%s\n' megalodon \${MegalodonReadReport} >> \$modelContentTSVFileName
 		printf '%s\t%s\n' deepsignal \${DeepSignalReadReport} >> \$modelContentTSVFileName
 
-		## pip install xgboost
-		xgboost_predict.py \
+		python src/nanocompare/xgboost/xgboost_predict.py \
 			--verbose  --contain-na --tsv-input\
 			--dsname ${params.dsname} -i \${modelContentTSVFileName}\
 			-m NA12878 -o ${params.dsname}.nanome.per_read.combine.tsv.gz &>> Report.run.log  || true
