@@ -1744,37 +1744,38 @@ process Report {
 		${workflow.runName} "${workflow.start}"\
 		> README_${params.dsname}.txt   2>> Report.run.log
 
-	if [[ ${params.outputGenomeBrowser} == true ]]; then
-		mkdir -p GenomeBrowser-${params.dsname}
-		## generate meth freq bigwig data
-		find . -maxdepth 1 -name '*-perSite-cov1.sort.bed.gz' | \
-			parallel -j\$((numProcessor)) -v \
-				"basefn={/}  && \
-					zcat {} | \
-					awk '{printf \\"%s\\t%d\\t%d\\t%2.5f\\n\\" , \\\$1,\\\$2,\\\$3,\\\$7}' > \
-					GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_methfreq.bedgraph} && \
+	if [[ ${params.outputGenomeBrowser} == true ]] ; then
+		if command -v bedGraphToBigWig  &> /dev/null ; then
+			mkdir -p GenomeBrowser-${params.dsname}
+			find . -maxdepth 1 -name '*-perSite-cov1.sort.bed.gz' -print0 | \
+				while IFS= read -r -d '' infn ; do
+					echo "### processing infn=\$infn"
+					## methfreq bw generation
+					zcat \${infn} | awk '{printf "%s\\t%d\\t%d\\t%2.5f\\n" , \$1,\$2,\$3,\$7}' > \
+						GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_methfreq.bedgraph}
 					LC_COLLATE=C sort -u -k1,1 -k2,2n \
-						GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_methfreq.bedgraph} > \
-							GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_methfreq.sorted.bedgraph} && \
-					bedGraphToBigWig GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_methfreq.sorted.bedgraph} \
-						reference_genome/chrom.sizes   GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_methfreq.bw} && \
-						rm -f GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_methfreq.bedgraph}  \
-							GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_methfreq.sorted.bedgraph}"
+						GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_methfreq.bedgraph} > \
+							GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_methfreq.sorted.bedgraph}
+					bedGraphToBigWig GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_methfreq.sorted.bedgraph} \
+						reference_genome/chrom.sizes   GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_methfreq.bw}
+					rm -f GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_methfreq.bedgraph}  \
+							GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_methfreq.sorted.bedgraph}
 
-		## generate coverage bigwig data
-		find . -maxdepth 1 -name '*-perSite-cov1.sort.bed.gz' | \
-			parallel -j\$((numProcessor)) -v \
-				"basefn={/}  && \
-					zcat {} | \
-					awk '{printf \\"%s\\t%d\\t%d\\t%d\\n\\" , \\\$1,\\\$2,\\\$3,\\\$8}' > \
-					GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_coverage.bedgraph} && \
+					## coverage bw generation
+					zcat \${infn} | \
+						awk '{printf "%s\\t%d\\t%d\\t%d\\n" , \$1,\$2,\$3,\$8}' > \
+							GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_coverage.bedgraph}
 					LC_COLLATE=C sort -u -k1,1 -k2,2n \
-						GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_coverage.bedgraph} > \
-							GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_coverage.sorted.bedgraph} && \
-					bedGraphToBigWig GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_coverage.sorted.bedgraph} \
-						reference_genome/chrom.sizes   GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_coverage.bw} && \
-						rm -f GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_coverage.bedgraph}  \
-							GenomeBrowser-${params.dsname}/\\\${basefn/-perSite-cov1.sort.bed.gz/_coverage.sorted.bedgraph}"
+						GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_coverage.bedgraph} > \
+							GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_coverage.sorted.bedgraph}
+					bedGraphToBigWig GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_coverage.sorted.bedgraph} \
+						reference_genome/chrom.sizes   GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_coverage.bw}
+					rm -f GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_coverage.bedgraph}  \
+							GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_coverage.sorted.bedgraph}
+				done
+		else
+			echo "### ERROR: No bedGraphToBigWig in PATH, please install it"
+		fi
 	fi
 	echo "### report html DONE"
 	"""

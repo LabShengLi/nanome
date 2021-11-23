@@ -38,7 +38,8 @@ nextflow run main.nf\
     --dsname TestData\
     --input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt\
     --cleanCache false\
-	--runTombo --runMETEORE --runDeepMod --outputBam --outputGenomeBrowser --outputONTCoverage
+	--runTombo --runMETEORE --runDeepMod\
+	--outputIntermediate --outputRaw --outputGenomeBrowser --outputBam --outputONTCoverage
 
 # Report
 tree ${workDir} > ${baseDir}/work_demo_filetree.txt
