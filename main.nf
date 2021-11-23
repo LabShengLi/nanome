@@ -246,13 +246,18 @@ process EnvCheck {
 	tag 'EnvCheck'
 	errorStrategy 'terminate'
 
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy", pattern: "tools_version_table.tsv", overwrite: true
+
 	input:
 	path reference_genome
+	path utils
 
 	output:
-	path "reference_genome",	emit: reference_genome
-	path "${params.MEGALODON_MODEL_DIR}",		emit: megalodon_model, optional: true
+	path "reference_genome",				emit: reference_genome
+	path "${params.MEGALODON_MODEL_DIR}",	emit: megalodon_model, optional: true
 	path "${params.DEEPSIGNAL_MODEL_DIR}",	emit: deepsignal_model, optional: true
+	path "tools_version_table.tsv",			emit: tools_version_tsv, optional: true
 
 	script:
 	"""
@@ -260,7 +265,7 @@ process EnvCheck {
 	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
 
 	## Validate nanome container/environment is correct
-	validate_nanome_container.sh
+	bash utils/validate_nanome_container.sh
 
 	## Untar and prepare megalodon model
 	if [[ ${params.runMegalodon} == true ]]; then
@@ -1777,7 +1782,7 @@ process Report {
 workflow {
 	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
 
-	EnvCheck(genome_ch)
+	EnvCheck(genome_ch, ch_utils)
 	Untar(fast5_tar_ch)
 	if (params.runBasecall) {
 		Basecall(Untar.out.untar)
