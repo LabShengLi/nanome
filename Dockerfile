@@ -15,12 +15,12 @@ LABEL description="Nanome project in Li Lab at The Jackson Laboratory" \
 
 # Guppy version
 ARG GUPPY_VERSION=5.0.16
+ARG MEGALODON_VERSION=2.3.5
 ARG BUILD_PACKAGES="wget apt-transport-https procps git curl"
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG METEORE_GITHUB="https://github.com/comprna/METEORE/archive/refs/tags/v1.0.0.tar.gz"
-ARG DEEPSIGNAL_MODEL="https://zenodo.org/record/5513090/files/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7%2B.tar.gz"
-ARG MEGALODON_MODEL="https://zenodo.org/record/5513090/files/megalodon_model.tar.gz"
-ARG MEGALODON_VERSION=2.3.5
+ARG DEEPSIGNAL_MODEL="https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz"
+ARG MEGALODON_MODEL="https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/megalodon_model.tar.gz"
 
 # Install guppy-gpu version, ref: https://github.com/GenomicParisCentre/dockerfiles
 RUN apt-get -q update && \
@@ -58,8 +58,7 @@ USER root
 WORKDIR /data/
 
 # Get METEORE dir into /data/METEORE-1.0.0,
-# Get DeepSignal model into /data/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+
-# Get E. coli and hg38 chr22 regenome into /data
+# Get DeepSignal/Megalodon models into dir like /data/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+
 RUN cd /data && wget -q ${METEORE_GITHUB} &&\
     tar -xzf v1.0.0.tar.gz &&\
     rm -f v1.0.0.tar.gz &&\
