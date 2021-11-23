@@ -5,9 +5,15 @@
 # @Organization : JAX Li Lab
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
 """
+Install:
+    conda install -c conda-forge parallel
+    pip install build twine
+
 Build package command:
-    find . -name '*.egg-info' -type d | parallel -j1 -v rm -r {}
-    rm -rf dist/*  && python -m build
+    find . -name '*.egg-info' -type d | parallel -j1 -v rm -r {} ; \
+        rm -rf dist/*  && python -m build
+
+    twine upload dist/*
 """
 
 import setuptools
@@ -65,13 +71,15 @@ setuptools.setup(
     python_requires=">=3.6",
     install_requires=[
         'biopython',
-        'pybedtools >=0.8.2', # lower version, NA values have issues, ref: https://daler.github.io/pybedtools/changes.html#changes-in-v0-8-0
+        'pybedtools >=0.8.2',
+        # lower version, NA values have issues, ref: https://daler.github.io/pybedtools/changes.html#changes-in-v0-8-0
         'pandas',
         'seaborn',
         'scipy',
         'numpy',
         'statsmodels',
-        'scikit-learn <=0.23.2', # upper version may not load model success, ref: https://github.com/EpistasisLab/tpot/issues/1171
+        'scikit-learn <=0.23.2',
+        # upper version may not load model success, ref: https://github.com/EpistasisLab/tpot/issues/1171
         'matplotlib',
         'jinja2',
         'openpyxl',
