@@ -20,7 +20,7 @@ nextflow run TheJacksonLaboratory/nanome --help
 nextflow run TheJacksonLaboratory/nanome\
     -profile singularity,hpc\
     --dsname TestData\
-    --input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt\
+    --input https://github.com/TheJacksonLaboratory/nanome/raw/master/test_data/demo1.fast5.reads.tar.gz\
     --genome hg38
 
 # Running NANOME pipeline for E. coli data
@@ -52,7 +52,7 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
   * A generic configuration profile to be used with [Singularity](https://sylabs.io/docs/)
   * Pulls from [Docker Hub](https://hub.docker.com/repository/docker/liuyangzzu/nanome): docker://liuyangzzu/nanome:latest
 * `conda`
-  * A generic configuration profile to be used with [Conda](https://docker.com/)
+  * A generic configuration profile to be used with [Conda](https://docker.com/), check [conda usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#5-conda-environment-for-local-running)
 * `hpc`		
   * A generic configuration profile to be used on HPC cluster with [SLURM](https://slurm.schedmd.com/documentation.html) job submission support.
 * `google`	
@@ -160,7 +160,7 @@ nextflow run TheJacksonLaboratory/nanome --help
 ```
 
 # 2. Experiment for E. coli data
-The NANOME pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--type` need to be set as `ecoli`. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline params' config file [ecoli_demo.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/examples/ecoli_demo.config).
+The NANOME pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--genome` need to be set as `ecoli`. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline params' config file [ecoli_demo.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/examples/ecoli_demo.config).
 
 ```angular2html
 nextflow run TheJacksonLaboratory/nanome\
@@ -235,11 +235,11 @@ Our Nextflow pipeline can running on CloudOS. The CloudOS recommend using the Do
 nextflow run TheJacksonLaboratory/nanome\
     -profile test,docker,google \
     -w [Google-storage-bucket]/nanome-work-ci \
-    --outputDir [Google-storage-bucket]/nanome-outputs-ci\
+    --outdir [Google-storage-bucket]/nanome-outputs-ci\
     --googleProjectName  [Google-project-name]
 ```
 
-The `[Google-project-name]` is your google project name, and `[Google-storage-bucket]` is the **Data Bucket** name that you can access on google cloud. `-w` is pipeline output working directory, `--outputDir` is the directory for methylation-calling results.
+The `[Google-project-name]` is your google project name, and `[Google-storage-bucket]` is the **Data Bucket** name that you can access on google cloud. `-w` is pipeline output working directory, `--outdir` is the directory for methylation-calling results.
 
 For more detail of using cloud computing, please check [Cloud computing usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/CloudComputing.md).
 
