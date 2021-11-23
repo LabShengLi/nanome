@@ -242,3 +242,31 @@ nextflow run TheJacksonLaboratory/nanome\
 The `[Google-project-name]` is your google project name, and `[Google-storage-bucket]` is the **Data Bucket** name that you can access on google cloud. `-w` is pipeline output working directory, `--outputDir` is the directory for methylation-calling results.
 
 For more detail of using cloud computing, please check [Cloud computing usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/CloudComputing.md).
+
+# 5. Conda environment for local running
+
+NANOME support local running without Docker or Singularity support. Below is conda environment installation steps, users need to install Guppy software by themselves in this case:
+```angular2html
+# Create conda environment for local running NANOME
+git clone https://github.com/TheJacksonLaboratory/nanome.git
+cd nanome
+conda env create --name nanome --file=environment.yml
+conda activate nanome
+
+pip install megalodon==2.3.5
+npm install -g inliner
+
+# Run NANOME pipeline using local execution
+conda activate nanome
+nextflow run TheJacksonLaboratory/nanome\
+    -profile test\
+    --guppyDir [guppy-installation-directory]
+
+# Run NANOME pipeline via conda environment
+nextflow run TheJacksonLaboratory/nanome\
+    -profile test,conda\
+    --conda_name [conda-env-dir]\
+    --conda_base_dir [conda-dir]\
+    --guppyDir [guppy-installation-directory]
+```
+Param`--guppyDir=[guppy-installation-directory]` is the Guppy software installation base directory, `--conda_base_dir [conda-dir]` is conda software base directory, `--conda_name [conda-env-dir]` is conda environment base directory.

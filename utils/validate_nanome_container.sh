@@ -16,6 +16,8 @@ echo "### PATHONPATH=$PYTHONPATH"
 echo "### PATH=$PATH"
 
 printf "====================\n"
+echo "### Check Guppy dir:"
+which guppy_basecaller
 guppy_basecaller -v | head -1
 guppy_version=$(guppy_basecaller -v | head -1 | awk '{print $NF}')
 

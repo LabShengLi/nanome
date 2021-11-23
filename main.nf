@@ -743,6 +743,9 @@ process Megalodon {
 		commandType='gpu'
 	fi
 
+	echo "### Guppy dir:"
+	which guppy_basecall_server
+
 	if [[ \${commandType} == "cpu" ]]; then
 		## CPU version command
 		## Ref: https://github.com/nanoporetech/megalodon
