@@ -1573,7 +1573,7 @@ process METEORE {
 	## combineScript="python utils/combination_model_prediction.py"
 	combineScript="combination_model_prediction.py"
 
-	# Use the optimized model (n_estimator = 3 and max_dep = 10)
+	# Use the optimized model
 	# Please note this optimized model is reported in METEORE paper, ref: https://github.com/comprna/METEORE#command
 	# paper: https://doi.org/10.1101/2020.10.14.340315, text:  random forest (RF) (parameters: max_depth=3 and n_estimator=10)
 	# therefore, we output optimized model results

@@ -6,10 +6,14 @@ User needs to provide ONT tools's methylation-calling raw outputs and BS-seq dat
 
 You can install NANOME standardized genome-wide evaluation tool (**nanome-jax**) from [PyPI](https://pypi.org/project/nanome-jax/):
 ```angular2html
-conda install -c anaconda cython
+# Creat conda environment and install required packages
+conda create --name py39 python=3.9
+conda activate py39
+conda install -c anaconda scikit-learn==0.23.2 cython
 conda install -c conda-forge -c bioconda pybedtools
-pip install nanome-jax
 
+# Install nanome-jax for genome-wide evaluation
+pip install nanome-jax
 pip show nanome-jax
 ```
 
