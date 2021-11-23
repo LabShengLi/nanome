@@ -688,6 +688,8 @@ process NplshComb {
 
 	input:
 	path x
+	path ch_src
+	path ch_utils
 
 	output:
 	path "${params.dsname}.nanopolish.per_read.combine.tsv.gz",	emit: nanopolish_combine_out_ch
@@ -701,8 +703,17 @@ process NplshComb {
 	> ${params.dsname}.nanopolish.per_read.combine.tsv.gz
 	cat ${x} > ${params.dsname}.nanopolish.per_read.combine.tsv.gz
 
+	if [[ ${params.deduplicate} == true ]] ; then
+		echo "### Deduplicate for read-level outputs"
+		zcat ${params.dsname}.nanopolish.per_read.combine.tsv.gz |\
+			sort -V -u -k1,1 -k3,3n -k4,4n -k5,5 -k2,2 |\
+			gzip -f > ${params.dsname}.nanopolish.per_read.combine.sort.tsv.gz
+		rm ${params.dsname}.nanopolish.per_read.combine.tsv.gz &&\
+			mv ${params.dsname}.nanopolish.per_read.combine.sort.tsv.gz ${params.dsname}.nanopolish.per_read.combine.tsv.gz
+	fi
+
 	## Unify format output
-	unify_format_for_calls.sh \
+	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Nanopolish Nanopolish \
 		${params.dsname}.nanopolish.per_read.combine.tsv.gz \
 		.  \$((numProcessor))  12  ${chrSet}
@@ -825,6 +836,8 @@ process MgldnComb {
 
 	input:
 	path x
+	path ch_src
+	path ch_utils
 
 	output:
 	path "${params.dsname}.megalodon.per_read.combine.bed.gz",	emit: megalodon_combine
@@ -838,8 +851,18 @@ process MgldnComb {
 	> ${params.dsname}.megalodon.per_read.combine.bed.gz
 	cat ${x} > ${params.dsname}.megalodon.per_read.combine.bed.gz
 
+	if [[ ${params.deduplicate} == true ]] ; then
+		echo "### Deduplicate for read-level outputs"
+		## sort order: Chr, Start, (End), ID, Strand
+		zcat ${params.dsname}.megalodon.per_read.combine.bed.gz |\
+			sort -V -u -k2,2 -k4,4n -k1,1 -k3,3 |\
+			gzip -f > ${params.dsname}.megalodon.per_read.combine.sort.bed.gz
+		rm ${params.dsname}.megalodon.per_read.combine.bed.gz &&\
+			mv ${params.dsname}.megalodon.per_read.combine.sort.bed.gz  ${params.dsname}.megalodon.per_read.combine.bed.gz
+	fi
+
 	## Unify format output
-	unify_format_for_calls.sh \
+	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Megalodon Megalodon \
 		${params.dsname}.megalodon.per_read.combine.bed.gz \
 		.  \$((numProcessor))  12  ${chrSet}
@@ -920,6 +943,8 @@ process DpSigComb {
 
 	input:
 	path x
+	path ch_src
+	path ch_utils
 
 	output:
 	path "${params.dsname}.deepsignal.per_read.combine.tsv.gz",	emit: deepsignal_combine_out
@@ -933,8 +958,18 @@ process DpSigComb {
 	touch ${params.dsname}.deepsignal.per_read.combine.tsv.gz
 	cat ${x} > ${params.dsname}.deepsignal.per_read.combine.tsv.gz
 
+	if [[ ${params.deduplicate} == true ]] ; then
+		echo "### Deduplicate for read-level outputs"
+		## sort order: Chr, Start, (End), ID, Strand
+		zcat ${params.dsname}.deepsignal.per_read.combine.tsv.gz |\
+			sort -V -u -k1,1 -k2,2n -k5,5 -k3,3 |\
+			gzip -f > ${params.dsname}.deepsignal.per_read.combine.sort.tsv.gz
+		rm ${params.dsname}.deepsignal.per_read.combine.tsv.gz &&\
+			mv ${params.dsname}.deepsignal.per_read.combine.sort.tsv.gz  ${params.dsname}.deepsignal.per_read.combine.tsv.gz
+	fi
+
 	## Unify format output
-	unify_format_for_calls.sh \
+	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  DeepSignal DeepSignal\
 		${params.dsname}.deepsignal.per_read.combine.tsv.gz \
 		.  \$((numProcessor))  12  ${chrSet}
@@ -1106,6 +1141,8 @@ process GuppyComb {
 	path x
 	path y
 	path reference_genome
+	path ch_src
+	path ch_utils
 
 	output:
 	path "${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz", emit: guppy_fast5mod_combine_out
@@ -1176,14 +1213,24 @@ process GuppyComb {
 			mv meth.chr_${chrSet}.tsv.gz ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
 	fi
 
+	if [[ ${params.deduplicate} == true ]] ; then
+		echo "### Deduplicate for read-level outputs"
+		## sort order: Chr, Start, (End), ID, Strand
+		zcat ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz |\
+			sort -V -u -k1,1 -k3,3n -k5,5 -k2,2 |\
+			gzip -f > ${params.dsname}.guppy.gcf52ref_per_read.combine.sort.tsv.gz
+		rm ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz &&\
+			mv ${params.dsname}.guppy.gcf52ref_per_read.combine.sort.tsv.gz ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz
+	fi
+
 	## Unify format output for read level
-	unify_format_for_calls.sh \
+	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Guppy Guppy.gcf52ref\
 		 ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz \
 		.  \$((numProcessor))  1  ${chrSet}
 
 	## Unify format output for site level
-	unify_format_for_calls.sh \
+	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Guppy Guppy\
 		${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz \
 		.  \$((numProcessor))  2  ${chrSet}
@@ -1299,6 +1346,8 @@ process TomboComb {
 
 	input:
 	path x
+	path ch_src
+	path ch_utils
 
 	output:
 	path "${params.dsname}.tombo.per_read.combine.bed.gz",	emit: tombo_combine_out
@@ -1312,8 +1361,18 @@ process TomboComb {
 	touch ${params.dsname}.tombo.per_read.combine.bed.gz
 	cat ${x} > ${params.dsname}.tombo.per_read.combine.bed.gz
 
+	if [[ ${params.deduplicate} == true ]] ; then
+		echo "### Deduplicate for read-level outputs"
+		## sort order: Chr, Start, (End), ID, Strand
+		zcat ${params.dsname}.tombo.per_read.combine.bed.gz |\
+			sort -V -u -k1,1 -k3,3n -k5,5 -k2,2 |\
+			gzip -f > ${params.dsname}.tombo.per_read.combine.sort.bed.gz
+		rm ${params.dsname}.tombo.per_read.combine.bed.gz &&\
+			mv ${params.dsname}.tombo.per_read.combine.sort.bed.gz  ${params.dsname}.tombo.per_read.combine.bed.gz
+	fi
+
 	## Unify format output
-	unify_format_for_calls.sh \
+	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Tombo Tombo\
 		${params.dsname}.tombo.per_read.combine.bed.gz \
 		.  \$((numProcessor))  12 ${chrSet}
@@ -1416,6 +1475,8 @@ process DpmodComb {
 	input:
 	path x
 	path deepmod_c_tar_file
+	path ch_src
+	path ch_utils
 
 	output:
 	path "${params.dsname}.deepmod.*.combine.bed.gz",	emit: deepmod_combine_out
@@ -1515,7 +1576,7 @@ process DpmodComb {
 	fi
 
 	## Unify format output
-	unify_format_for_calls.sh \
+	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  DeepMod DeepMod\
 		\${callfn} \
 		.  \$((numProcessor))  2  ${chrSet}  &>> DpmodComb.run.log
@@ -1550,7 +1611,8 @@ process METEORE {
 	path naonopolish
 	path megalodon
 	path deepsignal
-	path utils
+	path ch_src
+	path ch_utils
 
 	output:
 	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz",	emit: meteore_combine_out, optional: true
@@ -1597,6 +1659,17 @@ process METEORE {
 	##	-o ${params.dsname}.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz\
 	##	&>> METEORE.run.log
 
+	if [[ ${params.deduplicate} == true ]] ; then
+		echo "### Deduplicate for read-level outputs"
+		## sort order: Chr, Start, (End), ID, Strand
+		zcat ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz |\
+			sort -V -u -k2,2 -k3,3n -k1,1 -k6,6 |\
+			gzip -f > ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.sort.tsv.gz
+		rm ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz &&\
+			mv ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.sort.tsv.gz\
+			  	${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
+	fi
+
 	# Read level and site level output
 	if [ -f ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz ] ; then
 		mkdir -p Read_Level-${params.dsname}
@@ -1605,7 +1678,7 @@ process METEORE {
 			gzip -f > Read_Level-${params.dsname}/${params.dsname}_METEORE-perRead-score.tsv.gz
 
 		## Unify format output for site level
-		unify_format_for_calls.sh \
+		bash utils/unify_format_for_calls.sh \
 			${params.dsname}  METEORE METEORE\
 			${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz \
 			.  \$((numProcessor))  2  ${chrSet}\
@@ -1648,11 +1721,11 @@ process Report {
 	input:
 	path site_fileList
 	path read_fileList
-
+	path tools_version_tsv
 	path qc_report
-	path src
-	path utils
 	path reference_genome
+	path ch_src
+	path ch_utils
 
 	output:
 	path "${params.dsname}_nanome_report.html",	emit:	report_out_ch
@@ -1682,9 +1755,20 @@ process Report {
 			--dsname ${params.dsname} -i \${modelContentTSVFileName}\
 			-m NA12878 -o ${params.dsname}.nanome.per_read.combine.tsv.gz &>> Report.run.log  || true
 
+		if [[ ${params.deduplicate} == true ]] ; then
+			echo "### Deduplicate for read-level outputs"
+			## sort order: Chr, Start, (End), ID, Strand
+			zcat ${params.dsname}.nanome.per_read.combine.tsv.gz |\
+				sort -V -u -k2,2 -k3,3n -k1,1 -k4,4 |\
+				gzip -f > ${params.dsname}.nanome.per_read.combine.sort.tsv.gz
+			rm ${params.dsname}.nanome.per_read.combine.tsv.gz &&\
+				mv ${params.dsname}.nanome.per_read.combine.sort.tsv.gz\
+					${params.dsname}.nanome.per_read.combine.tsv.gz
+		fi
+
 		## Unify format output
 		echo "### NANOME read/site level results"
-		unify_format_for_calls.sh \
+		bash utils/unify_format_for_calls.sh \
 			${params.dsname}  NANOME NANOME\
 			${params.dsname}.nanome.per_read.combine.tsv.gz \
 			.  \$((numProcessor))  12  ${chrSet}
@@ -1721,29 +1805,31 @@ process Report {
 	cp -rf \${nanome_dir}/src/nanocompare/report/icons ${params.dsname}_NANOME_report/
 	cp -rf \${nanome_dir}/src/nanocompare/report/js ${params.dsname}_NANOME_report/
 
-	## Generate html report
-	### python src/nanocompare/report/gen_html_report.py
-	gen_html_report.py \
+	## Generate html NANOME report
+	PYTHONPATH=src python src/nanocompare/report/gen_html_report.py\
 		${params.dsname} \
 		running_information.tsv \
 		\${basecallOutputFile} \
 		. \
 		${params.dsname}_NANOME_report \
-		./src/nanocompare/report  &>> Report.run.log
+		./src/nanocompare/report\
+		${tools_version_tsv}  &>> Report.run.log
 
 	## Combine a single html report
 	## No tty usage, ref: https://github.com/remy/inliner/issues/151
 	script -qec "inliner ${params.dsname}_NANOME_report/nanome_report.html" /dev/null  > ${params.dsname}_nanome_report.html
 
-	## Test on lifebit only
+	## Used for lifebit rendering feature
 	cp ${params.dsname}_nanome_report.html   multiqc_report.html
 
-	PYTHONIOENCODING=UTF-8 gen_readme.py\
-		utils/readme.txt.template ${params.dsname} ${params.outdir}\
+	## Generate readme.txt
+	PYTHONPATH=src PYTHONIOENCODING=UTF-8 python src/nanocompare/report/gen_txt_readme.py\
+		src/nanocompare/report/readme.txt.template ${params.dsname} ${params.outdir}\
 		${workflow.projectDir} ${workflow.workDir} "${workflow.commandLine}"\
 		${workflow.runName} "${workflow.start}"\
 		> README_${params.dsname}.txt   2>> Report.run.log
 
+	## Output BigWig format for IGV
 	if [[ ${params.outputGenomeBrowser} == true ]] ; then
 		if command -v bedGraphToBigWig  &> /dev/null ; then
 			mkdir -p GenomeBrowser-${params.dsname}
@@ -1799,7 +1885,7 @@ workflow {
 
 	if (params.runNanopolish && params.runMethcall) {
 		Nanopolish(Basecall.out.basecall, EnvCheck.out.reference_genome)
-		comb_nanopolish = NplshComb(Nanopolish.out.nanopolish_out.collect())
+		comb_nanopolish = NplshComb(Nanopolish.out.nanopolish_out.collect(), ch_src, ch_utils)
 		s1 = comb_nanopolish.site_unify
 		r1 = comb_nanopolish.read_unify
 	} else {
@@ -1809,7 +1895,7 @@ workflow {
 
 	if (params.runMegalodon && params.runMethcall) {
 		Megalodon(Untar.out.untar, EnvCheck.out.reference_genome, EnvCheck.out.megalodon_model)
-		comb_megalodon = MgldnComb(Megalodon.out.megalodon_out.collect())
+		comb_megalodon = MgldnComb(Megalodon.out.megalodon_out.collect(), ch_src, ch_utils)
 		s2 = comb_megalodon.site_unify
 		r2 = comb_megalodon.read_unify
 	} else {
@@ -1819,7 +1905,7 @@ workflow {
 
 	if (params.runDeepSignal && params.runMethcall) {
 		DeepSignal(Resquiggle.out.resquiggle, EnvCheck.out.reference_genome, EnvCheck.out.deepsignal_model)
-		comb_deepsignal = DpSigComb(DeepSignal.out.deepsignal_out.collect())
+		comb_deepsignal = DpSigComb(DeepSignal.out.deepsignal_out.collect(), ch_src, ch_utils)
 		s3 = comb_deepsignal.site_unify
 		r3 = comb_deepsignal.read_unify
 	} else {
@@ -1829,7 +1915,7 @@ workflow {
 
 	if (params.runGuppy && params.runMethcall) {
 		Guppy(Untar.out.untar, EnvCheck.out.reference_genome, ch_utils)
-		comb_guppy = GuppyComb(Guppy.out.guppy_fast5mod_bam.collect(), Guppy.out.guppy_gcf52ref_tsv.collect(), EnvCheck.out.reference_genome)
+		comb_guppy = GuppyComb(Guppy.out.guppy_fast5mod_bam.collect(), Guppy.out.guppy_gcf52ref_tsv.collect(), EnvCheck.out.reference_genome, ch_src, ch_utils)
 		s4 = comb_guppy.site_unify
 		r4 = comb_guppy.read_unify
 	} else {
@@ -1839,7 +1925,7 @@ workflow {
 
 	if (params.runTombo && params.runMethcall) {
 		Tombo(Resquiggle.out.resquiggle, EnvCheck.out.reference_genome)
-		comb_tombo = TomboComb(Tombo.out.tombo_out.collect())
+		comb_tombo = TomboComb(Tombo.out.tombo_out.collect(), ch_src, ch_utils)
 		s5 = comb_tombo.site_unify
 		r5 = comb_tombo.read_unify
 	} else {
@@ -1849,7 +1935,7 @@ workflow {
 
 	if (params.runDeepMod && params.runMethcall) {
 		DeepMod(Basecall.out.basecall, EnvCheck.out.reference_genome)
-		comb_deepmod = DpmodComb(DeepMod.out.deepmod_out.collect(), Channel.fromPath(deepmod_tar_file))
+		comb_deepmod = DpmodComb(DeepMod.out.deepmod_out.collect(), Channel.fromPath(deepmod_tar_file), ch_src, ch_utils)
 		s6 = comb_deepmod.site_unify
 	} else {
 		s6 = Channel.empty()
@@ -1857,7 +1943,7 @@ workflow {
 
 	if (params.runMETEORE && params.runMethcall) {
 		// Read level combine a list for top3 used by METEORE
-		METEORE(r1, r2, r3, ch_utils)
+		METEORE(r1, r2, r3, ch_src, ch_utils)
 		s7 = METEORE.out.site_unify
 		r7 = METEORE.out.read_unify
 	} else {
@@ -1874,5 +1960,5 @@ workflow {
 		r1, r2, r3
 		).toList().set { tools_read_unify }
 
-	Report(tools_site_unify, tools_read_unify, QCExport.out.qc_report, ch_src, ch_utils, EnvCheck.out.reference_genome)
+	Report(tools_site_unify, tools_read_unify, EnvCheck.out.tools_version_tsv, QCExport.out.qc_report, EnvCheck.out.reference_genome, ch_src, ch_utils)
 }
