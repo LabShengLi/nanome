@@ -17,7 +17,8 @@ callfn=${4}
 outdir=${5}
 processors=${6}
 step=${7:-'12'}
-chr_options=${8:-''}
+read_sort=${8:-'false'}
+chr_options=${9:-''}
 
 if [[ "${chr_options}" != "" ]] ; then
 	chr_options="--chrSet ${chr_options}"
@@ -34,6 +35,17 @@ if [[ "$step" == *"1"* ]]; then
         --read-level-format \
         --processors ${processors}	\
         -o ${outdir}   ${chr_options}
+
+    ## sort read-level outputs if needed
+    if [[ ${read_sort} == true ]] ; then
+        echo "### sort read-level unified output"
+        zcat Read_Level-${dsname}/${dsname}_${toolname}-perRead-score.tsv.gz |
+            sort -V -u -k2,2 -k3,3n -k4,4 -k1,1|
+            gzip -f > Read_Level-${dsname}/${dsname}_${toolname}-perRead-score.sort.tsv.gz
+        rm -f Read_Level-${dsname}/${dsname}_${toolname}-perRead-score.tsv.gz &&\
+            mv  Read_Level-${dsname}/${dsname}_${toolname}-perRead-score.sort.tsv.gz\
+                Read_Level-${dsname}/${dsname}_${toolname}-perRead-score.tsv.gz
+    fi
 fi
 
 if [[ "$step" == *"2"* ]]; then

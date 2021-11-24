@@ -35,7 +35,9 @@ nextflow run main.nf\
     --outdir ${outputsDir}\
     --cleanCache false \
     --runDeepMod --runTombo --runMETEORE\
-    --outputIntermediate --outputRaw --outputGenomeBrowser --outputBam --outputONTCoverage --deduplicate
+    --outputIntermediate --outputRaw\
+    --outputGenomeBrowser --outputBam --outputONTCoverage\
+    --deduplicate --sort
 
 # Report
 tree ${workDir} > ${baseDir}/work_ecoli_filetree.txt

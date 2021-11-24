@@ -716,7 +716,7 @@ process NplshComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Nanopolish Nanopolish \
 		${params.dsname}.nanopolish.per_read.combine.tsv.gz \
-		.  \$((numProcessor))  12  ${chrSet}
+		.  \$((numProcessor))  12 ${params.sort == true ? true : false} ${chrSet}
 
 	echo "### Nanopolish combine DONE"
 	"""
@@ -865,7 +865,7 @@ process MgldnComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Megalodon Megalodon \
 		${params.dsname}.megalodon.per_read.combine.bed.gz \
-		.  \$((numProcessor))  12  ${chrSet}
+		.  \$((numProcessor))  12  ${params.sort == true ? true : false}  ${chrSet}
 
 	echo "### Megalodon combine DONE"
 	"""
@@ -972,7 +972,7 @@ process DpSigComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  DeepSignal DeepSignal\
 		${params.dsname}.deepsignal.per_read.combine.tsv.gz \
-		.  \$((numProcessor))  12  ${chrSet}
+		.  \$((numProcessor))  12 ${params.sort == true ? true : false}  ${chrSet}
 	echo "### DeepSignal combine DONE"
 	"""
 }
@@ -1227,13 +1227,13 @@ process GuppyComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Guppy Guppy.gcf52ref\
 		 ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz \
-		.  \$((numProcessor))  1  ${chrSet}
+		.  \$((numProcessor))  1  ${params.sort == true ? true : false}  ${chrSet}
 
 	## Unify format output for site level
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Guppy Guppy\
 		${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz \
-		.  \$((numProcessor))  2  ${chrSet}
+		.  \$((numProcessor))  2  ${params.sort == true ? true : false}  ${chrSet}
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -1375,7 +1375,7 @@ process TomboComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Tombo Tombo\
 		${params.dsname}.tombo.per_read.combine.bed.gz \
-		.  \$((numProcessor))  12 ${chrSet}
+		.  \$((numProcessor))  12  ${params.sort == true ? true : false}  ${chrSet}
 	echo "### Tombo combine DONE"
 	"""
 }
@@ -1579,7 +1579,7 @@ process DpmodComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  DeepMod DeepMod\
 		\${callfn} \
-		.  \$((numProcessor))  2  ${chrSet}  &>> DpmodComb.run.log
+		.  \$((numProcessor))  2  ${params.sort == true ? true : false} ${chrSet}  &>> DpmodComb.run.log
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -1672,16 +1672,11 @@ process METEORE {
 
 	# Read level and site level output
 	if [ -f ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz ] ; then
-		mkdir -p Read_Level-${params.dsname}
-		zcat ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz | \
-			awk -F '\t' 'BEGIN {OFS = FS} {print \$1,\$2,\$3,\$6,\$5}' |
-			gzip -f > Read_Level-${params.dsname}/${params.dsname}_METEORE-perRead-score.tsv.gz
-
-		## Unify format output for site level
+		## Unify format output for read/site level
 		bash utils/unify_format_for_calls.sh \
 			${params.dsname}  METEORE METEORE\
 			${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz \
-			.  \$((numProcessor))  2  ${chrSet}\
+			.  \$((numProcessor))  12   ${params.sort == true ? true : false}  ${chrSet}\
 			&>> METEORE.run.log
 	fi
 	echo "### METEORE consensus DONE"
@@ -1771,7 +1766,7 @@ process Report {
 		bash utils/unify_format_for_calls.sh \
 			${params.dsname}  NANOME NANOME\
 			${params.dsname}.nanome.per_read.combine.tsv.gz \
-			.  \$((numProcessor))  12  ${chrSet}
+			.  \$((numProcessor))  12  ${params.sort == true ? true : false}  ${chrSet}
 		ln -s Site_Level-${params.dsname}/${params.dsname}_NANOME-perSite-cov1.sort.bed.gz\
 			${params.dsname}_NANOME-perSite-cov1.sort.bed.gz
 	fi
