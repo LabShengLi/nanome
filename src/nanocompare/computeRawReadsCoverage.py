@@ -23,7 +23,7 @@ from tqdm import tqdm
 from nanocompare.eval_common import get_dna_seq_from_reference, open_file_gz_or_txt, find_bed_filename, get_ref_fasta, \
     get_region_bed, intersect_bed_regions, get_region_tagname
 from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir, global_temp_dir, set_log_info_level
-from nanocompare.global_settings import humanChrSet, datasets_order, referenceGenomeFile, nanome_version, \
+from nanocompare.global_settings import HUMAN_CHR_SET, datasets_order, reference_genome_hg38_fn, NANOME_VERSION, \
     region_filename_dict
 
 # used for convert region bed cov to base level cov
@@ -68,7 +68,7 @@ def convert_region_to_cpg_base(dsname):
             # TODO: get strand info, + strand link to CG's C, - strand link to CG's G
             strand = tmp[4]
 
-            if chr not in humanChrSet:  # filter out non-human chrs
+            if chr not in HUMAN_CHR_SET:  # filter out non-human chrs
                 continue
 
             # we want get seq at least two bases, evaluate 'CG' patterns
@@ -191,7 +191,7 @@ def combine_na12878_coverage_bed():
     baseDir = "/fastscratch/liuya/nanocompare/NA12878-coverage"
     outfn = os.path.join(outdir, "NA12878-allChrs.coverage.bothstrand.bed.gz")
     outf = gzip.open(outfn, 'wt')
-    for chrName in humanChrSet:
+    for chrName in HUMAN_CHR_SET:
         logger.info(f"Processing chr={chrName}")
         flist = glob.glob(os.path.join(baseDir, f"NA12878-{chrName.upper()}.coverage.*.bed.gz"))
         logger.info(flist)
@@ -283,7 +283,7 @@ def report_raw_fast5_cpg_in_regions_table():
 def parse_arguments():
     parser = argparse.ArgumentParser(prog='computeRawReadsCoverage (NANOME)',
                                      description='compute coverage summary for raw reads in nanome paper')
-    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument("cmd", required=True, help="name of command")
     parser.add_argument('--session-name', type=str, help='run name, default is "RawReadsCompute"',
                         default='RawReadsCompute')
@@ -291,7 +291,7 @@ def parse_arguments():
                         help='genome annotation dir, contain BED files such as singleton, nonsingleton, etc.',
                         default=None)
     parser.add_argument('--reference-genome', type=str, help='reference genome file',
-                        default=referenceGenomeFile)
+                        default=reference_genome_hg38_fn)
     parser.add_argument('--base-cov-dir', type=str, help='raw fast5 base coverage dir',
                         default=base_cov_dir)
     parser.add_argument('--bed-dir', type=str, help='bed dir for concordant and discordant',

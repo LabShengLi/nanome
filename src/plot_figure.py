@@ -449,7 +449,7 @@ def save_wide_format_performance_results(runPrefix, outdir, tagname):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(prog='plot_figure (NANOME)', description='Plot and export data for Nanocompare paper.')
-    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument("cmd", help="name of command, fig5a, export-data, etc.")
     parser.add_argument('-i', nargs='+', help='list of input files', default=[])
     parser.add_argument('--dsname', type=str, help="dataset name", default=None)

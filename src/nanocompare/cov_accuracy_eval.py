@@ -18,7 +18,7 @@ from scipy.stats import PearsonRConstantInputWarning, pearsonr
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import get_tool_name, nanome_version, load_genome_annotation_config, save_done_file
+from nanocompare.global_settings import get_tool_name, NANOME_VERSION, load_genome_annotation_config, save_done_file
 
 
 def get_nsites_in_regions(callSet, bedfn, tagname):
@@ -288,7 +288,7 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(prog='cov_accuracy_eval (NANOME)',
                                      description='Coverage and performance evaluation')
-    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethCorr-DS_WGBS_2reps",
                         required=True)
@@ -318,7 +318,7 @@ def parse_arguments():
     parser.add_argument('--stepk', type=int, help="step for coverage sampling, default is 5", default=5)
 
     parser.add_argument('--chrSet', nargs='+', help='chromosome list, default is human chr1-22, X and Y',
-                        default=humanChrSet)
+                        default=HUMAN_CHR_SET)
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
     parser.add_argument('--processors', type=int, help="number of processors used, default is 1", default=1)
     parser.add_argument('-o', type=str, help=f"output base dir, default is {pic_base_dir}", default=pic_base_dir)

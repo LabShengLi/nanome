@@ -16,20 +16,25 @@ By default, we are using `--genome=hg38` for human reference genome, and you can
 # Get pipeline help
 nextflow run TheJacksonLaboratory/nanome --help
 
+# Running NANOME pipeline for human data
+nextflow run TheJacksonLaboratory/nanome\
+    -profile singularity,hpc\
+    --dsname TestData\
+    --input https://github.com/TheJacksonLaboratory/nanome/raw/master/test_data/demo1.fast5.reads.tar.gz\
+    --genome hg38
+
 # Running NANOME pipeline for E. coli data
 nextflow run TheJacksonLaboratory/nanome\
     -profile singularity,hpc\
     --dsname EcoliData\
     --input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli_data_from_meteore.tar.gz\
     --genome ecoli
-
-# Running NANOME pipeline for human data
-nextflow run TheJacksonLaboratory/nanome\
-    -profile singularity,hpc\
-    --dsname TestData\
-    --input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt\
-    --genome hg38
 ```
+
+## Methylation-calling tool configuration
+By default, NANOME pipeline will execute top four performers: **Nanopolish, Megalodon, DeepSignal and Guppy**, we also provide a **NANOME concensus results** using XGBoost model trained on 20% fully methylated and unmethylated CpGs based on Megalodon and DeepSignal outputs.
+
+The NANOME concensus results can cover more CpGs than any single tool, and perform a slightly better performance. User can supply params `--run[tool-name]` with values `true` or `false` to configure if running a specific tool. 
 
 ## Pre-defined pipeline profiles
 `-profile` is the name of execution configuration, we support various of  configurations, e.g., `conda`, `docker`, `singularity`, `hpc` and `google`. Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments.
@@ -47,7 +52,7 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
   * A generic configuration profile to be used with [Singularity](https://sylabs.io/docs/)
   * Pulls from [Docker Hub](https://hub.docker.com/repository/docker/liuyangzzu/nanome): docker://liuyangzzu/nanome:latest
 * `conda`
-  * A generic configuration profile to be used with [Conda](https://docker.com/)
+  * A generic configuration profile to be used with [Conda](https://docker.com/), check [conda usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#5-conda-environment-for-local-running)
 * `hpc`		
   * A generic configuration profile to be used on HPC cluster with [SLURM](https://slurm.schedmd.com/documentation.html) job submission support.
 * `google`	
@@ -155,7 +160,7 @@ nextflow run TheJacksonLaboratory/nanome --help
 ```
 
 # 2. Experiment for E. coli data
-The NANOME pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--type` need to be set as `ecoli`. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline params' config file [ecoli_demo.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/examples/ecoli_demo.config).
+The NANOME pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--genome` need to be set as `ecoli`. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline params' config file [ecoli_demo.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/examples/ecoli_demo.config).
 
 ```angular2html
 nextflow run TheJacksonLaboratory/nanome\
@@ -230,10 +235,38 @@ Our Nextflow pipeline can running on CloudOS. The CloudOS recommend using the Do
 nextflow run TheJacksonLaboratory/nanome\
     -profile test,docker,google \
     -w [Google-storage-bucket]/nanome-work-ci \
-    --outputDir [Google-storage-bucket]/nanome-outputs-ci\
+    --outdir [Google-storage-bucket]/nanome-outputs-ci\
     --googleProjectName  [Google-project-name]
 ```
 
-The `[Google-project-name]` is your google project name, and `[Google-storage-bucket]` is the **Data Bucket** name that you can access on google cloud. `-w` is pipeline output working directory, `--outputDir` is the directory for methylation-calling results.
+The `[Google-project-name]` is your google project name, and `[Google-storage-bucket]` is the **Data Bucket** name that you can access on google cloud. `-w` is pipeline output working directory, `--outdir` is the directory for methylation-calling results.
 
 For more detail of using cloud computing, please check [Cloud computing usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/CloudComputing.md).
+
+# 5. Conda environment for local running
+
+NANOME support local running without Docker or Singularity support. Below is conda environment installation steps, users need to install Guppy software by themselves in this case:
+```angular2html
+# Create conda environment for local running NANOME
+git clone https://github.com/TheJacksonLaboratory/nanome.git
+cd nanome
+conda env create --name nanome --file=environment.yml
+conda activate nanome
+
+pip install megalodon==2.3.5
+npm install -g inliner
+
+# Run NANOME pipeline using local execution
+conda activate nanome
+nextflow run TheJacksonLaboratory/nanome\
+    -profile test\
+    --guppyDir [guppy-installation-directory]
+
+# Run NANOME pipeline via conda environment
+nextflow run TheJacksonLaboratory/nanome\
+    -profile test,conda\
+    --conda_name [conda-env-dir]\
+    --conda_base_dir [conda-dir]\
+    --guppyDir [guppy-installation-directory]
+```
+Param`--guppyDir=[guppy-installation-directory]` is the Guppy software installation base directory, `--conda_base_dir [conda-dir]` is conda software base directory, `--conda_name [conda-env-dir]` is conda environment base directory.

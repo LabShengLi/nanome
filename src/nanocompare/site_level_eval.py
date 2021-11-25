@@ -13,11 +13,10 @@ import argparse
 
 import pybedtools
 from scipy import stats
-from scipy.stats import PearsonRConstantInputWarning
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import get_tool_name, ToolNameList, save_done_file, \
-    nanome_version, load_genome_annotation_config, sing_tagname, nonsing_tagname
+from nanocompare.global_settings import ToolNameList, NANOME_VERSION, load_genome_annotation_config, sing_tagname, \
+    nonsing_tagname, save_done_file
 
 
 def get_nsites_in_regions(callSet, bedfn, tagname):
@@ -216,10 +215,8 @@ def summary_cpgs_stats_results_table():
     logger.debug(f"Memory report: {get_current_memory_usage()}")
 
 
-def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=None, outdir=None,
-                                  large_mem=False,
-                                  enable_base_detection_bedfile=enable_base_detection_bedfile,
-                                  enable_cache=False, using_cache=False):
+def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=None, outdir=None, join_tag="join",
+                                  mpi=True):
     """
     Calculate Pearson's correlation coefficient at different regions.
     :param corr_infn:
@@ -230,14 +227,21 @@ def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=
     """
     global progress_bar_global_site
     progress_bar_global_site = tqdm(total=len(bed_tuple_list))
-    progress_bar_global_site.set_description(f"MT-PCC-{dsname}-regions")
+    progress_bar_global_site.set_description(f"MT-PCC-{join_tag}-{dsname}-regions")
 
-    executor = ThreadPoolExecutor(max_workers=args.processors)
+    if mpi:
+        executor = ThreadPoolExecutor(max_workers=args.processors)
+    else:
+        executor = ThreadPoolExecutor(max_workers=1)
     all_task = []
     ## input: df, bed_tuple
     ## return: list of dict [{tool1's pcc}, {toolk's pcc}]
+    df = pd.read_csv(corr_infn)
+    if df.isnull().values.any():
+        df.fillna('.', inplace=True)
+
     for bed_tuple in bed_tuple_list:
-        future = executor.submit(compute_pcc_at_region, corr_infn, bed_tuple)
+        future = executor.submit(compute_pcc_at_region, df, bed_tuple)
         future.add_done_callback(update_progress_bar_site_level)
         all_task.append(future)
     executor.shutdown()
@@ -254,7 +258,7 @@ def correlation_report_on_regions(corr_infn, bed_tuple_list, dsname=None, runid=
     outdf = pd.DataFrame(ret_list)
     logger.debug(outdf)
 
-    outfn = os.path.join(outdir, f'{runid}_{dsname}.corrdata.coe.pvalue.each.regions.xlsx')
+    outfn = os.path.join(outdir, f'{runid}_{dsname}.corrdata.coe.pvalue.each.regions_{join_tag}.xlsx')
     outdf.to_excel(outfn)
     logger.debug(f'save to {outfn}')
     return outdf
@@ -272,7 +276,7 @@ def save_meth_corr_data(callresult_dict, bgTruth, reportCpGSet, outfn):
     # outfile = open(outfn, 'w')
     outfile = gzip.open(outfn, 'wt')
 
-    header_list = ['chr', 'start', 'end', 'BGTruth_freq', 'BGTruth_cov', 'strand']
+    header_list = ['Chr', 'Start', 'End', 'BGTruth_freq', 'BGTruth_cov', 'Strand']
 
     # Output header
     for name in loaded_callname_list:
@@ -320,7 +324,16 @@ def get_num_intersect(callBed, region_bed, bedfn="", tagname=None):
     return ret
 
 
-def compute_pcc_at_region(corr_infn, bed_tuple):
+def compute_pcc_at_region(df, bed_tuple):
+    """
+    Compute PCC of input DF with respect to bed region tuple
+    Args:
+        df:
+        bed_tuple:
+
+    Returns:
+
+    """
     infn, tagname, coord_bed = bed_tuple
     logger.debug(f'tagname={tagname}, coord_fn={infn}')
     if not args.large_mem and tagname != genome_wide_tagname and coord_bed is None:  # load on demand
@@ -335,7 +348,6 @@ def compute_pcc_at_region(corr_infn, bed_tuple):
         logger.debug(f"Region name={tagname} is not found, not compute PCC")
         return None
 
-    df = pd.read_csv(corr_infn)
     newdf = filter_corrdata_df_by_bedfile(df, eval_coord_bed, infn)
     if newdf is None:
         logger.debug(f"Found intersection 0 CPGs for tagname={tagname}, no report for PCC")
@@ -347,10 +359,10 @@ def compute_pcc_at_region(corr_infn, bed_tuple):
     for i in range(1, len(newdf.columns)):
         toolname = str(newdf.columns[i]).replace('_freq', '')
         try:  # too few samples will fail
-            # with warnings.catch_warnings(): # not function
-            warnings.filterwarnings('ignore', category=PearsonRConstantInputWarning)
-            coe, pval = stats.pearsonr(newdf.iloc[:, 0], newdf.iloc[:, i])
-        except:
+            # warnings.filterwarnings('ignore', category=PearsonRConstantInputWarning)
+            mask_notna = newdf.iloc[:, i].notna().values
+            coe, pval = stats.pearsonr(newdf.iloc[mask_notna, 0], newdf.iloc[mask_notna, i].astype(np.float64))
+        except:  ## May be pearsonr function failed
             coe, pval = None, None
 
         # report to dataset
@@ -358,7 +370,7 @@ def compute_pcc_at_region(corr_infn, bed_tuple):
             'dsname': dsname,
             'Tool': toolname,
             'Location': tagname,
-            '#Bases': len(newdf),
+            '#Bases': newdf.iloc[:, i].notna().sum(),
             'COE': coe,
             'p-value': pval
         }
@@ -373,12 +385,12 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(prog='site_level_eval (NANOME)',
                                      description='Site-level correlation analysis in nanome paper')
-    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
-    parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethCorr-DS_WGBS_2reps",
+    parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethCorr-Dataset_WGBS_2Reps",
                         required=True)
     parser.add_argument('--calls', nargs='+',
-                        help='all ONT call results <tool-name>:<file-name> seperated by spaces, tool-name can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod',
+                        help='all ONT call results <tool-name>:<encode>:<file-name> seperated by spaces, tool-name can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod',
                         required=True)
     parser.add_argument('--bgtruth', type=str,
                         help="background truth file <encode-type>:<file-name1>;<file-name1>, encode-type can be 'encode' or 'bismark'",
@@ -394,15 +406,17 @@ def parse_arguments():
     parser.add_argument('--toolcov-cutoff', type=int, help="cutoff for coverage in nanopore tools, default is >=3",
                         default=3)
     parser.add_argument('--chrSet', nargs='+', help='chromosome list, default is human chr1-22, X and Y',
-                        default=humanChrSet)
+                        default=HUMAN_CHR_SET)
     parser.add_argument('--sep', type=str, help="seperator for output csv file", default=',')
     parser.add_argument('--processors', type=int, help="number of processors used, default is 1", default=1)
+
     parser.add_argument('-o', type=str, help=f"output base dir, default is {pic_base_dir}", default=pic_base_dir)
     parser.add_argument('--gen-venn', help="if generate CpGs files for venn data analysis", action='store_true')
     parser.add_argument('--summary-coverage', help="if summarize coverage at each region",
                         action='store_true')
     parser.add_argument('--region-coe-report', help="if report PCC value at each region",
                         action='store_true')
+    parser.add_argument('--report-no-join', help="if output no-join report also", action='store_true')
     parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
     parser.add_argument('--using-cache', help="if use cache files", action='store_true')
     parser.add_argument('--plot', help="if plot the correlation matrix figure", action='store_true')
@@ -516,28 +530,39 @@ if __name__ == '__main__':
     loaded_callname_list = []
 
     for callstr in args.calls:
-        callencode, callfn = callstr.split(':')
+        try:
+            if len(callstr.split(':')) == 3:
+                toolname, callencode, callfn = callstr.split(':')
+                score_cutoff = None
+            elif len(callstr.split(':')) == 5:
+                toolname, callencode, callfn, cutoff1, cutoff2 = callstr.split(':')
+                cutoff1 = float(cutoff1)
+                cutoff2 = float(cutoff1)
+                score_cutoff = (cutoff1, cutoff2)
+        except:
+            raise Exception(f"--calls params is not correct: {callstr}")
 
         if len(callfn) == 0:
             continue
 
-        callname = get_tool_name(callencode)
-        callfn_dict[callname] = callfn
+        callfn_dict[toolname] = callfn
 
-        loaded_callname_list.append(callname)
+        loaded_callname_list.append(toolname)
 
         # For site level evaluation, only need (freq, cov) results, no score needed. Especially for DeepMod, we must import as freq and cov format from DeepMod.Cluster encode
         # Do not filter bgtruth, because we use later for overlapping (without bg-truth)
-        callresult_dict_cov1[callname] = import_call(callfn, callencode, baseFormat=baseFormat, filterChr=args.chrSet,
-                                                     enable_cache=enable_cache, using_cache=using_cache,
-                                                     include_score=False, siteLevel=True, cache_dir=ds_cache_dir)
+        callresult_dict_cov1[toolname] = import_call(
+            callfn, callencode, baseFormat=baseFormat, filterChr=args.chrSet,
+            enable_cache=enable_cache, using_cache=using_cache,
+            include_score=False, siteLevel=True, cache_dir=ds_cache_dir,
+            toolname=toolname, score_cutoff=score_cutoff)
 
         # Stats the total cpgs and calls for each calls
         cnt_calls = 0
-        for cpg in callresult_dict_cov1[callname]:
-            cnt_calls += len(callresult_dict_cov1[callname][cpg])
-        call_cov1_calls[callname] = cnt_calls
-        call_cov1_cpg_sites[callname] = len(callresult_dict_cov1[callname])
+        for cpg in callresult_dict_cov1[toolname]:
+            cnt_calls += len(callresult_dict_cov1[toolname][cpg])
+        call_cov1_calls[toolname] = cnt_calls
+        call_cov1_cpg_sites[toolname] = len(callresult_dict_cov1[toolname])
 
     logger.info(f"Import calls from tools done for toollist={list(call_cov1_cpg_sites.keys())}")
     logger.info(f"Memory report: {get_current_memory_usage()}")
@@ -548,7 +573,7 @@ if __name__ == '__main__':
         callresult_dict_cov3[callname] = readLevelToSiteLevelWithCov(callresult_dict_cov1[callname],
                                                                      minCov=minToolCovCutt, toolname=callname)
     ## Destroy cov1 for memory saving
-    del callresult_dict_cov1[callname]
+    del callresult_dict_cov1
     logger.debug(f"Memory report: {get_current_memory_usage()}")
 
     logger.debug(f'\n\n####################\n\n')
@@ -570,7 +595,8 @@ if __name__ == '__main__':
 
         if bgTruth:
             bg_cpgs = bgTruth.keys()
-            outfn = os.path.join(venn_outdir, f'{args.dsname}.bgtruth.cpg.sites.cov{args.min_bgtruth_cov}.setsfile.txt.gz')
+            outfn = os.path.join(venn_outdir,
+                                 f'{args.dsname}.bgtruth.cpg.sites.cov{args.min_bgtruth_cov}.setsfile.txt.gz')
             ontcalls_to_setsfile_for_venn_analysis(bg_cpgs, outfn)
 
         for callname in ToolNameList:
@@ -583,7 +609,7 @@ if __name__ == '__main__':
         logger.debug(f"Memory report: {get_current_memory_usage()}")
         logger.debug(f'\n\n####################\n\n')
 
-    if bgTruth: # Having bgtruth params, then report PCC performance
+    if bgTruth:  # Having bgtruth params, then report PCC performance
         logger.debug(f"Start getting intersection (all joined) sites by tools and bgtruth")
         coveredCpGs = set(list(bgTruth.keys()))  # joined sets, start with bs-seq
         coveredCpGs001 = set(list(bgTruth.keys()))  # no change later
@@ -622,19 +648,42 @@ if __name__ == '__main__':
         outfn_bgtruth = os.path.join(out_dir,
                                      f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv.gz")
         save_meth_corr_data(callresult_dict_cov3, bgTruth, set(list(bgTruth.keys())), outfn_bgtruth)
-        outfn_bgtruth_sroted = os.path.join(out_dir,
+        outfn_bgtruth_sorted = os.path.join(out_dir,
                                             f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.sorted.csv.gz")
-        sort_bed_file(infn=outfn_bgtruth, outfn=outfn_bgtruth_sroted, has_header=True)
+        sort_bed_file(infn=outfn_bgtruth, outfn=outfn_bgtruth_sorted, has_header=True)
         os.remove(outfn_bgtruth)
 
-        # Report correlation matrix here
+        # Report correlation matrix for joined results
         df = pd.read_csv(outfn_joined_sorted, sep=sep)
         df = df.filter(regex='_freq$', axis=1)
         cordf = df.corr()
-        logger.debug(f'Correlation matrix is:\n{cordf}')
+        # Count CpGs
+        num_join_with_bsseq = [len(df.iloc[:, 0])] * len(df.columns)
+        cordf = pd.concat(
+            [cordf, pd.Series(num_join_with_bsseq, index=cordf.index).rename('CpGs_all_tools_with_BSseq')],
+            axis=1)
+
+        logger.debug(f'Correlation matrix (joined CpGs) is:\n{cordf}')
         corr_outfn = os.path.join(out_dir,
-                                  f'Meth_corr_plot_data-{RunPrefix}-correlation-matrix-toolcov{minToolCovCutt}-bsseqcov{bgtruthCutt}.xlsx')
+                                  f'Meth_corr_plot_data_joined-{RunPrefix}-correlation-matrix-toolcov{minToolCovCutt}-bsseqcov{bgtruthCutt}.xlsx')
         cordf.to_excel(corr_outfn)
+
+        if args.report_no_join:
+            # Report correlation matrix for no-join results
+            df = pd.read_csv(outfn_bgtruth_sorted, sep=sep)
+            df = df.filter(regex='_freq$', axis=1)
+            cordf = df.corr()
+            # Count CpGs
+            num_join_with_bsseq = [len(df.iloc[:, 0])]
+            for k in range(1, len(df.columns)):
+                num_join_with_bsseq.append(df.iloc[:, k].notna().sum())
+            cordf = pd.concat([cordf, pd.Series(num_join_with_bsseq, index=cordf.index).rename('CpGs_with_BSseq')],
+                              axis=1)
+
+            logger.debug(f'Correlation matrix (No-joined CpGs) is:\n{cordf}')
+            corr_outfn = os.path.join(out_dir,
+                                      f'Meth_corr_plot_data_no_join-{RunPrefix}-correlation-matrix-toolcov{minToolCovCutt}-bsseqcov{bgtruthCutt}.xlsx')
+            cordf.to_excel(corr_outfn)
 
         logger.debug(f'\n\n####################\n\n')
 
@@ -703,10 +752,30 @@ if __name__ == '__main__':
         correlation_report_on_regions(
             fnlist[0], bed_tuple_list=eval_genomic_context_tuple, dsname=dsname,
             runid=args.runid,
-            outdir=out_dir, large_mem=args.large_mem,
-            enable_base_detection_bedfile=not args.disable_bed_check,
-            enable_cache=args.enable_cache, using_cache=args.using_cache)
+            outdir=out_dir)
         logger.debug(f"Memory report: {get_current_memory_usage()}")
+
+        if args.report_no_join:
+            # file like: Meth_corr_plot_data_bgtruth-HL60_RRBS_2Reps_NANOME-bsCov5-minToolCov3-baseFormat1.sorted.csv.gz
+            fnlist = glob.glob(os.path.join(out_dir,
+                                            f'Meth_corr_plot_data_bgtruth-*bsCov{args.min_bgtruth_cov}-minToolCov{args.toolcov_cutoff}*.csv.gz'))
+            if len(fnlist) < 1:
+                raise Exception(f'Found no file for fnlist={fnlist}, for dir={out_dir}')
+            logger.debug(f'Find file: {fnlist}')
+
+            basefn = os.path.basename(fnlist[0])
+            tagname = basefn.replace('Meth_corr_plot_data_bgtruth-', '')
+            dsname = tagname[:tagname.find('_')]
+
+            logger.info(
+                f"Start report no-joined sites PCC in difference genomic regions based on file={fnlist[0]}, dsname={dsname}")
+            ## Due to large memory for no-joined, using non-mpi method
+            correlation_report_on_regions(
+                fnlist[0], bed_tuple_list=eval_genomic_context_tuple, dsname=dsname,
+                runid=args.runid,
+                outdir=out_dir,
+                join_tag="no_join", mpi=False)
+            logger.debug(f"Memory report: {get_current_memory_usage()}")
 
     if args.summary_coverage:
         logger.info("Start summarize CPG coverage at each regions")

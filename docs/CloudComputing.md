@@ -39,7 +39,7 @@
 nextflow run TheJacksonLaboratory/nanome\
      -profile test,docker,google\
      -w [Google-storage-bucket]/nanome-work-test\
-     --outputDir [Google-storage-bucket]/nanome-outputs\
+     --outdir [Google-storage-bucket]/nanome-outputs\
      --googleProjectName  [PROJECT_ID]
 ```
 
@@ -64,7 +64,7 @@ Note that our project id is `jax-nanopore-01`, used for `[PROJECT_ID]`, **Data B
 nextflow run TheJacksonLaboratory/nanome\
     -profile test,docker,google\
     -w gs://jax-nanopore-01-project-data/nanome-work\
-    --outputDir gs://jax-nanopore-01-project-data/nanome-outputs\
+    --outdir gs://jax-nanopore-01-project-data/nanome-outputs\
     --googleProjectName  jax-nanopore-01
 ```
 

@@ -11,10 +11,10 @@ Export read/site-level methylation results for TSS/METEORE analysis in nanome pa
 import argparse
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import get_tool_name, save_done_file, nanome_version
+from nanocompare.global_settings import save_done_file, NANOME_VERSION
 
 
-def import_and_save_read_level(callfn, callencode, outfn):
+def import_and_save_read_level(callfn, callencode, score_cutoff, outfn):
     """
     Export to unified read-level output format for each tool
     Args:
@@ -27,7 +27,7 @@ def import_and_save_read_level(callfn, callencode, outfn):
     """
     import_call(callfn, callencode, baseFormat=1, filterChr=args.chrSet,
                 include_score=False, siteLevel=False, save_unified_format=True, outfn=outfn,
-                enable_cache=False, using_cache=False)
+                enable_cache=False, using_cache=False, score_cutoff=score_cutoff)
 
 
 def output_calldict_to_unified_bed_as_0base(dictCalls, outfn, sep='\t'):
@@ -50,7 +50,7 @@ def output_calldict_to_unified_bed_as_0base(dictCalls, outfn, sep='\t'):
     logger.debug(f'Output for TSS analysis: {outfn}')
 
 
-def import_and_save_site_level(callfn, callname, callencode, minToolCovCutt, outfn):
+def import_and_save_site_level(callfn, callname, callencode, score_cutoff, minToolCovCutt, outfn):
     """
     Output to unified site-level format for each tool
     Args:
@@ -63,8 +63,11 @@ def import_and_save_site_level(callfn, callname, callencode, minToolCovCutt, out
     Returns:
 
     """
-    ontCall = import_call(callfn, callencode, baseFormat=baseFormat, enable_cache=enable_cache,
-                          using_cache=using_cache, include_score=False, siteLevel=True, filterChr=args.chrSet,
+    ontCall = import_call(callfn, callencode, baseFormat=baseFormat,
+                          enable_cache=enable_cache,
+                          score_cutoff=score_cutoff,
+                          using_cache=using_cache, include_score=False,
+                          siteLevel=True, filterChr=args.chrSet,
                           cache_dir=ds_cache_dir)
 
     ontCallWithCov = readLevelToSiteLevelWithCov(ontCall, minCov=minToolCovCutt, toolname=callname)
@@ -78,10 +81,11 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(prog='tss_eval (NANOME)',
                                      description='Export read/site level methylation results of all nanopore tools in nanome paper')
-    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix/output dir name", required=True)
-    parser.add_argument('--calls', nargs='+', help='all ONT call results <tool-name>:<file-name> seperated by spaces',
+    parser.add_argument('--calls', nargs='+',
+                        help='all ONT call results <tool-name>:<encode>:<file-name> seperated by spaces',
                         required=True)
     parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name2>",
                         default=None)
@@ -93,11 +97,12 @@ def parse_arguments():
     parser.add_argument('-o', type=str, help="output base dir", default=pic_base_dir)
     parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
     parser.add_argument('--using-cache', help="if use cache files", action='store_true')
+    parser.add_argument('--sort', help="if sort bed output", action='store_true')
     parser.add_argument('--cache-dir', type=str,
                         help=f'cache dir used for loading calls/bs-seq (speed up running), default is {global_cache_dir}',
                         default=global_cache_dir)
     parser.add_argument('--chrSet', nargs='+', help='chromosome list, default is human chromosome chr1-22, X and Y',
-                        default=humanChrSet)
+                        default=HUMAN_CHR_SET)
     parser.add_argument('--tagname', type=str, help="output unified file's tagname", default=None)
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
@@ -125,10 +130,11 @@ if __name__ == '__main__':
         enable_cache = args.enable_cache
         using_cache = args.using_cache
 
-    tool_cutoff = 1
-    bs_cutoff = 1
+    tool_cov_cutoff = 1
+    bs_cov_cutoff = 1
 
-    # Currently we only use 1-base start format, for BED of singletons, non-singletons are use 1-base format
+    # Currently we only use 1-base start format in our program
+    # for BED of singletons, non-singletons are use 1-base format
     baseFormat = 1
 
     out_dir = os.path.join(args.o, args.runid)
@@ -143,17 +149,27 @@ if __name__ == '__main__':
         logger.info(f"We are outputing each tool's unified results for read-level, same as METEORE format")
         input_list = []
         for callstr in args.calls:
-            callencode, callfn = callstr.split(':')
+            try:
+                if len(callstr.split(':')) == 3:
+                    toolname, callencode, callfn = callstr.split(':')
+                    score_cutoff = None
+                elif len(callstr.split(':')) == 5:
+                    toolname, callencode, callfn, cutoff1, cutoff2 = callstr.split(':')
+                    cutoff1 = float(cutoff1)
+                    cutoff2 = float(cutoff1)
+                    score_cutoff = (cutoff1, cutoff2)
+            except:
+                raise Exception(f"--calls params is not correct: {callstr}")
+
             if len(callfn) == 0:
                 continue
-            callname = get_tool_name(callencode)
             # Consider tools have read-level outputs, except for DeepMod
-            if callname not in ['Nanopolish', 'Megalodon', 'DeepSignal', 'Guppy', 'Tombo']:
+            if callencode not in ToolEncodeList:
                 continue
             outfn = os.path.join(out_dir,
-                                 f"{args.dsname}_{callname}{f'-{args.tagname}' if args.tagname else ''}-perRead-score.tsv.gz")
+                                 f"{args.dsname}_{toolname}{f'-{args.tagname}' if args.tagname else ''}-perRead-score.tsv.gz")
 
-            input_list.append((callfn, callencode, outfn,))
+            input_list.append((callfn, callencode, score_cutoff, outfn,))
 
         executor = ThreadPoolExecutor(max_workers=args.processors)
         for arg in input_list:
@@ -187,14 +203,21 @@ if __name__ == '__main__':
             bgTruthList.append(bgTruth1)
 
         # Combine one/two replicates, using cutoff=1 or 5
-        combine_bsdata = combineBGTruthList(bgTruthList, covCutoff=bs_cutoff)
+        combine_bsdata = combineBGTruthList(bgTruthList, covCutoff=bs_cov_cutoff)
 
         # Clean up bgTruthList
         del bgTruthList
 
-        outfn = os.path.join(out_dir, f'{args.dsname}_BSseq-perSite-cov{bs_cutoff}.bed.gz')
-        logger.debug(f'Combined BS-seq data (cov>={bs_cutoff}), all methylation level sites={len(combine_bsdata):,}')
+        outfn = os.path.join(out_dir, f'{args.dsname}_BSseq-perSite-cov{bs_cov_cutoff}.bed.gz')
+        logger.debug(
+            f'Combined BS-seq data (cov>={bs_cov_cutoff}), all methylation level sites={len(combine_bsdata):,}')
         output_calldict_to_unified_bed_as_0base(combine_bsdata, outfn)
+
+        if args.sort:
+            ## Sort bed file
+            sort_outfn = os.path.join(out_dir, f'{args.dsname}_BSseq-perSite-cov{bs_cov_cutoff}.sort.bed.gz')
+            sort_bed_file(outfn, sort_outfn)
+            os.remove(outfn)
 
         # Clean up bgTruth, not used anymore
         del combine_bsdata
@@ -208,20 +231,44 @@ if __name__ == '__main__':
     ontcall_tools_dict = dict()
 
     input_list = []
+    outfn_list = []
     for callstr in args.calls:
-        callencode, callfn = callstr.split(':')
+        try:
+            if len(callstr.split(':')) == 3:
+                toolname, callencode, callfn = callstr.split(':')
+                score_cutoff = None
+            elif len(callstr.split(':')) == 5:
+                toolname, callencode, callfn, cutoff1, cutoff2 = callstr.split(':')
+                cutoff1 = float(cutoff1)
+                cutoff2 = float(cutoff1)
+                score_cutoff = (cutoff1, cutoff2)
+        except:
+            raise Exception(f"--calls params is not correct: {callstr}")
+
         if len(callfn) == 0:
             continue
-        callname = get_tool_name(callencode)
 
-        outfn = os.path.join(out_dir, f'{args.dsname}_{callname}-perSite-cov{tool_cutoff}.bed.gz')
-        input1 = (callfn, callname, callencode, tool_cutoff, outfn,)
+        if callencode not in ToolEncodeList:
+            raise Exception(
+                f"Not correct encode for tool param: callstr={callstr}, callencode={callencode}, callfn={callfn}")
+
+        outfn = os.path.join(out_dir, f'{args.dsname}_{toolname}-perSite-cov{tool_cov_cutoff}.bed.gz')
+        outfn_list.append(outfn)
+        input1 = (callfn, toolname, callencode, score_cutoff, tool_cov_cutoff, outfn,)
         input_list.append(input1)
 
     executor = ThreadPoolExecutor(max_workers=args.processors)
     for arg in input_list:
         executor.submit(import_and_save_site_level, *arg)
     executor.shutdown()
+
+    if args.sort:
+        ## sort BED files
+        for outfn in outfn_list:
+            sort_outfn = outfn.replace(f'cov{tool_cov_cutoff}.bed.gz', f'cov{tool_cov_cutoff}.sort.bed.gz')
+            logger.debug(f"sort from fn={outfn}, to sort_outfn={sort_outfn}")
+            sort_bed_file(outfn, sort_outfn)
+            os.remove(outfn)
 
     for key in ontcall_tools_dict.keys():
         logger.debug(f"tool={key}, sites={ontcall_tools_dict[key]}")

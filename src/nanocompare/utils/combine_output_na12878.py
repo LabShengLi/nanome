@@ -8,7 +8,7 @@ import re
 import sys
 
 from nanocompare.global_config import set_log_debug_level, logger
-from nanocompare.global_settings import humanChrSet
+from nanocompare.global_settings import HUMAN_CHR_SET
 
 input_dir = "/projects/li-lab/Nanopore_compare/data/NA12878"
 combine_dir = "/projects/li-lab/Nanopore_compare/data/NA12878/combine_allchrs"
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     logger.info(f'Construct total files={len(processDict)}')
     outfn = os.path.join(combine_dir, f'NA12878.{toolSuffix[toolName]}.combine_allchrs.{bed_or_tsv}.gz')
     with gzip.open(outfn, 'wt') as outf:
-        for chr in humanChrSet:
+        for chr in HUMAN_CHR_SET:
             cntLines = 0
             if chr.upper() not in processDict:
                 continue

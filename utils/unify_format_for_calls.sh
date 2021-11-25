@@ -7,18 +7,21 @@
 
 # Generate unified read-level and/or site-level format of calls
 # Usage:
-# [prog]  <dsname> <call-encode> <call-fn> <outd-dir> <num-processors> <step12> <chr-options>
-#             1       2               3       4               5            6          7
+# [prog]  <dsname>   <toolname>  <call-encode> <call-fn> <outd-dir> <num-processors> <step12> <chr-options>
+#             1       2               3       4               5            6          7    8
+set -x
 dsname=${1}
-encode=${2}
-callfn=${3}
-outdir=${4}
-processors=${5}
-step=${6:-'12'}
-chr_options=${7:-''}
+toolname=${2}
+encode=${3}
+callfn=${4}
+outdir=${5}
+processors=${6}
+step=${7:-'12'}
+read_sort=${8:-'false'}
+chr_options=${9:-''}
 
 if [[ "${chr_options}" != "" ]] ; then
-		chr_options="--chrSet ${chr_options}"
+	chr_options="--chrSet ${chr_options}"
 fi
 
 if [[ "$step" == *"1"* ]]; then
@@ -26,12 +29,23 @@ if [[ "$step" == *"1"* ]]; then
     echo "### Read level unify"
     tss_eval.py \
         --calls \
-            ${encode}:${callfn} \
+            ${toolname}:${encode}:${callfn} \
         --runid Read_Level-${dsname} \
         --dsname ${dsname}\
         --read-level-format \
         --processors ${processors}	\
         -o ${outdir}   ${chr_options}
+
+    ## sort read-level outputs if needed
+    if [[ ${read_sort} == true ]] ; then
+        echo "### sort read-level unified output"
+        zcat Read_Level-${dsname}/${dsname}_${toolname}-perRead-score.tsv.gz |
+            sort -V -u -k2,2 -k3,3n -k4,4 -k1,1|
+            gzip -f > Read_Level-${dsname}/${dsname}_${toolname}-perRead-score.sort.tsv.gz
+        rm -f Read_Level-${dsname}/${dsname}_${toolname}-perRead-score.tsv.gz &&\
+            mv  Read_Level-${dsname}/${dsname}_${toolname}-perRead-score.sort.tsv.gz\
+                Read_Level-${dsname}/${dsname}_${toolname}-perRead-score.tsv.gz
+    fi
 fi
 
 if [[ "$step" == *"2"* ]]; then
@@ -39,7 +53,7 @@ if [[ "$step" == *"2"* ]]; then
     echo "### Site level unify"
     tss_eval.py \
         --calls \
-            ${encode}:${callfn} \
+            ${toolname}:${encode}:${callfn} \
         --runid Site_Level-${dsname} \
         --dsname ${dsname} \
         --processors ${processors}	\

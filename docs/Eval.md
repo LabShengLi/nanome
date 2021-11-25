@@ -4,9 +4,17 @@ User needs to provide ONT tools's methylation-calling raw outputs and BS-seq dat
 
 **Please note that we strongly suggest providing the whole genome-wide CpGs for performance comparison across tools, we do not suggest selecting a portion of CpGs for comparison**.
 
-You can install NANOME standardized genome-wide evaluation tool from [PyPI](https://pypi.org/project/nanome-jax/):
+You can install NANOME standardized genome-wide evaluation tool (**nanome-jax**) from [PyPI](https://pypi.org/project/nanome-jax/):
 ```angular2html
+# Creat conda environment and install required packages
+conda create --name py39 python=3.9
+conda activate py39
+conda install -c anaconda scikit-learn==0.23.2 cython
+conda install -c conda-forge -c bioconda pybedtools
+
+# Install nanome-jax for genome-wide evaluation
 pip install nanome-jax
+pip show nanome-jax
 ```
 
 If your system support docker or singularity, you can directly running evaluation tool without any installations:

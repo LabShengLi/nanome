@@ -20,7 +20,7 @@ import pybedtools
 from sklearn.metrics import confusion_matrix
 
 from nanocompare.eval_common import *
-from nanocompare.global_settings import nanome_version, perf_report_columns, \
+from nanocompare.global_settings import NANOME_VERSION, perf_report_columns, \
     save_done_file, \
     region_filename_dict, region_tagname_dict, sing_tagname, nonsing_tagname, concord_tagname, discord_tagname, \
     load_genome_annotation_config
@@ -114,7 +114,8 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
     d = defaultdict(list)
     bar = tqdm(narrowedCoordinatesList)
     for coord_tuple in bar:
-        bar.set_description(f"Read-level-{prefix_name}-{genome_wide_tagname if coord_tuple is None else coord_tuple[1]}")
+        bar.set_description(
+            f"Read-level-{prefix_name}-{genome_wide_tagname if coord_tuple is None else coord_tuple[1]}")
         if coord_tuple[1] != genome_wide_tagname:
             if not args.large_mem:
                 eval_coord_tuple = \
@@ -125,7 +126,7 @@ def report_per_read_performance(ontCalls, bgTruth, analysisPrefix, narrowedCoord
                                          cache_dir=ds_cache_dir)
             else:
                 eval_coord_tuple = coord_tuple
-        else: #genome-wide setting
+        else:  # genome-wide setting
             eval_coord_tuple = coord_tuple
 
         if eval_coord_tuple[1] != genome_wide_tagname and eval_coord_tuple[2] is None:
@@ -205,9 +206,9 @@ def report_per_read_performance_mpi(ontCalls, bgTruth, analysisPrefix, narrowedC
                                          enable_cache=args.enable_cache,
                                          using_cache=args.using_cache,
                                          cache_dir=ds_cache_dir)
-            else: # already in memory
+            else:  # already in memory
                 eval_coord_tuple = coord_tuple
-        else: # genome-wide, (None, 'Genome-wide', None)
+        else:  # genome-wide, (None, 'Genome-wide', None)
             eval_coord_tuple = coord_tuple
         ## skip for None bed regions, except for genome-wide
         if eval_coord_tuple[1] != genome_wide_tagname and eval_coord_tuple[2] is None:
@@ -229,7 +230,7 @@ def report_per_read_performance_mpi(ontCalls, bgTruth, analysisPrefix, narrowedC
     for future in all_tasks:
         ret = future.result()
         ret_dict = unpack_read_level_perf_ret_dict(ret)
-        if ret_dict is None: # skip None tagname results
+        if ret_dict is None:  # skip None tagname results
             continue
         ret_dict.update({"prefix": analysisPrefix})
         datasets.append(ret_dict)
@@ -316,7 +317,8 @@ def report_ecoli_metro_paper_evaluations(ontCallDict, evalCPGSet, threshold=0.2)
     pass
 
 
-def import_ont_calls_for_read_level(call_encode, callfn, absoluteBGTruthCov, multi_processor=False):
+def import_ont_calls_for_read_level(toolname, call_encode, callfn, score_cutoff, absoluteBGTruthCov,
+                                    multi_processor=False):
     """
     Import read level of ont calls
     Args:
@@ -328,32 +330,34 @@ def import_ont_calls_for_read_level(call_encode, callfn, absoluteBGTruthCov, mul
     Returns:
 
     """
-    call_name = call_encode.replace('.', '_')
     ## MUST import read-level results, and include score for plot ROC curve and PR curve
     ## ont_call0 is raw ont-calls, too large, it will be cut to only with bs-seq, named ont_call1
     ont_call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, siteLevel=False,
                             filterChr=args.chrSet, using_cache=using_cache, enable_cache=enable_cache,
-                            cache_dir=ds_cache_dir)
+                            cache_dir=ds_cache_dir, toolname=toolname, score_cutoff=score_cutoff)
     sites_summary = {'Dataset': dsname,
-                     'Method': call_name,
+                     'Method': toolname,
                      'Sites': len(ont_call0),
-                     f'BSseq-cov{args.min_bgtruth_cov}-certain': len(absoluteBGTruthCov) if absoluteBGTruthCov else None,
+                     f'BSseq-cov{args.min_bgtruth_cov}-certain': len(
+                         absoluteBGTruthCov) if absoluteBGTruthCov else None,
                      }
 
     if absoluteBGTruthCov:  # Filter out and keep only bg-truth cpgs, due to memory out of usage on NA19240
-        logger.debug(f'Filter out CpG sites not in bgtruth for {call_name}')
+        logger.debug(f'Filter out CpG sites not in bgtruth for {toolname}')
         ont_call1 = filter_cpg_dict(ont_call0,
                                     absoluteBGTruthCov,
-                                    toolname=call_name)  # using absoluteBGTruthCov for even fewer sites
+                                    toolname=toolname)  # using absoluteBGTruthCov for even fewer sites
         del ont_call0
         sites_summary.update({f'Join-tool-cov1-with-BSseq-cov{args.min_bgtruth_cov}-certain': len(ont_call1)})
-        logger.debug(f'{call_name} left only sites={len(ont_call1):,}')
+        logger.debug(f'{toolname}:{call_encode} left only sites={len(ont_call1):,}')
     else:
         ont_call1 = ont_call0
     ont_call2 = filter_cpg_dict_by_cov(ont_call1, coverage=args.toolcov_cutoff)
 
     if not multi_processor:  # sequencial/multithreading running, in same process, can directly return object
-        return (call_name, ont_call2, sites_summary,)
+        return (toolname, ont_call2, sites_summary,)
+
+    raise Exception("Under development below")
     # Save to temp, for main process use at multi-processing
     outfn = f"tmp_ont_calls_for_read_level_{args.runid}_{os.path.basename(callfn)}.pkl"
     outfnmd5 = os.path.join(args.bedtools_tmp, "tmp_mp_ont_" + hashlib.md5(outfn.encode('utf-8')).hexdigest() + ".pkl")
@@ -362,7 +366,7 @@ def import_ont_calls_for_read_level(call_encode, callfn, absoluteBGTruthCov, mul
         pickle.dump(ont_call1, handle)
     del ont_call1
     logger.debug(f"Memory report: {get_current_memory_usage()}")
-    return (call_name, outfnmd5, sites_summary,)
+    return (toolname, outfnmd5, sites_summary,)
 
 
 def import_bsseq_for_read_level(infn, encode, multi_processor=False):
@@ -521,9 +525,9 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(prog='read_level_eval (NANOME)',
                                      description='Read-level performance evaluation in nanome paper')
-    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
-    parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethPerf-DS_WGBS_2reps",
+    parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethPerf-Dataset_WGBS_2Reps",
                         required=True)
     parser.add_argument('--calls', nargs='+',
                         help='all ONT call results <tool-name>:<file-name> seperated by space, tool-name can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod',
@@ -538,9 +542,9 @@ def parse_arguments():
     parser.add_argument('--toolcov-cutoff', type=int, help="cutoff for coverage in nanopore tools, default is >=1",
                         default=1)
     parser.add_argument('--processors', type=int, help="number of processors used, default is 1", default=1)
-    parser.add_argument('--report-joined', action='store_true', help="true if report on only joined sets")
+    parser.add_argument('--report-no-join', action='store_true', help="true if report not on joined sets")
     parser.add_argument('--chrSet', nargs='+', help='chromosome list, default is human chr1-22, X and Y',
-                        default=humanChrSet)
+                        default=HUMAN_CHR_SET)
     parser.add_argument('-o', type=str, help=f"output base dir, default is {pic_base_dir}", default=pic_base_dir)
     parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
     parser.add_argument('--using-cache', help="if use cache files", action='store_true')
@@ -594,9 +598,6 @@ if __name__ == '__main__':
 
     # We use coverage >= args.min_bgtruth_cov for bg-truth, but 1x coverage for ONT calls
     cutoffBGTruth = args.min_bgtruth_cov
-
-    # Report performance on joined sites
-    report_joined = args.report_joined
 
     # If enable cache, loaded results will be saved to cache
     enable_cache = args.enable_cache
@@ -750,11 +751,21 @@ if __name__ == '__main__':
 
     arg_list = []
     for callstr in args.calls:
-        call_encode, callfn = callstr.split(':')
+        try:
+            if len(callstr.split(':')) == 3:
+                toolname, callencode, callfn = callstr.split(':')
+                score_cutoff = None
+            elif len(callstr.split(':')) == 5:
+                toolname, callencode, callfn, cutoff1, cutoff2 = callstr.split(':')
+                cutoff1 = float(cutoff1)
+                cutoff2 = float(cutoff1)
+                score_cutoff = (cutoff1, cutoff2)
+        except:
+            raise Exception(f"--calls params is not correct: {callstr}")
 
         if len(callfn.strip()) == 0:  # skip empty filename
             continue
-        arg_list.append((call_encode, callfn, absoluteBGTruthCov, False,))
+        arg_list.append((toolname, callencode, callfn, score_cutoff, absoluteBGTruthCov, False,))
 
     ## Dataframe for cpgs in tool and each tool joined with BS-seq
     sites_database_list = []  # list of dict
@@ -806,11 +817,11 @@ if __name__ == '__main__':
         logger.debug(f'After joined with {toolname}, cpgs={len(joinedCPG):,}')
 
     # this file is the all tool (cov>=1) joined with BS-seq (cov>=5) 0%, 100% together sites BED file, for evaluation on joined sites
-    bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}_{args.dsname}.Tools_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.bed.gz"
+    bedfn_tool_join_bgtruth = f"{out_dir}/{RunPrefix}_{args.dsname}.Tools_Certain_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.bed.gz"
     save_keys_to_single_site_bed(joinedCPG, outfn=bedfn_tool_join_bgtruth, callBaseFormat=baseFormat, outBaseFormat=1)
 
     ## Sort the bed file
-    bedfn_tool_join_bgtruth_sorted = f"{out_dir}/{RunPrefix}_{args.dsname}.Tools_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.sorted.bed.gz"
+    bedfn_tool_join_bgtruth_sorted = f"{out_dir}/{RunPrefix}_{args.dsname}.Tools_Certain_BGTruth_cov{cutoffBGTruth}_Joined_baseFormat1.sorted.bed.gz"
     sort_bed_file(infn=bedfn_tool_join_bgtruth, outfn=bedfn_tool_join_bgtruth_sorted)
 
     ## Delete not sorted file
@@ -867,17 +878,20 @@ if __name__ == '__main__':
 
     logger.debug("\n\n############\n\n")
 
-    if report_joined:  # Joined all together sites for evaluation
-        perf_dir = os.path.join(out_dir, 'performance-results')
-        os.makedirs(perf_dir, exist_ok=True)
-        eval_bgTruth = certainJoinedBGTruth  # evaluation bs-seq
-        secondBedFileName = bedfn_tool_join_bgtruth_sorted  # params passed for joined sets evaluation, may be remove, due to bgtruth is now joined
-    else:  # only based on bgtruth joined with a tool
+    if args.report_no_join:
+        # only based on bgtruth joined with a tool
         perf_dir = os.path.join(out_dir, 'performance-results-nojoined')
         os.makedirs(perf_dir, exist_ok=True)
         eval_bgTruth = certainBGTruth  # evaluation bs-seq
         secondBedFileName = None
-        raise Exception("Currently only support joined sets evaluation.")
+        raise Exception("Under development")
+    else:
+        # Joined all together sites for evaluation
+        perf_dir = os.path.join(out_dir, 'performance-results')
+        os.makedirs(perf_dir, exist_ok=True)
+        eval_bgTruth = certainJoinedBGTruth  # evaluation bs-seq
+        # params passed for joined sets evaluation, may be remove, due to bgtruth is now joined
+        secondBedFileName = bedfn_tool_join_bgtruth_sorted
 
     # Evaluated all region filename lists,
     # assume all genome annotations are in args.genome_annotation dir

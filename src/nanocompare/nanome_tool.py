@@ -13,13 +13,13 @@ from tqdm import tqdm
 
 from nanocompare.eval_common import open_file_gz_or_txt
 from nanocompare.global_config import set_log_debug_level, logger, set_log_info_level
-from nanocompare.global_settings import nanome_version
+from nanocompare.global_settings import NANOME_VERSION
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser(prog='nanome_tool (NANOME)',
                                      description='Plot and export data for Nanocompare paper.')
-    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{nanome_version}')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument("cmd", help="name of command: to_ucsc_bed, etc.")
     parser.add_argument('-i', type=str, help='input file name', required=True)
     parser.add_argument('-o', type=str, help="output file name",

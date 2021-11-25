@@ -35,13 +35,14 @@ from sklearn.metrics import roc_curve, auc, average_precision_score, f1_score, p
 from tqdm import tqdm
 
 from nanocompare.global_config import *
-from nanocompare.global_settings import humanChrSet, ToolEncodeList, BGTruthEncodeList, referenceGenomeFile, \
-    enable_base_detection_bedfile, region_filename_dict, genome_wide_tagname
+from nanocompare.global_settings import HUMAN_CHR_SET, ToolEncodeList, BGTruthEncodeList, reference_genome_hg38_fn, \
+    enable_base_detection_bedfile, region_filename_dict, genome_wide_tagname, EPSLONG, CHUNKSIZE
 
 
 def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=1, readid_col=4, log_lik_ratio_col=5,
-                                 sequence_col=-1, num_motifs_col=-2, baseFormat=1, llr_cutoff=2.0, output_first=False,
-                                 include_score=False, filterChr=humanChrSet, save_unified_format=False, outfn=None,
+                                 sequence_col=-1, num_motifs_col=-2, baseFormat=1, score_cutoff=(-2.0, 2.0),
+                                 output_first=False,
+                                 include_score=False, filterChr=HUMAN_CHR_SET, save_unified_format=False, outfn=None,
                                  stringent_cutoff=True):
     """
     We checked the input is 0-based for the start col
@@ -62,6 +63,10 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
     Referenced by Nanopolish script for handling with conversion of calls to frequencies:
     https://github.com/jts/nanopolish/blob/master/scripts/calculate_methylation_frequency.py
     """
+    if score_cutoff is None:
+        score_cutoff = (-2.0, 2.0)
+    llr_cutoff = abs(score_cutoff[1])
+
     cpgDict = defaultdict(list)
     call_cnt = 0
     meth_cnt = 0
@@ -186,12 +191,13 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
         logger.debug(f'Save METEORE output format to {outfn}')
 
     logger.debug(
-        f"###\timportPredictions_Nanopolish SUCCESS: {call_cnt:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file with LLR-cutoff={llr_cutoff:.2f}")
+        f"###\timportPredictions_Nanopolish SUCCESS: {call_cnt:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file with score_cutoff={score_cutoff}")
     return cpgDict
 
 
 def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=2, readid_col=4, meth_prob_col=7,
-                                 meth_col=8, baseFormat=1, include_score=False, filterChr=humanChrSet,
+                                 meth_col=8, baseFormat=1, score_cutoff=(0.5, 0.5), include_score=False,
+                                 filterChr=HUMAN_CHR_SET,
                                  save_unified_format=False, outfn=None):
     """
     We checked input as 0-based format for start col.
@@ -220,6 +226,8 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     - k_mer: the kmer around the targeted base
     ** by default if this probability will be higher than > 0.5, DeepSignal will tell that this is methylated site, or else is unmethylated
     """
+    if score_cutoff is None:
+        score_cutoff = (0.5, 0.5)
     infile, lines = open_file_gz_or_txt(infileName)
 
     if save_unified_format:
@@ -280,13 +288,13 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
         logger.debug(f'Save METEORE output format to {outfn}')
 
     logger.debug(
-        f"###\timportPredictions_DeepSignal SUCCESS: {row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file")
+        f"###\timportPredictions_DeepSignal SUCCESS: {row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs from {infileName} file with score_cutoff={score_cutoff}")
 
     return cpgDict
 
 
 def importPredictions_Tombo(infileName, chr_col=0, start_col=1, readid_col=3, strand_col=5, meth_col=4, baseFormat=1,
-                            cutoff=(-1.5, 2.5), output_first=False, include_score=False, filterChr=humanChrSet,
+                            score_cutoff=(-1.5, 2.5), output_first=False, include_score=False, filterChr=HUMAN_CHR_SET,
                             save_unified_format=False, outfn=None):
     """
     We checked input as 0-based start format.
@@ -309,6 +317,8 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, readid_col=3, st
     chr1    8447761    8447761    c9339e26-1898-4483-a312-b78c3fafc6a9    -0.8580941645036908    -    ATGGACACAGA
     ============
     """
+    if score_cutoff is None:
+        score_cutoff = (-1.5, 2.5)
     infile, lines = open_file_gz_or_txt(infileName)
 
     if save_unified_format:
@@ -370,10 +380,10 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, readid_col=3, st
             outf.write(f"{tmp[readid_col]}\t{tmp[chr_col]}\t{start}\t{tmp[strand_col]}\t{methCallTombo}\n")
 
         key = (tmp[chr_col], start, strand)
-        if methCallTombo < cutoff[0]:  # below -1.5 is methylated by default
+        if methCallTombo < score_cutoff[0]:  # below -1.5 is methylated by default
             meth_indicator = 1
             meth_cnt += 1
-        elif methCallTombo > cutoff[1]:  # above 2.5 is methylated by default
+        elif methCallTombo > score_cutoff[1]:  # above 2.5 is methylated by default
             meth_indicator = 0
             unmeth_cnt += 1
         else:
@@ -392,13 +402,13 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, readid_col=3, st
         logger.debug(f'Save METEORE output format to {outfn}')
 
     logger.debug(
-        f"###\timportPredictions_Tombo SUCCESS: {row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with meth-cutoff={cutoff} from {infileName} file")
+        f"###\timportPredictions_Tombo SUCCESS: {row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with score_cutoff={score_cutoff} from {infileName} file")
     return cpgDict
 
 
 def importPredictions_DeepMod_C(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-3, meth_freq_col=-2,
                                 meth_cov_col=-1, baseFormat=1, output_first=False, include_score=False,
-                                siteLevel=False, filterChr=humanChrSet, total_cols=12):
+                                siteLevel=False, filterChr=HUMAN_CHR_SET, total_cols=12):
     """
     DeepMod RNN results format
     We treate input as 0-based format for start col.
@@ -512,7 +522,8 @@ def importPredictions_DeepMod_C(infileName, chr_col=0, start_col=1, strand_col=5
 
 def importPredictions_DeepMod_Clustered(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4,
                                         meth_cov_col=-2, clustered_meth_freq_col=-1, baseFormat=1,
-                                        output_first=False, siteLevel=True, include_score=False, filterChr=humanChrSet,
+                                        output_first=False, siteLevel=True, include_score=False,
+                                        filterChr=HUMAN_CHR_SET,
                                         total_cols=13):
     """
     DeepMod RNN+Cluster results format for human genome
@@ -594,7 +605,7 @@ def importPredictions_DeepMod_Clustered(infileName, chr_col=0, start_col=1, stra
 
 def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, coverage_col=-4, meth_freq_col=-3,
                               meth_cov_col=-2, clustered_meth_freq_col=-1, baseFormat=1,
-                              output_first=False, siteLevel=True, include_score=False, filterChr=humanChrSet):
+                              output_first=False, siteLevel=True, include_score=False, filterChr=HUMAN_CHR_SET):
     """
     DeepMod RNN+Cluster results format for human genome
     Note that DeepMod only outputs site level stats, we use DeepMod clustered results for site level evaluation only.
@@ -687,8 +698,8 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
 
 
 def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3, strand_col=2, mod_log_prob_col=4,
-                                can_log_prob_col=5, baseFormat=1, cutoff=0.8, sep='\t', output_first=False,
-                                include_score=False, filterChr=humanChrSet, save_unified_format=False, outfn=None):
+                                can_log_prob_col=5, baseFormat=1, score_cutoff=(0.2, 0.8), sep='\t', output_first=False,
+                                include_score=False, filterChr=HUMAN_CHR_SET, save_unified_format=False, outfn=None):
     """
     0-based start for Magelodon：
         1.  baseFormat=0， start=Megalondon start；
@@ -708,6 +719,8 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
     (https://github.com/nanoporetech/megalodon/issues/47#issuecomment-673742805)
     ============
     """
+    if score_cutoff is None:
+        score_cutoff = (0.2, 0.8)
     infile, lines = open_file_gz_or_txt(infileName)
     if save_unified_format:
         outf = gzip.open(outfn, 'wt')
@@ -763,10 +776,11 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
             logger.error(f" ####Megalodon parse error at row={row}, exception={e}")
             continue
 
-        if meth_prob > cutoff:  ##Keep methylated reads
+        # logger.debug(f"meth_prob={meth_prob:.4f}, unmeth_prob={float(np.e ** float(tmp[can_log_prob_col])):.4f}, score_cutoff={score_cutoff}")
+        if meth_prob > score_cutoff[1]:  ##Keep methylated reads
             meth_indicator = 1
             meth_cnt += 1
-        elif meth_prob < 1 - cutoff:  ##Count unmethylated reads
+        elif meth_prob < score_cutoff[0]:  ##Count unmethylated reads
             meth_indicator = 0
             unmeth_cnt += 1
         else:  ## Neglect other cases 0.2<= prob <=0.8
@@ -785,12 +799,12 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
         logger.debug(f'Save METEORE output format to {outfn}')
 
     logger.debug(
-        f"###\timportPredictions_Megalodon SUCCESS: {call_cnt:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with meth-cutoff={cutoff:.2f} from {infileName} file")
+        f"###\timportPredictions_Megalodon SUCCESS: {call_cnt:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with score_cutoff={score_cutoff} from {infileName} file")
     return cpgDict
 
 
 def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=False, include_score=False,
-                            siteLevel=False, filterChr=humanChrSet, formatSource="raw"):
+                            siteLevel=False, filterChr=HUMAN_CHR_SET, formatSource="raw"):
     """
     Import Guppy results by Fast5mod from ONT developed tools, it can report read-level or site-level results.
     Start is 0-based, and combined + and - CpGs together.
@@ -952,8 +966,8 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
 
 
 def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand_col=1, start_col=2, readid_col=4,
-                                     log_ratio_col=5, log_lik_methylated_col=6, cutoff=(0.25, 0.5), header=None,
-                                     sep='\t', output_first=False, include_score=False, filterChr=humanChrSet,
+                                     log_ratio_col=5, log_lik_methylated_col=6, score_cutoff=(0.25, 0.5), header=None,
+                                     sep='\t', output_first=False, include_score=False, filterChr=HUMAN_CHR_SET,
                                      save_unified_format=False, outfn=None):
     """
     Parse read level gcf52ref format, start position is 0-base, end is 1-base
@@ -973,7 +987,7 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
     :param strand_col:
     :param start_col:
     :param log_lik_methylated_col:
-    :param cutoff:
+    :param score_cutoff:
     :param sep:
     :param output_first:
     :param include_score:
@@ -982,6 +996,8 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
     :return:
     """
     ### Using scanner way
+    if score_cutoff is None:
+        score_cutoff = (0.25, 0.5)
     cpgDict = defaultdict(list)
     call_cnt = methcall_cnt = 0
     infile, lines = open_file_gz_or_txt(infileName)
@@ -1013,10 +1029,10 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
         if save_unified_format:
             # output to 1-based for meteore, ref: https://github.com/comprna/METEORE/blob/master/script_in_snakemake/format_guppy.R
             outf.write(f"{readid}\t{chr}\t{start}\t{strand}\t{log_ratio}\n")
-        if (prob_methylated > cutoff[0]) and (prob_methylated < cutoff[1]):
+        if (prob_methylated > score_cutoff[0]) and (prob_methylated < score_cutoff[1]):
             continue
 
-        if prob_methylated <= cutoff[0]:
+        if prob_methylated <= score_cutoff[0]:
             meth_indicator = 0
         else:
             meth_indicator = 1
@@ -1029,18 +1045,20 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
             cpgDict[key].append((meth_indicator, prob_methylated))
         else:  # For read-level no scores
             cpgDict[key].append(meth_indicator)
+    infile.close()
     if save_unified_format:
         outf.close()
         logger.debug(f'Save METEORE output format to {outfn}')
 
     unmethcall_cnt = call_cnt - methcall_cnt
     logger.debug(
-        f"###\timportPredictions_Guppy_gcf52ref SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs, using cutoff={cutoff} from {infileName} file")
+        f"###\timportPredictions_Guppy_gcf52ref SUCCESS: {call_cnt:,} methylation calls (meth-calls={methcall_cnt:,}, unmeth-calls={unmethcall_cnt:,}) mapped to {len(cpgDict):,} CpGs, using score_cutoff={score_cutoff} from {infileName} file")
     return cpgDict
 
 
-def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, meth_indicator_col=3, meth_prob_col=4,
-                              strand_col=5, baseFormat=1, include_score=False, filterChr=humanChrSet):
+def importPredictions_METEORE(infileName, readid_col=0, chr_col=1, start_col=2, meth_indicator_col=3, meth_prob_col=4,
+                              strand_col=5, baseFormat=1, include_score=False, filterChr=HUMAN_CHR_SET,
+                              save_unified_format=False, outfn=None, toolname="METEORE"):
     """
     We checked input as 1-based format for start col.
     Return dict of key='chr1\t123\t123\t+', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
@@ -1062,7 +1080,11 @@ def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, 
     meth_cnt = 0
     unmeth_cnt = 0
 
-    for row in tqdm(infile, total=lines, desc="Import-METEORE"):
+    if save_unified_format:
+        outf = gzip.open(outfn, 'wt')
+        outf.write(f"ID\tChr\tPos\tStrand\tScore\n")
+
+    for row in tqdm(infile, total=lines, desc=f"Import-{toolname}"):
         if row.startswith("ID\tChr"):  # skim header
             continue
         tmp = row.strip().split("\t")
@@ -1070,10 +1092,16 @@ def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, 
         if tmp[chr_col] not in filterChr:
             continue
 
+        readid = tmp[readid_col]
         start_1_base = int(tmp[start_col])
         meth_indicator = int(tmp[meth_indicator_col])
         meth_prob = float(tmp[meth_prob_col])
         strand = tmp[strand_col]
+
+        if save_unified_format:
+            # output to 1-based readl-level format
+            log_ratio_score = math.log2((meth_prob + EPSLONG) / (1 - meth_prob + EPSLONG))
+            outf.write(f"{readid}\t{tmp[chr_col]}\t{start_1_base}\t{strand}\t{log_ratio_score}\n")
 
         ## Since METEORE report chr pos (1-based), strand
         ## pos is point to CG' C in +, and CG's G in -
@@ -1089,8 +1117,149 @@ def importPredictions_METEORE(infileName, chr_col=1, start_col=2, readid_col=0, 
         else:
             unmeth_cnt += 1
     infile.close()
+    if save_unified_format:
+        outf.close()
+        logger.debug(f'Save {toolname} output format to {outfn}')
     logger.debug(
-        f"###\timportPredictions_METEORE SUCCESS: rows={row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs (include + and -) from {infileName} file")
+        f"###\timportPredictions_{toolname} SUCCESS: rows={row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs (include + and -) from {infileName} file")
+    return cpgDict
+
+
+def importPredictions_UNIREAD(infileName, readid_col=0, chr_col=1, start_col=2, strand_col=3, meth_score_col=4,
+                              score_cutoff=(0, 0), sep='\t',
+                              baseFormat=1, include_score=False, filterChr=HUMAN_CHR_SET,
+                              save_unified_format=False, outfn=None, toolname=None):
+    """
+    Import the unified read level format
+
+    For Nanopolish/Megalodon UNIREAD, may apply score_cutoff=(-2,2), ref prob=0.2,0.8
+    For DeepSignal UNIREAD, apply score_cutoff=(0,0), ref prob=0.5
+
+    Sample format:
+    ID	Chr	Pos	Strand	Score
+    a0b5e934-3784-4163-b46c-f575ac1015bf	chr1	10469	+	-1.3874776010260244
+    a0b5e934-3784-4163-b46c-f575ac1015bf	chr1	10471	+	-1.895313535141491
+    a0b5e934-3784-4163-b46c-f575ac1015bf	chr1	10484	+	-1.3085324067839967
+    a0b5e934-3784-4163-b46c-f575ac1015bf	chr1	10489	+	4.122552265302514
+    a0b5e934-3784-4163-b46c-f575ac1015bf	chr1	10493	+	4.4188115095774565
+    """
+    if score_cutoff is None:  # Default if provided None
+        score_cutoff = (0, 0)
+    infile, lines = open_file_gz_or_txt(infileName)
+
+    cpgDict = defaultdict(list)
+    row_count = 0
+    meth_cnt = 0
+    unmeth_cnt = 0
+
+    if save_unified_format:
+        outf = gzip.open(outfn, 'wt')
+        outf.write(f"ID\tChr\tPos\tStrand\tScore\n")
+
+    for row in tqdm(infile, total=lines, desc=f"Import-{toolname}"):
+        if row.startswith("ID\tChr"):  # skim header
+            continue
+        tmp = row.strip().split(sep)
+
+        chr = tmp[chr_col]
+        if chr not in filterChr:
+            continue
+        readid = tmp[readid_col]
+        start_1_base = int(tmp[start_col])
+        strand = tmp[strand_col]
+        meth_score = float(tmp[meth_score_col])
+
+        if meth_score <= score_cutoff[0]:
+            meth_indicator = 0
+        elif meth_score > score_cutoff[1]:
+            meth_indicator = 1
+        else:
+            continue
+
+        if save_unified_format:
+            # output to 1-based readl-level format
+            outf.write(f"{readid}\t{chr}\t{start_1_base}\t{strand}\t{meth_score}\n")
+
+        ## Since METEORE report chr pos (1-based), strand
+        ## pos is point to CG' C in +, and CG's G in -
+        key = (tmp[chr_col], start_1_base - (1 - baseFormat), strand)
+        if include_score:
+            cpgDict[key].append((meth_indicator, meth_score))
+        else:
+            cpgDict[key].append(meth_indicator)
+
+        row_count += 1
+        if meth_indicator == 1:
+            meth_cnt += 1
+        else:
+            unmeth_cnt += 1
+    infile.close()
+    if save_unified_format:
+        outf.close()
+        logger.debug(f'Save {toolname} output format to {outfn}')
+    logger.debug(
+        f"###\timportPredictions_{toolname} SUCCESS: rows={row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with score_cutoff={score_cutoff}, from {infileName} file")
+    return cpgDict
+
+
+def importPredictions_UNISITE(infileName, chr_col=0, start_col=1, strand_col=5,
+                              meth_freq_col=6, meth_cov_col=7,
+                              sep='\t', covCutoff=1, baseFormat=1,
+                              include_score=False, siteLevel=True, includeCov=True,
+                              filterChr=HUMAN_CHR_SET, toolname=None):
+    """
+    Import the unified read level format
+
+    Sample format:
+    chr10	10738	10739	.	.	+	0.87	1
+    chr10	10750	10751	.	.	+	0.9	1
+    chr10	10752	10753	.	.	+	0.9	1
+    chr10	10767	10768	.	.	+	0.9	1
+    chr10	10779	10780	.	.	+	0.9	1
+    """
+    infile, lines = open_file_gz_or_txt(infileName)
+
+    cpgDict = defaultdict()
+    count_calls = 0
+    meth_cnt = 0
+    unmeth_cnt = 0
+
+    for row in tqdm(infile, total=lines, desc=f"Import-{toolname}"):
+        if row.startswith("ID\tChr"):  # skim header
+            continue
+        tmp = row.strip().split(sep)
+
+        chr = tmp[chr_col]
+        if chr not in filterChr:
+            continue
+        start = int(tmp[start_col]) + baseFormat
+        strand = tmp[strand_col]
+        meth_freq = float(tmp[meth_freq_col])
+        coverage = int(tmp[meth_cov_col])
+        meth_cov = int(meth_freq * coverage)
+
+        if coverage < covCutoff:
+            continue
+
+        ## Since METEORE report chr pos (1-based), strand
+        ## pos is point to CG' C in +, and CG's G in -
+        key = (tmp[chr_col], start, strand)
+        if siteLevel:
+            if includeCov:
+                cpgDict[key] = (meth_freq, coverage)
+            else:
+                cpgDict[key] = meth_freq
+        elif include_score:
+            cpgDict[key] = [(1, 1.0)] * meth_cov + [(0, 0.0)] * (coverage - meth_cov)
+        else:
+            cpgDict[key] = [1] * meth_cov + [0] * (coverage - meth_cov)
+        count_calls += coverage
+        meth_cnt += meth_cov
+        unmeth_cnt += coverage - meth_cov
+
+    infile.close()
+    logger.debug(
+        f"###\timportPredictions_{toolname} SUCCESS: {count_calls:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs (include + and -) from {infileName} file")
     return cpgDict
 
 
@@ -1155,7 +1324,7 @@ def open_file_gz_or_txt(infn, return_lines=True):
 
 # encode format
 def importGroundTruth_from_Encode(infileName, chr_col=0, start_col=1, methfreq_col=-1, cov_col=4, strand_col=5,
-                                  covCutoff=1, baseFormat=1, filterChr=humanChrSet, includeCov=True):
+                                  covCutoff=1, baseFormat=1, filterChr=HUMAN_CHR_SET, includeCov=True):
     """
     ### Description of the columns in this format (https://www.encodeproject.org/data-standards/wgbs/):
 
@@ -1254,7 +1423,7 @@ def importGroundTruth_from_Encode(infileName, chr_col=0, start_col=1, methfreq_c
 
 # bismark format, Deal with file name like 'bismark_bt2.CpG_report.txt.gz'
 def importGroundTruth_from_Bismark(infn, chr_col=0, start_col=1, strand_col=2, meth_col=3, unmeth_col=4, covCutoff=1,
-                                   baseFormat=1, filterChr=humanChrSet, includeCov=True, sep='\t', print_first=False):
+                                   baseFormat=1, filterChr=HUMAN_CHR_SET, includeCov=True, sep='\t', print_first=False):
     """
     We checked the input file is start using 1-based format.
     We use this format than others in Bismark due to it contains strand info.
@@ -1365,7 +1534,7 @@ def importGroundTruth_from_Bismark(infn, chr_col=0, start_col=1, strand_col=2, m
     for index, row in df.iterrows():
         chr = row['chr']
 
-        if chr not in humanChrSet:  # Filter out non-human chrs
+        if chr not in HUMAN_CHR_SET:  # Filter out non-human chrs
             continue
 
         start = int(row['start'])
@@ -1393,7 +1562,7 @@ def importGroundTruth_from_Bismark(infn, chr_col=0, start_col=1, strand_col=2, m
 
 def importGroundTruth_from_5hmc_ziwei(infn, chr_col=0, start_col=1, strand_col=7, meth_freq_col=3,
                                       meth_5hmc_freq_col=4, sep='\t', covCutoff=1, baseFormat=1, includeCov=True,
-                                      filterChr=humanChrSet, cov_col=(8, 9), provided_cov=5, print_first=False):
+                                      filterChr=HUMAN_CHR_SET, cov_col=(8, 9), provided_cov=5, print_first=False):
     """
     Input format is below, start is 1-based:
     chr1	10542	10543	1	0	0	0	+	2	1
@@ -1470,7 +1639,8 @@ def importGroundTruth_from_5hmc_ziwei(infn, chr_col=0, start_col=1, strand_col=7
 
 
 def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False, enable_cache=False, using_cache=False,
-                filterChr=humanChrSet, save_unified_format=False, outfn=None, cache_dir=None):
+                filterChr=HUMAN_CHR_SET, save_unified_format=False, outfn=None, cache_dir=None, toolname=None,
+                score_cutoff=None):
     """
     General purpose for import any tools methylation calling input files.
 
@@ -1495,19 +1665,24 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     call0 = None
     if encode == 'DeepSignal':
         calls0 = importPredictions_DeepSignal(infn, baseFormat=baseFormat, include_score=include_score,
+                                              score_cutoff=score_cutoff,
                                               filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn)
     elif encode == 'Tombo':
         calls0 = importPredictions_Tombo(infn, baseFormat=baseFormat, include_score=include_score, filterChr=filterChr,
+                                         score_cutoff=score_cutoff,
                                          save_unified_format=save_unified_format, outfn=outfn)
     elif encode == 'Nanopolish':
         calls0 = importPredictions_Nanopolish(infn, baseFormat=baseFormat, include_score=include_score,
+                                              score_cutoff=score_cutoff,
                                               filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn)
     elif encode == 'Megalodon':  # Original format
         calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score,
+                                             score_cutoff=score_cutoff,
                                              filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn)
     elif encode == 'Megalodon.ZW':  # Here, ziwei preprocess the raw file to this format: chr_col=0, start_col=1, strand_col=3
-        calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score, readid_col=2,
-                                             chr_col=0, start_col=1, strand_col=3, filterChr=filterChr,
+        calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score,
+                                             score_cutoff=score_cutoff,
+                                             readid_col=2, chr_col=0, start_col=1, strand_col=3, filterChr=filterChr,
                                              save_unified_format=save_unified_format, outfn=outfn)
     elif encode == 'DeepMod':  # import DeepMod, support both C and Cluster input format
         calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, siteLevel=siteLevel,
@@ -1528,12 +1703,27 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
         if siteLevel:
             raise Exception(f"Not support site-level import for gcf52ref format file={infn}")
         calls0 = importPredictions_Guppy_gcf52ref(infn, baseFormat=baseFormat, include_score=include_score,
-                                                  filterChr=filterChr, header=None,
+                                                  filterChr=filterChr, header=None, score_cutoff=score_cutoff,
                                                   save_unified_format=save_unified_format,
                                                   outfn=outfn)
-    elif encode == 'METEORE':  # import Guppy gcf52ref read level results
-        calls0 = importPredictions_METEORE(infn, baseFormat=baseFormat, include_score=include_score,
-                                           filterChr=filterChr)
+    elif encode == 'METEORE':
+        calls0 = importPredictions_METEORE(infn,
+                                           baseFormat=baseFormat, include_score=include_score,
+                                           filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn)
+    elif encode == 'NANOME':
+        calls0 = importPredictions_METEORE(infn, strand_col=3, meth_indicator_col=-2, meth_prob_col=-1,
+                                           baseFormat=baseFormat, include_score=include_score,
+                                           filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn,
+                                           toolname="NANOME")
+    elif encode == 'UNIREAD':
+        calls0 = importPredictions_UNIREAD(infn,
+                                           baseFormat=baseFormat, include_score=include_score,
+                                           filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn,
+                                           toolname=toolname, score_cutoff=score_cutoff)
+    elif encode == 'UNISITE':
+        calls0 = importPredictions_UNISITE(
+            infn, baseFormat=baseFormat, siteLevel=siteLevel, include_score=include_score,
+            filterChr=filterChr, toolname=toolname)
     else:
         raise Exception(f'Not support {encode} for file {infn} now')
 
@@ -1545,7 +1735,8 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     return calls0
 
 
-def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, filterChr=humanChrSet, enable_cache=False,
+def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, filterChr=HUMAN_CHR_SET,
+                   enable_cache=False,
                    using_cache=False,
                    cache_dir=None):
     """
@@ -1570,6 +1761,9 @@ def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, fil
     elif encode == "bismark":  # for genome-wide Bismark Report ouput format, 1-based start input
         bgTruth = importGroundTruth_from_Bismark(infn, covCutoff=covCutoff, filterChr=filterChr,
                                                  baseFormat=baseFormat, includeCov=includeCov)
+    elif encode == 'UNISITE':
+        bgTruth = importPredictions_UNISITE(infn, covCutoff=covCutoff, filterChr=filterChr, siteLevel=True,
+                                            baseFormat=baseFormat, includeCov=includeCov)
     elif encode == "5hmc_ziwei":  # for sanity check 5hmc
         bgTruth = importGroundTruth_from_5hmc_ziwei(infn, covCutoff=covCutoff,
                                                     baseFormat=baseFormat, includeCov=includeCov)
@@ -1913,12 +2107,12 @@ def do_singleton_nonsingleton_scanner():
     kbp = 5
     singletonFilename = os.path.join(pic_base_dir, f'hg38_singletons_{kbp}bp.bed.gz')
     nonsingletonFilename = os.path.join(pic_base_dir, f'hg38_nonsingletons_{kbp}bp.bed.gz')
-    SingletonsAndNonSingletonsScanner(referenceGenomeFile, singletonFilename, nonsingletonFilename, kbp=kbp)
+    SingletonsAndNonSingletonsScanner(reference_genome_hg38_fn, singletonFilename, nonsingletonFilename, kbp=kbp)
 
     kbp = 10
     singletonFilename = os.path.join(pic_base_dir, f'hg38_singletons_{kbp}bp.bed.gz')
     nonsingletonFilename = os.path.join(pic_base_dir, f'hg38_nonsingletons_{kbp}bp.bed.gz')
-    SingletonsAndNonSingletonsScanner(referenceGenomeFile, singletonFilename, nonsingletonFilename, kbp=kbp)
+    SingletonsAndNonSingletonsScanner(reference_genome_hg38_fn, singletonFilename, nonsingletonFilename, kbp=kbp)
 
 
 def SingletonsAndNonSingletonsScanner(referenceGenomeFile, outfileName_s, outfileName_ns, kbp=10):
@@ -1938,7 +2132,7 @@ def SingletonsAndNonSingletonsScanner(referenceGenomeFile, outfileName_s, outfil
     outfile_ns = gzip.open(outfileName_ns, "wt")  # "ns" stands for Non-Singletons
 
     for chromosome in list(reference.keys()):
-        if chromosome not in humanChrSet:
+        if chromosome not in HUMAN_CHR_SET:
             continue
         idxs = re.finditer('CG', str(reference[chromosome].seq).upper())
 
@@ -2277,12 +2471,14 @@ def get_dna_seq_from_reference(chr, start, end, ref_fasta=None):
     return short_seq
 
 
-def get_ref_fasta(ref_fn=referenceGenomeFile):
+def get_ref_fasta(ref_fn=reference_genome_hg38_fn):
     ref_fasta = SeqIO.to_dict(SeqIO.parse(open(ref_fn), 'fasta'))
     logger.debug(f'load ref file from {ref_fn}')
     return ref_fasta
 
-refGenome=None
+
+refGenome = None
+
 
 def sanity_check_dna_sequence(chr='chr10', start_base0=10493):
     """
@@ -2313,7 +2509,7 @@ def get_cache_filename(infn, params):
         cachefn = f'cachefile.{params["file_type"]}.encode.{params["encode"]}.{basefn}.base.{params["baseFormat"]}'
         if params["encode"] in ToolEncodeList:
             cachefn += f'.inscore.{params["include_score"]}'
-            if params["encode"] in ['DeepMod.Cluster', 'DeepMod.C', 'DeepMod', 'Guppy', 'Guppy.ZW']:
+            if params["encode"] in ['DeepMod.Cluster', 'DeepMod.C', 'DeepMod', 'Guppy', 'Guppy.ZW', 'UNISITE']:
                 cachefn += f'.siteLevel.{params["siteLevel"]}'
         elif params["encode"] in BGTruthEncodeList:
             cachefn += f'.cov.{params["cov"]}.incov.{params["includeCov"]}'
@@ -2362,7 +2558,7 @@ def check_cache_available(infn, **params):
     cachefn = get_cache_filename(infn, params)
 
     if os.path.exists(cachefn):
-        logger.debug(f'Start to get from cache:{cachefn}')
+        # logger.debug(f'Start to get from cache:{cachefn}')
         try:
             with open(cachefn, 'rb') as inf:
                 ret = pickle.load(inf)
@@ -2397,7 +2593,7 @@ def filter_cpg_dict_by_cov(cpgDict, coverage=1):
     Returns:
 
     """
-    if coverage <=1:
+    if coverage <= 1:
         return cpgDict
     retDict = {}
     for key in cpgDict:
@@ -2501,7 +2697,7 @@ def combineBGTruthList(bgTruthList, covCutoff=1):
     return unionBGTruth
 
 
-def combineBGTruthList_by_DeepModPaper(bgTruthList, freqCutoff=0.9, covCutoff=1, filterChrs=humanChrSet):
+def combineBGTruthList_by_DeepModPaper(bgTruthList, freqCutoff=0.9, covCutoff=1, filterChrs=HUMAN_CHR_SET):
     """
     Combine two replicates by DeepMod, >90% in both as methylated, =0% in both as unmethylated, remove others
     :param bgTruthList:
@@ -2711,7 +2907,7 @@ def get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detecti
         ## If pkl in cache is avalable, and the BED file's tempdir/filename.tmp is available, import it
         ## or else, need to reload. Note: temp file may be released, even the cache pkl is there.
         if ret is not None and ret[2] is not None and os.path.exists(ret[2].fn):
-            logger.debug(f'BED import {os.path.basename(infn)} finished from cache file, BED tuple={ret}')
+            # logger.debug(f'BED import {os.path.basename(infn)} finished from cache file, BED tuple={ret}')
             return ret
         logger.debug(f'BED file not cached yet, we load from raw file={os.path.basename(infn)}')
 
@@ -2818,11 +3014,15 @@ def filter_corrdata_df_by_bedfile(df, coord_bed, coord_fn):
     # but file has 20 fields; you can supply custom names with the `names` kwarg
     #   % (self.file_type, _names, self.field_count()))
     warnings.filterwarnings('ignore', category=UserWarning)
+
+    ## In order to support NaN in dataframe
+    ## Need replace NaN to ., then for sort, or else will encounter error: Differing number of BED fields encountered at line: 1339
+    ## Ref: NA values https://github.com/daler/pybedtools/issues/257
     bed_of_df = BedTool.from_dataframe(df).sort()
     bed_of_intersect = intersect_bed_regions(bed_of_df, coord_bed, coord_fn)
 
     if len(bed_of_intersect) > 0:
-        retdf = bed_of_intersect.to_dataframe()
+        retdf = bed_of_intersect.to_dataframe().replace('.', np.NaN)
         retdf.columns = df.columns
     else:
         retdf = None
@@ -2906,10 +3106,10 @@ def sort_bed_file(infn, outfn, has_header=False):
 
     Returns:
     """
-    command = f"zcat {infn} | sort -V -k1,1 -k2,2 | gzip -f > {outfn}"
+    command = f"zcat {infn} | sort -V -k1,1 -k2,2n | gzip -f > {outfn}"
     if has_header:
         command = f"""
-        zcat {infn}  |  awk 'NR<2{{print $0;next}}{{print $0| "sort -V -k1,1 -k2,2"}}' | gzip -f  > {outfn}
+        zcat {infn}  |  awk 'NR<2{{print $0;next}}{{print $0| "sort -V -k1,1 -k2,2n"}}' | gzip -f  > {outfn}
         """
     subprocess.Popen(command, shell=True, stdout=subprocess.PIPE) \
         .stdout.read().decode("utf-8")
@@ -2943,6 +3143,66 @@ def get_current_memory_usage():
     process = psutil.Process(os.getpid())
     ret = f"VMS:{convert_size(process.memory_info().vms)}, RSS:{convert_size(process.memory_info().rss)}"
     return ret
+
+
+def freq_to_label(freq, fully_cutoff=1.0, eps=EPSLONG):
+    """
+    Convert methylation frequency value into 5mC class label
+    Args:
+        freq:
+        fully_cutoff:
+        eps:
+
+    Returns:
+
+    """
+    if freq <= eps:
+        return 0
+    if freq >= fully_cutoff - eps:
+        return 1
+    raise Exception(f"Encounter not fully meth or unmeth value, freq={freq}")
+
+
+def tool_pred_class_label(log_likelyhood):
+    """
+    Infer class label based on log-likelyhood
+    Args:
+        log_likelyhood:
+
+    Returns:
+
+    """
+    if log_likelyhood > 0 + EPSLONG:
+        return 1
+    return 0
+
+
+def load_tool_read_level_unified_as_df(data_file_path, toolname, filterChrs=[], chunksize=CHUNKSIZE):
+    """
+    Load read-level unified input
+    Args:
+        data_file_path:
+        toolname:
+        filterChrs:
+
+    Returns:
+
+    """
+    logger.debug(f"Load {toolname}:{data_file_path}")
+
+    if len(filterChrs) >= 1:
+        iter_df = pd.read_csv(data_file_path, header=0, index_col=False, sep="\t", iterator=True,
+                              chunksize=chunksize)
+        data_file = pd.concat([chunk[chunk['Chr'].isin(filterChrs)] for chunk in iter_df])
+    else:
+        data_file = pd.read_csv(data_file_path, header=0, index_col=False, sep="\t")
+
+    data_file['Pos'] = data_file['Pos'].astype(np.int64)
+    data_file.drop_duplicates(subset=['Chr', "ID", "Pos", "Strand"], inplace=True)
+    data_file.rename(columns={"Score": toolname}, inplace=True)
+    data_file.dropna(inplace=True)
+    data_file.reset_index(inplace=True, drop=True)
+    return data_file
 
 
 if __name__ == '__main__':
