@@ -65,6 +65,48 @@ NA12878_best_params = {
 # gridcv_search_params = NA12878_best_params
 
 
+def evaluation_on_test(clf, X_test, y_test):
+    ## make prediction on test data
+    y_pred = clf.predict(X_test)
+    y_pred_prob = pd.DataFrame(clf.predict_proba(X_test))[[1]]
+
+    ## evaluate XGBoost model
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+    roc_auc = roc_auc_score(y_test, y_pred_prob)
+
+    cpg_xgboost = len(y_pred)
+    logger.info(f"Number of predictions (read-level): XGBoost={cpg_xgboost:,}")
+    for tool in tool_list:
+        logger.info(f"Number of predictions (read-level): {tool}={X_test[tool].notna().sum():,}")
+    logger.info(f"Number of predictions (read-level): METEORE={len(X_test.dropna(subset=tool_list)):,}")
+
+    conf_matrix = confusion_matrix(y_test, y_pred)
+    logger.info(f"\nconf_matrix=\n{conf_matrix}")
+
+    class_report = classification_report(y_test, y_pred)
+    logger.info(f"\nclass_report=\n{class_report}")
+
+    logger.info(
+        f"XGBoost accuracy={accuracy:.3f}, precision={precision:.3f}, recall={recall:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}")
+
+    ## evaluate for base model performance
+    for tool in tool_list:
+        y_score_tool = X_test[tool].fillna(value=0)
+        y_pred_tool = y_score_tool.apply(tool_pred_class_label)
+
+        ## DeepSignal may be np.nan, since its original results contains NAN
+        accuracy = accuracy_score(y_test, y_pred_tool)
+        precision = precision_score(y_test, y_pred_tool)
+        recall = recall_score(y_test, y_pred_tool)
+        f1 = f1_score(y_test, y_pred_tool)
+        roc_auc = roc_auc_score(y_test, y_score_tool)
+        logger.info(
+            f"{tool} accuracy={accuracy:.3f}, precision={precision:.3f}, recall={recall:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}")
+
+
 def train_xgboost_model(datadf):
     """
     Train xgboost model, tune the params
@@ -83,7 +125,7 @@ def train_xgboost_model(datadf):
     siteX = sitedf.loc[:, ["Chr", "Pos", "Strand"]]
     siteY = sitedf.loc[:, "Truth_label"]
     X_train_site, X_test_site, y_train_site, y_test_site = \
-        train_test_split(siteX, siteY, test_size=args.test_size, random_state=args.random_state, stratify=siteY)
+        train_test_split(siteX, siteY, test_size=1-args.train_size, random_state=args.random_state, stratify=siteY)
 
     train_test_array = [len(y_train_site), len(y_test_site)]
     logger.info(
@@ -101,25 +143,26 @@ def train_xgboost_model(datadf):
 
     ## select predictions (read) based on sites split
     traindf = datadf.merge(X_train_site, on=["Chr", "Pos", "Strand"], how='inner')
-    X_train = traindf[tool_list]
-    y_train = traindf['Truth_label']
-
     testdf = datadf.merge(X_test_site, on=["Chr", "Pos", "Strand"], how='inner')
-    X_test = testdf[tool_list]
-    y_test = testdf['Truth_label']
 
     ## save train and test data
     if args.gen_data is not None:
         outdir = os.path.dirname(args.o)
 
-        outfn = os.path.join(outdir, f"{args.gen_data}_NANOME_train{1 - args.test_size:.2f}_data.csv.gz")
+        outfn = os.path.join(outdir, f"{args.gen_data}_NANOME_train{args.train_size:.2f}_data.csv.gz")
         traindf.to_csv(outfn, index=False)
         logger.info(f"save to {outfn}")
 
-        outfn = os.path.join(outdir, f"{args.gen_data}_NANOME_test{args.test_size:.2f}_data.csv.gz")
+        outfn = os.path.join(outdir, f"{args.gen_data}_NANOME_test{1-args.train_size:.2f}_data.csv.gz")
         testdf.to_csv(outfn, index=False)
         logger.info(f"save to {outfn}")
         pass
+
+    ## extract features for train and test
+    X_train = traindf[tool_list]
+    y_train = traindf['Truth_label']
+    X_test = testdf[tool_list]
+    y_test = testdf['Truth_label']
 
     train_test_array = [len(y_train), len(y_test)]
     logger.info(
@@ -135,6 +178,24 @@ def train_xgboost_model(datadf):
             class_freq=\n{y_test.value_counts(normalize=True)}
             """)
 
+    if args.eval_only:
+        ## import model
+        if args.m is not None:
+            logger.debug(f"Model file: {args.m}")
+            xgboost_cls = joblib.load(args.m)
+            try:
+                logger.debug(f"Model info: xgboost_cls={xgboost_cls}")
+                logger.debug(f"best_params={xgboost_cls.best_params_}")
+            except:
+                logger.debug(f"WARNNING: print params encounter problem, may be scikit learn confilicts issue")
+        else:
+            raise Exception(f"No model input file specified")
+
+        ## evaluation on test data
+        evaluation_on_test(xgboost_cls, X_test, y_test)
+        return
+
+    ## Training process
     logger.info(f"\n\nDefault params={default_params}\n\nSearch parameters={gridcv_search_params}")
 
     ## train model using CV and search best params
@@ -167,45 +228,8 @@ def train_xgboost_model(datadf):
     joblib.dump(clf, args.o)
     logger.info(f"save model to {args.o}")
 
-    ## make prediction on test data
-    y_pred = clf.predict(X_test)
-    y_pred_prob = pd.DataFrame(clf.predict_proba(X_test))[[1]]
-
-    ## evaluate XGBoost model
-    accuracy = accuracy_score(y_test, y_pred)
-    precision = precision_score(y_test, y_pred)
-    recall = recall_score(y_test, y_pred)
-    f1 = f1_score(y_test, y_pred)
-    roc_auc = roc_auc_score(y_test, y_pred_prob)
-
-    cpg_xgboost = len(y_pred)
-    logger.info(f"Number of predictions (read-level): XGBoost={cpg_xgboost:,}")
-    for tool in tool_list:
-        logger.info(f"Number of predictions (read-level): {tool}={X_test[tool].notna().sum():,}")
-    logger.info(f"Number of predictions (read-level): METEORE={len(X_test.dropna(subset=tool_list)):,}")
-
-    conf_matrix = confusion_matrix(y_test, y_pred)
-    logger.info(f"\nconf_matrix=\n{conf_matrix}")
-
-    class_report = classification_report(y_test, y_pred)
-    logger.info(f"\nclass_report=\n{class_report}")
-
-    logger.info(
-        f"XGBoost accuracy={accuracy:.3f}, precision={precision:.3f}, recall={recall:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}")
-
-    ## evaluate for base model performance
-    for tool in tool_list:
-        y_pred_tool = X_test[tool].apply(tool_pred_class_label)
-        y_score_tool = X_test[tool].fillna(value=0)
-
-        ## DeepSignal may be np.nan, since its original results contains NAN
-        accuracy = accuracy_score(y_test, y_pred_tool)
-        precision = precision_score(y_test, y_pred_tool)
-        recall = recall_score(y_test, y_pred_tool)
-        f1 = f1_score(y_test, y_pred_tool)
-        roc_auc = roc_auc_score(y_test, y_score_tool)
-        logger.info(
-            f"{tool} accuracy={accuracy:.3f}, precision={precision:.3f}, recall={recall:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}")
+    ## evaluate model
+    evaluation_on_test(clf, X_test, y_test)
 
 
 def parse_arguments():
@@ -215,6 +239,8 @@ def parse_arguments():
                         help='input data for training')
     parser.add_argument('-o', type=str, required=True,
                         help='output trained model file name, suggest suffixed with .pkl')
+    parser.add_argument('-m', type=str, default=None,
+                        help='import XGBoost model from file')
     parser.add_argument('--bsseq-cov', type=int, default=5,
                         help='coverage cutoff for BS-seq data, default is 5')
     parser.add_argument('--random-state', type=int, default=42,
@@ -225,12 +251,13 @@ def parse_arguments():
                         help='num of iterations for RandomeSearchCV, default is 30')
     parser.add_argument('--processors', type=int, default=8,
                         help='num of processors, default is 8')
-    parser.add_argument('--test-size', type=float, default=0.5,
+    parser.add_argument('--train-size', type=float, default=0.5,
                         help='test data ratio: 0.0-1.0, default is 0.5')
     parser.add_argument('--fully-meth-threshold', type=float, default=1.0,
-                        help='fully methylated threshold, default is 1.0')
+                        help='fully methylated threshold (e.g., 0.9), default is 1.0')
     parser.add_argument('--gen-data', type=str, default=None,
                         help='generate train and test data if specified its name, such as APL, NA12878')
+    parser.add_argument('--eval-only', help="if only output evaluation results, not training", action='store_true')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
 
     args = parser.parse_args()
