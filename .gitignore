@@ -75,3 +75,8 @@ testdemo.py
 /xgboost_model/
 /dist/
 /*.egg-info/
+/src/nanocompare/xgboost/xgboost_demo.py
+/src/nanocompare/xgboost/xgboost_demo2.py
+/src/nanocompare/xgboost/xgboost_demo3.py
+/related_project/
+/src/nanocompare/xgboost/sanity_meteore_model_on_na12878.py

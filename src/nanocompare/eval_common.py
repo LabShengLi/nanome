@@ -1056,8 +1056,8 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
     return cpgDict
 
 
-def importPredictions_METEORE(infileName, readid_col=0, chr_col=1, start_col=2, meth_indicator_col=3, meth_prob_col=4,
-                              strand_col=5, baseFormat=1, include_score=False, filterChr=HUMAN_CHR_SET,
+def importPredictions_METEORE(infileName, readid_col=0, chr_col=1, start_col=2, meth_indicator_col=-3, meth_prob_col=-2,
+                              strand_col=-1, baseFormat=1, include_score=False, filterChr=HUMAN_CHR_SET,
                               save_unified_format=False, outfn=None, toolname="METEORE"):
     """
     We checked input as 1-based format for start col.
@@ -3163,7 +3163,7 @@ def freq_to_label(freq, fully_cutoff=1.0, eps=EPSLONG):
     raise Exception(f"Encounter not fully meth or unmeth value, freq={freq}")
 
 
-def tool_pred_class_label(log_likelyhood):
+def tool_pred_class_label(log_likelyhood, cutoff=0):
     """
     Infer class label based on log-likelyhood
     Args:
@@ -3172,28 +3172,28 @@ def tool_pred_class_label(log_likelyhood):
     Returns:
 
     """
-    if log_likelyhood > 0 + EPSLONG:
+    if log_likelyhood > cutoff + EPSLONG:
         return 1
     return 0
 
 
-def load_tool_read_level_unified_as_df(data_file_path, toolname, filterChrs=[], chunksize=CHUNKSIZE):
+def load_tool_read_level_unified_as_df(data_file_path, toolname, filterChrSet=None, chunksize=CHUNKSIZE):
     """
     Load read-level unified input
     Args:
         data_file_path:
         toolname:
-        filterChrs:
+        filterChrSet:
 
     Returns:
 
     """
     logger.debug(f"Load {toolname}:{data_file_path}")
 
-    if len(filterChrs) >= 1:
+    if filterChrSet is not None:
         iter_df = pd.read_csv(data_file_path, header=0, index_col=False, sep="\t", iterator=True,
                               chunksize=chunksize)
-        data_file = pd.concat([chunk[chunk['Chr'].isin(filterChrs)] for chunk in iter_df])
+        data_file = pd.concat([chunk[chunk['Chr'].isin(filterChrSet)] for chunk in iter_df])
     else:
         data_file = pd.read_csv(data_file_path, header=0, index_col=False, sep="\t")
 

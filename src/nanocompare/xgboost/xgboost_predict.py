@@ -10,6 +10,7 @@ from functools import reduce
 
 import joblib
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 
 from nanocompare.eval_common import load_tool_read_level_unified_as_df
 from nanocompare.global_config import set_log_debug_level, set_log_info_level, logger
@@ -36,7 +37,7 @@ def parse_arguments():
     parser.add_argument('--contain-na', help="if make prediction on NA values", action='store_true')
     parser.add_argument('--tsv-input', help="if input is tsv for tools' read-level format, or else is combined input",
                         action='store_true')
-    parser.add_argument('--chrs', nargs='+', help='chromosomes used', default=[])
+    parser.add_argument('--chrs', nargs='+', help='chromosomes used', default=None)
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     args = parser.parse_args()
     return args
@@ -67,7 +68,7 @@ if __name__ == '__main__':
         tool_list = list(df_tsvfile[0])
         dflist = []
         for index, row in df_tsvfile.iterrows():
-            df = load_tool_read_level_unified_as_df(row[1], toolname=row[0], filterChrs=args.chrs,
+            df = load_tool_read_level_unified_as_df(row[1], toolname=row[0], filterChrSet=args.chrs,
                                                     chunksize=args.chunksize)
             dflist.append(df)
         if args.contain_na:
@@ -100,9 +101,8 @@ if __name__ == '__main__':
             datadf.dropna(subset=list(datadf.columns[0:-2]), inplace=True)
         datadf.drop_duplicates(subset=["ID", "Chr", "Pos", "Strand"], inplace=True)
         datadf.dropna(subset=tool_list, inplace=True, how='all')
-        datadf.reset_index(inplace=True, drop=True)
         datadf = datadf.loc[:, list(datadf.columns[0:-2])]
-
+        datadf.reset_index(inplace=True, drop=True)
         logger.debug(f"tool_list={tool_list}")
         logger.debug(f"datadf={datadf}")
 
@@ -115,6 +115,7 @@ if __name__ == '__main__':
 
     logger.debug(f"Start predict by XGBoost......")
     predX = datadf.loc[:, tool_list]
+    predX = MinMaxScaler().fit_transform(predX)
     prediction = pd.DataFrame(xgboost_cls.predict(predX))
     prediction.rename(columns={0: "Prediction"}, inplace=True)
 

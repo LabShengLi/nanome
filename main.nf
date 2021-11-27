@@ -1365,7 +1365,7 @@ process TomboComb {
 		echo "### Deduplicate for read-level outputs"
 		## sort order: Chr, Start, (End), ID, Strand
 		zcat ${params.dsname}.tombo.per_read.combine.bed.gz |\
-			sort -V -u -k1,1 -k3,3n -k5,5 -k2,2 |\
+			sort -V -u -k1,1 -k3,3n -k4,4 -k6,6 |\
 			gzip -f > ${params.dsname}.tombo.per_read.combine.sort.bed.gz
 		rm ${params.dsname}.tombo.per_read.combine.bed.gz &&\
 			mv ${params.dsname}.tombo.per_read.combine.sort.bed.gz  ${params.dsname}.tombo.per_read.combine.bed.gz
@@ -1640,8 +1640,8 @@ process METEORE {
 
 	## Degrade sk-learn for METEORE program if needed, it's model load need lower version
 	## pip install -U scikit-learn==0.21.3
-	## combineScript="python utils/combination_model_prediction.py"
-	combineScript="combination_model_prediction.py"
+	combineScript="python utils/combination_model_prediction.py"
+	## combineScript="combination_model_prediction.py"
 
 	# Use the optimized model
 	# Please note this optimized model is reported in METEORE paper, ref: https://github.com/comprna/METEORE#command
@@ -1745,7 +1745,7 @@ process Report {
 		printf '%s\t%s\n' megalodon \${MegalodonReadReport} >> \$modelContentTSVFileName
 		printf '%s\t%s\n' deepsignal \${DeepSignalReadReport} >> \$modelContentTSVFileName
 
-		python src/nanocompare/xgboost/xgboost_predict.py \
+		PYTHONPATH=src python src/nanocompare/xgboost/xgboost_predict.py \
 			--verbose  --contain-na --tsv-input\
 			--dsname ${params.dsname} -i \${modelContentTSVFileName}\
 			-m NA12878 -o ${params.dsname}.nanome.per_read.combine.tsv.gz &>> Report.run.log  || true

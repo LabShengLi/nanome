@@ -59,6 +59,7 @@ def main(mp, combine_file, combine_id_strand):
     print(f"loaded_model={loaded_model}", flush=True)
 
     combine_file.dropna(inplace=True)
+    combine_file.reset_index(inplace=True, drop=True)
     X = combine_file[combine_file.columns[3:]]  # 2:
     X = sklearn.preprocessing.MinMaxScaler().fit_transform(X)
 
@@ -74,7 +75,7 @@ def main(mp, combine_file, combine_id_strand):
     final_output['Pos'] = final_output['Pos'].astype(np.int64)
     final_output['Prediction'] = final_output['Prediction'].astype(int)
     outdf = final_output.merge(combine_id_strand, how='left', on=['ID', 'Chr', 'Pos'])
-
+    outdf.dropna(inplace=True)
     outdf.to_csv(options.output, header=True, index=False, sep='\t')
     print(f"save to {options.output}", flush=True)
 
