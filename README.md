@@ -116,6 +116,12 @@ Timeline figure for benchmarking experiments are below:
 ### NANOME report
 Please check [NANOME report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/NANOME_report_html.pdf) for the sample report by NANOME pipeline.
 
+### Lifebit CloudOS report
+We now support running NANOME on cloud computing platform. [Lifebit](https://lifebit.ai/lifebit-cloudos/) is a web-based cloud computing platform, and below is the running reports:
+* Ecoli test report: https://cloudos.lifebit.ai/public/jobs/619ee67240695e01e7401d42
+* Human test report: https://cloudos.lifebit.ai/public/jobs/619c6848402cb601dde15312
+* NA12878 chr22 report: https://cloudos.lifebit.ai/public/jobs/61a0eac140695e01e742224c
+
 ![NanomeReportHtml](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/nanome_report_html.png)
 
 
