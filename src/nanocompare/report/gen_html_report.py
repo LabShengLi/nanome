@@ -62,7 +62,7 @@ def get_methcall_report_df(baseDir, outDir):
     print(f"max_cov={max_cov}")
 
     ret_dict = defaultdict(list)
-    for tool in ToolNameList + ['NANOME']:
+    for tool in ['NANOME'] + ToolNameList:
         fnlist = glob.glob(os.path.join(baseDir, f'*_{tool}-perSite-cov1.sort.bed.gz'))
         if len(fnlist) < 1:
             print(f"Not found file in baseDir={baseDir}, pattern={f'*_{tool}-perSite-cov1.sort.bed.gz'}")
