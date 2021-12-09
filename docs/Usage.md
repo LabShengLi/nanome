@@ -213,8 +213,20 @@ Succeeded   : 19
 
 The output files of pipeline on E. coli data by all tools are below, please also check the pipeline output directory tree for [outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/outputs_ecoli.tree.txt) and [work](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/work_ecoli.tree.txt). The pipeline can also generate [timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_ecoli.pdf), [report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_ecoli.pdf) and [resource usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_ecoli.txt.tsv).
 
+# 3. Support for other reference genome
+We now support other reference genome. Below is an example of running NANOME for any other reference genomes, please make sure you put reference genome file .fasta and the indexed file into directory [reference-genome-dir], the `--chrSet` is the chomosomes params for the specific genome. 
 
-# 3. Benchmarking experiment
+```angular2html
+nextflow run TheJacksonLaboratory/nanome\
+    -profile singularity \
+    --input [input-file]\
+    --genome [reference-genome-dir]\
+    --chrSet '[chomosomes sperated by a space]'
+```
+
+Note: NANOME support the default behaviour of each tool's running, if the tool perfomed on the genome you specified is same as human/E. coli data. 
+
+# 4. Benchmarking experiment
 We constructed a list of benchmarking datasets that contain Fast5 reads from 800 to 7,200  for NA19240. The datasets can be got by users upon request. Following command is running NANOME pipeline on our benchmarking datasets, please refer to the input parameters for config file [benchmarking_hpc.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/executors/benchmarking_hpc.config).
 
 ```angular2html
@@ -227,7 +239,7 @@ nextflow run TheJacksonLaboratory/nanome\
 
 Resource usage are reported by [Nextflow](https://www.nextflow.io/) workflow reporting utilities. Please refer to the [Trace file](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_benchmark.txt.tsv), [Report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_benchmark.pdf) and [Timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_benchmark.pdf) of benchmarking results on our HPC.
 
-# 4. Running pipeline on cloud computing platform
+# 5. Running pipeline on cloud computing platform
 
 Our Nextflow pipeline can running on CloudOS. The CloudOS recommend using the Docker image. Below is an example.
 
@@ -243,7 +255,7 @@ The `[Google-project-name]` is your google project name, and `[Google-storage-bu
 
 For more detail of using cloud computing, please check [Cloud computing usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/CloudComputing.md).
 
-# 5. Conda environment for local running
+# 6. Conda environment for local running
 
 NANOME support local running without Docker or Singularity support. Below is conda environment installation steps, users need to install Guppy software by themselves in this case:
 ```angular2html

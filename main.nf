@@ -36,12 +36,12 @@ def helpMessage() {
 	Mandatory arguments:
 	  --dsname		Dataset/analysis name
 	  --input		Input path for raw fast5 files (folders, tar/tar.gz files)
-	  --genome		Genome reference name ('hg38', 'ecoli', or 'hg38_chr22')
+	  --genome		Genome reference name ('hg38', 'ecoli', or 'hg38_chr22') or directory, a directory must contain only one .fasta file with a .sizes file for chromosome sizes.
 
 	General options:
 	  --processors		Processors used for each task
 	  --outdir		Output dir, default is 'outputs'
-	  --chrSet		Chromosomes used in analysis, default is chr1-22, X and Y, for human. For E. coli data, it is default as 'NC_000913.3'
+	  --chrSet		Chromosomes used in analysis, default is chr1-22, X and Y, for human. For E. coli data, it is default as 'NC_000913.3'. For other reference genome, please specify each chromosome with space seperated.
 
 	  --cleanCache		If clean work dir after complete, default is true
 
@@ -98,12 +98,12 @@ megalodon_model_tar = params.megalodon_model_tar
 
 if (genome_map[params.genome] != null) { genome_path = genome_map[params.genome] } else { 	genome_path = params.genome }
 
-// infer dataType, chrSet based on reference genome name, hg - human, ecoli - ecoli
+// infer dataType, chrSet based on reference genome name, hg - human, ecoli - ecoli, otherwise is other reference genome
 if (params.genome.contains('hg')) {
 	dataType = "human"
 	if (params.chrSet == true || params.chrSet == 'true') {
 		// default for human, if true or 'true' (string), using '  '
-		chrSet = '  '
+		chrSet = 'chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY'
 	} else {
 		chrSet = params.chrSet
 	}
@@ -116,7 +116,12 @@ if (params.genome.contains('hg')) {
 		chrSet = params.chrSet
 	}
 } else {
-	exit 1, "Not supported reference genome name, please use hg38, or ecoli"
+	dataType = 'other'
+	if (params.chrSet == true || params.chrSet == 'true') {
+		// No default value for other reference genome
+		exit 1, "Missing --chrSet option for other reference genome, please sepecify chromsomes used in reference genome [${params.genome}]"
+	}
+	chrSet = params.chrSet
 }
 
 
@@ -136,7 +141,7 @@ if (dataType == 'human') {
 		deepmod_tar_file = params.deepmod_ctar
 	}
 } else if (dataType == 'ecoli') { isDeepModCluster = false }
-else { 	exit 1, "Param type=${dataType} is not support" }
+else { 	isDeepModCluster = false }
 
 workflow.onComplete {
 	if (workflow.success && params.cleanCache) {
@@ -170,7 +175,7 @@ summary['genome'] 			= params.genome
 
 summary['\nRunning settings']         = "--------"
 summary['processors'] 		= params.processors
-summary['chrSet'] 			= chrSet
+summary['chrSet'] 			= chrSet.split(' ').join(',')
 summary['dataType'] 		= dataType
 
 if (params.runBasecall) summary['runBasecall'] = 'Yes'
@@ -310,13 +315,14 @@ process EnvCheck {
 	find \${find_dir} -name '*.sizes' | \
 			parallel -j1 -v ln -s -f {} reference_genome/chrom.sizes
 
-	ls -lh ${referenceGenome}
-	ls -lh ${chromSizesFile}
+	# ls -lh ${referenceGenome}
+	# ls -lh ${chromSizesFile} # only need for Tombo
+	ls -lh reference_genome/
 
 	echo "### Check reference genome and chrSet"
 	echo "referenceGenome=${referenceGenome}"
 	echo "chromSizesFile=${chromSizesFile}"
-	echo "chrSet=${chrSet}"
+	echo "chrSet=[${chrSet}]"
 	echo "dataType=${dataType}"
 
 	echo "### Check env DONE"
@@ -716,7 +722,7 @@ process NplshComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Nanopolish Nanopolish \
 		${params.dsname}.nanopolish.per_read.combine.tsv.gz \
-		.  \$((numProcessor))  12 ${params.sort == true ? true : false} ${chrSet}
+		.  \$((numProcessor))  12 ${params.sort == true ? true : false}   "${chrSet}"
 
 	echo "### Nanopolish combine DONE"
 	"""
@@ -865,7 +871,7 @@ process MgldnComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Megalodon Megalodon \
 		${params.dsname}.megalodon.per_read.combine.bed.gz \
-		.  \$((numProcessor))  12  ${params.sort == true ? true : false}  ${chrSet}
+		.  \$((numProcessor))  12  ${params.sort == true ? true : false}  "${chrSet}"
 
 	echo "### Megalodon combine DONE"
 	"""
@@ -972,7 +978,7 @@ process DpSigComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  DeepSignal DeepSignal\
 		${params.dsname}.deepsignal.per_read.combine.tsv.gz \
-		.  \$((numProcessor))  12 ${params.sort == true ? true : false}  ${chrSet}
+		.  \$((numProcessor))  12 ${params.sort == true ? true : false}  "${chrSet}"
 	echo "### DeepSignal combine DONE"
 	"""
 }
@@ -1179,10 +1185,10 @@ process GuppyComb {
 	if [[ "${dataType}" == "human" ]] ; then
 		echo "### For human, extract chr1-22, X and Y"
 		> chr_all_list.txt
-		for i in {1..22} X Y
+		for chrname in ${chrSet}
 		do
-			if cat rf_chr_all_list.txt | grep -w ">chr\${i}" -q ; then
-				echo chr\${i} >> chr_all_list.txt
+			if cat rf_chr_all_list.txt | grep -w ">\${chrname}" -q ; then
+				echo \${chrname} >> chr_all_list.txt
 			fi
 		done
 		rm  -f rf_chr_all_list.txt
@@ -1196,21 +1202,25 @@ process GuppyComb {
 				gzip -f meth.chr_{}.tsv" :::: chr_all_list.txt
 
 		touch ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
-		for i in {1..22} X Y
+		for chrname in ${chrSet}
 		do
-			if [ -f "meth.chr_chr\$i.tsv.gz" ]; then
-				cat  meth.chr_chr\$i.tsv.gz >> \
+			if [ -f "meth.chr_\${chrname}.tsv.gz" ]; then
+				cat  meth.chr_\${chrname}.tsv.gz >> \
 					${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
 			fi
 		done
-	elif [[ "${dataType}" == "ecoli" ]] ; then
-		echo "### For ecoli, chr=${chrSet}"
-		fast5mod call total.meth.bam ${referenceGenome} \
-			meth.chr_${chrSet}.tsv \
-			--meth cpg --quiet \
-			--regions ${chrSet}
-		gzip -f  meth.chr_${chrSet}.tsv && \
-			mv meth.chr_${chrSet}.tsv.gz ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
+	else
+		echo "### For other genome, chrSet=[${chrSet}]"
+		for chrname in ${chrSet} ;
+		do
+			fast5mod call total.meth.bam ${referenceGenome} \
+				meth.chr_\${chrname}.tsv \
+				--meth cpg --quiet \
+				--regions \${chrname}
+			gzip -f  meth.chr_\${chrname}.tsv
+		done
+		cat meth.chr_*.tsv.gz > ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz &&\
+			rm -f meth.chr_*.tsv.gz
 	fi
 
 	if [[ ${params.deduplicate} == true ]] ; then
@@ -1227,13 +1237,13 @@ process GuppyComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Guppy Guppy.gcf52ref\
 		 ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz \
-		.  \$((numProcessor))  1  ${params.sort == true ? true : false}  ${chrSet}
+		.  \$((numProcessor))  1  ${params.sort == true ? true : false}  "${chrSet}"
 
 	## Unify format output for site level
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Guppy Guppy\
 		${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz \
-		.  \$((numProcessor))  2  ${params.sort == true ? true : false}  ${chrSet}
+		.  \$((numProcessor))  2  ${params.sort == true ? true : false}  "${chrSet}"
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -1312,8 +1322,15 @@ process Tombo {
 	## Tombo lib need h5py lower than 3.0
 	## Error may occur with higher version of h5py: AttributeError: 'Dataset' object has no attribute 'value'
 	## ref: https://github.com/nanoporetech/tombo/issues/325
+
+	if [ -f "${chromSizesFile}" ]; then
+		ln -s  ${chromSizesFile}  genome.chome.sizes
+	else
+		cut -f1,2 ${referenceGenome}.fai > genome.chome.sizes
+	fi
+
 	tombo_extract_per_read_stats.py \
-		${chromSizesFile} \
+		genome.chome.sizes \
 		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats" \
 		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed"
 
@@ -1375,7 +1392,7 @@ process TomboComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Tombo Tombo\
 		${params.dsname}.tombo.per_read.combine.bed.gz \
-		.  \$((numProcessor))  12  ${params.sort == true ? true : false}  ${chrSet}
+		.  \$((numProcessor))  12  ${params.sort == true ? true : false}  "${chrSet}"
 	echo "### Tombo combine DONE"
 	"""
 }
@@ -1517,7 +1534,7 @@ process DpmodComb {
 	## merge different runs of modification detection
 	## ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#2-how-to-merge-different-runs-of-modification-detection
 	sum_chr_mod.py \
-		indir/ C ${params.dsname}.deepmod ${chrSet}  &>> DpmodComb.run.log
+		indir/ C ${params.dsname}.deepmod ${chrSet.split(' ').join(',')}  &>> DpmodComb.run.log
 
 	> ${params.dsname}.deepmod.C_per_site.combine.bed
 
@@ -1579,7 +1596,7 @@ process DpmodComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  DeepMod DeepMod\
 		\${callfn} \
-		.  \$((numProcessor))  2  ${params.sort == true ? true : false} ${chrSet}  &>> DpmodComb.run.log
+		.  \$((numProcessor))  2  ${params.sort == true ? true : false} "${chrSet}"  &>> DpmodComb.run.log
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -1676,7 +1693,7 @@ process METEORE {
 		bash utils/unify_format_for_calls.sh \
 			${params.dsname}  METEORE METEORE\
 			${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz \
-			.  \$((numProcessor))  12   ${params.sort == true ? true : false}  ${chrSet}\
+			.  \$((numProcessor))  12   ${params.sort == true ? true : false}  "${chrSet}"\
 			&>> METEORE.run.log
 	fi
 	echo "### METEORE consensus DONE"
@@ -1766,7 +1783,7 @@ process Report {
 		bash utils/unify_format_for_calls.sh \
 			${params.dsname}  NANOME NANOME\
 			${params.dsname}.nanome.per_read.combine.tsv.gz \
-			.  \$((numProcessor))  12  ${params.sort == true ? true : false}  ${chrSet}
+			.  \$((numProcessor))  12  ${params.sort == true ? true : false}  "${chrSet}"
 		ln -s Site_Level-${params.dsname}/${params.dsname}_NANOME-perSite-cov1.sort.bed.gz\
 			${params.dsname}_NANOME-perSite-cov1.sort.bed.gz
 	fi
