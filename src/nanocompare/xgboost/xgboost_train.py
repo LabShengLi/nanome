@@ -147,7 +147,7 @@ def evaluation_on_test(clf, testdf, x_col_list=None, y_col_name=None, all_tools=
             meteore_model = load_meteore_model(meteore_deepsignal_megalodon_model)
             X_test_scaled = testdf[['deepsignal_scale', 'megalodon_scale']]
             tmp_y_pred = meteore_model.predict(X_test_scaled)
-            tmp_y_pred_prob = pd.DataFrame(meteore_model.predict_proba(X_test))[1]
+            tmp_y_pred_prob = pd.DataFrame(meteore_model.predict_proba(X_test_scaled))[1]
             ## evaluate model
             accuracy = accuracy_score(y_test, tmp_y_pred)
             precision = precision_score(y_test, tmp_y_pred)
@@ -170,7 +170,7 @@ def evaluation_on_test(clf, testdf, x_col_list=None, y_col_name=None, all_tools=
     print(f"save to {outfn}")
 
 
-def train_classifier_model(datadf, nadf=None, input_tools=['megalodon', 'deepsignal']):
+def train_classifier_model(datadf, nadf=None, train_tool_list=None):
     """
     Train xgboost/RF model, tune the params
     Args:
@@ -242,12 +242,11 @@ def train_classifier_model(datadf, nadf=None, input_tools=['megalodon', 'deepsig
                              f"{args.gen_data}_test_data_trainsize{args.train_size:.2f}_{args.model_type}_data.csv.gz")
         testdf.to_csv(outfn, index=False)
         logger.info(f"save to {outfn}")
-        pass
 
     traindf.reset_index(drop=True, inplace=True)
     testdf.reset_index(drop=True, inplace=True)
 
-    X_train = traindf[input_tools]
+    X_train = traindf[train_tool_list]
     y_train = traindf[TRUTH_LABEL_COLUMN]
 
     logger.info(
@@ -290,12 +289,12 @@ def train_classifier_model(datadf, nadf=None, input_tools=['megalodon', 'deepsig
 
     ## save cv results
     perf_df = pd.DataFrame(clf.cv_results_)
-    outfn = args.o + f'_{"_".join(input_tools)}' + f'_{args.model_type}_cv_results.xlsx'
+    outfn = args.o + f'_{"_".join(train_tool_list)}' + f'_{args.model_type}_cv_results.xlsx'
     perf_df.to_excel(outfn)
     logger.info(f"save to {outfn}")
 
     ## save model
-    outfn = args.o + f'_{"_".join(input_tools)}' + f'_{args.model_type}_model.pkl'
+    outfn = args.o + f'_{"_".join(train_tool_list)}' + f'_{args.model_type}_model.pkl'
     joblib.dump(clf, outfn)
     logger.info(f"save model to {outfn}")
 
@@ -331,9 +330,9 @@ def train_classifier_model(datadf, nadf=None, input_tools=['megalodon', 'deepsig
 
     ## evaluate model
     if clf is not None:
-        evaluation_on_test(clf, testdf, x_col_list=input_tools, y_col_name=TRUTH_LABEL_COLUMN, all_tools=all_tools)
+        evaluation_on_test(clf, testdf, x_col_list=train_tool_list, y_col_name=TRUTH_LABEL_COLUMN, all_tools=all_tools)
         if nadf is not None:
-            evaluation_on_na_test(clf, test_nadf, x_col_list=input_tools, y_col_name=TRUTH_LABEL_COLUMN)
+            evaluation_on_na_test(clf, test_nadf, x_col_list=train_tool_list, y_col_name=TRUTH_LABEL_COLUMN)
 
 
 def parse_arguments():
@@ -395,7 +394,7 @@ if __name__ == '__main__':
         datadf1.drop('guppy', axis=1, inplace=True)
         datadf1.drop_duplicates(subset=["ID", "Chr", "Pos", "Strand"], inplace=True)
         datadf1.dropna(subset=["Freq", "Coverage"], inplace=True)
-        datadf1.dropna(subset=tool_list, inplace=True, how='all')
+        datadf1.dropna(subset=tool_list, inplace=True)
         datadf_list.append(datadf1)
     datadf = pd.concat(datadf_list)
     datadf_list = None  # save memory
@@ -414,18 +413,11 @@ if __name__ == '__main__':
             datadf1 = datadf1[(datadf1['Freq'] <= EPSLONG) | (datadf1['Freq'] >= 1.0 - EPSLONG)]
             datadf1[TRUTH_LABEL_COLUMN] = datadf1['Freq'].apply(freq_to_label).astype(int)
 
-            mask1 = datadf1['megalodon'].notna()
-            mask2 = datadf1['deepsignal'].notna()
-            mask3 = (mask1 | mask2) & ~(mask1 & mask2)
-            datadf1 = datadf1[mask3]
-
-            # datadf1['megalodon_pred'] = datadf1['megalodon'].apply(lambda x: 1 if x > 0 else 0)
-            # datadf1['nanopolish_pred'] = datadf1['nanopolish'].apply(lambda x: 1 if x > 0 else 0)
-            # datadf1['deepsignal_pred'] = datadf1['deepsignal'].apply(lambda x: 1 if x > 0 else 0)
+            datadf1.dropna(subset=tool_list, how='all', inplace=True)
             datadf_list.append(datadf1)
         nadf = pd.concat(datadf_list)
         logger.debug(
-            f"NA  nadf={nadf}\n\n total NA preds={len(nadf):,}, megalodon={nadf['megalodon'].notna().sum():,}, deepsignal={nadf['deepsignal'].notna().sum():,}")
+            f"NA  nadf={nadf}\n\n total NA preds={len(nadf):,}, nanopolish={nadf['nanopolish'].notna().sum():,}, megalodon={nadf['megalodon'].notna().sum():,}, deepsignal={nadf['deepsignal'].notna().sum():,}")
         nadf_sites = nadf[SITES_COLUMN_LIST].drop_duplicates()
         logger.debug(f"NA  sites={len(nadf_sites):,}")
     else:
@@ -453,6 +445,6 @@ if __name__ == '__main__':
     # logger.info(
     #     f"Assert all-values+NA-values=total: {num_all_value_read_level + sum(list(num_na_value_for_tool.values()))} == {len(datadf)}")
 
-    train_classifier_model(datadf, nadf, input_tools=args.t)
+    train_classifier_model(datadf, nadf, train_tool_list=args.t)
 
-    logger.info(f"### train model={args.model_type} program DONE")
+    logger.info(f"### train model={args.model_type} on tools={args.t} program DONE")

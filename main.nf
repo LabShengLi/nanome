@@ -187,6 +187,7 @@ if (params.runMethcall) {
 	if (params.runTombo) summary['runTombo'] = 'Yes'
 	if (params.runMETEORE) summary['runMETEORE'] = 'Yes'
 	if (params.runDeepMod) summary['runDeepMod'] = 'Yes'
+	if (params.runNANOME) summary['runNANOME'] = 'Yes'
 }
 
 summary['\nPipeline settings']         = "--------"
@@ -1749,43 +1750,45 @@ process Report {
 	path "${params.dsname}.nanome.per_read.combine.tsv.gz", emit: nanome_combine_out, optional: true
 
 	"""
-	## NANOME XGBoost method
-	NanopolishReadReport=\$(find . -maxdepth 1 -name '*Nanopolish-perRead-score.tsv.gz')
-	MegalodonReadReport=\$(find . -maxdepth 1 -name '*Megalodon-perRead-score.tsv.gz')
-	DeepSignalReadReport=\$(find . -maxdepth 1 -name '*DeepSignal-perRead-score.tsv.gz')
+	if [[ ${params.runNANOME} == true ]] ; then
+		## NANOME XGBoost method
+		NanopolishReadReport=\$(find . -maxdepth 1 -name '*Nanopolish-perRead-score.tsv.gz')
+		MegalodonReadReport=\$(find . -maxdepth 1 -name '*Megalodon-perRead-score.tsv.gz')
+		DeepSignalReadReport=\$(find . -maxdepth 1 -name '*DeepSignal-perRead-score.tsv.gz')
 
-	if [[ ! -z \$MegalodonReadReport && ! -z \$DeepSignalReadReport ]] ; then
-		## NANOME XGBoost model results, if two model results exists
-		echo "### NANOME XGBoost predictions"
-		modelContentTSVFileName=${params.dsname}_Megalodon_DeepSignal_combine.nanome_model_content.tsv
-		> \$modelContentTSVFileName
-		printf '%s\t%s\n' megalodon \${MegalodonReadReport} >> \$modelContentTSVFileName
-		printf '%s\t%s\n' deepsignal \${DeepSignalReadReport} >> \$modelContentTSVFileName
+		if [[ ! -z \$MegalodonReadReport && ! -z \$DeepSignalReadReport ]] ; then
+			## NANOME XGBoost model results, if two model results exists
+			echo "### NANOME XGBoost predictions"
+			modelContentTSVFileName=${params.dsname}_Megalodon_DeepSignal_combine.nanome_model_content.tsv
+			> \$modelContentTSVFileName
+			printf '%s\t%s\n' megalodon \${MegalodonReadReport} >> \$modelContentTSVFileName
+			printf '%s\t%s\n' deepsignal \${DeepSignalReadReport} >> \$modelContentTSVFileName
 
-		PYTHONPATH=src python src/nanocompare/xgboost/xgboost_predict.py \
-			--verbose  --contain-na --tsv-input\
-			--dsname ${params.dsname} -i \${modelContentTSVFileName}\
-			-m NA12878 -o ${params.dsname}.nanome.per_read.combine.tsv.gz &>> Report.run.log  || true
+			PYTHONPATH=src python src/nanocompare/xgboost/xgboost_predict.py \
+				--verbose  --contain-na --tsv-input\
+				--dsname ${params.dsname} -i \${modelContentTSVFileName}\
+				-m ${params.NANOME_MODEL}  -o ${params.dsname}.nanome.per_read.combine.tsv.gz &>> Report.run.log  || true
 
-		if [[ ${params.deduplicate} == true ]] ; then
-			echo "### Deduplicate for read-level outputs"
-			## sort order: Chr, Start, (End), ID, Strand
-			zcat ${params.dsname}.nanome.per_read.combine.tsv.gz |\
-				sort -V -u -k2,2 -k3,3n -k1,1 -k4,4 |\
-				gzip -f > ${params.dsname}.nanome.per_read.combine.sort.tsv.gz
-			rm ${params.dsname}.nanome.per_read.combine.tsv.gz &&\
-				mv ${params.dsname}.nanome.per_read.combine.sort.tsv.gz\
-					${params.dsname}.nanome.per_read.combine.tsv.gz
+			if [[ ${params.deduplicate} == true ]] ; then
+				echo "### Deduplicate for read-level outputs"
+				## sort order: Chr, Start, (End), ID, Strand
+				zcat ${params.dsname}.nanome.per_read.combine.tsv.gz |\
+					sort -V -u -k2,2 -k3,3n -k1,1 -k4,4 |\
+					gzip -f > ${params.dsname}.nanome.per_read.combine.sort.tsv.gz
+				rm ${params.dsname}.nanome.per_read.combine.tsv.gz &&\
+					mv ${params.dsname}.nanome.per_read.combine.sort.tsv.gz\
+						${params.dsname}.nanome.per_read.combine.tsv.gz
+			fi
+
+			## Unify format output
+			echo "### NANOME read/site level results"
+			bash utils/unify_format_for_calls.sh \
+				${params.dsname}  NANOME NANOME\
+				${params.dsname}.nanome.per_read.combine.tsv.gz \
+				.  \$((numProcessor))  12  ${params.sort == true ? true : false}  "${chrSet}"
+			ln -s Site_Level-${params.dsname}/${params.dsname}_NANOME-perSite-cov1.sort.bed.gz\
+				${params.dsname}_NANOME-perSite-cov1.sort.bed.gz
 		fi
-
-		## Unify format output
-		echo "### NANOME read/site level results"
-		bash utils/unify_format_for_calls.sh \
-			${params.dsname}  NANOME NANOME\
-			${params.dsname}.nanome.per_read.combine.tsv.gz \
-			.  \$((numProcessor))  12  ${params.sort == true ? true : false}  "${chrSet}"
-		ln -s Site_Level-${params.dsname}/${params.dsname}_NANOME-perSite-cov1.sort.bed.gz\
-			${params.dsname}_NANOME-perSite-cov1.sort.bed.gz
 	fi
 
 	## Generate NF pipeline running information tsv
