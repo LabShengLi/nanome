@@ -1752,18 +1752,39 @@ process Report {
 	"""
 	if [[ ${params.runNANOME} == true ]] ; then
 		## NANOME XGBoost method
-		NanopolishReadReport=\$(find . -maxdepth 1 -name '*Nanopolish-perRead-score.tsv.gz')
-		MegalodonReadReport=\$(find . -maxdepth 1 -name '*Megalodon-perRead-score.tsv.gz')
-		DeepSignalReadReport=\$(find . -maxdepth 1 -name '*DeepSignal-perRead-score.tsv.gz')
+		modelContentTSVFileName=${params.dsname}_tool_combine.nanome_model_content.tsv
+		> \$modelContentTSVFileName
+		passModelTsv=true
+		if [[ "${params.NANOME_CONCENSUS_TOOLS}" == *"Nanopolish"* ]]; then
+			NanopolishReadReport=\$(find . -maxdepth 1 -name '*Nanopolish-perRead-score.tsv.gz')
+			if [[ -z \$NanopolishReadReport ]] ; then
+				echo "### Not found Nanopolish read-level outputs"
+				passModelTsv=false
+			fi
+			printf '%s\t%s\n' nanopolish \${NanopolishReadReport} >> \$modelContentTSVFileName
+		fi
 
-		if [[ ! -z \$MegalodonReadReport && ! -z \$DeepSignalReadReport ]] ; then
+		if [[ "${params.NANOME_CONCENSUS_TOOLS}" == *"Megalodon"* ]]; then
+			MegalodonReadReport=\$(find . -maxdepth 1 -name '*Megalodon-perRead-score.tsv.gz')
+			if [[ -z \$MegalodonReadReport ]] ; then
+				echo "### Not found Megalodon read-level outputs"
+				passModelTsv=false
+			fi
+			printf '%s\t%s\n' megalodon \${MegalodonReadReport} >> \$modelContentTSVFileName
+		fi
+
+		if [[ "${params.NANOME_CONCENSUS_TOOLS}" == *"DeepSignal"* ]]; then
+			DeepSignalReadReport=\$(find . -maxdepth 1 -name '*DeepSignal-perRead-score.tsv.gz')
+			if [[ -z \$DeepSignalReadReport ]] ; then
+				echo "### Not found DeepSignal read-level outputs"
+				passModelTsv=false
+			fi
+			printf '%s\t%s\n' deepsignal \${DeepSignalReadReport} >> \$modelContentTSVFileName
+		fi
+
+		if [[ "\$passModelTsv" == true ]] ; then
 			## NANOME XGBoost model results, if two model results exists
 			echo "### NANOME XGBoost predictions"
-			modelContentTSVFileName=${params.dsname}_Megalodon_DeepSignal_combine.nanome_model_content.tsv
-			> \$modelContentTSVFileName
-			printf '%s\t%s\n' megalodon \${MegalodonReadReport} >> \$modelContentTSVFileName
-			printf '%s\t%s\n' deepsignal \${DeepSignalReadReport} >> \$modelContentTSVFileName
-
 			PYTHONPATH=src python src/nanocompare/xgboost/xgboost_predict.py \
 				--verbose  --contain-na --tsv-input\
 				--dsname ${params.dsname} -i \${modelContentTSVFileName}\

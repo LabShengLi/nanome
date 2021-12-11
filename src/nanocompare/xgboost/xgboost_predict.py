@@ -5,16 +5,20 @@
 # @Organization : JAX Li Lab
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
 
+"""
+Predict NANOME consensus results
+"""
+
 import argparse
+import os.path
 from functools import reduce
 
 import joblib
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
 
 from nanocompare.eval_common import load_tool_read_level_unified_as_df
 from nanocompare.global_config import set_log_debug_level, set_log_info_level, logger
-from nanocompare.global_settings import nanome_model_dict, CHUNKSIZE, NANOME_VERSION
+from nanocompare.global_settings import nanome_model_dict, CHUNKSIZE, NANOME_VERSION, xgboost_mode_base_dir
 
 
 def parse_arguments():
@@ -52,7 +56,7 @@ if __name__ == '__main__':
     logger.debug(f"args={args}")
 
     if args.m in nanome_model_dict:
-        infn = nanome_model_dict[args.m]
+        infn = os.path.join(xgboost_mode_base_dir, nanome_model_dict[args.m])
     else:
         infn = args.m
     logger.debug(f"Model file: {infn}")
@@ -115,7 +119,7 @@ if __name__ == '__main__':
 
     logger.debug(f"Start predict by XGBoost......")
     predX = datadf.loc[:, tool_list]
-    predX = MinMaxScaler().fit_transform(predX)
+    # predX = MinMaxScaler().fit_transform(predX)
     prediction = pd.DataFrame(xgboost_cls.predict(predX))
     prediction.rename(columns={0: "Prediction"}, inplace=True)
 
@@ -127,7 +131,6 @@ if __name__ == '__main__':
         ['ID', 'Chr', 'Pos', 'Strand'] + tool_list + ["Prediction", "Prob_methylation"]]
     logger.debug(f"nanome_df={nanome_df}")
 
-    ## APL.nanopolish.methylation_calls.combine.tsv.gz
     nanome_df.to_csv(args.o, sep='\t', index=False)
     logger.info(f"save to {args.o}")
     logger.info("Done for XGBoost predict")
