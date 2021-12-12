@@ -24,7 +24,7 @@ from nanocompare.global_settings import nanome_model_dict, CHUNKSIZE, NANOME_VER
 def parse_arguments():
     parser = argparse.ArgumentParser(prog='xgboost_predict (NANOME)', description='XGBoost predict for data')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
-    parser.add_argument('-i', type=str, required=True,
+    parser.add_argument('-i', nargs='+', required=True,
                         help='input data for predicting')
     parser.add_argument('-m', type=str, required=True,
                         help=f'model file, existing model list: {",".join(list(nanome_model_dict.keys()))}')
@@ -32,6 +32,8 @@ def parse_arguments():
                         help='dataset name')
     parser.add_argument('-o', type=str, required=True,
                         help='output file name')
+    parser.add_argument('-t', nargs='+', help='tools used for prediction, default is: [megalodon, deepsignal]',
+                        default=['megalodon', 'deepsignal'])
     parser.add_argument('--random-state', type=int, default=42,
                         help='random state, default is 42')
     parser.add_argument('--processors', type=int, default=8,
@@ -68,7 +70,9 @@ if __name__ == '__main__':
         logger.debug(f"WARNNING: print params encounter problem")
 
     if args.tsv_input:
-        df_tsvfile = pd.read_csv(args.i, header=None, sep='\t')
+        if len(args.i) != 1:
+            raise Exception(f"Not support args.i={args.i}, in tsv_input mode")
+        df_tsvfile = pd.read_csv(args.i[0], header=None, sep='\t')
         tool_list = list(df_tsvfile[0])
         dflist = []
         for index, row in df_tsvfile.iterrows():
@@ -94,18 +98,26 @@ if __name__ == '__main__':
         logger.debug(f"tool_list={tool_list}")
         logger.debug(f"datadf={datadf}")
     else:  # combined input as default input
-        if len(args.chrs) >= 1:
-            iter_df = pd.read_csv(args.i, header=0, index_col=False, sep="\t", iterator=True,
-                                  chunksize=args.chunksize)
-            datadf = pd.concat([chunk[chunk['Chr'].isin(args.chrs)] for chunk in iter_df])
-        else:
-            datadf = pd.read_csv(args.i, header=0, sep='\t', index_col=False)
-        tool_list = list(datadf.columns[4:-2])
+        dflist = []
+        for infn in args.i:
+            if args.chrs is not None and len(args.chrs) >= 1:
+                iter_df = pd.read_csv(infn, header=0, index_col=False, sep=",", iterator=True,
+                                      chunksize=args.chunksize)
+                datadf1 = pd.concat([chunk[chunk['Chr'].isin(args.chrs)] for chunk in iter_df])
+            else:
+                datadf1 = pd.read_csv(infn, header=0, sep=',', index_col=False)
+            dflist.append(datadf1)
+        datadf = pd.concat(dflist)
+
+        tool_list = list(args.t)
+        datadf = datadf[list(datadf.columns[0:4]) + args.t]
+
         if not args.contain_na:  ## remove NAs
-            datadf.dropna(subset=list(datadf.columns[0:-2]), inplace=True)
+            datadf.dropna(subset=args.t, inplace=True)
+        else:
+            datadf.dropna(subset=args.t, inplace=True, how='all')
         datadf.drop_duplicates(subset=["ID", "Chr", "Pos", "Strand"], inplace=True)
-        datadf.dropna(subset=tool_list, inplace=True, how='all')
-        datadf = datadf.loc[:, list(datadf.columns[0:-2])]
+
         datadf.reset_index(inplace=True, drop=True)
         logger.debug(f"tool_list={tool_list}")
         logger.debug(f"datadf={datadf}")
