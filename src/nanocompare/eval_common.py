@@ -271,7 +271,10 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
         key = (tmp[chr_col], start, strand)
 
         if include_score:
-            cpgDict[key].append((int(tmp[meth_col]), float(tmp[meth_prob_col])))
+            the_score = float(tmp[meth_prob_col])
+            if np.isnan(the_score):
+                the_score = 0.0
+            cpgDict[key].append((int(tmp[meth_col]), the_score, ))
         else:
             cpgDict[key].append(int(tmp[meth_col]))
 
@@ -1989,7 +1992,10 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
 
                 ### prediction results, AUC related:
                 ypred_of_ont_tool.append(perCall[0])
-                yscore_of_ont_tool.append(perCall[1])
+                if np.isnan(perCall[1]):
+                    yscore_of_ont_tool.append(0.0)
+                else:
+                    yscore_of_ont_tool.append(perCall[1])
 
                 if is_fully_meth(bgTruth[cpgKey][0]):  # BG Truth label
                     y_of_bgtruth.append(1)
@@ -2053,7 +2059,7 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
             average_precision = average_precision_score(y_of_bgtruth, yscore_of_ont_tool)
         except ValueError:
             logger.error(
-                f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{ypred_of_ont_tool}, \nother settings: {title}, {tagname}, {secondFilterBedFileName}")
+                f"###\tERROR for roc_curve: y(Truth):{len(y_of_bgtruth)}, scores(Call pred):{len(yscore_of_ont_tool)}, \nother settings: {title}, {tagname}, {secondFilterBedFileName}")
             fprSwitch = 0
             roc_auc = 0.0
             average_precision = 0.0
