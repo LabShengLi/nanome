@@ -1,4 +1,4 @@
-**This is an explanation of how to use NANOME pipeline on raw Fast5 input.**
+**This is an explanation of how to use NANOME pipeline on raw Fast5 input. For specific scenarios, please check [Specific Usage](https://github.com/TheJacksonLaboratory/nanome/blob/enhance5/docs/SpecificUsage.md).**
 
 The inputs of NANOME pipeline is a folder/tar/tar.gz or txt file list containing raw signal Fast5 files and a reference genome. We recommend allocate GPU resources to softwares such as Guppy, DeepSignal, DeepMod and Megalodon, in order to optimal running times. We integrated a latest tool METEORE, it depends on other tools' read-level outputs (e.g., Megalodon and DeepSignal), and running METEORE program directly on them, detailed please check [METEORE](https://github.com/comprna/METEORE).
 
@@ -219,6 +219,7 @@ We now support other reference genome. Below is an example of running NANOME for
 ```angular2html
 nextflow run TheJacksonLaboratory/nanome\
     -profile singularity \
+    --dsname [your-dataset-name]\
     --input [input-file]\
     --genome [reference-genome-dir]\
     --chrSet '[chomosomes sperated by a space]'
@@ -282,3 +283,4 @@ nextflow run TheJacksonLaboratory/nanome\
     --guppyDir [guppy-installation-directory]
 ```
 Param`--guppyDir=[guppy-installation-directory]` is the Guppy software installation base directory, `--conda_base_dir [conda-dir]` is conda software base directory, `--conda_name [conda-env-dir]` is conda environment base directory.
+

@@ -354,19 +354,31 @@ process Untar {
 		### deal with tar.gz
 		tar -xzf \${infn} -C untarTempDir
 	elif [[ -d ${fast5_tar} ]]; then
-		## Copy files, do not change original files such as old analyses data
-		## cp -rf ${fast5_tar}/* untarTempDir/  || true # failed means nothing in this folder
-		find ${fast5_tar}/ -name '*.fast5' | \
-			parallel -j\$(( numProcessor ))  cp {} untarTempDir/
+		if [[ ${params.skipBasecall} == false ]] ; then
+			## Copy files, do not change original files such as old analyses data
+			## cp -rf ${fast5_tar}/* untarTempDir/  || true # failed means nothing in this folder
+			find ${fast5_tar}/ -name '*.fast5' | \
+				parallel -j\$(( numProcessor ))  cp {} untarTempDir/
+		else
+			## user provide basecalled input dir, just cp them
+			mkdir -p untarTempDir/test
+			cp -rf ${fast5_tar}/*   untarTempDir/test/
+		fi
 	else
 		echo "### Untar error for input=${fast5_tar}"
 	fi
 
 	## move fast5 files in tree folders into a single folder
 	mkdir -p ${fast5_tar.baseName}.untar
-	## find untarTempDir -name "*.fast5" -type f -exec mv {} ${fast5_tar.baseName}.untar/ \\;
-	find untarTempDir -name "*.fast5" -type f | \
-		parallel -j\$(( numProcessor ))  mv {}  ${fast5_tar.baseName}.untar/
+
+	if [[ ${params.skipBasecall} == false ]] ; then
+		## find untarTempDir -name "*.fast5" -type f -exec mv {} ${fast5_tar.baseName}.untar/ \\;
+		find untarTempDir -name "*.fast5" -type f | \
+			parallel -j\$(( numProcessor ))  mv {}  ${fast5_tar.baseName}.untar/
+	else
+		## Keep the directory structure for basecalled input
+		mv untarTempDir/*/*   ${fast5_tar.baseName}.untar/
+	fi
 
 	## Clean unused files
 	rm -rf untarTempDir
@@ -420,26 +432,31 @@ process Basecall {
 	guppy_basecaller -v
 	mkdir -p ${fast5_dir.baseName}.basecalled
 
-	if [[ \${commandType} == "cpu" ]]; then
-		## CPU version command
-		guppy_basecaller --input_path ${fast5_dir} \
-			--save_path "${fast5_dir.baseName}.basecalled" \
-			--config ${params.GUPPY_BASECALL_MODEL} \
-			--num_callers \$(( numProcessor )) \
-			--fast5_out --compress_fastq\
-			--verbose_logs  &>> Basecall.run.log
-	elif [[ \${commandType} == "gpu" ]]; then
-		## GPU version command
-		guppy_basecaller --input_path ${fast5_dir} \
-			--save_path "${fast5_dir.baseName}.basecalled" \
-			--config ${params.GUPPY_BASECALL_MODEL} \
-			--num_callers \$(( numProcessor )) \
-			--fast5_out --compress_fastq\
-			--verbose_logs \
-			-x auto  &>> Basecall.run.log
+	if [[ ${params.skipBasecall} == false ]] ; then
+		if [[ \${commandType} == "cpu" ]]; then
+			## CPU version command
+			guppy_basecaller --input_path ${fast5_dir} \
+				--save_path "${fast5_dir.baseName}.basecalled" \
+				--config ${params.GUPPY_BASECALL_MODEL} \
+				--num_callers \$(( numProcessor )) \
+				--fast5_out --compress_fastq\
+				--verbose_logs  &>> Basecall.run.log
+		elif [[ \${commandType} == "gpu" ]]; then
+			## GPU version command
+			guppy_basecaller --input_path ${fast5_dir} \
+				--save_path "${fast5_dir.baseName}.basecalled" \
+				--config ${params.GUPPY_BASECALL_MODEL} \
+				--num_callers \$(( numProcessor )) \
+				--fast5_out --compress_fastq\
+				--verbose_logs \
+				-x auto  &>> Basecall.run.log
+		else
+			echo "### error value for commandType=\${commandType}"
+			exit 255
+		fi
 	else
-		echo "### error value for commandType=\${commandType}"
-		exit 255
+		## Just use user's basecalled input
+		cp -rf ${fast5_dir}/*   ${fast5_dir.baseName}.basecalled/
 	fi
 
 	## Combine fastq
@@ -465,7 +482,7 @@ process Basecall {
 
     # Clean
     if [[ ${params.cleanStep} == "true" ]]; then
-    	rm -f ${fast5_dir.baseName}.basecalled.sam
+    	echo "### No need to clean"
     fi
 	echo "### Basecalled by Guppy DONE"
 	"""
@@ -484,7 +501,7 @@ process QCExport {
 	path reference_genome
 
 	output:
-	path "${params.dsname}_basecall_report.html",	emit: qc_html
+	path "${params.dsname}_basecall_report.html",	optional: true, emit: qc_html
 	path "${params.dsname}_QCReport",				emit: qc_report
 	path "${params.dsname}_bam_data",		optional: true,	 emit: bam_data
 
@@ -504,10 +521,13 @@ process QCExport {
 			fi
 		done
 
-	## Perform QC report by NanoComp
-	NanoComp --summary ${params.dsname}_combine_sequencing_summary.txt.gz  \
-		--names ${params.dsname} --outdir ${params.dsname}_QCReport -t \$(( numProcessor )) \
-		--raw  -f pdf -p ${params.dsname}_   &>> QCReport.run.log
+	mkdir -p ${params.dsname}_QCReport
+	if [[ ${params.skipQC} == false ]]; then
+		## Perform QC report by NanoComp
+		NanoComp --summary ${params.dsname}_combine_sequencing_summary.txt.gz  \
+			--names ${params.dsname} --outdir ${params.dsname}_QCReport -t \$(( numProcessor )) \
+			--raw  -f pdf -p ${params.dsname}_   &>> QCReport.run.log
+	fi
 
 	if [[ ${params.outputBam} == true  || ${params.outputONTCoverage} == true ]]; then
 		## Combine all batch fq.gz
@@ -543,8 +563,8 @@ process QCExport {
 		mv ${params.dsname}_ONT_coverage_combine.bed.gz ${params.dsname}_QCReport/
 	fi
 
-	mv ${params.dsname}_combine_sequencing_summary.txt.gz ${params.dsname}_QCReport/
-	mv ${params.dsname}_QCReport/${params.dsname}_NanoComp-report.html ${params.dsname}_basecall_report.html
+	[ -f ${params.dsname}_combine_sequencing_summary.txt.gz ] && mv -f ${params.dsname}_combine_sequencing_summary.txt.gz ${params.dsname}_QCReport/
+	[ -f ${params.dsname}_QCReport/${params.dsname}_NanoComp-report.html ] && mv -f ${params.dsname}_QCReport/${params.dsname}_NanoComp-report.html ${params.dsname}_basecall_report.html
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -1006,7 +1026,7 @@ process Guppy {
 	output:
 	path "outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz",	optional: true,	emit: guppy_fast5mod_bam_gz
 	path "batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*",	emit: guppy_fast5mod_bam
-	path "batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz",	emit: guppy_gcf52ref_tsv
+	path "batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz",	optional: true, emit: guppy_gcf52ref_tsv
 
 	when:
 	params.runMethcall && params.runGuppy
@@ -1023,11 +1043,17 @@ process Guppy {
 		commandType='gpu'
 	fi
 
+	if [[ ${params.skipBasecall} == false ]]; then
+		indir=${fast5_dir}
+	else
+		indir=${fast5_dir}/workspace
+	fi
+
 	mkdir -p ${fast5_dir.baseName}.methcalled
 
 	if [[ \${commandType} == "cpu" ]]; then
 		## CPU version command
-		guppy_basecaller --input_path ${fast5_dir} \
+		guppy_basecaller --input_path \${indir} --recursive\
 			--save_path ${fast5_dir.baseName}.methcalled \
 			--config ${params.GUPPY_METHCALL_MODEL} \
 			--num_callers \$(( numProcessor )) \
@@ -1035,7 +1061,7 @@ process Guppy {
 			--verbose_logs  &>> Guppy.run.log
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
-		guppy_basecaller --input_path ${fast5_dir} \
+		guppy_basecaller --input_path \${indir} --recursive\
 			--save_path ${fast5_dir.baseName}.methcalled \
 			--config ${params.GUPPY_METHCALL_MODEL} \
 			--num_callers \$(( numProcessor )) \
@@ -1065,35 +1091,40 @@ process Guppy {
 		-type f 2>/dev/null |\
 		parallel -j\$(( numProcessor )) 'rm -f {}'
 
-	## gcf52ref ways
-	minimap2 -t \$(( numProcessor * ${params.mediumProcTimes} )) -a -x map-ont ${referenceGenome} \
-		batch_combine_fq.fq.gz | \
-		samtools sort -@ \$(( numProcessor * ${params.mediumProcTimes} )) \
-			-T tmp -o gcf52ref.batch.${fast5_dir.baseName}.bam &&\
-		samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} )) \
-			gcf52ref.batch.${fast5_dir.baseName}.bam
-	echo "### gcf52ref minimap2 alignment is done"
+	if [[ ${params.runGuppyGcf52ref} == true ]]; then
+		## gcf52ref ways
+		minimap2 -t \$(( numProcessor * ${params.mediumProcTimes} )) -a -x map-ont ${referenceGenome} \
+			batch_combine_fq.fq.gz | \
+			samtools sort -@ \$(( numProcessor * ${params.mediumProcTimes} )) \
+				-T tmp -o gcf52ref.batch.${fast5_dir.baseName}.bam &&\
+			samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} )) \
+				gcf52ref.batch.${fast5_dir.baseName}.bam
+		echo "### gcf52ref minimap2 alignment is done"
 
-	## Modified version, support dir input, not all fast5 files (too long arguments)
-	extract_methylation_fast5_support_dir.py \
-		-p \$(( numProcessor * ${params.mediumProcTimes} )) ${fast5_dir.baseName}.methcalled/workspace
-	echo "### gcf52ref extract to db done"
+		## Modified version, support dir input, not all fast5 files (too long arguments)
+		extract_methylation_fast5_support_dir.py \
+			-p \$(( numProcessor * ${params.mediumProcTimes} )) ${fast5_dir.baseName}.methcalled/workspace
+		echo "### gcf52ref extract to db done"
 
-	## gcf52ref files preparation
-	### git clone https://github.com/kpalin/gcf52ref.git
-	tar -xzf utils/gcf52ref.tar.gz -C .
-	patch gcf52ref/scripts/extract_methylation_from_rocks.py < utils/gcf52ref.patch
+		## gcf52ref files preparation
+		### git clone https://github.com/kpalin/gcf52ref.git
+		tar -xzf utils/gcf52ref.tar.gz -C .
+		patch gcf52ref/scripts/extract_methylation_from_rocks.py < utils/gcf52ref.patch
 
-	python gcf52ref/scripts/extract_methylation_from_rocks.py \
-		-d base_mods.rocksdb \
-		-a gcf52ref.batch.${fast5_dir.baseName}.bam \
-		-r ${referenceGenome} \
-		-o tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv
-	echo "### gcf52ref extract to tsv done"
+		python gcf52ref/scripts/extract_methylation_from_rocks.py \
+			-d base_mods.rocksdb \
+			-a gcf52ref.batch.${fast5_dir.baseName}.bam \
+			-r ${referenceGenome} \
+			-o tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv
+		echo "### gcf52ref extract to tsv done"
 
-	awk 'NR>1' tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv | gzip -f > \
-		batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz
-	echo "### gcf52ref extraction DONE"
+		awk 'NR>1' tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv | gzip -f > \
+			batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz
+		echo "### gcf52ref extraction DONE"
+	else
+		## pass the empty file to channel
+		touch batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz
+	fi
 
 	## fast5mod ways
 	FAST5PATH=${fast5_dir.baseName}.methcalled/workspace
@@ -1153,8 +1184,8 @@ process GuppyComb {
 
 	output:
 	path "${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz", emit: guppy_fast5mod_combine_out
-	path "${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz", emit: guppy_gcf52ref_combine_out
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz", emit: read_unify
+	path "${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz", optional: true, emit: guppy_gcf52ref_combine_out
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz", optional: true,  emit: read_unify
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz", emit: site_unify
 	path "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz", emit: guppy_combine_raw_out_ch,  optional: true
 
@@ -1162,9 +1193,11 @@ process GuppyComb {
 	x.size() >= 1 && params.runCombine
 
 	"""
-	## gcf52ref ways
-	cat batch_*.guppy.gcf52ref_per_read.tsv.gz > ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz
-	echo "### gcf52ref combine DONE"
+	if [[ ${params.runGuppyGcf52ref} == true ]] ; then
+		## gcf52ref ways
+		cat batch_*.guppy.gcf52ref_per_read.tsv.gz > ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz
+		echo "### gcf52ref combine DONE"
+	fi
 
 	## fast5mod ways combine
 	## find name like batch_*.guppy.fast5mod_guppy2sam.bam*
@@ -1234,11 +1267,13 @@ process GuppyComb {
 			mv ${params.dsname}.guppy.gcf52ref_per_read.combine.sort.tsv.gz ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz
 	fi
 
-	## Unify format output for read level
-	bash utils/unify_format_for_calls.sh \
-		${params.dsname}  Guppy Guppy.gcf52ref\
-		 ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz \
-		.  \$((numProcessor))  1  ${params.sort == true ? true : false}  "${chrSet}"
+	if [[ ${params.runGuppyGcf52ref} == true ]] ; then
+		## Unify format output for read level
+		bash utils/unify_format_for_calls.sh \
+			${params.dsname}  Guppy Guppy.gcf52ref\
+			 ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz \
+			.  \$((numProcessor))  1  ${params.sort == true ? true : false}  "${chrSet}"
+	fi
 
 	## Unify format output for site level
 	bash utils/unify_format_for_calls.sh \
@@ -1829,6 +1864,10 @@ process Report {
 
 	## Get basecalling results from NanoComp
 	basecallOutputFile=\$(find ${params.dsname}_QCReport/ -name "*NanoStats.txt" -type f)
+
+	if [[ -z "\${basecallOutputFile}" ]] ; then
+		basecallOutputFile=None
+	fi
 
 	## Generate report dir and html utilities
 	if [ -d /opt/nanome ]; then

@@ -78,7 +78,7 @@ NANOME pipeline support running with various ways in different platforms:
 
 
 ## Simple usage
-Please refer to [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). We provide a **tutorial video** for running NANOME pipeline:
+Please refer to [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md) and [Specific Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/SpecificUsage.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). We provide a **tutorial video** for running NANOME pipeline:
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/FBAU4GIepXM/0.jpg)](https://www.youtube.com/watch?v=FBAU4GIepXM)
 
@@ -123,9 +123,10 @@ Please check [NANOME report](https://github.com/TheJacksonLaboratory/nanome/blob
 
 ### Lifebit CloudOS report
 We now support running NANOME on cloud computing platform. [Lifebit](https://lifebit.ai/lifebit-cloudos/) is a web-based cloud computing platform, and below is the running reports:
-* Ecoli test report: https://cloudos.lifebit.ai/public/jobs/619ee67240695e01e7401d42
-* Human test report: https://cloudos.lifebit.ai/public/jobs/619c6848402cb601dde15312
-* NA12878 chr22 report: https://cloudos.lifebit.ai/public/jobs/61a0eac140695e01e742224c
+* Ecoli test report: https://cloudos.lifebit.ai/public/jobs/61b1084e40695e01e7470eaf
+* Human test report: https://cloudos.lifebit.ai/public/jobs/61b1087540695e01e7470f3d
+* NA12878 chr22 report: https://cloudos.lifebit.ai/public/jobs/61b2176540695e01e7477da9
+* NA12878 chr20 part5 report: https://cloudos.lifebit.ai/public/jobs/61b123f540695e01e747206e
 
 
 ## Revision History
