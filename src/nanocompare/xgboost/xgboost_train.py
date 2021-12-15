@@ -13,6 +13,8 @@ import sys
 from collections import defaultdict
 from warnings import simplefilter
 
+import math
+
 from nanocompare.eval_common import freq_to_label
 from nanocompare.xgboost.xgboost_common import TRUTH_LABEL_COLUMN, default_xgboost_params, gridcv_xgboost_params, \
     gridcv_rf_params, SITES_COLUMN_LIST, default_rf_params, meteore_deepsignal_megalodon_model, load_meteore_model
@@ -184,47 +186,56 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
     sitedf.reset_index(inplace=True, drop=True)
     logger.info(f"Sites={len(sitedf)}, class_distribution=\n{sitedf[TRUTH_LABEL_COLUMN].value_counts()}")
 
-    ## split sites into train and test
-    siteX = sitedf.loc[:, SITES_COLUMN_LIST]
-    siteY = sitedf.loc[:, TRUTH_LABEL_COLUMN]
-    X_train_site, X_test_site, y_train_site, y_test_site = \
-        train_test_split(siteX, siteY, test_size=1 - args.train_size, random_state=args.random_state, stratify=siteY)
+    if not math.isclose(args.train_size, 1.0):
+        ## split sites into train and test
+        siteX = sitedf.loc[:, SITES_COLUMN_LIST]
+        siteY = sitedf.loc[:, TRUTH_LABEL_COLUMN]
+        X_train_site, X_test_site, y_train_site, y_test_site = \
+            train_test_split(siteX, siteY, test_size=1 - args.train_size, random_state=args.random_state,
+                             stratify=siteY)
 
-    train_test_array = [len(y_train_site), len(y_test_site)]
-    logger.info(
-        f"""Split, site level report:
-        Train:Test={train_test_array / np.sum(train_test_array)}
-        
-        Train data:Sites={len(y_train_site):,}
-        class_distribution=\n{y_train_site.value_counts()}
-        class_freq=\n{y_train_site.value_counts(normalize=True)}
-        
-        Test data:Sites={len(y_test_site):,}
-        class_distribution=\n{y_test_site.value_counts()}
-        class_freq=\n{y_test_site.value_counts(normalize=True)}
-        """)
+        train_test_array = [len(y_train_site), len(y_test_site)]
+        logger.info(
+            f"""Split, site level report:
+            Train:Test={train_test_array / np.sum(train_test_array)}
+            
+            Train data:Sites={len(y_train_site):,}
+            class_distribution=\n{y_train_site.value_counts()}
+            class_freq=\n{y_train_site.value_counts(normalize=True)}
+            
+            Test data:Sites={len(y_test_site):,}
+            class_distribution=\n{y_test_site.value_counts()}
+            class_freq=\n{y_test_site.value_counts(normalize=True)}
+            """)
 
-    ## select predictions (read) based on sites split
-    traindf = datadf.merge(X_train_site, on=SITES_COLUMN_LIST, how='inner')
-    testdf = datadf.merge(X_test_site, on=SITES_COLUMN_LIST, how='inner')
+        ## select predictions (read) based on sites split
+        traindf = datadf.merge(X_train_site, on=SITES_COLUMN_LIST, how='inner')
+        testdf = datadf.merge(X_test_site, on=SITES_COLUMN_LIST, how='inner')
+    else:
+        traindf = datadf
+        testdf = None
 
     if nadf is not None:
         sitenadf = nadf[SITES_COLUMN_LIST + [TRUTH_LABEL_COLUMN]].drop_duplicates()
         sitenadf.reset_index(inplace=True, drop=True)
         logger.info(
             f"NADF  Sites={len(sitenadf):,}, class_distribution=\n{sitenadf[TRUTH_LABEL_COLUMN].value_counts()}")
-        ## split sites into train and test
-        sitenaX = sitenadf.loc[:, SITES_COLUMN_LIST]
-        sitenaY = sitenadf.loc[:, TRUTH_LABEL_COLUMN]
-        naX_train_site, naX_test_site, nay_train_site, nay_test_site = \
-            train_test_split(sitenaX, sitenaY, test_size=1 - args.train_size, random_state=args.random_state,
-                             stratify=sitenaY)
-        logger.debug(
-            f"NA: Total CpGs={len(sitenadf):,}, train CpGs={len(naX_train_site):,}, test CpGs={len(naX_test_site):,}")
-        train_nadf = nadf.merge(naX_train_site, on=SITES_COLUMN_LIST, how='inner')
-        test_nadf = nadf.merge(naX_test_site, on=SITES_COLUMN_LIST, how='inner')
-        logger.debug(
-            f"NA: Total Predictions={len(nadf):,}, train preds={len(train_nadf):,}, test preds={len(test_nadf):,}")
+        if not math.isclose(args.train_size, 1.0):
+            ## split sites into train and test
+            sitenaX = sitenadf.loc[:, SITES_COLUMN_LIST]
+            sitenaY = sitenadf.loc[:, TRUTH_LABEL_COLUMN]
+            naX_train_site, naX_test_site, nay_train_site, nay_test_site = \
+                train_test_split(sitenaX, sitenaY, test_size=1 - args.train_size, random_state=args.random_state,
+                                 stratify=sitenaY)
+            logger.debug(
+                f"NA: Total CpGs={len(sitenadf):,}, train CpGs={len(naX_train_site):,}, test CpGs={len(naX_test_site):,}")
+            train_nadf = nadf.merge(naX_train_site, on=SITES_COLUMN_LIST, how='inner')
+            test_nadf = nadf.merge(naX_test_site, on=SITES_COLUMN_LIST, how='inner')
+            logger.debug(
+                f"NA: Total Predictions={len(nadf):,}, train preds={len(train_nadf):,}, test preds={len(test_nadf):,}")
+        else:
+            train_nadf = nadf
+            test_nadf = None
 
         traindf = pd.concat([traindf, train_nadf])
         # testdf = pd.concat([testdf, test_nadf])
@@ -244,7 +255,9 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
         logger.info(f"save to {outfn}")
 
     traindf.reset_index(drop=True, inplace=True)
-    testdf.reset_index(drop=True, inplace=True)
+
+    if testdf is not None:
+        testdf.reset_index(drop=True, inplace=True)
 
     X_train = traindf[train_tool_list]
     y_train = traindf[TRUTH_LABEL_COLUMN]
@@ -260,7 +273,7 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
     # X_train = MinMaxScaler().fit_transform(X_train)
 
     ## Training process
-    if args.model_type in ['XGBoost', 'XGBoost_NA']:
+    if args.model_type in ['XGBoost', 'XGBoost_NA', 'XGBoostNA2T', 'XGBoostNA3T', ]:
         ## train model using CV and search best params
         default_xgboost_params.update({'random_state': args.random_state})
         clf_model = XGBClassifier(**default_xgboost_params)
@@ -299,17 +312,18 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
     logger.info(f"save model to {outfn}")
 
     ## Evaluate on overlapped predictions for CpGs by all tools (Top4 + XGBoost/RF)
-    testdf.dropna(inplace=True)
-    testdf.reset_index(drop=True, inplace=True)
-    logger.debug(f"Total overlaped predictions: {len(testdf):,}")
-    y_test = testdf[TRUTH_LABEL_COLUMN]
+    if testdf is not None:
+        testdf.dropna(inplace=True)
+        testdf.reset_index(drop=True, inplace=True)
+        logger.debug(f"Total overlaped predictions: {len(testdf):,}")
+        y_test = testdf[TRUTH_LABEL_COLUMN]
 
-    logger.info(
-        f"""Split, read level report:
-            Test data:Reads_pred={len(y_test):,}
-            class_distribution=\n{y_test.value_counts()}
-            class_freq=\n{y_test.value_counts(normalize=True)}
-            """)
+        logger.info(
+            f"""Split, read level report:
+                Test data:Reads_pred={len(y_test):,}
+                class_distribution=\n{y_test.value_counts()}
+                class_freq=\n{y_test.value_counts(normalize=True)}
+                """)
 
     # if args.eval_only and False:
     #     ## import model
@@ -329,9 +343,9 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
     #     return
 
     ## evaluate model
-    if clf is not None:
+    if clf is not None and testdf is not None:
         evaluation_on_test(clf, testdf, x_col_list=train_tool_list, y_col_name=TRUTH_LABEL_COLUMN, all_tools=all_tools)
-        if nadf is not None:
+        if nadf is not None and test_nadf is not None:
             evaluation_on_na_test(clf, test_nadf, x_col_list=train_tool_list, y_col_name=TRUTH_LABEL_COLUMN)
 
 
@@ -385,6 +399,9 @@ if __name__ == '__main__':
 
     tool_list = list(args.t)
     logger.debug(f"tool_list={tool_list}")
+
+    if math.isclose(args.train_size, 1.0):
+        logger.info(f"Full data set is used for training/cross-validation the model")
 
     datadf_list = []
     for infn in args.i:

@@ -1,5 +1,5 @@
 **This is an explanation of how to use NANOME pipeline on some specific scenarios. For general usage, please check [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/enhance5/docs/Usage.md).**
-## 1. How to use other reference genome? (ref: https://github.com/TheJacksonLaboratory/nanome/issues/130)
+## 1. How to use other reference genome in NANOME? 
 
 NANOME support other reference genome. Below is an example of running NANOME for any other reference genomes, please make sure you put reference genome file .fasta and the indexed file into directory [reference-genome-dir], the `--chrSet` is the chomosomes params for the specific genome. 
 
@@ -27,7 +27,7 @@ Note:
 * please set param `--chrSet` with your interested chomosomes names, seperated by a space, such as `--chrSet 'chr1 chr2 chr3'` (the single quote character is important)
 * for human or ecoli genome, NANOME will automatically set default chromosomes chr1-22, X, Y for human, NC_000913.3 for ecoli. Users can change the default setting by specifying `--chrSet` param
 
-## 2. How to input basecalled data into NANOME? (ref: https://github.com/TheJacksonLaboratory/nanome/issues/131#issuecomment-993256692)
+## 2. How to input basecalled data into NANOME? 
 
 NANOME support the basecalled input data. You can use `--skipBasecall` param to inform NANOME to skip redo the basecalling step. We suggest keeping the Guppy basecalled data/directory structure as input. The `.fastq.gz` file, `sequencing_summary.txt` file, and the `workspace/*.fast5` files are need to be located in the default directory.  
 
