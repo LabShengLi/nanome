@@ -6,7 +6,7 @@
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
 
 """
-Common functions used by read level and site level evaluations in Nanocompare paper.
+Common functions used by read level and site level evaluations in nanome paper.
 
 Such as import_DeepSignal, import_BGTruth, etc.
 """

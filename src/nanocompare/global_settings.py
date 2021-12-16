@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from nanocompare.global_config import set_log_debug_level
+from nanocompare.global_config import set_log_debug_level, current_time_str
 
 NANOME_VERSION = "1.3.18"
 
@@ -142,18 +142,22 @@ def get_tool_name(encode_name):
     return encode_name
 
 
-def save_done_file(outdir, filename="DONE.txt"):
+def save_done_file(outdir, filename=None):
     """
     Save a done file for finish flag
     :param outdir:
     :param filename:
     :return:
     """
+    time_tag = current_time_str()
+    if filename == None:
+        filename = f"DONE_{time_tag}.txt"
     outfn = os.path.join(outdir, filename)
     with open(outfn, "w") as outf:
-        outf.write("DONE\n")
+        outf.write(f"DONE at {time_tag}\n")
 
 
 if __name__ == '__main__':
     set_log_debug_level()
-    load_genome_annotation_config(True)
+    ## load_genome_annotation_config(True)
+    # save_done_file('.')

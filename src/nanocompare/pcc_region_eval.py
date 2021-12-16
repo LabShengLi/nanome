@@ -6,7 +6,7 @@
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
 
 """
-Evaluate PCC at different regions
+Evaluate PCC at different regions in nanome paper
 """
 
 import argparse
@@ -163,7 +163,8 @@ def parse_arguments():
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('-i', type=str, help="input freq file for BS-seq and tools", required=True)
-    parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as PCCRegion-Dataset_WGBS_2Reps",
+    parser.add_argument('--runid', type=str,
+                        help="running prefix/output folder name, such as PCCRegion-Dataset_WGBS_2Reps",
                         required=True)
     parser.add_argument('--genome-annotation', type=str,
                         help='genome annotation dir, contain BED files',
@@ -310,4 +311,4 @@ if __name__ == '__main__':
 
     save_done_file(out_dir)
     logger.info(f"Memory report: {get_current_memory_usage()}")
-    logger.info("### Site level correlation analysis DONE")
+    logger.info("### PCC region evaluation DONE")
