@@ -93,8 +93,6 @@ if (params.input == false) { exit 1, "Missing --input option for input data, che
 
 // Parse genome params
 genome_map = params.genome_map
-// online input, or google storage input
-megalodon_model_tar = params.megalodon_model_tar
 
 if (genome_map[params.genome] != null) { genome_path = genome_map[params.genome] } else { 	genome_path = params.genome }
 
@@ -116,7 +114,8 @@ if (params.genome.contains('hg')) {
 		chrSet = params.chrSet
 	}
 } else {
-	dataType = 'other'
+	// default will not found name, use other
+	if (params.dataType == false) { dataType = 'other' } else { dataType = params.dataType }
 	if (params.chrSet == true || params.chrSet == 'true') {
 		// No default value for other reference genome
 		exit 1, "Missing --chrSet option for other reference genome, please sepecify chromsomes used in reference genome [${params.genome}]"
@@ -131,17 +130,10 @@ ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: fa
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
 
 // Reference genome, deepmod cluster settings
-def deepmod_tar_file = "${projectDir}/README.md"
 def referenceGenome = 'reference_genome/ref.fasta'
 def chromSizesFile = 'reference_genome/chrom.sizes'
 
-if (dataType == 'human') {
-	isDeepModCluster = params.useDeepModCluster
-	if (isDeepModCluster && params.runDeepMod) {
-		deepmod_tar_file = params.deepmod_ctar
-	}
-} else if (dataType == 'ecoli') { isDeepModCluster = false }
-else { 	isDeepModCluster = false }
+if (dataType == 'human') { isDeepModCluster = params.useDeepModCluster } else { 	isDeepModCluster = false }
 
 workflow.onComplete {
 	if (workflow.success && params.cleanCache) {
@@ -263,10 +255,12 @@ process EnvCheck {
 	input:
 	path reference_genome
 	path utils
+	path rerioDir
+	path deepsignalDir
 
 	output:
 	path "reference_genome",				emit: reference_genome
-	path "${params.MEGALODON_MODEL_DIR}",	emit: megalodon_model, optional: true
+	path "rerio", 							emit: rerio, optional: true  // used by Megalodon
 	path "${params.DEEPSIGNAL_MODEL_DIR}",	emit: deepsignal_model, optional: true
 	path "tools_version_table.tsv",			emit: tools_version_tsv, optional: true
 
@@ -280,28 +274,36 @@ process EnvCheck {
 
 	## Untar and prepare megalodon model
 	if [[ ${params.runMegalodon} == true ]]; then
-		if [[ -f "/data/${params.MEGALODON_MODEL_TAR_GZ}" ]] ; then
-			tar -xzf /data/${params.MEGALODON_MODEL_TAR_GZ} -C .
+		if [[ ${rerioDir} == rerioDir_false ]] ; then
+			# Obtain and run R9.4.1, MinION, 5mC CpG model from Rerio
+			git clone ${params.rerioGithub}
+			rerio/download_model.py rerio/basecall_models/${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG.replace('.cfg', '')}
 		else
-			wget ${params.megalodon_model_tar} --no-verbose &&\
-				tar -xzf ${params.MEGALODON_MODEL_TAR_GZ} &&\
-				rm -f ${params.MEGALODON_MODEL_TAR_GZ}
+			if [[ ${rerioDir} != rerio ]] ; then
+				## rename it to rerio for output channel
+				cp  -a ${rerioDir}  rerio
+			fi
 		fi
-		## Check Megalodon model
-		ls -lh ${params.MEGALODON_MODEL_DIR}
+
+		ls -lh rerio/
 	fi
 
 	## Untar and prepare megalodon model
 	if [[ ${params.runDeepSignal} == true ]]; then
-		if [[ -f "/data/${params.DEEPSIGNAL_MODEL_TAR_GZ}" ]] ; then
-			tar -xzf /data/${params.DEEPSIGNAL_MODEL_TAR_GZ} -C .
-		else
+		if [[ ${deepsignalDir} == deepsignalDir_false ]] ; then
+			## Get DeepSignal Model online
 			wget ${params.deepsignal_model_tar} --no-verbose &&\
 				tar -xzf ${params.DEEPSIGNAL_MODEL_TAR_GZ} &&\
 				rm -f ${params.DEEPSIGNAL_MODEL_TAR_GZ}
+		else
+		 	if [[ ${deepsignalDir} != ${params.DEEPSIGNAL_MODEL_DIR} ]] ; then
+				## rename it to deepsignal default dir name
+				cp  -a ${rerioDir}  ${params.DEEPSIGNAL_MODEL_DIR}
+			fi
 		fi
+
 		## Check DeepSignal model
-		ls -lh ${params.DEEPSIGNAL_MODEL_DIR}
+		ls -lh ${params.DEEPSIGNAL_MODEL_DIR}/
 	fi
 
 	## Get dir for reference_genome
@@ -766,7 +768,7 @@ process Megalodon {
 	input:
 	path fast5_dir
 	each path(reference_genome)
-	each path(megalodon_model_dir)
+	each path(rerio_dir)
 
 	output:
 	path "batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt.gz", emit: megalodon_out
@@ -794,43 +796,33 @@ process Megalodon {
 		## Ref: https://github.com/nanoporetech/megalodon
 		## CPU issues: https://github.com/nanoporetech/megalodon/issues/172
 		megalodon \
-			${fast5_dir} \
-			--overwrite \
-			--outputs per_read_mods mods per_read_refs \
-			--guppy-server-path guppy_basecall_server \
-			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-			--guppy-params "-d ${megalodon_model_dir}/ --num_callers \$(( numProcessor )) --ipc_threads \$(( numProcessor * ${params.lowProcTimes} ))" \
-			--guppy-timeout ${params.GUPPY_TIMEOUT} \
-			--samtools-executable ${params.SAMTOOLS_PATH} \
-			--sort-mappings \
-			--mappings-format bam \
-			--reference ${referenceGenome} \
+			${fast5_dir}   --overwrite \
 			--mod-motif m CG 0 \
+			--outputs per_read_mods mods per_read_refs \
 			--mod-output-formats bedmethyl wiggle \
-			--write-mods-text \
-			--write-mod-log-probs \
+			--write-mods-text --write-mod-log-probs \
+			--guppy-server-path \$(which guppy_basecall_server) \
+			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
+			--guppy-params "-d ./${rerio_dir}/basecall_models/" \
+			--guppy-timeout ${params.GUPPY_TIMEOUT} \
+			--reference ${referenceGenome} \
 			--processes \$(( numProcessor ))  &>> Megalodon.run.log
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		## Ref: https://github.com/nanoporetech/megalodon
+		## --guppy-params "-d megalodon_model_dir/ --num_callers \$(( numProcessor )) --ipc_threads \$(( numProcessor * \${params.highProcTimes} ))"
 		megalodon \
-			${fast5_dir} \
-			--overwrite \
-			--outputs per_read_mods mods per_read_refs \
-			--guppy-server-path guppy_basecall_server \
-			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
-			--guppy-params "-d ${megalodon_model_dir}/ --num_callers \$(( numProcessor )) --ipc_threads \$(( numProcessor * ${params.highProcTimes} ))" \
-			--guppy-timeout ${params.GUPPY_TIMEOUT} \
-			--samtools-executable ${params.SAMTOOLS_PATH} \
-			--sort-mappings \
-			--mappings-format bam \
-			--reference ${referenceGenome} \
+			${fast5_dir}   --overwrite \
 			--mod-motif m CG 0 \
+			--outputs per_read_mods mods per_read_refs \
 			--mod-output-formats bedmethyl wiggle \
-			--write-mods-text \
-			--write-mod-log-probs \
-			--processes \$(( numProcessor * ${params.mediumProcTimes} )) \
-			--devices 0  &>> Megalodon.run.log
+			--write-mods-text --write-mod-log-probs \
+			--guppy-server-path \$(which guppy_basecall_server) \
+			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
+			--guppy-params "-d ./${rerio_dir}/basecall_models/" \
+			--guppy-timeout ${params.GUPPY_TIMEOUT} \
+			--reference ${referenceGenome} \
+			--processes \$(( numProcessor ))  --devices 0  &>> Megalodon.run.log
 	else
 		echo "### error value for commandType=\${commandType}"
 		exit 255
@@ -1595,7 +1587,7 @@ process DpmodComb {
 			tar -xzf ${deepmod_c_tar_file}
 		else
 			if [[ "${deepmod_c_tar_file}" != "C" ]] ; then
-				mv ${deepmod_c_tar_file} C
+				cp -a  ${deepmod_c_tar_file}   C
 			fi
 		fi
 
@@ -1671,6 +1663,7 @@ process METEORE {
 	path deepsignal
 	path ch_src
 	path ch_utils
+	path METEOREDir
 
 	output:
 	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz",	emit: meteore_combine_out, optional: true
@@ -1681,13 +1674,23 @@ process METEORE {
 	params.runMethcall && params.runMETEORE
 
 	"""
-	if [[ -d "/data/${params.METEORE_Dir}" ]] ; then
-		METEOREDIR="/data/${params.METEORE_Dir}"
-	else
+	if [[ ${METEOREDir} == METEOREDir_ch_false ]] ; then
+		## Get METEORE model online
 		wget ${params.METEOREGithub}  --no-verbose &&\
 			tar -xzf v1.0.0.tar.gz &&\
 			rm -f v1.0.0.tar.gz
-		METEOREDIR="${params.METEORE_Dir}"
+	else
+		if [[ ${METEOREDir} != ${params.METEOREDirName} ]] ; then
+			## rename link folder
+			cp -a  ${METEOREDir}  ${params.METEOREDirName}
+		fi
+	fi
+
+	if [[ -e "${params.METEOREDirName}" ]] ; then
+		METEOREDIR="${params.METEOREDirName}"
+	else
+		echo "### METEORE folder is not correct"
+		exit -1
 	fi
 
 	## METEORE outputs by combining other tools
@@ -1951,7 +1954,19 @@ process Report {
 workflow {
 	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
 
-	EnvCheck(genome_ch, ch_utils)
+	if (params.rerioDir == false) { // default if false, will online downloading
+		rerioDir = Channel.fromPath('rerioDir_false', type: 'any', checkIfExists: false)
+	} else {
+		rerioDir = Channel.fromPath(params.rerioDir, type: 'any', checkIfExists: true)
+	}
+
+	if (params.deepsignalDir == false) { // default if false, will online downloading
+		deepsignalDir = Channel.fromPath('deepsignalDir_false', type: 'any', checkIfExists: false)
+	} else {
+		deepsignalDir = Channel.fromPath(params.deepsignalDir, type: 'any', checkIfExists: true)
+	}
+
+	EnvCheck(genome_ch, ch_utils, rerioDir, deepsignalDir)
 	Untar(fast5_tar_ch)
 	if (params.runBasecall) {
 		Basecall(Untar.out.untar)
@@ -1974,7 +1989,7 @@ workflow {
 	}
 
 	if (params.runMegalodon && params.runMethcall) {
-		Megalodon(Untar.out.untar, EnvCheck.out.reference_genome, EnvCheck.out.megalodon_model)
+		Megalodon(Untar.out.untar, EnvCheck.out.reference_genome, EnvCheck.out.rerio)
 		comb_megalodon = MgldnComb(Megalodon.out.megalodon_out.collect(), ch_src, ch_utils)
 		s2 = comb_megalodon.site_unify
 		r2 = comb_megalodon.read_unify
@@ -2014,8 +2029,14 @@ workflow {
 	}
 
 	if (params.runDeepMod && params.runMethcall) {
+		if (isDeepModCluster == false) {
+			// not use cluster model, only a place holder here
+			ch_ctar = Channel.fromPath('ch_ctar_false', type:'any', checkIfExists: false)
+		} else {
+			ch_ctar = Channel.fromPath(params.deepmod_ctar, type:'any', checkIfExists: true)
+		}
 		DeepMod(Basecall.out.basecall, EnvCheck.out.reference_genome)
-		comb_deepmod = DpmodComb(DeepMod.out.deepmod_out.collect(), Channel.fromPath(deepmod_tar_file), ch_src, ch_utils)
+		comb_deepmod = DpmodComb(DeepMod.out.deepmod_out.collect(), ch_ctar, ch_src, ch_utils)
 		s6 = comb_deepmod.site_unify
 	} else {
 		s6 = Channel.empty()
@@ -2023,7 +2044,12 @@ workflow {
 
 	if (params.runMETEORE && params.runMethcall) {
 		// Read level combine a list for top3 used by METEORE
-		METEORE(r1, r2, r3, ch_src, ch_utils)
+		if (params.METEOREDir == false) {
+			METEOREDir_ch = Channel.fromPath('METEOREDir_ch_false', type: 'any', checkIfExists: false)
+		} else {
+			METEOREDir_ch = Channel.fromPath(params.METEOREDir, type: 'any', checkIfExists: true)
+		}
+		METEORE(r1, r2, r3, ch_src, ch_utils, METEOREDir_ch)
 		s7 = METEORE.out.site_unify
 		r7 = METEORE.out.read_unify
 	} else {
