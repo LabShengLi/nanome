@@ -99,15 +99,15 @@ if (genome_map[params.genome] != null) { genome_path = genome_map[params.genome]
 // infer dataType, chrSet based on reference genome name, hg - human, ecoli - ecoli, otherwise is other reference genome
 if (params.genome.contains('hg')) {
 	dataType = "human"
-	if (params.chrSet == true || params.chrSet == 'true') {
-		// default for human, if true or 'true' (string), using '  '
+	if (params.chrSet == false || params.chrSet == 'false') {
+		// default for human, if false or 'false' (string), using '  '
 		chrSet = 'chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY'
 	} else {
 		chrSet = params.chrSet
 	}
 } else if (params.genome.contains('ecoli')) {
 	dataType = "ecoli"
-	if (params.chrSet == true || params.chrSet == 'true') {
+	if (params.chrSet == false || params.chrSet == 'false') {
 		// default for ecoli
 		chrSet = 'NC_000913.3'
 	} else {
@@ -116,7 +116,7 @@ if (params.genome.contains('hg')) {
 } else {
 	// default will not found name, use other
 	if (params.dataType == false) { dataType = 'other' } else { dataType = params.dataType }
-	if (params.chrSet == true || params.chrSet == 'true') {
+	if (params.chrSet == false || params.chrSet == 'false') {
 		// No default value for other reference genome
 		exit 1, "Missing --chrSet option for other reference genome, please sepecify chromsomes used in reference genome [${params.genome}]"
 	}
@@ -163,12 +163,19 @@ if (params.input.endsWith(".filelist.txt")) {
 def summary = [:]
 summary['dsname'] 			= params.dsname
 summary['input'] 			= params.input
-summary['genome'] 			= params.genome
+
+if (genome_map[params.genome] != null) { summary['genome'] = "${params.genome}:[${genome_path}]" }
+else { summary['genome'] = params.genome }
 
 summary['\nRunning settings']         = "--------"
 summary['processors'] 		= params.processors
 summary['chrSet'] 			= chrSet.split(' ').join(',')
 summary['dataType'] 		= dataType
+
+if (params.deepsignalDir != false) { summary['DeepSignalDir'] = params.deepsignalDir }
+if (params.rerioDir != false) { summary['RerioDir'] = params.rerioDir }
+if (params.METEOREDir != false) { summary['METEOREDir'] = params.METEOREDir }
+
 
 if (params.runBasecall) summary['runBasecall'] = 'Yes'
 if (params.runMethcall) {
