@@ -281,7 +281,7 @@ process EnvCheck {
 
 	## Untar and prepare megalodon model
 	if [[ ${params.runMegalodon} == true ]]; then
-		if [[ ${rerioDir} == rerioDir_false ]] ; then
+		if [[ ${rerioDir} == false1 ]] ; then
 			# Obtain and run R9.4.1, MinION, 5mC CpG model from Rerio
 			git clone ${params.rerioGithub}
 			rerio/download_model.py rerio/basecall_models/${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG.replace('.cfg', '')}
@@ -297,7 +297,7 @@ process EnvCheck {
 
 	## Untar and prepare megalodon model
 	if [[ ${params.runDeepSignal} == true ]]; then
-		if [[ ${deepsignalDir} == deepsignalDir_false ]] ; then
+		if [[ ${deepsignalDir} == false2 ]] ; then
 			## Get DeepSignal Model online
 			wget ${params.deepsignal_model_tar} --no-verbose &&\
 				tar -xzf ${params.DEEPSIGNAL_MODEL_TAR_GZ} &&\
@@ -1962,13 +1962,13 @@ workflow {
 	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
 
 	if (params.rerioDir == false) { // default if false, will online downloading
-		rerioDir = Channel.fromPath('rerioDir_false', type: 'any', checkIfExists: false)
+		rerioDir = Channel.fromPath("${projectDir}/utils/false1", type: 'any', checkIfExists: false)
 	} else {
 		rerioDir = Channel.fromPath(params.rerioDir, type: 'any', checkIfExists: true)
 	}
 
 	if (params.deepsignalDir == false) { // default if false, will online downloading
-		deepsignalDir = Channel.fromPath('deepsignalDir_false', type: 'any', checkIfExists: false)
+		deepsignalDir = Channel.fromPath("${projectDir}/utils/false2", type: 'any', checkIfExists: false)
 	} else {
 		deepsignalDir = Channel.fromPath(params.deepsignalDir, type: 'any', checkIfExists: true)
 	}
@@ -2038,7 +2038,7 @@ workflow {
 	if (params.runDeepMod && params.runMethcall) {
 		if (isDeepModCluster == false) {
 			// not use cluster model, only a place holder here
-			ch_ctar = Channel.fromPath('ch_ctar_false', type:'any', checkIfExists: false)
+			ch_ctar = Channel.fromPath("${projectDir}/utils/false1", type:'any', checkIfExists: false)
 		} else {
 			ch_ctar = Channel.fromPath(params.deepmod_ctar, type:'any', checkIfExists: true)
 		}
@@ -2065,11 +2065,11 @@ workflow {
 	}
 
 	// Site level combine a list
-	Channel.fromPath("${projectDir}/README.md").concat(
+	Channel.fromPath("${projectDir}/utils/false1").concat(
 		s1, s2, s3, s4, s5, s6, s7
 		).toList().set { tools_site_unify }
 
-	Channel.fromPath("${projectDir}/LICENSE").concat(
+	Channel.fromPath("${projectDir}/utils/false2").concat(
 		r1, r2, r3
 		).toList().set { tools_read_unify }
 
