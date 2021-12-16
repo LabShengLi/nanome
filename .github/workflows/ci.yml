@@ -25,27 +25,28 @@ jobs:
           nextflow -v &&\
             nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.ci_test_name }},docker  ${{ matrix.using_tools_option }}
           echo "Outputs tree view:" ; tree -a outputs; ls -lh -R outputs; du -hs * 2>/dev/null | sort -h
-  singularity:
-    name: Singularity
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        singularity_version: ['3.6.4']
-        nxf_ver: ['']
-        ci_test_name: ['test', 'test_human']
-    steps:
-      - uses: actions/checkout@v1
-      - uses: eWaterCycle/setup-singularity@v6
-        with:
-          singularity-version: ${{ matrix.singularity_version }}
-      - name: Install Nextflow ${{ matrix.nxf_ver }}
-        run: |
-          export NXF_VER=${{ matrix.nxf_ver }}
-          wget -qO- get.nextflow.io | bash
-          sudo mv nextflow /usr/local/bin/
-      - name: Basic NANOME workflow tests by ${{ matrix.ci_test_name }}
-        run: |
-          nextflow -v &&\
-            nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.ci_test_name }},singularity --runMethcall false
-          echo "Outputs tree view:" ; tree -a outputs; ls -lh -R outputs
+# remove singularity, since it is same with docker container
+#  singularity:
+#    name: Singularity
+#    runs-on: ubuntu-latest
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        singularity_version: ['3.6.4']
+#        nxf_ver: ['']
+#        ci_test_name: ['test', 'test_human']
+#    steps:
+#      - uses: actions/checkout@v1
+#      - uses: eWaterCycle/setup-singularity@v6
+#        with:
+#          singularity-version: ${{ matrix.singularity_version }}
+#      - name: Install Nextflow ${{ matrix.nxf_ver }}
+#        run: |
+#          export NXF_VER=${{ matrix.nxf_ver }}
+#          wget -qO- get.nextflow.io | bash
+#          sudo mv nextflow /usr/local/bin/
+#      - name: Basic NANOME workflow tests by ${{ matrix.ci_test_name }}
+#        run: |
+#          nextflow -v &&\
+#            nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.ci_test_name }},singularity --runMethcall false
+#          echo "Outputs tree view:" ; tree -a outputs; ls -lh -R outputs
