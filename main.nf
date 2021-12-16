@@ -1681,7 +1681,7 @@ process METEORE {
 	params.runMethcall && params.runMETEORE
 
 	"""
-	if [[ ${METEOREDir} == METEOREDir_ch_false ]] ; then
+	if [[ ${METEOREDir} == false1 ]] ; then
 		## Get METEORE model online
 		wget ${params.METEOREGithub}  --no-verbose &&\
 			tar -xzf v1.0.0.tar.gz &&\
@@ -2052,7 +2052,7 @@ workflow {
 	if (params.runMETEORE && params.runMethcall) {
 		// Read level combine a list for top3 used by METEORE
 		if (params.METEOREDir == false) {
-			METEOREDir_ch = Channel.fromPath('METEOREDir_ch_false', type: 'any', checkIfExists: false)
+			METEOREDir_ch = Channel.fromPath("${projectDir}/utils/false1", type: 'any', checkIfExists: false)
 		} else {
 			METEOREDir_ch = Channel.fromPath(params.METEOREDir, type: 'any', checkIfExists: true)
 		}
