@@ -199,6 +199,11 @@ summary['Script dir']       = workflow.projectDir
 summary['User']             = workflow.userName
 summary['Profile']          = workflow.profile
 summary['Config Files'] 	= workflow.configFiles.join(',')
+
+if (params.guppyDir != false) {
+	summary['guppyDir'] 	= params.guppyDir
+}
+
 if (workflow.revision) summary['Pipeline Release'] = workflow.revision
 if (workflow.containerEngine) summary['Container'] = "$workflow.containerEngine - $workflow.container"
 if (workflow.profile.contains('hpc') || workflow.profile.contains('winter') || workflow.profile.contains('sumner') ) {

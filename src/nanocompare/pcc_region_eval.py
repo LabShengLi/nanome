@@ -113,7 +113,7 @@ def compute_pcc_at_region(df, bed_tuple):
     logger.debug(f'tagname={tagname}, coord_fn={infn}')
     if not args.large_mem and tagname != genome_wide_tagname and coord_bed is None:  # load on demand
         eval_coord_bed = get_region_bed_tuple(
-            infn, enable_base_detection_bedfile=enable_base_detection_bedfile,
+            infn, enable_base_detection_bedfile=not args.disable_bed_check,
             enable_cache=args.enable_cache, using_cache=args.using_cache,
             cache_dir=ds_cache_dir)[2]
     else:  # large memory, or genome wide - None
