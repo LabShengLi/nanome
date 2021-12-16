@@ -57,14 +57,8 @@ ENV PATH /opt/conda/envs/nanome/bin:$PATH
 USER root
 WORKDIR /data/
 
-# Get METEORE dir into /data/METEORE-1.0.0,
-# Get DeepSignal/Megalodon models into dir like /data/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+
-RUN cd /data && wget -q ${METEORE_GITHUB} &&\
-    tar -xzf v1.0.0.tar.gz &&\
-    rm -f v1.0.0.tar.gz &&\
-    rm -rf METEORE-1.0.0/example_results METEORE-1.0.0/data &&\ 
-    wget -q ${DEEPSIGNAL_MODEL} &&\
-    wget -q ${MEGALODON_MODEL} &&\
+# Get bigwig conversion tool
+RUN cd /data && \
     wget -q http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bedGraphToBigWig &&\
     chmod +x bedGraphToBigWig &&\
     mv bedGraphToBigWig  /usr/local/bin/
