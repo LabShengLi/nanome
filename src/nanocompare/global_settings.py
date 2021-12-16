@@ -98,6 +98,8 @@ nanome_model_dict = {
     "NA12878": nanome_na12878_model_fn,
     "NA12878_XGBoost_NA": 'NANOME_NA12878_train0.20_megalodon_deepsignal_XGBoost_NA_model.pkl',
     "NA12878_XGBoost_NA_top3": 'NANOME_NA12878_train0.20_nanopolish_megalodon_deepsignal_XGBoost_NA_model.pkl',
+    "NA12878_XGBoostNA2T": 'NANOME_NA12878_train1.0_megalodon_deepsignal_XGBoostNA2T_model.pkl',
+    "NA12878_XGBoostNA3T": 'NANOME_NA12878_train1.0_nanopolish_megalodon_deepsignal_XGBoostNA3T_model.pkl',
 }
 
 
