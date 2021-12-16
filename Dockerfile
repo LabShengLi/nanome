@@ -15,7 +15,7 @@ LABEL description="Nanome project in Li Lab at The Jackson Laboratory" \
 
 # Guppy version
 ARG GUPPY_VERSION=5.0.16
-ARG MEGALODON_VERSION=2.3.5
+ARG MEGALODON_VERSION=2.4.1
 ARG BUILD_PACKAGES="wget apt-transport-https procps git curl"
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG METEORE_GITHUB="https://github.com/comprna/METEORE/archive/refs/tags/v1.0.0.tar.gz"
