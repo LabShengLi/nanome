@@ -164,18 +164,13 @@ def summary = [:]
 summary['dsname'] 			= params.dsname
 summary['input'] 			= params.input
 
-if (genome_map[params.genome] != null) { summary['genome'] = "${params.genome}:[${genome_path}]" }
+if (genome_map[params.genome] != null) { summary['genome'] = "${params.genome} - [${genome_path}]" }
 else { summary['genome'] = params.genome }
 
 summary['\nRunning settings']         = "--------"
 summary['processors'] 		= params.processors
 summary['chrSet'] 			= chrSet.split(' ').join(',')
 summary['dataType'] 		= dataType
-
-if (params.deepsignalDir != false) { summary['DeepSignalDir'] = params.deepsignalDir }
-if (params.rerioDir != false) { summary['RerioDir'] = params.rerioDir }
-if (params.METEOREDir != false) { summary['METEOREDir'] = params.METEOREDir }
-
 
 if (params.runBasecall) summary['runBasecall'] = 'Yes'
 if (params.runMethcall) {
@@ -188,6 +183,9 @@ if (params.runMethcall) {
 	if (params.runDeepMod) summary['runDeepMod'] = 'Yes'
 	if (params.runNANOME) summary['runNANOME'] = 'Yes'
 }
+if (params.deepsignalDir != false) { summary['deepsignalDir'] = params.deepsignalDir }
+if (params.rerioDir != false) { summary['rerioDir'] = params.rerioDir }
+if (params.METEOREDir != false) { summary['METEOREDir'] = params.METEOREDir }
 
 summary['\nPipeline settings']         = "--------"
 summary['Working dir'] 		= workflow.workDir

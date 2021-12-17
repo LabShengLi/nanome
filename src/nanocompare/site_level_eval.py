@@ -600,9 +600,7 @@ if __name__ == '__main__':
                                  f'{args.dsname}.bgtruth.cpg.sites.cov{args.min_bgtruth_cov}.setsfile.txt.gz')
             ontcalls_to_setsfile_for_venn_analysis(bg_cpgs, outfn)
 
-        for callname in ToolNameList:
-            if callname not in callresult_dict_cov3:
-                continue
+        for callname in callresult_dict_cov3.keys():
             call_keys = callresult_dict_cov3[callname].keys()
             outfn = os.path.join(venn_outdir,
                                  f'{args.dsname}.{callname}.cpg.sites.cov{args.toolcov_cutoff}.setsfile.txt.gz')
