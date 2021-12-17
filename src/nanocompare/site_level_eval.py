@@ -387,13 +387,14 @@ def parse_arguments():
                                      description='Site-level correlation analysis in nanome paper')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
-    parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as MethCorr-Dataset_WGBS_2Reps",
+    parser.add_argument('--runid', type=str,
+                        help="running prefix/output folder name, such as MethCorr-Dataset_WGBS_2Reps",
                         required=True)
     parser.add_argument('--calls', nargs='+',
-                        help='all ONT call results <tool-name>:<encode>:<file-name> seperated by spaces, tool-name can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod',
+                        help='all ONT call results <tool-name>:<file-encode>:<file-name> seperated by spaces, tool-name/file-encode can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod, NANOME',
                         required=True)
     parser.add_argument('--bgtruth', type=str,
-                        help="background truth file <encode-type>:<file-name1>;<file-name1>, encode-type can be 'encode' or 'bismark'",
+                        help="background truth file <encode-type>:<file-name1>;<file-name2>, encode-type can be 'encode' or 'bismark'",
                         default=None)
     parser.add_argument('--genome-annotation', type=str,
                         help='genome annotation dir, contain BED files',
