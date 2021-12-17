@@ -4,6 +4,12 @@
 # @Software : NANOME project
 # @Organization : JAX Li Lab
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
+"""
+Prepare data for training, join all tools log-likelyhood (log meth_prob/unmeth_prob) score, with bs-seq
+Note:   no-coverage filter for tools and bs-seq, guppy score is from gcf52ref for reference purpose, not certified by us
+        contain NA value for each columns
+        run faster for splitting chromsomes
+"""
 import argparse
 from functools import reduce
 
@@ -64,7 +70,7 @@ if __name__ == '__main__':
 
     ## Combine bsseq to pred_df
     if args.contain_na:
-        pred_bsseq_combine_df = pred_combine_df.merge(bsseq_df, how='left', on=['Chr', 'Pos', 'Strand'])
+        pred_bsseq_combine_df = pred_combine_df.merge(bsseq_df, how='outer', on=['Chr', 'Pos', 'Strand'])
     else:
         pred_bsseq_combine_df = pred_combine_df.merge(bsseq_df, how='inner', on=['Chr', 'Pos', 'Strand'])
     print(f"pred_bsseq_combine_df={pred_bsseq_combine_df}")

@@ -11,13 +11,15 @@ import argparse
 import os.path
 import sys
 from collections import defaultdict
+from functools import reduce
 from warnings import simplefilter
 
 import math
+from tqdm import tqdm
 
 from nanocompare.eval_common import freq_to_label
 from nanocompare.xgboost.xgboost_common import TRUTH_LABEL_COLUMN, default_xgboost_params, gridcv_xgboost_params, \
-    gridcv_rf_params, SITES_COLUMN_LIST, default_rf_params, meteore_deepsignal_megalodon_model, load_meteore_model
+    gridcv_rf_params, SITES_COLUMN_LIST, default_rf_params
 
 simplefilter(action='ignore', category=FutureWarning)
 simplefilter(action='ignore', category=UserWarning)
@@ -124,12 +126,9 @@ def evaluation_on_test(clf, testdf, x_col_list=None, y_col_name=None, all_tools=
 
     ## evaluate for base model performance
 
-    for tool in all_tools + ['METEORE']:
-        y_pred_tool = testdf[f"{tool}_pred"]
-        if tool != 'METEORE':
-            y_score_tool = testdf[tool]
-        else:
-            y_score_tool = testdf['METEORE_prob']
+    for tool in all_tools:
+        y_score_tool = testdf[tool]
+        y_pred_tool = testdf[tool].apply(lambda x: 1 if x >= 0 else 0)
         accuracy = accuracy_score(y_test, y_pred_tool)
         precision = precision_score(y_test, y_pred_tool)
         recall = recall_score(y_test, y_pred_tool)
@@ -144,28 +143,6 @@ def evaluation_on_test(clf, testdf, x_col_list=None, y_col_name=None, all_tools=
 
         logger.info(
             f"tool={tool} accuracy={accuracy:.3f}, precision={precision:.3f}, recall={recall:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}")
-        if tool == 'METEORE':
-            # refit and re eval
-            meteore_model = load_meteore_model(meteore_deepsignal_megalodon_model)
-            X_test_scaled = testdf[['deepsignal_scale', 'megalodon_scale']]
-            tmp_y_pred = meteore_model.predict(X_test_scaled)
-            tmp_y_pred_prob = pd.DataFrame(meteore_model.predict_proba(X_test_scaled))[1]
-            ## evaluate model
-            accuracy = accuracy_score(y_test, tmp_y_pred)
-            precision = precision_score(y_test, tmp_y_pred)
-            recall = recall_score(y_test, tmp_y_pred)
-            f1 = f1_score(y_test, tmp_y_pred)
-            roc_auc = roc_auc_score(y_test, tmp_y_pred_prob)
-            dataset['Tool'].append(f"{tool}_online_pred")
-            dataset['Accuracy'].append(accuracy)
-            dataset['Precision'].append(precision)
-            dataset['Recall'].append(recall)
-            dataset['F1'].append(f1)
-            dataset['ROC_AUC'].append(roc_auc)
-            logger.info(
-                f"tool={tool} accuracy={accuracy:.3f}, precision={precision:.3f}, recall={recall:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}.  (Refit min-max preprocessing)")
-            conf_matrix = confusion_matrix(y_test, tmp_y_pred)
-            logger.info(f"\nconf_matrix=\n{conf_matrix}")
     outdf = pd.DataFrame.from_dict(dataset)
     outfn = args.o + f"_{args.model_type}_evaluation_on_test_across_tools.csv"
     outdf.to_csv(outfn, index=False)
@@ -273,7 +250,7 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
     # X_train = MinMaxScaler().fit_transform(X_train)
 
     ## Training process
-    if args.model_type in ['XGBoost', 'XGBoost_NA', 'XGBoostNA2T', 'XGBoostNA3T', ]:
+    if args.model_type.startswith('XGBoost'):  # ['XGBoost', 'XGBoost_NA', 'XGBoostNA2T', 'XGBoostNA3T', ]
         ## train model using CV and search best params
         default_xgboost_params.update({'random_state': args.random_state})
         clf_model = XGBClassifier(**default_xgboost_params)
@@ -397,51 +374,54 @@ if __name__ == '__main__':
         set_log_info_level()
     logger.debug(f"args={args}")
 
-    tool_list = list(args.t)
-    logger.debug(f"tool_list={tool_list}")
+    train_tool_list = list(args.t)
+    logger.debug(f"train_tool_list={train_tool_list}")
+
+    ## ID,Chr,Pos,Strand,nanopolish,megalodon,deepsignal,guppy,meteore,Freq,Coverage
+    dtype = {'ID': str, 'Chr': str, 'Pos': np.int64, 'Strand': str, 'nanopolish': float,
+             'megalodon': float, 'deepsignal': float, 'guppy': float, 'meteore': float,
+             'Freq': float, 'Coverage': float}
 
     if math.isclose(args.train_size, 1.0):
         logger.info(f"Full data set is used for training/cross-validation the model")
 
     datadf_list = []
-    for infn in args.i:
-        datadf1 = pd.read_csv(infn, index_col=False, nrows=args.test)
+    nadatadf_list = []
+    for infn in tqdm(args.i):
+        datadf1 = pd.read_csv(infn, dtype=dtype, header=0, index_col=False, nrows=args.test)
         datadf1['Pos'] = datadf1['Pos'].astype(np.int64)
         # drop guppy due to there is not clear read level outputs for it
         datadf1.drop('guppy', axis=1, inplace=True)
+        all_tools = list(datadf1.columns[4:datadf1.columns.get_loc('Freq')])
         datadf1.drop_duplicates(subset=["ID", "Chr", "Pos", "Strand"], inplace=True)
         datadf1.dropna(subset=["Freq", "Coverage"], inplace=True)
-        datadf1.dropna(subset=tool_list, inplace=True)
-        datadf_list.append(datadf1)
-    datadf = pd.concat(datadf_list)
-    datadf_list = None  # save memory
-    datadf1 = None  # save memory
-    logger.debug(f"datadf={datadf}")
+        datadf1 = datadf1[datadf1['Coverage'] >= args.bsseq_cov]
+        datadf1 = datadf1[(datadf1['Freq'] <= EPSLONG) | (datadf1['Freq'] >= args.fully_meth_threshold - EPSLONG)]
+        ## add label for distribution report
+        datadf1[TRUTH_LABEL_COLUMN] = datadf1['Freq'].apply(freq_to_label).astype(int)
+        datadf1.reset_index(drop=True, inplace=True)
 
-    if args.na_data is not None:
-        datadf_list = []
-        for infn in args.na_data:
-            datadf1 = pd.read_csv(infn, index_col=False, nrows=args.test)
-            datadf1['Pos'] = datadf1['Pos'].astype(np.int64)
-            datadf1.drop('guppy', axis=1, inplace=True)
-            datadf1.drop_duplicates(subset=["ID", "Chr", "Pos", "Strand"], inplace=True)
-            datadf1.dropna(subset=["Freq", "Coverage"], inplace=True)
-            datadf1 = datadf1[datadf1['Coverage'] >= 5]
-            datadf1 = datadf1[(datadf1['Freq'] <= EPSLONG) | (datadf1['Freq'] >= 1.0 - EPSLONG)]
-            datadf1[TRUTH_LABEL_COLUMN] = datadf1['Freq'].apply(freq_to_label).astype(int)
+        ## non-NA data for all tools for evaluation
+        datadf2 = datadf1.dropna(subset=all_tools)
+        datadf_list.append(datadf2)
 
-            datadf1.dropna(subset=tool_list, how='all', inplace=True)
-            datadf_list.append(datadf1)
-        nadf = pd.concat(datadf_list)
-        logger.debug(
-            f"NA  nadf={nadf}\n\n total NA preds={len(nadf):,}, nanopolish={nadf['nanopolish'].notna().sum():,}, megalodon={nadf['megalodon'].notna().sum():,}, deepsignal={nadf['deepsignal'].notna().sum():,}")
-        nadf_sites = nadf[SITES_COLUMN_LIST].drop_duplicates()
-        logger.debug(f"NA  sites={len(nadf_sites):,}")
-    else:
-        nadf = None
+        ## NA data at trained tools
+        mask_list = [datadf1[tool].isna() for tool in args.t]
+        mask_na_index = reduce(lambda left, right: (left | right), mask_list)
+        datadf3 = datadf1[mask_na_index]
+        nadatadf_list.append(datadf3)
 
-    all_tools = list(datadf.columns[4:datadf.columns.get_loc('Freq')])
     logger.debug(f"all_tools={all_tools}")
+
+    datadf = pd.concat(datadf_list)
+    datadf.reset_index(drop=True, inplace=True)
+    datadf_list = None  # save memory
+    logger.debug(f"datadf={len(datadf):,}")
+
+    nadatadf = pd.concat(nadatadf_list)
+    datadf.reset_index(drop=True, inplace=True)
+    nadatadf_list = None  # save memory
+    logger.debug(f"nadatadf={len(nadatadf):,}")
 
     ## Output read-level, site-level distributions
     logger.info(f"Read stats: total={len(datadf):,}, distribution=\n{datadf[TRUTH_LABEL_COLUMN].value_counts()}")
@@ -450,18 +430,6 @@ if __name__ == '__main__':
     logger.info(f"Site stats: total={len(sitedf):,}, distribution=\n{sitedf[TRUTH_LABEL_COLUMN].value_counts()}")
     sitedf = None
 
-    # ## use all-value data, NA for tool1, and tool2 value data
-    # logger.debug(f"datadf={datadf}")
-    #
-    # num_all_value_read_level = len(datadf.dropna(subset=tool_list))
-    # num_na_value_for_tool = {}
-    # for tool in tool_list:
-    #     num_na_value_for_tool[tool] = len(datadf[datadf[tool].isna()])
-    # logger.info(
-    #     f"NA value stats for read level: all-values={num_all_value_read_level:,}, NA-values={num_na_value_for_tool}")
-    # logger.info(
-    #     f"Assert all-values+NA-values=total: {num_all_value_read_level + sum(list(num_na_value_for_tool.values()))} == {len(datadf)}")
+    train_classifier_model(datadf, nadatadf, train_tool_list=args.t)
 
-    train_classifier_model(datadf, nadf, train_tool_list=args.t)
-
-    logger.info(f"### train model={args.model_type} on tools={args.t} program DONE")
+    logger.info(f"### train model={args.model_type} on train_tools={args.t} program DONE")
