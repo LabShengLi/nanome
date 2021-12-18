@@ -43,7 +43,7 @@ def helpMessage() {
 	  --outdir		Output dir, default is 'outputs'
 	  --chrSet		Chromosomes used in analysis, default is chr1-22, X and Y, for human. For E. coli data, it is default as 'NC_000913.3'. For other reference genome, please specify each chromosome with space seperated.
 
-	  --cleanCache		If clean work dir after complete, default is true
+	  --cleanWork		If clean work dir after complete, default is true
 
 	Running environment options:
 	  --docker_name		Docker name used for pipeline, default is 'liuyangzzu/nanome:latest'
@@ -136,7 +136,7 @@ def chromSizesFile = 'reference_genome/chrom.sizes'
 if (dataType == 'human') { isDeepModCluster = params.useDeepModCluster } else { 	isDeepModCluster = false }
 
 workflow.onComplete {
-	if (workflow.success && params.cleanCache) {
+	if (workflow.success && params.cleanWork) {
 		def workDir = new File("${workflow.workDir}")
 		println "rm -rf ${workflow.workDir}".execute().text
 	}
