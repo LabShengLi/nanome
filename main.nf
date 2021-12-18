@@ -1538,8 +1538,8 @@ process DpmodComb {
 	path ch_utils
 
 	output:
-	path "${params.dsname}_deepmod_*_per_site_combine.*.gz",	emit: deepmod_combine_out
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify
+	path "${params.dsname}_deepmod_*_per_site_combine.*.gz",	emit: deepmod_combine_out,	 optional: true
+	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify,	 optional: true
 
 	path "${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz",	emit: deepmod_combine_sum_chrs_mod_ch,	optional: true
 	path "${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz",	emit: deepmod_combine_c_cluster_all_chrs_ch,	optional: true
