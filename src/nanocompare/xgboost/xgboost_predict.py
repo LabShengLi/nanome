@@ -19,6 +19,7 @@ import pandas as pd
 from nanocompare.eval_common import load_tool_read_level_unified_as_df
 from nanocompare.global_config import set_log_debug_level, set_log_info_level, logger
 from nanocompare.global_settings import nanome_model_dict, CHUNKSIZE, NANOME_VERSION, xgboost_mode_base_dir
+from nanocompare.xgboost.xgboost_common import SITES_COLUMN_LIST, READS_COLUMN_LIST
 
 
 def parse_arguments():
@@ -90,8 +91,6 @@ if __name__ == '__main__':
         # release memory
         dflist = None
         datadf.drop_duplicates(subset=["ID", "Chr", "Pos", "Strand"], inplace=True)
-        datadf.reset_index(inplace=True, drop=True)
-
         if len(datadf) <= 0:
             raise Exception(f"The combined results are empty, for tool_list={tool_list}, fn_list={df_tsvfile[1]}")
 
@@ -116,22 +115,24 @@ if __name__ == '__main__':
             datadf.dropna(subset=args.t, inplace=True)
         else:
             datadf.dropna(subset=args.t, inplace=True, how='all')
-        datadf.drop_duplicates(subset=["ID", "Chr", "Pos", "Strand"], inplace=True)
-
-        datadf.reset_index(inplace=True, drop=True)
+        datadf.drop_duplicates(subset=READS_COLUMN_LIST, inplace=True)
         logger.debug(f"tool_list={tool_list}")
         logger.debug(f"datadf={datadf}")
+
+    if datadf is not None:
+        datadf.reset_index(inplace=True, drop=True)
+    else:
+        raise Exception(f"datadf can not be None")
 
     ## Output read-level, site-level distributions
     logger.debug(f"Read stats: total={len(datadf):,}")
 
-    sitedf = datadf[["Chr", "Pos", "Strand"]].drop_duplicates()
+    sitedf = datadf[SITES_COLUMN_LIST].drop_duplicates()
     logger.debug(f"Site stats: total={len(sitedf):,}")
     sitedf = None
 
     logger.debug(f"Start predict by XGBoost......")
     predX = datadf.loc[:, tool_list]
-    # predX = MinMaxScaler().fit_transform(predX)
     prediction = pd.DataFrame(xgboost_cls.predict(predX))
     prediction.rename(columns={0: "Prediction"}, inplace=True)
 
@@ -139,10 +140,9 @@ if __name__ == '__main__':
     prediction_prob.rename(columns={1: "Prob_methylation"}, inplace=True)
 
     nanome_df = pd.concat([datadf, prediction, prediction_prob], axis=1)
-    nanome_df = nanome_df[
-        ['ID', 'Chr', 'Pos', 'Strand'] + tool_list + ["Prediction", "Prob_methylation"]]
+    nanome_df = nanome_df[READS_COLUMN_LIST + tool_list + ["Prediction", "Prob_methylation"]]
     logger.debug(f"nanome_df={nanome_df}")
 
     nanome_df.to_csv(args.o, sep='\t', index=False)
     logger.info(f"save to {args.o}")
-    logger.info("Done for XGBoost predict")
+    logger.info(f"### Done for model:{args.m} predict")
