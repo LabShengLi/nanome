@@ -288,7 +288,7 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
     joblib.dump(clf, outfn)
     logger.info(f"save model to {outfn}")
 
-    ## Evaluate on overlapped predictions for CpGs by all tools (Top4 + XGBoost/RF)
+    ## Evaluate on overlapped predictions for CpGs by all tools
     if testdf is not None:
         testdf.dropna(inplace=True)
         testdf.reset_index(drop=True, inplace=True)
@@ -301,23 +301,6 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
                 class_distribution=\n{y_test.value_counts()}
                 class_freq=\n{y_test.value_counts(normalize=True)}
                 """)
-
-    # if args.eval_only and False:
-    #     ## import model
-    #     if args.m is not None:
-    #         logger.debug(f"Model file: {args.m}")
-    #         xgboost_cls = joblib.load(args.m)
-    #         try:
-    #             logger.debug(f"Model info: xgboost_cls={xgboost_cls}")
-    #             logger.debug(f"best_params={xgboost_cls.best_params_}")
-    #         except:
-    #             logger.debug(f"WARNNING: print params encounter problem, may be scikit learn confilicts issue")
-    #     else:
-    #         raise Exception(f"No model input file specified")
-    #
-    #     ## evaluation on test data
-    #     evaluation_on_test(xgboost_cls, X_test, y_test)
-    #     return
 
     ## evaluate model
     if clf is not None and testdf is not None:
