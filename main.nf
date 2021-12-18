@@ -135,6 +135,7 @@ def chromSizesFile = 'reference_genome/chrom.sizes'
 
 if (dataType == 'human') { isDeepModCluster = params.useDeepModCluster } else { 	isDeepModCluster = false }
 
+
 workflow.onComplete {
 	if (workflow.success && params.cleanWork) {
 		def workDir = new File("${workflow.workDir}")
@@ -667,7 +668,7 @@ process Nanopolish {
 	each path(reference_genome)
 
 	output:
-	path "batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz", 	emit: nanopolish_out
+	path "${params.dsname}_nanopolish_batch_${basecallDir.baseName}.*.gz", 	emit: nanopolish_out
 
 	when:
 	params.runMethcall && params.runNanopolish
@@ -697,7 +698,7 @@ process Nanopolish {
 	## ref: https://github.com/jts/nanopolish/issues/683, https://github.com/jts/nanopolish/issues/580
 	nanopolish call-methylation -t \$( echo "print(int( \$numProcessor * ${params.reduceProcTimes} ))" | python3 ) -r \${fastqFile##*/} \
 		-b \${bamFileName} -g ${referenceGenome} -q cpg | awk 'NR>1' | \
-		gzip -f > batch_${basecallDir.baseName}.nanopolish.methylation_calls.tsv.gz
+		gzip -f > ${params.dsname}_nanopolish_batch_${basecallDir.baseName}.tsv.gz
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -715,7 +716,7 @@ process NplshComb {
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy",
-		pattern: "${params.dsname}.*.combine.*.gz",
+		pattern: "${params.dsname}_nanopolish_per_read_combine.*.gz",
 		enabled: params.outputRaw
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
@@ -731,7 +732,7 @@ process NplshComb {
 	path ch_utils
 
 	output:
-	path "${params.dsname}.nanopolish.per_read.combine.tsv.gz",	emit: nanopolish_combine_out_ch
+	path "${params.dsname}_nanopolish_per_read_combine.tsv.gz",	emit: nanopolish_combine_out_ch
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify
 
@@ -739,22 +740,22 @@ process NplshComb {
 	x.size() >= 1 && params.runCombine
 
 	"""
-	> ${params.dsname}.nanopolish.per_read.combine.tsv.gz
-	cat ${x} > ${params.dsname}.nanopolish.per_read.combine.tsv.gz
+	> ${params.dsname}_nanopolish_per_read_combine.tsv.gz
+	cat ${x} > ${params.dsname}_nanopolish_per_read_combine.tsv.gz
 
 	if [[ ${params.deduplicate} == true ]] ; then
 		echo "### Deduplicate for read-level outputs"
-		zcat ${params.dsname}.nanopolish.per_read.combine.tsv.gz |\
+		zcat ${params.dsname}_nanopolish_per_read_combine.tsv.gz |\
 			sort -V -u -k1,1 -k3,3n -k4,4n -k5,5 -k2,2 |\
-			gzip -f > ${params.dsname}.nanopolish.per_read.combine.sort.tsv.gz
-		rm ${params.dsname}.nanopolish.per_read.combine.tsv.gz &&\
-			mv ${params.dsname}.nanopolish.per_read.combine.sort.tsv.gz ${params.dsname}.nanopolish.per_read.combine.tsv.gz
+			gzip -f > ${params.dsname}_nanopolish_per_read_combine.sort.tsv.gz
+		rm ${params.dsname}_nanopolish_per_read_combine.tsv.gz &&\
+			mv ${params.dsname}_nanopolish_per_read_combine.sort.tsv.gz ${params.dsname}_nanopolish_per_read_combine.tsv.gz
 	fi
 
 	## Unify format output
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Nanopolish Nanopolish \
-		${params.dsname}.nanopolish.per_read.combine.tsv.gz \
+		${params.dsname}_nanopolish_per_read_combine.tsv.gz \
 		.  \$((numProcessor))  12 ${params.sort == true ? true : false}   "${chrSet}"
 
 	echo "### Nanopolish combine DONE"
@@ -776,7 +777,7 @@ process Megalodon {
 	each path(rerio_dir)
 
 	output:
-	path "batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt.gz", emit: megalodon_out
+	path "${params.dsname}_megalodon_batch_${fast5_dir.baseName}.*.gz", emit: megalodon_out
 
 	when:
 	params.runMethcall && params.runMegalodon
@@ -834,7 +835,7 @@ process Megalodon {
 	fi
 
 	awk 'NR>1' megalodon_results/per_read_modified_base_calls.txt | gzip -f > \
-		batch_${fast5_dir.baseName}.megalodon.per_read_modified_base_calls.txt.gz
+		${params.dsname}_megalodon_batch_${fast5_dir.baseName}.tsv.gz
 
 	### Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -853,7 +854,7 @@ process MgldnComb {
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy",
-		pattern: "${params.dsname}.*.combine.*.gz",
+		pattern: "${params.dsname}_megalodon_per_read_combine.*.gz",
 		enabled: params.outputRaw
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
@@ -869,7 +870,7 @@ process MgldnComb {
 	path ch_utils
 
 	output:
-	path "${params.dsname}.megalodon.per_read.combine.bed.gz",	emit: megalodon_combine
+	path "${params.dsname}_megalodon_per_read_combine.*.gz",	emit: megalodon_combine
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify
 
@@ -877,23 +878,23 @@ process MgldnComb {
 	x.size() >= 1  && params.runCombine
 
 	"""
-	> ${params.dsname}.megalodon.per_read.combine.bed.gz
-	cat ${x} > ${params.dsname}.megalodon.per_read.combine.bed.gz
+	> ${params.dsname}_megalodon_per_read_combine.bed.gz
+	cat ${x} > ${params.dsname}_megalodon_per_read_combine.bed.gz
 
 	if [[ ${params.deduplicate} == true ]] ; then
 		echo "### Deduplicate for read-level outputs"
 		## sort order: Chr, Start, (End), ID, Strand
-		zcat ${params.dsname}.megalodon.per_read.combine.bed.gz |\
+		zcat ${params.dsname}_megalodon_per_read_combine.bed.gz |\
 			sort -V -u -k2,2 -k4,4n -k1,1 -k3,3 |\
-			gzip -f > ${params.dsname}.megalodon.per_read.combine.sort.bed.gz
-		rm ${params.dsname}.megalodon.per_read.combine.bed.gz &&\
-			mv ${params.dsname}.megalodon.per_read.combine.sort.bed.gz  ${params.dsname}.megalodon.per_read.combine.bed.gz
+			gzip -f > ${params.dsname}_megalodon_per_read_combine.sort.bed.gz
+		rm ${params.dsname}_megalodon_per_read_combine.bed.gz &&\
+			mv ${params.dsname}_megalodon_per_read_combine.sort.bed.gz  ${params.dsname}_megalodon_per_read_combine.bed.gz
 	fi
 
 	## Unify format output
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Megalodon Megalodon \
-		${params.dsname}.megalodon.per_read.combine.bed.gz \
+		${params.dsname}_megalodon_per_read_combine.bed.gz \
 		.  \$((numProcessor))  12  ${params.sort == true ? true : false}  "${chrSet}"
 
 	echo "### Megalodon combine DONE"
@@ -915,7 +916,7 @@ process DeepSignal {
 	each path(deepsignal_model_dir)
 
 	output:
-	path "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv.gz",	emit: deepsignal_out
+	path "${params.dsname}_deepsignal_batch_${indir.baseName}.*.gz",	emit: deepsignal_out
 
 	when:
 	params.runMethcall && params.runDeepSignal
@@ -923,12 +924,14 @@ process DeepSignal {
 	"""
 	DeepSignalModelBaseDir="."
 	commandType='gpu'
+	outFile="${params.dsname}_deepsignal_batch_${indir.baseName}.tsv"
+
 	if [[ \${commandType} == "cpu" ]]; then
 		## CPU version command
 		deepsignal call_mods \
 			--input_path ${indir}/workspace \
 			--model_path "\${DeepSignalModelBaseDir}/${params.DEEPSIGNAL_MODEL_DIR}/${params.DEEPSIGNAL_MODEL}" \
-			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
+			--result_file \${outFile} \
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
 			--nproc \$(( numProcessor * ${params.highProcTimes}  )) \
@@ -938,7 +941,7 @@ process DeepSignal {
 		deepsignal call_mods \
 			--input_path ${indir}/workspace \
 			--model_path "\${DeepSignalModelBaseDir}/${params.DEEPSIGNAL_MODEL_DIR}/${params.DEEPSIGNAL_MODEL}" \
-			--result_file "batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv" \
+			--result_file \${outFile} \
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
 			--nproc \$(( numProcessor * ${params.highProcTimes}  )) \
@@ -948,7 +951,7 @@ process DeepSignal {
 		exit 255
 	fi
 
-	gzip -f batch_${indir.baseName}.CpG.deepsignal.call_mods.tsv
+	gzip -f \${outFile}
 	echo "### DeepSignal methylation DONE"
 	"""
 }
@@ -960,7 +963,7 @@ process DpSigComb {
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy",
-		pattern: "${params.dsname}.*.combine.*.gz",
+		pattern: "${params.dsname}_deepsignal_per_read_combine.*.gz",
 		enabled: params.outputRaw
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
@@ -976,7 +979,7 @@ process DpSigComb {
 	path ch_utils
 
 	output:
-	path "${params.dsname}.deepsignal.per_read.combine.tsv.gz",	emit: deepsignal_combine_out
+	path "${params.dsname}_deepsignal_per_read_combine.*.gz",	emit: deepsignal_combine_out
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify
 
@@ -984,23 +987,23 @@ process DpSigComb {
 	x.size() >= 1 && params.runCombine
 
 	"""
-	touch ${params.dsname}.deepsignal.per_read.combine.tsv.gz
-	cat ${x} > ${params.dsname}.deepsignal.per_read.combine.tsv.gz
+	touch ${params.dsname}_deepsignal_per_read_combine.tsv.gz
+	cat ${x} > ${params.dsname}_deepsignal_per_read_combine.tsv.gz
 
 	if [[ ${params.deduplicate} == true ]] ; then
 		echo "### Deduplicate for read-level outputs"
 		## sort order: Chr, Start, (End), ID, Strand
-		zcat ${params.dsname}.deepsignal.per_read.combine.tsv.gz |\
+		zcat ${params.dsname}_deepsignal_per_read_combine.tsv.gz |\
 			sort -V -u -k1,1 -k2,2n -k5,5 -k3,3 |\
-			gzip -f > ${params.dsname}.deepsignal.per_read.combine.sort.tsv.gz
-		rm ${params.dsname}.deepsignal.per_read.combine.tsv.gz &&\
-			mv ${params.dsname}.deepsignal.per_read.combine.sort.tsv.gz  ${params.dsname}.deepsignal.per_read.combine.tsv.gz
+			gzip -f > ${params.dsname}_deepsignal_per_read_combine.sort.tsv.gz
+		rm ${params.dsname}_deepsignal_per_read_combine.tsv.gz &&\
+			mv ${params.dsname}_deepsignal_per_read_combine.sort.tsv.gz  ${params.dsname}_deepsignal_per_read_combine.tsv.gz
 	fi
 
 	## Unify format output
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  DeepSignal DeepSignal\
-		${params.dsname}.deepsignal.per_read.combine.tsv.gz \
+		${params.dsname}_deepsignal_per_read_combine.tsv.gz \
 		.  \$((numProcessor))  12 ${params.sort == true ? true : false}  "${chrSet}"
 	echo "### DeepSignal combine DONE"
 	"""
@@ -1013,12 +1016,13 @@ process Guppy {
 
 	publishDir "${params.outdir}/${params.dsname}_intermediate/guppy",
 		mode: "copy",
-		pattern: "outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz",
+		pattern: "bamfile_${params.dsname}_guppy_fast5mod_batch_${fast5_dir.baseName}_guppy2sam.bam.tar.gz",
 		enabled: params.outputIntermediate
+
 	publishDir "${params.outdir}/${params.dsname}_intermediate/guppy",
 		mode: "copy",
-		pattern: "batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz",
-		enabled: params.outputIntermediate
+		pattern: "${params.dsname}_guppy_gcf52ref_batch_${fast5_dir.baseName}.*.gz",
+		enabled: params.outputIntermediate && params.runGuppyGcf52ref
 
 	input:
 	path fast5_dir
@@ -1026,9 +1030,10 @@ process Guppy {
 	each path(utils)
 
 	output:
-	path "outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz",	optional: true,	emit: guppy_fast5mod_bam_gz
-	path "batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*",	emit: guppy_fast5mod_bam
-	path "batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz",	optional: true, emit: guppy_gcf52ref_tsv
+	path "${params.dsname}_guppy_fast5mod_batch_${fast5_dir.baseName}_guppy2sam.bam*",	emit: guppy_fast5mod_bam
+	path "${params.dsname}_guppy_gcf52ref_batch_${fast5_dir.baseName}.*.gz",	optional: true, emit: guppy_gcf52ref_tsv
+
+	path "bamfile_${params.dsname}_guppy_fast5mod_batch_${fast5_dir.baseName}_guppy2sam.bam.tar.gz",	optional: true,	emit: guppy_fast5mod_bam_gz
 
 	when:
 	params.runMethcall && params.runGuppy
@@ -1121,16 +1126,15 @@ process Guppy {
 		echo "### gcf52ref extract to tsv done"
 
 		awk 'NR>1' tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv | gzip -f > \
-			batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz
+			${params.dsname}_guppy_gcf52ref_batch_${fast5_dir.baseName}.tsv.gz &&\
+			rm -f tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv
 		echo "### gcf52ref extraction DONE"
-	else
-		## pass the empty file to channel
-		touch batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv.gz
 	fi
 
 	## fast5mod ways
 	FAST5PATH=${fast5_dir.baseName}.methcalled/workspace
-	OUTBAM=batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam
+	## OUTBAM=batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam
+	OUTBAM=${params.dsname}_guppy_fast5mod_batch_${fast5_dir.baseName}_guppy2sam.bam
 
 	fast5mod guppy2sam \${FAST5PATH} --reference ${referenceGenome} \
 		--workers \$(( numProcessor * ${params.highProcTimes} )) --recursive --quiet \
@@ -1139,8 +1143,8 @@ process Guppy {
 		samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} ))  \${OUTBAM}
 
 	if [[ "${params.outputIntermediate}" == true ]] ; then
-		tar -czf outbatch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam.tar.gz \
-			batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam*
+		tar -czf bamfile_\${OUTBAM}.tar.gz \
+			\${OUTBAM}*
 	fi
 	echo "### fast5mod extraction DONE"
 
@@ -1163,11 +1167,11 @@ process GuppyComb {
 	tag "${params.dsname}"
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
-		mode: "copy", pattern: "${params.dsname}.guppy.*.combine.tsv.gz",
+		mode: "copy", pattern: "${params.dsname}_guppy_*_per_*_combine.*.gz",
 		enabled: params.outputRaw
 
 	publishDir "${params.outdir}/${params.dsname}_intermediate/guppy",
-		mode: "copy", pattern: "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz",
+		mode: "copy", pattern: "bamfile_${params.dsname}_guppy_fast5mod_combine.bam.tar.gz",
 		enabled: params.outputIntermediate
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
@@ -1178,18 +1182,19 @@ process GuppyComb {
 		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
 
 	input:
-	path x
-	path y
+	path x // fast5mod bam inputs
+	path y // gcf52ref tsv.gz inputs
 	path reference_genome
 	path ch_src
 	path ch_utils
 
 	output:
-	path "${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz", emit: guppy_fast5mod_combine_out
-	path "${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz", optional: true, emit: guppy_gcf52ref_combine_out
+	path "${params.dsname}_guppy_fast5mod_per_site_combine.*.gz", emit: guppy_fast5mod_combine_out
+	path "${params.dsname}_guppy_gcf52ref_per_read_combine.*.gz", optional: true, emit: guppy_gcf52ref_combine_out
+	path "bamfile_${params.dsname}_guppy_fast5mod_combine.bam.tar.gz", emit: guppy_combine_raw_out_ch,  optional: true
+
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz", optional: true,  emit: read_unify
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz", emit: site_unify
-	path "${params.dsname}.guppy_fast5mod.combined.bam.tar.gz", emit: guppy_combine_raw_out_ch,  optional: true
 
 	when:
 	x.size() >= 1 && params.runCombine
@@ -1197,23 +1202,23 @@ process GuppyComb {
 	"""
 	if [[ ${params.runGuppyGcf52ref} == true ]] ; then
 		## gcf52ref ways
-		cat batch_*.guppy.gcf52ref_per_read.tsv.gz > ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz
+		cat ${params.dsname}_guppy_gcf52ref_batch_*.gz > ${params.dsname}_guppy_gcf52ref_per_read_combine.tsv.gz
 		echo "### gcf52ref combine DONE"
 	fi
 
 	## fast5mod ways combine
 	## find name like batch_*.guppy.fast5mod_guppy2sam.bam*
-	find . -maxdepth 1  -name 'batch_*.guppy.fast5mod_guppy2sam.bam' |
+	find . -maxdepth 1  -name '${params.dsname}_guppy_fast5mod_batch_*_guppy2sam.bam' |
 		parallel -j\$(( numProcessor )) --xargs -v \
-		samtools merge -@\$(( numProcessor * ${params.mediumProcTimes} )) total.meth.bam {}
+		samtools merge -@\$(( numProcessor * ${params.mediumProcTimes} )) ${params.dsname}_guppy_fast5mod_combine.bam {}
 
 	### sort is not needed due to merge the sorted bam, ref: http://www.htslib.org/doc/samtools-merge.html
 	### samtools sort -@ \$(( numProcessor * ${params.mediumProcTimes} )) total.meth.bam
-	samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} )) total.meth.bam
+	samtools index -@ \$(( numProcessor * ${params.mediumProcTimes} )) ${params.dsname}_guppy_fast5mod_combine.bam
 	echo "Samtool merge and index for fast5mod DONE"
 
 	if [[ ${params.outputIntermediate} == true ]] ; then
-		tar -czf ${params.dsname}.guppy_fast5mod.combined.bam.tar.gz total.meth.bam*
+		tar -czf bamfile_${params.dsname}_guppy_fast5mod_combine.bam.tar.gz ${params.dsname}_guppy_fast5mod_combine.bam*
 	fi
 
 	awk '/^>/' ${referenceGenome} | awk '{print \$1}' \
@@ -1233,60 +1238,60 @@ process GuppyComb {
 
 		## Ref: https://github.com/nanoporetech/medaka/issues/177
 		parallel -j\$(( numProcessor * ${params.highProcTimes} )) -v \
-			"fast5mod call total.meth.bam ${referenceGenome} \
+			"fast5mod call  ${params.dsname}_guppy_fast5mod_combine.bam  ${referenceGenome} \
 				meth.chr_{}.tsv  --meth cpg --quiet --regions {} ; \
 				gzip -f meth.chr_{}.tsv" :::: chr_all_list.txt
 
-		touch ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
+		touch ${params.dsname}_guppy_fast5mod_per_site_combine.tsv.gz
 		for chrname in ${chrSet}
 		do
 			if [ -f "meth.chr_\${chrname}.tsv.gz" ]; then
 				cat  meth.chr_\${chrname}.tsv.gz >> \
-					${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz
+					${params.dsname}_guppy_fast5mod_per_site_combine.tsv.gz
 			fi
 		done
 	else
 		echo "### For other genome, chrSet=[${chrSet}]"
 		for chrname in ${chrSet} ;
 		do
-			fast5mod call total.meth.bam ${referenceGenome} \
+			fast5mod call ${params.dsname}_guppy_fast5mod_combine.bam  ${referenceGenome} \
 				meth.chr_\${chrname}.tsv \
 				--meth cpg --quiet \
 				--regions \${chrname}
 			gzip -f  meth.chr_\${chrname}.tsv
 		done
-		cat meth.chr_*.tsv.gz > ${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz &&\
+		cat meth.chr_*.tsv.gz > ${params.dsname}_guppy_fast5mod_per_site_combine.tsv.gz &&\
 			rm -f meth.chr_*.tsv.gz
 	fi
 
-	if [[ ${params.deduplicate} == true ]] ; then
+	if [[ ${params.deduplicate} == true && ${params.runGuppyGcf52ref} == true ]] ; then
 		echo "### Deduplicate for read-level outputs"
 		## sort order: Chr, Start, (End), ID, Strand
-		zcat ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz |\
+		zcat ${params.dsname}_guppy_gcf52ref_per_read_combine.tsv.gz |\
 			sort -V -u -k1,1 -k3,3n -k5,5 -k2,2 |\
-			gzip -f > ${params.dsname}.guppy.gcf52ref_per_read.combine.sort.tsv.gz
-		rm ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz &&\
-			mv ${params.dsname}.guppy.gcf52ref_per_read.combine.sort.tsv.gz ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz
+			gzip -f > ${params.dsname}_guppy_gcf52ref_per_read_combine.sort.tsv.gz
+		rm ${params.dsname}_guppy_gcf52ref_per_read_combine.tsv.gz &&\
+			mv ${params.dsname}_guppy_gcf52ref_per_read_combine.sort.tsv.gz ${params.dsname}_guppy_gcf52ref_per_read_combine.tsv.gz
 	fi
 
 	if [[ ${params.runGuppyGcf52ref} == true ]] ; then
 		## Unify format output for read level
 		bash utils/unify_format_for_calls.sh \
 			${params.dsname}  Guppy Guppy.gcf52ref\
-			 ${params.dsname}.guppy.gcf52ref_per_read.combine.tsv.gz \
+			 ${params.dsname}_guppy_gcf52ref_per_read_combine.tsv.gz \
 			.  \$((numProcessor))  1  ${params.sort == true ? true : false}  "${chrSet}"
 	fi
 
 	## Unify format output for site level
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Guppy Guppy\
-		${params.dsname}.guppy.fast5mod_per_site.combine.tsv.gz \
+		${params.dsname}_guppy_fast5mod_per_site_combine.tsv.gz \
 		.  \$((numProcessor))  2  ${params.sort == true ? true : false}  "${chrSet}"
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
 		rm -f meth.chr*.tsv.gz
-		rm -f total.meth.bam*
+		rm -f ${params.dsname}_guppy_fast5mod_combine.bam*
 	fi
 	echo "### Guppy combine DONE"
 	"""
@@ -1305,9 +1310,8 @@ process Tombo {
 	path resquiggleDir
 	each path(reference_genome)
 
-
 	output:
-	path "batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed.gz",	emit: tombo_out
+	path "${params.dsname}_tombo_batch_${resquiggleDir.baseName}.*.gz",	emit: tombo_out, optional: true
 
 	when:
 	params.runMethcall && params.runTombo
@@ -1319,8 +1323,8 @@ process Tombo {
 	tombo detect_modifications alternative_model \
 		--fast5-basedirs ${resquiggleDir}/workspace \
 		--dna\
-		--statistics-file-basename batch_${resquiggleDir.baseName} \
-		--per-read-statistics-basename batch_${resquiggleDir.baseName} \
+		--statistics-file-basename ${params.dsname}_tombo_batch_${resquiggleDir.baseName} \
+		--per-read-statistics-basename ${params.dsname}_tombo_batch_${resquiggleDir.baseName} \
 		--alternate-bases CpG \
 		--processes \$(( numProcessor )) \
 		--corrected-group ${params.ResquiggleCorrectedGroup} \
@@ -1335,8 +1339,8 @@ process Tombo {
 		tombo detect_modifications alternative_model \
 			--fast5-basedirs ${resquiggleDir}/workspace \
 			--dna\
-			--statistics-file-basename batch_${resquiggleDir.baseName} \
-			--per-read-statistics-basename batch_${resquiggleDir.baseName} \
+			--statistics-file-basename ${params.dsname}_tombo_batch_${resquiggleDir.baseName} \
+			--per-read-statistics-basename ${params.dsname}_tombo_batch_${resquiggleDir.baseName} \
 			--alternate-bases CpG \
 			--processes \$(( numProcessor )) \
 			--corrected-group ${params.ResquiggleCorrectedGroup} \
@@ -1369,10 +1373,10 @@ process Tombo {
 
 	tombo_extract_per_read_stats.py \
 		genome.chome.sizes \
-		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats" \
-		"batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed"
+		"${params.dsname}_tombo_batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats" \
+		"${params.dsname}_tombo_batch_${resquiggleDir.baseName}.bed"
 
-	gzip -f batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats.bed
+	gzip -f ${params.dsname}_tombo_batch_${resquiggleDir.baseName}.bed
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -1389,7 +1393,7 @@ process TomboComb {
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy",
-		pattern: "${params.dsname}.*.combine.*.gz",
+		pattern: "${params.dsname}_tombo_per_read_combine.*.gz",
 		enabled: params.outputRaw
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
@@ -1405,7 +1409,7 @@ process TomboComb {
 	path ch_utils
 
 	output:
-	path "${params.dsname}.tombo.per_read.combine.bed.gz",	emit: tombo_combine_out
+	path "${params.dsname}_tombo_per_read_combine.*.gz",	emit: tombo_combine_out
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify
 
@@ -1413,23 +1417,23 @@ process TomboComb {
 	x.size() >= 1 && params.runCombine
 
 	"""
-	touch ${params.dsname}.tombo.per_read.combine.bed.gz
-	cat ${x} > ${params.dsname}.tombo.per_read.combine.bed.gz
+	touch ${params.dsname}_tombo_per_read_combine.bed.gz
+	cat ${x} > ${params.dsname}_tombo_per_read_combine.bed.gz
 
 	if [[ ${params.deduplicate} == true ]] ; then
 		echo "### Deduplicate for read-level outputs"
 		## sort order: Chr, Start, (End), ID, Strand
-		zcat ${params.dsname}.tombo.per_read.combine.bed.gz |\
+		zcat ${params.dsname}_tombo_per_read_combine.bed.gz |\
 			sort -V -u -k1,1 -k3,3n -k4,4 -k6,6 |\
-			gzip -f > ${params.dsname}.tombo.per_read.combine.sort.bed.gz
-		rm ${params.dsname}.tombo.per_read.combine.bed.gz &&\
-			mv ${params.dsname}.tombo.per_read.combine.sort.bed.gz  ${params.dsname}.tombo.per_read.combine.bed.gz
+			gzip -f > ${params.dsname}_tombo_per_read_combine.sort.bed.gz
+		rm ${params.dsname}_tombo_per_read_combine.bed.gz &&\
+			mv ${params.dsname}_tombo_per_read_combine.sort.bed.gz  ${params.dsname}_tombo_per_read_combine.bed.gz
 	fi
 
 	## Unify format output
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Tombo Tombo\
-		${params.dsname}.tombo.per_read.combine.bed.gz \
+		${params.dsname}_tombo_per_read_combine.bed.gz \
 		.  \$((numProcessor))  12  ${params.sort == true ? true : false}  "${chrSet}"
 	echo "### Tombo combine DONE"
 	"""
@@ -1512,7 +1516,7 @@ process DpmodComb {
 	tag "${params.dsname}"
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
-		mode: "copy", pattern: "${params.dsname}.deepmod.*.combine.bed.gz",
+		mode: "copy", pattern: "${params.dsname}_deepmod_*_per_site_combine.*.gz",
 		enabled: params.outputRaw
 	publishDir "${params.outdir}/${params.dsname}_intermediate/deepmod",
 		mode: "copy", pattern: "${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz",
@@ -1534,8 +1538,9 @@ process DpmodComb {
 	path ch_utils
 
 	output:
-	path "${params.dsname}.deepmod.*.combine.bed.gz",	emit: deepmod_combine_out
+	path "${params.dsname}_deepmod_*_per_site_combine.*.gz",	emit: deepmod_combine_out
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify
+
 	path "${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz",	emit: deepmod_combine_sum_chrs_mod_ch,	optional: true
 	path "${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz",	emit: deepmod_combine_c_cluster_all_chrs_ch,	optional: true
 	path "${params.dsname}.deepmod.all_batch.C.bed.tar.gz",	emit: deepmod_combine_all_batch_c_ch,	optional: true
@@ -1574,14 +1579,14 @@ process DpmodComb {
 	sum_chr_mod.py \
 		indir/ C ${params.dsname}.deepmod ${chrSet.split(' ').join(',')}  &>> DpmodComb.run.log
 
-	> ${params.dsname}.deepmod.C_per_site.combine.bed
+	> ${params.dsname}_deepmod_c_per_site_combine.bed
 
 	## Note: for ecoli data, no pattern for chr*, but N*
 	for f in \$(ls -1 indir/${params.dsname}.deepmod.*.C.bed)
 	do
-	  cat \$f >> ${params.dsname}.deepmod.C_per_site.combine.bed
+	  cat \$f >> ${params.dsname}_deepmod_c_per_site_combine.bed
 	done
-	gzip -f ${params.dsname}.deepmod.C_per_site.combine.bed
+	gzip -f ${params.dsname}_deepmod_c_per_site_combine.bed
 
 	if [[ "${dataType}" == "human" && "${isDeepModCluster}" == "true" ]] ; then
 		## Only apply to human genome
@@ -1603,13 +1608,13 @@ process DpmodComb {
 			./C \
 			\${DeepModTrainModelDir}/${params.DEEPMOD_CLUSTER_MODEL} &>> DpmodComb.run.log
 
-		> ${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed
+		> ${params.dsname}_deepmod_clusterCpG_per_site_combine.bed
 		for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
 		do
-		  cat \$f >> ${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed
+		  cat \$f >> ${params.dsname}_deepmod_clusterCpG_per_site_combine.bed
 		done
 
-		gzip -f ${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed
+		gzip -f ${params.dsname}_deepmod_clusterCpG_per_site_combine.bed
 
 		if [[ "${params.outputIntermediate}" == true ]] ; then
 			tar -czf ${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz \
@@ -1625,9 +1630,9 @@ process DpmodComb {
 	fi
 
 	if [[ "${isDeepModCluster}" == "true" ]] ; then
-		callfn=${params.dsname}.deepmod.C_clusterCpG_per_site.combine.bed.gz
+		callfn=${params.dsname}_deepmod_clusterCpG_per_site_combine.bed.gz
 	else
-		callfn=${params.dsname}.deepmod.C_per_site.combine.bed.gz
+		callfn=${params.dsname}_deepmod_c_per_site_combine.bed.gz
 	fi
 
 	## Unify format output
@@ -1652,7 +1657,7 @@ process METEORE {
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy",
-		pattern: "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz",
+		pattern: "${params.dsname}_meteore_*_model_per_read_combine.*.gz",
 		enabled: params.outputRaw
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
@@ -1671,7 +1676,7 @@ process METEORE {
 	path METEOREDir
 
 	output:
-	path "${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz",	emit: meteore_combine_out, optional: true
+	path "${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.*.gz",	emit: meteore_combine_out, optional: true
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify, 	optional: true
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify,	optional: true
 
@@ -1699,7 +1704,7 @@ process METEORE {
 	fi
 
 	## METEORE outputs by combining other tools
-	modelContentFileName=${params.dsname}_Megalodon_DeepSignal_combine.model_content.tsv
+	modelContentFileName=${params.dsname}_METEORE_RF_DeepSignal_Megalodon.model_content.tsv
 	> \$modelContentFileName
 	printf '%s\t%s\n' deepsignal ${deepsignal} >> \$modelContentFileName
 	printf '%s\t%s\n' megalodon ${megalodon} >> \$modelContentFileName
@@ -1716,7 +1721,7 @@ process METEORE {
 	\${combineScript}\
 		-i \${modelContentFileName} \
 		-m optimized -b \${METEOREDIR} \
-		-o ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz\
+		-o ${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.tsv.gz\
 		&>> METEORE.run.log
 
 	# Use default parameters from the sklearn library (n_estimator = 100 and max_dep = None)
@@ -1728,20 +1733,20 @@ process METEORE {
 	if [[ ${params.deduplicate} == true ]] ; then
 		echo "### Deduplicate for read-level outputs"
 		## sort order: Chr, Start, (End), ID, Strand
-		zcat ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz |\
+		zcat ${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.tsv.gz |\
 			sort -V -u -k2,2 -k3,3n -k1,1 -k6,6 |\
-			gzip -f > ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.sort.tsv.gz
-		rm ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz &&\
-			mv ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.sort.tsv.gz\
-			  	${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
+			gzip -f > ${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.sort.tsv.gz
+		rm ${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.tsv.gz &&\
+			mv ${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.sort.tsv.gz\
+			  	${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.tsv.gz
 	fi
 
 	# Read level and site level output
-	if [ -f ${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz ] ; then
+	if [ -f ${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.tsv.gz ] ; then
 		## Unify format output for read/site level
 		bash utils/unify_format_for_calls.sh \
 			${params.dsname}  METEORE METEORE\
-			${params.dsname}.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz \
+			${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.tsv.gz \
 			.  \$((numProcessor))  12   ${params.sort == true ? true : false}  "${chrSet}"\
 			&>> METEORE.run.log
 	fi
@@ -1776,7 +1781,7 @@ process Report {
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy",
-		pattern: "${params.dsname}.nanome.per_read.combine.tsv.gz",
+		pattern: "${params.dsname}_nanome_*_per_read_combine.*.gz",
 		enabled: params.outputRaw
 
 	input:
@@ -1795,12 +1800,12 @@ process Report {
 	path "GenomeBrowser-${params.dsname}", emit:  genome_browser_ch, optional: true
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify, optional: true
 	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify, optional: true
-	path "${params.dsname}.nanome.per_read.combine.tsv.gz", emit: nanome_combine_out, optional: true
+	path "${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.*.gz", emit: nanome_combine_out, optional: true
 
 	"""
 	if [[ ${params.runNANOME} == true ]] ; then
 		## NANOME XGBoost method
-		modelContentTSVFileName=${params.dsname}_tool_combine.nanome_model_content.tsv
+		modelContentTSVFileName=${params.dsname}_nanome_${params.NANOME_MODEL}_model_content.tsv
 		> \$modelContentTSVFileName
 		passModelTsv=false
 		if [[ "${params.NANOME_CONCENSUS_TOOLS}" == *"Nanopolish"* ]]; then
@@ -1842,24 +1847,24 @@ process Report {
 			PYTHONPATH=src python src/nanocompare/xgboost/xgboost_predict.py \
 				--contain-na --tsv-input\
 				--dsname ${params.dsname} -i \${modelContentTSVFileName}\
-				-m ${params.NANOME_MODEL}  -o ${params.dsname}.nanome.per_read.combine.tsv.gz &>> Report.run.log  || true
+				-m ${params.NANOME_MODEL}  -o ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz &>> Report.run.log  || true
 
 			if [[ ${params.deduplicate} == true ]] ; then
 				echo "### Deduplicate for read-level outputs"
 				## sort order: Chr, Start, (End), ID, Strand
-				zcat ${params.dsname}.nanome.per_read.combine.tsv.gz |\
+				zcat ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz |\
 					sort -V -u -k2,2 -k3,3n -k1,1 -k4,4 |\
-					gzip -f > ${params.dsname}.nanome.per_read.combine.sort.tsv.gz
-				rm ${params.dsname}.nanome.per_read.combine.tsv.gz &&\
-					mv ${params.dsname}.nanome.per_read.combine.sort.tsv.gz\
-						${params.dsname}.nanome.per_read.combine.tsv.gz
+					gzip -f > ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.sort.tsv.gz
+				rm ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz &&\
+					mv ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.sort.tsv.gz\
+						${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
 			fi
 
 			## Unify format output
 			echo "### NANOME read/site level results"
 			bash utils/unify_format_for_calls.sh \
 				${params.dsname}  NANOME NANOME\
-				${params.dsname}.nanome.per_read.combine.tsv.gz \
+				${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz \
 				.  \$((numProcessor))  12  ${params.sort == true ? true : false}  "${chrSet}"
 			ln -s Site_Level-${params.dsname}/${params.dsname}_NANOME-perSite-cov1.sort.bed.gz\
 				${params.dsname}_NANOME-perSite-cov1.sort.bed.gz
@@ -2023,7 +2028,13 @@ workflow {
 
 	if (params.runGuppy && params.runMethcall) {
 		Guppy(Untar.out.untar, EnvCheck.out.reference_genome, ch_utils)
-		comb_guppy = GuppyComb(Guppy.out.guppy_fast5mod_bam.collect(), Guppy.out.guppy_gcf52ref_tsv.collect(), EnvCheck.out.reference_genome, ch_src, ch_utils)
+
+		gcf52ref_ch = Channel.fromPath("${projectDir}/utils/false1").concat(Guppy.out.guppy_gcf52ref_tsv.collect())
+
+		comb_guppy = GuppyComb(Guppy.out.guppy_fast5mod_bam.collect(),
+								gcf52ref_ch,
+								EnvCheck.out.reference_genome,
+								ch_src, ch_utils)
 		s4 = comb_guppy.site_unify
 		r4 = comb_guppy.read_unify
 	} else {
