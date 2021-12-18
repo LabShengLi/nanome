@@ -1802,12 +1802,14 @@ process Report {
 		## NANOME XGBoost method
 		modelContentTSVFileName=${params.dsname}_tool_combine.nanome_model_content.tsv
 		> \$modelContentTSVFileName
-		passModelTsv=true
+		passModelTsv=false
 		if [[ "${params.NANOME_CONCENSUS_TOOLS}" == *"Nanopolish"* ]]; then
 			NanopolishReadReport=\$(find . -maxdepth 1 -name '*Nanopolish-perRead-score.tsv.gz')
 			if [[ -z \$NanopolishReadReport ]] ; then
 				echo "### Not found Nanopolish read-level outputs"
-				passModelTsv=false
+				NanopolishReadReport="None"
+			else
+				passModelTsv=true
 			fi
 			printf '%s\t%s\n' nanopolish \${NanopolishReadReport} >> \$modelContentTSVFileName
 		fi
@@ -1816,7 +1818,9 @@ process Report {
 			MegalodonReadReport=\$(find . -maxdepth 1 -name '*Megalodon-perRead-score.tsv.gz')
 			if [[ -z \$MegalodonReadReport ]] ; then
 				echo "### Not found Megalodon read-level outputs"
-				passModelTsv=false
+				MegalodonReadReport="None"
+			else
+				passModelTsv=true
 			fi
 			printf '%s\t%s\n' megalodon \${MegalodonReadReport} >> \$modelContentTSVFileName
 		fi
@@ -1825,13 +1829,15 @@ process Report {
 			DeepSignalReadReport=\$(find . -maxdepth 1 -name '*DeepSignal-perRead-score.tsv.gz')
 			if [[ -z \$DeepSignalReadReport ]] ; then
 				echo "### Not found DeepSignal read-level outputs"
-				passModelTsv=false
+				DeepSignalReadReport="None"
+			else
+				passModelTsv=true
 			fi
 			printf '%s\t%s\n' deepsignal \${DeepSignalReadReport} >> \$modelContentTSVFileName
 		fi
 
 		if [[ "\$passModelTsv" == true ]] ; then
-			## NANOME XGBoost model results, if two model results exists
+			## NANOME XGBoost model results, if there are model results exists
 			echo "### NANOME XGBoost predictions"
 			PYTHONPATH=src python src/nanocompare/xgboost/xgboost_predict.py \
 				--contain-na --tsv-input\
@@ -1960,12 +1966,14 @@ workflow {
 	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
 
 	if (params.rerioDir == false) { // default if false, will online downloading
+		// This is only a place holder for input
 		rerioDir = Channel.fromPath("${projectDir}/utils/false1", type: 'any', checkIfExists: false)
 	} else {
 		rerioDir = Channel.fromPath(params.rerioDir, type: 'any', checkIfExists: true)
 	}
 
 	if (params.deepsignalDir == false) { // default if false, will online downloading
+		// This is only a place holder for input
 		deepsignalDir = Channel.fromPath("${projectDir}/utils/false2", type: 'any', checkIfExists: false)
 	} else {
 		deepsignalDir = Channel.fromPath(params.deepsignalDir, type: 'any', checkIfExists: true)

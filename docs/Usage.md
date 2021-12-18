@@ -32,7 +32,7 @@ nextflow run TheJacksonLaboratory/nanome\
 ```
 
 ## Methylation-calling tool configuration
-By default, NANOME pipeline will execute top four performers: **Nanopolish, Megalodon, DeepSignal and Guppy**, we also provide a **NANOME concensus results** using XGBoost model trained on 20% fully methylated and unmethylated CpGs based on Megalodon and DeepSignal outputs.
+By default, NANOME pipeline will execute top four performers: **Nanopolish, Megalodon, DeepSignal and Guppy**, we also provide a **NANOME concensus results** using XGBoost model trained on all fully methylated and unmethylated CpGs based on Nanopolish, Megalodon and DeepSignal outputs. The model is very robust and can deal with NA values, and can make prediction if there is a prediction by any tool.
 
 The NANOME concensus results can cover more CpGs than any single tool, and perform a slightly better performance. User can supply params `--run[tool-name]` with values `true` or `false` to configure if running a specific tool. 
 

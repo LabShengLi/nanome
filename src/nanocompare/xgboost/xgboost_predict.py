@@ -77,8 +77,12 @@ if __name__ == '__main__':
         tool_list = list(df_tsvfile[0])
         dflist = []
         for index, row in df_tsvfile.iterrows():
-            df = load_tool_read_level_unified_as_df(row[1], toolname=row[0], filterChrSet=args.chrs,
-                                                    chunksize=args.chunksize)
+            if row[1] == 'None':
+                empty_frame = {'Chr': [], "ID": [], "Pos": [], "Strand": [], row[0]: []}
+                df = pd.DataFrame(empty_frame)
+            else:
+                df = load_tool_read_level_unified_as_df(row[1], toolname=row[0], filterChrSet=args.chrs,
+                                                        chunksize=args.chunksize)
             dflist.append(df)
         if args.contain_na:
             datadf = reduce(
@@ -144,5 +148,6 @@ if __name__ == '__main__':
     logger.debug(f"nanome_df={nanome_df}")
 
     nanome_df.to_csv(args.o, sep='\t', index=False)
+    logger.info(f"make predictions:{len(nanome_df):,}")
     logger.info(f"save to {args.o}")
     logger.info(f"### Done for model:{args.m} predict")
