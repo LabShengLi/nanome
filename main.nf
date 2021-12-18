@@ -1834,7 +1834,7 @@ process Report {
 			## NANOME XGBoost model results, if two model results exists
 			echo "### NANOME XGBoost predictions"
 			PYTHONPATH=src python src/nanocompare/xgboost/xgboost_predict.py \
-				--verbose  --contain-na --tsv-input\
+				--contain-na --tsv-input\
 				--dsname ${params.dsname} -i \${modelContentTSVFileName}\
 				-m ${params.NANOME_MODEL}  -o ${params.dsname}.nanome.per_read.combine.tsv.gz &>> Report.run.log  || true
 
