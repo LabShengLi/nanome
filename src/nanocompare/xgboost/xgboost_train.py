@@ -45,32 +45,63 @@ def report_performance(y_test, y_pred, y_score, toolname=None):
     f1 = f1_score(y_test, y_pred)
     roc_auc = roc_auc_score(y_test, y_score)
     logger.info(
-        f"tool={toolname} accuracy={accuracy:.3f}, precision={precision:.3f}, recall={recall:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}")
+        f"tool={toolname} accuracy={accuracy:.3f}, precision={precision:.3f}, recall={recall:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}, #Pred={len(y_test):,}")
     return accuracy, precision, recall, f1, roc_auc
 
 
 def evaluation_on_na_test(clf, nadf, x_col_list=None, y_col_name=None):
+    """
+    Evaluation on NA predictions
+    Args:
+        clf:
+        nadf:
+        x_col_list:
+        y_col_name:
+
+    Returns:
+
+    """
     nadf.reset_index(drop=True, inplace=True)
     logger.debug(f"Eval on NAs   Total predictions:{len(nadf):,}")
-    logger.debug(f"Eval on NAs   Total CpGs:{len(nadf.drop_duplicates(subset=SITES_COLUMN_LIST)):,}")
+
+    numSites = len(nadf.drop_duplicates(subset=SITES_COLUMN_LIST))
+    logger.debug(f"Eval on NAs   Total CpGs:{numSites:,}")
     X_test = nadf[x_col_list]
     y_test = nadf[y_col_name]
 
     y_pred = pd.DataFrame(clf.predict(X_test))[0]
     y_pred_prob = pd.DataFrame(clf.predict_proba(X_test))[1]
 
+    dataset = []
     for tool in x_col_list:
         mask = nadf[tool].notna()
         y_tool_score = nadf[mask][tool]
         y_tool_pred = y_tool_score.apply(lambda x: 1 if x > 0 else 0)
         logger.info(f"Total subsets={len(y_test[mask]):,}")
-        report_performance(y_test[mask], y_tool_pred, y_tool_score, toolname=tool)
-        report_performance(y_test[mask], y_pred[mask], y_pred_prob[mask], toolname=args.model_type)
+        accuracy, precision, recall, f1, roc_auc = report_performance(y_test[mask], y_tool_pred, y_tool_score,
+                                                                      toolname=tool)
+        ret = {'Tool': tool, 'Accuracy': accuracy, 'Precision': precision,
+               'Recall': recall, 'F1': f1, 'ROC_AUC': roc_auc,
+               '#Pred': len(y_tool_score), '#Bases': numSites
+               }
+        dataset.append(ret)
+
+        accuracy, precision, recall, f1, roc_auc = report_performance(y_test[mask], y_pred[mask], y_pred_prob[mask],
+                                                                      toolname=args.model_type)
+        ret = {'Tool': args.model_type, 'Accuracy': accuracy, 'Precision': precision,
+               'Recall': recall, 'F1': f1, 'ROC_AUC': roc_auc,
+               '#Pred': len(y_tool_score), '#Bases': numSites
+               }
+        dataset.append(ret)
+    outdf = pd.DataFrame(dataset)
+    outfn = args.o + f'_{"_".join(train_tool_list)}' + f'_{args.model_type}_niter{args.niter}_NA_eval.csv'
+    outdf.to_csv(outfn)
+    logger.info(f"save to {outfn}")
 
 
 def evaluation_on_test(clf, testdf, x_col_list=None, y_col_name=None, all_tools=None):
     """
-    Evaluate trained classifier on test dataframe
+    Evaluate trained classifier on non-NA data
     Args:
         clf:
         testdf:
@@ -84,12 +115,11 @@ def evaluation_on_test(clf, testdf, x_col_list=None, y_col_name=None, all_tools=
     logger.debug("Evaluate on test data...")
     testdf.reset_index(drop=True, inplace=True)
     logger.debug(f"Total predictions:{len(testdf):,}")
-    logger.debug(f"Total CpGs:{len(testdf.drop_duplicates(subset=SITES_COLUMN_LIST)):,}")
+
+    numSites = len(testdf.drop_duplicates(subset=SITES_COLUMN_LIST))
+    logger.debug(f"Total CpGs:{numSites:,}")
     X_test = testdf[x_col_list]
     y_test = testdf[y_col_name]
-
-    ## Scale features before make prediction
-    # X_test = MinMaxScaler().fit_transform(X_test)
 
     ## make prediction on test data
     y_pred = clf.predict(X_test)
@@ -103,12 +133,6 @@ def evaluation_on_test(clf, testdf, x_col_list=None, y_col_name=None, all_tools=
     f1 = f1_score(y_test, y_pred)
     roc_auc = roc_auc_score(y_test, y_pred_prob)
 
-    # cpg_xgboost = len(y_pred)
-    # logger.info(f"Number of predictions (read-level): XGBoost={cpg_xgboost:,}")
-    # for tool in tool_list:
-    #     logger.info(f"Number of predictions (read-level): {tool}={X_test[tool].notna().sum():,}")
-    # logger.info(f"Number of predictions (read-level): METEORE={len(X_test.dropna(subset=tool_list)):,}")
-
     conf_matrix = confusion_matrix(y_test, y_pred)
     logger.info(f"\nconf_matrix=\n{conf_matrix}")
     class_report = classification_report(y_test, y_pred)
@@ -120,9 +144,11 @@ def evaluation_on_test(clf, testdf, x_col_list=None, y_col_name=None, all_tools=
     dataset['Recall'].append(recall)
     dataset['F1'].append(f1)
     dataset['ROC_AUC'].append(roc_auc)
+    dataset['#Bases'].append(numSites)
+    dataset['#Pred'].append(len(y_test))
 
     logger.info(
-        f"tool=NANOME({args.model_type}) accuracy={accuracy:.3f}, precision={precision:.3f}, recall={recall:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}")
+        f"tool=NANOME({args.model_type}) accuracy={accuracy:.3f}, precision={precision:.3f}, recall={recall:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}, #Pred={len(y_pred):,}, #Bases={numSites:,}")
 
     ## evaluate for base model performance
 
@@ -140,11 +166,13 @@ def evaluation_on_test(clf, testdf, x_col_list=None, y_col_name=None, all_tools=
         dataset['Recall'].append(recall)
         dataset['F1'].append(f1)
         dataset['ROC_AUC'].append(roc_auc)
+        dataset['#Bases'].append(numSites)
+        dataset['#Pred'].append(len(y_pred_tool))
 
         logger.info(
-            f"tool={tool} accuracy={accuracy:.3f}, precision={precision:.3f}, recall={recall:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}")
+            f"tool={tool} accuracy={accuracy:.3f}, precision={precision:.3f}, recall={recall:.3f}, f1={f1:.3f}, roc_auc={roc_auc:.3f}, #Pred={len(y_pred_tool):,}, #Bases={numSites:,}")
     outdf = pd.DataFrame.from_dict(dataset)
-    outfn = args.o + f"_{args.model_type}_evaluation_on_test_across_tools.csv"
+    outfn = args.o + f"_{args.model_type}_niter{args.niter}_evaluation_on_test_across_tools.csv"
     outdf.to_csv(outfn, index=False)
     print(f"save to {outfn}")
 
@@ -279,12 +307,12 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
 
     ## save cv results
     perf_df = pd.DataFrame(clf.cv_results_)
-    outfn = args.o + f'_{"_".join(train_tool_list)}' + f'_{args.model_type}_cv_results.xlsx'
+    outfn = args.o + f'_{"_".join(train_tool_list)}' + f'_{args.model_type}_niter{args.niter}_cv_results.xlsx'
     perf_df.to_excel(outfn)
     logger.info(f"save to {outfn}")
 
     ## save model
-    outfn = args.o + f'_{"_".join(train_tool_list)}' + f'_{args.model_type}_model.pkl'
+    outfn = args.o + f'_{"_".join(train_tool_list)}' + f'_{args.model_type}_niter{args.niter}_model.pkl'
     joblib.dump(clf, outfn)
     logger.info(f"save model to {outfn}")
 
