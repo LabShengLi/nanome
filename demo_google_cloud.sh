@@ -21,7 +21,11 @@ date;hostname;pwd
 WORK_DIR_BUCKET=${1:-"gs://jax-nanopore-01-project-data/NANOME-TestData-work"}
 OUTPUT_DIR_BUCKET=${2:-"gs://jax-nanopore-01-export-bucket/NANOME-TestData-ouputs"}
 
+set +x
+source /home/liuya/anaconda3/etc/profile.d/conda.sh
+conda activate py39
 gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} >/dev/null 2>&1 || true
+set -x
 
 ## Run test demo on google cloud
 echo "### nanome pipeline for demo data on google START"
