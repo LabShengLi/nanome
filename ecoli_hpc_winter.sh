@@ -33,7 +33,6 @@ nextflow run main.nf\
     -config conf/executors/jaxhpc_input.config,conf/examples/ecoli_demo.config\
     -work-dir ${workDir}\
     --outdir ${outputsDir}\
-    --cleanCache false \
     --runDeepMod --runTombo --runMETEORE\
     --outputIntermediate --outputRaw\
     --outputGenomeBrowser --outputBam --outputONTCoverage\

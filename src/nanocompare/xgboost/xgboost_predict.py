@@ -5,7 +5,12 @@
 # @Organization : JAX Li Lab
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
 
+"""
+Predict NANOME consensus results
+"""
+
 import argparse
+import os.path
 from functools import reduce
 
 import joblib
@@ -13,13 +18,14 @@ import pandas as pd
 
 from nanocompare.eval_common import load_tool_read_level_unified_as_df
 from nanocompare.global_config import set_log_debug_level, set_log_info_level, logger
-from nanocompare.global_settings import nanome_model_dict, CHUNKSIZE, NANOME_VERSION
+from nanocompare.global_settings import nanome_model_dict, CHUNKSIZE, NANOME_VERSION, xgboost_mode_base_dir
+from nanocompare.xgboost.xgboost_common import SITES_COLUMN_LIST, READS_COLUMN_LIST
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser(prog='xgboost_predict (NANOME)', description='XGBoost predict for data')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
-    parser.add_argument('-i', type=str, required=True,
+    parser.add_argument('-i', nargs='+', required=True,
                         help='input data for predicting')
     parser.add_argument('-m', type=str, required=True,
                         help=f'model file, existing model list: {",".join(list(nanome_model_dict.keys()))}')
@@ -27,6 +33,8 @@ def parse_arguments():
                         help='dataset name')
     parser.add_argument('-o', type=str, required=True,
                         help='output file name')
+    parser.add_argument('-t', nargs='+', help='tools used for prediction, default is: [megalodon, deepsignal]',
+                        default=['megalodon', 'deepsignal'])
     parser.add_argument('--random-state', type=int, default=42,
                         help='random state, default is 42')
     parser.add_argument('--processors', type=int, default=8,
@@ -36,7 +44,7 @@ def parse_arguments():
     parser.add_argument('--contain-na', help="if make prediction on NA values", action='store_true')
     parser.add_argument('--tsv-input', help="if input is tsv for tools' read-level format, or else is combined input",
                         action='store_true')
-    parser.add_argument('--chrs', nargs='+', help='chromosomes used', default=[])
+    parser.add_argument('--chrs', nargs='+', help='chromosomes used', default=None)
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     args = parser.parse_args()
     return args
@@ -51,7 +59,7 @@ if __name__ == '__main__':
     logger.debug(f"args={args}")
 
     if args.m in nanome_model_dict:
-        infn = nanome_model_dict[args.m]
+        infn = os.path.join(xgboost_mode_base_dir, nanome_model_dict[args.m])
     else:
         infn = args.m
     logger.debug(f"Model file: {infn}")
@@ -63,12 +71,18 @@ if __name__ == '__main__':
         logger.debug(f"WARNNING: print params encounter problem")
 
     if args.tsv_input:
-        df_tsvfile = pd.read_csv(args.i, header=None, sep='\t')
+        if len(args.i) != 1:
+            raise Exception(f"Not support args.i={args.i}, in tsv_input mode")
+        df_tsvfile = pd.read_csv(args.i[0], header=None, sep='\t')
         tool_list = list(df_tsvfile[0])
         dflist = []
         for index, row in df_tsvfile.iterrows():
-            df = load_tool_read_level_unified_as_df(row[1], toolname=row[0], filterChrs=args.chrs,
-                                                    chunksize=args.chunksize)
+            if row[1] == 'None':
+                empty_frame = {'Chr': [], "ID": [], "Pos": [], "Strand": [], row[0]: []}
+                df = pd.DataFrame(empty_frame)
+            else:
+                df = load_tool_read_level_unified_as_df(row[1], toolname=row[0], filterChrSet=args.chrs,
+                                                        chunksize=args.chunksize)
             dflist.append(df)
         if args.contain_na:
             datadf = reduce(
@@ -81,35 +95,43 @@ if __name__ == '__main__':
         # release memory
         dflist = None
         datadf.drop_duplicates(subset=["ID", "Chr", "Pos", "Strand"], inplace=True)
-        datadf.reset_index(inplace=True, drop=True)
-
         if len(datadf) <= 0:
             raise Exception(f"The combined results are empty, for tool_list={tool_list}, fn_list={df_tsvfile[1]}")
 
         logger.debug(f"tool_list={tool_list}")
         logger.debug(f"datadf={datadf}")
     else:  # combined input as default input
-        if len(args.chrs) >= 1:
-            iter_df = pd.read_csv(args.i, header=0, index_col=False, sep="\t", iterator=True,
-                                  chunksize=args.chunksize)
-            datadf = pd.concat([chunk[chunk['Chr'].isin(args.chrs)] for chunk in iter_df])
-        else:
-            datadf = pd.read_csv(args.i, header=0, sep='\t', index_col=False)
-        tool_list = list(datadf.columns[4:-2])
-        if not args.contain_na:  ## remove NAs
-            datadf.dropna(subset=list(datadf.columns[0:-2]), inplace=True)
-        datadf.drop_duplicates(subset=["ID", "Chr", "Pos", "Strand"], inplace=True)
-        datadf.dropna(subset=tool_list, inplace=True, how='all')
-        datadf.reset_index(inplace=True, drop=True)
-        datadf = datadf.loc[:, list(datadf.columns[0:-2])]
+        dflist = []
+        for infn in args.i:
+            if args.chrs is not None and len(args.chrs) >= 1:
+                iter_df = pd.read_csv(infn, header=0, index_col=False, sep=",", iterator=True,
+                                      chunksize=args.chunksize)
+                datadf1 = pd.concat([chunk[chunk['Chr'].isin(args.chrs)] for chunk in iter_df])
+            else:
+                datadf1 = pd.read_csv(infn, header=0, sep=',', index_col=False)
+            dflist.append(datadf1)
+        datadf = pd.concat(dflist)
 
+        tool_list = list(args.t)
+        datadf = datadf[list(datadf.columns[0:4]) + args.t]
+
+        if not args.contain_na:  ## remove NAs
+            datadf.dropna(subset=args.t, inplace=True)
+        else:
+            datadf.dropna(subset=args.t, inplace=True, how='all')
+        datadf.drop_duplicates(subset=READS_COLUMN_LIST, inplace=True)
         logger.debug(f"tool_list={tool_list}")
         logger.debug(f"datadf={datadf}")
+
+    if datadf is not None:
+        datadf.reset_index(inplace=True, drop=True)
+    else:
+        raise Exception(f"datadf can not be None")
 
     ## Output read-level, site-level distributions
     logger.debug(f"Read stats: total={len(datadf):,}")
 
-    sitedf = datadf[["Chr", "Pos", "Strand"]].drop_duplicates()
+    sitedf = datadf[SITES_COLUMN_LIST].drop_duplicates()
     logger.debug(f"Site stats: total={len(sitedf):,}")
     sitedf = None
 
@@ -122,11 +144,10 @@ if __name__ == '__main__':
     prediction_prob.rename(columns={1: "Prob_methylation"}, inplace=True)
 
     nanome_df = pd.concat([datadf, prediction, prediction_prob], axis=1)
-    nanome_df = nanome_df[
-        ['ID', 'Chr', 'Pos', 'Strand'] + tool_list + ["Prediction", "Prob_methylation"]]
+    nanome_df = nanome_df[READS_COLUMN_LIST + tool_list + ["Prediction", "Prob_methylation"]]
     logger.debug(f"nanome_df={nanome_df}")
 
-    ## APL.nanopolish.methylation_calls.combine.tsv.gz
     nanome_df.to_csv(args.o, sep='\t', index=False)
+    logger.info(f"make predictions:{len(nanome_df):,}")
     logger.info(f"save to {args.o}")
-    logger.info("Done for XGBoost predict")
+    logger.info(f"### Done for model:{args.m} predict")

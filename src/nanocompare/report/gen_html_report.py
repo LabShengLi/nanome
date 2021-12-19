@@ -62,7 +62,7 @@ def get_methcall_report_df(baseDir, outDir):
     print(f"max_cov={max_cov}")
 
     ret_dict = defaultdict(list)
-    for tool in ToolNameList + ['NANOME']:
+    for tool in ['NANOME'] + ToolNameList:
         fnlist = glob.glob(os.path.join(baseDir, f'*_{tool}-perSite-cov1.sort.bed.gz'))
         if len(fnlist) < 1:
             print(f"Not found file in baseDir={baseDir}, pattern={f'*_{tool}-perSite-cov1.sort.bed.gz'}")
@@ -101,20 +101,23 @@ if __name__ == '__main__':
 
     ## Basecalling report summary
     dataset_basecall = defaultdict(list)
-    with open(infn_basecall_info) as stats:
-        for line in stats:
-            linesplit = line.strip().split(':')
-            linesplit = [e.strip() for e in linesplit]
-            if line.startswith('Top 5'):
-                break
-            if len(linesplit) > 1:
-                dataset_basecall['Title'].append(linesplit[0])
-                dataset_basecall['Information'].append(linesplit[1])
-            else:
-                dataset_basecall['Title'].append(linesplit[0])
-                dataset_basecall['Information'].append("")
+    if infn_basecall_info != 'None':
+        with open(infn_basecall_info) as stats:
+            for line in stats:
+                linesplit = line.strip().split(':')
+                linesplit = [e.strip() for e in linesplit]
+                if line.startswith('Top 5'):
+                    break
+                if len(linesplit) > 1:
+                    dataset_basecall['Title'].append(linesplit[0])
+                    dataset_basecall['Information'].append(linesplit[1])
+                else:
+                    dataset_basecall['Title'].append(linesplit[0])
+                    dataset_basecall['Information'].append("")
+        df_basecall_info = pd.DataFrame.from_dict(dataset_basecall)
+    else:
+        df_basecall_info = pd.DataFrame()
 
-    df_basecall_info = pd.DataFrame.from_dict(dataset_basecall)
     print(df_basecall_info)
 
     df_methcall_info = get_methcall_report_df(indir_methcall, outdir).dropna()

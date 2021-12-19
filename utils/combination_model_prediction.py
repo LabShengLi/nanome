@@ -9,8 +9,9 @@ Created on Thu Jul  9 18:03:39 2020
 import argparse
 import warnings
 from functools import reduce
-import numpy as np
+
 import joblib
+import numpy as np
 import pandas as pd
 import sklearn
 from pandas.core.common import SettingWithCopyWarning
@@ -58,7 +59,6 @@ def main(mp, combine_file, combine_id_strand):
     print(f"model file: {mp}")
     print(f"loaded_model={loaded_model}", flush=True)
 
-    combine_file.dropna(inplace=True)
     X = combine_file[combine_file.columns[3:]]  # 2:
     X = sklearn.preprocessing.MinMaxScaler().fit_transform(X)
 
@@ -74,7 +74,7 @@ def main(mp, combine_file, combine_id_strand):
     final_output['Pos'] = final_output['Pos'].astype(np.int64)
     final_output['Prediction'] = final_output['Prediction'].astype(int)
     outdf = final_output.merge(combine_id_strand, how='left', on=['ID', 'Chr', 'Pos'])
-
+    outdf.dropna(inplace=True)
     outdf.to_csv(options.output, header=True, index=False, sep='\t')
     print(f"save to {options.output}", flush=True)
 
@@ -97,6 +97,7 @@ if __name__ == '__main__':
     combine_file = reduce(lambda left, right: pd.merge(left, right, how='inner', on=["ID", "Chr", "Pos"]),
                           dfs)
     combine_file.drop_duplicates(subset=["ID", "Chr", "Pos"], inplace=True)
+    combine_file.dropna(inplace=True)
     combine_file.reset_index(inplace=True, drop=True)
 
     # print(f"combine_file={combine_file}")

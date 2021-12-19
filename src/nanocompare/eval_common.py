@@ -6,7 +6,7 @@
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
 
 """
-Common functions used by read level and site level evaluations in Nanocompare paper.
+Common functions used by read level and site level evaluations in nanome paper.
 
 Such as import_DeepSignal, import_BGTruth, etc.
 """
@@ -271,7 +271,10 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
         key = (tmp[chr_col], start, strand)
 
         if include_score:
-            cpgDict[key].append((int(tmp[meth_col]), float(tmp[meth_prob_col])))
+            the_score = float(tmp[meth_prob_col])
+            if np.isnan(the_score):
+                the_score = 0.0
+            cpgDict[key].append((int(tmp[meth_col]), the_score, ))
         else:
             cpgDict[key].append(int(tmp[meth_col]))
 
@@ -1056,8 +1059,8 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
     return cpgDict
 
 
-def importPredictions_METEORE(infileName, readid_col=0, chr_col=1, start_col=2, meth_indicator_col=3, meth_prob_col=4,
-                              strand_col=5, baseFormat=1, include_score=False, filterChr=HUMAN_CHR_SET,
+def importPredictions_METEORE(infileName, readid_col=0, chr_col=1, start_col=2, meth_indicator_col=-3, meth_prob_col=-2,
+                              strand_col=-1, baseFormat=1, include_score=False, filterChr=HUMAN_CHR_SET,
                               save_unified_format=False, outfn=None, toolname="METEORE"):
     """
     We checked input as 1-based format for start col.
@@ -1989,7 +1992,10 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
 
                 ### prediction results, AUC related:
                 ypred_of_ont_tool.append(perCall[0])
-                yscore_of_ont_tool.append(perCall[1])
+                if np.isnan(perCall[1]):
+                    yscore_of_ont_tool.append(0.0)
+                else:
+                    yscore_of_ont_tool.append(perCall[1])
 
                 if is_fully_meth(bgTruth[cpgKey][0]):  # BG Truth label
                     y_of_bgtruth.append(1)
@@ -2053,7 +2059,7 @@ def computePerReadPerfStats(ontCalls, bgTruth, title, coordBedFileName=None, sec
             average_precision = average_precision_score(y_of_bgtruth, yscore_of_ont_tool)
         except ValueError:
             logger.error(
-                f"###\tERROR for roc_curve: y(Truth):{y_of_bgtruth}, scores(Call pred):{ypred_of_ont_tool}, \nother settings: {title}, {tagname}, {secondFilterBedFileName}")
+                f"###\tERROR for roc_curve: y(Truth):{len(y_of_bgtruth)}, scores(Call pred):{len(yscore_of_ont_tool)}, \nother settings: {title}, {tagname}, {secondFilterBedFileName}")
             fprSwitch = 0
             roc_auc = 0.0
             average_precision = 0.0
@@ -3163,7 +3169,7 @@ def freq_to_label(freq, fully_cutoff=1.0, eps=EPSLONG):
     raise Exception(f"Encounter not fully meth or unmeth value, freq={freq}")
 
 
-def tool_pred_class_label(log_likelyhood):
+def tool_pred_class_label(log_likelyhood, cutoff=0):
     """
     Infer class label based on log-likelyhood
     Args:
@@ -3172,28 +3178,28 @@ def tool_pred_class_label(log_likelyhood):
     Returns:
 
     """
-    if log_likelyhood > 0 + EPSLONG:
+    if log_likelyhood > cutoff + EPSLONG:
         return 1
     return 0
 
 
-def load_tool_read_level_unified_as_df(data_file_path, toolname, filterChrs=[], chunksize=CHUNKSIZE):
+def load_tool_read_level_unified_as_df(data_file_path, toolname, filterChrSet=None, chunksize=CHUNKSIZE):
     """
     Load read-level unified input
     Args:
         data_file_path:
         toolname:
-        filterChrs:
+        filterChrSet:
 
     Returns:
 
     """
     logger.debug(f"Load {toolname}:{data_file_path}")
 
-    if len(filterChrs) >= 1:
+    if filterChrSet is not None:
         iter_df = pd.read_csv(data_file_path, header=0, index_col=False, sep="\t", iterator=True,
                               chunksize=chunksize)
-        data_file = pd.concat([chunk[chunk['Chr'].isin(filterChrs)] for chunk in iter_df])
+        data_file = pd.concat([chunk[chunk['Chr'].isin(filterChrSet)] for chunk in iter_df])
     else:
         data_file = pd.read_csv(data_file_path, header=0, index_col=False, sep="\t")
 

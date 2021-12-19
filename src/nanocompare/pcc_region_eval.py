@@ -6,7 +6,7 @@
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
 
 """
-Evaluate PCC at different regions
+Evaluate PCC at different regions in nanome paper
 """
 
 import argparse
@@ -113,7 +113,7 @@ def compute_pcc_at_region(df, bed_tuple):
     logger.debug(f'tagname={tagname}, coord_fn={infn}')
     if not args.large_mem and tagname != genome_wide_tagname and coord_bed is None:  # load on demand
         eval_coord_bed = get_region_bed_tuple(
-            infn, enable_base_detection_bedfile=enable_base_detection_bedfile,
+            infn, enable_base_detection_bedfile=not args.disable_bed_check,
             enable_cache=args.enable_cache, using_cache=args.using_cache,
             cache_dir=ds_cache_dir)[2]
     else:  # large memory, or genome wide - None
@@ -163,7 +163,8 @@ def parse_arguments():
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('-i', type=str, help="input freq file for BS-seq and tools", required=True)
-    parser.add_argument('--runid', type=str, help="running prefix/output folder name, such as PCCRegion-Dataset_WGBS_2Reps",
+    parser.add_argument('--runid', type=str,
+                        help="running prefix/output folder name, such as PCCRegion-Dataset_WGBS_2Reps",
                         required=True)
     parser.add_argument('--genome-annotation', type=str,
                         help='genome annotation dir, contain BED files',
@@ -310,4 +311,4 @@ if __name__ == '__main__':
 
     save_done_file(out_dir)
     logger.info(f"Memory report: {get_current_memory_usage()}")
-    logger.info("### Site level correlation analysis DONE")
+    logger.info("### PCC region evaluation DONE")

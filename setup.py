@@ -23,7 +23,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="nanome-jax",
-    version="1.3.18",
+    version="1.3.21",
     author="Yang Liu",
     author_email="yang.liu@jax.org",
     description="NANOME (Nanopore methylation) pipeline developed by Li Lab at The Jackson Laboratory",
@@ -44,6 +44,7 @@ setuptools.setup(
         'src/nanocompare/tss_eval.py',
         'src/nanocompare/pcc_region_eval.py',
         'src/nanocompare/nanome_consensus.py',
+        'src/nanocompare/region_intersect.py',
         'src/nanocompare/computeRawReadsCoverage.py',
         'src/nanocompare/report/gen_html_report.py',
         'src/nanocompare/report/gen_txt_readme.py',

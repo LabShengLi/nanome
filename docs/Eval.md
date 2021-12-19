@@ -17,13 +17,13 @@ pip install nanome-jax
 pip show nanome-jax
 ```
 
-If your system support docker or singularity, you can directly running evaluation tool without any installations:
+**If your system support docker or singularity, you can directly running evaluation tool without any installations**:
 ```angular2html
 ## Check nanome-jax package in docker
-docker run -v $PWD:$PWD -w $PWD -it liuyangzzu/nanome:latest pip show nanome-jax
+docker run liuyangzzu/nanome:latest pip show nanome-jax
 
 ## Check nanome-jax package in singularity 
-singularity exec -e docker://liuyangzzu/nanome:latest pip show nanome-jax
+singularity exec docker://liuyangzzu/nanome:latest pip show nanome-jax
 ```
 
 # 1. Read-level performance evaluation
@@ -330,3 +330,32 @@ optional arguments:
   --tagname TAGNAME     output unified file's tagname
   --verbose             if output verbose info
 ```
+
+# 4. Intersect your data with genomic regions
+
+For specific genomic region analysis, below is the tool to intersect data file with specific region BED file.
+
+```angular2html
+region_intersect.py -h
+usage: region_intersect (NANOME) [-h] [-v] -i I -r R -o O [--sep SEP]
+                                 [--bed-format BED_FORMAT]
+                                 [--strand-intersect] [--header HEADER]
+                                 [--verbose]
+
+Intersect data with region file
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --version         show program's version number and exit
+  -i I                  input data file
+  -r R                  region BED file
+  -o O                  output file
+  --sep SEP             file seperator, default is TAB
+  --bed-format BED_FORMAT
+                        BED file start format 0/1, default is 1
+  --strand-intersect    if BED file intersect using strand sensitive mode
+  --header HEADER       if input file contain header, set to 0, default is
+                        None
+  --verbose             if output verbose info
+```
+We provide a list of regions on GCP storage: https://storage.googleapis.com/jax-nanopore-01-project-data/nanome_paper/genome-annotation.tar.gz .

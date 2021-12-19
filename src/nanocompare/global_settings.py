@@ -14,9 +14,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from nanocompare.global_config import set_log_debug_level
+from nanocompare.global_config import set_log_debug_level, current_time_str
 
-NANOME_VERSION = "1.3.18"
+NANOME_VERSION = "1.3.21"
 
 # define the small error of 0 and 1, for fully-meth and unmeth eval
 EPSLONG = 1e-5
@@ -89,17 +89,11 @@ discord_tagname = 'Discordant'
 
 default_config_name = 'nanome_genome_annotation.csv'
 
-nanome_apl_model_fn = os.path.join(
-    Path(__file__).parent, 'xgboost', 'trained_model',
-    'NANOME_APL_train0.20_megalodon_deepsignal_xgboost_model.pkl')
-
-nanome_na12878_model_fn = os.path.join(
-    Path(__file__).parent, 'xgboost', 'trained_model',
-    'NANOME_NA12878_train0.20_megalodon_deepsignal_xgboost_model.pkl')
+xgboost_mode_base_dir = os.path.join(Path(__file__).parent, 'xgboost', 'trained_model')
 
 nanome_model_dict = {
-    "APL": nanome_apl_model_fn,
-    "NA12878": nanome_na12878_model_fn,
+    "NA12878_XGBoostNA2T": 'NANOME_NA12878_train1.0_megalodon_deepsignal_XGBoostNA2T_model.pkl',
+    "NA12878_XGBoostNA3T": 'NANOME_NA12878_train1.0_nanopolish_megalodon_deepsignal_XGBoostNA3T_model.pkl',
 }
 
 
@@ -144,18 +138,22 @@ def get_tool_name(encode_name):
     return encode_name
 
 
-def save_done_file(outdir, filename="DONE.txt"):
+def save_done_file(outdir, filename=None):
     """
     Save a done file for finish flag
     :param outdir:
     :param filename:
     :return:
     """
+    time_tag = current_time_str()
+    if filename == None:
+        filename = f"DONE_{time_tag}.txt"
     outfn = os.path.join(outdir, filename)
     with open(outfn, "w") as outf:
-        outf.write("DONE\n")
+        outf.write(f"DONE at {time_tag}\n")
 
 
 if __name__ == '__main__':
     set_log_debug_level()
-    load_genome_annotation_config(True)
+    ## load_genome_annotation_config(True)
+    # save_done_file('.')
