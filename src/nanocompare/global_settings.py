@@ -16,7 +16,7 @@ import pandas as pd
 
 from nanocompare.global_config import set_log_debug_level, current_time_str
 
-NANOME_VERSION = "1.3.20"
+NANOME_VERSION = "1.3.21"
 
 # define the small error of 0 and 1, for fully-meth and unmeth eval
 EPSLONG = 1e-5
@@ -90,14 +90,8 @@ discord_tagname = 'Discordant'
 default_config_name = 'nanome_genome_annotation.csv'
 
 xgboost_mode_base_dir = os.path.join(Path(__file__).parent, 'xgboost', 'trained_model')
-nanome_apl_model_fn = 'NANOME_APL_train0.20_megalodon_deepsignal_xgboost_model.pkl'
-nanome_na12878_model_fn = 'NANOME_NA12878_train0.20_megalodon_deepsignal_xgboost_model.pkl'
 
 nanome_model_dict = {
-    "APL": nanome_apl_model_fn,
-    "NA12878": nanome_na12878_model_fn,
-    "NA12878_XGBoost_NA": 'NANOME_NA12878_train0.20_megalodon_deepsignal_XGBoost_NA_model.pkl',
-    "NA12878_XGBoost_NA_top3": 'NANOME_NA12878_train0.20_nanopolish_megalodon_deepsignal_XGBoost_NA_model.pkl',
     "NA12878_XGBoostNA2T": 'NANOME_NA12878_train1.0_megalodon_deepsignal_XGBoostNA2T_model.pkl',
     "NA12878_XGBoostNA3T": 'NANOME_NA12878_train1.0_nanopolish_megalodon_deepsignal_XGBoostNA3T_model.pkl',
 }
