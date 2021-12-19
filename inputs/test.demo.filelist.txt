@@ -1,1 +1,1 @@
-https://github.com/TheJacksonLaboratory/nanome/raw/enhance5/test_data/demo1_fast5_reads.tar.gz
+https://github.com/TheJacksonLaboratory/nanome/raw/master/test_data/demo1_fast5_reads.tar.gz

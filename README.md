@@ -118,7 +118,7 @@ Timeline figure for benchmarking experiments are below:
 ### NANOME report
 Please check [NANOME report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/NANOME_report_html.pdf) for the sample report by NANOME pipeline.
 
-![NanomeReportHtml](https://github.com/TheJacksonLaboratory/nanome/blob/enhance5/docs/nanome_report_html.png)
+![NanomeReportHtml](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/nanome_report_html.png)
 
 
 ### Lifebit CloudOS report
