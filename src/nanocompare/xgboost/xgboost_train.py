@@ -75,14 +75,15 @@ def evaluation_on_na_test(clf, nadf, x_col_list=None, y_col_name=None):
     dataset = []
     for tool in x_col_list:
         mask = nadf[tool].notna()
+        tool_notna_num = len(nadf[mask].drop_duplicates(subset=SITES_COLUMN_LIST))
         y_tool_score = nadf[mask][tool]
         y_tool_pred = y_tool_score.apply(lambda x: 1 if x > 0 else 0)
-        logger.info(f"Total subsets={len(y_test[mask]):,}")
+        logger.info(f"For non-NA of {tool} in NA_DF2, total pred={len(y_test[mask]):,}, sites={tool_notna_num:,}")
         accuracy, precision, recall, f1, roc_auc = report_performance(y_test[mask], y_tool_pred, y_tool_score,
                                                                       toolname=tool)
         ret = {'Tool': tool, 'Accuracy': accuracy, 'Precision': precision,
                'Recall': recall, 'F1': f1, 'ROC_AUC': roc_auc,
-               '#Pred': len(y_tool_score), '#Bases': numSites
+               '#Bases': tool_notna_num, '#Pred': len(y_tool_score)
                }
         dataset.append(ret)
 
@@ -90,7 +91,7 @@ def evaluation_on_na_test(clf, nadf, x_col_list=None, y_col_name=None):
                                                                       toolname=args.model_type)
         ret = {'Tool': args.model_type, 'Accuracy': accuracy, 'Precision': precision,
                'Recall': recall, 'F1': f1, 'ROC_AUC': roc_auc,
-               '#Pred': len(y_tool_score), '#Bases': numSites
+               '#Bases': tool_notna_num, '#Pred': len(y_tool_score)
                }
         dataset.append(ret)
     outdf = pd.DataFrame(dataset)
@@ -189,9 +190,8 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
     ## read level to site level df
     sitedf = datadf[SITES_COLUMN_LIST + [TRUTH_LABEL_COLUMN]].drop_duplicates()
     sitedf.reset_index(inplace=True, drop=True)
-    logger.info(f"Sites={len(sitedf)}, class_distribution=\n{sitedf[TRUTH_LABEL_COLUMN].value_counts()}")
 
-    if not math.isclose(args.train_size, 1.0):
+    if not math.isclose(args.train_size, 1.0):  # not equal 1.0
         ## split sites into train and test
         siteX = sitedf.loc[:, SITES_COLUMN_LIST]
         siteY = sitedf.loc[:, TRUTH_LABEL_COLUMN]
@@ -200,14 +200,14 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
                              stratify=siteY)
 
         train_test_array = [len(y_train_site), len(y_test_site)]
-        logger.info(
+        logger.debug(
             f"""Split, site level report:
             Train:Test={train_test_array / np.sum(train_test_array)}
-            
+
             Train data:Sites={len(y_train_site):,}
             class_distribution=\n{y_train_site.value_counts()}
             class_freq=\n{y_train_site.value_counts(normalize=True)}
-            
+
             Test data:Sites={len(y_test_site):,}
             class_distribution=\n{y_test_site.value_counts()}
             class_freq=\n{y_test_site.value_counts(normalize=True)}
@@ -216,6 +216,11 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
         ## select predictions (read) based on sites split
         traindf = datadf.merge(X_train_site, on=SITES_COLUMN_LIST, how='inner')
         testdf = datadf.merge(X_test_site, on=SITES_COLUMN_LIST, how='inner')
+
+        ## general info of train and test for non-NA data
+        logger.info(general_info_df(traindf, TRUTH_LABEL_COLUMN, 'Train DF (non-NA data)'))
+        logger.info(general_info_df(testdf, TRUTH_LABEL_COLUMN, 'Test DF (non-NA data)'))
+
     else:
         traindf = datadf
         testdf = None
@@ -223,7 +228,7 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
     if nadf is not None:
         sitenadf = nadf[SITES_COLUMN_LIST + [TRUTH_LABEL_COLUMN]].drop_duplicates()
         sitenadf.reset_index(inplace=True, drop=True)
-        logger.info(
+        logger.debug(
             f"NADF  Sites={len(sitenadf):,}, class_distribution=\n{sitenadf[TRUTH_LABEL_COLUMN].value_counts()}")
         if not math.isclose(args.train_size, 1.0):
             ## split sites into train and test
@@ -236,8 +241,9 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
                 f"NA: Total CpGs={len(sitenadf):,}, train CpGs={len(naX_train_site):,}, test CpGs={len(naX_test_site):,}")
             train_nadf = nadf.merge(naX_train_site, on=SITES_COLUMN_LIST, how='inner')
             test_nadf = nadf.merge(naX_test_site, on=SITES_COLUMN_LIST, how='inner')
-            logger.debug(
-                f"NA: Total Predictions={len(nadf):,}, train preds={len(train_nadf):,}, test preds={len(test_nadf):,}")
+            ## general info of train and test for any-NA data
+            logger.info(general_info_df(train_nadf, TRUTH_LABEL_COLUMN, 'Train na_DF (any-NA data)'))
+            logger.info(general_info_df(test_nadf, TRUTH_LABEL_COLUMN, 'Test na_DF (any-NA data)'))
         else:
             train_nadf = nadf
             test_nadf = None
@@ -267,7 +273,7 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
     X_train = traindf[train_tool_list]
     y_train = traindf[TRUTH_LABEL_COLUMN]
 
-    logger.info(
+    logger.debug(
         f"""Split, read level report:
     Train data:Reads_pred={len(y_train):,}
     class_distribution=\n{y_train.value_counts()}
@@ -283,12 +289,12 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
         default_xgboost_params.update({'random_state': args.random_state})
         clf_model = XGBClassifier(**default_xgboost_params)
         gridcv_params = gridcv_xgboost_params
-        logger.info(f"\n\nDefault params={default_xgboost_params}\n\nSearch gridcv_params={gridcv_params}")
+        logger.debug(f"\n\nDefault params={default_xgboost_params}\n\nSearch gridcv_params={gridcv_params}")
     elif args.model_type == 'RF':
         default_rf_params.update({'random_state': args.random_state})
         clf_model = RandomForestClassifier(**default_rf_params)
         gridcv_params = gridcv_rf_params
-        logger.info(f"\n\nDefault params={default_rf_params}\n\nSearch gridcv_params={gridcv_params}")
+        logger.debug(f"\n\nDefault params={default_rf_params}\n\nSearch gridcv_params={gridcv_params}")
     else:
         raise Exception(f"args.model_type={args.model_type} is not supported")
 
@@ -323,7 +329,7 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
         logger.debug(f"Total overlaped predictions: {len(testdf):,}")
         y_test = testdf[TRUTH_LABEL_COLUMN]
 
-        logger.info(
+        logger.debug(
             f"""Split, read level report:
                 Test data:Reads_pred={len(y_test):,}
                 class_distribution=\n{y_test.value_counts()}
@@ -335,6 +341,30 @@ def train_classifier_model(datadf, nadf=None, train_tool_list=None):
         evaluation_on_test(clf, testdf, x_col_list=train_tool_list, y_col_name=TRUTH_LABEL_COLUMN, all_tools=all_tools)
         if nadf is not None and test_nadf is not None:
             evaluation_on_na_test(clf, test_nadf, x_col_list=train_tool_list, y_col_name=TRUTH_LABEL_COLUMN)
+
+
+def general_info_df(df, label, dfname=None):
+    """
+    Output the general info of pred df
+    Args:
+        df:
+        label:
+
+    Returns:
+
+    """
+    outstr = '\n\n###### General info of data ######\n'
+    if dfname is not None:
+        outstr += f"dataset name: {dfname}\n\n"
+    outstr += '------------------\n'
+    outstr += f'Total predictions: {len(df):,}\n\n'
+    outstr += f'Predictions distribution:\n{df[label].value_counts()}\n{df[label].value_counts(normalize=True)}\n\n'
+    outstr += '------------------\n'
+    sitedf = df[["Chr", "Pos", "Strand", TRUTH_LABEL_COLUMN]].drop_duplicates()
+    outstr += f'Total sites: {len(sitedf):,}\n\n'
+    outstr += f'Sites distribution:\n{sitedf[label].value_counts()}\n{sitedf[label].value_counts(normalize=True)}\n\n'
+    outstr += '####################################\n\n'
+    return outstr
 
 
 def parse_arguments():
@@ -427,19 +457,16 @@ if __name__ == '__main__':
     datadf = pd.concat(datadf_list)
     datadf.reset_index(drop=True, inplace=True)
     datadf_list = None  # save memory
-    logger.debug(f"datadf={len(datadf):,}")
+    logger.debug(f"DF1 pred (non-NA)={len(datadf):,}")
 
     nadatadf = pd.concat(nadatadf_list)
     datadf.reset_index(drop=True, inplace=True)
     nadatadf_list = None  # save memory
-    logger.debug(f"nadatadf={len(nadatadf):,}")
+    logger.debug(f"DF2 pred (any-NA)={len(nadatadf):,}")
 
-    ## Output read-level, site-level distributions
-    logger.info(f"Read stats: total={len(datadf):,}, distribution=\n{datadf[TRUTH_LABEL_COLUMN].value_counts()}")
-
-    sitedf = datadf[["Chr", "Pos", "Strand", TRUTH_LABEL_COLUMN]].drop_duplicates()
-    logger.info(f"Site stats: total={len(sitedf):,}, distribution=\n{sitedf[TRUTH_LABEL_COLUMN].value_counts()}")
-    sitedf = None
+    ## Output read-level, site-level distributions for DF1 and DF2
+    logger.info(general_info_df(datadf, TRUTH_LABEL_COLUMN, 'DF1 (non-NA data)'))
+    logger.info(general_info_df(nadatadf, TRUTH_LABEL_COLUMN, 'DF2 (any-NA data)'))
 
     train_classifier_model(datadf, nadatadf, train_tool_list=args.t)
 
