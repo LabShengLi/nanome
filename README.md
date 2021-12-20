@@ -80,7 +80,7 @@ NANOME pipeline support running with various ways in different platforms:
 ## Simple usage
 Please refer to [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md) and [Specific Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/SpecificUsage.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). We provide a **tutorial video** for running NANOME pipeline:
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/FBAU4GIepXM/0.jpg)](https://www.youtube.com/watch?v=FBAU4GIepXM)
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/TfotM55KTVE/0.jpg)](https://www.youtube.com/watch?v=TfotM55KTVE)
 
 When you have Nextflow software, NANOME pipeline can be directly executed without any other additional installation steps:
 ```angular2html
