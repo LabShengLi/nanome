@@ -98,6 +98,7 @@ def parse_arguments():
     parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
     parser.add_argument('--using-cache', help="if use cache files", action='store_true')
     parser.add_argument('--sort', help="if sort bed output", action='store_true')
+    parser.add_argument('--deduplicate', help="if deduplicate not unique records", action='store_true')
     parser.add_argument('--cache-dir', type=str,
                         help=f'cache dir used for loading calls/bs-seq (speed up running), default is {global_cache_dir}',
                         default=global_cache_dir)
@@ -148,6 +149,7 @@ if __name__ == '__main__':
         ## Output read-level unified format with 1-based start for ONT tools
         logger.info(f"We are outputing each tool's unified results for read-level, same as METEORE format")
         input_list = []
+        outfn_list = []
         for callstr in args.calls:
             try:
                 if len(callstr.split(':')) == 3:
@@ -168,6 +170,7 @@ if __name__ == '__main__':
                 continue
             outfn = os.path.join(out_dir,
                                  f"{args.dsname}_{toolname}{f'-{args.tagname}' if args.tagname else ''}-perRead-score.tsv.gz")
+            outfn_list.append(outfn)
 
             input_list.append((callfn, callencode, score_cutoff, outfn,))
 
@@ -176,6 +179,16 @@ if __name__ == '__main__':
             executor.submit(import_and_save_read_level, *arg)
         executor.shutdown()
 
+        if args.sort:
+            logger.debug(f"Start to sort read level outputs")
+            input_params_list = []
+            for infn in outfn_list:
+                outfn = infn.replace('-perRead-score.tsv.gz', '-perRead-score.sort.tsv.gz')
+                input_params_list.append((infn, outfn, args.deduplicate,))
+            with Pool(args.processors) as p:
+                p.starmap(sort_per_read_tsv_file, input_params_list)
+            for infn in outfn_list:
+                os.remove(infn)
         save_done_file(out_dir)
         logger.info(f"Memory report: {get_current_memory_usage()}")
         logger.info("### Unified format output DONE")
@@ -214,9 +227,10 @@ if __name__ == '__main__':
         output_calldict_to_unified_bed_as_0base(combine_bsdata, outfn)
 
         if args.sort:
+            logger.debug(f"Start to sort bsseq site level outputs")
             ## Sort bed file
             sort_outfn = os.path.join(out_dir, f'{args.dsname}_BSseq-perSite-cov{bs_cov_cutoff}.sort.bed.gz')
-            sort_bed_file(outfn, sort_outfn)
+            sort_bed_file(outfn, sort_outfn, args.deduplicate)
             os.remove(outfn)
 
         # Clean up bgTruth, not used anymore
@@ -263,12 +277,16 @@ if __name__ == '__main__':
     executor.shutdown()
 
     if args.sort:
+        logger.debug(f"Start to sort all tools' site level outputs")
         ## sort BED files
+        in_params_list = []
         for outfn in outfn_list:
             sort_outfn = outfn.replace(f'cov{tool_cov_cutoff}.bed.gz', f'cov{tool_cov_cutoff}.sort.bed.gz')
-            logger.debug(f"sort from fn={outfn}, to sort_outfn={sort_outfn}")
-            sort_bed_file(outfn, sort_outfn)
-            os.remove(outfn)
+            in_params_list.append((outfn, sort_outfn, args.deduplicate,))
+
+        with Pool(args.processors) as p:
+            p.starmap(sort_bed_file, in_params_list)
+        [os.remove(outfn) for outfn in outfn_list]
 
     for key in ontcall_tools_dict.keys():
         logger.debug(f"tool={key}, sites={ontcall_tools_dict[key]}")

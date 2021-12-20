@@ -274,7 +274,7 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
             the_score = float(tmp[meth_prob_col])
             if np.isnan(the_score):
                 the_score = 0.0
-            cpgDict[key].append((int(tmp[meth_col]), the_score, ))
+            cpgDict[key].append((int(tmp[meth_col]), the_score,))
         else:
             cpgDict[key].append(int(tmp[meth_col]))
 
@@ -3103,7 +3103,23 @@ def sanity_check_get_dna_seq():
     return
 
 
-def sort_bed_file(infn, outfn, has_header=False):
+def uniqueOption(deduplicate=False):
+    """
+    return unique option -u if True
+    Args:
+        deduplicate:
+
+    Returns:
+
+    """
+    if deduplicate:
+        uniqueOption = '-u'
+    else:
+        uniqueOption = '  '
+    return uniqueOption
+
+
+def sort_bed_file(infn, outfn, has_header=False, deduplicate=False):
     """
     Sort and save bed files into outfn
     Args:
@@ -3112,7 +3128,7 @@ def sort_bed_file(infn, outfn, has_header=False):
 
     Returns:
     """
-    command = f"zcat {infn} | sort -V -k1,1 -k2,2n | gzip -f > {outfn}"
+    command = f"zcat {infn} | sort -V {uniqueOption(deduplicate)} -k1,1 -k2,2n | gzip -f > {outfn}"
     if has_header:
         command = f"""
         zcat {infn}  |  awk 'NR<2{{print $0;next}}{{print $0| "sort -V -k1,1 -k2,2n"}}' | gzip -f  > {outfn}
@@ -3120,6 +3136,38 @@ def sort_bed_file(infn, outfn, has_header=False):
     subprocess.Popen(command, shell=True, stdout=subprocess.PIPE) \
         .stdout.read().decode("utf-8")
     logger.debug(f'Sort {infn} and save into {outfn}, has_header={has_header}')
+
+
+def sort_set_txt_file(infn, outfn, deduplicate=False):
+    """
+    Sort and save bed files into outfn
+    Args:
+        infn:
+        outfn:
+
+    Returns:
+    """
+    command = f"zcat {infn} | sort -t '_' -V {uniqueOption(deduplicate)} -k1,1 -k2,2n -k3,3 | gzip -f > {outfn}"
+    subprocess.Popen(command, shell=True, stdout=subprocess.PIPE) \
+        .stdout.read().decode("utf-8")
+    logger.debug(f'Sort {infn} and save into {outfn}')
+    return True
+
+
+def sort_per_read_tsv_file(infn, outfn, deduplicate=False):
+    """
+    Sort and save bed files into outfn
+    Args:
+        infn:
+        outfn:
+
+    Returns:
+    """
+    command = f"zcat {infn} | sort -V {uniqueOption(deduplicate)} -k2,2 -k3,3n -k4,4 -k1,1 | gzip -f > {outfn}"
+    subprocess.Popen(command, shell=True, stdout=subprocess.PIPE) \
+        .stdout.read().decode("utf-8")
+    logger.debug(f'Sort {infn} and save into {outfn}')
+    return True
 
 
 def convert_size(size_bytes):
