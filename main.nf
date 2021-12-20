@@ -184,10 +184,10 @@ if (params.runMethcall) {
 	if (params.runDeepMod) summary['runDeepMod'] = 'Yes'
 	if (params.runNANOME) summary['runNANOME'] = 'Yes'
 }
-if (!params.deepsignalDir) { summary['deepsignalDir'] = params.deepsignalDir }
-if (!params.rerioDir) { summary['rerioDir'] = params.rerioDir }
-if (!params.METEOREDir) { summary['METEOREDir'] = params.METEOREDir }
-if (!params.guppyDir) { summary['guppyDir'] 	= params.guppyDir }
+if (params.deepsignalDir) { summary['deepsignalDir'] = params.deepsignalDir }
+if (params.rerioDir) { summary['rerioDir'] = params.rerioDir }
+if (params.METEOREDir) { summary['METEOREDir'] = params.METEOREDir }
+if (params.guppyDir) { summary['guppyDir'] 	= params.guppyDir }
 
 summary['\nPipeline settings']         = "--------"
 summary['Working dir'] 		= workflow.workDir
@@ -642,7 +642,7 @@ process Resquiggle {
 		--corrected-group ${params.ResquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} \
 		--basecall-subgroup ${params.BasecallSubGroupName}\
-		--ignore-read-locks ${params.tomboResquiggleOptions}\
+		--ignore-read-locks ${params.tomboResquiggleOptions ? params.tomboResquiggleOptions: ' '}\
 		--overwrite \
 		${basecallIndir.baseName}.resquiggle/workspace \
 		${referenceGenome} &>> Resquiggle.run.log
