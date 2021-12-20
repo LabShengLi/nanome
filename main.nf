@@ -36,7 +36,7 @@ def helpMessage() {
 	Mandatory arguments:
 	  --dsname		Dataset/analysis name
 	  --input		Input path for raw fast5 files (folders, tar/tar.gz files)
-	  --genome		Genome reference name ('hg38', 'ecoli', or 'hg38_chr22') or directory, a directory must contain only one .fasta file with a .sizes file for chromosome sizes.
+	  --genome		Genome reference name ('hg38', 'ecoli', or 'hg38_chr22') or directory, a directory must contain only one .fasta file with .fasta.fai index file
 
 	General options:
 	  --processors		Processors used for each task
@@ -184,10 +184,10 @@ if (params.runMethcall) {
 	if (params.runDeepMod) summary['runDeepMod'] = 'Yes'
 	if (params.runNANOME) summary['runNANOME'] = 'Yes'
 }
-if (!params.deepsignalDir) { summary['deepsignalDir'] = params.deepsignalDir }
-if (!params.rerioDir) { summary['rerioDir'] = params.rerioDir }
-if (!params.METEOREDir) { summary['METEOREDir'] = params.METEOREDir }
-if (!params.guppyDir) { summary['guppyDir'] 	= params.guppyDir }
+if (params.deepsignalDir) { summary['deepsignalDir'] = params.deepsignalDir }
+if (params.rerioDir) { summary['rerioDir'] = params.rerioDir }
+if (params.METEOREDir) { summary['METEOREDir'] = params.METEOREDir }
+if (params.guppyDir) { summary['guppyDir'] 	= params.guppyDir }
 
 summary['\nPipeline settings']         = "--------"
 summary['Working dir'] 		= workflow.workDir
@@ -209,7 +209,7 @@ if (workflow.profile.contains('hpc') || workflow.profile.contains('winter') || w
     summary['time']            = params.time
     if (params.gresOptions != false) {summary['gresOptions'] = params.gresOptions }
 }
-if (workflow.profile.contains('google') || params.config.contains('lifebit')) {
+if (workflow.profile.contains('google') || (params.config && params.config.contains('lifebit'))) {
 	summary['\nGCP settings']         = "--------"
 	if (!params.config.contains('lifebit')) {
 		summary['googleProjectName']    = params.googleProjectName
@@ -351,64 +351,94 @@ process Untar {
 	output:
 	path "${fast5_tar.baseName}.untar", emit:untar,  optional: true
 
-	"""
-	date; hostname; pwd
-	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
+	script:
+	cores = task.cpus * params.highProcTimes
+	if (!params.skipBasecall) { // perform basecall
+		"""
+		date; hostname; pwd
+		echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
 
-	## Extract input files tar/tar.gz/folder
-	infn="${fast5_tar}"
-	mkdir -p untarTempDir
-	if [ "\${infn##*.}" == "tar" ]; then
-		### deal with tar
-		tar -xf \${infn} -C untarTempDir
-	elif [ "\${infn##*.}" == "gz" ]; then
-		### deal with tar.gz
-		tar -xzf \${infn} -C untarTempDir
-	elif [[ -d ${fast5_tar} ]]; then
-		if [[ ${params.skipBasecall} == false ]] ; then
+		## Extract input files tar/tar.gz/folder
+		infn="${fast5_tar}"
+		mkdir -p untarTempDir
+		if [ "\${infn##*.}" == "tar" ]; then
+			### deal with tar
+			tar -xf \${infn} -C untarTempDir
+		elif [ "\${infn##*.}" == "gz" ]; then
+			### deal with tar.gz
+			tar -xzf \${infn} -C untarTempDir
+		elif [[ -d ${fast5_tar} ]]; then
 			## Copy files, do not change original files such as old analyses data
 			find ${fast5_tar}/ -name '*.fast5' | \
-				parallel -j${task.cpus * params.highProcTimes}  cp {} untarTempDir/
+				parallel -j$cores  cp {} untarTempDir/
 		else
+			echo "### Untar error for input=${fast5_tar}"
+		fi
+
+		## Move fast5 raw/basecalled files into XXX.untar folder
+		mkdir -p ${fast5_tar.baseName}.untar
+
+		find untarTempDir -name "*.fast5" -type f | \
+			parallel -j$cores  mv {}  ${fast5_tar.baseName}.untar/
+
+		## Clean temp files
+		rm -rf untarTempDir
+
+		## Clean old basecalled analyses in input fast5 files
+		if [[ "${params.cleanAnalyses}" == true ]] ; then
+			echo "### Start cleaning old analysis"
+			## python -c 'import h5py; print(h5py.version.info)'
+			clean_old_basecall_in_fast5.py \
+				-i ${fast5_tar.baseName}.untar --is-indir --verbose\
+				--processor $cores
+		fi
+
+		totalFiles=\$( find ${fast5_tar.baseName}.untar -name "*.fast5" -type f | wc -l )
+		echo "### Total fast5 input files:\${totalFiles}"
+		if (( totalFiles==0 )); then
+			echo "### no fast5 files at ${fast5_tar.baseName}.untar, skip this job"
+			rm -rf ${fast5_tar.baseName}.untar
+		fi
+		echo "### Untar DONE"
+		"""
+	} else {
+		"""
+		date; hostname; pwd
+
+		## Extract input files tar/tar.gz/folder
+		infn="${fast5_tar}"
+		mkdir -p untarTempDir
+		if [ "\${infn##*.}" == "tar" ]; then
+			### deal with tar
+			tar -xf \${infn} -C untarTempDir
+		elif [ "\${infn##*.}" == "gz" ]; then
+			### deal with tar.gz
+			tar -xzf \${infn} -C untarTempDir
+		elif [[ -d ${fast5_tar} ]]; then
 			## user provide basecalled input dir, just cp them
 			mkdir -p untarTempDir/test
 			cp -rf ${fast5_tar}/*   untarTempDir/test/
+		else
+			echo "### Untar error for input=${fast5_tar}"
 		fi
-	else
-		echo "### Untar error for input=${fast5_tar}"
-	fi
 
-	## Move fast5 raw/basecalled files into XXX.untar folder
-	mkdir -p ${fast5_tar.baseName}.untar
-
-	if [[ ${params.skipBasecall} == false ]] ; then
-		find untarTempDir -name "*.fast5" -type f | \
-			parallel -j${task.cpus * params.highProcTimes}  mv {}  ${fast5_tar.baseName}.untar/
-	else
+		## Move fast5 raw/basecalled files into XXX.untar folder
+		mkdir -p ${fast5_tar.baseName}.untar
 		## Keep the directory structure for basecalled input
 		mv untarTempDir/*/*   ${fast5_tar.baseName}.untar/
-	fi
 
-	## Clean temp files
-	rm -rf untarTempDir
+		## Clean temp files
+		rm -rf untarTempDir
 
-	## Clean old basecalled analyses in input fast5 files
-	if [[ "${params.cleanAnalyses}" == true ]] ; then
-		echo "### Start cleaning old analysis"
-		## python -c 'import h5py; print(h5py.version.info)'
-		clean_old_basecall_in_fast5.py \
-			-i ${fast5_tar.baseName}.untar --is-indir --verbose\
-			--processor ${task.cpus * params.highProcTimes}
-	fi
-
-	totalFiles=\$( find ${fast5_tar.baseName}.untar -name "*.fast5" -type f | wc -l )
-	echo "### Total fast5 input files:\${totalFiles}"
-	if (( totalFiles==0 )); then
-		echo "### no fast5 files at ${fast5_tar.baseName}.untar, skip this job"
-		rm -rf ${fast5_tar.baseName}.untar
-	fi
-	echo "### Untar DONE"
-	"""
+		totalFiles=\$( find ${fast5_tar.baseName}.untar -name "*.fast5" -type f | wc -l )
+		echo "### Total fast5 input files:\${totalFiles}"
+		if (( totalFiles==0 )); then
+			echo "### no fast5 files at ${fast5_tar.baseName}.untar, skip this job"
+			rm -rf ${fast5_tar.baseName}.untar
+		fi
+		echo "### Untar DONE"
+		"""
+	}
 }
 
 
@@ -514,6 +544,9 @@ process QCExport {
 	path "${params.dsname}_QCReport",				emit: qc_report
 	path "${params.dsname}_bam_data",		optional: true,	 emit: bam_data
 
+	script:
+	cores = task.cpus * params.highProcTimes
+	samtools_cores = task.cpus * params.mediumProcTimes
 	"""
 	## Combine all sequencing summary files
 	touch ${params.dsname}_combine_sequencing_summary.txt.gz
@@ -534,7 +567,7 @@ process QCExport {
 	if [[ ${params.skipQC} == false ]]; then
 		## Perform QC report by NanoComp
 		NanoComp --summary ${params.dsname}_combine_sequencing_summary.txt.gz  \
-			--names ${params.dsname} --outdir ${params.dsname}_QCReport -t ${task.cpus * params.highProcTimes} \
+			--names ${params.dsname} --outdir ${params.dsname}_QCReport -t $cores \
 			--raw  -f pdf -p ${params.dsname}_   &>> QCReport.run.log
 	fi
 
@@ -546,12 +579,12 @@ process QCExport {
 
 		## After basecall, we align results to merged, sorted bam, can be for ONT coverage analyses/output bam
 		# align FASTQ files to reference genome, write sorted alignments to a BAM file
-		minimap2 -t ${task.cpus * params.mediumProcTimes} -a  -x map-ont \
+		minimap2 -t ${samtools_cores} -a  -x map-ont \
 			${referenceGenome} \
 			merge_all_fq.fq.gz | \
-			samtools sort -@ ${task.cpus * params.mediumProcTimes} -T tmp -o \
+			samtools sort -@ ${samtools_cores} -T tmp -o \
 				${params.dsname}_merge_all_bam.bam &&\
-			samtools index -@ ${task.cpus * params.mediumProcTimes}  ${params.dsname}_merge_all_bam.bam
+			samtools index -@ ${samtools_cores}  ${params.dsname}_merge_all_bam.bam
 		echo "### Samtools alignment done"
 	fi
 
@@ -572,8 +605,10 @@ process QCExport {
 		mv ${params.dsname}_ONT_coverage_combine.bed.gz ${params.dsname}_QCReport/
 	fi
 
-	[ -f ${params.dsname}_combine_sequencing_summary.txt.gz ] && mv -f ${params.dsname}_combine_sequencing_summary.txt.gz ${params.dsname}_QCReport/
-	[ -f ${params.dsname}_QCReport/${params.dsname}_NanoComp-report.html ] && mv -f ${params.dsname}_QCReport/${params.dsname}_NanoComp-report.html ${params.dsname}_basecall_report.html
+	[ -f ${params.dsname}_combine_sequencing_summary.txt.gz ] && \
+		mv -f ${params.dsname}_combine_sequencing_summary.txt.gz ${params.dsname}_QCReport/
+	[ -f ${params.dsname}_QCReport/${params.dsname}_NanoComp-report.html ] && \
+		mv -f ${params.dsname}_QCReport/${params.dsname}_NanoComp-report.html ${params.dsname}_basecall_report.html
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -606,6 +641,10 @@ process Resquiggle {
 	when:
 	params.runMethcall && (params.runDeepSignal || params.runTombo)
 
+	script:
+	cores = task.cpus * params.highProcTimes
+	samtools_cores = task.cpus * params.mediumProcTimes
+	resquiggle_cores = (task.cpus*params.reduceProcTimes).intValue()
 	"""
 	### copy basecall workspace files, due to tombo resquiggle modify base folder
 	rm -rf ${basecallIndir.baseName}.resquiggle
@@ -628,7 +667,7 @@ process Resquiggle {
 		--fastq-filenames ${basecallIndir.baseName}.resquiggle/batch_basecall_combine_fq_*.fq\
 		--basecall-group ${params.BasecallGroupName}\
 		--basecall-subgroup ${params.BasecallSubGroupName}\
-		--overwrite --processes  ${task.cpus * params.mediumProcTimes} \
+		--overwrite --processes  ${samtools_cores} \
 		&>> Resquiggle.run.log
 	echo "### tombo preprocess DONE"
 
@@ -638,11 +677,11 @@ process Resquiggle {
 	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
 	### Out of memory solution for large data: --tomboResquiggleOptions '--signal-length-range 0 500000  --sequence-length-range 0 50000'
 	tombo resquiggle\
-		--processes ${(task.cpus*params.reduceProcTimes).intValue()} \
+		--processes ${resquiggle_cores} \
 		--corrected-group ${params.ResquiggleCorrectedGroup} \
 		--basecall-group ${params.BasecallGroupName} \
 		--basecall-subgroup ${params.BasecallSubGroupName}\
-		--ignore-read-locks ${params.tomboResquiggleOptions}\
+		--ignore-read-locks ${params.tomboResquiggleOptions ? params.tomboResquiggleOptions : ''}\
 		--overwrite \
 		${basecallIndir.baseName}.resquiggle/workspace \
 		${referenceGenome} &>> Resquiggle.run.log
@@ -670,6 +709,10 @@ process Nanopolish {
 	when:
 	params.runMethcall && params.runNanopolish
 
+	script:
+	samtools_cores = task.cpus * params.mediumProcTimes
+	nanopolish_cores = (task.cpus*params.reduceProcTimes).intValue()
+
 	"""
 	## Put all fq and bam files into working dir, DO NOT affect the basecall dir
 	bamFileName="${params.dsname}.batch_${basecallDir.baseName}.sorted.bam"
@@ -683,9 +726,9 @@ process Nanopolish {
 	nanopolish index -d ${basecallDir}/workspace -s ${basecallDir}/${basecallDir.baseName}-sequencing_summary.txt  \${fastqFile##*/}
 
 	## Aligning reads to the reference genome, ref: https://nanopolish.readthedocs.io/en/latest/quickstart_call_methylation.html#aligning-reads-to-the-reference-genome
-	minimap2 -t ${task.cpus * params.mediumProcTimes}  -a -x map-ont ${referenceGenome} \${fastqFile##*/} | \
-		samtools sort -@ ${task.cpus * params.mediumProcTimes} -T tmp -o \${bamFileName} &&\
-		samtools index -@ ${task.cpus * params.mediumProcTimes}  \${bamFileName}
+	minimap2 -t ${samtools_cores}  -a -x map-ont ${referenceGenome} \${fastqFile##*/} | \
+		samtools sort -@ ${samtools_cores} -T tmp -o \${bamFileName} &&\
+		samtools index -@ ${samtools_cores}  \${bamFileName}
 	echo "### Alignment step: minimap2 and samtools DONE"
 
 	## Calling methylation, ref: https://nanopolish.readthedocs.io/en/latest/quickstart_call_methylation.html#calling-methylation
@@ -693,7 +736,7 @@ process Nanopolish {
 	## ref: https://github.com/jts/nanopolish/issues/872
 	## ref: https://github.com/jts/nanopolish/issues/683, https://github.com/jts/nanopolish/issues/580
 	nanopolish call-methylation \
-		-t ${(task.cpus*params.reduceProcTimes).intValue()}\
+		-t ${nanopolish_cores}\
 	 	-r \${fastqFile##*/} \
 		-b \${bamFileName} -g ${referenceGenome} -q cpg | \
 		awk 'NR>1' | \
@@ -755,7 +798,7 @@ process NplshComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Nanopolish Nanopolish \
 		${params.dsname}_nanopolish_per_read_combine.tsv.gz \
-		.  ${task.cpus * params.highProcTimes}  12 ${params.sort  ? true : false}   "${chrSet}"
+		.  ${task.cpus}  12 ${params.sort  ? true : false}   "${chrSet}"
 
 	echo "### Nanopolish combine DONE"
 	"""
@@ -781,6 +824,8 @@ process Megalodon {
 	when:
 	params.runMethcall && params.runMegalodon
 
+	script:
+	cores = task.cpus * params.mediumProcTimes
 	"""
 	date; hostname; pwd
 
@@ -811,7 +856,7 @@ process Megalodon {
 			--guppy-params "-d ./${rerio_dir}/basecall_models/" \
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--reference ${referenceGenome} \
-			--processes ${task.cpus * params.mediumProcTimes}\
+			--processes $cores\
 			&>> Megalodon.run.log
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
@@ -828,7 +873,7 @@ process Megalodon {
 			--guppy-params "-d ./${rerio_dir}/basecall_models/" \
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--reference ${referenceGenome} \
-			--processes ${task.cpus * params.mediumProcTimes} --devices 0\
+			--processes $cores --devices 0\
 			&>> Megalodon.run.log
 	else
 		echo "### error value for commandType=\${commandType}"
@@ -842,7 +887,7 @@ process Megalodon {
 	if [[ ${params.cleanStep} == "true" ]]; then
 		### keep guppy server log, due to it may fail when remove that folder, rm -rf megalodon_results
 		find megalodon_results/  -maxdepth 1 -type f |\
-		 	parallel -j${task.cpus * params.mediumProcTimes} 'rm {}'
+		 	parallel -j$cores 'rm {}'
 	fi
 	echo "### Megalodon DONE"
 	"""
@@ -896,7 +941,7 @@ process MgldnComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Megalodon Megalodon \
 		${params.dsname}_megalodon_per_read_combine.bed.gz \
-		.  ${task.cpus * params.highProcTimes}  12  ${params.sort  ? true : false}  "${chrSet}"
+		.  ${task.cpus}  12  ${params.sort  ? true : false}  "${chrSet}"
 
 	echo "### Megalodon combine DONE"
 	"""
@@ -922,6 +967,8 @@ process DeepSignal {
 	when:
 	params.runMethcall && params.runDeepSignal
 
+	script:
+	cores = task.cpus * params.highProcTimes
 	"""
 	DeepSignalModelBaseDir="."
 	commandType='gpu'
@@ -935,7 +982,7 @@ process DeepSignal {
 			--result_file \${outFile} \
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
-			--nproc ${task.cpus * params.highProcTimes} \
+			--nproc $cores \
 			--is_gpu no
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
@@ -945,7 +992,7 @@ process DeepSignal {
 			--result_file \${outFile} \
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
-			--nproc ${task.cpus * params.highProcTimes} \
+			--nproc $cores \
 			--is_gpu yes
 	else
 		echo "### error value for commandType=\${commandType}"
@@ -1005,7 +1052,7 @@ process DpSigComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  DeepSignal DeepSignal\
 		${params.dsname}_deepsignal_per_read_combine.tsv.gz \
-		.  ${task.cpus * params.highProcTimes}  12 ${params.sort  ? true : false}  "${chrSet}"
+		.  $task.cpus  12 ${params.sort  ? true : false}  "${chrSet}"
 	echo "### DeepSignal combine DONE"
 	"""
 }
@@ -1039,6 +1086,9 @@ process Guppy {
 	when:
 	params.runMethcall && params.runGuppy
 
+	script:
+	cores = task.cpus * params.highProcTimes
+	samtools_cores = task.cpus * params.mediumProcTimes
 	"""
 	date; hostname; pwd
 
@@ -1103,15 +1153,15 @@ process Guppy {
 		## gcf52ref ways
 		minimap2 -t ${task.cpus * params.mediumProcTimes} -a -x map-ont ${referenceGenome} \
 			batch_combine_fq.fq.gz | \
-			samtools sort -@ ${task.cpus * params.mediumProcTimes} \
+			samtools sort -@ ${samtools_cores} \
 				-T tmp -o gcf52ref.batch.${fast5_dir.baseName}.bam &&\
-			samtools index -@ ${task.cpus * params.mediumProcTimes} \
+			samtools index -@ ${samtools_cores} \
 				gcf52ref.batch.${fast5_dir.baseName}.bam
 		echo "### gcf52ref minimap2 alignment is done"
 
 		## Modified version, support dir input, not all fast5 files (too long arguments)
 		extract_methylation_fast5_support_dir.py \
-			-p ${task.cpus * params.mediumProcTimes}  ${fast5_dir.baseName}.methcalled/workspace
+			-p ${samtools_cores}  ${fast5_dir.baseName}.methcalled/workspace
 		echo "### gcf52ref extract to db done"
 
 		## gcf52ref files preparation
@@ -1135,14 +1185,13 @@ process Guppy {
 
 	## fast5mod ways
 	FAST5PATH=${fast5_dir.baseName}.methcalled/workspace
-	## OUTBAM=batch_${fast5_dir.baseName}.guppy.fast5mod_guppy2sam.bam
 	OUTBAM=${params.dsname}_guppy_fast5mod_batch_${fast5_dir.baseName}_guppy2sam.bam
 
 	fast5mod guppy2sam \${FAST5PATH} --reference ${referenceGenome} \
-		--workers ${task.cpus * params.highProcTimes}  --recursive --quiet \
-		| samtools sort -@   ${task.cpus * params.mediumProcTimes}  | \
-		samtools view -b -@ ${task.cpus * params.mediumProcTimes}  > \${OUTBAM} &&\
-		samtools index -@ ${task.cpus * params.mediumProcTimes}   \${OUTBAM}
+		--workers ${samtools_cores}  --recursive --quiet \
+		| samtools sort -@   ${samtools_cores}  | \
+		samtools view -b -@ ${samtools_cores}  > \${OUTBAM} &&\
+		samtools index -@ ${samtools_cores}   \${OUTBAM}
 
 	if [[ "${params.outputIntermediate}" == true ]] ; then
 		tar -czf bamfile_\${OUTBAM}.tar.gz \
@@ -1201,6 +1250,9 @@ process GuppyComb {
 	when:
 	x.size() >= 1 && params.runCombine
 
+	script:
+	cores = task.cpus * params.highProcTimes
+	samtools_cores = task.cpus * params.mediumProcTimes
 	"""
 	if [[ ${params.runGuppyGcf52ref} == true ]] ; then
 		## gcf52ref ways
@@ -1215,8 +1267,8 @@ process GuppyComb {
 		samtools merge -@${task.cpus * params.mediumProcTimes}  ${params.dsname}_guppy_fast5mod_combine.bam {}
 
 	### sort is not needed due to merge the sorted bam, ref: http://www.htslib.org/doc/samtools-merge.html
-	### samtools sort -@ ${task.cpus * params.mediumProcTimes} total.meth.bam
-	samtools index -@ ${task.cpus * params.mediumProcTimes}  ${params.dsname}_guppy_fast5mod_combine.bam
+	### samtools sort -@ ${samtools_cores} total.meth.bam
+	samtools index -@ ${samtools_cores}  ${params.dsname}_guppy_fast5mod_combine.bam
 	echo "Samtool merge and index for fast5mod DONE"
 
 	if [[ ${params.outputIntermediate} == true ]] ; then
@@ -1239,7 +1291,7 @@ process GuppyComb {
 		cat chr_all_list.txt
 
 		## Ref: https://github.com/nanoporetech/medaka/issues/177
-		parallel -j${task.cpus * params.highProcTimes}  -v \
+		parallel -j$cores  -v \
 			"fast5mod call  ${params.dsname}_guppy_fast5mod_combine.bam  ${referenceGenome} \
 				meth.chr_{}.tsv  --meth cpg --quiet --regions {} ; \
 				gzip -f meth.chr_{}.tsv" :::: chr_all_list.txt
@@ -1281,14 +1333,14 @@ process GuppyComb {
 		bash utils/unify_format_for_calls.sh \
 			${params.dsname}  Guppy Guppy.gcf52ref\
 			 ${params.dsname}_guppy_gcf52ref_per_read_combine.tsv.gz \
-			.  ${task.cpus * params.mediumProcTimes}  1  ${params.sort  ? true : false}  "${chrSet}"
+			.  ${task.cpus}  1  ${params.sort  ? true : false}  "${chrSet}"
 	fi
 
 	## Unify format output for site level
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Guppy Guppy\
 		${params.dsname}_guppy_fast5mod_per_site_combine.tsv.gz \
-		.  ${task.cpus * params.mediumProcTimes}  2  ${params.sort  ? true : false}  "${chrSet}"
+		.  ${task.cpus}  2  ${params.sort  ? true : false}  "${chrSet}"
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -1972,14 +2024,14 @@ process Report {
 workflow {
 	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
 
-	if (!params.rerioDir) { // default if false, will online downloading
+	if (!params.rerioDir) { // default if null, will online downloading
 		// This is only a place holder for input
 		rerioDir = Channel.fromPath("${projectDir}/utils/null1", type: 'any', checkIfExists: false)
 	} else {
 		rerioDir = Channel.fromPath(params.rerioDir, type: 'any', checkIfExists: true)
 	}
 
-	if (!params.deepsignalDir) { // default if false, will online downloading
+	if (!params.deepsignalDir) { // default if null, will online downloading
 		// This is only a place holder for input
 		deepsignalDir = Channel.fromPath("${projectDir}/utils/null2", type: 'any', checkIfExists: false)
 	} else {
