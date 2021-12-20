@@ -413,6 +413,8 @@ def parse_arguments():
 
     parser.add_argument('-o', type=str, help=f"output base dir, default is {pic_base_dir}", default=pic_base_dir)
     parser.add_argument('--gen-venn', help="if generate CpGs files for venn data analysis", action='store_true')
+    parser.add_argument('--sort', help="if sort outputs", action='store_true')
+    parser.add_argument('--deduplicate', help="if deduplicate not unique records needed", action='store_true')
     parser.add_argument('--summary-coverage', help="if summarize coverage at each region",
                         action='store_true')
     parser.add_argument('--region-coe-report', help="if report PCC value at each region",
@@ -599,6 +601,9 @@ if __name__ == '__main__':
             outfn = os.path.join(venn_outdir,
                                  f'{args.dsname}.bgtruth.cpg.sites.cov{args.min_bgtruth_cov}.setsfile.txt.gz')
             ontcalls_to_setsfile_for_venn_analysis(bg_cpgs, outfn)
+            outfn_sort = outfn.replace('.setsfile.txt.gz', '.setsfile.sort.txt.gz')
+            sort_set_txt_file(outfn, outfn_sort)
+            os.remove(outfn)
 
         for callname in callresult_dict_cov3.keys():
             call_keys = callresult_dict_cov3[callname].keys()
@@ -607,6 +612,20 @@ if __name__ == '__main__':
             ontcalls_to_setsfile_for_venn_analysis(call_keys, outfn)
         logger.debug(f"Memory report: {get_current_memory_usage()}")
         logger.debug(f'\n\n####################\n\n')
+
+        if args.sort:
+            ## sort all setsfile.txt.gz
+            logger.debug(f"Start to sort setsfile for venn data")
+            flist = glob.glob(os.path.join(venn_outdir, '*.setsfile.txt.gz'))
+            with Pool(args.processors) as p:
+                input_params_list = []
+                for infn in flist:
+                    input_params_list.append((infn, infn.replace('setsfile.txt.gz', 'setsfile.sort.txt.gz'), args.deduplicate))
+                logger.debug(f"input_params_list={input_params_list}")
+                p.starmap(sort_set_txt_file, input_params_list)
+            for infn in flist:
+                os.remove(infn)
+            logger.debug(f"Sort setsfile done")
 
     if bgTruth:  # Having bgtruth params, then report PCC performance
         logger.debug(f"Start getting intersection (all joined) sites by tools and bgtruth")
@@ -637,20 +656,26 @@ if __name__ == '__main__':
         outfn_joined = os.path.join(out_dir,
                                     f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv.gz")
         save_meth_corr_data(callresult_dict_cov3, bgTruth, coveredCpGs, outfn_joined)
-        outfn_joined_sorted = os.path.join(out_dir,
-                                           f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.sorted.csv.gz")
-        sort_bed_file(infn=outfn_joined, outfn=outfn_joined_sorted, has_header=True)
-        os.remove(outfn_joined)
+        if args.sort:
+            outfn_joined_sorted = os.path.join(out_dir,
+                                               f"Meth_corr_plot_data_joined-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.sorted.csv.gz")
+            sort_bed_file(infn=outfn_joined, outfn=outfn_joined_sorted, has_header=True)
+            os.remove(outfn_joined)
+        else:
+            outfn_joined_sorted = outfn_joined
 
         logger.debug(
             'Output data of meth-freq and coverage on bgTruth related CpG sites as datasets for correlation analysis')
         outfn_bgtruth = os.path.join(out_dir,
                                      f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.csv.gz")
         save_meth_corr_data(callresult_dict_cov3, bgTruth, set(list(bgTruth.keys())), outfn_bgtruth)
-        outfn_bgtruth_sorted = os.path.join(out_dir,
-                                            f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.sorted.csv.gz")
-        sort_bed_file(infn=outfn_bgtruth, outfn=outfn_bgtruth_sorted, has_header=True)
-        os.remove(outfn_bgtruth)
+        if args.sort:
+            outfn_bgtruth_sorted = os.path.join(out_dir,
+                                                f"Meth_corr_plot_data_bgtruth-{RunPrefix}-bsCov{bgtruthCutt}-minToolCov{minToolCovCutt}-baseFormat{baseFormat}.sorted.csv.gz")
+            sort_bed_file(infn=outfn_bgtruth, outfn=outfn_bgtruth_sorted, has_header=True)
+            os.remove(outfn_bgtruth)
+        else:
+            outfn_bgtruth_sorted = outfn_bgtruth
 
         # Report correlation matrix for joined results
         df = pd.read_csv(outfn_joined_sorted, sep=sep)
