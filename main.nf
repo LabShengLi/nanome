@@ -40,10 +40,10 @@ def helpMessage() {
 
 	General options:
 	  --processors		Processors used for each task
-	  --outdir		Output dir, default is 'outputs'
+	  --outdir		Output dir, default is 'results'
 	  --chrSet		Chromosomes used in analysis, default is chr1-22, X and Y, for human. For E. coli data, it is default as 'NC_000913.3'. For other reference genome, please specify each chromosome with space seperated.
 
-	  --cleanWork		If clean work dir after complete, default is true
+	  --cleanWork		If clean work dir after complete, default is false
 
 	Running environment options:
 	  --docker_name		Docker name used for pipeline, default is 'liuyangzzu/nanome:latest'
@@ -88,18 +88,18 @@ if (params.help){
 }
 
 // Check mandatory params
-if (params.dsname == false) { exit 1, "Missing --dsname option for dataset name, check command help use --help" }
-if (params.input == false) { exit 1, "Missing --input option for input data, check command help use --help" }
+if (! params.dsname) { exit 1, "Missing --dsname option for dataset name, check command help use --help" }
+if (! params.input) { exit 1, "Missing --input option for input data, check command help use --help" }
 
 // Parse genome params
 genome_map = params.genome_map
 
-if (genome_map[params.genome] != null) { genome_path = genome_map[params.genome] } else { 	genome_path = params.genome }
+if (genome_map[params.genome]) { genome_path = genome_map[params.genome] } else { 	genome_path = params.genome }
 
 // infer dataType, chrSet based on reference genome name, hg - human, ecoli - ecoli, otherwise is other reference genome
 if (params.genome.contains('hg')) {
 	dataType = "human"
-	if (params.chrSet == false || params.chrSet == 'false') {
+	if (!params.chrSet) {
 		// default for human, if false or 'false' (string), using '  '
 		chrSet = 'chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY'
 	} else {
@@ -107,7 +107,7 @@ if (params.genome.contains('hg')) {
 	}
 } else if (params.genome.contains('ecoli')) {
 	dataType = "ecoli"
-	if (params.chrSet == false || params.chrSet == 'false') {
+	if (!params.chrSet) {
 		// default for ecoli
 		chrSet = 'NC_000913.3'
 	} else {
@@ -115,8 +115,8 @@ if (params.genome.contains('hg')) {
 	}
 } else {
 	// default will not found name, use other
-	if (params.dataType == false) { dataType = 'other' } else { dataType = params.dataType }
-	if (params.chrSet == false || params.chrSet == 'false') {
+	if (!params.dataType) { dataType = 'other' } else { dataType = params.dataType }
+	if (!params.chrSet) {
 		// No default value for other reference genome
 		exit 1, "Missing --chrSet option for other reference genome, please sepecify chromsomes used in reference genome [${params.genome}]"
 	}
@@ -184,9 +184,9 @@ if (params.runMethcall) {
 	if (params.runDeepMod) summary['runDeepMod'] = 'Yes'
 	if (params.runNANOME) summary['runNANOME'] = 'Yes'
 }
-if (params.deepsignalDir != false) { summary['deepsignalDir'] = params.deepsignalDir }
-if (params.rerioDir != false) { summary['rerioDir'] = params.rerioDir }
-if (params.METEOREDir != false) { summary['METEOREDir'] = params.METEOREDir }
+if (!params.deepsignalDir) { summary['deepsignalDir'] = params.deepsignalDir }
+if (!params.rerioDir) { summary['rerioDir'] = params.rerioDir }
+if (!params.METEOREDir) { summary['METEOREDir'] = params.METEOREDir }
 
 summary['\nPipeline settings']         = "--------"
 summary['Working dir'] 		= workflow.workDir
@@ -280,7 +280,7 @@ process EnvCheck {
 
 	## Untar and prepare megalodon model
 	if [[ ${params.runMegalodon} == true ]]; then
-		if [[ ${rerioDir} == false1 ]] ; then
+		if [[ ${rerioDir} == null* ]] ; then
 			# Obtain and run R9.4.1, MinION, 5mC CpG model from Rerio
 			git clone ${params.rerioGithub}
 			rerio/download_model.py rerio/basecall_models/${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG.replace('.cfg', '')}
@@ -296,7 +296,7 @@ process EnvCheck {
 
 	## Untar and prepare megalodon model
 	if [[ ${params.runDeepSignal} == true ]]; then
-		if [[ ${deepsignalDir} == false2 ]] ; then
+		if [[ ${deepsignalDir} == null* ]] ; then
 			## Get DeepSignal Model online
 			wget ${params.deepsignal_model_tar} --no-verbose &&\
 				tar -xzf ${params.DEEPSIGNAL_MODEL_TAR_GZ} &&\
@@ -1689,7 +1689,7 @@ process METEORE {
 	params.runMethcall && params.runMETEORE
 
 	"""
-	if [[ ${METEOREDir} == false1 ]] ; then
+	if [[ ${METEOREDir} == null* ]] ; then
 		## Get METEORE model online
 		wget ${params.METEOREGithub}  --no-verbose &&\
 			tar -xzf v1.0.0.tar.gz &&\
@@ -1975,16 +1975,16 @@ process Report {
 workflow {
 	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
 
-	if (params.rerioDir == false) { // default if false, will online downloading
+	if (!params.rerioDir) { // default if false, will online downloading
 		// This is only a place holder for input
-		rerioDir = Channel.fromPath("${projectDir}/utils/false1", type: 'any', checkIfExists: false)
+		rerioDir = Channel.fromPath("${projectDir}/utils/null1", type: 'any', checkIfExists: false)
 	} else {
 		rerioDir = Channel.fromPath(params.rerioDir, type: 'any', checkIfExists: true)
 	}
 
-	if (params.deepsignalDir == false) { // default if false, will online downloading
+	if (!params.deepsignalDir) { // default if false, will online downloading
 		// This is only a place holder for input
-		deepsignalDir = Channel.fromPath("${projectDir}/utils/false2", type: 'any', checkIfExists: false)
+		deepsignalDir = Channel.fromPath("${projectDir}/utils/null2", type: 'any', checkIfExists: false)
 	} else {
 		deepsignalDir = Channel.fromPath(params.deepsignalDir, type: 'any', checkIfExists: true)
 	}
@@ -2034,7 +2034,7 @@ workflow {
 	if (params.runGuppy && params.runMethcall) {
 		Guppy(Untar.out.untar, EnvCheck.out.reference_genome, ch_utils)
 
-		gcf52ref_ch = Channel.fromPath("${projectDir}/utils/false1").concat(Guppy.out.guppy_gcf52ref_tsv.collect())
+		gcf52ref_ch = Channel.fromPath("${projectDir}/utils/null1").concat(Guppy.out.guppy_gcf52ref_tsv.collect())
 
 		comb_guppy = GuppyComb(Guppy.out.guppy_fast5mod_bam.collect(),
 								gcf52ref_ch,
@@ -2060,7 +2060,7 @@ workflow {
 	if (params.runDeepMod && params.runMethcall) {
 		if (isDeepModCluster == false) {
 			// not use cluster model, only a place holder here
-			ch_ctar = Channel.fromPath("${projectDir}/utils/false1", type:'any', checkIfExists: false)
+			ch_ctar = Channel.fromPath("${projectDir}/utils/null1", type:'any', checkIfExists: false)
 		} else {
 			ch_ctar = Channel.fromPath(params.deepmod_ctar, type:'any', checkIfExists: true)
 		}
@@ -2073,8 +2073,8 @@ workflow {
 
 	if (params.runMETEORE && params.runMethcall) {
 		// Read level combine a list for top3 used by METEORE
-		if (params.METEOREDir == false) {
-			METEOREDir_ch = Channel.fromPath("${projectDir}/utils/false1", type: 'any', checkIfExists: false)
+		if (!params.METEOREDir) {
+			METEOREDir_ch = Channel.fromPath("${projectDir}/utils/null1", type: 'any', checkIfExists: false)
 		} else {
 			METEOREDir_ch = Channel.fromPath(params.METEOREDir, type: 'any', checkIfExists: true)
 		}
@@ -2087,11 +2087,11 @@ workflow {
 	}
 
 	// Site level combine a list
-	Channel.fromPath("${projectDir}/utils/false1").concat(
+	Channel.fromPath("${projectDir}/utils/null1").concat(
 		s1, s2, s3, s4, s5, s6, s7
 		).toList().set { tools_site_unify }
 
-	Channel.fromPath("${projectDir}/utils/false2").concat(
+	Channel.fromPath("${projectDir}/utils/null2").concat(
 		r1, r2, r3
 		).toList().set { tools_read_unify }
 
