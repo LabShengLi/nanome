@@ -187,6 +187,7 @@ if (params.runMethcall) {
 if (!params.deepsignalDir) { summary['deepsignalDir'] = params.deepsignalDir }
 if (!params.rerioDir) { summary['rerioDir'] = params.rerioDir }
 if (!params.METEOREDir) { summary['METEOREDir'] = params.METEOREDir }
+if (!params.guppyDir) { summary['guppyDir'] 	= params.guppyDir }
 
 summary['\nPipeline settings']         = "--------"
 summary['Working dir'] 		= workflow.workDir
@@ -197,10 +198,6 @@ summary['Script dir']       = workflow.projectDir
 summary['User']             = workflow.userName
 summary['Profile']          = workflow.profile
 summary['Config Files'] 	= workflow.configFiles.join(',')
-
-if (params.guppyDir != false) {
-	summary['guppyDir'] 	= params.guppyDir
-}
 
 if (workflow.revision) summary['Pipeline Release'] = workflow.revision
 if (workflow.containerEngine) summary['Container'] = "$workflow.containerEngine - $workflow.container"
@@ -758,7 +755,7 @@ process NplshComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Nanopolish Nanopolish \
 		${params.dsname}_nanopolish_per_read_combine.tsv.gz \
-		.  ${task.cpus * params.highProcTimes}  12 ${params.sort == true ? true : false}   "${chrSet}"
+		.  ${task.cpus * params.highProcTimes}  12 ${params.sort  ? true : false}   "${chrSet}"
 
 	echo "### Nanopolish combine DONE"
 	"""
@@ -899,7 +896,7 @@ process MgldnComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Megalodon Megalodon \
 		${params.dsname}_megalodon_per_read_combine.bed.gz \
-		.  ${task.cpus * params.highProcTimes}  12  ${params.sort == true ? true : false}  "${chrSet}"
+		.  ${task.cpus * params.highProcTimes}  12  ${params.sort  ? true : false}  "${chrSet}"
 
 	echo "### Megalodon combine DONE"
 	"""
@@ -1008,7 +1005,7 @@ process DpSigComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  DeepSignal DeepSignal\
 		${params.dsname}_deepsignal_per_read_combine.tsv.gz \
-		.  ${task.cpus * params.highProcTimes}  12 ${params.sort == true ? true : false}  "${chrSet}"
+		.  ${task.cpus * params.highProcTimes}  12 ${params.sort  ? true : false}  "${chrSet}"
 	echo "### DeepSignal combine DONE"
 	"""
 }
@@ -1284,14 +1281,14 @@ process GuppyComb {
 		bash utils/unify_format_for_calls.sh \
 			${params.dsname}  Guppy Guppy.gcf52ref\
 			 ${params.dsname}_guppy_gcf52ref_per_read_combine.tsv.gz \
-			.  ${task.cpus * params.mediumProcTimes}  1  ${params.sort == true ? true : false}  "${chrSet}"
+			.  ${task.cpus * params.mediumProcTimes}  1  ${params.sort  ? true : false}  "${chrSet}"
 	fi
 
 	## Unify format output for site level
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Guppy Guppy\
 		${params.dsname}_guppy_fast5mod_per_site_combine.tsv.gz \
-		.  ${task.cpus * params.mediumProcTimes}  2  ${params.sort == true ? true : false}  "${chrSet}"
+		.  ${task.cpus * params.mediumProcTimes}  2  ${params.sort  ? true : false}  "${chrSet}"
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -1439,7 +1436,7 @@ process TomboComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Tombo Tombo\
 		${params.dsname}_tombo_per_read_combine.bed.gz \
-		.  $task.cpus  12  ${params.sort == true ? true : false}  "${chrSet}"
+		.  $task.cpus  12  ${params.sort  ? true : false}  "${chrSet}"
 	echo "### Tombo combine DONE"
 	"""
 }
@@ -1644,7 +1641,7 @@ process DpmodComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  DeepMod DeepMod\
 		\${callfn} \
-		.  $task.cpus  2  ${params.sort == true ? true : false} "${chrSet}"  &>> DpmodComb.run.log
+		.  $task.cpus  2  ${params.sort ? true : false} "${chrSet}"  &>> DpmodComb.run.log
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -1752,7 +1749,7 @@ process METEORE {
 		bash utils/unify_format_for_calls.sh \
 			${params.dsname}  METEORE METEORE\
 			${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.tsv.gz \
-			.  $task.cpus  12   ${params.sort == true ? true : false}  "${chrSet}"\
+			.  $task.cpus  12   ${params.sort ? true : false}  "${chrSet}"\
 			&>> METEORE.run.log
 	fi
 	echo "### METEORE consensus DONE"
@@ -1870,7 +1867,7 @@ process Report {
 			bash utils/unify_format_for_calls.sh \
 				${params.dsname}  NANOME NANOME\
 				${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz \
-				.  $task.cpus  12  ${params.sort == true ? true : false}  "${chrSet}"
+				.  $task.cpus  12  ${params.sort ? true : false}  "${chrSet}"
 			ln -s Site_Level-${params.dsname}/${params.dsname}_NANOME-perSite-cov1.sort.bed.gz\
 				${params.dsname}_NANOME-perSite-cov1.sort.bed.gz
 		fi
@@ -2058,7 +2055,7 @@ workflow {
 	}
 
 	if (params.runDeepMod && params.runMethcall) {
-		if (isDeepModCluster == false) {
+		if (!isDeepModCluster) {
 			// not use cluster model, only a place holder here
 			ch_ctar = Channel.fromPath("${projectDir}/utils/null1", type:'any', checkIfExists: false)
 		} else {
