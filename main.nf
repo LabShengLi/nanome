@@ -261,7 +261,7 @@ process EnvCheck {
 	path deepsignalDir
 
 	output:
-	path "reference_genome",				emit: reference_genome
+	path "reference_genome",				emit: reference_genome, optional: true
 	path "rerio", 							emit: rerio, optional: true  // used by Megalodon
 	path "${params.DEEPSIGNAL_MODEL_DIR}",	emit: deepsignal_model, optional: true
 	path "tools_version_table.tsv",			emit: tools_version_tsv, optional: true
@@ -275,7 +275,7 @@ process EnvCheck {
 	bash utils/validate_nanome_container.sh  tools_version_table.tsv
 
 	## Untar and prepare megalodon model
-	if [[ ${params.runMegalodon} == true ]]; then
+	if [[ ${params.runMegalodon} == true && ${params.runMethcall} == true ]]; then
 		if [[ ${rerioDir} == null* ]] ; then
 			# Obtain and run R9.4.1, MinION, 5mC CpG model from Rerio
 			git clone ${params.rerioGithub}
@@ -291,7 +291,7 @@ process EnvCheck {
 	fi
 
 	## Untar and prepare megalodon model
-	if [[ ${params.runDeepSignal} == true ]]; then
+	if [[ ${params.runDeepSignal} == true && ${params.runMethcall} == true ]]; then
 		if [[ ${deepsignalDir} == null* ]] ; then
 			## Get DeepSignal Model online
 			wget ${params.deepsignal_model_tar} --no-verbose &&\
@@ -308,26 +308,28 @@ process EnvCheck {
 		ls -lh ${params.DEEPSIGNAL_MODEL_DIR}/
 	fi
 
-	## Get dir for reference_genome
-	mkdir -p reference_genome
-	find_dir="\$PWD/reference_genome"
-	if [[ ${reference_genome} == *.tar.gz ]] ; then
-		tar -xzf ${reference_genome} -C reference_genome
-	elif [[ ${reference_genome} == *.tar ]] ; then
-		tar -xf ${reference_genome} -C reference_genome
-	else
-		## for folder, use ln, note this is a symbolic link to a folder
-		find_dir=\$( readlink -f ${reference_genome} )
+	if [[ ${params.runMethcall} == true ]]; then
+		## Get dir for reference_genome
+		mkdir -p reference_genome
+		find_dir="\$PWD/reference_genome"
+		if [[ ${reference_genome} == *.tar.gz ]] ; then
+			tar -xzf ${reference_genome} -C reference_genome
+		elif [[ ${reference_genome} == *.tar ]] ; then
+			tar -xf ${reference_genome} -C reference_genome
+		else
+			## for folder, use ln, note this is a symbolic link to a folder
+			find_dir=\$( readlink -f ${reference_genome} )
+		fi
+
+		find \${find_dir} -name '*.fasta*' | \
+			 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/\${fn/*.fasta/ref.fasta}'
+		find \${find_dir} -name '*.sizes' | \
+				parallel -j1 -v ln -s -f {} reference_genome/chrom.sizes
+
+		# ls -lh ${referenceGenome}
+		# ls -lh ${chromSizesFile} # only need for Tombo
+		ls -lh reference_genome/
 	fi
-
-	find \${find_dir} -name '*.fasta*' | \
-		 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/\${fn/*.fasta/ref.fasta}'
-	find \${find_dir} -name '*.sizes' | \
-			parallel -j1 -v ln -s -f {} reference_genome/chrom.sizes
-
-	# ls -lh ${referenceGenome}
-	# ls -lh ${chromSizesFile} # only need for Tombo
-	ls -lh reference_genome/
 
 	echo "### Check reference genome and chrSet"
 	echo "referenceGenome=${referenceGenome}"
@@ -2027,6 +2029,7 @@ workflow {
 		// This is only a place holder for input
 		rerioDir = Channel.fromPath("${projectDir}/utils/null1", type: 'any', checkIfExists: false)
 	} else {
+		// User provide the dir
 		rerioDir = Channel.fromPath(params.rerioDir, type: 'any', checkIfExists: true)
 	}
 
@@ -2034,6 +2037,7 @@ workflow {
 		// This is only a place holder for input
 		deepsignalDir = Channel.fromPath("${projectDir}/utils/null2", type: 'any', checkIfExists: false)
 	} else {
+		// User provide the dir
 		deepsignalDir = Channel.fromPath(params.deepsignalDir, type: 'any', checkIfExists: true)
 	}
 
