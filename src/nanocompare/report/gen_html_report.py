@@ -66,8 +66,6 @@ def get_methcall_report_df(baseDir, outDir):
         fnlist = glob.glob(os.path.join(baseDir, f'*_{tool}-perSite-cov1.sort.bed.gz'))
         if len(fnlist) < 1:
             print(f"Not found file in baseDir={baseDir}, pattern={f'*_{tool}-perSite-cov1.sort.bed.gz'}")
-            ret_dict['Tool'].append(tool)
-            ret_dict['CpGs'].append(None)
             continue
         try:
             df_site_level = pd.read_csv(fnlist[0], sep='\t', header=None, index_col=False)
@@ -82,7 +80,7 @@ def get_methcall_report_df(baseDir, outDir):
                          col_index=7, x_label='Coverage', the_range=(0, max_cov + 1))
         except:  # can not call any results
             ret_dict['Tool'].append(tool)
-            ret_dict['CpGs'].append(None)
+            ret_dict['CpGs'].append('0')
     return pd.DataFrame.from_dict(ret_dict)
 
 
@@ -137,6 +135,7 @@ if __name__ == '__main__':
             df_running_info=df_running_info,
             df_basecall_info=df_basecall_info,
             df_methcall_info=df_methcall_info,
+            df_fig_inf=df_methcall_info[df_methcall_info['CpGs']!='0']
         ))
 
     # df_basecall_info = pd.read_csv(infn_basecall_info, sep='\t')

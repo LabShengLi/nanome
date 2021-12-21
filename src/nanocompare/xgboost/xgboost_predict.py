@@ -11,6 +11,7 @@ Predict NANOME consensus results
 
 import argparse
 import os.path
+import sys
 from functools import reduce
 
 import joblib
@@ -97,7 +98,13 @@ if __name__ == '__main__':
         dflist = None
         datadf.drop_duplicates(subset=["ID", "Chr", "Pos", "Strand"], inplace=True)
         if len(datadf) <= 0:
-            raise Exception(f"The combined results are empty, for tool_list={tool_list}, fn_list={df_tsvfile[1]}")
+            key_list = ['Chr', "ID", "Pos", "Strand"] + tool_list + ['Prediction', 'Prob_methylation']
+            empty_frame = { keystr: [] for keystr in key_list}
+            outdf = pd.DataFrame(empty_frame)
+            outdf.to_csv(args.o, sep='\t', index=False)
+            logger.info(f"make no predictions")
+            logger.error(f"The combined results are empty, for tool_list={tool_list}, fn_list={df_tsvfile[1]}")
+            sys.exit(0)
 
         logger.debug(f"tool_list={tool_list}")
         logger.debug(f"datadf={datadf}")
