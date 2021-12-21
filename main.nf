@@ -189,6 +189,14 @@ if (params.rerioDir) { summary['rerioDir'] = params.rerioDir }
 if (params.METEOREDir) { summary['METEOREDir'] = params.METEOREDir }
 if (params.guppyDir) { summary['guppyDir'] 	= params.guppyDir }
 
+if (params.outputBam) { summary['outputBam'] 	= params.outputBam }
+if (params.outputONTCoverage) { summary['outputONTCoverage'] 	= params.outputONTCoverage }
+if (params.outputIntermediate) { summary['outputIntermediate'] 	= params.outputIntermediate }
+if (params.outputRaw) { summary['outputRaw'] 	= params.outputRaw }
+if (params.outputGenomeBrowser) { summary['outputGenomeBrowser'] 	= params.outputGenomeBrowser }
+if (params.deduplicate) { summary['deduplicate'] 	= params.deduplicate }
+if (params.sort) { summary['sort'] 	= params.sort }
+
 summary['\nPipeline settings']         = "--------"
 summary['Working dir'] 		= workflow.workDir
 summary['Output dir']       = params.outdir
@@ -218,9 +226,9 @@ if (workflow.profile.contains('google') || (params.config && params.config.conta
 		summary['googleProjectName']    = params.googleProjectName
 	} else { // lifebit specific settings
 		summary['config']       		= params.config
-		summary['zoneCloud']       		= params.zoneCloud
 		summary['networkLifebit']       = params.networkLifebit
 		summary['subnetworkLifebit']	= params.subnetworkLifebit
+		summary['zoneCloud']       		= params.zoneCloud
 	}
     summary['googleLocation']          = params.googleLocation
     summary['googleRegion']            = params.googleRegion
