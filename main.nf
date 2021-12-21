@@ -197,21 +197,24 @@ summary['Working dir']      = workflow.workDir
 summary['Script dir']       = workflow.projectDir
 summary['User']             = workflow.userName
 summary['Profile']          = workflow.profile
-summary['Config Files'] 	= workflow.configFiles.join(',')
-
+summary['Config files'] 	= workflow.configFiles.join(',')
 if (workflow.revision) summary['Pipeline Release'] = workflow.revision
 if (workflow.containerEngine) summary['Container'] = "$workflow.containerEngine - $workflow.container"
+summary['errorStrategy']    = params.errorStrategy
+summary['maxRetries']       = params.maxRetries
+summary['echo']         	= params.echo
+
 if (workflow.profile.contains('hpc') || workflow.profile.contains('winter') || workflow.profile.contains('sumner') ) {
 	summary['\nHPC settings']         = "--------"
-    summary['queue']         = params.queue
+    summary['queue']        = params.queue
     summary['qos']          = params.qos
-    summary['memory']            = params.memory
-    summary['time']            = params.time
-    if (params.gresOptions != false) {summary['gresOptions'] = params.gresOptions }
+    summary['memory']       = params.memory
+    summary['time']         = params.time
+    if (params.gresOptions) {summary['gresOptions'] = params.gresOptions }
 }
 if (workflow.profile.contains('google') || (params.config && params.config.contains('lifebit'))) {
 	summary['\nGCP settings']         = "--------"
-	if (!params.config.contains('lifebit')) {
+	if (!params.config || !params.config.contains('lifebit')) {
 		summary['googleProjectName']    = params.googleProjectName
 	} else { // lifebit specific settings
 		summary['config']       		= params.config
@@ -231,10 +234,6 @@ if (workflow.profile.contains('google') || (params.config && params.config.conta
 	summary['lowDiskSize']      = params.lowDiskSize
 	summary['midDiskSize']      = params.midDiskSize
 	summary['highDiskSize']     = params.highDiskSize
-
-	summary['errorStrategy']    = params.errorStrategy
-	summary['maxRetries']       = params.maxRetries
-	summary['echo']         	= params.echo
 }
 
 log.info """\
@@ -763,10 +762,10 @@ process NplshComb {
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
 		mode: "copy",
-		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz"
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
-		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
+		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov*.gz"
 
 	input:
 	path x
@@ -775,8 +774,8 @@ process NplshComb {
 
 	output:
 	path "${params.dsname}_nanopolish_per_read_combine.tsv.gz",	emit: nanopolish_combine_out_ch
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify
+	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify
 
 	when:
 	x.size() >= 1 && params.runCombine
@@ -905,10 +904,10 @@ process MgldnComb {
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
 		mode: "copy",
-		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz"
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
-		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
+		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov*.gz"
 
 	input:
 	path x
@@ -917,8 +916,8 @@ process MgldnComb {
 
 	output:
 	path "${params.dsname}_megalodon_per_read_combine.*.gz",	emit: megalodon_combine
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify
+	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify
 
 	when:
 	x.size() >= 1  && params.runCombine
@@ -1016,10 +1015,10 @@ process DpSigComb {
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
 		mode: "copy",
-		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz"
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
-		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
+		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1*.gz"
 
 	input:
 	path x
@@ -1028,8 +1027,8 @@ process DpSigComb {
 
 	output:
 	path "${params.dsname}_deepsignal_per_read_combine.*.gz",	emit: deepsignal_combine_out
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify
+	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify
 
 	when:
 	x.size() >= 1 && params.runCombine
@@ -1227,10 +1226,10 @@ process GuppyComb {
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
 		mode: "copy",
-		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz"
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
-		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
+		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov*.gz"
 
 	input:
 	path x // fast5mod bam inputs
@@ -1244,8 +1243,8 @@ process GuppyComb {
 	path "${params.dsname}_guppy_gcf52ref_per_read_combine.*.gz", optional: true, emit: guppy_gcf52ref_combine_out
 	path "bamfile_${params.dsname}_guppy_fast5mod_combine.bam.tar.gz", emit: guppy_combine_raw_out_ch,  optional: true
 
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz", optional: true,  emit: read_unify
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz", emit: site_unify
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz", optional: true,  emit: read_unify
+	path "Site_Level-${params.dsname}/*-perSite-cov*.gz", emit: site_unify
 
 	when:
 	x.size() >= 1 && params.runCombine
@@ -1452,10 +1451,10 @@ process TomboComb {
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
 		mode: "copy",
-		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz"
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
-		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
+		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov*.gz"
 
 	input:
 	path x
@@ -1464,8 +1463,8 @@ process TomboComb {
 
 	output:
 	path "${params.dsname}_tombo_per_read_combine.*.gz",	emit: tombo_combine_out
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify
+	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify
 
 	when:
 	x.size() >= 1 && params.runCombine
@@ -1583,7 +1582,7 @@ process DpmodComb {
 		enabled: params.outputIntermediate
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
-		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
+		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov*.gz"
 
 	input:
 	path x
@@ -1593,7 +1592,7 @@ process DpmodComb {
 
 	output:
 	path "${params.dsname}_deepmod_*_per_site_combine.*.gz",	emit: deepmod_combine_out,	 optional: true
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify,	 optional: true
+	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify,	 optional: true
 
 	path "${params.dsname}.deepmod.sum_chrs_mod.C.bed.tar.gz",	emit: deepmod_combine_sum_chrs_mod_ch,	optional: true
 	path "${params.dsname}.deepmod_clusterCpG.all_chrs.C.bed.tar.gz",	emit: deepmod_combine_c_cluster_all_chrs_ch,	optional: true
@@ -1716,10 +1715,10 @@ process METEORE {
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
 		mode: "copy",
-		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz"
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
-		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
+		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov*.gz"
 
 	input:
 	path naonopolish
@@ -1731,8 +1730,8 @@ process METEORE {
 
 	output:
 	path "${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.*.gz",	emit: meteore_combine_out, optional: true
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify, 	optional: true
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify,	optional: true
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify, 	optional: true
+	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify,	optional: true
 
 	when:
 	params.runMethcall && params.runMETEORE
@@ -1827,11 +1826,11 @@ process Report {
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
 		mode: "copy",
-		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz"
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz"
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
 		mode: "copy",
-		pattern: "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz"
+		pattern: "Site_Level-${params.dsname}/*-perSite-cov*.gz"
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy",
@@ -1852,8 +1851,8 @@ process Report {
 	path "README_${params.dsname}.txt",	emit: 	readme_out_ch
 	path "multiqc_report.html",	emit: 	lbt_report_ch
 	path "GenomeBrowser-${params.dsname}", emit:  genome_browser_ch, optional: true
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score.tsv.gz",	emit: read_unify, optional: true
-	path "Site_Level-${params.dsname}/*-perSite-cov1.sort.bed.gz",	emit: site_unify, optional: true
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify, optional: true
+	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify, optional: true
 	path "${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.*.gz", emit: nanome_combine_out, optional: true
 
 	"""
