@@ -121,9 +121,15 @@ if __name__ == '__main__':
     df_methcall_info = get_methcall_report_df(indir_methcall, outdir).dropna()
     df_version = pd.read_csv(version_file, index_col=None, sep='\t')
 
-    df_methcall_info = df_methcall_info.merge(df_version, on='Tool', how='left')
-    df_methcall_info = df_methcall_info.fillna('1.0').iloc[:, [0, 2, 1]]
-    print(df_methcall_info)
+    if 'Tool' in df_methcall_info:
+        df_methcall_info = df_methcall_info.merge(df_version, on='Tool', how='left')
+        df_methcall_info = df_methcall_info.fillna('1.0').iloc[:, [0, 2, 1]]
+        df_fig_inf = df_methcall_info[df_methcall_info['CpGs'] != '0']
+    else:
+        df_methcall_info = pd.DataFrame()
+        df_fig_inf = pd.DataFrame()
+
+    print(f"df_methcall_info={df_methcall_info}")
 
     env = Environment(loader=FileSystemLoader(basedir))
     template = env.get_template('index.html')
@@ -135,7 +141,7 @@ if __name__ == '__main__':
             df_running_info=df_running_info,
             df_basecall_info=df_basecall_info,
             df_methcall_info=df_methcall_info,
-            df_fig_inf=df_methcall_info[df_methcall_info['CpGs']!='0']
+            df_fig_inf=df_fig_inf
         ))
 
     # df_basecall_info = pd.read_csv(infn_basecall_info, sep='\t')
