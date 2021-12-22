@@ -53,17 +53,17 @@ def helpMessage() {
 	  --conda_base_dir	Conda base directory, default is '/opt/conda'
 
 	Platform specific options:
-	  --queue		SLURM job submission queue name for cluster running, default is 'gpu'
-	  --qos			SLURM job submission qos name for cluster running, default is 'inference'
-	  --gresOptions		SLURM job submission GPU allocation options for cluster running, default is 'gpu:v100:1'
-	  --time		SLURM job submission time allocation options for cluster running, default is '2h'
-	  --memory		SLURM job submission memory allocation options for cluster running, default is '32GB'
+	  --queue		SLURM job submission queue name for cluster running, e.g., 'gpu'
+	  --qos			SLURM job submission qos name for cluster running, e.g., 'inference'
+	  --gresOptions		SLURM job submission GPU allocation options for cluster running, e.g., 'gpu:v100:1'
+	  --time		SLURM job submission time allocation options for cluster running, e.g., '2h', '1d'
+	  --memory		SLURM job submission memory allocation options for cluster running, e.g., '32GB'
 
-	  --googleProjectName	Google Cloud Platform (GCP) project name for google-lifesciences task running
-	  --config		Lifebit CloudOS config file, please set to 'conf/executors/lifebit.config'
+	  --googleProjectName	Google Cloud Platform (GCP) project name for google-lifesciences
+	  --config		Lifebit CloudOS config file, e.g., 'conf/executors/lifebit.config'
 
 	Tools's specific configurations:
-	  --run[Tool-name]	By default, we run top four performers in nanome paper, specify '--run[Tool-name]' can include other tool, supported tools: Megalodon, Nanopolish, DeepSignal, Guppy, Tombo, METEORE, and DeepMod
+	  --run[Tool-name]	By default, we run top four performers in nanome paper, specify '--run[Tool-name]' can include other tool, supported tools: NANOME, Megalodon, Nanopolish, DeepSignal, Guppy, Tombo, METEORE, and DeepMod
 
 	Other options:
 	  --guppyDir		Guppy installation local directory, used only for conda environment
@@ -71,13 +71,13 @@ def helpMessage() {
 	-profile options:
 	  Use this parameter to choose a predefined configuration profile. Profiles can give configuration presets for different compute environments.
 
-	  test		A bundle of input params for ecolid test case
-	  test_human	A bundle of input params for human test case
+	  test		A bundle of input params for ecoli test
+	  test_human	A bundle of input params for human test
 	  docker 	A generic configuration profile to be used with Docker, pulls software from Docker Hub: liuyangzzu/nanome:latest
 	  singulairy	A generic configuration profile to be used with Singularity, pulls software from: docker://liuyangzzu/nanome:latest
-	  conda		Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Create conda enviroment by 'conda env create -f environment.yml'
-	  hpc		A generic configuration profile to be used on HPC cluster with SLURM job submission support.
-	  google	A generic configuration profile to be used on Google Cloud platform with 'google-lifesciences' support.
+	  conda		Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Check our GitHub for how to install local conda enviroment
+	  hpc		A generic configuration profile to be used on HPC cluster with SLURM
+	  google	A generic configuration profile to be used on Google Cloud platform with 'google-lifesciences'
 
 	Contact to https://github.com/TheJacksonLaboratory/nanome/issues for bug report.
 	""".stripIndent()
@@ -100,7 +100,7 @@ genome_map = params.genome_map
 if (genome_map[params.genome]) { genome_path = genome_map[params.genome] } else { 	genome_path = params.genome }
 
 // infer dataType, chrSet based on reference genome name, hg - human, ecoli - ecoli, otherwise is other reference genome
-if (params.genome.contains('hg')) {
+if (params.genome.contains('hg') || (params.dataType && params.dataType == 'human')) {
 	dataType = "human"
 	if (!params.chrSet) {
 		// default for human, if false or 'false' (string), using '  '
@@ -108,7 +108,7 @@ if (params.genome.contains('hg')) {
 	} else {
 		chrSet = params.chrSet
 	}
-} else if (params.genome.contains('ecoli')) {
+} else if (params.genome.contains('ecoli') || (params.dataType && params.dataType == 'ecoli')) {
 	dataType = "ecoli"
 	if (!params.chrSet) {
 		// default for ecoli
