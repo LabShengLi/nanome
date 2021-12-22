@@ -16,19 +16,21 @@ By default, we are using `--genome=hg38` for human reference genome, and you can
 # Get pipeline help
 nextflow run TheJacksonLaboratory/nanome --help
 
-# Running NANOME pipeline for human data
+# Running NANOME pipeline for human data on HPC
 nextflow run TheJacksonLaboratory/nanome\
     -profile singularity,hpc\
     --dsname TestData\
-    --input https://github.com/TheJacksonLaboratory/nanome/raw/master/test_data/demo1.fast5.reads.tar.gz\
-    --genome hg38
+    --input https://github.com/TheJacksonLaboratory/nanome/raw/master/test_data/demo1_fast5_reads.tar.gz\
+    --genome hg38\
+    --queue gpu --qos inference --memory 32GB --time 1h --gresOptions gpu:v100:1
 
-# Running NANOME pipeline for E. coli data
+# Running NANOME pipeline for E. coli data on HPC
 nextflow run TheJacksonLaboratory/nanome\
     -profile singularity,hpc\
     --dsname EcoliData\
     --input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli_data_from_meteore.tar.gz\
-    --genome ecoli
+    --genome ecoli\
+    --queue gpu --qos inference --memory 32GB --time 1h --gresOptions gpu:v100:1
 ```
 
 ## Methylation-calling tool configuration
@@ -60,7 +62,7 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
 
 You can also running NANOME pipeline on cloud computing platform ([google cloud platform](https://cloud.google.com/) or [Lifebit CloudOS](https://lifebit.gitbook.io/cloudos/)), sample of command line is below.
 ```angular2html
-# Running on Google Cloud (https://cloud.google.com)
+# Running test on Google Cloud (https://cloud.google.com)
 nextflow run TheJacksonLaboratory/nanome\
     -profile test,docker,google \
     -w [Google-storage-bucket]/TestData-work \
@@ -78,14 +80,6 @@ Launching `main.nf` [wise_crick] - revision: efbaa90697
 NANOME - NF PIPELINE (v1.3.6)
 by Li Lab at The Jackson Laboratory
 https://nanome.jax.org
-=================================
-dsname          :TestData
-input           :https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt
-output          :/fastscratch/li-lab/nanome/outputs
-work            :/fastscratch/li-lab/nanome/work
-type        :human
-runBasecall     :true
-runMethcall     :true
 =================================
 executor >  slurm (28)
 [30/56fb5a] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
@@ -117,41 +111,42 @@ Succeeded   : 28
 All tools' methlation calling and evaluation results will be output to `outputs` folder by default below.
 
 ```angular2html
-tree outputs/TestData-methylation-callings/
+tree results/TestData-methylation-callings/
 
-outputs/TestData-methylation-callings/
+results/TestData-methylation-callings/
 ├── Raw_Results-TestData
-│   ├── TestData.deepmod.C_clusterCpG_per_site.combine.bed.gz
-│   ├── TestData.deepmod.C_per_site.combine.bed.gz
-│   ├── TestData.deepsignal.per_read.combine.tsv.gz
-│   ├── TestData.guppy.fast5mod_per_site.combine.tsv.gz
-│   ├── TestData.guppy.gcf52ref_per_read.combine.tsv.gz
-│   ├── TestData.megalodon.per_read.combine.bed.gz
-│   ├── TestData.meteore.megalodon_deepsignal_optimized_rf_model_per_read.combine.tsv.gz
-│   ├── TestData.nanopolish.per_read.combine.tsv.gz
-│   └── TestData.tombo.per_read.combine.bed.gz
+│   ├── TestData_deepmod_clusterCpG_per_site_combine.bed.gz
+│   ├── TestData_deepmod_c_per_site_combine.bed.gz
+│   ├── TestData_deepsignal_per_read_combine.tsv.gz
+│   ├── TestData_guppy_fast5mod_per_site_combine.tsv.gz
+│   ├── TestData_megalodon_per_read_combine.bed.gz
+│   ├── TestData_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.tsv.gz
+│   ├── TestData_nanome_NA12878_XGBoostNA3T_per_read_combine.tsv.gz
+│   ├── TestData_nanopolish_per_read_combine.tsv.gz
+│   └── TestData_tombo_per_read_combine.bed.gz
 ├── Read_Level-TestData
 │   ├── TestData_DeepSignal-perRead-score.tsv.gz
-│   ├── TestData_Guppy-perRead-score.tsv.gz
 │   ├── TestData_Megalodon-perRead-score.tsv.gz
 │   ├── TestData_METEORE-perRead-score.tsv.gz
+│   ├── TestData_NANOME-perRead-score.tsv.gz
 │   ├── TestData_Nanopolish-perRead-score.tsv.gz
 │   └── TestData_Tombo-perRead-score.tsv.gz
-└── Site_Level-TestData
-    ├── TestData_DeepMod-perSite-cov1.sort.bed.gz
-    ├── TestData_DeepSignal-perSite-cov1.sort.bed.gz
-    ├── TestData_Guppy-perSite-cov1.sort.bed.gz
-    ├── TestData_Megalodon-perSite-cov1.sort.bed.gz
-    ├── TestData_METEORE-perSite-cov1.sort.bed.gz
-    ├── TestData_Nanopolish-perSite-cov1.sort.bed.gz
-    └── TestData_Tombo-perSite-cov1.sort.bed.gz
+├── Site_Level-TestData
+│   ├── TestData_DeepMod-perSite-cov1.sort.bed.gz
+│   ├── TestData_DeepSignal-perSite-cov1.sort.bed.gz
+│   ├── TestData_Guppy-perSite-cov1.sort.bed.gz
+│   ├── TestData_Megalodon-perSite-cov1.sort.bed.gz
+│   ├── TestData_METEORE-perSite-cov1.sort.bed.gz
+│   ├── TestData_NANOME-perSite-cov1.sort.bed.gz
+│   ├── TestData_Nanopolish-perSite-cov1.sort.bed.gz
+│   └── TestData_Tombo-perSite-cov1.sort.bed.gz
+└── tools_version_table.tsv
 
-tree outputs -L 1
-outputs
-├── README.txt
-├── report
+tree results -L 1
+results
 ├── TestData-basecallings
-└── TestData-methylation-callings
+├── TestData-methylation-callings
+└── TestData_nanome_report.html
 ```
 
 We also support input as a file list if input file name is suffixed like `.filelist.txt`, an example input is [test.demo.filelist.txt](https://github.com/TheJacksonLaboratory/nanome/blob/master/inputs/test.demo.filelist.txt). Please use folowings for pipeline command help:
@@ -172,43 +167,30 @@ Pipeline results for E. coli data is below.
 
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
-Launching `main.nf` [drunk_carlsson] - revision: efbaa90697
+Launching `main.nf` [maniac_poitras] - revision: 47f69be0ab
 NANOME - NF PIPELINE (v1.3.6)
 by Li Lab at The Jackson Laboratory
-https://nanome.jax.org
+https://github.com/TheJacksonLaboratory/nanome
 =================================
-dsname          :EcoliDemo
-input           :https://zenodo.org/record/5483859/files/ecoli_data_from_meteore.tar.gz
-output          :/fastscratch/li-lab/nanome/outputs-ecoli
-work            :/fastscratch/li-lab/nanome/work-ecoli
-type        :ecoli
-runBasecall     :true
-runMethcall     :true
-=================================
-executor >  slurm (19)
-[e6/9fbf7e] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
-[10/24fad4] process > Untar (ecoli_data_from_mete... [100%] 1 of 1 ✔
-[45/94553b] process > Basecall (ecoli_data_from_m... [100%] 1 of 1 ✔
-[6d/7fd4ca] process > QCExport                       [100%] 1 of 1 ✔
-[2c/31de5c] process > Resquiggle (ecoli_data_from... [100%] 1 of 1 ✔
-[58/256829] process > Nanopolish (ecoli_data_from... [100%] 1 of 1 ✔
-[67/bf7f23] process > Megalodon (ecoli_data_from_... [100%] 1 of 1 ✔
-[97/dd7a8f] process > DeepSignal (ecoli_data_from... [100%] 1 of 1 ✔
-[03/efbbca] process > Guppy (ecoli_data_from_mete... [100%] 1 of 1 ✔
-[b9/3ed251] process > Tombo (ecoli_data_from_mete... [100%] 1 of 1 ✔
-[4f/c40418] process > DeepMod (ecoli_data_from_me... [100%] 1 of 1 ✔
-[5c/8182bf] process > NplshComb (1)                  [100%] 1 of 1 ✔
-[d0/123535] process > MgldnComb (1)                  [100%] 1 of 1 ✔
-[a1/25ef0c] process > DpSigComb (1)                  [100%] 1 of 1 ✔
-[ff/f8786e] process > GuppyComb (1)                  [100%] 1 of 1 ✔
-[07/e1fa8a] process > TomboComb (1)                  [100%] 1 of 1 ✔
-[fa/863b04] process > DpmodComb (1)                  [100%] 1 of 1 ✔
-[a0/3326d1] process > METEORE (1)                    [100%] 1 of 1 ✔
-[2f/9a2ad7] process > Report (1)                     [100%] 1 of 1 ✔
-Completed at: 11-Sep-2021 20:25:14
-Duration    : 5m 19s
-CPU hours   : 0.1
-Succeeded   : 19
+executor >  slurm (14)
+[61/6ba4f5] process > EnvCheck (EnvCheck)                      [100%] 1 of 1 ✔
+[82/f5adec] process > Untar (ecoli_data_from_meteore.tar)      [100%] 1 of 1 ✔
+[7b/4b3001] process > Basecall (ecoli_data_from_meteore.tar)   [100%] 1 of 1 ✔
+[e8/4be95e] process > QCExport (EcoliDemo)                     [100%] 1 of 1 ✔
+[49/000f5c] process > Resquiggle (ecoli_data_from_meteore.tar) [100%] 1 of 1 ✔
+[cf/149a24] process > Nanopolish (ecoli_data_from_meteore.tar) [100%] 1 of 1 ✔
+[9c/edf13d] process > NplshComb (EcoliDemo)                    [100%] 1 of 1 ✔
+[e3/f56451] process > Megalodon (ecoli_data_from_meteore.tar)  [100%] 1 of 1 ✔
+[87/9417c5] process > MgldnComb (EcoliDemo)                    [100%] 1 of 1 ✔
+[f6/5ffa6b] process > DeepSignal (ecoli_data_from_meteore.tar) [100%] 1 of 1 ✔
+[3f/b28b4d] process > DpSigComb (EcoliDemo)                    [100%] 1 of 1 ✔
+[b0/93b421] process > Guppy (ecoli_data_from_meteore.tar)      [100%] 1 of 1 ✔
+[db/f8cce4] process > GuppyComb (EcoliDemo)                    [100%] 1 of 1 ✔
+[1d/5aba6f] process > Report (EcoliDemo)                       [100%] 1 of 1 ✔
+Completed at: 22-Dec-2021 11:39:24
+Duration    : 4m 54s
+CPU hours   : 0.7
+Succeeded   : 14
 ```
 
 The output files of pipeline on E. coli data by all tools are below, please also check the pipeline output directory tree for [outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/outputs_ecoli.tree.txt) and [work](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/work_ecoli.tree.txt). The pipeline can also generate [timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_ecoli.pdf), [report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_ecoli.pdf) and [resource usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_ecoli.txt.tsv).
@@ -283,4 +265,3 @@ nextflow run TheJacksonLaboratory/nanome\
     --guppyDir [guppy-installation-directory]
 ```
 Param`--guppyDir=[guppy-installation-directory]` is the Guppy software installation base directory, `--conda_base_dir [conda-dir]` is conda software base directory, `--conda_name [conda-env-dir]` is conda environment base directory.
-
