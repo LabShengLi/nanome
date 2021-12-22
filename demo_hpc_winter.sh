@@ -40,7 +40,8 @@ nextflow run main.nf\
 	--runTombo --runMETEORE --runDeepMod --useDeepModCluster\
 	--outputIntermediate --outputRaw\
 	--outputGenomeBrowser --outputBam --outputONTCoverage\
-	--deduplicate --sort
+	--deduplicate --sort \
+	--processors 8
 
 # Report
 tree ${workDir} > ${baseDir}/work_demo_filetree.txt
