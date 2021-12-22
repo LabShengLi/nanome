@@ -182,6 +182,8 @@ summary['chrSet'] 			= chrSet.split(' ').join(',')
 summary['dataType'] 		= dataType
 
 if (params.runBasecall) summary['runBasecall'] = 'Yes'
+if (params.skipBasecall) summary['skipBasecall'] = 'Yes'
+
 if (params.runMethcall) {
 	if (params.runNanopolish) summary['runNanopolish'] = 'Yes'
 	if (params.runMegalodon) summary['runMegalodon'] = 'Yes'
@@ -192,10 +194,15 @@ if (params.runMethcall) {
 	if (params.runDeepMod) summary['runDeepMod'] = 'Yes'
 	if (params.runNANOME) summary['runNANOME'] = 'Yes'
 }
+if (params.cleanAnalyses) summary['cleanAnalyses'] = 'Yes'
 if (params.deepsignalDir) { summary['deepsignalDir'] = params.deepsignalDir }
-if (params.rerioDir) { summary['rerioDir'] = params.rerioDir }
+if (params.rerioDir) {
+	summary['rerioDir'] = params.rerioDir
+	summary['MEGALODON_MODEL_FOR_GUPPY_CONFIG'] = params.MEGALODON_MODEL_FOR_GUPPY_CONFIG
+}
 if (params.METEOREDir) { summary['METEOREDir'] = params.METEOREDir }
 if (params.guppyDir) { summary['guppyDir'] 	= params.guppyDir }
+if (params.tomboResquiggleOptions) { summary['tomboResquiggleOptions'] 	= params.tomboResquiggleOptions }
 
 if (params.outputBam) { summary['outputBam'] 	= params.outputBam }
 if (params.outputONTCoverage) { summary['outputONTCoverage'] 	= params.outputONTCoverage }
