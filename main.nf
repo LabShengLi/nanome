@@ -36,7 +36,7 @@ def helpMessage() {
 	Mandatory arguments:
 	  --dsname		Dataset/analysis name
 	  --input		Input path for raw fast5 files (folders, tar/tar.gz files)
-	  --genome		Genome reference name ('hg38', 'ecoli', or 'hg38_chr22') or directory, a directory must contain only one .fasta file with .fasta.fai index file
+	  --genome		Genome reference name ('hg38', 'ecoli', or 'hg38_chr22') or directory, a directory must contain only one .fasta file with .fasta.fai index file, default is hg38
 
 	General options:
 	  --processors		Processors used for each task
@@ -71,6 +71,8 @@ def helpMessage() {
 	-profile options:
 	  Use this parameter to choose a predefined configuration profile. Profiles can give configuration presets for different compute environments.
 
+	  test		A bundle of input params for ecolid test case
+	  test_human	A bundle of input params for human test case
 	  docker 	A generic configuration profile to be used with Docker, pulls software from Docker Hub: liuyangzzu/nanome:latest
 	  singulairy	A generic configuration profile to be used with Singularity, pulls software from: docker://liuyangzzu/nanome:latest
 	  conda		Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Create conda enviroment by 'conda env create -f environment.yml'
@@ -88,9 +90,8 @@ if (params.help){
 }
 
 // Check mandatory params
-if (! params.dsname) { exit 1, "Missing --dsname option for dataset name, check command help use --help" }
-if (! params.input) { exit 1, "Missing --input option for input data, check command help use --help" }
-
+if (! params.dsname)  exit 1, "Missing --dsname option for dataset name, check command help use --help"
+if (! params.input)  exit 1, "Missing --input option for input data, check command help use --help"
 if ( !file(params.input).exists() )   exit 1, "input does not exist, check params: --input ${params.input}"
 
 // Parse genome params
