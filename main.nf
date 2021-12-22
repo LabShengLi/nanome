@@ -151,7 +151,13 @@ if (params.input.endsWith(".filelist.txt")) {
 	// list of files in filelist.txt
 	Channel.fromPath( params.input, checkIfExists: true )
 		.splitCsv(header: false)
-		.map { file(it[0]) }
+		.map {
+			if (!file(it[0]).exists())  {
+				log.warn "File not exists: ${it[0]}, check file list: ${params.input}"
+			} else {
+				return file(it[0])
+			}
+		}
 		.set{ fast5_tar_ch }
 } else if(params.input.endsWith("/*")) {
 	// match all files in the folder, note: input must use '', prevent expand in advance
