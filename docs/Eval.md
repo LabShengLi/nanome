@@ -64,18 +64,13 @@ singularity exec -e docker://liuyangzzu/nanome:latest read_level_eval.py
 ```angular2html
 read_level_eval.py -h
 
-usage: read_level_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID
-                                --calls CALLS [CALLS ...] --bgtruth BGTRUTH
-                                [--genome-annotation GENOME_ANNOTATION]
-                                [--min-bgtruth-cov MIN_BGTRUTH_COV]
-                                [--processors PROCESSORS] [--report-joined]
-                                [--chrSet CHRSET [CHRSET ...]] [-o O]
-                                [--enable-cache] [--using-cache]
-                                [--distribution] [--bsseq-report]
-                                [--analysis ANALYSIS] [--save-curve-data]
-                                [--large-mem] [--bedtools-tmp BEDTOOLS_TMP]
-                                [--cache-dir CACHE_DIR] [--disable-bed-check]
-                                [--mpi] [--mpi-import] [--config] [--verbose]
+usage: read_level_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID --calls CALLS [CALLS ...] [--bgtruth BGTRUTH]
+                                [--genome-annotation GENOME_ANNOTATION] [--min-bgtruth-cov MIN_BGTRUTH_COV]
+                                [--toolcov-cutoff TOOLCOV_CUTOFF] [--processors PROCESSORS] [--report-no-join]
+                                [--chrSet CHRSET [CHRSET ...]] [-o O] [--enable-cache] [--using-cache] [--distribution]
+                                [--bsseq-report] [--analysis ANALYSIS] [--save-curve-data] [--large-mem]
+                                [--bedtools-tmp BEDTOOLS_TMP] [--cache-dir CACHE_DIR] [--disable-bed-check] [--mpi]
+                                [--mpi-import] [--config] [--verbose]
 
 Read-level performance evaluation in nanome paper
 
@@ -83,48 +78,38 @@ optional arguments:
   -h, --help            show this help message and exit
   -v, --version         show program's version number and exit
   --dsname DSNAME       dataset name
-  --runid RUNID         running prefix/output folder name, such as MethPerf-
-                        DS_WGBS_2reps
+  --runid RUNID         running prefix/output folder name, such as MethPerf-Dataset_WGBS_2Reps
   --calls CALLS [CALLS ...]
-                        all ONT call results <tool-name>:<file-name> seperated
-                        by space, tool-name can be Nanopolish, Megalodon,
-                        DeepSignal, Guppy, Tombo, METEORE,
-                        DeepMod.C/DeepMod.Cluster
-  --bgtruth BGTRUTH     background truth file <encode-type>:<file-name>;<file-
-                        name>, encode-type can be 'encode' or 'bismark'
+                        all ONT call results <tool-name>:<file-encode>:<file-name> seperated by space, tool-name/file-
+                        encode can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod, NANOME
+  --bgtruth BGTRUTH     background truth file <encode-type>:<file-name1>;<file-name2>, encode-type can be 'encode' or
+                        'bismark'
   --genome-annotation GENOME_ANNOTATION
-                        genome annotation dir, contain BED files such as
-                        singleton, nonsingleton, etc.
+                        genome annotation dir, contain BED files
   --min-bgtruth-cov MIN_BGTRUTH_COV
                         min bg-truth coverage cutoff, default is 5
+  --toolcov-cutoff TOOLCOV_CUTOFF
+                        cutoff for coverage in nanopore tools, default is >=1
   --processors PROCESSORS
                         number of processors used, default is 1
-  --report-joined       true if report on only joined sets
+  --report-no-join      true if report not on joined sets
   --chrSet CHRSET [CHRSET ...]
                         chromosome list, default is human chr1-22, X and Y
-  -o O                  output base dir, default is /projects/li-
-                        lab/yang/results/2021-10-19
+  -o O                  output base dir
   --enable-cache        if enable cache functions
   --using-cache         if use cache files
-  --distribution        if report singleton/nonsingleton distributions at all
-                        regions
+  --distribution        if report singleton/nonsingleton distributions at all regions
   --bsseq-report        if report singleton/nonsingleton in bs-seq
   --analysis ANALYSIS   special analysis specifications for ecoli
   --save-curve-data     if save pred/truth points for curve plot
   --large-mem           if using large memory (>100GB) for speed up
   --bedtools-tmp BEDTOOLS_TMP
-                        bedtools temp dir, default is
-                        /fastscratch/liuya/nanome/temp_dir
+                        bedtools temp dir
   --cache-dir CACHE_DIR
-                        cache dir used for loading calls/bs-seq (speed up
-                        running), default is
-                        /fastscratch/liuya/nanome/cache_dir
-  --disable-bed-check   if disable auto-checking the 0/1 base format for
-                        genome annotations
-  --mpi                 if using multi-processing/threading for evaluation, it
-                        can speed-up but may need more memory
-  --mpi-import          if using multi-processing/threading for import, it can
-                        speed-up, only for small size data
+                        cache dir used for loading calls/bs-seq (speed up running)
+  --disable-bed-check   if disable auto-checking the 0/1 base format for genome annotations
+  --mpi                 if using multi-processing/threading for evaluation, it can speed-up but may need more memory
+  --mpi-import          if using multi-processing/threading for import, it can speed-up, only for small size data
   --config              if print out config file for genome annotation
   --verbose             if output verbose info
 ```
@@ -163,19 +148,13 @@ Sample results can be found at [site-level outputs](https://github.com/TheJackso
 ```angular2html
 site_level_eval.py -h
 
-usage: site_level_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID
-                                --calls CALLS [CALLS ...] --bgtruth BGTRUTH
-                                [--genome-annotation GENOME_ANNOTATION]
-                                [--beddir BEDDIR]
-                                [--min-bgtruth-cov MIN_BGTRUTH_COV]
-                                [--toolcov-cutoff TOOLCOV_CUTOFF]
-                                [--chrSet CHRSET [CHRSET ...]] [--sep SEP]
-                                [--processors PROCESSORS] [-o O] [--gen-venn]
-                                [--summary-coverage] [--region-coe-report]
-                                [--enable-cache] [--using-cache] [--plot]
-                                [--bedtools-tmp BEDTOOLS_TMP]
-                                [--cache-dir CACHE_DIR] [--large-mem]
-                                [--disable-bed-check] [--mpi] [--config]
+usage: site_level_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID --calls CALLS [CALLS ...] [--bgtruth BGTRUTH]
+                                [--genome-annotation GENOME_ANNOTATION] [--beddir BEDDIR]
+                                [--min-bgtruth-cov MIN_BGTRUTH_COV] [--toolcov-cutoff TOOLCOV_CUTOFF]
+                                [--chrSet CHRSET [CHRSET ...]] [--sep SEP] [--processors PROCESSORS] [-o O] [--gen-venn]
+                                [--sort] [--deduplicate] [--summary-coverage] [--region-coe-report] [--report-no-join]
+                                [--enable-cache] [--using-cache] [--plot] [--bedtools-tmp BEDTOOLS_TMP]
+                                [--cache-dir CACHE_DIR] [--large-mem] [--disable-bed-check] [--mpi] [--config]
                                 [--verbose]
 
 Site-level correlation analysis in nanome paper
@@ -184,21 +163,14 @@ optional arguments:
   -h, --help            show this help message and exit
   -v, --version         show program's version number and exit
   --dsname DSNAME       dataset name
-  --runid RUNID         running prefix/output folder name, such as MethCorr-
-                        DS_WGBS_2reps
+  --runid RUNID         running prefix/output folder name, such as MethCorr-Dataset_WGBS_2Reps
   --calls CALLS [CALLS ...]
-                        all ONT call results <tool-name>:<file-name> seperated
-                        by spaces, tool-name can be Nanopolish, Megalodon,
-                        DeepSignal, Guppy, Tombo, METEORE, DeepMod.Cluster
-  --bgtruth BGTRUTH     background truth file <encode-type>:<file-
-                        name1>;<file-name1>, encode-type can be 'encode' or
-                        'bismark'
+                        all ONT call results <tool-name>:<file-encode>:<file-name> seperated by spaces, tool-name/file-encode can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod, NANOME
+  --bgtruth BGTRUTH     background truth file <encode-type>:<file-name1>;<file-name2>, encode-type can be 'encode' or  'bismark'
   --genome-annotation GENOME_ANNOTATION
-                        genome annotation dir, contain BED files such as
-                        singleton, nonsingleton, etc.
-  --beddir BEDDIR       base dir for concordant/discordant BED files generated
-                        by read-level analysis, make sure provided dsname is
-                        same
+                        genome annotation dir, contain BED files
+  --beddir BEDDIR       base dir for concordant/discordant BED files generated by read-level analysis, make sure the
+                        dsname is same
   --min-bgtruth-cov MIN_BGTRUTH_COV
                         cutoff for coverage in bg-truth, default is >=5
   --toolcov-cutoff TOOLCOV_CUTOFF
@@ -208,26 +180,23 @@ optional arguments:
   --sep SEP             seperator for output csv file
   --processors PROCESSORS
                         number of processors used, default is 1
-  -o O                  output base dir, default is /projects/li-
-                        lab/yang/results/2021-10-19
+  -o O                  output base dir
   --gen-venn            if generate CpGs files for venn data analysis
+  --sort                if sort outputs
+  --deduplicate         if deduplicate not unique records needed
   --summary-coverage    if summarize coverage at each region
   --region-coe-report   if report PCC value at each region
+  --report-no-join      if output no-join report also
   --enable-cache        if enable cache functions
   --using-cache         if use cache files
   --plot                if plot the correlation matrix figure
   --bedtools-tmp BEDTOOLS_TMP
-                        bedtools temp dir, default is
-                        /fastscratch/liuya/nanome/temp_dir
+                        bedtools temp dir
   --cache-dir CACHE_DIR
-                        cache dir used for loading calls/bs-seq(speed up
-                        running), default is
-                        /fastscratch/liuya/nanome/cache_dir
+                        cache dir used for loading calls/bs-seq(speed up running)
   --large-mem           if using large memory (>100GB) for speed up
-  --disable-bed-check   if disable auto-checking the 0/1 base format for
-                        genome annotations
-  --mpi                 if using multi-processing/threading for evaluation, it
-                        can speed-up but need more memory
+  --disable-bed-check   if disable auto-checking the 0/1 base format for genome annotations
+  --mpi                 if using multi-processing/threading for evaluation, it can speed-up but need more memory
   --config              if print out config file for genome annotation
   --verbose             if output verbose info
 ```
@@ -289,16 +258,12 @@ chr1	11344287	11344288	.	.	-	0.0	2
 ```angular2html
 tss_eval.py -h
 
-usage: tss_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID --calls CALLS
-                         [CALLS ...] [--bgtruth BGTRUTH] [--read-level-format]
-                         [--sep SEP] [--processors PROCESSORS] [-o O]
-                         [--enable-cache] [--using-cache]
-                         [--cache-dir CACHE_DIR]
-                         [--chrSet CHRSET [CHRSET ...]] [--tagname TAGNAME]
-                         [--verbose]
+usage: tss_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID --calls CALLS [CALLS ...] [--bgtruth BGTRUTH]
+                         [--read-level-format] [--sep SEP] [--processors PROCESSORS] [-o O] [--enable-cache]
+                         [--using-cache] [--sort] [--deduplicate] [--cache-dir CACHE_DIR] [--chrSet CHRSET [CHRSET ...]]
+                         [--tagname TAGNAME] [--verbose]
 
-Export read/site level methylation results of all nanopore tools in nanome
-paper
+Export read/site level methylation results of all nanopore tools in nanome paper
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -306,27 +271,21 @@ optional arguments:
   --dsname DSNAME       dataset name
   --runid RUNID         running prefix/output dir name
   --calls CALLS [CALLS ...]
-                        all ONT call results <tool-name>:<file-name> seperated
-                        by spaces
-  --bgtruth BGTRUTH     background truth file <encode-type>:<file-
-                        name1>;<file-name2>
-  --read-level-format   if true, it will output read level results (1-based
-                        start), else it will output site-level results
-                        (0-based start, 1-based end)
-  --sep SEP             seperator for output csv file, default is tab
-                        character
+                        all ONT call results <tool-name>:<encode>:<file-name> seperated by spaces
+  --bgtruth BGTRUTH     background truth file <encode-type>:<file-name1>;<file-name2>
+  --read-level-format   if true, it will output read level results (1-based start), else it will output site-level results (0-based start, 1-based end)
+  --sep SEP             seperator for output csv file, default is tab character
   --processors PROCESSORS
                         running processors, default is 1
   -o O                  output base dir
   --enable-cache        if enable cache functions
   --using-cache         if use cache files
+  --sort                if sort bed output
+  --deduplicate         if deduplicate not unique records
   --cache-dir CACHE_DIR
-                        cache dir used for loading calls/bs-seq (speed up
-                        running), default is
-                        /fastscratch/liuya/nanome/cache_dir
+                        cache dir used for loading calls/bs-seq (speed up running)
   --chrSet CHRSET [CHRSET ...]
-                        chromosome list, default is human chromosome chr1-22,
-                        X and Y
+                        chromosome list, default is human chromosome chr1-22, X and Y
   --tagname TAGNAME     output unified file's tagname
   --verbose             if output verbose info
 ```
