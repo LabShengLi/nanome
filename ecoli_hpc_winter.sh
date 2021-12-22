@@ -36,7 +36,8 @@ nextflow run main.nf\
     --runDeepMod --runTombo --runMETEORE\
     --outputIntermediate --outputRaw\
     --outputGenomeBrowser --outputBam --outputONTCoverage\
-    --deduplicate --sort
+    --deduplicate --sort\
+    --processors 8
 
 # Report
 tree ${workDir} > ${baseDir}/work_ecoli_filetree.txt

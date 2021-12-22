@@ -37,10 +37,11 @@ nextflow run main.nf\
     --outdir ${outputsDir}\
     --dsname TestData\
     --input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt\
-	--runTombo --runMETEORE --runDeepMod\
+	--runTombo --runMETEORE --runDeepMod --useDeepModCluster\
 	--outputIntermediate --outputRaw\
 	--outputGenomeBrowser --outputBam --outputONTCoverage\
-	--deduplicate --sort
+	--deduplicate --sort \
+	--processors 8
 
 # Report
 tree ${workDir} > ${baseDir}/work_demo_filetree.txt

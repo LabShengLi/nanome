@@ -36,7 +36,7 @@ def helpMessage() {
 	Mandatory arguments:
 	  --dsname		Dataset/analysis name
 	  --input		Input path for raw fast5 files (folders, tar/tar.gz files)
-	  --genome		Genome reference name ('hg38', 'ecoli', or 'hg38_chr22') or directory, a directory must contain only one .fasta file with .fasta.fai index file
+	  --genome		Genome reference name ('hg38', 'ecoli', or 'hg38_chr22') or directory, a directory must contain only one .fasta file with .fasta.fai index file, default is hg38
 
 	General options:
 	  --processors		Processors used for each task
@@ -53,17 +53,17 @@ def helpMessage() {
 	  --conda_base_dir	Conda base directory, default is '/opt/conda'
 
 	Platform specific options:
-	  --queue		SLURM job submission queue name for cluster running, default is 'gpu'
-	  --qos			SLURM job submission qos name for cluster running, default is 'inference'
-	  --gresOptions		SLURM job submission GPU allocation options for cluster running, default is 'gpu:v100:1'
-	  --time		SLURM job submission time allocation options for cluster running, default is '2h'
-	  --memory		SLURM job submission memory allocation options for cluster running, default is '32GB'
+	  --queue		SLURM job submission queue name for cluster running, e.g., 'gpu'
+	  --qos			SLURM job submission qos name for cluster running, e.g., 'inference'
+	  --gresOptions		SLURM job submission GPU allocation options for cluster running, e.g., 'gpu:v100:1'
+	  --time		SLURM job submission time allocation options for cluster running, e.g., '2h', '1d'
+	  --memory		SLURM job submission memory allocation options for cluster running, e.g., '32GB'
 
-	  --googleProjectName	Google Cloud Platform (GCP) project name for google-lifesciences task running
-	  --config		Lifebit CloudOS config file, please set to 'conf/executors/lifebit.config'
+	  --googleProjectName	Google Cloud Platform (GCP) project name for google-lifesciences
+	  --config		Lifebit CloudOS config file, e.g., 'conf/executors/lifebit.config'
 
 	Tools's specific configurations:
-	  --run[Tool-name]	By default, we run top four performers in nanome paper, specify '--run[Tool-name]' can include other tool, supported tools: Megalodon, Nanopolish, DeepSignal, Guppy, Tombo, METEORE, and DeepMod
+	  --run[Tool-name]	By default, we run top four performers in nanome paper, specify '--run[Tool-name]' can include other tool, supported tools: NANOME, Megalodon, Nanopolish, DeepSignal, Guppy, Tombo, METEORE, and DeepMod
 
 	Other options:
 	  --guppyDir		Guppy installation local directory, used only for conda environment
@@ -71,11 +71,13 @@ def helpMessage() {
 	-profile options:
 	  Use this parameter to choose a predefined configuration profile. Profiles can give configuration presets for different compute environments.
 
+	  test		A bundle of input params for ecoli test
+	  test_human	A bundle of input params for human test
 	  docker 	A generic configuration profile to be used with Docker, pulls software from Docker Hub: liuyangzzu/nanome:latest
 	  singulairy	A generic configuration profile to be used with Singularity, pulls software from: docker://liuyangzzu/nanome:latest
-	  conda		Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Create conda enviroment by 'conda env create -f environment.yml'
-	  hpc		A generic configuration profile to be used on HPC cluster with SLURM job submission support.
-	  google	A generic configuration profile to be used on Google Cloud platform with 'google-lifesciences' support.
+	  conda		Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Check our GitHub for how to install local conda enviroment
+	  hpc		A generic configuration profile to be used on HPC cluster with SLURM
+	  google	A generic configuration profile to be used on Google Cloud platform with 'google-lifesciences'
 
 	Contact to https://github.com/TheJacksonLaboratory/nanome/issues for bug report.
 	""".stripIndent()
@@ -88,8 +90,9 @@ if (params.help){
 }
 
 // Check mandatory params
-if (! params.dsname) { exit 1, "Missing --dsname option for dataset name, check command help use --help" }
-if (! params.input) { exit 1, "Missing --input option for input data, check command help use --help" }
+if (! params.dsname)  exit 1, "Missing --dsname option for dataset name, check command help use --help"
+if (! params.input)  exit 1, "Missing --input option for input data, check command help use --help"
+if ( !file(params.input).exists() )   exit 1, "input does not exist, check params: --input ${params.input}"
 
 // Parse genome params
 genome_map = params.genome_map
@@ -97,7 +100,7 @@ genome_map = params.genome_map
 if (genome_map[params.genome]) { genome_path = genome_map[params.genome] } else { 	genome_path = params.genome }
 
 // infer dataType, chrSet based on reference genome name, hg - human, ecoli - ecoli, otherwise is other reference genome
-if (params.genome.contains('hg')) {
+if (params.genome.contains('hg') || (params.dataType && params.dataType == 'human')) {
 	dataType = "human"
 	if (!params.chrSet) {
 		// default for human, if false or 'false' (string), using '  '
@@ -105,7 +108,7 @@ if (params.genome.contains('hg')) {
 	} else {
 		chrSet = params.chrSet
 	}
-} else if (params.genome.contains('ecoli')) {
+} else if (params.genome.contains('ecoli') || (params.dataType && params.dataType == 'ecoli')) {
 	dataType = "ecoli"
 	if (!params.chrSet) {
 		// default for ecoli
@@ -149,7 +152,13 @@ if (params.input.endsWith(".filelist.txt")) {
 	// list of files in filelist.txt
 	Channel.fromPath( params.input, checkIfExists: true )
 		.splitCsv(header: false)
-		.map { file(it[0]) }
+		.map {
+			if (!file(it[0]).exists())  {
+				log.warn "File not exists: ${it[0]}, check file list: ${params.input}"
+			} else {
+				return file(it[0])
+			}
+		}
 		.set{ fast5_tar_ch }
 } else if(params.input.endsWith("/*")) {
 	// match all files in the folder, note: input must use '', prevent expand in advance
@@ -174,6 +183,8 @@ summary['chrSet'] 			= chrSet.split(' ').join(',')
 summary['dataType'] 		= dataType
 
 if (params.runBasecall) summary['runBasecall'] = 'Yes'
+if (params.skipBasecall) summary['skipBasecall'] = 'Yes'
+
 if (params.runMethcall) {
 	if (params.runNanopolish) summary['runNanopolish'] = 'Yes'
 	if (params.runMegalodon) summary['runMegalodon'] = 'Yes'
@@ -184,10 +195,23 @@ if (params.runMethcall) {
 	if (params.runDeepMod) summary['runDeepMod'] = 'Yes'
 	if (params.runNANOME) summary['runNANOME'] = 'Yes'
 }
+if (params.cleanAnalyses) summary['cleanAnalyses'] = 'Yes'
 if (params.deepsignalDir) { summary['deepsignalDir'] = params.deepsignalDir }
-if (params.rerioDir) { summary['rerioDir'] = params.rerioDir }
+if (params.rerioDir) {
+	summary['rerioDir'] = params.rerioDir
+	summary['MEGALODON_MODEL_FOR_GUPPY_CONFIG'] = params.MEGALODON_MODEL_FOR_GUPPY_CONFIG
+}
 if (params.METEOREDir) { summary['METEOREDir'] = params.METEOREDir }
 if (params.guppyDir) { summary['guppyDir'] 	= params.guppyDir }
+if (params.tomboResquiggleOptions) { summary['tomboResquiggleOptions'] 	= params.tomboResquiggleOptions }
+
+if (params.outputBam) { summary['outputBam'] 	= params.outputBam }
+if (params.outputONTCoverage) { summary['outputONTCoverage'] 	= params.outputONTCoverage }
+if (params.outputIntermediate) { summary['outputIntermediate'] 	= params.outputIntermediate }
+if (params.outputRaw) { summary['outputRaw'] 	= params.outputRaw }
+if (params.outputGenomeBrowser) { summary['outputGenomeBrowser'] 	= params.outputGenomeBrowser }
+if (params.deduplicate) { summary['deduplicate'] 	= params.deduplicate }
+if (params.sort) { summary['sort'] 	= params.sort }
 
 summary['\nPipeline settings']         = "--------"
 summary['Working dir'] 		= workflow.workDir
@@ -218,9 +242,9 @@ if (workflow.profile.contains('google') || (params.config && params.config.conta
 		summary['googleProjectName']    = params.googleProjectName
 	} else { // lifebit specific settings
 		summary['config']       		= params.config
-		summary['zoneCloud']       		= params.zoneCloud
 		summary['networkLifebit']       = params.networkLifebit
 		summary['subnetworkLifebit']	= params.subnetworkLifebit
+		summary['zoneCloud']       		= params.zoneCloud
 	}
     summary['googleLocation']          = params.googleLocation
     summary['googleRegion']            = params.googleRegion
@@ -261,7 +285,7 @@ process EnvCheck {
 	path deepsignalDir
 
 	output:
-	path "reference_genome",				emit: reference_genome
+	path "reference_genome",				emit: reference_genome, optional: true
 	path "rerio", 							emit: rerio, optional: true  // used by Megalodon
 	path "${params.DEEPSIGNAL_MODEL_DIR}",	emit: deepsignal_model, optional: true
 	path "tools_version_table.tsv",			emit: tools_version_tsv, optional: true
@@ -275,7 +299,7 @@ process EnvCheck {
 	bash utils/validate_nanome_container.sh  tools_version_table.tsv
 
 	## Untar and prepare megalodon model
-	if [[ ${params.runMegalodon} == true ]]; then
+	if [[ ${params.runMegalodon} == true && ${params.runMethcall} == true ]]; then
 		if [[ ${rerioDir} == null* ]] ; then
 			# Obtain and run R9.4.1, MinION, 5mC CpG model from Rerio
 			git clone ${params.rerioGithub}
@@ -291,7 +315,7 @@ process EnvCheck {
 	fi
 
 	## Untar and prepare megalodon model
-	if [[ ${params.runDeepSignal} == true ]]; then
+	if [[ ${params.runDeepSignal} == true && ${params.runMethcall} == true ]]; then
 		if [[ ${deepsignalDir} == null* ]] ; then
 			## Get DeepSignal Model online
 			wget ${params.deepsignal_model_tar} --no-verbose &&\
@@ -308,26 +332,26 @@ process EnvCheck {
 		ls -lh ${params.DEEPSIGNAL_MODEL_DIR}/
 	fi
 
-	## Get dir for reference_genome
-	mkdir -p reference_genome
-	find_dir="\$PWD/reference_genome"
-	if [[ ${reference_genome} == *.tar.gz ]] ; then
-		tar -xzf ${reference_genome} -C reference_genome
-	elif [[ ${reference_genome} == *.tar ]] ; then
-		tar -xf ${reference_genome} -C reference_genome
-	else
-		## for folder, use ln, note this is a symbolic link to a folder
-		find_dir=\$( readlink -f ${reference_genome} )
+	if [[ ${params.runBasecall} == true || ${params.runMethcall} == true ]]; then
+		## Get dir for reference_genome
+		mkdir -p reference_genome
+		find_dir="\$PWD/reference_genome"
+		if [[ ${reference_genome} == *.tar.gz ]] ; then
+			tar -xzf ${reference_genome} -C reference_genome
+		elif [[ ${reference_genome} == *.tar ]] ; then
+			tar -xf ${reference_genome} -C reference_genome
+		else
+			## for folder, use ln, note this is a symbolic link to a folder
+			find_dir=\$( readlink -f ${reference_genome} )
+		fi
+
+		find \${find_dir} -name '*.fasta*' | \
+			 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/\${fn/*.fasta/ref.fasta}'
+		find \${find_dir} -name '*.sizes' | \
+				parallel -j1 -v ln -s -f {} reference_genome/chrom.sizes
+
+		ls -lh reference_genome/
 	fi
-
-	find \${find_dir} -name '*.fasta*' | \
-		 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/\${fn/*.fasta/ref.fasta}'
-	find \${find_dir} -name '*.sizes' | \
-			parallel -j1 -v ln -s -f {} reference_genome/chrom.sizes
-
-	# ls -lh ${referenceGenome}
-	# ls -lh ${chromSizesFile} # only need for Tombo
-	ls -lh reference_genome/
 
 	echo "### Check reference genome and chrSet"
 	echo "referenceGenome=${referenceGenome}"
@@ -2021,12 +2045,15 @@ process Report {
 
 
 workflow {
+	if ( !file(genome_path).exists() )   exit 1, "genome reference file does not exist, check params: --genome ${params.genome}"
 	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
 
 	if (!params.rerioDir) { // default if null, will online downloading
 		// This is only a place holder for input
 		rerioDir = Channel.fromPath("${projectDir}/utils/null1", type: 'any', checkIfExists: false)
 	} else {
+		// User provide the dir
+		if ( !file(params.rerioDir).exists() )   exit 1, "rerioDir does not exist, check params: --rerioDir ${params.rerioDir}"
 		rerioDir = Channel.fromPath(params.rerioDir, type: 'any', checkIfExists: true)
 	}
 
@@ -2034,6 +2061,8 @@ workflow {
 		// This is only a place holder for input
 		deepsignalDir = Channel.fromPath("${projectDir}/utils/null2", type: 'any', checkIfExists: false)
 	} else {
+		// User provide the dir
+		if ( !file(params.deepsignalDir).exists() )   exit 1, "deepsignalDir does not exist, check params: --deepsignalDir ${params.deepsignalDir}"
 		deepsignalDir = Channel.fromPath(params.deepsignalDir, type: 'any', checkIfExists: true)
 	}
 
@@ -2110,6 +2139,7 @@ workflow {
 			// not use cluster model, only a place holder here
 			ch_ctar = Channel.fromPath("${projectDir}/utils/null1", type:'any', checkIfExists: false)
 		} else {
+			if ( !file(params.deepmod_ctar).exists() )   exit 1, "deepmod_ctar does not exist, check params: --deepmod_ctar ${params.deepmod_ctar}"
 			ch_ctar = Channel.fromPath(params.deepmod_ctar, type:'any', checkIfExists: true)
 		}
 		DeepMod(Basecall.out.basecall, EnvCheck.out.reference_genome)
@@ -2124,6 +2154,7 @@ workflow {
 		if (!params.METEOREDir) {
 			METEOREDir_ch = Channel.fromPath("${projectDir}/utils/null1", type: 'any', checkIfExists: false)
 		} else {
+			if ( !file(params.METEOREDir).exists() )   exit 1, "METEOREDir does not exist, check params: --METEOREDir ${params.METEOREDir}"
 			METEOREDir_ch = Channel.fromPath(params.METEOREDir, type: 'any', checkIfExists: true)
 		}
 		METEORE(r1, r2, r3, ch_src, ch_utils, METEOREDir_ch)
