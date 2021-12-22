@@ -43,7 +43,7 @@ def helpMessage() {
 	  --outdir		Output dir, default is 'results'
 	  --chrSet		Chromosomes used in analysis, default is chr1-22, X and Y, for human. For E. coli data, it is default as 'NC_000913.3'. For other reference genome, please specify each chromosome with space seperated.
 
-	  --cleanWork		If clean work dir after complete, default is false
+	  --cleanup		If clean work dir after complete, default is false
 
 	Running environment options:
 	  --docker_name		Docker name used for pipeline, default is 'liuyangzzu/nanome:latest'
@@ -139,14 +139,6 @@ def chromSizesFile = 'reference_genome/chrom.sizes'
 if (dataType == 'human') { isDeepModCluster = params.useDeepModCluster } else { 	isDeepModCluster = false }
 
 
-workflow.onComplete {
-	if (workflow.success && params.cleanWork) {
-		def workDir = new File("${workflow.workDir}")
-		println "rm -rf ${workflow.workDir}".execute().text
-	}
-}
-
-
 // Collect all folders of fast5 files, and send into Channels for pipelines
 if (params.input.endsWith(".filelist.txt")) {
 	// list of files in filelist.txt
@@ -226,7 +218,8 @@ if (workflow.revision) summary['Pipeline Release'] = workflow.revision
 if (workflow.containerEngine) summary['Container'] = "$workflow.containerEngine - $workflow.container"
 summary['errorStrategy']    = params.errorStrategy
 summary['maxRetries']       = params.maxRetries
-summary['echo']         	= params.echo
+if (params.echo)  summary['echo'] = params.echo
+if (params.cleanup)   summary['cleanup'] = params.cleanup
 
 if (workflow.profile.contains('hpc') || workflow.profile.contains('winter') || workflow.profile.contains('sumner') ) {
 	summary['\nHPC settings']         = "--------"
