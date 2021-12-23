@@ -1,7 +1,7 @@
 # DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation
 ## --NANOME(Nanopore methylation) pipeline of DNA methylation calling tools for Oxford Nanopore sequencing 
 
-![demo_gif.gif](https://github.com/TheJacksonLaboratory/nanome/blob/robust2/docs/demo_gif.gif)
+[![demo_gif.gif](https://github.com/TheJacksonLaboratory/nanome/blob/robust2/docs/demo_gif.gif)](https://www.youtube.com/watch?v=TfotM55KTVE)
 
 ## Methodology of NANOME pipeline
 **Background:** Nanopore long-read sequencing technology greatly expands the capacity of long-range, single-molecule DNA-modification detection. A growing number of analytical tools have been developed to detect DNA methylation from nanopore sequencing reads. Here, we assess the performance of different methylation calling tools to provide a systematic evaluation to guide researchers performing human epigenome-wide studies.
