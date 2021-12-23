@@ -25,7 +25,7 @@ jobs:
           nextflow -v &&\
             nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.ci_test_name }},docker  ${{ matrix.using_tools_option }}
           echo "Outputs tree view:" ; tree -a results; ls -lh -R results; du -hs * 2>/dev/null | sort -h
-          echo "CpGs summary" ; find work -name 'Report.run.log' -exec tail {} \;
+          echo "CpGs summary" ; find work -name 'Report.run.log' -exec tail {} \; 2>/dev/null
 # remove singularity, since it is same with docker container
 #  singularity:
 #    name: Singularity

@@ -298,7 +298,7 @@ log.info "================================="
 
 // Check all tools work well
 process EnvCheck {
-	tag 'EnvCheck'
+	tag "${params.dsname}"
 	errorStrategy 'terminate'
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
