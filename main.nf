@@ -101,7 +101,7 @@ if (params.help){
 // Check mandatory params
 if (! params.dsname)  exit 1, "Missing --dsname option for dataset name, check command help use --help"
 if (! params.input)  exit 1, "Missing --input option for input data, check command help use --help"
-if ( !file(params.input).exists() )   exit 1, "input does not exist, check params: --input ${params.input}"
+if ( !file(params.input.toString()).exists() )   exit 1, "input does not exist, check params: --input ${params.input}"
 
 // Parse genome params
 genome_map = params.genome_map
@@ -2067,7 +2067,7 @@ process Report {
 
 
 workflow {
-	if ( !file(genome_path).exists() )   exit 1, "genome reference file does not exist, check params: --genome ${params.genome}"
+	if ( !file(genome_path.toString()).exists() )   exit 1, "genome reference file does not exist, check params: --genome ${params.genome}"
 	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
 
 	if (!params.rerioDir) { // default if null, will online downloading
@@ -2075,7 +2075,7 @@ workflow {
 		rerioDir = Channel.fromPath("${projectDir}/utils/null1", type: 'any', checkIfExists: false)
 	} else {
 		// User provide the dir
-		if ( !file(params.rerioDir).exists() )   exit 1, "rerioDir does not exist, check params: --rerioDir ${params.rerioDir}"
+		if ( !file(params.rerioDir.toString()).exists() )   exit 1, "rerioDir does not exist, check params: --rerioDir ${params.rerioDir}"
 		rerioDir = Channel.fromPath(params.rerioDir, type: 'any', checkIfExists: true)
 	}
 
@@ -2084,7 +2084,7 @@ workflow {
 		deepsignalDir = Channel.fromPath(params.DEEPSIGNAL_MODEL_ONLINE, type: 'any', checkIfExists: true)
 	} else {
 		// User provide the dir
-		if ( !file(params.deepsignalDir).exists() )   exit 1, "deepsignalDir does not exist, check params: --deepsignalDir ${params.deepsignalDir}"
+		if ( !file(params.deepsignalDir.toString()).exists() )   exit 1, "deepsignalDir does not exist, check params: --deepsignalDir ${params.deepsignalDir}"
 		deepsignalDir = Channel.fromPath(params.deepsignalDir, type: 'any', checkIfExists: true)
 	}
 
@@ -2161,7 +2161,7 @@ workflow {
 			// not use cluster model, only a place holder here
 			ch_ctar = Channel.fromPath("${projectDir}/utils/null1", type:'any', checkIfExists: false)
 		} else {
-			if ( !file(params.DEEPMOD_CFILE).exists() )   exit 1, "DEEPMOD_CFILE does not exist, check params: --DEEPMOD_CFILE ${params.DEEPMOD_CFILE}"
+			if ( !file(params.DEEPMOD_CFILE.toString()).exists() )   exit 1, "DEEPMOD_CFILE does not exist, check params: --DEEPMOD_CFILE ${params.DEEPMOD_CFILE}"
 			ch_ctar = Channel.fromPath(params.DEEPMOD_CFILE, type:'any', checkIfExists: true)
 		}
 		DeepMod(Basecall.out.basecall, EnvCheck.out.reference_genome)
@@ -2176,7 +2176,7 @@ workflow {
 		if (!params.METEOREDir) {
 			METEOREDir_ch = Channel.fromPath(params.METEORE_GITHUB_ONLINE, type: 'any', checkIfExists: true)
 		} else {
-			if ( !file(params.METEOREDir).exists() )   exit 1, "METEOREDir does not exist, check params: --METEOREDir ${params.METEOREDir}"
+			if ( !file(params.METEOREDir.toString()).exists() )   exit 1, "METEOREDir does not exist, check params: --METEOREDir ${params.METEOREDir}"
 			METEOREDir_ch = Channel.fromPath(params.METEOREDir, type: 'any', checkIfExists: true)
 		}
 		METEORE(r1, r2, r3, ch_src, ch_utils, METEOREDir_ch)
