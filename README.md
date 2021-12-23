@@ -1,7 +1,7 @@
 # DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation
 ## --NANOME(Nanopore methylation) pipeline of DNA methylation calling tools for Oxford Nanopore sequencing 
 
-[![demo_gif.gif](https://github.com/TheJacksonLaboratory/nanome/blob/robust2/docs/demo_gif.gif)](https://www.youtube.com/watch?v=TfotM55KTVE)
+[![demo_gif.gif](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/demo_gif.gif)](https://www.youtube.com/watch?v=TfotM55KTVE)
 
 ## Methodology of NANOME pipeline
 **Background:** Nanopore long-read sequencing technology greatly expands the capacity of long-range, single-molecule DNA-modification detection. A growing number of analytical tools have been developed to detect DNA methylation from nanopore sequencing reads. Here, we assess the performance of different methylation calling tools to provide a systematic evaluation to guide researchers performing human epigenome-wide studies.
@@ -93,8 +93,12 @@ nextflow run TheJacksonLaboratory/nanome\
 # Run NANOME via singularity
 nextflow run TheJacksonLaboratory/nanome\
     -profile test,singularity
+
+# Run NANOME for human data
+nextflow run TheJacksonLaboratory/nanome\
+    -profile test_human,[docker/singularity]
 ```
-Please note that above two commands are integrated in our **CI/CD test cases**. Our Github will automatically test and report results on every commit and PRs (https://github.com/TheJacksonLaboratory/nanome/actions). 
+Please note that above commands are integrated in our **CI/CD test cases**. Our Github will automatically test and report results on every commit and PRs (https://github.com/TheJacksonLaboratory/nanome/actions). 
 
 We firstly proposed the **standardized whole genome-wide evaluation packages**, check [standardized evaluation tool usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Eval.md) for more detail. We do not suggest evaluating on a portion of CpGs for performance comparisons.
 

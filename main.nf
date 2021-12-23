@@ -28,10 +28,12 @@ def helpMessage() {
 	https://github.com/TheJacksonLaboratory/nanome
 	=================================
 	Usage:
-	The typical command for running the pipeline is as follows:
+	The typical command is as follows:
 
 	nextflow run TheJacksonLaboratory/nanome -profile test,docker
 	nextflow run TheJacksonLaboratory/nanome -profile test,singularity
+	nextflow run TheJacksonLaboratory/nanome -profile [docker/singularity] \\
+		--dsname DSNAME --input INPUT --genome GENOME
 
 	Mandatory arguments:
 	  --dsname		Dataset/analysis name
@@ -68,11 +70,11 @@ def helpMessage() {
 	  --conda_base_dir	Conda base directory, default is '/opt/conda'
 
 	Platform specific options:
-	  --queue		SLURM job submission queue name for cluster running, e.g., 'gpu'
-	  --qos			SLURM job submission qos name for cluster running, e.g., 'inference'
-	  --gresOptions		SLURM job submission GPU allocation options for cluster running, e.g., 'gpu:v100:1'
-	  --time		SLURM job submission time allocation options for cluster running, e.g., '2h', '1d'
-	  --memory		SLURM job submission memory allocation options for cluster running, e.g., '32GB'
+	  --queue		SLURM job submission queue name, e.g., 'gpu'
+	  --qos			SLURM job submission QOS name, e.g., 'inference'
+	  --gresOptions		SLURM job submission GPU allocation option, e.g., 'gpu:v100:1'
+	  --time		SLURM job submission running time, e.g., '2h', '1d'
+	  --memory		SLURM job submission memory, e.g., '32GB'
 
 	  --googleProjectName	Google Cloud Platform (GCP) project name for google-lifesciences
 	  --config		Lifebit CloudOS config file, e.g., 'conf/executors/lifebit.config'
