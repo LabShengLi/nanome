@@ -196,6 +196,15 @@ if (params.rerioDir) {
 if (params.METEOREDir) { summary['METEOREDir'] = params.METEOREDir }
 if (params.guppyDir) { summary['guppyDir'] 	= params.guppyDir }
 if (params.tomboResquiggleOptions) { summary['tomboResquiggleOptions'] 	= params.tomboResquiggleOptions }
+if (params.runDeepMod && params.runMethcall) {
+	if (params.moveOption)  summary['moveOption'] = params.moveOption
+	summary['DEEPMOD_RNN_MODEL'] = params.DEEPMOD_RNN_MODEL
+	if (isDeepModCluster)  {
+		summary['useDeepModCluster'] = params.useDeepModCluster
+		summary['deepmod_ctar'] = params.deepmod_ctar
+		summary['DEEPMOD_CLUSTER_MODEL'] = params.DEEPMOD_CLUSTER_MODEL
+	}
+}
 
 if (params.outputBam) { summary['outputBam'] 	= params.outputBam }
 if (params.outputONTCoverage) { summary['outputONTCoverage'] 	= params.outputONTCoverage }
