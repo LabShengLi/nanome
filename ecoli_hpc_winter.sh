@@ -42,7 +42,6 @@ nextflow run main.nf\
 # Report
 tree ${workDir} > ${baseDir}/work_ecoli_filetree.txt
 tree ${outputsDir} > ${baseDir}/outputs_ecoli_filetree.txt
-
 find  ${workDir}  -name 'Report.run.log' -exec tail {} \;
 
 echo "### nanome pipeline for ecoli data on HPC DONE"

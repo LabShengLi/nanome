@@ -36,7 +36,6 @@ nextflow run main.nf\
 	--input inputs/na12878_chr22_gs.filelist.txt\
 	--cleanAnalyses true\
 	--tomboResquiggleOptions '--signal-length-range 0 500000  --sequence-length-range 0 50000'\
-	--reduceProcTimes  0.5\
 	--midDiskSize "850.GB" --highDiskSize "1024.GB"\
 	--machineType n1-highmem-16
 
