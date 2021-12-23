@@ -49,16 +49,16 @@ def helpMessage() {
 
 	Tools specific options:
 	  --run[Tool-name]	By default, we run top four performers in nanome paper, specify '--run[Tool-name]' can include other tool, supported tools: NANOME, Megalodon, Nanopolish, DeepSignal, Guppy, Tombo, METEORE, and DeepMod
-	  --rerioDir		Rerio dir for Megalodon model
+	  --rerioDir		Rerio dir for Megalodon model, default will get online
 	  --MEGALODON_MODEL	Megalodon model name, default is 'res_dna_r941_min_modbases_5mC_v001.cfg'
 	  --guppyDir		Guppy installation local directory, used only for conda environment
 	  --GUPPY_BASECALL_MODEL	Guppy basecalling model, default is 'dna_r9.4.1_450bps_hac.cfg'
 	  --GUPPY_METHCALL_MODEL	Guppy methylation calling model, default is 'dna_r9.4.1_450bps_modbases_5mc_hac.cfg'
-	  --deepsignalDir	DeepSignal model dir, default will get the model online
+	  --deepsignalDir	DeepSignal model dir, default will get online
 	  --tomboResquiggleOptions	Tombo resquiggle options for super long/damaged sequencing, set to '--signal-length-range 0 500000  --sequence-length-range 0 50000'
 	  --moveOption	If using move table for DeepMod, default is true
 	  --useDeepModCluster	If using DeepMod cluster model for human, default is false
-	  --METEOREDir	METEORE model dir, default will get the model online
+	  --METEOREDir	METEORE model dir, default will get online
 
 	Running environment options:
 	  --docker_name		Docker name used for pipeline, default is 'liuyangzzu/nanome:latest'
@@ -231,8 +231,8 @@ if (params.runMethcall && params.runDeepSignal) summary['DEEPSIGNAL_MODEL_DIR/DE
 if (params.runMethcall && params.runGuppy) summary['GUPPY_METHCALL_MODEL'] 	= params.GUPPY_METHCALL_MODEL
 if (params.runMethcall && params.runDeepMod) {
 	if (isDeepModCluster) {
-		summary['DEEPMOD_RNN_MODEL/DEEPMOD_CLUSTER_MODEL'] = "${params.DEEPMOD_RNN_MODEL};${params.DEEPMOD_CLUSTER_MODEL}"
-		summary['deepmod_ctar'] = params.deepmod_ctar
+		summary['DEEPMOD_RNN_MODEL;DEEPMOD_CLUSTER_MODEL'] = "${params.DEEPMOD_RNN_MODEL};${params.DEEPMOD_CLUSTER_MODEL}"
+		summary['DEEPMOD_CFILE'] = params.DEEPMOD_CFILE
 	} else {
 		summary['DEEPMOD_RNN_MODEL'] = "${params.DEEPMOD_RNN_MODEL}"
 	}
@@ -344,9 +344,9 @@ process EnvCheck {
 	if [[ ${params.runDeepSignal} == true && ${params.runMethcall} == true ]]; then
 		if [[ ${deepsignalDir} == null* ]] ; then
 			## Get DeepSignal Model online
-			wget ${params.deepsignal_model_tar} --no-verbose &&\
-				tar -xzf ${params.DEEPSIGNAL_MODEL_TAR_GZ} &&\
-				rm -f ${params.DEEPSIGNAL_MODEL_TAR_GZ}
+			wget ${params.DEEPSIGNAL_MODEL_ONLINE} --no-verbose &&\
+				tar -xzf ${params.DEEPSIGNAL_MODEL_DIR}.tar.gz &&\
+				rm -f ${params.DEEPSIGNAL_MODEL_DIR}.tar.gz
 		else
 		 	if [[ ${deepsignalDir} != ${params.DEEPSIGNAL_MODEL_DIR} ]] ; then
 				## rename it to deepsignal default dir name
@@ -1636,7 +1636,7 @@ process DpmodComb {
 
 	input:
 	path x
-	path deepmod_c_tar_file
+	path deepmod_cfile
 	path ch_src
 	path ch_utils
 
@@ -1696,11 +1696,11 @@ process DpmodComb {
 		echo "### For human, apply cluster model of DeepMod"
 
 		## Get dir for deepmod cluster-model inputs
-		if [[ "${deepmod_c_tar_file}" == *.tar.gz ]] ; then
-			tar -xzf ${deepmod_c_tar_file}
+		if [[ "${deepmod_cfile}" == *.tar.gz ]] ; then
+			tar -xzf ${deepmod_cfile}
 		else
-			if [[ "${deepmod_c_tar_file}" != "C" ]] ; then
-				cp -a  ${deepmod_c_tar_file}   C
+			if [[ "${deepmod_cfile}" != "C" ]] ; then
+				cp -a  ${deepmod_cfile}   C
 			fi
 		fi
 
@@ -2165,8 +2165,8 @@ workflow {
 			// not use cluster model, only a place holder here
 			ch_ctar = Channel.fromPath("${projectDir}/utils/null1", type:'any', checkIfExists: false)
 		} else {
-			if ( !file(params.deepmod_ctar).exists() )   exit 1, "deepmod_ctar does not exist, check params: --deepmod_ctar ${params.deepmod_ctar}"
-			ch_ctar = Channel.fromPath(params.deepmod_ctar, type:'any', checkIfExists: true)
+			if ( !file(params.DEEPMOD_CFILE).exists() )   exit 1, "DEEPMOD_CFILE does not exist, check params: --DEEPMOD_CFILE ${params.DEEPMOD_CFILE}"
+			ch_ctar = Channel.fromPath(params.DEEPMOD_CFILE, type:'any', checkIfExists: true)
 		}
 		DeepMod(Basecall.out.basecall, EnvCheck.out.reference_genome)
 		comb_deepmod = DpmodComb(DeepMod.out.deepmod_out.collect(), ch_ctar, ch_src, ch_utils)
