@@ -36,14 +36,29 @@ def helpMessage() {
 	Mandatory arguments:
 	  --dsname		Dataset/analysis name
 	  --input		Input path for raw fast5 files (folders, tar/tar.gz files)
-	  --genome		Genome reference name ('hg38', 'ecoli', or 'hg38_chr22') or directory, a directory must contain only one .fasta file with .fasta.fai index file, default is hg38
+	  --genome		Genome reference name ('hg38', 'ecoli', or 'hg38_chr22') or a directory, the directory must contain only one .fasta file with .fasta.fai index file. Default is hg38
 
 	General options:
 	  --processors		Processors used for each task
 	  --outdir		Output dir, default is 'results'
 	  --chrSet		Chromosomes used in analysis, default is chr1-22, X and Y, for human. For E. coli data, it is default as 'NC_000913.3'. For other reference genome, please specify each chromosome with space seperated.
+	  --cleanAnalyses	If clean old basecalling info in fast5 files
+	  --skipBasecall	Skip redo basecalling if users provide basecalled inputs
 
 	  --cleanup		If clean work dir after complete, default is false
+
+	Tools specific options:
+	  --run[Tool-name]	By default, we run top four performers in nanome paper, specify '--run[Tool-name]' can include other tool, supported tools: NANOME, Megalodon, Nanopolish, DeepSignal, Guppy, Tombo, METEORE, and DeepMod
+	  --rerioDir		Rerio dir for Megalodon model, default will get online
+	  --MEGALODON_MODEL	Megalodon model name, default is 'res_dna_r941_min_modbases_5mC_v001.cfg'
+	  --guppyDir		Guppy installation local directory, used only for conda environment
+	  --GUPPY_BASECALL_MODEL	Guppy basecalling model, default is 'dna_r9.4.1_450bps_hac.cfg'
+	  --GUPPY_METHCALL_MODEL	Guppy methylation calling model, default is 'dna_r9.4.1_450bps_modbases_5mc_hac.cfg'
+	  --deepsignalDir	DeepSignal model dir, default will get online
+	  --tomboResquiggleOptions	Tombo resquiggle options for super long/damaged sequencing, set to '--signal-length-range 0 500000  --sequence-length-range 0 50000'
+	  --moveOption	If using move table for DeepMod, default is true
+	  --useDeepModCluster	If using DeepMod cluster model for human, default is false
+	  --METEOREDir	METEORE model dir, default will get online
 
 	Running environment options:
 	  --docker_name		Docker name used for pipeline, default is 'liuyangzzu/nanome:latest'
@@ -61,12 +76,6 @@ def helpMessage() {
 
 	  --googleProjectName	Google Cloud Platform (GCP) project name for google-lifesciences
 	  --config		Lifebit CloudOS config file, e.g., 'conf/executors/lifebit.config'
-
-	Tools's specific configurations:
-	  --run[Tool-name]	By default, we run top four performers in nanome paper, specify '--run[Tool-name]' can include other tool, supported tools: NANOME, Megalodon, Nanopolish, DeepSignal, Guppy, Tombo, METEORE, and DeepMod
-
-	Other options:
-	  --guppyDir		Guppy installation local directory, used only for conda environment
 
 	-profile options:
 	  Use this parameter to choose a predefined configuration profile. Profiles can give configuration presets for different compute environments.
@@ -92,7 +101,7 @@ if (params.help){
 // Check mandatory params
 if (! params.dsname)  exit 1, "Missing --dsname option for dataset name, check command help use --help"
 if (! params.input)  exit 1, "Missing --input option for input data, check command help use --help"
-if ( !file(params.input).exists() )   exit 1, "input does not exist, check params: --input ${params.input}"
+if ( !file(params.input.toString()).exists() )   exit 1, "input does not exist, check params: --input ${params.input}"
 
 // Parse genome params
 genome_map = params.genome_map
@@ -185,13 +194,23 @@ if (params.runMethcall) {
 	if (params.runTombo) summary['runTombo'] = 'Yes'
 	if (params.runMETEORE) summary['runMETEORE'] = 'Yes'
 	if (params.runDeepMod) summary['runDeepMod'] = 'Yes'
+
+	if (params.runDeepMod) {
+		summary['runDeepMod'] = 'Yes'
+		if (params.moveOption)  summary['runDeepMod'] = summary['runDeepMod'] + ' + (move table)'
+		if (isDeepModCluster)  {
+			summary['runDeepMod'] = summary['runDeepMod'] + ' + (cluster model)'
+		}
+	}
+
 	if (params.runNANOME) summary['runNANOME'] = 'Yes'
 }
+
 if (params.cleanAnalyses) summary['cleanAnalyses'] = 'Yes'
 if (params.deepsignalDir) { summary['deepsignalDir'] = params.deepsignalDir }
 if (params.rerioDir) {
 	summary['rerioDir'] = params.rerioDir
-	summary['MEGALODON_MODEL_FOR_GUPPY_CONFIG'] = params.MEGALODON_MODEL_FOR_GUPPY_CONFIG
+	summary['MEGALODON_MODEL'] = params.MEGALODON_MODEL
 }
 if (params.METEOREDir) { summary['METEOREDir'] = params.METEOREDir }
 if (params.guppyDir) { summary['guppyDir'] 	= params.guppyDir }
@@ -204,6 +223,20 @@ if (params.outputRaw) { summary['outputRaw'] 	= params.outputRaw }
 if (params.outputGenomeBrowser) { summary['outputGenomeBrowser'] 	= params.outputGenomeBrowser }
 if (params.deduplicate) { summary['deduplicate'] 	= params.deduplicate }
 if (params.sort) { summary['sort'] 	= params.sort }
+
+summary['\nModel summary']         = "--------"
+if (params.runBasecall && !params.skipBasecall) summary['GUPPY_BASECALL_MODEL'] 	= params.GUPPY_BASECALL_MODEL
+if (params.runMethcall && params.runMegalodon) summary['MEGALODON_MODEL'] 	= params.MEGALODON_MODEL
+if (params.runMethcall && params.runDeepSignal) summary['DEEPSIGNAL_MODEL_DIR/DEEPSIGNAL_MODEL'] 	= params.DEEPSIGNAL_MODEL_DIR + "/" + params.DEEPSIGNAL_MODEL
+if (params.runMethcall && params.runGuppy) summary['GUPPY_METHCALL_MODEL'] 	= params.GUPPY_METHCALL_MODEL
+if (params.runMethcall && params.runDeepMod) {
+	if (isDeepModCluster) {
+		summary['DEEPMOD_RNN_MODEL;DEEPMOD_CLUSTER_MODEL'] = "${params.DEEPMOD_RNN_MODEL};${params.DEEPMOD_CLUSTER_MODEL}"
+		summary['DEEPMOD_CFILE'] = params.DEEPMOD_CFILE
+	} else {
+		summary['DEEPMOD_RNN_MODEL'] = "${params.DEEPMOD_RNN_MODEL}"
+	}
+}
 
 summary['\nPipeline settings']         = "--------"
 summary['Working dir'] 		= workflow.workDir
@@ -265,7 +298,7 @@ log.info "================================="
 
 // Check all tools work well
 process EnvCheck {
-	tag 'EnvCheck'
+	tag "${params.dsname}"
 	errorStrategy 'terminate'
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
@@ -296,7 +329,7 @@ process EnvCheck {
 		if [[ ${rerioDir} == null* ]] ; then
 			# Obtain and run R9.4.1, MinION, 5mC CpG model from Rerio
 			git clone ${params.rerioGithub}
-			rerio/download_model.py rerio/basecall_models/${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG.replace('.cfg', '')}
+			rerio/download_model.py rerio/basecall_models/${params.MEGALODON_MODEL.replace('.cfg', '')}
 		else
 			if [[ ${rerioDir} != rerio ]] ; then
 				## rename it to rerio for output channel
@@ -307,17 +340,15 @@ process EnvCheck {
 		ls -lh rerio/
 	fi
 
-	## Untar and prepare megalodon model
+	## Untar and prepare deepsignal model
 	if [[ ${params.runDeepSignal} == true && ${params.runMethcall} == true ]]; then
-		if [[ ${deepsignalDir} == null* ]] ; then
+		if [[ ${deepsignalDir} == *.tar.gz ]] ; then
 			## Get DeepSignal Model online
-			wget ${params.deepsignal_model_tar} --no-verbose &&\
-				tar -xzf ${params.DEEPSIGNAL_MODEL_TAR_GZ} &&\
-				rm -f ${params.DEEPSIGNAL_MODEL_TAR_GZ}
+			tar -xzf ${deepsignalDir}
 		else
 		 	if [[ ${deepsignalDir} != ${params.DEEPSIGNAL_MODEL_DIR} ]] ; then
 				## rename it to deepsignal default dir name
-				cp  -a ${rerioDir}  ${params.DEEPSIGNAL_MODEL_DIR}
+				cp  -a ${deepsignalDir}  ${params.DEEPSIGNAL_MODEL_DIR}
 			fi
 		fi
 
@@ -868,7 +899,7 @@ process Megalodon {
 			--mod-output-formats bedmethyl wiggle \
 			--write-mods-text --write-mod-log-probs \
 			--guppy-server-path \$(which guppy_basecall_server) \
-			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
+			--guppy-config ${params.MEGALODON_MODEL} \
 			--guppy-params "-d ./${rerio_dir}/basecall_models/" \
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--reference ${referenceGenome} \
@@ -885,7 +916,7 @@ process Megalodon {
 			--mod-output-formats bedmethyl wiggle \
 			--write-mods-text --write-mod-log-probs \
 			--guppy-server-path \$(which guppy_basecall_server) \
-			--guppy-config ${params.MEGALODON_MODEL_FOR_GUPPY_CONFIG} \
+			--guppy-config ${params.MEGALODON_MODEL} \
 			--guppy-params "-d ./${rerio_dir}/basecall_models/" \
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--reference ${referenceGenome} \
@@ -1603,7 +1634,7 @@ process DpmodComb {
 
 	input:
 	path x
-	path deepmod_c_tar_file
+	path deepmod_cfile
 	path ch_src
 	path ch_utils
 
@@ -1663,11 +1694,11 @@ process DpmodComb {
 		echo "### For human, apply cluster model of DeepMod"
 
 		## Get dir for deepmod cluster-model inputs
-		if [[ "${deepmod_c_tar_file}" == *.tar.gz ]] ; then
-			tar -xzf ${deepmod_c_tar_file}
+		if [[ "${deepmod_cfile}" == *.tar.gz ]] ; then
+			tar -xzf ${deepmod_cfile}
 		else
-			if [[ "${deepmod_c_tar_file}" != "C" ]] ; then
-				cp -a  ${deepmod_c_tar_file}   C
+			if [[ "${deepmod_cfile}" != "C" ]] ; then
+				cp -a  ${deepmod_cfile}   C
 			fi
 		fi
 
@@ -1754,11 +1785,9 @@ process METEORE {
 	params.runMethcall && params.runMETEORE
 
 	"""
-	if [[ ${METEOREDir} == null* ]] ; then
+	if [[ ${METEOREDir} == *.tar.gz ]] ; then
 		## Get METEORE model online
-		wget ${params.METEOREGithub}  --no-verbose &&\
-			tar -xzf v1.0.0.tar.gz &&\
-			rm -f v1.0.0.tar.gz
+		tar -xzf ${METEOREDir}
 	else
 		if [[ ${METEOREDir} != ${params.METEOREDirName} ]] ; then
 			## rename link folder
@@ -1878,7 +1907,7 @@ process Report {
 		modelContentTSVFileName=${params.dsname}_nanome_${params.NANOME_MODEL}_model_content.tsv
 		> \$modelContentTSVFileName
 		passModelTsv=false
-		if [[ "${params.NANOME_CONCENSUS_TOOLS}" == *"Nanopolish"* ]]; then
+		if [[ "${params.NANOME_CONSENSUS_TOOLS}" == *"Nanopolish"* ]]; then
 			NanopolishReadReport=\$(find . -maxdepth 1 -name '*Nanopolish-perRead-score.tsv.gz')
 			if [[ -z \$NanopolishReadReport ]] ; then
 				echo "### Not found Nanopolish read-level outputs"
@@ -1889,7 +1918,7 @@ process Report {
 			printf '%s\t%s\n' nanopolish \${NanopolishReadReport} >> \$modelContentTSVFileName
 		fi
 
-		if [[ "${params.NANOME_CONCENSUS_TOOLS}" == *"Megalodon"* ]]; then
+		if [[ "${params.NANOME_CONSENSUS_TOOLS}" == *"Megalodon"* ]]; then
 			MegalodonReadReport=\$(find . -maxdepth 1 -name '*Megalodon-perRead-score.tsv.gz')
 			if [[ -z \$MegalodonReadReport ]] ; then
 				echo "### Not found Megalodon read-level outputs"
@@ -1900,7 +1929,7 @@ process Report {
 			printf '%s\t%s\n' megalodon \${MegalodonReadReport} >> \$modelContentTSVFileName
 		fi
 
-		if [[ "${params.NANOME_CONCENSUS_TOOLS}" == *"DeepSignal"* ]]; then
+		if [[ "${params.NANOME_CONSENSUS_TOOLS}" == *"DeepSignal"* ]]; then
 			DeepSignalReadReport=\$(find . -maxdepth 1 -name '*DeepSignal-perRead-score.tsv.gz')
 			if [[ -z \$DeepSignalReadReport ]] ; then
 				echo "### Not found DeepSignal read-level outputs"
@@ -2038,7 +2067,7 @@ process Report {
 
 
 workflow {
-	if ( !file(genome_path).exists() )   exit 1, "genome reference file does not exist, check params: --genome ${params.genome}"
+	if ( !file(genome_path.toString()).exists() )   exit 1, "genome reference file does not exist, check params: --genome ${params.genome}"
 	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
 
 	if (!params.rerioDir) { // default if null, will online downloading
@@ -2046,16 +2075,16 @@ workflow {
 		rerioDir = Channel.fromPath("${projectDir}/utils/null1", type: 'any', checkIfExists: false)
 	} else {
 		// User provide the dir
-		if ( !file(params.rerioDir).exists() )   exit 1, "rerioDir does not exist, check params: --rerioDir ${params.rerioDir}"
+		if ( !file(params.rerioDir.toString()).exists() )   exit 1, "rerioDir does not exist, check params: --rerioDir ${params.rerioDir}"
 		rerioDir = Channel.fromPath(params.rerioDir, type: 'any', checkIfExists: true)
 	}
 
-	if (!params.deepsignalDir) { // default if null, will online downloading
-		// This is only a place holder for input
-		deepsignalDir = Channel.fromPath("${projectDir}/utils/null2", type: 'any', checkIfExists: false)
+	if (!params.deepsignalDir) {
+		// default if null, will online downloading
+		deepsignalDir = Channel.fromPath(params.DEEPSIGNAL_MODEL_ONLINE, type: 'any', checkIfExists: true)
 	} else {
 		// User provide the dir
-		if ( !file(params.deepsignalDir).exists() )   exit 1, "deepsignalDir does not exist, check params: --deepsignalDir ${params.deepsignalDir}"
+		if ( !file(params.deepsignalDir.toString()).exists() )   exit 1, "deepsignalDir does not exist, check params: --deepsignalDir ${params.deepsignalDir}"
 		deepsignalDir = Channel.fromPath(params.deepsignalDir, type: 'any', checkIfExists: true)
 	}
 
@@ -2132,8 +2161,8 @@ workflow {
 			// not use cluster model, only a place holder here
 			ch_ctar = Channel.fromPath("${projectDir}/utils/null1", type:'any', checkIfExists: false)
 		} else {
-			if ( !file(params.deepmod_ctar).exists() )   exit 1, "deepmod_ctar does not exist, check params: --deepmod_ctar ${params.deepmod_ctar}"
-			ch_ctar = Channel.fromPath(params.deepmod_ctar, type:'any', checkIfExists: true)
+			if ( !file(params.DEEPMOD_CFILE.toString()).exists() )   exit 1, "DEEPMOD_CFILE does not exist, check params: --DEEPMOD_CFILE ${params.DEEPMOD_CFILE}"
+			ch_ctar = Channel.fromPath(params.DEEPMOD_CFILE, type:'any', checkIfExists: true)
 		}
 		DeepMod(Basecall.out.basecall, EnvCheck.out.reference_genome)
 		comb_deepmod = DpmodComb(DeepMod.out.deepmod_out.collect(), ch_ctar, ch_src, ch_utils)
@@ -2145,9 +2174,9 @@ workflow {
 	if (params.runMETEORE && params.runMethcall) {
 		// Read level combine a list for top3 used by METEORE
 		if (!params.METEOREDir) {
-			METEOREDir_ch = Channel.fromPath("${projectDir}/utils/null1", type: 'any', checkIfExists: false)
+			METEOREDir_ch = Channel.fromPath(params.METEORE_GITHUB_ONLINE, type: 'any', checkIfExists: true)
 		} else {
-			if ( !file(params.METEOREDir).exists() )   exit 1, "METEOREDir does not exist, check params: --METEOREDir ${params.METEOREDir}"
+			if ( !file(params.METEOREDir.toString()).exists() )   exit 1, "METEOREDir does not exist, check params: --METEOREDir ${params.METEOREDir}"
 			METEOREDir_ch = Channel.fromPath(params.METEOREDir, type: 'any', checkIfExists: true)
 		}
 		METEORE(r1, r2, r3, ch_src, ch_utils, METEOREDir_ch)

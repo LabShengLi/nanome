@@ -34,7 +34,8 @@ nextflow run main.nf\
 	-w ${WORK_DIR_BUCKET} \
 	--outdir ${OUTPUT_DIR_BUCKET} \
 	--dsname TestData \
-	--input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt
+	--input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt\
+	--googleProjectName jax-nanopore-01
 
 echo "### nanome pipeline for demo data on google DONE"
 

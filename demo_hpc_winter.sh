@@ -46,5 +46,6 @@ nextflow run main.nf\
 # Report
 tree ${workDir} > ${baseDir}/work_demo_filetree.txt
 tree ${outputsDir} > ${baseDir}/outputs_demo_filetree.txt
+find  ${workDir}  -name 'Report.run.log' -exec tail {} \;
 
 echo "### nanome pipeline for demo data on HPC winter DONE"
