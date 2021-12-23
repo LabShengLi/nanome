@@ -340,17 +340,15 @@ process EnvCheck {
 		ls -lh rerio/
 	fi
 
-	## Untar and prepare megalodon model
+	## Untar and prepare deepsignal model
 	if [[ ${params.runDeepSignal} == true && ${params.runMethcall} == true ]]; then
-		if [[ ${deepsignalDir} == null* ]] ; then
+		if [[ ${deepsignalDir} == *.tar.gz ]] ; then
 			## Get DeepSignal Model online
-			wget ${params.DEEPSIGNAL_MODEL_ONLINE} --no-verbose &&\
-				tar -xzf ${params.DEEPSIGNAL_MODEL_DIR}.tar.gz &&\
-				rm -f ${params.DEEPSIGNAL_MODEL_DIR}.tar.gz
+			tar -xzf ${deepsignalDir}
 		else
 		 	if [[ ${deepsignalDir} != ${params.DEEPSIGNAL_MODEL_DIR} ]] ; then
 				## rename it to deepsignal default dir name
-				cp  -a ${rerioDir}  ${params.DEEPSIGNAL_MODEL_DIR}
+				cp  -a ${deepsignalDir}  ${params.DEEPSIGNAL_MODEL_DIR}
 			fi
 		fi
 
@@ -1787,11 +1785,9 @@ process METEORE {
 	params.runMethcall && params.runMETEORE
 
 	"""
-	if [[ ${METEOREDir} == null* ]] ; then
+	if [[ ${METEOREDir} == *.tar.gz ]] ; then
 		## Get METEORE model online
-		wget ${params.METEOREGithub}  --no-verbose &&\
-			tar -xzf v1.0.0.tar.gz &&\
-			rm -f v1.0.0.tar.gz
+		tar -xzf ${METEOREDir}
 	else
 		if [[ ${METEOREDir} != ${params.METEOREDirName} ]] ; then
 			## rename link folder
@@ -2083,9 +2079,9 @@ workflow {
 		rerioDir = Channel.fromPath(params.rerioDir, type: 'any', checkIfExists: true)
 	}
 
-	if (!params.deepsignalDir) { // default if null, will online downloading
-		// This is only a place holder for input
-		deepsignalDir = Channel.fromPath("${projectDir}/utils/null2", type: 'any', checkIfExists: false)
+	if (!params.deepsignalDir) {
+		// default if null, will online downloading
+		deepsignalDir = Channel.fromPath(params.DEEPSIGNAL_MODEL_ONLINE, type: 'any', checkIfExists: true)
 	} else {
 		// User provide the dir
 		if ( !file(params.deepsignalDir).exists() )   exit 1, "deepsignalDir does not exist, check params: --deepsignalDir ${params.deepsignalDir}"
@@ -2178,7 +2174,7 @@ workflow {
 	if (params.runMETEORE && params.runMethcall) {
 		// Read level combine a list for top3 used by METEORE
 		if (!params.METEOREDir) {
-			METEOREDir_ch = Channel.fromPath("${projectDir}/utils/null1", type: 'any', checkIfExists: false)
+			METEOREDir_ch = Channel.fromPath(params.METEORE_GITHUB_ONLINE, type: 'any', checkIfExists: true)
 		} else {
 			if ( !file(params.METEOREDir).exists() )   exit 1, "METEOREDir does not exist, check params: --METEOREDir ${params.METEOREDir}"
 			METEOREDir_ch = Channel.fromPath(params.METEOREDir, type: 'any', checkIfExists: true)
