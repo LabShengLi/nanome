@@ -528,7 +528,7 @@ process Basecall {
 				--config ${params.GUPPY_BASECALL_MODEL} \
 				--num_callers ${task.cpus} \
 				--fast5_out --compress_fastq\
-				--verbose_logs  &>> Basecall.run.log
+				--verbose_logs  &>> ${params.dsname}.${fast5_dir.baseName}.Basecall.run.log
 		elif [[ \${commandType} == "gpu" ]]; then
 			## GPU version command
 			guppy_basecaller --input_path ${fast5_dir} \
@@ -537,7 +537,7 @@ process Basecall {
 				--num_callers ${task.cpus} \
 				--fast5_out --compress_fastq\
 				--verbose_logs \
-				-x auto  &>> Basecall.run.log
+				-x auto  &>> ${params.dsname}.${fast5_dir.baseName}.Basecall.run.log
 		else
 			echo "### error value for commandType=\${commandType}"
 			exit 255
@@ -617,7 +617,7 @@ process QCExport {
 		## Perform QC report by NanoComp
 		NanoComp --summary ${params.dsname}_combine_sequencing_summary.txt.gz  \
 			--names ${params.dsname} --outdir ${params.dsname}_QCReport -t $cores \
-			--raw  -f pdf -p ${params.dsname}_   &>> QCReport.run.log
+			--raw  -f pdf -p ${params.dsname}_   &>> ${params.dsname}.QCReport.run.log
 	fi
 
 	if [[ ${params.outputBam} == true  || ${params.outputONTCoverage} == true ]]; then
@@ -717,7 +717,7 @@ process Resquiggle {
 		--basecall-group ${params.BasecallGroupName}\
 		--basecall-subgroup ${params.BasecallSubGroupName}\
 		--overwrite --processes  ${samtools_cores} \
-		&>> Resquiggle.run.log
+		&>> ${params.dsname}.${basecallIndir.baseName}.Resquiggle.run.log
 	echo "### tombo preprocess DONE"
 
 	### Need to check Tombo resquiggle bugs, lots of users report long runtime and hang at nearly completion for large data
@@ -733,7 +733,7 @@ process Resquiggle {
 		--ignore-read-locks ${params.tomboResquiggleOptions ? params.tomboResquiggleOptions : ''}\
 		--overwrite \
 		${basecallIndir.baseName}.resquiggle/workspace \
-		${referenceGenome} &>> Resquiggle.run.log
+		${referenceGenome} &>> ${params.dsname}.${basecallIndir.baseName}.Resquiggle.run.log
 
 	echo "### tombo resquiggle DONE"
 	"""
@@ -906,7 +906,7 @@ process Megalodon {
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--reference ${referenceGenome} \
 			--processes $cores\
-			&>> Megalodon.run.log
+			&>> ${params.dsname}.${fast5_dir.baseName}.Megalodon.run.log
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		## Ref: https://github.com/nanoporetech/megalodon
@@ -923,7 +923,7 @@ process Megalodon {
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--reference ${referenceGenome} \
 			--processes $cores --devices 0\
-			&>> Megalodon.run.log
+			&>> ${params.dsname}.${fast5_dir.baseName}.Megalodon.run.log
 	else
 		echo "### error value for commandType=\${commandType}"
 		exit 255
@@ -1032,7 +1032,7 @@ process DeepSignal {
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
 			--nproc $cores \
-			--is_gpu no
+			--is_gpu no   &>> ${params.dsname}.${indir.baseName}.DeepSignal.run.log
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		deepsignal call_mods \
@@ -1042,7 +1042,7 @@ process DeepSignal {
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
 			--nproc $cores \
-			--is_gpu yes
+			--is_gpu yes  &>> ${params.dsname}.${indir.baseName}.DeepSignal.run.log
 	else
 		echo "### error value for commandType=\${commandType}"
 		exit 255
@@ -1165,7 +1165,7 @@ process Guppy {
 			--config ${params.GUPPY_METHCALL_MODEL} \
 			--num_callers $task.cpus \
 			--fast5_out --compress_fastq\
-			--verbose_logs  &>> Guppy.run.log
+			--verbose_logs  &>> ${params.dsname}.${fast5_dir.baseName}.Guppy.run.log
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		guppy_basecaller --input_path \${indir} --recursive\
@@ -1174,7 +1174,7 @@ process Guppy {
 			--num_callers $task.cpus \
 			--fast5_out --compress_fastq\
 			--verbose_logs \
-			--device auto  &>> Guppy.run.log
+			--device auto  &>> ${params.dsname}.${fast5_dir.baseName}.Guppy.run.log
 	else
 		echo "### error value for commandType=\${commandType}"
 		exit 255
@@ -1432,11 +1432,11 @@ process Tombo {
 		--processes $task.cpus \
 		--corrected-group ${params.ResquiggleCorrectedGroup} \
 		--multiprocess-region-size ${params.tomboMultiprocessRegionSize} &> \
-		${resquiggleDir.baseName}.Tombo.run.log
+		${params.dsname}.${resquiggleDir.baseName}.Tombo.run.log
 
 	retry=1
 	## while grep -q "BrokenPipeError:" ${resquiggleDir.baseName}.Tombo.run.log
-	while ! tail -n 1 ${resquiggleDir.baseName}.Tombo.run.log |  grep -q "100%"
+	while ! tail -n 1 ${params.dsname}.${resquiggleDir.baseName}.Tombo.run.log |  grep -q "100%"
 	do
 		echo "### Found error in tombo detect_modifications, repeat tombo running again!!!"
 		tombo detect_modifications alternative_model \
@@ -1448,7 +1448,7 @@ process Tombo {
 			--processes $task.cpus \
 			--corrected-group ${params.ResquiggleCorrectedGroup} \
 			--multiprocess-region-size ${params.tomboMultiprocessRegionSize} &> \
-			${resquiggleDir.baseName}.Tombo.run.log
+			${params.dsname}.${resquiggleDir.baseName}.Tombo.run.log
 		retry=\$(( retry+1 ))
 		if (( retry >= 5 )); then
 			break
@@ -1456,7 +1456,7 @@ process Tombo {
 	done
 
 	## if grep -q "BrokenPipeError: \\[Errno 32\\] Broken pipe" ${resquiggleDir.baseName}.Tombo.run.log; then
-	if ! tail -n 1 ${resquiggleDir.baseName}.Tombo.run.log |  grep -q "100%" ; then
+	if ! tail -n 1 ${params.dsname}.${resquiggleDir.baseName}.Tombo.run.log |  grep -q "100%" ; then
 		## Grep the broken pipeline bug for Tombo
 		echo "### Tombo seems not finish 100% after retry reached at \${retry} times, please check by yourself, it may be software or genome reference problem."
 	else
@@ -1477,7 +1477,8 @@ process Tombo {
 	tombo_extract_per_read_stats.py \
 		genome.chome.sizes \
 		"${params.dsname}_tombo_batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats" \
-		"${params.dsname}_tombo_batch_${resquiggleDir.baseName}.bed"
+		"${params.dsname}_tombo_batch_${resquiggleDir.baseName}.bed" \
+		&>> ${params.dsname}.${resquiggleDir.baseName}.Tombo.run.log
 
 	gzip -f ${params.dsname}_tombo_batch_${resquiggleDir.baseName}.bed
 
@@ -1598,7 +1599,7 @@ process DeepMod {
 			--modfile \${DeepModTrainModelDir}/${params.DEEPMOD_RNN_MODEL} \
 			--FileID batch_${basecallDir.baseName}_num \
 			--threads ${task.cpus * params.mediumProcTimes} \
-			${params.moveOption ? '--move' : ' '} &>> DeepMod.run.log
+			${params.moveOption ? '--move' : ' '} &>> ${params.dsname}.${basecallDir.baseName}.DeepMod.run.log
 
 	if [[ "${params.outputIntermediate}" == true ]] ; then
 		tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
@@ -1680,7 +1681,7 @@ process DpmodComb {
 	## merge different runs of modification detection
 	## ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#2-how-to-merge-different-runs-of-modification-detection
 	sum_chr_mod.py \
-		indir/ C ${params.dsname}.deepmod ${chrSet.split(' ').join(',')}  &>> DpmodComb.run.log
+		indir/ C ${params.dsname}.deepmod ${chrSet.split(' ').join(',')}  &>> ${params.dsname}.DpmodComb.run.log
 
 	> ${params.dsname}_deepmod_c_per_site_combine.bed
 
@@ -1709,7 +1710,7 @@ process DpmodComb {
 		hm_cluster_predict.py \
 			indir/${params.dsname}.deepmod \
 			./C \
-			\${DeepModTrainModelDir}/${params.DEEPMOD_CLUSTER_MODEL} &>> DpmodComb.run.log
+			\${DeepModTrainModelDir}/${params.DEEPMOD_CLUSTER_MODEL} &>> ${params.dsname}.DpmodComb.run.log
 
 		> ${params.dsname}_deepmod_clusterCpG_per_site_combine.bed
 		for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
@@ -1742,7 +1743,7 @@ process DpmodComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  DeepMod DeepMod\
 		\${callfn} \
-		.  $task.cpus  2  ${params.sort ? true : false} "${chrSet}"  &>> DpmodComb.run.log
+		.  $task.cpus  2  ${params.sort ? true : false} "${chrSet}"  &>> ${params.dsname}.DpmodComb.run.log
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -1823,13 +1824,13 @@ process METEORE {
 		-i \${modelContentFileName} \
 		-m optimized -b \${METEOREDIR} \
 		-o ${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.tsv.gz\
-		&>> METEORE.run.log
+		&>> ${params.dsname}.METEORE.run.log
 
 	# Use default parameters from the sklearn library (n_estimator = 100 and max_dep = None)
 	##\${combineScript}\
 	##	-i \${modelContentFileName} -m default -b \${METEOREDIR} \
 	##	-o ${params.dsname}.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz\
-	##	&>> METEORE.run.log
+	##	&>> ${params.dsname}.METEORE.run.log
 
 	if [[ ${params.deduplicate} == true ]] ; then
 		echo "### Deduplicate for read-level outputs"
@@ -1849,7 +1850,7 @@ process METEORE {
 			${params.dsname}  METEORE METEORE\
 			${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.tsv.gz \
 			.  $task.cpus  12   ${params.sort ? true : false}  "${chrSet}"\
-			&>> METEORE.run.log
+			&>> ${params.dsname}.METEORE.run.log
 	fi
 	echo "### METEORE consensus DONE"
 	"""
@@ -1948,7 +1949,7 @@ process Report {
 			PYTHONPATH=src python src/nanocompare/xgboost/xgboost_predict.py \
 				--contain-na --tsv-input\
 				--dsname ${params.dsname} -i \${modelContentTSVFileName}\
-				-m ${params.NANOME_MODEL}  -o ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz &>> Report.run.log  || true
+				-m ${params.NANOME_MODEL}  -o ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz &>> ${params.dsname}.Report.run.log  || true
 
 			if [[ ${params.deduplicate} == true ]] ; then
 				echo "### Deduplicate for read-level outputs"
@@ -2013,7 +2014,7 @@ process Report {
 		. \
 		${params.dsname}_NANOME_report \
 		./src/nanocompare/report\
-		${tools_version_tsv}  &>> Report.run.log
+		${tools_version_tsv}  &>> ${params.dsname}.Report.run.log
 
 	## Combine a single html report
 	## No tty usage, ref: https://github.com/remy/inliner/issues/151
@@ -2027,7 +2028,7 @@ process Report {
 		src/nanocompare/report/readme.txt.template ${params.dsname} ${params.outdir}\
 		${workflow.projectDir} ${workflow.workDir} "${workflow.commandLine}"\
 		${workflow.runName} "${workflow.start}"\
-		> README_${params.dsname}.txt   2>> Report.run.log
+		> README_${params.dsname}.txt   2>> ${params.dsname}.Report.run.log
 
 	## Output BigWig format for IGV
 	if [[ ${params.outputGenomeBrowser} == true ]] ; then

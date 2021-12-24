@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=nanome.teradata.demo
+#SBATCH --job-name=nanome.teradata_hpc
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 #SBATCH -q training
@@ -12,7 +12,7 @@
 #SBATCH --mail-type=END
 
 # sbatch teradata_demo_hpc.sh chr22
-
+set -e
 date; hostname; pwd
 chrName=${1:-"chr22"}
 baseDir=${2:-"/fastscratch/$USER/nanome"}
@@ -21,6 +21,7 @@ branchName=${3:-"master"}
 pipelineDir=${baseDir}/na12878_${chrName}_test
 rm -rf $pipelineDir
 mkdir -p $pipelineDir
+cd $pipelineDir
 
 ########################################
 ########################################
@@ -28,8 +29,7 @@ mkdir -p $pipelineDir
 module load singularity
 echo "### Start test on teradata ${chrName}"
 
-set -ex
-cd $pipelineDir
+set -x
 nextflow pull TheJacksonLaboratory/nanome -r $branchName
 nextflow run TheJacksonLaboratory/nanome -r $branchName\
         -resume -with-report -with-timeline -with-trace -with-dag\
