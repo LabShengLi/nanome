@@ -144,7 +144,7 @@ if __name__ == '__main__':
     sitedf = None
 
     logger.debug(f"Start predict by XGBoost......")
-    predX = datadf.loc[:, tool_list]
+    predX = datadf.loc[:, tool_list].astype(float)
     prediction = pd.DataFrame(xgboost_cls.predict(predX))
     prediction.rename(columns={0: "Prediction"}, inplace=True)
 
