@@ -6,12 +6,12 @@
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
 """
 Install:
-    conda install -c conda-forge parallel
     pip install build twine
 
 Build package command:
-    find . -name '*.egg-info' -type d | parallel -j1 -v rm -r {} ; \
-        rm -rf dist/*  && python -m build
+    find . -name '*.egg-info' -type d -exec rm -rf {} \+ &&\
+        rm -rf dist/*  &&\
+        python -m build
 
     twine upload dist/*
 """
