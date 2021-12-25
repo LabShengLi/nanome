@@ -23,7 +23,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="nanome-jax",
-    version="1.3.22",
+    version="1.3.23",
     author="Yang Liu",
     author_email="yang.liu@jax.org",
     description="NANOME (Nanopore methylation) pipeline developed by Li Lab at The Jackson Laboratory",
@@ -34,7 +34,7 @@ setuptools.setup(
         'Bug Tracker': 'https://github.com/TheJacksonLaboratory/nanome/issues'
     },
     packages=(
-        setuptools.find_packages(where="src", exclude=("*.resource", "*.*.saniti_ecoli",))
+        setuptools.find_packages(where="src", exclude=("*.resource", "*.*.saniti_ecoli", "*.*.xgboost.sanity",))
     ),
     package_dir={'nanocompare': 'src/nanocompare'},
     scripts=[
