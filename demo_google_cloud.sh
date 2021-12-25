@@ -29,7 +29,7 @@ date;hostname;pwd
 ###########################################
 ### Run Test pipeline on google cloud
 set +x
-source /home/liuya/anaconda3/etc/profile.d/conda.sh
+source $(conda info --base)/etc/profile.d/conda.sh
 conda activate py39
 gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} >/dev/null 2>&1 || true
 set -x
