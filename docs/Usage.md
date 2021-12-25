@@ -72,9 +72,9 @@ nextflow run TheJacksonLaboratory/nanome\
     --googleProjectName  [Google-project-name]
 ```
 
-## Running results and outputs
+## Running results
 
-Pipeline running results is below, output directory trees are [outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/outputs_demo.tree.txt) and [work](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/work_demo.tree.txt). It can also generates [timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_demo.pdf), [report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_demo.pdf) and [resource usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_demo.txt.tsv) with more Nextflow [options](https://www.nextflow.io/docs/latest/tracing.html) (e.g., `-with-report -with-timeline -with-trace -with-dag -resume`).
+Pipeline running results is below, output directory trees are [results](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/outputs_demo.tree.txt) and [work](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/work_demo.tree.txt). It can also generates [timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_demo.pdf), [report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_demo.pdf) and [resource usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_demo.txt.tsv) with more Nextflow [options](https://www.nextflow.io/docs/latest/tracing.html) (e.g., `-with-report -with-timeline -with-trace -with-dag -resume`).
 
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
@@ -110,7 +110,7 @@ Succeeded   : 28
 ```
 
 
-All tools' methlation calling and evaluation results will be output to `outputs` folder by default below.
+All tools' methlation calling and evaluation results will be output to `results` folder by default below.
 
 ```angular2html
 tree results/TestData-methylation-callings/
@@ -195,7 +195,7 @@ CPU hours   : 0.7
 Succeeded   : 14
 ```
 
-The output files of pipeline on E. coli data by all tools are below, please also check the pipeline output directory tree for [outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/outputs_ecoli.tree.txt) and [work](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/work_ecoli.tree.txt). The pipeline can also generate [timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_ecoli.pdf), [report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_ecoli.pdf) and [resource usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_ecoli.txt.tsv).
+The output files of pipeline on E. coli data by all tools are below, please also check the pipeline output directory tree for [results](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/outputs_ecoli.tree.txt) and [work](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/work_ecoli.tree.txt). The pipeline can also generate [timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_ecoli.pdf), [report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_ecoli.pdf) and [resource usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_ecoli.txt.tsv).
 
 # 3. Support for other reference genome
 We now support other reference genome. Below is an example of running NANOME for any other reference genomes, please make sure you put reference genome file .fasta and the indexed file into directory [reference-genome-dir], the `--chrSet` is the chomosomes params for the specific genome. 
