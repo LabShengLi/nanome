@@ -1,6 +1,6 @@
 **This is an explanation of how to use NANOME pipeline on raw Fast5 input. For specific scenarios, please check [Specific Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/SpecificUsage.md).**
 
-The inputs of NANOME pipeline is a folder/tar/tar.gz or txt file list containing raw signal Fast5 files and a reference genome. We recommend allocate GPU resources to softwares such as Guppy, DeepSignal, DeepMod and Megalodon, in order to optimal running times. We integrated a latest tool METEORE, it depends on other tools' read-level outputs (e.g., Megalodon and DeepSignal), and running METEORE program directly on them, detailed please check [METEORE](https://github.com/comprna/METEORE).
+The inputs of NANOME pipeline is a folder/tar/tar.gz or txt file list containing raw signal Fast5 files and a reference genome. We recommend allocate GPU resources to software such as Guppy, DeepSignal, DeepMod and Megalodon, in order to optimal running times. We integrated the latest tool METEORE, it depends on other tools' read-level outputs (e.g., Megalodon and DeepSignal), and running METEORE program directly on them, detailed please check [METEORE](https://github.com/comprna/METEORE).
 
 # 1. Running NANOME for human nanopore sequencing data
 
@@ -36,9 +36,9 @@ nextflow run TheJacksonLaboratory/nanome\
 ```
 
 ## Methylation-calling tool configuration
-By default, NANOME pipeline will execute top four performers: **Nanopolish, Megalodon, DeepSignal and Guppy**, we also provide a **NANOME concensus results** using XGBoost model trained on all fully methylated and unmethylated CpGs based on Nanopolish, Megalodon and DeepSignal outputs. The model is very robust and can deal with NA values, and can make prediction if there is a prediction by any tool.
+By default, NANOME pipeline will execute top four performers: **Nanopolish, Megalodon, DeepSignal and Guppy**, we also provide a **NANOME consensus results** using XGBoost model trained on all fully methylated and unmethylated CpGs based on Nanopolish, Megalodon and DeepSignal outputs. The model is very robust and can deal with NA values, and can make prediction if there is a prediction by any tool.
 
-The NANOME concensus results can cover more CpGs than any single tool, and perform a slightly better performance. User can supply params `--run[tool-name]` with values `true` or `false` to configure if running a specific tool. 
+The NANOME consensus results can cover more CpGs than any single tool, and perform a slightly better performance. User can supply params `--run[tool-name]` with values `true` or `false` to configure if running a specific tool. 
 
 ## Pre-defined pipeline profiles
 `-profile` is the name of execution configuration, we support various of  configurations, e.g., `conda`, `docker`, `singularity`, `hpc` and `google`. Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments.
@@ -62,7 +62,7 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
 * `google`	
   * A generic configuration profile to be used on [Google Cloud](https://cloud.google.com/) platform with **google-lifesciences** support.
 
-You can also running NANOME pipeline on cloud computing platform ([google cloud platform](https://cloud.google.com/) or [Lifebit CloudOS](https://lifebit.gitbook.io/cloudos/)), sample of command line is below.
+You can also run NANOME pipeline on cloud computing platform ([google cloud platform](https://cloud.google.com/) or [Lifebit CloudOS](https://lifebit.gitbook.io/cloudos/)), sample of command line is below.
 ```angular2html
 # Running test on Google Cloud (https://cloud.google.com)
 nextflow run TheJacksonLaboratory/nanome\
@@ -72,9 +72,9 @@ nextflow run TheJacksonLaboratory/nanome\
     --googleProjectName  [Google-project-name]
 ```
 
-## Running results and outputs
+## Running results
 
-Pipeline running results is below, output directory trees are [outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/outputs_demo.tree.txt) and [work](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/work_demo.tree.txt). It can also generates [timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_demo.pdf), [report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_demo.pdf) and [resource usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_demo.txt.tsv) with more Nextflow [options](https://www.nextflow.io/docs/latest/tracing.html) (e.g., `-with-report -with-timeline -with-trace -with-dag -resume`).
+Pipeline running results is below, output directory trees are [results](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/outputs_demo.tree.txt) and [work](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/work_demo.tree.txt). It can also generate [timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_demo.pdf), [report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_demo.pdf) and [resource usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_demo.txt.tsv) with more Nextflow [options](https://www.nextflow.io/docs/latest/tracing.html) (e.g., `-with-report -with-timeline -with-trace -with-dag -resume`).
 
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
@@ -110,7 +110,7 @@ Succeeded   : 28
 ```
 
 
-All tools' methlation calling and evaluation results will be output to `outputs` folder by default below.
+All tools' methylation calling and evaluation results will be output to `results` folder by default below.
 
 ```angular2html
 tree results/TestData-methylation-callings/
@@ -157,7 +157,7 @@ nextflow run TheJacksonLaboratory/nanome --help
 ```
 
 # 2. Experiment for E. coli data
-The NANOME pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--genome` need to be set as `ecoli`. Below is an example of pipeline runing on E. coli data, please refer to the input parameters for pipeline params' config file [ecoli_demo.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/examples/ecoli_demo.config).
+The NANOME pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--genome` need to be set as `ecoli`. Below is an example of pipeline running on E. coli data, please refer to the input parameters for pipeline params' config file [ecoli_demo.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/examples/ecoli_demo.config).
 
 ```angular2html
 nextflow run TheJacksonLaboratory/nanome\
@@ -195,10 +195,10 @@ CPU hours   : 0.7
 Succeeded   : 14
 ```
 
-The output files of pipeline on E. coli data by all tools are below, please also check the pipeline output directory tree for [outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/outputs_ecoli.tree.txt) and [work](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/work_ecoli.tree.txt). The pipeline can also generate [timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_ecoli.pdf), [report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_ecoli.pdf) and [resource usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_ecoli.txt.tsv).
+The output files of pipeline on E. coli data by all tools are below, please also check the pipeline output directory tree for [results](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/outputs_ecoli.tree.txt) and [work](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/work_ecoli.tree.txt). The pipeline can also generate [timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_ecoli.pdf), [report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_ecoli.pdf) and [resource usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_ecoli.txt.tsv).
 
 # 3. Support for other reference genome
-We now support other reference genome. Below is an example of running NANOME for any other reference genomes, please make sure you put reference genome file .fasta and the indexed file into directory [reference-genome-dir], the `--chrSet` is the chomosomes params for the specific genome. 
+We now support other reference genome. Below is an example of running NANOME for any other reference genomes, please make sure you put reference genome file .fasta and the indexed file into directory [reference-genome-dir], the `--chrSet` is the chromosomes params for the specific genome. 
 
 ```angular2html
 nextflow run TheJacksonLaboratory/nanome\
@@ -206,10 +206,10 @@ nextflow run TheJacksonLaboratory/nanome\
     --dsname [your-dataset-name]\
     --input [input-file]\
     --genome [reference-genome-dir]\
-    --chrSet '[chomosomes sperated by a space]'
+    --chrSet '[chromosomes separated by a space]'
 ```
 
-Note: NANOME support the default behaviour of each tool's running, if the tool perfomed on the genome you specified is same as human/E. coli data. 
+Note: NANOME support the default behaviour of each tool's running, if the tool performed on the genome you specified is same as human/E. coli data. 
 
 # 4. Benchmarking experiment
 We constructed a list of benchmarking datasets that contain Fast5 reads from 800 to 7,200  for NA19240. The datasets can be got by users upon request. Following command is running NANOME pipeline on our benchmarking datasets, please refer to the input parameters for config file [benchmarking_hpc.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/executors/benchmarking_hpc.config).
@@ -226,7 +226,7 @@ Resource usage are reported by [Nextflow](https://www.nextflow.io/) workflow rep
 
 # 5. Running pipeline on cloud computing platform
 
-Our Nextflow pipeline can running on CloudOS. The CloudOS recommend using the Docker image. Below is an example.
+Our Nextflow pipeline can run on CloudOS. The CloudOS recommend using the Docker image. Below is an example.
 
 ```angular2html
 nextflow run TheJacksonLaboratory/nanome\
@@ -236,7 +236,7 @@ nextflow run TheJacksonLaboratory/nanome\
     --googleProjectName  [Google-project-name]
 ```
 
-The `[Google-project-name]` is your google project name, and `[Google-storage-bucket]` is the **Data Bucket** name that you can access on google cloud. `-w` is pipeline output working directory, `--outdir` is the directory for methylation-calling results.
+The `[Google-project-name]` is your Google project name, and `[Google-storage-bucket]` is the **Data Bucket** name that you can access on Google Cloud. `-w` is pipeline output working directory, `--outdir` is the directory for methylation-calling results.
 
 For more detail of using cloud computing, please check [Cloud computing usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/CloudComputing.md).
 
@@ -250,12 +250,19 @@ cd nanome
 conda env create --name nanome --file=environment.yml
 conda activate nanome
 
-pip install megalodon==2.3.5
+pip install megalodon==2.4.1
 npm install -g inliner
+conda install -c conda-forge -c bioconda nextflow
 
 # Run NANOME pipeline using local execution
 conda activate nanome
 nextflow run TheJacksonLaboratory/nanome\
+    -profile test\
+    --guppyDir [guppy-installation-directory]
+
+# Another way
+conda run --no-capture-output  --name nanome\
+    nextflow run TheJacksonLaboratory/nanome\
     -profile test\
     --guppyDir [guppy-installation-directory]
 

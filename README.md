@@ -98,7 +98,7 @@ nextflow run TheJacksonLaboratory/nanome\
 nextflow run TheJacksonLaboratory/nanome\
     -profile test_human,[docker/singularity]
 ```
-Please note that above commands are integrated in our **CI/CD test cases**. Our Github will automatically test and report results on every commit and PRs (https://github.com/TheJacksonLaboratory/nanome/actions). 
+Please note that above commands are integrated in our **CI/CD test cases**. Our GitHub will automatically test and report results on every commit and PRs (https://github.com/TheJacksonLaboratory/nanome/actions). 
 
 We firstly proposed the **standardized whole genome-wide evaluation packages**, check [standardized evaluation tool usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Eval.md) for more detail. We do not suggest evaluating on a portion of CpGs for performance comparisons.
 
@@ -140,7 +140,7 @@ For release history, please visit [here](https://github.com/TheJacksonLaboratory
 
 
 ## Contact
-If you have any questions/issues/bugs, please post them on [GitHub](https://github.com/TheJacksonLaboratory/nanome/issues). We will continuously update the Github to support famous methylation-calling tools for Oxford Nanopore sequencing.
+If you have any questions/issues/bugs, please post them on [GitHub](https://github.com/TheJacksonLaboratory/nanome/issues). We will continuously update the GitHub to support famous methylation-calling tools for Oxford Nanopore sequencing.
 
 
 ## Reference

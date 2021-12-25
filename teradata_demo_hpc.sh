@@ -1,41 +1,40 @@
-#!/bin/bash -e
-#SBATCH --job-name=nanome.teradata.demo
+#!/bin/bash
+#SBATCH --job-name=nanome.teradata_hpc
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 #SBATCH -q training
 #SBATCH -N 1 # number of nodes
-#SBATCH -n 1 # number of cores
+#SBATCH -n 12 # number of cores
 #SBATCH --mem=10G # memory pool for all cores
 #SBATCH --time=14-00:00:00 # time
 #SBATCH --output=log/%x.%j.log # STDOUT & STDERR
 #SBATCH --mail-user=yang.liu@jax.org
 #SBATCH --mail-type=END
+
+# sbatch teradata_demo_hpc.sh chr22
+set -e
 date; hostname; pwd
-# run on winter: chr22
-#             sbatch teradata_demo_hpc.sh
+chrName=${1:-"chr22"}
+baseDir=${2:-"/fastscratch/$USER/nanome"}
+branchName=${3:-"master"}
 
-# Base directory of running and output for nanome
-baseDir=${1:-/fastscratch/li-lab/nanome}
-workDir=${baseDir}/work-na12878
-outputsDir=${baseDir}/outputs-na12878
-
-########################################
-# Clean old results
-rm -rf ${workDir} ${outputsDir} &&\
-    mkdir -p ${workDir} ${outputsDir}
+pipelineDir=${baseDir}/na12878_${chrName}_test
+rm -rf $pipelineDir
+mkdir -p $pipelineDir
+cd $pipelineDir
 
 ########################################
 ########################################
-# Running pipeline for tera data, more options:  -with-report -with-timeline -with-trace -with-dag
+# Running pipeline for tera data, more options:
 module load singularity
-echo "### Start test on teradata"
-set -ex
-nextflow run main.nf -resume\
-        -profile singularity,hpc \
-        -config conf/executors/jaxhpc_input.config,conf/executors/na12878_hpc.config\
-        -work-dir ${workDir} \
-        --outdir ${outputsDir} \
-        --dsname NA12878_CHR22 \
-        --input 'https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/na12878_chr22.filelist.txt'
+echo "### Start test on teradata ${chrName}"
 
-echo "### Run pass on teradata for NANOME"
+set -x
+nextflow pull TheJacksonLaboratory/nanome -r $branchName
+nextflow run TheJacksonLaboratory/nanome -r $branchName\
+        -resume -with-report -with-timeline -with-trace -with-dag\
+        -profile singularity,hpc \
+        -config ${NANOME_DIR}/conf/executors/jaxhpc_input.config,${NANOME_DIR}/conf/executors/na12878_hpc.config\
+        --dsname NA12878_${chrName} \
+        --input "https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/na12878_${chrName^^}.filelist.txt"
+echo "### Run pass on teradata ${chrName} for NANOME"

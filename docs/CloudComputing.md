@@ -1,4 +1,4 @@
-# Running pipeline on google cloud platform
+# Running pipeline on Google Cloud Platform
 
 ## Authentication step (only need once configuration)
 1. Install google API from https://anaconda.org/conda-forge/google-cloud-sdk.
@@ -54,7 +54,7 @@ nextflow run TheJacksonLaboratory/nanome\
     cd nanome
     gcloud builds submit --tag us.gcr.io/[PROJECT_ID]/nanome:latest --timeout=2000s
     ```
-Check the Container Regestry link like https://console.cloud.google.com/gcr/images/[PROJECT_ID] for above pushed internal Docker container.
+Check the Container Registry link like https://console.cloud.google.com/gcr/images/[PROJECT_ID] for above pushed internal Docker container.
 
 ## Running pipeline
 
@@ -75,6 +75,6 @@ Enable 'Private Google access' for the network/subnet.
 
 
 ## References
-* Google cloud for Nextflow: https://cloud.google.com/life-sciences/docs/tutorials/nextflow  
+* Google Cloud for Nextflow: https://cloud.google.com/life-sciences/docs/tutorials/nextflow  
 * Nextflow on GCP: https://www.nextflow.io/docs/latest/google.html
 * Sandeep sample codes: https://github.com/snamburi3/nextflow-starter-cloud

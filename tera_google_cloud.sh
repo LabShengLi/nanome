@@ -1,5 +1,5 @@
-#!/bin/bash -e
-#SBATCH --job-name=nanome.google.tera
+#!/bin/bash
+#SBATCH --job-name=nanome.google_tera
 #SBATCH -p compute
 #SBATCH -q long
 #SBATCH -N 1 # number of nodes
@@ -10,7 +10,7 @@
 #SBATCH --mail-user=yang.liu@jax.org
 #SBATCH --mail-type=END
 
-set -ex
+set -e
 date;hostname;pwd
 
 ###########################################
@@ -21,12 +21,13 @@ date;hostname;pwd
 WORK_DIR_BUCKET=${1:-"gs://jax-nanopore-01-project-data/NANOME_tera-work"}
 OUTPUT_DIR_BUCKET=${2:-"gs://jax-nanopore-01-export-bucket/NANOME_tera_ouputs"}
 
-## gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} >/dev/null 2>&1 || true
+gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} >/dev/null 2>&1 || true
 
 ###########################################
 ###########################################
 ###########################################
 ### Run pipeline on google for NA12878
+set -x
 echo "### nanome pipeline for NA12878 some chr and part file on google START"
 nextflow run main.nf\
     -profile docker,google -resume -with-report -with-timeline -with-trace -with-dag\

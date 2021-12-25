@@ -85,8 +85,8 @@ def helpMessage() {
 	  test		A bundle of input params for ecoli test
 	  test_human	A bundle of input params for human test
 	  docker 	A generic configuration profile to be used with Docker, pulls software from Docker Hub: liuyangzzu/nanome:latest
-	  singulairy	A generic configuration profile to be used with Singularity, pulls software from: docker://liuyangzzu/nanome:latest
-	  conda		Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Check our GitHub for how to install local conda enviroment
+	  singularity	A generic configuration profile to be used with Singularity, pulls software from: docker://liuyangzzu/nanome:latest
+	  conda		Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Check our GitHub for how to install local conda environment
 	  hpc		A generic configuration profile to be used on HPC cluster with SLURM
 	  google	A generic configuration profile to be used on Google Cloud platform with 'google-lifesciences'
 
@@ -94,7 +94,7 @@ def helpMessage() {
 	""".stripIndent()
 }
 
-// Show help emssage
+// Show help message
 if (params.help){
     helpMessage()
     exit 0
@@ -108,7 +108,8 @@ if ( !file(params.input.toString()).exists() )   exit 1, "input does not exist, 
 // Parse genome params
 genome_map = params.genome_map
 
-if (genome_map[params.genome]) { genome_path = genome_map[params.genome] } else { 	genome_path = params.genome }
+if (genome_map[params.genome]) { genome_path = genome_map[params.genome] }
+else { 	genome_path = params.genome }
 
 // infer dataType, chrSet based on reference genome name, hg - human, ecoli - ecoli, otherwise is other reference genome
 if (params.genome.contains('hg') || (params.dataType && params.dataType == 'human')) {
@@ -132,7 +133,7 @@ if (params.genome.contains('hg') || (params.dataType && params.dataType == 'huma
 	if (!params.dataType) { dataType = 'other' } else { dataType = params.dataType }
 	if (!params.chrSet) {
 		// No default value for other reference genome
-		exit 1, "Missing --chrSet option for other reference genome, please sepecify chromsomes used in reference genome [${params.genome}]"
+		exit 1, "Missing --chrSet option for other reference genome, please specify chromosomes used in reference genome [${params.genome}]"
 	}
 	chrSet = params.chrSet
 }
@@ -147,7 +148,8 @@ ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: fals
 def referenceGenome = 'reference_genome/ref.fasta'
 def chromSizesFile = 'reference_genome/chrom.sizes'
 
-if (dataType == 'human') { isDeepModCluster = params.useDeepModCluster } else { 	isDeepModCluster = false }
+if (dataType == 'human') { isDeepModCluster = params.useDeepModCluster }
+else { isDeepModCluster = false }
 
 
 // Collect all folders of fast5 files, and send into Channels for pipelines
@@ -229,11 +231,13 @@ if (params.sort) { summary['sort'] 	= params.sort }
 summary['\nModel summary']         = "--------"
 if (params.runBasecall && !params.skipBasecall) summary['GUPPY_BASECALL_MODEL'] 	= params.GUPPY_BASECALL_MODEL
 if (params.runMethcall && params.runMegalodon) summary['MEGALODON_MODEL'] 	= params.MEGALODON_MODEL
-if (params.runMethcall && params.runDeepSignal) summary['DEEPSIGNAL_MODEL_DIR/DEEPSIGNAL_MODEL'] 	= params.DEEPSIGNAL_MODEL_DIR + "/" + params.DEEPSIGNAL_MODEL
+if (params.runMethcall && params.runDeepSignal) summary['DEEPSIGNAL_MODEL_DIR/DEEPSIGNAL_MODEL'] =\
+ 	params.DEEPSIGNAL_MODEL_DIR + "/" + params.DEEPSIGNAL_MODEL
 if (params.runMethcall && params.runGuppy) summary['GUPPY_METHCALL_MODEL'] 	= params.GUPPY_METHCALL_MODEL
 if (params.runMethcall && params.runDeepMod) {
 	if (isDeepModCluster) {
-		summary['DEEPMOD_RNN_MODEL;DEEPMOD_CLUSTER_MODEL'] = "${params.DEEPMOD_RNN_MODEL};${params.DEEPMOD_CLUSTER_MODEL}"
+		summary['DEEPMOD_RNN_MODEL;DEEPMOD_CLUSTER_MODEL'] = \
+			"${params.DEEPMOD_RNN_MODEL};${params.DEEPMOD_CLUSTER_MODEL}"
 		summary['DEEPMOD_CFILE'] = params.DEEPMOD_CFILE
 	} else {
 		summary['DEEPMOD_RNN_MODEL'] = "${params.DEEPMOD_RNN_MODEL}"
@@ -256,7 +260,8 @@ summary['maxRetries']       = params.maxRetries
 if (params.echo)  summary['echo'] = params.echo
 if (params.cleanup)   summary['cleanup'] = params.cleanup
 
-if (workflow.profile.contains('hpc') || workflow.profile.contains('winter') || workflow.profile.contains('sumner') ) {
+if (workflow.profile.contains('hpc') || workflow.profile.contains('winter') ||\
+ 	workflow.profile.contains('sumner') ) {
 	summary['\nHPC settings']         = "--------"
     summary['queue']        = params.queue
     summary['qos']          = params.qos
@@ -528,7 +533,7 @@ process Basecall {
 				--config ${params.GUPPY_BASECALL_MODEL} \
 				--num_callers ${task.cpus} \
 				--fast5_out --compress_fastq\
-				--verbose_logs  &>> Basecall.run.log
+				--verbose_logs  &>> ${params.dsname}.${fast5_dir.baseName}.Basecall.run.log
 		elif [[ \${commandType} == "gpu" ]]; then
 			## GPU version command
 			guppy_basecaller --input_path ${fast5_dir} \
@@ -537,7 +542,7 @@ process Basecall {
 				--num_callers ${task.cpus} \
 				--fast5_out --compress_fastq\
 				--verbose_logs \
-				-x auto  &>> Basecall.run.log
+				-x auto  &>> ${params.dsname}.${fast5_dir.baseName}.Basecall.run.log
 		else
 			echo "### error value for commandType=\${commandType}"
 			exit 255
@@ -555,7 +560,8 @@ process Basecall {
 	 	"${fast5_dir.baseName}.basecalled/fail/" -maxdepth 1 -name '*.fastq.gz' -type f\
 	 	-print0 2>/dev/null | \
 	 	while read -d \$'\0' file ; do
-	 		cat \$file >> "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz
+	 		cat \$file >> \
+	 			"${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz
 	 	done
 	echo "### Combine fastq.gz DONE"
 
@@ -617,7 +623,7 @@ process QCExport {
 		## Perform QC report by NanoComp
 		NanoComp --summary ${params.dsname}_combine_sequencing_summary.txt.gz  \
 			--names ${params.dsname} --outdir ${params.dsname}_QCReport -t $cores \
-			--raw  -f pdf -p ${params.dsname}_   &>> QCReport.run.log
+			--raw  -f pdf -p ${params.dsname}_   &>> ${params.dsname}.QCReport.run.log
 	fi
 
 	if [[ ${params.outputBam} == true  || ${params.outputONTCoverage} == true ]]; then
@@ -648,8 +654,10 @@ process QCExport {
 			awk '\$4 = \$4 FS "-"' |
 			gzip -f > ${params.dsname}.coverage.negativestrand.bed.gz
 
-		cat ${params.dsname}.coverage.positivestrand.bed.gz > ${params.dsname}_ONT_coverage_combine.bed.gz
-		cat ${params.dsname}.coverage.negativestrand.bed.gz >> ${params.dsname}_ONT_coverage_combine.bed.gz
+		cat ${params.dsname}.coverage.positivestrand.bed.gz > \
+			${params.dsname}_ONT_coverage_combine.bed.gz
+		cat ${params.dsname}.coverage.negativestrand.bed.gz >> \
+			${params.dsname}_ONT_coverage_combine.bed.gz
 
 		mv ${params.dsname}_ONT_coverage_combine.bed.gz ${params.dsname}_QCReport/
 	fi
@@ -657,11 +665,13 @@ process QCExport {
 	[ -f ${params.dsname}_combine_sequencing_summary.txt.gz ] && \
 		mv -f ${params.dsname}_combine_sequencing_summary.txt.gz ${params.dsname}_QCReport/
 	[ -f ${params.dsname}_QCReport/${params.dsname}_NanoComp-report.html ] && \
-		mv -f ${params.dsname}_QCReport/${params.dsname}_NanoComp-report.html ${params.dsname}_basecall_report.html
+		mv -f ${params.dsname}_QCReport/${params.dsname}_NanoComp-report.html \
+		 	${params.dsname}_basecall_report.html
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
-		rm -f ${params.dsname}.coverage.positivestrand.bed.gz ${params.dsname}.coverage.negativestrand.bed.gz
+		rm -f ${params.dsname}.coverage.positivestrand.bed.gz \
+		 	${params.dsname}.coverage.negativestrand.bed.gz
 		rm -f merge_all_fq.fq.gz
 		if [[ ${params.outputBam} == false ]]; then
 			rm -f ${params.dsname}_merge_all_bam.bam*
@@ -700,7 +710,8 @@ process Resquiggle {
 	mkdir -p ${basecallIndir.baseName}.resquiggle/workspace
 
 	### original basecalled results will be parrallelly used by other processes
-	cp -f ${basecallIndir}/batch_basecall_combine_fq_*.fq.gz  ${basecallIndir.baseName}.resquiggle/
+	cp -f ${basecallIndir}/batch_basecall_combine_fq_*.fq.gz  \
+		${basecallIndir.baseName}.resquiggle/
 
 	## cp -rf ${basecallIndir}/workspace  ${basecallIndir.baseName}.resquiggle/
 	find ${basecallIndir}/workspace -name '*.fast5' -type f| \
@@ -717,7 +728,7 @@ process Resquiggle {
 		--basecall-group ${params.BasecallGroupName}\
 		--basecall-subgroup ${params.BasecallSubGroupName}\
 		--overwrite --processes  ${samtools_cores} \
-		&>> Resquiggle.run.log
+		&>> ${params.dsname}.${basecallIndir.baseName}.Resquiggle.run.log
 	echo "### tombo preprocess DONE"
 
 	### Need to check Tombo resquiggle bugs, lots of users report long runtime and hang at nearly completion for large data
@@ -733,7 +744,7 @@ process Resquiggle {
 		--ignore-read-locks ${params.tomboResquiggleOptions ? params.tomboResquiggleOptions : ''}\
 		--overwrite \
 		${basecallIndir.baseName}.resquiggle/workspace \
-		${referenceGenome} &>> Resquiggle.run.log
+		${referenceGenome} &>> ${params.dsname}.${basecallIndir.baseName}.Resquiggle.run.log
 
 	echo "### tombo resquiggle DONE"
 	"""
@@ -772,7 +783,9 @@ process Nanopolish {
 	## Index, ref: https://github.com/jts/nanopolish#data-preprocessing
 	## Index the raw read with fastq, we do not index in basecalled dir, in case of cache can be work
 	ln -s \${fastqFile}  \${fastqFile##*/}
-	nanopolish index -d ${basecallDir}/workspace -s ${basecallDir}/${basecallDir.baseName}-sequencing_summary.txt  \${fastqFile##*/}
+	nanopolish index -d ${basecallDir}/workspace \
+		-s ${basecallDir}/${basecallDir.baseName}-sequencing_summary.txt \
+		\${fastqFile##*/}
 
 	## Aligning reads to the reference genome, ref: https://nanopolish.readthedocs.io/en/latest/quickstart_call_methylation.html#aligning-reads-to-the-reference-genome
 	minimap2 -t ${samtools_cores}  -a -x map-ont ${referenceGenome} \${fastqFile##*/} | \
@@ -840,7 +853,8 @@ process NplshComb {
 			sort -V -u -k1,1 -k3,3n -k4,4n -k5,5 -k2,2 |\
 			gzip -f > ${params.dsname}_nanopolish_per_read_combine.sort.tsv.gz
 		rm ${params.dsname}_nanopolish_per_read_combine.tsv.gz &&\
-			mv ${params.dsname}_nanopolish_per_read_combine.sort.tsv.gz ${params.dsname}_nanopolish_per_read_combine.tsv.gz
+			mv ${params.dsname}_nanopolish_per_read_combine.sort.tsv.gz \
+				${params.dsname}_nanopolish_per_read_combine.tsv.gz
 	fi
 
 	## Unify format output
@@ -906,7 +920,7 @@ process Megalodon {
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--reference ${referenceGenome} \
 			--processes $cores\
-			&>> Megalodon.run.log
+			&>> ${params.dsname}.${fast5_dir.baseName}.Megalodon.run.log
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		## Ref: https://github.com/nanoporetech/megalodon
@@ -923,7 +937,7 @@ process Megalodon {
 			--guppy-timeout ${params.GUPPY_TIMEOUT} \
 			--reference ${referenceGenome} \
 			--processes $cores --devices 0\
-			&>> Megalodon.run.log
+			&>> ${params.dsname}.${fast5_dir.baseName}.Megalodon.run.log
 	else
 		echo "### error value for commandType=\${commandType}"
 		exit 255
@@ -983,7 +997,8 @@ process MgldnComb {
 			sort -V -u -k2,2 -k4,4n -k1,1 -k3,3 |\
 			gzip -f > ${params.dsname}_megalodon_per_read_combine.sort.bed.gz
 		rm ${params.dsname}_megalodon_per_read_combine.bed.gz &&\
-			mv ${params.dsname}_megalodon_per_read_combine.sort.bed.gz  ${params.dsname}_megalodon_per_read_combine.bed.gz
+			mv ${params.dsname}_megalodon_per_read_combine.sort.bed.gz \
+			 	${params.dsname}_megalodon_per_read_combine.bed.gz
 	fi
 
 	## Unify format output
@@ -1032,7 +1047,7 @@ process DeepSignal {
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
 			--nproc $cores \
-			--is_gpu no
+			--is_gpu no   &>> ${params.dsname}.${indir.baseName}.DeepSignal.run.log
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		deepsignal call_mods \
@@ -1042,7 +1057,7 @@ process DeepSignal {
 			--reference_path ${referenceGenome} \
 			--corrected_group ${params.ResquiggleCorrectedGroup} \
 			--nproc $cores \
-			--is_gpu yes
+			--is_gpu yes  &>> ${params.dsname}.${indir.baseName}.DeepSignal.run.log
 	else
 		echo "### error value for commandType=\${commandType}"
 		exit 255
@@ -1094,7 +1109,8 @@ process DpSigComb {
 			sort -V -u -k1,1 -k2,2n -k5,5 -k3,3 |\
 			gzip -f > ${params.dsname}_deepsignal_per_read_combine.sort.tsv.gz
 		rm ${params.dsname}_deepsignal_per_read_combine.tsv.gz &&\
-			mv ${params.dsname}_deepsignal_per_read_combine.sort.tsv.gz  ${params.dsname}_deepsignal_per_read_combine.tsv.gz
+			mv ${params.dsname}_deepsignal_per_read_combine.sort.tsv.gz  \
+				${params.dsname}_deepsignal_per_read_combine.tsv.gz
 	fi
 
 	## Unify format output
@@ -1165,7 +1181,7 @@ process Guppy {
 			--config ${params.GUPPY_METHCALL_MODEL} \
 			--num_callers $task.cpus \
 			--fast5_out --compress_fastq\
-			--verbose_logs  &>> Guppy.run.log
+			--verbose_logs  &>> ${params.dsname}.${fast5_dir.baseName}.Guppy.run.log
 	elif [[ \${commandType} == "gpu" ]]; then
 		## GPU version command
 		guppy_basecaller --input_path \${indir} --recursive\
@@ -1174,7 +1190,7 @@ process Guppy {
 			--num_callers $task.cpus \
 			--fast5_out --compress_fastq\
 			--verbose_logs \
-			--device auto  &>> Guppy.run.log
+			--device auto  &>> ${params.dsname}.${fast5_dir.baseName}.Guppy.run.log
 	else
 		echo "### error value for commandType=\${commandType}"
 		exit 255
@@ -1313,7 +1329,8 @@ process GuppyComb {
 	## find name like batch_*.guppy.fast5mod_guppy2sam.bam*
 	find . -maxdepth 1  -name '${params.dsname}_guppy_fast5mod_batch_*_guppy2sam.bam' |
 		parallel -j$task.cpus --xargs -v \
-		samtools merge -@${task.cpus * params.mediumProcTimes}  ${params.dsname}_guppy_fast5mod_combine.bam {}
+		samtools merge -@${task.cpus * params.mediumProcTimes} \
+		 	${params.dsname}_guppy_fast5mod_combine.bam {}
 
 	### sort is not needed due to merge the sorted bam, ref: http://www.htslib.org/doc/samtools-merge.html
 	### samtools sort -@ ${samtools_cores} total.meth.bam
@@ -1321,7 +1338,8 @@ process GuppyComb {
 	echo "Samtool merge and index for fast5mod DONE"
 
 	if [[ ${params.outputIntermediate} == true ]] ; then
-		tar -czf bamfile_${params.dsname}_guppy_fast5mod_combine.bam.tar.gz ${params.dsname}_guppy_fast5mod_combine.bam*
+		tar -czf bamfile_${params.dsname}_guppy_fast5mod_combine.bam.tar.gz \
+			${params.dsname}_guppy_fast5mod_combine.bam*
 	fi
 
 	awk '/^>/' ${referenceGenome} | awk '{print \$1}' \
@@ -1336,7 +1354,7 @@ process GuppyComb {
 			fi
 		done
 		rm  -f rf_chr_all_list.txt
-		echo "### Chomosome list"
+		echo "### Chromosome list"
 		cat chr_all_list.txt
 
 		## Ref: https://github.com/nanoporetech/medaka/issues/177
@@ -1374,7 +1392,8 @@ process GuppyComb {
 			sort -V -u -k1,1 -k3,3n -k5,5 -k2,2 |\
 			gzip -f > ${params.dsname}_guppy_gcf52ref_per_read_combine.sort.tsv.gz
 		rm ${params.dsname}_guppy_gcf52ref_per_read_combine.tsv.gz &&\
-			mv ${params.dsname}_guppy_gcf52ref_per_read_combine.sort.tsv.gz ${params.dsname}_guppy_gcf52ref_per_read_combine.tsv.gz
+			mv ${params.dsname}_guppy_gcf52ref_per_read_combine.sort.tsv.gz \
+				${params.dsname}_guppy_gcf52ref_per_read_combine.tsv.gz
 	fi
 
 	if [[ ${params.runGuppyGcf52ref} == true ]] ; then
@@ -1432,11 +1451,11 @@ process Tombo {
 		--processes $task.cpus \
 		--corrected-group ${params.ResquiggleCorrectedGroup} \
 		--multiprocess-region-size ${params.tomboMultiprocessRegionSize} &> \
-		${resquiggleDir.baseName}.Tombo.run.log
+		${params.dsname}.${resquiggleDir.baseName}.Tombo.run.log
 
 	retry=1
 	## while grep -q "BrokenPipeError:" ${resquiggleDir.baseName}.Tombo.run.log
-	while ! tail -n 1 ${resquiggleDir.baseName}.Tombo.run.log |  grep -q "100%"
+	while ! tail -n 1 ${params.dsname}.${resquiggleDir.baseName}.Tombo.run.log |  grep -q "100%"
 	do
 		echo "### Found error in tombo detect_modifications, repeat tombo running again!!!"
 		tombo detect_modifications alternative_model \
@@ -1448,7 +1467,7 @@ process Tombo {
 			--processes $task.cpus \
 			--corrected-group ${params.ResquiggleCorrectedGroup} \
 			--multiprocess-region-size ${params.tomboMultiprocessRegionSize} &> \
-			${resquiggleDir.baseName}.Tombo.run.log
+			${params.dsname}.${resquiggleDir.baseName}.Tombo.run.log
 		retry=\$(( retry+1 ))
 		if (( retry >= 5 )); then
 			break
@@ -1456,7 +1475,7 @@ process Tombo {
 	done
 
 	## if grep -q "BrokenPipeError: \\[Errno 32\\] Broken pipe" ${resquiggleDir.baseName}.Tombo.run.log; then
-	if ! tail -n 1 ${resquiggleDir.baseName}.Tombo.run.log |  grep -q "100%" ; then
+	if ! tail -n 1 ${params.dsname}.${resquiggleDir.baseName}.Tombo.run.log |  grep -q "100%" ; then
 		## Grep the broken pipeline bug for Tombo
 		echo "### Tombo seems not finish 100% after retry reached at \${retry} times, please check by yourself, it may be software or genome reference problem."
 	else
@@ -1477,7 +1496,8 @@ process Tombo {
 	tombo_extract_per_read_stats.py \
 		genome.chome.sizes \
 		"${params.dsname}_tombo_batch_${resquiggleDir.baseName}.CpG.tombo.per_read_stats" \
-		"${params.dsname}_tombo_batch_${resquiggleDir.baseName}.bed"
+		"${params.dsname}_tombo_batch_${resquiggleDir.baseName}.bed" \
+		&>> ${params.dsname}.${resquiggleDir.baseName}.Tombo.run.log
 
 	gzip -f ${params.dsname}_tombo_batch_${resquiggleDir.baseName}.bed
 
@@ -1530,7 +1550,8 @@ process TomboComb {
 			sort -V -u -k1,1 -k3,3n -k4,4 -k6,6 |\
 			gzip -f > ${params.dsname}_tombo_per_read_combine.sort.bed.gz
 		rm ${params.dsname}_tombo_per_read_combine.bed.gz &&\
-			mv ${params.dsname}_tombo_per_read_combine.sort.bed.gz  ${params.dsname}_tombo_per_read_combine.bed.gz
+			mv ${params.dsname}_tombo_per_read_combine.sort.bed.gz  \
+				${params.dsname}_tombo_per_read_combine.bed.gz
 	fi
 
 	## Unify format output
@@ -1598,7 +1619,8 @@ process DeepMod {
 			--modfile \${DeepModTrainModelDir}/${params.DEEPMOD_RNN_MODEL} \
 			--FileID batch_${basecallDir.baseName}_num \
 			--threads ${task.cpus * params.mediumProcTimes} \
-			${params.moveOption ? '--move' : ' '} &>> DeepMod.run.log
+			${params.moveOption ? '--move' : ' '} \
+			&>> ${params.dsname}.${basecallDir.baseName}.DeepMod.run.log
 
 	if [[ "${params.outputIntermediate}" == true ]] ; then
 		tar -czf batch_${basecallDir.baseName}_num.tar.gz mod_output/batch_${basecallDir.baseName}_num/
@@ -1680,7 +1702,8 @@ process DpmodComb {
 	## merge different runs of modification detection
 	## ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#2-how-to-merge-different-runs-of-modification-detection
 	sum_chr_mod.py \
-		indir/ C ${params.dsname}.deepmod ${chrSet.split(' ').join(',')}  &>> DpmodComb.run.log
+		indir/ C ${params.dsname}.deepmod ${chrSet.split(' ').join(',')} \
+		&>> ${params.dsname}.DpmodComb.run.log
 
 	> ${params.dsname}_deepmod_c_per_site_combine.bed
 
@@ -1709,7 +1732,8 @@ process DpmodComb {
 		hm_cluster_predict.py \
 			indir/${params.dsname}.deepmod \
 			./C \
-			\${DeepModTrainModelDir}/${params.DEEPMOD_CLUSTER_MODEL} &>> DpmodComb.run.log
+			\${DeepModTrainModelDir}/${params.DEEPMOD_CLUSTER_MODEL} \
+			&>> ${params.dsname}.DpmodComb.run.log
 
 		> ${params.dsname}_deepmod_clusterCpG_per_site_combine.bed
 		for f in \$(ls -1 indir/${params.dsname}.deepmod_clusterCpG.*.C.bed)
@@ -1742,7 +1766,8 @@ process DpmodComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  DeepMod DeepMod\
 		\${callfn} \
-		.  $task.cpus  2  ${params.sort ? true : false} "${chrSet}"  &>> DpmodComb.run.log
+		.  $task.cpus  2  ${params.sort ? true : false} "${chrSet}"\
+		&>> ${params.dsname}.DpmodComb.run.log
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -1823,13 +1848,13 @@ process METEORE {
 		-i \${modelContentFileName} \
 		-m optimized -b \${METEOREDIR} \
 		-o ${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.tsv.gz\
-		&>> METEORE.run.log
+		&>> ${params.dsname}.METEORE.run.log
 
 	# Use default parameters from the sklearn library (n_estimator = 100 and max_dep = None)
 	##\${combineScript}\
 	##	-i \${modelContentFileName} -m default -b \${METEOREDIR} \
 	##	-o ${params.dsname}.meteore.megalodon_deepsignal_default_rf_model_per_read.combine.tsv.gz\
-	##	&>> METEORE.run.log
+	##	&>> ${params.dsname}.METEORE.run.log
 
 	if [[ ${params.deduplicate} == true ]] ; then
 		echo "### Deduplicate for read-level outputs"
@@ -1849,7 +1874,7 @@ process METEORE {
 			${params.dsname}  METEORE METEORE\
 			${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.tsv.gz \
 			.  $task.cpus  12   ${params.sort ? true : false}  "${chrSet}"\
-			&>> METEORE.run.log
+			&>> ${params.dsname}.METEORE.run.log
 	fi
 	echo "### METEORE consensus DONE"
 	"""
@@ -1948,7 +1973,9 @@ process Report {
 			PYTHONPATH=src python src/nanocompare/xgboost/xgboost_predict.py \
 				--contain-na --tsv-input\
 				--dsname ${params.dsname} -i \${modelContentTSVFileName}\
-				-m ${params.NANOME_MODEL}  -o ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz &>> Report.run.log  || true
+				-m ${params.NANOME_MODEL}  \
+				-o ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz \
+				&>> ${params.dsname}.Report.run.log  || true
 
 			if [[ ${params.deduplicate} == true ]] ; then
 				echo "### Deduplicate for read-level outputs"
@@ -2013,11 +2040,12 @@ process Report {
 		. \
 		${params.dsname}_NANOME_report \
 		./src/nanocompare/report\
-		${tools_version_tsv}  &>> Report.run.log
+		${tools_version_tsv}  &>> ${params.dsname}.Report.run.log
 
 	## Combine a single html report
 	## No tty usage, ref: https://github.com/remy/inliner/issues/151
-	script -qec "inliner ${params.dsname}_NANOME_report/nanome_report.html" /dev/null  > ${params.dsname}_nanome_report.html
+	script -qec "inliner ${params.dsname}_NANOME_report/nanome_report.html" /dev/null \
+	  	> ${params.dsname}_nanome_report.html
 
 	## Used for lifebit rendering feature
 	cp ${params.dsname}_nanome_report.html   multiqc_report.html
@@ -2027,7 +2055,7 @@ process Report {
 		src/nanocompare/report/readme.txt.template ${params.dsname} ${params.outdir}\
 		${workflow.projectDir} ${workflow.workDir} "${workflow.commandLine}"\
 		${workflow.runName} "${workflow.start}"\
-		> README_${params.dsname}.txt   2>> Report.run.log
+		> README_${params.dsname}.txt   2>> ${params.dsname}.Report.run.log
 
 	## Output BigWig format for IGV
 	if [[ ${params.outputGenomeBrowser} == true ]] ; then
@@ -2069,7 +2097,9 @@ process Report {
 
 
 workflow {
-	if ( !file(genome_path.toString()).exists() )   exit 1, "genome reference file does not exist, check params: --genome ${params.genome}"
+	if ( !file(genome_path.toString()).exists() )
+		exit 1, "genome reference file does not exist, check params: --genome ${params.genome}"
+
 	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
 
 	if (!params.rerioDir) { // default if null, will online downloading
@@ -2077,7 +2107,8 @@ workflow {
 		rerioDir = Channel.fromPath("${projectDir}/utils/null1", type: 'any', checkIfExists: false)
 	} else {
 		// User provide the dir
-		if ( !file(params.rerioDir.toString()).exists() )   exit 1, "rerioDir does not exist, check params: --rerioDir ${params.rerioDir}"
+		if ( !file(params.rerioDir.toString()).exists() )
+			exit 1, "rerioDir does not exist, check params: --rerioDir ${params.rerioDir}"
 		rerioDir = Channel.fromPath(params.rerioDir, type: 'any', checkIfExists: true)
 	}
 
@@ -2086,7 +2117,8 @@ workflow {
 		deepsignalDir = Channel.fromPath(params.DEEPSIGNAL_MODEL_ONLINE, type: 'any', checkIfExists: true)
 	} else {
 		// User provide the dir
-		if ( !file(params.deepsignalDir.toString()).exists() )   exit 1, "deepsignalDir does not exist, check params: --deepsignalDir ${params.deepsignalDir}"
+		if ( !file(params.deepsignalDir.toString()).exists() )
+			exit 1, "deepsignalDir does not exist, check params: --deepsignalDir ${params.deepsignalDir}"
 		deepsignalDir = Channel.fromPath(params.deepsignalDir, type: 'any', checkIfExists: true)
 	}
 
@@ -2163,7 +2195,8 @@ workflow {
 			// not use cluster model, only a place holder here
 			ch_ctar = Channel.fromPath("${projectDir}/utils/null1", type:'any', checkIfExists: false)
 		} else {
-			if ( !file(params.DEEPMOD_CFILE.toString()).exists() )   exit 1, "DEEPMOD_CFILE does not exist, check params: --DEEPMOD_CFILE ${params.DEEPMOD_CFILE}"
+			if ( !file(params.DEEPMOD_CFILE.toString()).exists() )
+				exit 1, "DEEPMOD_CFILE does not exist, check params: --DEEPMOD_CFILE ${params.DEEPMOD_CFILE}"
 			ch_ctar = Channel.fromPath(params.DEEPMOD_CFILE, type:'any', checkIfExists: true)
 		}
 		DeepMod(Basecall.out.basecall, EnvCheck.out.reference_genome)
@@ -2178,7 +2211,8 @@ workflow {
 		if (!params.METEOREDir) {
 			METEOREDir_ch = Channel.fromPath(params.METEORE_GITHUB_ONLINE, type: 'any', checkIfExists: true)
 		} else {
-			if ( !file(params.METEOREDir.toString()).exists() )   exit 1, "METEOREDir does not exist, check params: --METEOREDir ${params.METEOREDir}"
+			if ( !file(params.METEOREDir.toString()).exists() )
+				exit 1, "METEOREDir does not exist, check params: --METEOREDir ${params.METEOREDir}"
 			METEOREDir_ch = Channel.fromPath(params.METEOREDir, type: 'any', checkIfExists: true)
 		}
 		METEORE(r1, r2, r3, ch_src, ch_utils, METEOREDir_ch)
@@ -2198,5 +2232,7 @@ workflow {
 		r1, r2, r3
 		).toList().set { tools_read_unify }
 
-	Report(tools_site_unify, tools_read_unify, EnvCheck.out.tools_version_tsv, QCExport.out.qc_report, EnvCheck.out.reference_genome, ch_src, ch_utils)
+	Report(tools_site_unify, tools_read_unify,
+			EnvCheck.out.tools_version_tsv, QCExport.out.qc_report,
+			EnvCheck.out.reference_genome, ch_src, ch_utils)
 }
