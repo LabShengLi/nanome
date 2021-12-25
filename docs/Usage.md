@@ -250,13 +250,19 @@ cd nanome
 conda env create --name nanome --file=environment.yml
 conda activate nanome
 
-pip install megalodon==2.3.5
+pip install megalodon==2.4.1
 npm install -g inliner
 conda install -c conda-forge -c bioconda nextflow
 
 # Run NANOME pipeline using local execution
 conda activate nanome
 nextflow run TheJacksonLaboratory/nanome\
+    -profile test\
+    --guppyDir [guppy-installation-directory]
+
+# Another way
+conda run --no-capture-output  --name nanome\
+    nextflow run TheJacksonLaboratory/nanome\
     -profile test\
     --guppyDir [guppy-installation-directory]
 
