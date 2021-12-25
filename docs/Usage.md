@@ -252,6 +252,7 @@ conda activate nanome
 
 pip install megalodon==2.3.5
 npm install -g inliner
+conda install -c conda-forge -c bioconda nextflow
 
 # Run NANOME pipeline using local execution
 conda activate nanome
