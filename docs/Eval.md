@@ -1,6 +1,6 @@
 **This is an explanation of how to use script to perform read-level and site-level performance evaluation.**
 
-User needs to provide ONT tools's methylation-calling raw outputs and BS-seq data before evaluations. The genome-annotation files may needed if performances at specific genomic regions are interested. 
+User needs to provide ONT tools' methylation-calling raw outputs and BS-seq data before evaluations. The genome-annotation files may be needed if performances at specific genomic regions are interested. 
 
 **Please note that we strongly suggest providing the whole genome-wide CpGs for performance comparison across tools, we do not suggest selecting a portion of CpGs for comparison**.
 
@@ -17,7 +17,7 @@ pip install nanome-jax
 pip show nanome-jax
 ```
 
-**If your system support docker or singularity, you can directly running evaluation tool without any installations**:
+**If your system support docker or singularity, you can directly run evaluation tool without any installations**:
 ```angular2html
 ## Check nanome-jax package in docker
 docker run liuyangzzu/nanome:latest pip show nanome-jax
@@ -28,7 +28,7 @@ singularity exec docker://liuyangzzu/nanome:latest pip show nanome-jax
 
 # 1. Read-level performance evaluation
 ## Script for read-level evaluation
-The script `read_level_eval.py` is desinged for general purpose of read-level performance evaluation for all kinds of tools.
+The script `read_level_eval.py` is designed for general purpose of read-level performance evaluation for all kinds of tools.
 
 ```angular2html
 read_level_eval.py -v
@@ -117,7 +117,7 @@ optional arguments:
 # 2. Site-level performance evaluation
 
 ## Script for site-level evaluation
-The script `site_level_eval.py` is desinged for general purpose of site-level performance evaluation for all kinds of tools.
+The script `site_level_eval.py` is designed for general purpose of site-level performance evaluation for all kinds of tools.
 
 ```angular2html
 site_level_eval.py -v
@@ -177,7 +177,7 @@ optional arguments:
                         cutoff for coverage in nanopore tools, default is >=3
   --chrSet CHRSET [CHRSET ...]
                         chromosome list, default is human chr1-22, X and Y
-  --sep SEP             seperator for output csv file
+  --sep SEP             separator for output csv file
   --processors PROCESSORS
                         number of processors used, default is 1
   -o O                  output base dir
@@ -205,7 +205,7 @@ optional arguments:
 
 
 ## Script for unified format conversion
-The script `tss_eval.py` is desinged for general purpose of converting raw results of all kinds of tools into a unified format.
+The script `tss_eval.py` is designed for general purpose of converting raw results of all kinds of tools into a unified format.
 
 ```angular2html
 tss_eval.py -v
@@ -274,7 +274,7 @@ optional arguments:
                         all ONT call results <tool-name>:<encode>:<file-name> seperated by spaces
   --bgtruth BGTRUTH     background truth file <encode-type>:<file-name1>;<file-name2>
   --read-level-format   if true, it will output read level results (1-based start), else it will output site-level results (0-based start, 1-based end)
-  --sep SEP             seperator for output csv file, default is tab character
+  --sep SEP             separators for output csv file, default is tab character
   --processors PROCESSORS
                         running processors, default is 1
   -o O                  output base dir
@@ -309,7 +309,7 @@ optional arguments:
   -i I                  input data file
   -r R                  region BED file
   -o O                  output file
-  --sep SEP             file seperator, default is TAB
+  --sep SEP             file separator, default is TAB
   --bed-format BED_FORMAT
                         BED file start format 0/1, default is 1
   --strand-intersect    if BED file intersect using strand sensitive mode

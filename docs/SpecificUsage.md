@@ -1,7 +1,7 @@
 **This is an explanation of how to use NANOME pipeline on some specific scenarios. For general usage, please check [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md).**
 ## 1. How to use other reference genome in NANOME? 
 
-NANOME support other reference genome. Below is an example of running NANOME for any other reference genomes, please make sure you put reference genome file .fasta and the indexed file into directory [reference-genome-dir], the `--chrSet` is the chomosomes params for the specific genome. 
+NANOME support other reference genome. Below is an example of running NANOME for any other reference genomes, please make sure you put reference genome file .fasta and the indexed file into directory [reference-genome-dir], the `--chrSet` is the chromosomes params for the specific genome. 
 
 ```angular2html
 nextflow run TheJacksonLaboratory/nanome\
@@ -9,7 +9,7 @@ nextflow run TheJacksonLaboratory/nanome\
     --dsname [your-dataset-name]\
     --input [input-file]\
     --genome [reference-genome-dir]\
-    --chrSet '[chomosomes sperated by a space]'
+    --chrSet '[chromosomes separated by a space]'
 ```
 
 The reference genome folder `other_ref` will be like below:
@@ -22,9 +22,9 @@ other_ref
 ```
 
 Note: 
-* NANOME support the default behaviour of each tool's running, if the tool perfomed on the genome you specified is same as human/E. coli data. 
+* NANOME support the default behaviour of each tool's running, if the tool performed on the genome you specified is same as human/E. coli data. 
 * please ensure there is only one `.fasta` file in genome reference folder, the index file is same name with suffix as `.fasta.fai`
-* please set param `--chrSet` with your interested chomosomes names, seperated by a space, such as `--chrSet 'chr1 chr2 chr3'` (the single quote character is important)
+* please set param `--chrSet` with your interested chromosomes names, seperated by a space, such as `--chrSet 'chr1 chr2 chr3'` (the single quote character is important)
 * for human or ecoli genome, NANOME will automatically set default chromosomes chr1-22, X, Y for human, NC_000913.3 for ecoli. Users can change the default setting by specifying `--chrSet` param
 
 ## 2. How to input basecalled data into NANOME? 
