@@ -85,8 +85,8 @@ def helpMessage() {
 	  test		A bundle of input params for ecoli test
 	  test_human	A bundle of input params for human test
 	  docker 	A generic configuration profile to be used with Docker, pulls software from Docker Hub: liuyangzzu/nanome:latest
-	  singulairy	A generic configuration profile to be used with Singularity, pulls software from: docker://liuyangzzu/nanome:latest
-	  conda		Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Check our GitHub for how to install local conda enviroment
+	  singularity	A generic configuration profile to be used with Singularity, pulls software from: docker://liuyangzzu/nanome:latest
+	  conda		Please only use conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity. Check our GitHub for how to install local conda environment
 	  hpc		A generic configuration profile to be used on HPC cluster with SLURM
 	  google	A generic configuration profile to be used on Google Cloud platform with 'google-lifesciences'
 
@@ -94,7 +94,7 @@ def helpMessage() {
 	""".stripIndent()
 }
 
-// Show help emssage
+// Show help message
 if (params.help){
     helpMessage()
     exit 0
@@ -133,7 +133,7 @@ if (params.genome.contains('hg') || (params.dataType && params.dataType == 'huma
 	if (!params.dataType) { dataType = 'other' } else { dataType = params.dataType }
 	if (!params.chrSet) {
 		// No default value for other reference genome
-		exit 1, "Missing --chrSet option for other reference genome, please sepecify chromsomes used in reference genome [${params.genome}]"
+		exit 1, "Missing --chrSet option for other reference genome, please specify chromosomes used in reference genome [${params.genome}]"
 	}
 	chrSet = params.chrSet
 }
@@ -1354,7 +1354,7 @@ process GuppyComb {
 			fi
 		done
 		rm  -f rf_chr_all_list.txt
-		echo "### Chomosome list"
+		echo "### Chromosome list"
 		cat chr_all_list.txt
 
 		## Ref: https://github.com/nanoporetech/medaka/issues/177
