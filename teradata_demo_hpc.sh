@@ -35,6 +35,6 @@ nextflow run TheJacksonLaboratory/nanome -r $branchName\
         -resume -with-report -with-timeline -with-trace -with-dag\
         -profile singularity,hpc \
         -config ${NANOME_DIR}/conf/executors/jaxhpc_input.config,${NANOME_DIR}/conf/executors/na12878_hpc.config\
-        --dsname NA12878_${chrName} \
-        --input "https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/na12878_${chrName^^}.filelist.txt"
+        --dsname NA12878_${chrName^^} \
+        --input "https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/na12878_${chrName}.filelist.txt"
 echo "### Run pass on teradata ${chrName} for NANOME"

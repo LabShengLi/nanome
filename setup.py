@@ -27,6 +27,7 @@ setuptools.setup(
     author="Yang Liu",
     author_email="yang.liu@jax.org",
     description="NANOME (Nanopore methylation) pipeline developed by Li Lab at The Jackson Laboratory",
+    license='MIT License',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/TheJacksonLaboratory/nanome",
