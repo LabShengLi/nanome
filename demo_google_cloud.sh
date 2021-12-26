@@ -42,7 +42,8 @@ nextflow run ${NANOME_DIR}/main.nf\
 	--outdir ${OUTPUT_DIR_BUCKET} \
 	--googleProjectName ${gcpProjectName}\
 	--dsname TestData \
-	--input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt
+	--input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/demo1_fast5_reads.tar.gz
+
 echo "### NANOME pipeline for demo data on google DONE"
 
 exit 0

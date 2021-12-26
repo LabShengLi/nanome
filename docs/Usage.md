@@ -20,7 +20,7 @@ nextflow run TheJacksonLaboratory/nanome --help
 nextflow run TheJacksonLaboratory/nanome\
     -profile singularity,hpc\
     --dsname TestData\
-    --input https://github.com/TheJacksonLaboratory/nanome/raw/master/test_data/demo1_fast5_reads.tar.gz\
+    --input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/demo1_fast5_reads.tar.gz\
     --genome hg38\
     --queue gpu --qos inference\
     --processors 8 --memory 32GB --time 1h --gresOptions gpu:v100:1
