@@ -34,7 +34,7 @@ nextflow run ${NANOME_DIR}/main.nf\
     -profile singularity,hpc\
     -config ${NANOME_DIR}/conf/executors/jaxhpc_input.config\
     --dsname TestData\
-    --input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt\
+    --input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/demo1_fast5_reads.tar.gz\
 	--runTombo --runMETEORE --runDeepMod --useDeepModCluster\
 	--outputIntermediate --outputRaw\
 	--outputGenomeBrowser --outputBam --outputONTCoverage\
