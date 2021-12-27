@@ -12,7 +12,7 @@ jobs:
       matrix:
         nxf_ver: ['20.07.1', '']
         ci_test_name: ['test', 'test_human']
-        using_tools_option: ['', '--runTombo --runDeepMod --runMETEORE']
+        using_tools_option: ['']
     steps:
       - uses: actions/checkout@v1
       - name: Install Nextflow ${{ matrix.nxf_ver }}
