@@ -12,6 +12,13 @@
 
 set -e
 date;hostname;pwd
+chrName=${1:-"chr22"}
+baseDir=${2:-"/fastscratch/$USER/nanome"}
+
+pipelineDir=${baseDir}/na12878_${chrName}_gcptest
+rm -rf $pipelineDir
+mkdir -p $pipelineDir
+cd $pipelineDir
 
 ###########################################
 ###########################################
@@ -29,12 +36,12 @@ gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} >/dev/null 2>&1 || tru
 ### Run pipeline on google for NA12878
 set -x
 echo "### nanome pipeline for NA12878 some chr and part file on google START"
-nextflow run main.nf\
+nextflow run ${NANOME_DIR}\
     -profile docker,google -resume -with-report -with-timeline -with-trace -with-dag\
 	-w ${WORK_DIR_BUCKET} \
 	--outdir ${OUTPUT_DIR_BUCKET}\
-	--dsname NA12878_CHR22\
-	--input inputs/na12878_chr22_gs.filelist.txt\
+	--dsname NA12878_${chrName^^}\
+	--input ${NANOME_DIR}/inputs/na12878_${chrName}_gs.filelist.txt\
 	--cleanAnalyses true\
 	--tomboResquiggleOptions '--signal-length-range 0 500000  --sequence-length-range 0 50000'\
 	--midDiskSize "850.GB" --highDiskSize "1024.GB"\

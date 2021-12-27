@@ -36,7 +36,7 @@ set -x
 
 ## Run test demo on google cloud
 echo "### NANOME pipeline for demo data on google START"
-nextflow run ${NANOME_DIR}/main.nf\
+nextflow run ${NANOME_DIR}\
     -profile docker,google \
 	-w ${WORK_DIR_BUCKET} \
 	--outdir ${OUTPUT_DIR_BUCKET} \

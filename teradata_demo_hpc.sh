@@ -16,7 +16,6 @@ set -e
 date; hostname; pwd
 chrName=${1:-"chr22"}
 baseDir=${2:-"/fastscratch/$USER/nanome"}
-branchName=${3:-"master"}
 
 pipelineDir=${baseDir}/na12878_${chrName}_test
 rm -rf $pipelineDir
@@ -30,8 +29,7 @@ module load singularity
 echo "### Start test on teradata ${chrName}"
 
 set -x
-nextflow pull TheJacksonLaboratory/nanome -r $branchName
-nextflow run TheJacksonLaboratory/nanome -r $branchName\
+nextflow run ${NANOME_DIR}\
         -resume -with-report -with-timeline -with-trace -with-dag\
         -profile singularity,hpc \
         -config ${NANOME_DIR}/conf/executors/jaxhpc_input.config,${NANOME_DIR}/conf/executors/na12878_hpc.config\

@@ -28,7 +28,7 @@ set -x
 
 cd ${baseDir}/${pipelineName}
 
-nextflow run ${NANOME_DIR}/main.nf\
+nextflow run ${NANOME_DIR}\
     -resume -with-report -with-timeline -with-trace -with-dag\
     -profile singularity,hpc\
     --dsname EcoliDemo\
