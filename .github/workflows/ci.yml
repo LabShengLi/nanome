@@ -25,8 +25,8 @@ jobs:
           nextflow -v &&\
             nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.ci_test_name }},docker  ${{ matrix.using_tools_option }}
       - name: File tree for ${{ matrix.ci_test_name }}
-          run: |
-            echo "Outputs tree view:" ; tree -a results; ls -lh -R results
+        run: |
+          echo "Outputs tree view:" ; tree -a results; ls -lh -R results
       - name: Results for ${{ matrix.ci_test_name }}
         run: |
           echo "CpGs summary:" ; sudo find work -name '*.Report.run.log' -exec tail {} \;
