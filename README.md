@@ -76,7 +76,7 @@ NANOME pipeline support running with various ways in different platforms:
 * Conda
 * **Local** execution: running directly on default platform
 * HPC clusters with **SLURM** support
-* Google Cloud Platform (GCP) with **google-lifesciences** support
+* Cloud computing platform, e.g., Google Cloud Platform(GCP) with **google-lifesciences** support
 
 
 ## Simple usage
