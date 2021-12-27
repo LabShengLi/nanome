@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=nanome.human_demo_hpc_winter
+#SBATCH --job-name=nanome.human_demo_hpc
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 #SBATCH -q inference
