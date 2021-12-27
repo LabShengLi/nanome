@@ -49,6 +49,6 @@ tar -czf ${pipelineName}.tar.gz  \
     work/*/*/.command.* work/*/*/*.run.log \
     *trace/  .nextflow.log
 
-find  work  -name '*Report.run.log' -exec tail {} \;
+find  work  -name '*.Report.run.log' -exec tail {} \;
 
 echo "### NANOME pipeline for ecoli_demo on HPC DONE"
