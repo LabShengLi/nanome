@@ -129,10 +129,10 @@ Please check [NANOME report](https://github.com/TheJacksonLaboratory/nanome/blob
 
 ### Lifebit CloudOS report
 We now support running NANOME on cloud computing platform. [Lifebit](https://lifebit.ai/lifebit-cloudos/) is a web-based cloud computing platform, and below is the running reports:
-* Ecoli test report: https://cloudos.lifebit.ai/public/jobs/61beda088c574a01e8cd462f
-* Human test report: https://cloudos.lifebit.ai/public/jobs/61bebd968c574a01e8cd390d
-* NA12878 chr22 report: https://cloudos.lifebit.ai/public/jobs/61b2176540695e01e7477da9
-* NA12878 chr20 part5 report: https://cloudos.lifebit.ai/public/jobs/61b123f540695e01e747206e
+* Ecoli test report: https://cloudos.lifebit.ai/public/jobs/61c9fd328c574a01e8d31d2e
+* Human test report: https://cloudos.lifebit.ai/public/jobs/61c9fe618c574a01e8d31e99
+* NA12878 chr22 report: https://cloudos.lifebit.ai/public/jobs/61c4f2ad8c574a01e8d0eee3
+* NA12878 chr20 part5 report: https://cloudos.lifebit.ai/public/jobs/61c770748c574a01e8d2062b
 
 
 ## Revision History
