@@ -103,7 +103,7 @@ if (params.help){
 // Check mandatory params
 if (! params.dsname)  exit 1, "Missing --dsname option for dataset name, check command help use --help"
 if (! params.input)  exit 1, "Missing --input option for input data, check command help use --help"
-if ( !file(params.input.toString()).exists() )   exit 1, "input does not exist, check params: --input ${params.input}"
+//if ( !file(params.input.toString()).exists() )   exit 1, "input does not exist, check params: --input ${params.input}"
 
 // Parse genome params
 genome_map = params.genome_map
@@ -165,10 +165,11 @@ if (params.input.endsWith(".filelist.txt")) {
 			}
 		}
 		.set{ fast5_tar_ch }
-} else if(params.input.endsWith("/*")) {
+} else if(params.input.contains("*")) {
 	// match all files in the folder, note: input must use '', prevent expand in advance
 	// such as --input '/fastscratch/liuya/nanome/NA12878/NA12878_CHR22/input_chr22/*'
-	Channel.fromPath(params.input, type: 'any').set{ fast5_tar_ch }
+	Channel.fromPath(params.input, type: 'any', checkIfExists: true)
+		.set{ fast5_tar_ch }
 } else {
 	// For single file/wildcard matched files
 	Channel.fromPath( params.input, checkIfExists: true ).set{ fast5_tar_ch }
@@ -337,13 +338,11 @@ process EnvCheck {
 			# Obtain and run R9.4.1, MinION, 5mC CpG model from Rerio
 			git clone ${params.rerioGithub}
 			rerio/download_model.py rerio/basecall_models/${params.MEGALODON_MODEL.replace('.cfg', '')}
-		else
-			if [[ ${rerioDir} != rerio ]] ; then
-				## rename it to rerio for output channel
-				cp  -a ${rerioDir}  rerio
-			fi
+		elif [[ ${rerioDir} != rerio && -d ${rerioDir} ]] ; then
+			## rename it to rerio for output channel
+			cp  -a ${rerioDir}  rerio
 		fi
-
+		## Check Rerio model
 		ls -lh rerio/
 	fi
 
@@ -352,13 +351,10 @@ process EnvCheck {
 		if [[ ${deepsignalDir} == *.tar.gz ]] ; then
 			## Get DeepSignal Model online
 			tar -xzf ${deepsignalDir}
-		else
-		 	if [[ ${deepsignalDir} != ${params.DEEPSIGNAL_MODEL_DIR} ]] ; then
-				## rename it to deepsignal default dir name
-				cp  -a ${deepsignalDir}  ${params.DEEPSIGNAL_MODEL_DIR}
-			fi
+		elif [[ ${deepsignalDir} != ${params.DEEPSIGNAL_MODEL_DIR} && -d ${deepsignalDir}  ]] ; then
+			## rename it to deepsignal default dir name
+			cp  -a ${deepsignalDir}  ${params.DEEPSIGNAL_MODEL_DIR}
 		fi
-
 		## Check DeepSignal model
 		ls -lh ${params.DEEPSIGNAL_MODEL_DIR}/
 	fi
@@ -367,13 +363,16 @@ process EnvCheck {
 		## Get dir for reference_genome
 		mkdir -p reference_genome
 		find_dir="\$PWD/reference_genome"
-		if [[ ${reference_genome} == *.tar.gz ]] ; then
+		if [[ ${reference_genome} == *.tar.gz && -f ${reference_genome}  ]] ; then
 			tar -xzf ${reference_genome} -C reference_genome
-		elif [[ ${reference_genome} == *.tar ]] ; then
+		elif [[ ${reference_genome} == *.tar && -f ${reference_genome} ]] ; then
 			tar -xf ${reference_genome} -C reference_genome
-		else
+		elif [[ -d ${reference_genome} ]] ; then
 			## for folder, use ln, note this is a symbolic link to a folder
 			find_dir=\$( readlink -f ${reference_genome} )
+		else
+			echo "### ERROR: not recognized reference_genome=${reference_genome}"
+			exit -1
 		fi
 
 		find \${find_dir} -name '*.fasta*' | \
@@ -413,14 +412,13 @@ process Untar {
 		echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
 
 		## Extract input files tar/tar.gz/folder
-		infn="${fast5_tar}"
 		mkdir -p untarTempDir
-		if [ "\${infn##*.}" == "tar" ]; then
+		if [[ ${fast5_tar} == *.tar && -f ${fast5_tar} ]] ; then
 			### deal with tar
-			tar -xf \${infn} -C untarTempDir
-		elif [ "\${infn##*.}" == "gz" ]; then
+			tar -xf ${fast5_tar} -C untarTempDir
+		elif [[ ${fast5_tar} == *.tar.gz && -f ${fast5_tar} ]] ; then
 			### deal with tar.gz
-			tar -xzf \${infn} -C untarTempDir
+			tar -xzf ${fast5_tar} -C untarTempDir
 		elif [[ -d ${fast5_tar} ]]; then
 			## Copy files, do not change original files such as old analyses data
 			find ${fast5_tar}/ -name '*.fast5' | \
@@ -460,15 +458,14 @@ process Untar {
 		date; hostname; pwd
 
 		## Extract input files tar/tar.gz/folder
-		infn="${fast5_tar}"
 		mkdir -p untarTempDir
-		if [ "\${infn##*.}" == "tar" ]; then
+		if [[ ${fast5_tar} == *.tar && -f ${fast5_tar} ]] ; then
 			### deal with tar
-			tar -xf \${infn} -C untarTempDir
-		elif [ "\${infn##*.}" == "gz" ]; then
+			tar -xf ${fast5_tar} -C untarTempDir
+		elif [[ ${fast5_tar} == *.tar.gz && -f ${fast5_tar} ]] ; then
 			### deal with tar.gz
-			tar -xzf \${infn} -C untarTempDir
-		elif [[ -d ${fast5_tar} ]]; then
+			tar -xzf ${fast5_tar} -C untarTempDir
+		elif [[ -d ${fast5_tar} ]] ; then
 			## user provide basecalled input dir, just cp them
 			mkdir -p untarTempDir/test
 			cp -rf ${fast5_tar}/*   untarTempDir/test/
