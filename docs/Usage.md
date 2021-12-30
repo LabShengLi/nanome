@@ -21,9 +21,6 @@ nextflow run TheJacksonLaboratory/nanome --help
 By default, NANOME uses `--genome=hg38` for human reference genome, and users can specify other reference genome using parameter `--genome=ecoli`. We defined a bunch of predefined running configuration params in profile in next section. An example of how to use NANOME pipeline is given below.
 
 ```angular2html
-# Get pipeline help
-nextflow run TheJacksonLaboratory/nanome --help
-
 # Running NANOME pipeline for human data on HPC
 nextflow run TheJacksonLaboratory/nanome\
     -profile singularity,hpc\
