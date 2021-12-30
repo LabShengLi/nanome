@@ -165,7 +165,7 @@ if (params.input.endsWith(".filelist.txt")) {
 			}
 		}
 		.set{ fast5_tar_ch }
-} else if(params.input.contains("*")) {
+} else if (params.input.contains('*') || params.input.contains('?')) {
 	// match all files in the folder, note: input must use '', prevent expand in advance
 	// such as --input '/fastscratch/liuya/nanome/NA12878/NA12878_CHR22/input_chr22/*'
 	Channel.fromPath(params.input, type: 'any', checkIfExists: true)
