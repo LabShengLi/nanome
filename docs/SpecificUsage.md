@@ -57,3 +57,12 @@ Note:
 * please keep all fast5 files in `workspace/` directory
 * NANOME input can be a directory/tar/tar.gz file, you can compress the basecalled folder using `tar -czf ecoli_ci_basecalled.tar.gz ecoli_ci_basecalled/`
 * by default, NANOME run top four performers. If user wants to run Nanopolish tool only, just specify not run other three tools using params `--runMegalodon false --runDeepSignal false --runGuppy false`
+
+
+## 3. Update latest version of NANOME.
+Below is the command for updating the latest version of NANOME, if you have executed NANOME old version previously. `-r [branch-name]` is used to get a specific version from a branch in the GitHub for Nextflow.
+```angular2html
+nextflow pull TheJacksonLaboratory/nanome
+
+nextflow pull TheJacksonLaboratory/nanome -r [branch-name]
+```
