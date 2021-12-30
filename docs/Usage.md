@@ -12,14 +12,14 @@ The command for running NANOME pipeline is to run `nextflow run TheJacksonLabora
 
 NANOME support **multiple runs input** as a file list if input file name is suffixed like `.filelist.txt`, example inputs are [benchmark.filelist.txt](https://github.com/TheJacksonLaboratory/nanome/blob/master/inputs/benchmark.filelist.txt) and [na12878_chr22.filelist.txt](https://github.com/TheJacksonLaboratory/nanome/blob/master/inputs/na12878_chr22.filelist.txt). Another option is to use wildcard matching features, i.e., `--input 'input_folders/dir_*'` (Note: the single quote character outside wildcard string is needed).
 
+By default, NANOME uses `--genome=hg38` for human reference genome, and users can specify other reference genome using parameter `--genome=ecoli`. We defined a bunch of predefined running configuration params in profile in next section. 
+
 Please use followings for pipeline command help:
 ```angular2html
 nextflow run TheJacksonLaboratory/nanome --help
 ```
 
-
-By default, NANOME uses `--genome=hg38` for human reference genome, and users can specify other reference genome using parameter `--genome=ecoli`. We defined a bunch of predefined running configuration params in profile in next section. An example of how to use NANOME pipeline is given below.
-
+Examples of how to use NANOME pipeline are given below.
 ```angular2html
 # Running NANOME pipeline for human data on HPC
 nextflow run TheJacksonLaboratory/nanome\
