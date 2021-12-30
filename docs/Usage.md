@@ -151,7 +151,9 @@ results
 └── TestData_nanome_report.html
 ```
 
-We also support input as a file list if input file name is suffixed like `.filelist.txt`, an example input is [test.demo.filelist.txt](https://github.com/TheJacksonLaboratory/nanome/blob/master/inputs/test.demo.filelist.txt). Please use folowings for pipeline command help:
+We also support **multiple runs input** as a file list if input file name is suffixed like `.filelist.txt`, example inputs are [test.demo.filelist.txt](https://github.com/TheJacksonLaboratory/nanome/blob/master/inputs/test.demo.filelist.txt) and [na12878_chr22.filelist.txt](https://github.com/TheJacksonLaboratory/nanome/blob/master/inputs/na12878_chr22.filelist.txt). Another option is to use wildcard matching features, i.e., `--input 'input_folders/dir_*'`.
+
+Please use followings for pipeline command help:
 ```angular2html
 nextflow run TheJacksonLaboratory/nanome --help
 ```
