@@ -39,7 +39,7 @@ We use  CI Automation Tools to **enable the automated testing on every commit an
 NANOME pipeline can be easily configured with different RAM, CPU/GPU resources schema to parallelly run methylation-calling tools. For optimal usage, we recommend running NANOME pipeline on HPC or cloud computing platform, e.g., google cloud platform (GCP). The basic hardware requirements are below:
 * GPU or CPU with 2+ cores. 
 * RAM: 7+ GB per cpu.
-* Storage using HDD or SSD. Please ensure your storage before running the pipeline.
+* Storage using HDD or SSD. Please ensure the storage before running the pipeline.
 
 
 ### Software requirements
