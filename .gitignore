@@ -37,7 +37,7 @@ do_build_docker.sh
 src/nanocompare/__pycache__/
 __pycache__/
 benchmark_hpc_sumner.sh
-ci_hpc_sumner.sh
+ci_hpc.sh
 ecoli_hpc_sumner.sh
 .DS_Store
 docs/.DS_Store
@@ -46,8 +46,7 @@ src/nanocompare/report/icons/.DS_Store
 testdemo.py
 ## maintained by ly
 
-/ci_google_cloud.sh
-/ci_hpc_winter.sh
+/ci_gcp.sh
 /pull_nanome_images.sh
 /ci_git_test.sh
 /sumner_test.sh
@@ -79,3 +78,4 @@ testdemo.py
 /related_project/
 /teradata_demo_hpc1.sh
 /Makefile
+*.swp

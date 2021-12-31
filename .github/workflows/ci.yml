@@ -12,20 +12,24 @@ jobs:
       matrix:
         nxf_ver: ['20.07.1', '']
         ci_test_name: ['test', 'test_human']
-        using_tools_option: ['', '--runTombo --runDeepMod --runMETEORE']
+        using_tools_option: ['']
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Install Nextflow ${{ matrix.nxf_ver }}
         run: |
           export NXF_VER=${{ matrix.nxf_ver }}
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
-      - name: Basic NANOME workflow tests by ${{ matrix.ci_test_name }}
+      - name: Basic NANOME workflow test for ${{ matrix.ci_test_name }}
         run: |
           nextflow -v &&\
             nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.ci_test_name }},docker  ${{ matrix.using_tools_option }}
-          echo "Outputs tree view:" ; tree -a results; ls -lh -R results; sudo du -hs * 2>/dev/null | sort -h
-          echo "CpGs summary" ; sudo find work -name '*Report.run.log' 2>&1  -exec tail {} 2>&1 \;  || true
+      - name: File tree for ${{ matrix.ci_test_name }}
+        run: |
+          echo "Outputs tree view:" ; tree -a results; ls -lh -R results
+      - name: Results for ${{ matrix.ci_test_name }}
+        run: |
+          echo "CpGs summary:" ; sudo find work -name '*.Report.run.log' -exec tail {} \;
 # remove singularity, since it is same with docker container
 #  singularity:
 #    name: Singularity

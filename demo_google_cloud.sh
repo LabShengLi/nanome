@@ -36,36 +36,12 @@ set -x
 
 ## Run test demo on google cloud
 echo "### NANOME pipeline for demo data on google START"
-nextflow run ${NANOME_DIR}/main.nf\
+nextflow run ${NANOME_DIR}\
     -profile docker,google \
 	-w ${WORK_DIR_BUCKET} \
 	--outdir ${OUTPUT_DIR_BUCKET} \
 	--googleProjectName ${gcpProjectName}\
 	--dsname TestData \
-	--input https://raw.githubusercontent.com/TheJacksonLaboratory/nanome/master/inputs/test.demo.filelist.txt
+	--input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/demo1_fast5_reads.tar.gz
+
 echo "### NANOME pipeline for demo data on google DONE"
-
-exit 0
-###########################################
-###########################################
-###########################################
-### Run Test pipeline on google 12878
-## working and outputs dir
-WORK_DIR_BUCKET=${1:-"gs://jax-nanopore-01-project-data/NANOME-na12878_chr17_p6-work"}
-OUTPUT_DIR_BUCKET=${2:-"gs://jax-nanopore-01-export-bucket/NANOME-na12878_chr17_p6-ouputs"}
-
-gsutil -m rm -rf ${WORK_DIR_BUCKET}  ${OUTPUT_DIR_BUCKET} >/dev/null 2>&1 || true
-
-## Run test demo on google cloud
-echo "### nanome pipeline for NA12878 some chr and part file on google START"
-nextflow run main.nf\
-    -profile docker,google -resume\
-	-w ${WORK_DIR_BUCKET} \
-	--outdir ${OUTPUT_DIR_BUCKET} \
-	--dsname na12878_chr17_p6 \
-	--input 'http://s3.amazonaws.com/nanopore-human-wgs/rel3-fast5-chr17.part06.tar'\
-	--cleanAnalyses true\
-	--tomboResquiggleOptions '--signal-length-range 0 500000  --sequence-length-range 0 50000'
-
-echo "### nanome pipeline for NA12878 some chr and part file on google DONE"
-exit 0

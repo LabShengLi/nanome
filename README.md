@@ -1,5 +1,5 @@
 # DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation
-## --NANOME(Nanopore methylation) pipeline of DNA methylation calling tools for Oxford Nanopore sequencing 
+## --NANOME(Nanopore methylation) pipeline of DNA methylation calling for Oxford Nanopore sequencing 
 
 [![demo_gif.gif](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/demo_gif.gif)](https://www.youtube.com/watch?v=TfotM55KTVE)
 
@@ -25,10 +25,10 @@
 ## Highlights of NANOME pipeline
 ### Several first highlights for NANOME
 * Enables users to process **terabasescale** Oxford Nanopore sequencing datasets.
-* Provide a one command line, **end-to-end pipeline** for analyzing Nanopore sequencing data for all methylation-calling tools.
+* Provide a **one command line**/**web-based UI** for end-to-end analyzing Nanopore sequencing methylation-callings.
 * Support **various platform** executions: local, HPC and CloudOS, **without needs for tools' installation** (NANOME support docker and singularity).
 * **First standardized whole genome-wide evaluation framework**, considering per-read and per-site performance for singletons/non-singletons, genic and intergenic regions, CpG islands/shores/shelves, different CG densities regions and repetitive regions. 
-* The **first Nextflow based DNA methylation-calling pipeline**. Please check more articles about Nextflow based workflow technology from Nature Biotechnology: https://doi.org/10.1038/s41587-020-0439-x and https://doi.org/10.1038/nbt.3820.
+* The **first Nextflow based DNA methylation-calling pipeline for ONT data**. Please check more articles about Nextflow based workflow technology from Nature Biotechnology: https://doi.org/10.1038/s41587-020-0439-x and https://doi.org/10.1038/nbt.3820.
 
 ### CI/CD features
 We use  CI Automation Tools to **enable the automated testing on every commit and on PRs** to make sure that updates are not introducing bugs. Please check the automatic testing results on [Github](https://github.com/TheJacksonLaboratory/nanome/actions).
@@ -39,7 +39,7 @@ We use  CI Automation Tools to **enable the automated testing on every commit an
 NANOME pipeline can be easily configured with different RAM, CPU/GPU resources schema to parallelly run methylation-calling tools. For optimal usage, we recommend running NANOME pipeline on HPC or cloud computing platform, e.g., google cloud platform (GCP). The basic hardware requirements are below:
 * GPU or CPU with 2+ cores. 
 * RAM: 7+ GB per cpu.
-* Storage using HDD or SSD. Please ensure your storage before running the pipeline.
+* Storage using HDD or SSD. Please ensure the storage before running the pipeline.
 
 
 ### Software requirements
@@ -76,7 +76,7 @@ NANOME pipeline support running with various ways in different platforms:
 * Conda
 * **Local** execution: running directly on default platform
 * HPC clusters with **SLURM** support
-* Google Cloud Platform (GCP) with **google-lifesciences** support
+* Cloud computing platform, e.g., Google Cloud Platform(GCP) with **google-lifesciences** support
 
 
 ## Simple usage
@@ -129,10 +129,10 @@ Please check [NANOME report](https://github.com/TheJacksonLaboratory/nanome/blob
 
 ### Lifebit CloudOS report
 We now support running NANOME on cloud computing platform. [Lifebit](https://lifebit.ai/lifebit-cloudos/) is a web-based cloud computing platform, and below is the running reports:
-* Ecoli test report: https://cloudos.lifebit.ai/public/jobs/61beda088c574a01e8cd462f
-* Human test report: https://cloudos.lifebit.ai/public/jobs/61bebd968c574a01e8cd390d
-* NA12878 chr22 report: https://cloudos.lifebit.ai/public/jobs/61b2176540695e01e7477da9
-* NA12878 chr20 part5 report: https://cloudos.lifebit.ai/public/jobs/61b123f540695e01e747206e
+* Ecoli test report: https://cloudos.lifebit.ai/public/jobs/61c9fd328c574a01e8d31d2e
+* Human test report: https://cloudos.lifebit.ai/public/jobs/61c9fe618c574a01e8d31e99
+* NA12878 chr22 report: https://cloudos.lifebit.ai/public/jobs/61c4f2ad8c574a01e8d0eee3
+* NA12878 chr20 part5 report: https://cloudos.lifebit.ai/public/jobs/61c770748c574a01e8d2062b
 
 
 ## Revision History
