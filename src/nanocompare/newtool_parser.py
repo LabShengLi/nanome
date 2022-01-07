@@ -35,8 +35,8 @@ def parse_arguments():
     parser.add_argument('--sep', type=str, help="seperator for output csv file, default is tab character", default='\t')
     parser.add_argument('--sort', help="if sort bed output", action='store_true')
     parser.add_argument('--deduplicate', help="if deduplicate not unique records", action='store_true')
-    parser.add_argument('--chrSet', nargs='+', help='chromosome list, default is human chromosome chr1-22, X and Y',
-                        default=HUMAN_CHR_SET)
+    parser.add_argument('--chrSet', nargs='+', help='chromosome list, default None for no filter',
+                        default=None)
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
 
@@ -62,6 +62,9 @@ if __name__ == '__main__':
 
     for row in tqdm(infile, total=lines):
         tmp = row.strip().split(args.sep)
+
+        if args.chrSet is not None and tmp[chr_col] not in args.chrSet:
+            continue
         try:
             pos = int(tmp[pos_col]) + (1 - args.baseFormat)
             if not args.log_score:

@@ -277,9 +277,9 @@ nextflow run TheJacksonLaboratory/nanome\
 ```
 Param`--guppyDir=[guppy-installation-directory]` is the Guppy software installation base directory, `--conda_base_dir [conda-dir]` is conda software base directory, `--conda_name [conda-env-dir]` is conda environment base directory.
 
-# 7. Adding a new module/tool
+# 7. Add a new module/tool
 
-NANOME support adding new methylation-calling module in a rapid way, without touching the main pipeline codes. Users only need to specify the container and methylation calling command line interface in a configuration file.
+NANOME support adding any new methylation-calling module in a rapid way, without touching the main pipeline codes. Users only need to specify the container and methylation calling command line interface for each new tool in a configuration file.
 
 Below is the sample configuration text for adding new tool in NANOME ([conf/modules/newmodules.config](https://github.com/TheJacksonLaboratory/nanome/blob/robust6/conf/modules/newmodules.config)). There are two params predefined to be used in script: `${input}`: basecalling input, `${genome}`: reference genome.
 ```angular2html
@@ -315,7 +315,8 @@ Below is the sample configuration text for adding new tool in NANOME ([conf/modu
 The execution command for running new tool is as below. `-config conf/modules/newmodules.config` is used as input of new module configurations, `--runNewTool` is the param to run new tools in the configuration files.
 
 ```angular2html
-nextflow run main.nf \
+cd nanome
+nextflow run TheJacksonLaboratory/nanome\
     -profile test,singularity\
     -config conf/modules/newmodules.config\
     --runNewTool

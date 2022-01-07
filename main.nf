@@ -209,6 +209,9 @@ if (params.runMethcall) {
 	}
 
 	if (params.runNANOME) summary['runNANOME'] = 'Yes'
+
+	if (params.runNewTool && params.newModuleConfigs)
+		summary['runNewTool'] = params.newModuleConfigs.collect{it.name}.join(',')
 }
 
 if (params.cleanAnalyses) summary['cleanAnalyses'] = 'Yes'
@@ -1880,7 +1883,8 @@ process NewToolComb {
 	 	--read-out Read_Level-${params.dsname}/${params.dsname}_${module.name}-perRead-score.tsv.gz \
 	 	--site-out Site_Level-${params.dsname}/${params.dsname}_${module.name}-perSite-cov1.sort.bed.gz\
 	 	--column-order ${module.outputOrder.join(' ')} \
-	 	--score-cols ${module.outputScoreCols.join(' ')}  ${module.logScore ? '--log-score': ' '}
+	 	--score-cols ${module.outputScoreCols.join(' ')}  ${module.logScore ? '--log-score': ' '}\
+	 	--chrSet ${chrSet}
 	echo "### NewTool Combine DONE"
 	"""
 }
