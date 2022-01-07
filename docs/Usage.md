@@ -276,3 +276,47 @@ nextflow run TheJacksonLaboratory/nanome\
     --guppyDir [guppy-installation-directory]
 ```
 Param`--guppyDir=[guppy-installation-directory]` is the Guppy software installation base directory, `--conda_base_dir [conda-dir]` is conda software base directory, `--conda_name [conda-env-dir]` is conda environment base directory.
+
+# 7. Adding a new module/tool
+
+NANOME support adding new methylation-calling module in a rapid way, without touching the main pipeline codes. Users only need to specify the container and methylation calling command line interface in a configuration file.
+
+Below is the sample configuration text for adding new tool in NANOME (conf/modules/newmodules.config). There are two params predefined to be used in script: `${input}`: basecalling input, `${genome}`: reference genome.
+```angular2html
+[
+      name      : 'megalodonNew1',
+      container : 'liuyangzzu/nanome:v1.3',
+      version   : '5.0',
+      cmd       : '''
+          ## Download Rerio model
+          git clone https://github.com/nanoporetech/rerio
+          rerio/download_model.py rerio/basecall_models/res_dna_r941_min_modbases_5mC_v001
+
+          ## Megalodon calling
+          megalodon     ${input}   --overwrite  \
+              --mod-motif m CG 0   --outputs per_read_mods mods per_read_refs\
+              --mod-output-formats bedmethyl wiggle \
+              --write-mods-text --write-mod-log-probs\
+              --guppy-server-path $(which guppy_basecall_server) \
+              --guppy-config res_dna_r941_min_modbases_5mC_v001.cfg  \
+              --guppy-params "-d ./rerio/basecall_models/" \
+              --guppy-timeout 300 \
+              --reference ${genome} \
+              --processes 2
+      ''',
+      output	 : 'megalodon_results/per_read_modified_base_calls.txt', //output file name
+      outputHeader 	: true, // if output contain header
+      outputOrder 	: [0,1,3,2], // output columns index for: READID, CHR, POS, STRAND
+      outputScoreCols	: [4,5], // output of scores
+      logScore		: true // if output score is log-transformed values
+]
+```
+
+The execution command for running new tool is as below. `-config conf/modules/newmodules.config` is used as input of new module configurations, `--runNewTool` is the param to run new tools in the configuration files.
+
+```angular2html
+nextflow run main.nf \
+    -profile test,singularity\
+    -config conf/modules/newmodules.config\
+    --runNewTool
+```

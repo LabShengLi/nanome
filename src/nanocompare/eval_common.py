@@ -3259,6 +3259,18 @@ def load_tool_read_level_unified_as_df(data_file_path, toolname, filterChrSet=No
     return data_file
 
 
+def prob_to_log(prob):
+    """
+    convert probability of 5mC to log-likelyhood
+    Args:
+        prob:
+
+    Returns:
+
+    """
+    return math.log2((prob + EPSLONG) / (1 - prob + EPSLONG))
+
+
 if __name__ == '__main__':
     set_log_debug_level()
     # refGenome = get_ref_fasta('/projects/li-lab/Nanopore_compare/nf_input/reference_genome/ecoli/Ecoli_k12_mg1655.fasta')
