@@ -1791,7 +1791,7 @@ process DpmodComb {
 // NewTool runs
 process NewTool {
 	tag "${module.name}(${input})"
-	container  "${workflow.containerEngine == 'singularity' ? 'docker://' : ''}" + "${module.container}"
+	container  "${workflow.containerEngine == 'singularity' ? module.container_singularity : workflow.containerEngine == 'docker'? module.container_docker: null}"
 
 	publishDir "${params.outdir}/${params.dsname}_intermediate/${module.name}",
 		mode: "copy",

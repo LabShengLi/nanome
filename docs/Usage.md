@@ -279,14 +279,16 @@ Param`--guppyDir=[guppy-installation-directory]` is the Guppy software installat
 
 # 7. Add a new module/tool
 
-NANOME support adding any new methylation-calling module in a rapid way, without touching the main pipeline codes. Users only need to specify the container and methylation calling command line interface for each new tool in a configuration file.
+NANOME support adding any new methylation-calling module in a rapid way, without touching the main pipeline codes. Users only need to specify the container (or local running way) and methylation calling command line interface for each new tool in a configuration file.
 
 Below is the sample configuration text for adding new tool in NANOME ([conf/modules/newmodules.config](https://github.com/TheJacksonLaboratory/nanome/blob/robust6/conf/modules/newmodules.config)). There are two params predefined to be used in script: `${input}`: basecalling input, `${genome}`: reference genome.
 ```angular2html
 [
       name      : 'megalodonNew1',
-      container : 'liuyangzzu/nanome:v1.3',
-      version   : '5.0',
+      container_docker : 'liuyangzzu/nanome:v1.3',  // docker image name
+	  container_singularity : 'docker://liuyangzzu/nanome:v1.3', // singularity image name
+      version   : '5.0', // tool's version
+      // command line interface for methylation-calling
       cmd       : '''
           ## Download Rerio model
           git clone https://github.com/nanoporetech/rerio
