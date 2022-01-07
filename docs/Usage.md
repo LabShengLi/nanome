@@ -281,7 +281,7 @@ Param`--guppyDir=[guppy-installation-directory]` is the Guppy software installat
 
 NANOME support adding new methylation-calling module in a rapid way, without touching the main pipeline codes. Users only need to specify the container and methylation calling command line interface in a configuration file.
 
-Below is the sample configuration text for adding new tool in NANOME (conf/modules/newmodules.config). There are two params predefined to be used in script: `${input}`: basecalling input, `${genome}`: reference genome.
+Below is the sample configuration text for adding new tool in NANOME ([conf/modules/newmodules.config](https://github.com/TheJacksonLaboratory/nanome/blob/robust6/conf/modules/newmodules.config)). There are two params predefined to be used in script: `${input}`: basecalling input, `${genome}`: reference genome.
 ```angular2html
 [
       name      : 'megalodonNew1',
