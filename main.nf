@@ -1884,7 +1884,8 @@ process NewToolComb {
 	 	--site-out Site_Level-${params.dsname}/${params.dsname}_${module.name}-perSite-cov1.sort.bed.gz\
 	 	--column-order ${module.outputOrder.join(' ')} \
 	 	--score-cols ${module.outputScoreCols.join(' ')}  ${module.logScore ? '--log-score': ' '}\
-	 	--chrSet ${chrSet}
+	 	--chrSet ${chrSet} ${params.deduplicate ? '--deduplicate': ' '} ${params.sort ? '--sort': ' '}
+
 	echo "### NewTool Combine DONE"
 	"""
 }
@@ -2209,7 +2210,7 @@ process Report {
 
 workflow {
 	if ( !file(genome_path.toString()).exists() )
-		exit 1, "genome reference file does not exist, check params: --genome ${params.genome}"
+		exit 1, "genome reference path does not exist, check params: --genome ${params.genome}"
 
 	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
 
@@ -2223,8 +2224,11 @@ workflow {
 		rerioDir = Channel.fromPath(params.rerioDir, type: 'any', checkIfExists: true)
 	}
 
-	if (!params.deepsignalDir) {
-		// default if null, will online downloading
+	if (! params.runDeepSignal) {
+		// use null placeholder
+		deepsignalDir = Channel.fromPath("${projectDir}/utils/null2", type: 'any', checkIfExists: true)
+	} else if (!params.deepsignalDir) {
+		// default if null, will online staging
 		deepsignalDir = Channel.fromPath(params.DEEPSIGNAL_MODEL_ONLINE, type: 'any', checkIfExists: true)
 	} else {
 		// User provide the dir
