@@ -46,6 +46,7 @@ setuptools.setup(
         'src/nanocompare/pcc_region_eval.py',
         'src/nanocompare/nanome_consensus.py',
         'src/nanocompare/region_intersect.py',
+        'src/nanocompare/newtool_parser.py',
         'src/nanocompare/computeRawReadsCoverage.py',
         'src/nanocompare/report/gen_html_report.py',
         'src/nanocompare/report/gen_txt_readme.py',

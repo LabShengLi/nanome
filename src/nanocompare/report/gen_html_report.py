@@ -47,7 +47,7 @@ def get_methcall_report_df(baseDir, outDir):
     """
     ## Pre-check the max-coverage
     max_cov = None
-    for tool in ToolNameList + ['NANOME']:
+    for tool in tool_list:
         fnlist = glob.glob(os.path.join(baseDir, f'*_{tool}-perSite-cov1.sort.bed.gz'))
         if len(fnlist) < 1:
             print(f"Not found file in baseDir={baseDir}, pattern={f'*_{tool}-perSite-cov1.sort.bed.gz'}")
@@ -62,7 +62,7 @@ def get_methcall_report_df(baseDir, outDir):
     print(f"max_cov={max_cov}")
 
     ret_dict = defaultdict(list)
-    for tool in ['NANOME'] + ToolNameList:
+    for tool in tool_list:
         fnlist = glob.glob(os.path.join(baseDir, f'*_{tool}-perSite-cov1.sort.bed.gz'))
         if len(fnlist) < 1:
             print(f"Not found file in baseDir={baseDir}, pattern={f'*_{tool}-perSite-cov1.sort.bed.gz'}")
@@ -118,8 +118,10 @@ if __name__ == '__main__':
 
     print(df_basecall_info)
 
+    df_version = pd.read_csv(version_file, index_col=None, sep='\t', header=0)
+    tool_list = list(df_version['Tool'])
+    print(tool_list)
     df_methcall_info = get_methcall_report_df(indir_methcall, outdir).dropna()
-    df_version = pd.read_csv(version_file, index_col=None, sep='\t')
 
     if 'Tool' in df_methcall_info:
         df_methcall_info = df_methcall_info.merge(df_version, on='Tool', how='left')
@@ -143,8 +145,4 @@ if __name__ == '__main__':
             df_methcall_info=df_methcall_info,
             df_fig_inf=df_fig_inf
         ))
-
-    # df_basecall_info = pd.read_csv(infn_basecall_info, sep='\t')
-    # print(df_basecall_info)
-
-    pass
+    print("### gen_html_report DONE")

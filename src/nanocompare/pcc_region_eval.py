@@ -13,6 +13,7 @@ import argparse
 
 import pybedtools
 from scipy import stats
+from sklearn.metrics import mean_squared_error
 
 from nanocompare.eval_common import *
 from nanocompare.global_settings import NANOME_VERSION, load_genome_annotation_config, save_done_file
@@ -137,8 +138,10 @@ def compute_pcc_at_region(df, bed_tuple):
             # warnings.filterwarnings('ignore', category=PearsonRConstantInputWarning)
             mask_notna = newdf.iloc[:, i].notna().values
             coe, pval = stats.pearsonr(newdf.iloc[mask_notna, 0], newdf.iloc[mask_notna, i].astype(np.float64))
+            mse = mean_squared_error(newdf.iloc[mask_notna, 0], newdf.iloc[mask_notna, i].astype(np.float64))
         except:  ## May be pearsonr function failed
             coe, pval = None, None
+            mse = None
 
         # report to dataset
         ret = {
@@ -146,6 +149,7 @@ def compute_pcc_at_region(df, bed_tuple):
             'Tool': toolname,
             'Location': tagname,
             '#Bases': newdf.iloc[:, i].notna().sum(),
+            'MSE': mse,
             'COE': coe,
             'p-value': pval
         }

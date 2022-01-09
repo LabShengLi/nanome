@@ -1,5 +1,3 @@
-import os
-
 import joblib
 
 from nanocompare.global_config import logger
@@ -7,11 +5,6 @@ from nanocompare.global_config import logger
 TRUTH_LABEL_COLUMN = 'Truth_label'
 SITES_COLUMN_LIST = ["Chr", "Pos", "Strand"]
 READS_COLUMN_LIST = ['ID'] + SITES_COLUMN_LIST
-
-meteore_dir = '/projects/li-lab/yang/tools/METEORE'
-meteore_deepsignal_megalodon_model = os.path.join(meteore_dir, 'saved_models',
-                                                  'rf_model_max_depth_3_n_estimator_10_deepsignal_megalodon.model')
-meteore_deepsignal_megalodon_tool = ['deepsignal', 'megalodon']
 
 default_xgboost_params = {
     'objective': 'binary:logistic',

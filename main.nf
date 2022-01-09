@@ -209,6 +209,9 @@ if (params.runMethcall) {
 	}
 
 	if (params.runNANOME) summary['runNANOME'] = 'Yes'
+
+	if (params.runNewTool && params.newModuleConfigs)
+		summary['runNewTool'] = params.newModuleConfigs.collect{it.name}.join(',')
 }
 
 if (params.cleanAnalyses) summary['cleanAnalyses'] = 'Yes'
@@ -331,6 +334,15 @@ process EnvCheck {
 
 	## Validate nanome container/environment is correct
 	bash utils/validate_nanome_container.sh  tools_version_table.tsv
+
+	if [[ ${params.runNewTool} == true ]] ; then
+		newTools=(${params.newModuleConfigs.collect{it.name}.join(' ')})
+		newToolsVersion=(${params.newModuleConfigs.collect{it.version}.join(' ')})
+
+		for i in "\${!newTools[@]}"; do
+			printf "%s\t%s\n" "\${newTools[\$i]}" "\${newToolsVersion[\$i]}" >> tools_version_table.tsv
+		done
+	fi
 
 	## Untar and prepare megalodon model
 	if [[ ${params.runMegalodon} == true && ${params.runMethcall} == true ]]; then
@@ -1776,6 +1788,109 @@ process DpmodComb {
 }
 
 
+// NewTool runs
+process NewTool {
+	tag "${module.name}(${input})"
+	container  "${workflow.containerEngine == 'singularity' ? module.container_singularity : workflow.containerEngine == 'docker'? module.container_docker: null}"
+
+	publishDir "${params.outdir}/${params.dsname}_intermediate/${module.name}",
+		mode: "copy",
+		enabled: params.outputIntermediate
+
+	input:
+	tuple val (module), path (input)
+	each path (genome_path)
+	val genome
+
+	output:
+	path "${params.dsname}_${module.name}_batch_${input.baseName}.*.gz",  emit: batch_out
+
+	script:
+	"""
+	echo "### Check input"
+	echo ${module.name}
+	input=${input}
+	genome=${genome}
+
+	echo "### Perform calling"
+	${module['cmd']}
+
+	echo "### Rename output"
+	echo output=${module['output']}
+
+	if [[ ${module['output']} == *.gz ]] ; then
+		mv ${module['output']}  ${params.dsname}_${module.name}_batch_${input.baseName}.tsv.gz
+	else
+		gzip  -cvf ${module['output']} > ${params.dsname}_${module.name}_batch_${input.baseName}.tsv.gz
+	fi
+	echo "### NewTool=${module.name} DONE"
+	"""
+}
+
+
+// Combine NewTool runs' all results together
+process NewToolComb {
+	tag "${params.dsname}"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
+		mode: "copy",
+		pattern: "${params.dsname}_${module.name}_per_read_combine.*.gz",
+		enabled: params.outputRaw
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy",
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov*.gz"
+
+	input:
+	path batch_in
+	val module
+	each path(src)
+
+	output:
+	path "${params.dsname}_${module.name}_per_read_combine.*.gz",	emit: combine_out
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify
+	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify
+
+	when:
+	params.runCombine
+
+	"""
+	touch ${params.dsname}_${module.name}_per_read_combine.tsv.gz
+
+	if [[ ${module.outputHeader} == true ]] ; then
+		## remove header before combine
+		find . -maxdepth 1 -name '${params.dsname}_${module.name}_batch*.gz' \
+	 		-print0 2>/dev/null | \
+	 		while read -d \$'\0' file ; do
+	 			zcat \$file | \
+	 				awk 'NR>1' | \
+	 				gzip -f \
+	 				>> ${params.dsname}_${module.name}_per_read_combine.tsv.gz
+	 		done
+	else
+		cat ${params.dsname}_${module.name}_batch*.gz\
+			> ${params.dsname}_${module.name}_per_read_combine.tsv.gz
+	fi
+
+	mkdir -p Read_Level-${params.dsname}
+	mkdir -p Site_Level-${params.dsname}
+
+	python src/nanocompare/newtool_parser.py\
+	 	-i  ${params.dsname}_${module.name}_per_read_combine.tsv.gz\
+	 	--read-out Read_Level-${params.dsname}/${params.dsname}_${module.name}-perRead-score.tsv.gz \
+	 	--site-out Site_Level-${params.dsname}/${params.dsname}_${module.name}-perSite-cov1.sort.bed.gz\
+	 	--column-order ${module.outputOrder.join(' ')} \
+	 	--score-cols ${module.outputScoreCols.join(' ')}  ${module.logScore ? '--log-score': ' '}\
+	 	--chrSet ${chrSet} ${params.deduplicate ? '--deduplicate': ' '} ${params.sort ? '--sort': ' '}
+
+	echo "### NewTool Combine DONE"
+	"""
+}
+
+
 // Read level unified output, and get METEORE output
 process METEORE {
 	tag "${params.dsname}"
@@ -2095,7 +2210,7 @@ process Report {
 
 workflow {
 	if ( !file(genome_path.toString()).exists() )
-		exit 1, "genome reference file does not exist, check params: --genome ${params.genome}"
+		exit 1, "genome reference path does not exist, check params: --genome ${params.genome}"
 
 	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
 
@@ -2109,8 +2224,11 @@ workflow {
 		rerioDir = Channel.fromPath(params.rerioDir, type: 'any', checkIfExists: true)
 	}
 
-	if (!params.deepsignalDir) {
-		// default if null, will online downloading
+	if (! params.runDeepSignal) {
+		// use null placeholder
+		deepsignalDir = Channel.fromPath("${projectDir}/utils/null2", type: 'any', checkIfExists: true)
+	} else if (!params.deepsignalDir) {
+		// default if null, will online staging
 		deepsignalDir = Channel.fromPath(params.DEEPSIGNAL_MODEL_ONLINE, type: 'any', checkIfExists: true)
 	} else {
 		// User provide the dir
@@ -2220,9 +2338,22 @@ workflow {
 		r7 = Channel.empty()
 	}
 
+	if (params.runNewTool && params.newModuleConfigs) {
+		newModuleCh = Channel.of( params.newModuleConfigs ).flatten()
+		// ref: https://www.nextflow.io/docs/latest/operator.html#combine
+		NewTool(newModuleCh.combine(Basecall.out.basecall), EnvCheck.out.reference_genome, referenceGenome)
+		NewToolComb(NewTool.out.batch_out.collect(), newModuleCh, ch_src)
+
+		s_new = NewToolComb.out.site_unify
+		r_new = NewToolComb.out.read_unify
+	} else {
+		s_new = Channel.empty()
+		r_new = Channel.empty()
+	}
+
 	// Site level combine a list
 	Channel.fromPath("${projectDir}/utils/null1").concat(
-		s1, s2, s3, s4, s5, s6, s7
+		s1, s2, s3, s4, s5, s6, s7, s_new
 		).toList().set { tools_site_unify }
 
 	Channel.fromPath("${projectDir}/utils/null2").concat(
