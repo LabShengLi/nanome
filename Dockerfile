@@ -19,9 +19,6 @@ ARG REMORA_VERSION=0.1.2
 ARG MEGALODON_VERSION=2.4.2
 ARG BUILD_PACKAGES="wget apt-transport-https procps git curl"
 ARG DEBIAN_FRONTEND="noninteractive"
-ARG METEORE_GITHUB="https://github.com/comprna/METEORE/archive/refs/tags/v1.0.0.tar.gz"
-ARG DEEPSIGNAL_MODEL="https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz"
-ARG MEGALODON_MODEL="https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/megalodon_model.tar.gz"
 
 # Install guppy-gpu version, ref: https://github.com/GenomicParisCentre/dockerfiles
 RUN apt-get -q update && \
