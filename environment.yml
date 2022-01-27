@@ -39,8 +39,8 @@ dependencies:
   - nanopolish=0.13.2
   - pip:
     - xgboost
-    - ont-pyguppy-client-lib==5.0.16
-    - deepsignal==0.1.9
+    - ont-pyguppy-client-lib==6.0.1
+    - deepsignal==0.1.10
     - fast5mod==1.0.5
     - nanome-jax==1.3.25
     - megalodon
