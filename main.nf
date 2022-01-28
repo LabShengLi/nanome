@@ -347,13 +347,15 @@ process EnvCheck {
 
 	## Untar and prepare megalodon model
 	if [[ ${params.runMegalodon} == true && ${params.runMethcall} == true ]]; then
-		if [[ ${rerioDir} == null* ]] ; then
+		if [[ ${rerioDir} == null* && ${params.rerio} == true ]] ; then
 			# Obtain and run R9.4.1, MinION, 5mC CpG model from Rerio
 			git clone ${params.rerioGithub}
 			rerio/download_model.py rerio/basecall_models/${params.MEGALODON_MODEL.replace('.cfg', '')}
-		elif [[ ${rerioDir} != rerio && -d ${rerioDir} ]] ; then
+		elif [[ ${rerioDir} != rerio && -d ${rerioDir} && ${params.rerio} == true ]] ; then
 			## rename it to rerio for output channel
 			cp  -a ${rerioDir}  rerio
+		else
+			mkdir -p rerio
 		fi
 		## Check Rerio model
 		ls -lh rerio/
