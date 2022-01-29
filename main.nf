@@ -356,6 +356,7 @@ process EnvCheck {
 			cp  -a ${rerioDir}  rerio
 		else
 			mkdir -p rerio
+			touch rerio/test.txt
 		fi
 		## Check Rerio model
 		ls -lh rerio/
