@@ -528,9 +528,11 @@ process Basecall {
 	if [[ "\${CUDA_VISIBLE_DEVICES:-}" == "" ]] ; then
 		echo "Detect no GPU, using CPU commandType"
 		commandType='cpu'
+		gpuOptions=" "
 	else
 		echo "Detect GPU, using GPU commandType"
 		commandType='gpu'
+		gpuOptions="-x auto"
 	fi
 
 	which guppy_basecaller
@@ -538,27 +540,13 @@ process Basecall {
 	mkdir -p ${fast5_dir.baseName}.basecalled
 
 	if [[ ${params.skipBasecall} == false ]] ; then
-		if [[ \${commandType} == "cpu" ]]; then
-			## CPU version command
-			guppy_basecaller --input_path ${fast5_dir} \
-				--save_path "${fast5_dir.baseName}.basecalled" \
-				--config ${params.GUPPY_BASECALL_MODEL} \
-				--num_callers ${task.cpus} \
-				--fast5_out --compress_fastq\
-				--verbose_logs  &>> ${params.dsname}.${fast5_dir.baseName}.Basecall.run.log
-		elif [[ \${commandType} == "gpu" ]]; then
-			## GPU version command
-			guppy_basecaller --input_path ${fast5_dir} \
-				--save_path "${fast5_dir.baseName}.basecalled" \
-				--config ${params.GUPPY_BASECALL_MODEL} \
-				--num_callers ${task.cpus} \
-				--fast5_out --compress_fastq\
-				--verbose_logs \
-				-x auto  &>> ${params.dsname}.${fast5_dir.baseName}.Basecall.run.log
-		else
-			echo "### error value for commandType=\${commandType}"
-			exit 255
-		fi
+		## CPU/GPU version command
+		guppy_basecaller --input_path ${fast5_dir} \
+			--save_path "${fast5_dir.baseName}.basecalled" \
+			--config ${params.GUPPY_BASECALL_MODEL} \
+			--num_callers ${task.cpus} \
+			--fast5_out --compress_fastq\
+			--verbose_logs  \${gpuOptions} &>> ${params.dsname}.${fast5_dir.baseName}.Basecall.run.log
 	else
 		## Just use user's basecalled input
 		cp -rf ${fast5_dir}/*   ${fast5_dir.baseName}.basecalled/
@@ -1165,9 +1153,11 @@ process Guppy {
 	if [[ "\${CUDA_VISIBLE_DEVICES:-}" == "" ]] ; then
 		echo "Detect no GPU, using CPU commandType"
 		commandType='cpu'
+		gpuOptions=" "
 	else
 		echo "Detect GPU, using GPU commandType"
 		commandType='gpu'
+		gpuOptions="-x auto"
 	fi
 
 	if [[ ${params.skipBasecall} == false ]]; then
@@ -1178,27 +1168,14 @@ process Guppy {
 
 	mkdir -p ${fast5_dir.baseName}.methcalled
 
-	if [[ \${commandType} == "cpu" ]]; then
-		## CPU version command
-		guppy_basecaller --input_path \${indir} --recursive\
-			--save_path ${fast5_dir.baseName}.methcalled \
-			--config ${params.GUPPY_METHCALL_MODEL} \
-			--num_callers $task.cpus \
-			--fast5_out --compress_fastq\
-			--verbose_logs  &>> ${params.dsname}.${fast5_dir.baseName}.Guppy.run.log
-	elif [[ \${commandType} == "gpu" ]]; then
-		## GPU version command
-		guppy_basecaller --input_path \${indir} --recursive\
-			--save_path ${fast5_dir.baseName}.methcalled \
-			--config ${params.GUPPY_METHCALL_MODEL} \
-			--num_callers $task.cpus \
-			--fast5_out --compress_fastq\
-			--verbose_logs \
-			--device auto  &>> ${params.dsname}.${fast5_dir.baseName}.Guppy.run.log
-	else
-		echo "### error value for commandType=\${commandType}"
-		exit 255
-	fi
+	## CPU/GPU version command
+	guppy_basecaller --input_path \${indir} --recursive\
+		--save_path ${fast5_dir.baseName}.methcalled \
+		--config ${params.GUPPY_METHCALL_MODEL} \
+		--num_callers $task.cpus \
+		--fast5_out --compress_fastq\
+		--verbose_logs  \${gpuOptions} &>> ${params.dsname}.${fast5_dir.baseName}.Guppy.run.log
+
 	echo "### Guppy methylation calling DONE"
 
 	## Extract guppy methylation-callings
