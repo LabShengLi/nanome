@@ -252,7 +252,7 @@ cd nanome
 conda env create --name nanome --file=environment.yml
 conda activate nanome
 
-pip install megalodon==2.4.1
+pip install megalodon==2.4.2
 npm install -g inliner
 conda install -c conda-forge -c bioconda nextflow
 
