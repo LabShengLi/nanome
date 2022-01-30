@@ -234,7 +234,8 @@ if (params.sort) { summary['sort'] 	= params.sort }
 
 summary['\nModel summary']         = "--------"
 if (params.runBasecall && !params.skipBasecall) summary['GUPPY_BASECALL_MODEL'] 	= params.GUPPY_BASECALL_MODEL
-if (params.runMethcall && params.runMegalodon) summary['MEGALODON_MODEL'] 	= params.MEGALODON_MODEL
+if (params.runMethcall && params.runMegalodon)
+	summary['MEGALODON_MODEL'] 	= params.rerio? 'Rerio:' + params.MEGALODON_MODEL : 'Remora:' + params.remoraModel
 if (params.runMethcall && params.runDeepSignal) summary['DEEPSIGNAL_MODEL_DIR/DEEPSIGNAL_MODEL'] =\
  	params.DEEPSIGNAL_MODEL_DIR + "/" + params.DEEPSIGNAL_MODEL
 if (params.runMethcall && params.runGuppy) summary['GUPPY_METHCALL_MODEL'] 	= params.GUPPY_METHCALL_MODEL
@@ -346,13 +347,16 @@ process EnvCheck {
 
 	## Untar and prepare megalodon model
 	if [[ ${params.runMegalodon} == true && ${params.runMethcall} == true ]]; then
-		if [[ ${rerioDir} == null* ]] ; then
+		if [[ ${rerioDir} == null* && ${params.rerio} == true ]] ; then
 			# Obtain and run R9.4.1, MinION, 5mC CpG model from Rerio
 			git clone ${params.rerioGithub}
 			rerio/download_model.py rerio/basecall_models/${params.MEGALODON_MODEL.replace('.cfg', '')}
-		elif [[ ${rerioDir} != rerio && -d ${rerioDir} ]] ; then
+		elif [[ ${rerioDir} != rerio && -d ${rerioDir} && ${params.rerio} == true ]] ; then
 			## rename it to rerio for output channel
 			cp  -a ${rerioDir}  rerio
+		else
+			mkdir -p rerio
+			touch rerio/test.txt
 		fi
 		## Check Rerio model
 		ls -lh rerio/
@@ -525,9 +529,11 @@ process Basecall {
 	if [[ "\${CUDA_VISIBLE_DEVICES:-}" == "" ]] ; then
 		echo "Detect no GPU, using CPU commandType"
 		commandType='cpu'
+		gpuOptions=" "
 	else
 		echo "Detect GPU, using GPU commandType"
 		commandType='gpu'
+		gpuOptions="-x auto"
 	fi
 
 	which guppy_basecaller
@@ -535,27 +541,13 @@ process Basecall {
 	mkdir -p ${fast5_dir.baseName}.basecalled
 
 	if [[ ${params.skipBasecall} == false ]] ; then
-		if [[ \${commandType} == "cpu" ]]; then
-			## CPU version command
-			guppy_basecaller --input_path ${fast5_dir} \
-				--save_path "${fast5_dir.baseName}.basecalled" \
-				--config ${params.GUPPY_BASECALL_MODEL} \
-				--num_callers ${task.cpus} \
-				--fast5_out --compress_fastq\
-				--verbose_logs  &>> ${params.dsname}.${fast5_dir.baseName}.Basecall.run.log
-		elif [[ \${commandType} == "gpu" ]]; then
-			## GPU version command
-			guppy_basecaller --input_path ${fast5_dir} \
-				--save_path "${fast5_dir.baseName}.basecalled" \
-				--config ${params.GUPPY_BASECALL_MODEL} \
-				--num_callers ${task.cpus} \
-				--fast5_out --compress_fastq\
-				--verbose_logs \
-				-x auto  &>> ${params.dsname}.${fast5_dir.baseName}.Basecall.run.log
-		else
-			echo "### error value for commandType=\${commandType}"
-			exit 255
-		fi
+		## CPU/GPU version command
+		guppy_basecaller --input_path ${fast5_dir} \
+			--save_path "${fast5_dir.baseName}.basecalled" \
+			--config ${params.GUPPY_BASECALL_MODEL} \
+			--num_callers ${task.cpus} \
+			--fast5_out --compress_fastq\
+			--verbose_logs  \${gpuOptions} &>> ${params.dsname}.${fast5_dir.baseName}.Basecall.run.log
 	else
 		## Just use user's basecalled input
 		cp -rf ${fast5_dir}/*   ${fast5_dir.baseName}.basecalled/
@@ -905,51 +897,43 @@ process Megalodon {
 	if [[ "\${CUDA_VISIBLE_DEVICES:-}" == "" ]] ; then
 		echo "Detect no GPU, using CPU commandType"
 		commandType='cpu'
+		gpuOptions=" "
 	else
 		echo "Detect GPU, using GPU commandType"
 		commandType='gpu'
+		gpuOptions="--devices 0"
 	fi
 
 	echo "### Guppy dir:"
 	which guppy_basecall_server
 
-	if [[ \${commandType} == "cpu" ]]; then
-		## CPU version command
-		## Ref: https://github.com/nanoporetech/megalodon
-		## CPU issues: https://github.com/nanoporetech/megalodon/issues/172
+	if [[ ${params.rerio} == true ]] ; then
+		## Rerio model running
 		megalodon \
-			${fast5_dir}   --overwrite \
-			--mod-motif m CG 0 \
-			--outputs per_read_mods mods per_read_refs \
-			--mod-output-formats bedmethyl wiggle \
-			--write-mods-text --write-mod-log-probs \
-			--guppy-server-path \$(which guppy_basecall_server) \
-			--guppy-config ${params.MEGALODON_MODEL} \
-			--guppy-params "-d ./${rerio_dir}/basecall_models/" \
-			--guppy-timeout ${params.GUPPY_TIMEOUT} \
-			--reference ${referenceGenome} \
-			--processes $cores\
-			&>> ${params.dsname}.${fast5_dir.baseName}.Megalodon.run.log
-	elif [[ \${commandType} == "gpu" ]]; then
-		## GPU version command
-		## Ref: https://github.com/nanoporetech/megalodon
-		## --guppy-params "-d megalodon_model_dir/ --num_callers 8 --ipc_threads  42"
-		megalodon \
-			${fast5_dir}   --overwrite \
-			--mod-motif m CG 0 \
-			--outputs per_read_mods mods per_read_refs \
-			--mod-output-formats bedmethyl wiggle \
-			--write-mods-text --write-mod-log-probs \
-			--guppy-server-path \$(which guppy_basecall_server) \
-			--guppy-config ${params.MEGALODON_MODEL} \
-			--guppy-params "-d ./${rerio_dir}/basecall_models/" \
-			--guppy-timeout ${params.GUPPY_TIMEOUT} \
-			--reference ${referenceGenome} \
-			--processes $cores --devices 0\
-			&>> ${params.dsname}.${fast5_dir.baseName}.Megalodon.run.log
+				${fast5_dir}   --overwrite \
+				--mod-motif m CG 0 \
+				--outputs per_read_mods mods per_read_refs \
+				--mod-output-formats bedmethyl wiggle \
+				--write-mods-text --write-mod-log-probs \
+				--guppy-server-path \$(which guppy_basecall_server) \
+				--guppy-config ${params.MEGALODON_MODEL} \
+				--guppy-params "-d ./${rerio_dir}/basecall_models/" \
+				--guppy-timeout ${params.GUPPY_TIMEOUT} \
+				--reference ${referenceGenome} \
+				--processes $cores \${gpuOptions} \
+				&>> ${params.dsname}.${fast5_dir.baseName}.Megalodon.run.log
 	else
-		echo "### error value for commandType=\${commandType}"
-		exit 255
+		## Run Remora model
+		megalodon ${fast5_dir} --overwrite\
+				--guppy-config ${params.GUPPY_BASECALL_MODEL}\
+				--remora-modified-bases ${params.remoraModel} fast 0.0.0 5mc CG 0\
+				--outputs mod_mappings mods per_read_mods\
+				--guppy-server-path \$(which guppy_basecall_server) \
+				--mod-output-formats bedmethyl wiggle \
+				--write-mods-text --write-mod-log-probs\
+				--reference ${referenceGenome}\
+				--processes $cores \${gpuOptions} \
+				&>> ${params.dsname}.${fast5_dir.baseName}.Megalodon.run.log
 	fi
 
 	awk 'NR>1' megalodon_results/per_read_modified_base_calls.txt | gzip -f > \
@@ -1170,9 +1154,11 @@ process Guppy {
 	if [[ "\${CUDA_VISIBLE_DEVICES:-}" == "" ]] ; then
 		echo "Detect no GPU, using CPU commandType"
 		commandType='cpu'
+		gpuOptions=" "
 	else
 		echo "Detect GPU, using GPU commandType"
 		commandType='gpu'
+		gpuOptions="-x auto"
 	fi
 
 	if [[ ${params.skipBasecall} == false ]]; then
@@ -1183,27 +1169,14 @@ process Guppy {
 
 	mkdir -p ${fast5_dir.baseName}.methcalled
 
-	if [[ \${commandType} == "cpu" ]]; then
-		## CPU version command
-		guppy_basecaller --input_path \${indir} --recursive\
-			--save_path ${fast5_dir.baseName}.methcalled \
-			--config ${params.GUPPY_METHCALL_MODEL} \
-			--num_callers $task.cpus \
-			--fast5_out --compress_fastq\
-			--verbose_logs  &>> ${params.dsname}.${fast5_dir.baseName}.Guppy.run.log
-	elif [[ \${commandType} == "gpu" ]]; then
-		## GPU version command
-		guppy_basecaller --input_path \${indir} --recursive\
-			--save_path ${fast5_dir.baseName}.methcalled \
-			--config ${params.GUPPY_METHCALL_MODEL} \
-			--num_callers $task.cpus \
-			--fast5_out --compress_fastq\
-			--verbose_logs \
-			--device auto  &>> ${params.dsname}.${fast5_dir.baseName}.Guppy.run.log
-	else
-		echo "### error value for commandType=\${commandType}"
-		exit 255
-	fi
+	## CPU/GPU version command
+	guppy_basecaller --input_path \${indir} --recursive\
+		--save_path ${fast5_dir.baseName}.methcalled \
+		--config ${params.GUPPY_METHCALL_MODEL} \
+		--num_callers $task.cpus \
+		--fast5_out --compress_fastq\
+		--verbose_logs  \${gpuOptions} &>> ${params.dsname}.${fast5_dir.baseName}.Guppy.run.log
+
 	echo "### Guppy methylation calling DONE"
 
 	## Extract guppy methylation-callings

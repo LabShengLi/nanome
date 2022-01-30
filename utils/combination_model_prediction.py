@@ -97,6 +97,7 @@ if __name__ == '__main__':
     combine_file = reduce(lambda left, right: pd.merge(left, right, how='inner', on=["ID", "Chr", "Pos"]),
                           dfs)
     combine_file.drop_duplicates(subset=["ID", "Chr", "Pos"], inplace=True)
+    combine_file.replace([np.inf, -np.inf], np.nan, inplace=True)
     combine_file.dropna(inplace=True)
     combine_file.reset_index(inplace=True, drop=True)
 
