@@ -244,7 +244,9 @@ For more detail of using cloud computing, please check [Cloud computing usage](h
 
 # 6. Conda environment for local running
 
-NANOME support local running without Docker or Singularity support. Below is conda environment installation steps, users need to install Guppy software by themselves in this case:
+NANOME support local running without Docker or Singularity support. Below is conda environment installation steps, users need to install Guppy software by themselves in this case.
+
+* Create conda environment name:
 ```angular2html
 # Create conda environment for local running NANOME
 git clone https://github.com/TheJacksonLaboratory/nanome.git
@@ -255,7 +257,10 @@ conda activate nanome
 pip install megalodon==2.4.2
 npm install -g inliner
 conda install -c conda-forge -c bioconda nextflow
+```
 
+* Run NANOME in local conda way:
+```
 # Run NANOME pipeline using local execution
 conda activate nanome
 nextflow run TheJacksonLaboratory/nanome\
@@ -277,7 +282,31 @@ nextflow run TheJacksonLaboratory/nanome\
 ```
 Param`--guppyDir=[guppy-installation-directory]` is the Guppy software installation base directory, `--conda_base_dir [conda-dir]` is conda software base directory, `--conda_name [conda-env-dir]` is conda environment base directory.
 
-# 7. Add a new module/tool
+# 7. Using GPU
+NANOME support running on GPU mode automatically, based on setting of environment varable `CUDA_VISIBLE_DEVICES`. In general, this variable will be set by system administrator, so there is no command line difference for GPU and CPU.
+
+Check your system support NVIDIA and CUDA driver:
+```angular2html
+nvidia-smi
+nvcc -V
+echo $CUDA_VISIBLE_DEVICES
+```
+
+Singularity can directly pass CUDA devices by default, however, docker need to provide `--gpus all` docker options to pass CUDA devices. Below is the docker command to use GPU resources:
+```angular2html
+nextflow run TheJacksonLaboratory/nanome\
+    -profile test,docker\
+    --containerOptions '--gpus all'
+```
+
+Please ensure the system installed GPU supported options for docker, check [install document](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html). Below is a test by running a base CUDA container:
+```angular2html
+sudo docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi
+```
+
+Check links for how to  install [Nvidia](https://www.nvidia.com/Download/index.aspx?lang=cn) and [CUDA](https://developer.nvidia.com/cuda-toolkit-archive) drivers.
+
+# 8. Add a new module/tool
 
 NANOME support adding any new methylation-calling module in a rapid way, without touching the main pipeline codes. Users only need to specify the container (or local running way) and methylation calling command line interface for each new tool in a configuration file.
 
