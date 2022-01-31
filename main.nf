@@ -76,7 +76,7 @@ def helpMessage() {
 	  --time		SLURM job submission running time, e.g., '2h', '1d'
 	  --memory		SLURM job submission memory, e.g., '32GB'
 
-	  --googleProjectName	Google Cloud Platform (GCP) project name for google-lifesciences
+	  --projectCloud	Google Cloud Platform (GCP) project name for google-lifesciences
 	  --config		Lifebit CloudOS config file, e.g., 'conf/executors/lifebit.config'
 
 	-profile options:
@@ -276,24 +276,30 @@ if (workflow.profile.contains('hpc') || workflow.profile.contains('winter') ||\
 }
 if (workflow.profile.contains('google') || (params.config && params.config.contains('lifebit'))) {
 	summary['\nGCP settings']         = "--------"
-	if (!params.config || !params.config.contains('lifebit')) {
-		summary['googleProjectName']    = params.googleProjectName
-	} else { // lifebit specific settings
-		summary['config']       		= params.config
-		summary['networkLifebit']       = params.networkLifebit
-		summary['subnetworkLifebit']	= params.subnetworkLifebit
-		summary['zoneCloud']       		= params.zoneCloud
+	if (params.projectCloud) {
+		summary['projectCloud']    = params.projectCloud
 	}
-    summary['googleLocation']          = params.googleLocation
-    summary['googleRegion']            = params.googleRegion
+	if (params.config) { // lifebit specific settings
+		summary['config']       		= params.config
+	}
+	summary['networkCloud']       = params.networkCloud
+	summary['subnetworkCloud']	= params.subnetworkCloud
+
+    summary['locationCloud']          = params.locationCloud
+    summary['regionCloud']            = params.regionCloud
+    summary['zoneCloud']       		= params.zoneCloud
+
     summary['bootDiskSizeCloud']       = params.bootDiskSizeCloud
 
-	summary['machineType']         	= params.machineType
-	summary['highmemMachineType']  	= params.highmemMachineType
+	if (params.machineType)   	summary['machineType'] = params.machineType
+	else {
+		summary['machineType:cpus']         	= params.processors
+		summary['machineType:memory']         	= params.memory
+	}
 	summary['gpuType']         	= params.gpuType
 	summary['gpuNumber']        = params.gpuNumber
 
-	summary['lowDiskSize']      = params.lowDiskSize
+	// summary['lowDiskSize']      = params.lowDiskSize
 	summary['midDiskSize']      = params.midDiskSize
 	summary['highDiskSize']     = params.highDiskSize
 }
