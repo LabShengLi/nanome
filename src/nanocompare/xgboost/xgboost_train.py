@@ -382,8 +382,6 @@ def parse_arguments():
                         help='sanity check old meteore results')
     parser.add_argument('--model-type', type=str, default='XGBoost',
                         help='model type for training, can be XGBoost, or RF, or XGBoost_NA')
-    parser.add_argument('--na-data', nargs='+', default=None,
-                        help='data sets that include NAs')
     parser.add_argument('--bsseq-cov', type=int, default=5,
                         help='coverage cutoff for BS-seq data, default is 5')
     parser.add_argument('--random-state', type=int, default=42,
@@ -402,6 +400,7 @@ def parse_arguments():
                         help='generate train and test data if specified its name, such as APL, NA12878')
     parser.add_argument('--eval-only', help="if only output evaluation results, not training", action='store_true')
     parser.add_argument('--test', type=int, help="if only test on some number of rows", default=None)
+    parser.add_argument('--save-df', help="if save the data into dataframe", action='store_true')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     args = parser.parse_args()
     return args
@@ -442,27 +441,37 @@ if __name__ == '__main__':
         datadf1[TRUTH_LABEL_COLUMN] = datadf1['Freq'].apply(freq_to_label).astype(int)
         datadf1.reset_index(drop=True, inplace=True)
 
-        ## non-NA data for all tools for evaluation
+        ## non-NA train data for all tools for evaluation
         datadf2 = datadf1.dropna(subset=all_tools)
         datadf_list.append(datadf2)
 
-        ## NA data at trained tools
+        ## NA train data at any one or more tools
         mask_list = [datadf1[tool].isna() for tool in args.t]
         mask_na_index = reduce(lambda left, right: (left | right), mask_list)
         datadf3 = datadf1[mask_na_index]
         nadatadf_list.append(datadf3)
 
     logger.debug(f"all_tools={all_tools}")
+    outdir = os.path.dirname(args.o)
+    os.makedirs(outdir, exist_ok=True)
 
     datadf = pd.concat(datadf_list)
     datadf.reset_index(drop=True, inplace=True)
     datadf_list = None  # save memory
     logger.debug(f"DF1 pred (non-NA)={len(datadf):,}")
+    if args.save_df:
+        outfn = args.o + f'_joined_nonNA_df.csv.gz'
+        datadf.to_csv(outfn, index=False)
+        logger.debug(f"save to {outfn}")
 
     nadatadf = pd.concat(nadatadf_list)
-    datadf.reset_index(drop=True, inplace=True)
+    nadatadf.reset_index(drop=True, inplace=True)
     nadatadf_list = None  # save memory
     logger.debug(f"DF2 pred (any-NA)={len(nadatadf):,}")
+    if args.save_df:
+        outfn = args.o + f'_joined_NA_df.csv.gz'
+        nadatadf.to_csv(outfn, index=False)
+        logger.debug(f"save to {outfn}")
 
     ## Output read-level, site-level distributions for DF1 and DF2
     logger.info(general_info_df(datadf, TRUTH_LABEL_COLUMN, 'DF1 (non-NA data)'))
