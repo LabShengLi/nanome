@@ -232,7 +232,7 @@ def filter_noncg_sites_for_tombo(
     filter_noncg_sites_ref_seq(df=df, tagname=basename, ntask=ntask, ttask=ttask, num_seq=num_seq)
 
 
-def convert_bismark_add_strand_and_seq(indf, outfn, report_num=None):
+def convert_bismark_add_strand_and_seq(indf, outfn):
     """
     Check start pointer, if point to CG's C, it is positive strand, or else, it is reverse strand
     Note: input file is 1-based start, we also output to a 1-based format that is compatable to our Bismark import functions.
@@ -244,7 +244,8 @@ def convert_bismark_add_strand_and_seq(indf, outfn, report_num=None):
     logger.debug(f'Start add strand and seq to bismark cov file, total len={len(indf)}')
 
     outf = gzip.open(outfn, 'wt')
-    for index, row in tqdm(indf.iterrows()):
+
+    for index, row in tqdm(indf.iterrows(), total=len(indf), desc='Bismark_cov'):
         # if report_num and index % report_num == 0:
         #     logger.debug(f'processed index={index}')
         chr = row['chr']
@@ -265,16 +266,28 @@ def convert_bismark_add_strand_and_seq(indf, outfn, report_num=None):
     logger.debug(f'Finish add strand info task')
 
 
-def convert_bismark_cov_to_gw_format(df):
+def convert_bismark_cov_to_gw_format(df, tagname=None):
     """
     Save adding strand info and dna seq format, which is in same format of Bismark Genome-wide output files
+
+    Input format:
+    chr17	61127	61127	100	1	0
+    chr17	61139	61139	100	1	0
+    chr17	61193	61193	100	1	0
+
+    Output format:
+    chr17	61127	+	1	0	GCG
+    chr17	61139	+	1	0	ACG
+    chr17	61193	+	1	0	CCG
+
     :param df:
     :return:
     """
     basefn = os.path.basename(args.i)
     basename = os.path.splitext(basefn)[0]
 
-    outfn = os.path.join(args.o, f'{basename}.convert.add.strand.tsv.gz')
+    outfn = os.path.join(args.o,
+                         f'{basename.replace(".gz", "")}.{"" if tagname is None else tagname}.convert.add.strand.tsv.gz')
     convert_bismark_add_strand_and_seq(df, outfn)
 
 
@@ -632,7 +645,7 @@ if __name__ == '__main__':
     ref_fasta = None
     if args.cmd in ['tombo-add-seq', 'deepmod-add-seq', 'deepmod-read-level', 'sanity-check-seq',
                     'bismark-convert']:  # These command will use reference genome
-        ref_fn = '/projects/li-lab/Ziwei/Nanopore/data/reference/hg38.fa'
+        ref_fn = '/projects/li-lab/reference/hg38/hg38.fasta'
         ref_fasta = SeqIO.to_dict(SeqIO.parse(open(ref_fn), 'fasta'))
 
     if args.cmd == 'tombo-add-seq':
@@ -694,13 +707,17 @@ if __name__ == '__main__':
 
         ## sbatch meth_stats_tool.sh bismark-convert -i /pod/2/li-lab/Ziwei/Nanopore_methyl_compare/result/APL_BSseq/APL-bs_R1_val_1_bismark_bt2_pe.deduplicated.sorted.bed
 
-        df = pd.read_csv(args.i, sep='\t', header=None)
+        df = pd.read_csv(args.i, sep='\t', header=None, index_col=None)
         if len(df.columns) != 6:
             raise Exception(f"Can no recognize input file format for infn={args.i}, df={df}")
         df.columns = ['chr', 'start', 'end', 'freq100', 'mcount', 'ccount']
-        logger.debug(df)
 
-        convert_bismark_cov_to_gw_format(df)
+        if args.chrs is not None and len(args.chrs) >= 1:
+            logger.debug(f"Filter by chrs={args.chrs}")
+            df = df[df.chr.isin(args.chrs)].copy()
+            df.reset_index(drop=True, inplace=True)
+        logger.debug(df)
+        convert_bismark_cov_to_gw_format(df, tagname='_'.join(args.chrs))
     elif args.cmd == 'gc-density-bed':
         # sbatch meth_stats_tool.sh gc-density-bed
         infn = "/projects/li-lab/yang/workspace/nano-compare/data/genome-annotation/hg38.gc5Base.bed.gz"
