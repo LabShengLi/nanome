@@ -1,6 +1,8 @@
 ## Tutorial of DNA methylation calling for ONT data
 In this totorial, you will learn how to do methylation calling on Oxford Nanopore sequencing data by latest tools. Please create a freshing new folder to execute following commands.
 
+{% include note.html content="This is my note. All the content I type here is treated as a single paragraph." %}
+
 ### 1. Software installation
 #### 1.1 Install Guppy
 Instal the latest version of Guppy:
