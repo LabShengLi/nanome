@@ -1,6 +1,43 @@
 ## Tutorial of DNA methylation calling for ONT data AAA
 In this totorial, you will learn how to do methylation calling on Oxford Nanopore sequencing data by latest tools. Please create a freshing new folder to execute following commands.
 
+test
+
+~~~
+$ cd ~/dc_workshop
+$ mkdir -p data/ref_genome
+$ curl -L -o data/ref_genome/ecoli_rel606.fasta.gz ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/017/985/GCA_000017985.1_ASM1798v1/GCA_000017985.1_ASM1798v1_genomic.fna.gz
+$ gunzip data/ref_genome/ecoli_rel606.fasta.gz
+~~~
+{: .bash}
+
+> ## Exercise 
+> 
+> We saved this file as `data/ref_genome/ecoli_rel606.fasta.gz` and then decompressed it. 
+> What is the real name of the genome? 
+> 
+>> ## Solution
+>> 
+>> ~~~
+>> $ head data/ref_genome/ecoli_rel606.fasta
+>> ~~~
+>> {: .bash}
+>> 
+>> The name of the sequence follows the `>` character. The name is `CP000819.1 Escherichia coli B str. REL606, complete genome`.
+>> Keep this chromosome name (`CP000819.1`) in mind, as we will use it later in the lesson. 
+> {: .solution}
+end of test
+
+
+~~~
+$ cd ~/dc_workshop
+$ mkdir -p data/ref_genome
+$ curl -L -o data/ref_genome/ecoli_rel606.fasta.gz ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/017/985/GCA_000017985.1_ASM1798v1/GCA_000017985.1_ASM1798v1_genomic.fna.gz
+$ gunzip data/ref_genome/ecoli_rel606.fasta.gz
+~~~
+{: .bash}
+
+
 
 ### 1. Software installation
 #### 1.1 Install Guppy
