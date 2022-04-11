@@ -1,5 +1,5 @@
 ## Tutorial of DNA methylation calling for ONT data
-In this totorial, you will learn how to do methylation calling on Oxford Nanopore sequencing data by latest tools. Please create a fresh new folder to run following commands.
+In this totorial, you will learn how to do methylation calling on Oxford Nanopore sequencing data by latest tools. Please create a freshing new folder to execute following commands.
 
 ### 1. Software installation
 #### 1.1 Install Guppy
@@ -13,7 +13,7 @@ ont-guppy-cpu/bin/guppy_basecaller  -v
 ```
 
 #### 1.2 Install Conda
-If you do not have conda, please follow this link(https://docs.conda.io/en/latest/miniconda.html) to install conda.
+If you do not have conda, please follow this link (https://docs.conda.io/en/latest/miniconda.html) to install conda.
 
 #### 1.3 Install Megalodon
 [Megalodon](https://github.com/nanoporetech/megalodon) is a popular and latest ONT developed methylation-calling tool. It can be installed in conda enviroment.
@@ -71,13 +71,8 @@ log.txt          modified_bases.5mC.bed   sequencing_summary.txt
 mappings.bam     mod_mappings.bam
 ```
 
-### 4. Consensus 5mC detection by Nanome Nextflow Pipeline
-We developed NANOME, the first Nextflow based container environment (Docker and Singularity) for consensus DNA methylation detection using XGBoost, a gradient boosting algorithm for nanopore long-read sequencing. 
-
-Enter an interactive node with 8 cpus:
-```
-srun --pty -q batch --time=08:00:00 --mem=25G -n 8  bash
-```
+### 4. Consensus 5mC detection by NANOME Pipeline
+We developed NANOME, the first Nextflow based container environment (Docker and Singularity) for consensus DNA methylation detection using XGBoost, a gradient boosting algorithm for nanopore long-read sequencing. The consensus outputs can obtain more accurate performance and more comprehensive CpG coverage.
 
 Install Nextflow:
 ```
@@ -85,6 +80,11 @@ conda activate megalodon
 # Install nextflow
 conda install -c conda-forge -c bioconda nextflow
 nextflow -v
+```
+
+Enter an interactive node with 8 cpus for parallelly job running (HPC users only):
+```
+srun --pty -q batch --time=08:00:00 --mem=25G -n 8  bash
 ```
 
 Run Nanome consensus pipeline for 5mC detection:
@@ -99,7 +99,9 @@ nextflow run TheJacksonLaboratory/nanome\
     --genome https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli.tar.gz
 ```
 
-The output can be followins:
+`-profile` is the bundle of paramters used for singularity, `--dsname` is the dataset name, `--input` is the FAST5 input files, and `--genome` is the reference genome file.
+
+The output of NANOME pipeline can be followins:
 ```
 [b2/6dbf5d] process > EnvCheck (CIEcoli)                   [100%] 1 of 1 ✔
 [12/5b2e1f] process > Untar (ecoli_ci_test_fast5.tar)      [100%] 1 of 1 ✔
@@ -121,52 +123,17 @@ CPU hours   : 0.2
 Succeeded   : 14
 ```
 
-Results are located at results folder as default:
+Results of NANOME pipeline are located at `results/` folder as default:
 ```
 ls results/
-
 CIEcoli-basecallings          CIEcoli_nanome_report.html  README_CIEcoli.txt
 CIEcoli-methylation-callings  MultiQC
 
 ls results/CIEcoli-methylation-callings/
-
 Raw_Results-CIEcoli  Read_Level-CIEcoli  Site_Level-CIEcoli  tools_version_table.tsv
 ```
 
-END of Tutorial
-
-You can use the [editor on GitHub](https://github.com/TheJacksonLaboratory/nanome/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
-
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/TheJacksonLaboratory/nanome/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+### Reference
+1. https://github.com/nanoporetech/megalodon
+2. https://github.com/TheJacksonLaboratory/nanome
+3. DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation. Genome Biology 22, 295 (2021). https://doi.org/10.1186/s13059-021-02510-z
