@@ -1,4 +1,32 @@
-## Welcome to GitHub Pages
+## Tutorial of DNA methylation calling for ONT data
+In this totorial, you will learn how to do methylation calling on Oxford Nanopore sequencing data by latest tools. Please create a fresh new folder to run following commands.
+
+### 1. Software installation
+#### 1.1 Install Guppy
+Instal the latest version of Guppy:
+```
+wget https://americas.oxfordnanoportal.com/software/analysis/ont-guppy-cpu_6.1.1_linux64.tar.gz
+tar -xzf ont-guppy-cpu_6.1.1_linux64.tar.gz && \
+    rm -f ont-guppy-cpu_6.1.1_linux64.tar.gz
+
+ont-guppy-cpu/bin/guppy_basecaller  -v
+```
+
+#### 1.2 Install Conda
+If you do not have conda, please follow this link(https://docs.conda.io/en/latest/miniconda.html) to install conda.
+
+#### 1.3 Install Megalodon
+[Megalodon](https://github.com/nanoporetech/megalodon) is a popular and latest ONT developed methylation-calling tool. It can be installed in conda enviroment.
+```
+conda create --name megalodon python=3.9
+conda activate megalodon
+
+pip install megalodon
+megalodon -v
+```
+
+
+
 
 You can use the [editor on GitHub](https://github.com/TheJacksonLaboratory/nanome/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
 
