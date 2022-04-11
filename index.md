@@ -14,7 +14,7 @@ ont-guppy-cpu/bin/guppy_basecaller  -v
 ```
 
 #### 1.2 Install Conda
-If you do not have conda, please follow this link [https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html) to install conda.
+If you do not have conda, please follow this link ([https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)) to install conda.
 
 #### 1.3 Install Megalodon
 [Megalodon](https://github.com/nanoporetech/megalodon) is a popular and latest ONT developed methylation-calling tool. It can be installed in conda enviroment.
@@ -149,6 +149,6 @@ Raw_Results-CIEcoli  Read_Level-CIEcoli  Site_Level-CIEcoli  tools_version_table
 
 
 ### Reference
-1. https://github.com/nanoporetech/megalodon
-2. https://github.com/TheJacksonLaboratory/nanome
-3. DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation. Genome Biology 22, 295 (2021). https://doi.org/10.1186/s13059-021-02510-z
+1. [https://github.com/nanoporetech/megalodon](https://github.com/nanoporetech/megalodon)
+2. [https://github.com/TheJacksonLaboratory/nanome](https://github.com/TheJacksonLaboratory/nanome)
+3. DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation. Genome Biology 22, 295 (2021). [https://doi.org/10.1186/s13059-021-02510-z](https://doi.org/10.1186/s13059-021-02510-z)
