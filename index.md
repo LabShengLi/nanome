@@ -3,6 +3,20 @@ In this totorial, you will learn how to do methylation calling on Oxford Nanopor
 
 {% include note.html content="This is my note. All the content I type here is treated as a single paragraph." %}
 
+
+~~~
+[bwa_index] Pack FASTA... 0.04 sec
+[bwa_index] Construct BWT for the packed sequence...
+[bwa_index] 1.05 seconds elapse.
+[bwa_index] Update BWT... 0.03 sec
+[bwa_index] Pack forward-only FASTA... 0.02 sec
+[bwa_index] Construct SA from BWT and Occ... 0.57 sec
+[main] Version: 0.7.17-r1188
+[main] CMD: bwa index data/ref_genome/ecoli_rel606.fasta
+[main] Real time: 1.765 sec; CPU: 1.715 sec
+~~~
+{: .output}
+
 ### 1. Software installation
 #### 1.1 Install Guppy
 Instal the latest version of Guppy:
