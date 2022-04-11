@@ -4,6 +4,7 @@ In this totorial, you will learn how to do methylation calling on Oxford Nanopor
 ### 1. Software installation
 #### 1.1 Install Guppy
 Instal the latest version of Guppy:
+
 ```
 wget https://americas.oxfordnanoportal.com/software/analysis/ont-guppy-cpu_6.1.1_linux64.tar.gz
 tar -xzf ont-guppy-cpu_6.1.1_linux64.tar.gz && \
@@ -13,10 +14,11 @@ ont-guppy-cpu/bin/guppy_basecaller  -v
 ```
 
 #### 1.2 Install Conda
-If you do not have conda, please follow this link (https://docs.conda.io/en/latest/miniconda.html) to install conda.
+If you do not have conda, please follow this link [https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html) to install conda.
 
 #### 1.3 Install Megalodon
 [Megalodon](https://github.com/nanoporetech/megalodon) is a popular and latest ONT developed methylation-calling tool. It can be installed in conda enviroment.
+
 ```
 conda create --name megalodon python=3.9
 conda activate megalodon
@@ -29,22 +31,24 @@ megalodon -v
 In this section, you will prepare the FAST5 files and reference genome for input data.
 
 #### 2.1 Download FAST5 files
+
 ```
 wget https://github.com/TheJacksonLaboratory/nanome/raw/master/test_data/ecoli_ci_test_fast5.tar.gz
 tar -xzf ecoli_ci_test_fast5.tar.gz && \
     rm -f ecoli_ci_test_fast5.tar.gz
+    
 ls ecoli_ci_test_fast5/
-
 kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch138_read698_strand.fast5
 kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch139_read4507_strand.fast5
 ```
 
 #### 2.2 Download reference genome
+
 ```
 wget https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli.tar.gz
 tar -xzf ecoli.tar.gz && rm ecoli.tar.gz
-ls ecoli/
 
+ls ecoli/
 Ecoli_k12_mg1655.fasta      Ecoli_k12_mg1655.fasta.bwt           Ecoli_k12_mg1655.fasta.pac
 Ecoli_k12_mg1655.fasta.amb  Ecoli_k12_mg1655.fasta.fai           Ecoli_k12_mg1655.fasta.sa
 Ecoli_k12_mg1655.fasta.ann  Ecoli_k12_mg1655.fasta.genome.sizes
@@ -52,6 +56,7 @@ Ecoli_k12_mg1655.fasta.ann  Ecoli_k12_mg1655.fasta.genome.sizes
 
 ### 3. 5mC & 5hmC detection by Megalodon
 Below is an example command to output basecalls, mappings, and CpG 5mC and 5hmC methylation in both per-read (``mod_mappings``) and aggregated (``mods``) formats on prepared data.
+
 ```
 megalodon \
     ecoli_ci_test_fast5/ \
@@ -64,7 +69,6 @@ megalodon \
     --write-mods-text --overwrite 
 
 ls methcall_ecoli_data/
-
 basecalls.fastq  mappings.summary.txt     per_read_modified_base_calls.db
 guppy_log        modified_bases.5hmC.bed  per_read_modified_base_calls.txt
 log.txt          modified_bases.5mC.bed   sequencing_summary.txt
@@ -75,6 +79,7 @@ mappings.bam     mod_mappings.bam
 We developed NANOME, the first Nextflow based container environment (Docker and Singularity) for consensus DNA methylation detection using XGBoost, a gradient boosting algorithm for nanopore long-read sequencing. The consensus outputs can obtain more accurate performance and more comprehensive CpG coverage.
 
 Install Nextflow:
+
 ```
 conda activate megalodon
 # Install nextflow
@@ -82,12 +87,16 @@ conda install -c conda-forge -c bioconda nextflow
 nextflow -v
 ```
 
+> :blush: **If you are HPC users, enter into an interactive node before running pipeline.**
+
 Enter an interactive node with 8 cpus for parallelly job running (HPC users only):
+
 ```
 srun --pty -q batch --time=08:00:00 --mem=25G -n 8  bash
 ```
 
 Run Nanome consensus pipeline for 5mC detection:
+
 ```
 module load singularity
 mkdir nanome
@@ -102,6 +111,7 @@ nextflow run TheJacksonLaboratory/nanome\
 `-profile` is the bundle of paramters used for singularity, `--dsname` is the dataset name, `--input` is the FAST5 input files, and `--genome` is the reference genome file.
 
 The output of NANOME pipeline can be followins:
+
 ```
 [b2/6dbf5d] process > EnvCheck (CIEcoli)                   [100%] 1 of 1 ✔
 [12/5b2e1f] process > Untar (ecoli_ci_test_fast5.tar)      [100%] 1 of 1 ✔
@@ -124,6 +134,7 @@ Succeeded   : 14
 ```
 
 Results of NANOME pipeline are located at `results/` folder as default:
+
 ```
 ls results/
 CIEcoli-basecallings          CIEcoli_nanome_report.html  README_CIEcoli.txt
