@@ -133,6 +133,10 @@ ls results/CIEcoli-methylation-callings/
 Raw_Results-CIEcoli  Read_Level-CIEcoli  Site_Level-CIEcoli  tools_version_table.tsv
 ```
 
+### 5. Tutorial video for running NANOME pipeline
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/TfotM55KTVE/0.jpg)](https://www.youtube.com/watch?v=TfotM55KTVE)
+
+
 ### Reference
 1. https://github.com/nanoporetech/megalodon
 2. https://github.com/TheJacksonLaboratory/nanome
