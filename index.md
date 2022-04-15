@@ -116,7 +116,7 @@ nextflow run TheJacksonLaboratory/nanome\
 
 `-profile` is the bundle of paramters used for singularity, `--dsname` is the dataset name, `--input` is the FAST5 input files, and `--genome` is the reference genome file.
 
-The output of NANOME pipeline can be followins:
+The output of NANOME pipeline can be followings:
 
 ```
 [b2/6dbf5d] process > EnvCheck (CIEcoli)                   [100%] 1 of 1 ✔
