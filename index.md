@@ -78,6 +78,8 @@ mappings.bam     mod_mappings.bam
 > ## Notes:
 > **If your system supports GPU, the option `--devices 0` can be used for acceleration.**
 
+For meanings of options in Megalodon, please check link [https://github.com/nanoporetech/megalodon#getting-started](https://github.com/nanoporetech/megalodon#getting-started).
+
 ### 4. Consensus 5mC detection by NANOME pipeline
 We developed NANOME, the first Nextflow based container environment (Docker and Singularity) for consensus DNA methylation detection using XGBoost, a gradient boosting algorithm for nanopore long-read sequencing. The consensus outputs can obtain more accurate performance and more comprehensive CpG coverage.
 
