@@ -84,7 +84,9 @@ We developed NANOME, the first Nextflow based container environment (Docker and 
 Install Nextflow:
 
 ```
-conda activate megalodon
+conda create --name nanome python=3.9
+conda activate nanome
+
 # Install nextflow
 conda install -c conda-forge -c bioconda nextflow
 nextflow -v
