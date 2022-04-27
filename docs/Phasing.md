@@ -1,7 +1,7 @@
 **This is an explanation of how to use NANOME pipeline phasing and 5hmC call. For general usage, please check [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md).**
 
 ## Phasing reads for methylaiton
-NANOME support phasing long-reads into H1 and H2 using Clair3 (variant calling) and Whatshap (long-read phasing). The option for running phasing step is `--phasing`.
+NANOME support phasing long-reads into H1 and H2 using [Clair3](https://github.com/HKU-BAL/Clair3) (variant calling) and [Whatshap](https://whatshap.readthedocs.io/en/latest/) (long-read phasing). The option for running phasing step is `--phasing`.
 
 Below is an example:
 ```angular2html
