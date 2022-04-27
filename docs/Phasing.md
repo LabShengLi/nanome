@@ -5,7 +5,7 @@ NANOME support phasing long-reads into H1 and H2 using Clair3 (variant calling) 
 
 Below is an example:
 ```angular2html
-nextflow run main.nf\
+nextflow run TheJacksonLaboratory/nanome\
     -profile singularity,winter \
     --dsname NA12878_CHR22_200 \
     --input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/na12878_chr22_200.tar.gz\
