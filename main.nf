@@ -563,8 +563,8 @@ process Basecall {
 	touch "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz
 
 	## Below is compatable with both Guppy v4.2.2 (old) and newest directory structures
-	find "${fast5_dir.baseName}.basecalled/" "${fast5_dir.baseName}.basecalled/pass/"\
-	 	"${fast5_dir.baseName}.basecalled/fail/" -maxdepth 1 -name '*.fastq.gz' -type f\
+	find "${fast5_dir.baseName}.basecalled/" "${fast5_dir.baseName}.basecalled/pass"\
+	 	${params.filter_fail_fq ? "" : "${fast5_dir.baseName}.basecalled/fail" } -maxdepth 1 -name '*.fastq.gz' -type f\
 	 	-print0 2>/dev/null | \
 	 	while read -d \$'\0' file ; do
 	 		cat \$file >> \
