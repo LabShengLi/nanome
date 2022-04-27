@@ -24,6 +24,9 @@
 
 ## Highlights of NANOME pipeline
 ### Several first highlights for NANOME
+
+![Figure_pipe_comp](https://github.com/TheJacksonLaboratory/nanome/blob/xgboost1/docs/resources/pipeline_comparison.pdf)
+
 * Enables users to process **terabasescale** Oxford Nanopore sequencing datasets.
 * Provide a **one command line**/**web-based UI** for end-to-end analyzing Nanopore sequencing methylation-callings.
 * Support **various platform** executions: local, HPC and CloudOS, **without needs for tools' installation** (NANOME support docker and singularity).
