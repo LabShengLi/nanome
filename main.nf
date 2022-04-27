@@ -2216,7 +2216,14 @@ process Clair3 {
 
 	echo "### Clair3 for variant calling DONE"
 
+	## haplotag
 	whatshap --version
+
+	## print header for file list tags
+	head -n 1 \
+		\$(find ${params.dsname}_clair3_out  -name '*_whatshap_haplotag_read_list_chr*.tsv' | head -n 1) \
+    	> ${params.dsname}_clair3_out/${params.dsname}_haplotag_read_list_combine.tsv
+
 	for chr in chr{1..22} chrX chrY; do
 		if [[ ${params.ctg_name} != "null" && "\$chr" != "${params.ctg_name}" ]] ; then
 			continue
@@ -2236,8 +2243,27 @@ process Clair3 {
 			--output-haplotag-list \${tsvFile} \
 			-o \${haplotagBamFile} \
 			\${phasingGZFile}  ${params.dsname}_bam_data/${params.dsname}_merge_all_bam.bam
+
+		if [[ ! -z "\${tsvFile}" ]]; then
+			awk 'NR>1' \${tsvFile} \
+				>> ${params.dsname}_clair3_out/${params.dsname}_haplotag_read_list_combine.tsv
+		fi
 		echo "### DONE for haplotag chr=\$chr"
 	done
+
+	# Extract h1 and h2 haplotype reads
+	whatshap split \
+		--output-h1 ${params.dsname}_clair3_out/${params.dsname}_split_h1.bam \
+		--output-h2 ${params.dsname}_clair3_out/${params.dsname}_split_h2.bam \
+		--output-untagged ${params.dsname}_clair3_out/${params.dsname}_split_untagged.bam  \
+		${params.dsname}_bam_data/${params.dsname}_merge_all_bam.bam \
+		${params.dsname}_clair3_out/${params.dsname}_haplotag_read_list_combine.tsv
+	echo "### Split by haplotag DONE"
+
+	# Index bam files
+	samtools index -@ ${task.cpus} ${params.dsname}_clair3_out/${params.dsname}_split_h1.bam
+	samtools index -@ ${task.cpus} ${params.dsname}_clair3_out/${params.dsname}_split_h2.bam
+	samtools index -@ ${task.cpus} ${params.dsname}_clair3_out/${params.dsname}_split_untagged.bam
 	"""
 }
 

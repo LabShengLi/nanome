@@ -13,6 +13,7 @@ import gzip
 import os
 from collections import defaultdict
 
+import math
 import numpy as np
 from tqdm import tqdm
 
@@ -24,12 +25,18 @@ indicator_5c = 0
 indicator_5mc = 1
 indicator_5hmc = 2
 
+class_label = {
+    indicator_5c: 'c',
+    indicator_5mc: 'm',
+    indicator_5hmc: 'h',
+}
+
 
 def import_megalodon_per_read_file(infn, chr_filter=None, readid_filter=None, sep='\t', readid_col=0, chr_col=1,
                                    strand_col=2, pos_col=3,
                                    meth_log_prob_col=4,
                                    unmeth_log_prob_col=5, meth_type_col=6, prob_cutoff=0.80, include_score=False,
-                                   outBase=1, only_test=None):
+                                   outBase=1, only_test=None, save_unified_format=False, outfn=None):
     """
     Import read-level megalodon, compatible with 5mc or 5hmc_5mc input
     Args:
@@ -49,6 +56,11 @@ def import_megalodon_per_read_file(infn, chr_filter=None, readid_filter=None, se
     """
     if outBase not in [0, 1]:
         raise Exception(f"outBase={outBase} is not allowed")
+
+    if save_unified_format:
+        logger.debug(f"Save unified format to {outfn}")
+        outf = gzip.open(outfn, 'wt')
+        outf.write(f"ID\tChr\tPos\tStrand\tScore\tLabel\n")
 
     if chr_filter is not None:  # set is fast than list
         chr_filter = set(chr_filter)
@@ -105,6 +117,18 @@ def import_megalodon_per_read_file(infn, chr_filter=None, readid_filter=None, se
             else:
                 cpgDict[key].append(meth_indicator)
             nreads += 1
+
+            ## keep only above cutoff reads
+            if save_unified_format:
+                # output to 1-based for meteore, ref: https://github.com/comprna/METEORE/blob/master/script/format_megalodon.R#L16
+                score = math.log((meth_prob + EPSLONG) / (unmeth_prob + EPSLONG))
+                outf.write(
+                    f"{readid}\t{chr}\t{pos}\t{strand}\t{score}\t{class_label[meth_indicator]}\n")
+
+    if save_unified_format:
+        outf.close()
+        logger.debug(f'Save unified output format to {outfn}')
+
     logger.debug(f"import Megalodon: cpgs={len(cpgDict):,}\t read_level_preds={nreads:,}")
     return cpgDict
 
@@ -113,7 +137,7 @@ def import_nanome_per_read_file(infn, chr_filter=None, readid_filter=None, sep='
                                 strand_col=3, pos_col=2,
                                 meth_prob_col=-1,
                                 meth_indicator_col=-2, include_score=False,
-                                outBase=1, only_test=None):
+                                outBase=1, only_test=None, save_unified_format=False, outfn=None):
     """
     Import read-level nanome input
     Args:
@@ -134,6 +158,11 @@ def import_nanome_per_read_file(infn, chr_filter=None, readid_filter=None, sep='
     """
     if outBase not in [0, 1]:
         raise Exception(f"outBase={outBase} is not allowed")
+
+    if save_unified_format:
+        logger.debug(f"Save unified format to {outfn}")
+        outf = gzip.open(outfn, 'wt')
+        outf.write(f"ID\tChr\tPos\tStrand\tScore\tLabel\n")
 
     if chr_filter is not None:  # set is fast than list
         chr_filter = set(chr_filter)
@@ -169,6 +198,18 @@ def import_nanome_per_read_file(infn, chr_filter=None, readid_filter=None, sep='
         else:
             cpgDict[key].append(meth_indicator)
         nreads += 1
+
+        ## keep only above cutoff reads
+        if save_unified_format:
+            # output to 1-based for meteore, ref: https://github.com/comprna/METEORE/blob/master/script/format_megalodon.R#L16
+            score = math.log((meth_prob + EPSLONG) / (1 - meth_prob + EPSLONG))
+            outf.write(
+                f"{readid}\t{chr}\t{pos}\t{strand}\t{score}\t{class_label[meth_indicator]}\n")
+
+    if save_unified_format:
+        outf.close()
+        logger.debug(f'Save unified output format to {outfn}')
+
     logger.debug(f"import NANOME: cpgs={len(cpgDict):,}\t read_level_preds={nreads:,}")
     return cpgDict
 

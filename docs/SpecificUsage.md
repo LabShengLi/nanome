@@ -66,3 +66,15 @@ nextflow pull TheJacksonLaboratory/nanome
 
 nextflow pull TheJacksonLaboratory/nanome -r [branch-name]
 ```
+
+## 4. Perform only basecall and QC
+Using option `--runMethcall false` will not run methylation calling, it will only perform basecall and QC.
+
+```angular2html
+nextflow run TheJacksonLaboratory/nanome\
+    -profile singularity,winter \
+    --dsname APL\
+    --input '/fastscratch/liuya/nanome/APL_ont_out/APL_sept/sept_dir/*'\
+    --genome hg38 \
+    --runMethcall false
+```
