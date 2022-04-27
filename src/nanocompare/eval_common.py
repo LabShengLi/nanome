@@ -701,7 +701,8 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
 
 
 def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3, strand_col=2, mod_log_prob_col=4,
-                                can_log_prob_col=5, baseFormat=1, score_cutoff=(0.2, 0.8), sep='\t', output_first=False,
+                                can_log_prob_col=5, meth_type_col=6, baseFormat=1, score_cutoff=(0.2, 0.8), sep='\t',
+                                output_first=False,
                                 include_score=False, filterChr=HUMAN_CHR_SET, save_unified_format=False, outfn=None):
     """
     0-based start for Magelodon：
@@ -729,6 +730,9 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
         outf = gzip.open(outfn, 'wt')
         outf.write(f"ID\tChr\tPos\tStrand\tScore\n")
 
+    if type(filterChr) != set:
+        filterChr = set(filterChr)
+
     cpgDict = defaultdict(list)
     call_cnt = 0
     meth_cnt = 0
@@ -738,6 +742,9 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
         tmp = row.strip().split(sep)
 
         if tmp[chr_col] not in filterChr:
+            continue
+
+        if tmp[meth_type_col] != 'm':  # neglect 5hmc row
             continue
 
         if output_first:

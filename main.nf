@@ -633,7 +633,7 @@ process QCExport {
 			--raw  -f pdf -p ${params.dsname}_   &>> ${params.dsname}.QCReport.run.log
 	fi
 
-	if [[ ${params.outputBam} == true  || ${params.outputONTCoverage} == true ]]; then
+	if [[ ${params.outputBam} == true  || ${params.outputONTCoverage} == true || ${params.phasing} == true ]]; then
 		## Combine all batch fq.gz
 		> merge_all_fq.fq.gz
 		cat *.basecalled/batch_basecall_combine_fq_*.fq.gz > merge_all_fq.fq.gz
@@ -680,7 +680,7 @@ process QCExport {
 		rm -f ${params.dsname}.coverage.positivestrand.bed.gz \
 		 	${params.dsname}.coverage.negativestrand.bed.gz
 		rm -f merge_all_fq.fq.gz
-		if [[ ${params.outputBam} == false ]]; then
+		if [[ ${params.outputBam} == false && ${params.phasing} == false ]]; then
 			rm -f ${params.dsname}_merge_all_bam.bam*
 		else
 			mkdir -p ${params.dsname}_bam_data
@@ -929,10 +929,10 @@ process Megalodon {
 				--processes $cores \${gpuOptions} \
 				&>> ${params.dsname}.${fast5_dir.baseName}.Megalodon.run.log
 	else
-		## Run Remora model
+		## Run Remora model 5mc or 5hmc_5mc
 		megalodon ${fast5_dir} --overwrite\
 				--guppy-config ${params.GUPPY_BASECALL_MODEL}\
-				--remora-modified-bases ${params.remoraModel} fast 0.0.0 5mc CG 0\
+				--remora-modified-bases ${params.remoraModel} fast 0.0.0 ${params.hmc ? "5hmc_5mc" : "5mc"} CG 0\
 				--outputs mod_mappings mods per_read_mods\
 				--guppy-server-path \$(which guppy_basecall_server) \
 				--mod-output-formats bedmethyl wiggle \
@@ -2187,6 +2187,113 @@ process Report {
 }
 
 
+process Clair3 {
+	tag "${params.dsname}"
+
+	publishDir "${params.outdir}/${params.dsname}-phasing",
+		mode: "copy", pattern: "${params.dsname}_clair3_out"
+
+	input:
+	path merged_bam
+	path reference_genome
+
+	output:
+	path "${params.dsname}_clair3_out",	emit:	clair3_out_ch, optional: true
+
+	"""
+	run_clair3.sh --version
+
+	MODEL_NAME="r941_prom_sup_g5014"
+	mkdir -p ${params.dsname}_clair3_out
+	run_clair3.sh \
+	  --bam_fn=${params.dsname}_bam_data/${params.dsname}_merge_all_bam.bam \
+	  --ref_fn=${referenceGenome} \
+	  --threads=${task.cpus} \
+	  --platform="ont" \
+	  --model_path="/opt/models/\${MODEL_NAME}" \
+	  --output=${params.dsname}_clair3_out  ${params.ctg_name ? "--ctg_name=${params.ctg_name}": " "} \
+	  &> ${params.dsname}.Clair3.run.log
+
+	echo "### Clair3 for variant calling DONE"
+
+	whatshap --version
+	for chr in chr{1..22} chrX chrY; do
+		if [[ ${params.ctg_name} != "null" && "\$chr" != "${params.ctg_name}" ]] ; then
+			continue
+		fi
+		echo "### haplotag chr=\$chr"
+		# run whatshap haplotag
+		tsvFile="${params.dsname}_clair3_out/${params.dsname}_whatshap_haplotag_read_list_\$chr.tsv"
+		haplotagBamFile="${params.dsname}_clair3_out/${params.dsname}_whatshap_haplotag_bam_\$chr.bam"
+		phasingGZFile="${params.dsname}_clair3_out/tmp/phase_output/phase_vcf/phased_\$chr.vcf.gz"
+
+		## Phasing tag extraction for each chromosome
+		## older version lacks: --skip-missing-contigs  --output-threads ${task.cpus}
+		whatshap  haplotag \
+			--ignore-read-groups\
+			--regions \${chr}\
+			--reference ${referenceGenome}\
+			--output-haplotag-list \${tsvFile} \
+			-o \${haplotagBamFile} \
+			\${phasingGZFile}  ${params.dsname}_bam_data/${params.dsname}_merge_all_bam.bam
+		echo "### DONE for haplotag chr=\$chr"
+	done
+	"""
+}
+
+
+process Phasing {
+	tag "${params.dsname}"
+
+	publishDir "${params.outdir}/${params.dsname}-phasing",
+		mode: "copy", pattern: "${params.dsname}_hp_split"
+
+	input:
+	path mega_and_nanome_raw_list
+	path clair3_out
+	path ch_src
+
+	output:
+	path "${params.dsname}_hp_split",	emit:	hp_split_ch, optional: true
+
+	"""
+	echo "### hello phasing"
+
+	toolList=("megalodon" "nanome_NA12878_XGBoostNA3T")
+	encodeList=("megalodon" "nanome")
+
+	for i in "\${!toolList[@]}"; do
+		tool="\${toolList[i]}"
+    	encode="\${encodeList[i]}"
+
+		infn=\$(find . -name "${params.dsname}_\${tool}_per_read_combine*.gz")
+		if [[ -z \${infn} ]] ; then
+			continue
+		fi
+
+		echo "### tool=\${tool}, encode=\${encode}, infn=\${infn}"
+
+		## Split methylation results by phasing tag for each chromosome
+		for chr in chr{1..22} chrX chrY; do
+			if [[ ${params.ctg_name} != "null" && "\$chr" != "${params.ctg_name}" ]] ; then
+				continue
+			fi
+			echo "### HP split for chr=\${chr}"
+			PYTHONPATH=src python src/nanocompare/phasing/hp_split.py \
+				--dsname ${params.dsname}\
+				--tool \${tool}\
+				--encode \${encode}\
+				--num-class ${params.hmc? "3" : "2"}\
+				-i \${infn}\
+				--haplotype-list ${params.dsname}_clair3_out/${params.dsname}_whatshap_haplotag_read_list_\${chr}.tsv\
+				--region \${chr}\
+				-o .  &>> ${params.dsname}.Phasing.run.log
+		done
+	done
+	"""
+}
+
+
 workflow {
 	if ( !file(genome_path.toString()).exists() )
 		exit 1, "genome reference path does not exist, check params: --genome ${params.genome}"
@@ -2342,4 +2449,12 @@ workflow {
 	Report(tools_site_unify, tools_read_unify,
 			EnvCheck.out.tools_version_tsv, QCExport.out.qc_report,
 			EnvCheck.out.reference_genome, ch_src, ch_utils)
+
+	if (params.phasing) {
+		Clair3(QCExport.out.bam_data, EnvCheck.out.reference_genome)
+		Channel.fromPath("${projectDir}/utils/null1").concat(
+			MgldnComb.out.megalodon_combine, Report.out.nanome_combine_out
+			).toList().set { mega_and_nanome_ch }
+		Phasing(mega_and_nanome_ch, Clair3.out.clair3_out_ch, ch_src)
+	}
 }
