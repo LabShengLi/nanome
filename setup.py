@@ -64,6 +64,7 @@ setuptools.setup(
         'utils/tombo_extract_per_read_stats.py',
         'utils/validate_nanome_container.sh',
         'utils/unify_format_for_calls.sh',
+        'utils/getGuppyVersion.sh',
     ],
     include_package_data=True,
     package_data={'': ['src/nanocompare/*.csv', 'src/nanocompare/xgboost/trained_model/*.pkl']},

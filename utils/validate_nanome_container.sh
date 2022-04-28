@@ -21,8 +21,7 @@ printf "====================\n"
 echo "### Check Guppy dir:"
 which guppy_basecaller
 guppy_basecaller -v | head -1
-guppy_version=$(guppy_basecaller -v | head -1 | awk '{print $NF}')
-guppy_version=${guppy_version/+*/}
+guppy_version=$(guppy_basecaller -v |  head -n 1 | python utils/getGuppyVersion.py)
 
 printf "====================\n"
 nanopolish --version | head -1
