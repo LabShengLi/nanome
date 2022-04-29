@@ -80,3 +80,4 @@ testdemo.py
 /Makefile
 *.swp
 /result_paper/
+/create_env_nanome.sh
