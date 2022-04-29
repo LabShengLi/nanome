@@ -1,5 +1,5 @@
 ## Tutorial of DNA methylation calling for ONT data
-In this tutorial, you will learn how to perform methylation calling on Oxford Nanopore sequencing data by latest tools. Please create a freshing new folder to execute following commands.
+In this tutorial (20 min ~ 30 min), you will learn how to perform methylation calling on Oxford Nanopore sequencing data by latest tools. Please create a freshing new folder to execute following commands.
 
 > ## Notes:
 > **If you are HPC users, enter into an interactive node before running pipeline.**
@@ -158,7 +158,7 @@ Raw_Results-CIEcoli  Read_Level-CIEcoli  Site_Level-CIEcoli  tools_version_table
 
 
 ### Reference
-1. [https://community.nanoporetech.com/](https://community.nanoporetech.com)
+1. [https://community.nanoporetech.com](https://community.nanoporetech.com)
 2. [https://github.com/nanoporetech/megalodon](https://github.com/nanoporetech/megalodon)
 3. [https://github.com/TheJacksonLaboratory/nanome](https://github.com/TheJacksonLaboratory/nanome)
 4. DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation. Genome Biology 22, 295 (2021). [https://doi.org/10.1186/s13059-021-02510-z](https://doi.org/10.1186/s13059-021-02510-z)
