@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=nanome.ecoli_demo_hpc
 #SBATCH -p gpu
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:v100:1
 #SBATCH -q inference
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 4 # number of cores
@@ -33,7 +33,7 @@ nextflow run ${NANOME_DIR}\
     -profile singularity,hpc\
     --dsname EcoliDemo\
     -config ${NANOME_DIR}/conf/executors/jaxhpc_input.config,${NANOME_DIR}/conf/examples/ecoli_demo.config\
-    --runDeepMod --runTombo --runMETEORE\
+    --runGuppy --runTombo --runMETEORE\
     --outputIntermediate --outputRaw\
     --outputGenomeBrowser --outputBam --outputONTCoverage\
     --deduplicate --sort\

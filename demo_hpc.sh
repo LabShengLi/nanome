@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=nanome.human_demo_hpc
 #SBATCH -p gpu
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:v100:1
 #SBATCH -q inference
 #SBATCH -N 1 # number of nodes
 #SBATCH -n 4 # number of cores
@@ -35,7 +35,7 @@ nextflow run ${NANOME_DIR}\
     -config ${NANOME_DIR}/conf/executors/jaxhpc_input.config\
     --dsname TestData\
     --input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/demo1_fast5_reads.tar.gz\
-	--runTombo --runMETEORE --runDeepMod --useDeepModCluster\
+	--runTombo --runMETEORE --runGuppy\
 	--outputIntermediate --outputRaw\
 	--outputGenomeBrowser --outputBam --outputONTCoverage\
 	--deduplicate --sort \
