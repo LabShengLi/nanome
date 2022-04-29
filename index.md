@@ -11,7 +11,11 @@ srun --pty -q batch --time=01:00:00 --mem=25G -n 8  bash
 ```
 
 ### 1. Software installation
-#### 1.1 Install Guppy
+
+#### 1.1 Install Conda
+If you do not have conda, please follow this link ([https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)) to install conda, such as [Install on Linux](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html).
+
+#### 1.2 Install Guppy
 Install the latest version of Guppy:
 
 ```
@@ -21,9 +25,6 @@ tar -xzf ont-guppy-cpu_6.1.1_linux64.tar.gz && \
 
 ont-guppy-cpu/bin/guppy_basecaller  -v
 ```
-
-#### 1.2 Install Conda
-If you do not have conda, please follow this link ([https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)) to install conda.
 
 #### 1.3 Install Megalodon
 [Megalodon](https://github.com/nanoporetech/megalodon) is a popular and latest ONT developed methylation-calling tool. It can be installed in conda enviroment.
