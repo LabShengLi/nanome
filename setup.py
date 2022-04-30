@@ -23,7 +23,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="nanome-jax",
-    version="2.0.1",
+    version="2.0.2",
     author="Yang Liu",
     author_email="yang.liu@jax.org",
     description="NANOME (Nanopore methylation) pipeline developed by Li Lab at The Jackson Laboratory",
@@ -35,9 +35,9 @@ setuptools.setup(
         'Bug Tracker': 'https://github.com/TheJacksonLaboratory/nanome/issues'
     },
     packages=(
-        setuptools.find_packages(where="src", exclude=("*.resource", "*.*.saniti_ecoli", "*.xgboost.sanity",))
+        setuptools.find_packages(where="src", exclude=("*.*.resource", "*.*.*.saniti_ecoli", "*.xgboost.sanity",))
     ),
-    package_dir={'nanocompare': 'src/nanocompare'},
+    package_dir={'nanome': 'src/nanome'},
     scripts=[
         'src/nanome/nanocompare/plot_figure.py',
         'src/nanome/nanocompare/read_level_eval.py',
@@ -66,7 +66,7 @@ setuptools.setup(
         'utils/getGuppyVersion.sh',
     ],
     include_package_data=True,
-    package_data={'': ['src/nanocompare/*.csv', 'src/nanocompare/xgboost/trained_model/*.pkl']},
+    package_data={'': ['src/nanome/common/*.csv', 'src/nanome/xgboost/trained_model/*.pkl']},
     classifiers=[
         "Programming Language :: Python :: 3",
         'Intended Audience :: Science/Research',

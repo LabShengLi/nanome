@@ -1857,7 +1857,7 @@ process NewToolComb {
 	mkdir -p Read_Level-${params.dsname}
 	mkdir -p Site_Level-${params.dsname}
 
-	python src/nanocompare/newtool_parser.py\
+	python src/nanome/nanocompare/newtool_parser.py\
 	 	-i  ${params.dsname}_${module.name}_per_read_combine.tsv.gz\
 	 	--read-out Read_Level-${params.dsname}/${params.dsname}_${module.name}-perRead-score.tsv.gz \
 	 	--site-out Site_Level-${params.dsname}/${params.dsname}_${module.name}-perSite-cov1.sort.bed.gz\
@@ -2061,7 +2061,7 @@ process Report {
 		if [[ "\$passModelTsv" == true ]] ; then
 			## NANOME XGBoost model results, if there are model results exists
 			echo "### NANOME XGBoost predictions"
-			PYTHONPATH=src python src/nanocompare/xgboost/xgboost_predict.py \
+			PYTHONPATH=src python src/nanome/xgboost/xgboost_predict.py \
 				--contain-na --tsv-input\
 				--dsname ${params.dsname} -i \${modelContentTSVFileName}\
 				-m ${params.NANOME_MODEL}  \
@@ -2119,18 +2119,18 @@ process Report {
 		nanome_dir="."
 	fi
 	mkdir -p ${params.dsname}_NANOME_report
-	cp \${nanome_dir}/src/nanocompare/report/style.css ${params.dsname}_NANOME_report/
-	cp -rf \${nanome_dir}/src/nanocompare/report/icons ${params.dsname}_NANOME_report/
-	cp -rf \${nanome_dir}/src/nanocompare/report/js ${params.dsname}_NANOME_report/
+	cp \${nanome_dir}/src/nanome/nanocompare/report/style.css ${params.dsname}_NANOME_report/
+	cp -rf \${nanome_dir}/src/nanome/nanocompare/report/icons ${params.dsname}_NANOME_report/
+	cp -rf \${nanome_dir}/src/nanome/nanocompare/report/js ${params.dsname}_NANOME_report/
 
 	## Generate html NANOME report
-	PYTHONPATH=src python src/nanocompare/report/gen_html_report.py\
+	PYTHONPATH=src python src/nanome/nanocompare/report/gen_html_report.py\
 		${params.dsname} \
 		running_information.tsv \
 		\${basecallOutputFile} \
 		. \
 		${params.dsname}_NANOME_report \
-		./src/nanocompare/report\
+		./src/nanome/nanocompare/report\
 		${tools_version_tsv}  &>> ${params.dsname}.Report.run.log
 
 	## Combine a single html report
@@ -2142,8 +2142,8 @@ process Report {
 	cp ${params.dsname}_nanome_report.html   multiqc_report.html
 
 	## Generate readme.txt
-	PYTHONPATH=src PYTHONIOENCODING=UTF-8 python src/nanocompare/report/gen_txt_readme.py\
-		src/nanocompare/report/readme.txt.template ${params.dsname} ${params.outdir}\
+	PYTHONPATH=src PYTHONIOENCODING=UTF-8 python src/nanome/nanocompare/report/gen_txt_readme.py\
+		src/nanome/nanocompare/report/readme.txt.template ${params.dsname} ${params.outdir}\
 		${workflow.projectDir} ${workflow.workDir} "${workflow.commandLine}"\
 		${workflow.runName} "${workflow.start}"\
 		> README_${params.dsname}.txt   2>> ${params.dsname}.Report.run.log
@@ -2305,7 +2305,7 @@ process Phasing {
 				continue
 			fi
 			echo "### HP split for chr=\${chr}"
-			PYTHONPATH=src python src/nanocompare/phasing/hp_split.py \
+			PYTHONPATH=src python src/nanome/other/phasing/hp_split.py \
 				--dsname ${params.dsname}\
 				--tool \${tool}\
 				--encode \${encode}\
