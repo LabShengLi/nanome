@@ -233,7 +233,10 @@ def pcc_mse_evaluation(call, bgTruth, bed_tuple=None, tool=None, down_sample_cov
 
     logger.debug(f"bin_bg_freq key= {bin_bg_freq.keys()}, bin_pd_freq key={bin_pd_freq.keys()}")
 
-    pcc, pcc_pvalue = pearsonr(bg_freq, pd_freq)
+    try:
+        pcc, pcc_pvalue = pearsonr(bg_freq, pd_freq)
+    except:
+        pcc, pcc_pvalue = 0.0, 0.0
     mse = mean_squared_error(bg_freq, pd_freq)
     r2 = r2_score(bg_freq, pd_freq)
     mae = mean_absolute_error(bg_freq, pd_freq)

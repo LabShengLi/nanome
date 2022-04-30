@@ -14,6 +14,12 @@ Build package command:
         python -m build
 
     twine upload dist/*
+
+Test package:
+    conda activate py36
+    pip install dist/nanome-jax-2.0.2.tar.gz
+    pip show nanome-jax
+    ls /pod/2/li-lab/yang/anaconda3/envs/py36/lib/python3.6/site-packages/nanome
 """
 
 import setuptools
@@ -63,7 +69,7 @@ setuptools.setup(
         'utils/tombo_extract_per_read_stats.py',
         'utils/validate_nanome_container.sh',
         'utils/unify_format_for_calls.sh',
-        'utils/getGuppyVersion.sh',
+        'utils/getGuppyVersion.py',
     ],
     include_package_data=True,
     package_data={'': ['src/nanome/common/*.csv', 'src/nanome/xgboost/trained_model/*.pkl']},
