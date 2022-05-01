@@ -1,26 +1,6 @@
-# DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation
-## --NANOME(Nanopore methylation) pipeline of DNA methylation calling for Oxford Nanopore sequencing 
+# NANOME pipeline (Nanopore long-read sequencing data consensus DNA methylation detection)   
 
 [![demo_gif.gif](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/demo_gif.gif)](https://www.youtube.com/watch?v=TfotM55KTVE)
-
-## Methodology of NANOME pipeline
-**Background:** Nanopore long-read sequencing technology greatly expands the capacity of long-range, single-molecule DNA-modification detection. A growing number of analytical tools have been developed to detect DNA methylation from nanopore sequencing reads. Here, we assess the performance of different methylation calling tools to provide a systematic evaluation to guide researchers performing human epigenome-wide studies.
-
-
-![Figure1A](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Fig1A.jpg)
-
-**Fig. 1A. Survey of methylation calling tools .**  Timeline of publication and technological developments of Oxford Nanopore Technologies (ONT) methylation calling tools to detect DNA cytosine modifications. 
-
-
-![Figure1B](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Fig1B.jpg)
-**Fig. 1B. Workflow for 5-methylcytosine (5mC) detection for nanopore sequencing.** 
-
-
-**Results:** We compared several analytic tools for detecting DNA modifications from nanopore long-read sequencing data. We evaluated the CpG methylation-detection accuracy, CpG site coverage, and running time using nanopore sequencing data across different genomic contexts, using natural human DNA. Furthermore, we provide an online DNA methylation database (https://nanome.jax.org) with which to display the DNA methylation levels detected by nanopore sequencing and bisulfite sequencing data across different genomic contexts.
-
-
-**Conclusions:** Our study is the first benchmark of state-of-the-art methods for detection of mammalian whole-genome DNA-modifications in nanopore sequencing. We provide a broad foundation for cross-platform standardization, and an evaluation of analytical tools designed for genome-scale modified-base detection using nanopore sequencing. 
-
 
 ## Highlights of NANOME pipeline
 ### Several first highlights for NANOME
@@ -33,6 +13,30 @@
 * **First standardized whole genome-wide evaluation framework**, considering per-read and per-site performance for singletons/non-singletons, genic and intergenic regions, CpG islands/shores/shelves, different CG densities regions and repetitive regions. 
 * The **first Nextflow based DNA methylation-calling pipeline for ONT data**. Please check more articles about Nextflow based workflow technology from Nature Biotechnology: https://doi.org/10.1038/s41587-020-0439-x and https://doi.org/10.1038/nbt.3820.
 * Allow **add new modules/tools** in simple config txt file, without need to touch the main pipeline codes, supporting rapid development and evaluation.
+* Multi-modifications for 5mC and 5hmC.
+* Support phasing and allele-specific methylation detection.
+
+
+## Methodology of NANOME pipeline
+
+[comment]: <> (**Background:** Nanopore long-read sequencing technology greatly expands the capacity of long-range, single-molecule DNA-modification detection. A growing number of analytical tools have been developed to detect DNA methylation from nanopore sequencing reads. Here, we assess the performance of different methylation calling tools to provide a systematic evaluation to guide researchers performing human epigenome-wide studies.)
+
+
+![Figure1A](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Fig1A.jpg)
+
+**Fig. 1A. Survey of methylation calling tools .**  Timeline of publication and technological developments of Oxford Nanopore Technologies (ONT) methylation calling tools to detect DNA cytosine modifications. 
+
+
+![Figure1B](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Fig1B.jpg)
+**Fig. 1B. Workflow for 5-methylcytosine (5mC) detection for nanopore sequencing.** 
+
+
+[comment]: <> (**Results:** We compared several analytic tools for detecting DNA modifications from nanopore long-read sequencing data. We evaluated the CpG methylation-detection accuracy, CpG site coverage, and running time using nanopore sequencing data across different genomic contexts, using natural human DNA. Furthermore, we provide an online DNA methylation database &#40;https://nanome.jax.org&#41; with which to display the DNA methylation levels detected by nanopore sequencing and bisulfite sequencing data across different genomic contexts.)
+
+
+[comment]: <> (**Conclusions:** Our study is the first benchmark of state-of-the-art methods for detection of mammalian whole-genome DNA-modifications in nanopore sequencing. We provide a broad foundation for cross-platform standardization, and an evaluation of analytical tools designed for genome-scale modified-base detection using nanopore sequencing. )
+
+
 
 ### CI/CD features
 We use  CI Automation Tools to **enable the automated testing on every commit and on PRs** to make sure that updates are not introducing bugs. Please check the automatic testing results on [Github](https://github.com/TheJacksonLaboratory/nanome/actions).
@@ -48,9 +52,9 @@ NANOME pipeline can be easily configured with different RAM, CPU/GPU resources s
 
 ### Software requirements
 NANOME pipeline uses Nextflow technology. Users only need to install [Nextflow](https://www.nextflow.io/) (check the installation guide from https://nf-co.re/usage/installation), and have one of below commonly used environment tool:
-* conda
-* docker
-* singularity
+* Conda
+* Docker
+* Singularity
 
 We provide conda, docker and singularity environments that depend on below well-known open-source packages for methylation calling on nanopore sequencing data:
 
@@ -62,6 +66,8 @@ We provide conda, docker and singularity environments that depend on below well-
 [METEORE](https://github.com/comprna/METEORE) >=1.0.0  
 [ont-pyguppy-client-lib](https://github.com/nanoporetech/pyguppyclient) >=4.2.2  
 [fast5mod](https://github.com/nanoporetech/fast5mod) >=1.0.5
+[Clair3](https://github.com/HKU-BAL/Clair3) >=v0.1-r11
+[Whatshap](https://github.com/whatshap/whatshap) >=1.0
 
 Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https://nanoporetech.com)
 
