@@ -13,6 +13,7 @@
 * **First standardized whole genome-wide evaluation framework**, considering per-read and per-site performance for singletons/non-singletons, genic and intergenic regions, CpG islands/shores/shelves, different CG densities regions and repetitive regions. 
 * The **first Nextflow based DNA methylation-calling pipeline for ONT data**. Please check more articles about Nextflow based workflow technology from Nature Biotechnology: https://doi.org/10.1038/s41587-020-0439-x and https://doi.org/10.1038/nbt.3820.
 * Allow **add new modules/tools** in simple config txt file, without need to touch the main pipeline codes, supporting rapid development and evaluation.
+* Consensus of top performers by XGBoost model, allow NA values.
 * Multi-modifications for 5mC and 5hmC.
 * Support phasing and allele-specific methylation detection.
 
