@@ -8,10 +8,8 @@
 *.iml
 .idea/workspace.xml
 Rplots.pdf
-plots/*.png
 out
 gen
-src/nanocompare/.DS_Store
 /figures/
 /result/
 /plots/
@@ -33,12 +31,8 @@ dag.dot*
 report.html*
 timeline.html*
 trace.txt*
-do_build_docker.sh
 src/nanocompare/__pycache__/
 __pycache__/
-benchmark_hpc_sumner.sh
-ci_hpc.sh
-ecoli_hpc_sumner.sh
 .DS_Store
 docs/.DS_Store
 src/nanocompare/report/.DS_Store
@@ -46,13 +40,6 @@ src/nanocompare/report/icons/.DS_Store
 testdemo.py
 ## maintained by ly
 
-/ci_gcp.sh
-/pull_nanome_images.sh
-/ci_git_test.sh
-/sumner_test.sh
-/testpy.py
-/winter_test.sh
-/gcp_shell_memo.sh
 /local_singularity_cache/
 /data/
 /NANOME_trace/
@@ -61,25 +48,15 @@ testdemo.py
 /nanome_temp_dir/
 /script_paper/
 /tests/test_import_deepmod.py
-/bdocker_gcp.sh
-/na12878_hpc_winter_top4.sh
-/gcp_shell_memo.sh
-/benchmark_hpc_winter.sh
-/hello_test.sh
 /results/
-/na12878_hpc_winter.sh
-/google_cloud_test.sh
 /jupyter_codes/
-/na19240_hpc_winter.sh
 /xgboost_model/
 /dist/
 /*.egg-info/
 /src/nanocompare/xgboost/sanity/
 /related_project/
-/teradata_demo_hpc1.sh
 /Makefile
 *.swp
 /result_paper/
-/create_env_nanome.sh
 /src/nanome/xgboost/sanity/
 /hpc_test/
