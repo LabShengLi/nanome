@@ -11,9 +11,9 @@ import gzip
 
 from tqdm import tqdm
 
-from nanocompare.eval_common import open_file_gz_or_txt
-from nanocompare.global_config import set_log_debug_level, logger, set_log_info_level
-from nanocompare.global_settings import NANOME_VERSION
+from nanome.common.eval_common import open_file_gz_or_txt
+from nanome.common.global_config import set_log_debug_level, logger, set_log_info_level
+from nanome.common.global_settings import NANOME_VERSION
 
 
 def parse_arguments():

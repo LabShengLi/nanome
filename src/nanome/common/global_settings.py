@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
-from nanocompare.global_config import set_log_debug_level, current_time_str
+from nanome.common.global_config import set_log_debug_level, current_time_str
 
 NANOME_VERSION = "2.0.2"
 

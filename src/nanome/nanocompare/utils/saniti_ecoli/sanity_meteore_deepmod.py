@@ -3,8 +3,8 @@ from collections import defaultdict
 
 import pandas as pd
 
-from nanocompare.eval_common import import_call
-from nanocompare.global_config import set_log_debug_level, logger, pic_base_dir
+from nanome.common.eval_common import import_call
+from nanome.common.global_config import set_log_debug_level, logger, pic_base_dir
 
 
 def combine_both_strand_by_meteore(call_dict):

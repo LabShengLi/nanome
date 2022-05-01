@@ -22,10 +22,10 @@ from Bio import SeqIO
 from ont_fast5_api.fast5_interface import get_fast5_file
 from tqdm import tqdm
 
-from nanocompare.eval_common import load_tombo_df, load_deepmod_df, get_dna_base_from_reference, \
+from nanome.common.eval_common import load_tombo_df, load_deepmod_df, get_dna_base_from_reference, \
     load_sam_as_strand_info_df, load_nanopolish_df
-from nanocompare.global_config import *
-from nanocompare.global_settings import HUMAN_CHR_SET
+from nanome.common.global_config import *
+from nanome.common.global_settings import HUMAN_CHR_SET
 
 
 def add_strand_info_for_nanopolish(

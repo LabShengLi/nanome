@@ -6,7 +6,7 @@ Sanity check NA12878 for DeepMod.
 import argparse
 from multiprocessing import Pool
 
-from nanocompare.eval_common import *
+from nanome.common.eval_common import *
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
 
