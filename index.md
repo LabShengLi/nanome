@@ -2,7 +2,9 @@
 In this tutorial (20 min ~ 30 min), you will learn how to perform methylation calling on Oxford Nanopore sequencing data by latest tools. Please create a freshing new folder to execute following commands.
 
 
-**Prerequisites: Ability to connect to JAX Sumner is required.** 
+**Prerequisites: Ability to connect to JAX Sumner HPC will accelerate working through the tutorial.**
+
+**This tutorial is compatible with different platoforms: Linux, Mac and Windows.** 
 
 
 > ## Notes:
@@ -123,7 +125,7 @@ nextflow -v
 ```
 
 
-Run Nanome consensus pipeline for 5mC detection, if you use Singularity container, specify `-profile singularity`; for Docker container, use `-profile docker`. Below is an example use Singularity container:
+Run Nanome consensus pipeline for 5mC detection, if you use Singularity container, specify `-profile singularity`; for Docker container, use `-profile docker`. Below is an example of using Singularity container on JAX Sumner HPC:
 
 ```
 module load singularity
