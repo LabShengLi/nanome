@@ -29,13 +29,31 @@ Install Singularity from here: [https://sylabs.io/guides/3.0/user-guide/installa
 
 
 #### 1.2 Install Nextflow
-Running NANOME pipeline needs Nextflow.
+Running NANOME consensus pipeline needs install [Nextflow](https://www.nextflow.io/docs/latest/getstarted.html).
 
-will be installed in Conda. If you do not have Conda, please follow this link ([https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)) to install Conda, such as [Install on Linux](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html):
+* If you have [Java 11 or later](https://www.oracle.com/java/technologies/downloads), you can install Nextflow with below command:
+```
+curl -s https://get.nextflow.io | bash
+
+nextflow -v
+```
+
+* If you do not have Java, you can firstly install Conda, please follow this link ([https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)) to install Conda, such as [Install on Linux](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html):
 
 ```
 wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
+```
+
+Then you can install Nextflow through Conda:
+```
+conda create --name nanome python=3.9
+conda activate nanome
+
+# Install nextflow
+conda install -c conda-forge -c bioconda nextflow
+
+nextflow -v
 ```
 
 ### 2. Example data preparation
@@ -102,18 +120,6 @@ ls methcall_ecoli_data/
 
 ### 4. Consensus 5mC detection by NANOME Nextflow pipeline
 We developed NANOME, the first Nextflow based pipeline for consensus DNA methylation detection using XGBoost, a gradient boosting algorithm for nanopore long-read sequencing. The consensus outputs can obtain more accurate performance and  comprehensive CpG coverage.
-
-Install Nextflow:
-
-```
-conda create --name nanome python=3.9
-conda activate nanome
-
-# Install nextflow
-conda install -c conda-forge -c bioconda nextflow
-nextflow -v
-```
-
 
 Run Nanome consensus pipeline for 5mC detection, if you use Singularity container, specify `-profile singularity`; for Docker container, use `-profile docker` instead. Below is an example of using Singularity container on JAX Sumner HPC:
 
