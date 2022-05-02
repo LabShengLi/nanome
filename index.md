@@ -58,14 +58,13 @@ ls ecoli/
 ```
 
 ### 3. 5mC & 5hmC detection by ONT developed tool Megalodon
-Define below bash variable for Docker running (Docker user only):
+Define below bash variable for Docker running (**Docker user only**):
 ```
 RUN_NANOME="docker run -v $PWD:$PWD -w $PWD -it liuyangzzu/nanome:latest"
-
 ```
 
 
-Define below bash variable for Singularity running (Singularity user only):
+Define below bash variable for Singularity running (**Singularity user only**):
 ```
 RUN_NANOME="singularity exec docker://liuyangzzu/nanome:latest"
 ```
