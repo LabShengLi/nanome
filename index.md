@@ -19,7 +19,7 @@ In this tutorial (20 min ~ 30 min), you will learn how to perform methylation ca
 ### 1. Install Docker or Singularity
 In this tutorial, the ONT developed basecalling tool [Guppy](https://community.nanoporetech.com), methylation-calling tool [Megalodon](https://github.com/nanoporetech/megalodon) and our [NANOME](https://github.com/TheJacksonLaboratory/nanome) consensus methylation detection pipeline use containerized environment supported by Docker or Singularity. 
 
-Container environment avoids users to encounter software installations steps/issues, and ensure running belowing same commands across different platforms (Linux, MacOS and Windows). **If your system already has Singularity or Docker container, please skip this section.**
+Container environment avoids users to encounter software installations steps/issues, and ensures running belowing same commands across different platforms (Linux, MacOS and Windows). **If your system already has Singularity or Docker container, please skip this section.**
 
 Install Docker from here: [https://docs.docker.com/get-docker](https://docs.docker.com/get-docker).
 
@@ -49,25 +49,25 @@ ls ecoli/
 ```
 
 ### 3. 5mC & 5hmC detection by ONT developed tool Megalodon
-Define below bash variable for Docker running (**Docker user only**):
+* Define a bash variable for Docker running (**Docker user only**):
 ```
 RUN_NANOME="docker run -v $PWD:$PWD -w $PWD -it liuyangzzu/nanome:latest"
 ```
 
 
-Define below bash variable for Singularity running (**Singularity user only**):
+* Define a bash variable for Singularity running (**Singularity user only**):
 ```
 RUN_NANOME="singularity exec docker://liuyangzzu/nanome:latest"
 ```
 
-Check Guppy basecalling tool and Megalodon methylation-calling tool versions in container:
+* Check Guppy basecalling tool and Megalodon methylation-calling tool versions in container:
 ```
 $RUN_NANOME guppy_basecaller -v
 
 $RUN_NANOME megalodon -v
 ```
 
-Everything looks good now. Now you can run below command to perform basecalls, mappings, and CpG 5mC and 5hmC methylation-calls in both per-read (``mod_mappings``) and aggregated (``mods``) formats on prepared example ONT data.
+Everything looks good now. You can run below command to perform basecalls, mappings, and CpG 5mC and 5hmC methylation-calls in both per-read (``mod_mappings``) and aggregated (``mods``) formats on prepared example ONT data.
 
 ```
 LC_ALL=C  $RUN_NANOME   megalodon \
