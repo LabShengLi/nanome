@@ -28,7 +28,7 @@ bash Miniconda3-latest-Linux-x86_64.sh
 
 
 #### 1.2 Install Docker or Singularity
-In this tutorial, the ONT developed methylation-calling tool [Megalodon](https://github.com/nanoporetech/megalodon) and our [NANOME](https://github.com/TheJacksonLaboratory/nanome) consensus methylation detection pipeline use containerized environment supported by Docker or Singularity. If your system have one of them, please skip this section.
+In this tutorial, the ONT developed basecalling tool [Guppy](https://community.nanoporetech.com), methylation-calling tool [Megalodon](https://github.com/nanoporetech/megalodon) and our [NANOME](https://github.com/TheJacksonLaboratory/nanome) consensus methylation detection pipeline use containerized environment supported by Docker or Singularity. **If your system already have one, please skip this section.**
 
 Install Docker from here: [https://docs.docker.com/get-docker](https://docs.docker.com/get-docker).
 
