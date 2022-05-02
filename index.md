@@ -4,7 +4,7 @@ In this tutorial (20 min ~ 30 min), you will learn how to perform methylation ca
 
 **Prerequisites: Ability to connect to JAX Sumner HPC will accelerate working through the tutorial.**
 
-**This tutorial is compatible with different platoforms: Linux, Mac and Windows.** 
+**This tutorial is compatible with different platforms: Linux, Mac and Windows.** 
 
 
 > ## Notes:
