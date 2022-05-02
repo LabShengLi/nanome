@@ -1,6 +1,10 @@
 ## Tutorial of DNA methylation calling for ONT data
 In this tutorial (20 min ~ 30 min), you will learn how to perform methylation calling on Oxford Nanopore sequencing data by latest tools. Please create a freshing new folder to execute following commands.
 
+
+**Prerequisites: Ability to connect to JAX Sumner is required.** 
+
+
 > ## Notes:
 > **If you are HPC users, enter into an interactive node before running pipeline.**
 
@@ -13,7 +17,12 @@ srun --pty -q batch --time=01:00:00 --mem=25G -n 8  bash
 ### 1. Software installation
 
 #### 1.1 Install Conda
-If you do not have conda, please follow this link ([https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)) to install conda, such as [Install on Linux](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html).
+If you do not have conda, please follow this link ([https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)) to install conda, such as [Install on Linux](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html):
+
+```
+wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+```
 
 #### 1.2 Install Guppy
 Install the latest version of Guppy:
