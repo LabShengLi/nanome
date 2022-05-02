@@ -50,17 +50,23 @@ ls ecoli/
 
 ### 3. 5mC & 5hmC detection by ONT developed tool Megalodon
 * Define a bash variable for Docker running (**Docker user only**):
+
+
 ```
 RUN_NANOME="docker run -v $PWD:$PWD -w $PWD -it liuyangzzu/nanome:latest"
 ```
 
 
 * Define a bash variable for Singularity running (**Singularity user only**):
+
+
 ```
 RUN_NANOME="singularity exec docker://liuyangzzu/nanome:latest"
 ```
 
 * Check Guppy basecalling tool and Megalodon methylation-calling tool versions in container:
+
+
 ```
 $RUN_NANOME guppy_basecaller -v
 
@@ -93,6 +99,8 @@ ls methcall_ecoli_data/
 Running [NANOME](https://github.com/TheJacksonLaboratory/nanome) consensus pipeline needs install [Nextflow](https://www.nextflow.io/docs/latest/getstarted.html).
 
 * If you have [Java 11 or later](https://www.oracle.com/java/technologies/downloads), you can install Nextflow with below command:
+
+
 ```
 curl -s https://get.nextflow.io | bash
 
@@ -107,6 +115,7 @@ bash Miniconda3-latest-Linux-x86_64.sh
 ```
 
 Then you can install Nextflow through Conda:
+
 ```
 conda create --name nanome python=3.9
 conda activate nanome
