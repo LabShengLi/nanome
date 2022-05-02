@@ -123,7 +123,7 @@ nextflow -v
 ```
 
 
-Run Nanome consensus pipeline for 5mC detection:
+Run Nanome consensus pipeline for 5mC detection, if you use Singularity container, specify `-profile singularity`; for Docker container, use `-profile docker`. Below is an example use Singularity container:
 
 ```
 module load singularity
@@ -136,7 +136,7 @@ nextflow run TheJacksonLaboratory/nanome\
     --genome https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli.tar.gz
 ```
 
-`-profile` is the bundle of paramters used for singularity, `--dsname` is the dataset name, `--input` is the FAST5 input files, and `--genome` is the reference genome file.
+`-profile` is the bundle of paramters, `--dsname` is the dataset name, `--input` is the FAST5 input files, and `--genome` is the reference genome file.
 
 The output of NANOME pipeline can be followings:
 
