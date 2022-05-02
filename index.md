@@ -88,6 +88,8 @@ Ecoli_k12_mg1655.fasta.ann  Ecoli_k12_mg1655.fasta.genome.sizes
 Below is an example command to output basecalls, mappings, and CpG 5mC and 5hmC methylation in both per-read (``mod_mappings``) and aggregated (``mods``) formats on prepared data.
 
 ```
+conda activate megalodon
+
 megalodon \
     ecoli_ci_test_fast5/ \
     --guppy-config  dna_r9.4.1_450bps_fast.cfg\
@@ -128,7 +130,9 @@ nextflow -v
 Run Nanome consensus pipeline for 5mC detection, if you use Singularity container, specify `-profile singularity`; for Docker container, use `-profile docker`. Below is an example of using Singularity container on JAX Sumner HPC:
 
 ```
+conda activate nanome
 module load singularity
+
 mkdir nanome
 cd nanome
 nextflow run TheJacksonLaboratory/nanome\
