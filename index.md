@@ -16,9 +16,7 @@ In this tutorial (20 min ~ 30 min), you will learn how to perform methylation ca
 > srun --pty -q batch --time=01:00:00 --mem=25G -n 8  bash
 > ```
 
-### 1. Software installation
-
-#### 1.1 Install Docker or Singularity
+### 1. Install Docker or Singularity
 In this tutorial, the ONT developed basecalling tool [Guppy](https://community.nanoporetech.com), methylation-calling tool [Megalodon](https://github.com/nanoporetech/megalodon) and our [NANOME](https://github.com/TheJacksonLaboratory/nanome) consensus methylation detection pipeline use containerized environment supported by Docker or Singularity. 
 
 Container environment avoids users to encounter software installations steps/issues, and ensure running belowing same commands across different platforms (Linux, MacOS and Windows). **If your system already has Singularity or Docker container, please skip this section.**
@@ -27,34 +25,6 @@ Install Docker from here: [https://docs.docker.com/get-docker](https://docs.dock
 
 Install Singularity from here: [https://sylabs.io/guides/3.0/user-guide/installation.html](https://sylabs.io/guides/3.0/user-guide/installation.html).
 
-
-#### 1.2 Install Nextflow
-Running NANOME consensus pipeline needs install [Nextflow](https://www.nextflow.io/docs/latest/getstarted.html).
-
-* If you have [Java 11 or later](https://www.oracle.com/java/technologies/downloads), you can install Nextflow with below command:
-```
-curl -s https://get.nextflow.io | bash
-
-nextflow -v
-```
-
-* If you do not have Java, you can firstly install Conda, please follow this link ([https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)) to install Conda, such as [Install on Linux](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html):
-
-```
-wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
-bash Miniconda3-latest-Linux-x86_64.sh
-```
-
-Then you can install Nextflow through Conda:
-```
-conda create --name nanome python=3.9
-conda activate nanome
-
-# Install nextflow
-conda install -c conda-forge -c bioconda nextflow
-
-nextflow -v
-```
 
 ### 2. Example data preparation
 In this section, you will prepare the Oxford Nanopore raw FAST5 files and a reference genome for input data.
@@ -119,16 +89,43 @@ ls methcall_ecoli_data/
 > For meanings of options in Megalodon, please check link [https://github.com/nanoporetech/megalodon#getting-started](https://github.com/nanoporetech/megalodon#getting-started).
 
 ### 4. Consensus 5mC detection by NANOME Nextflow pipeline
+#### 4.1 Install Nextflow
+Running [NANOME](https://github.com/TheJacksonLaboratory/nanome) consensus pipeline needs install [Nextflow](https://www.nextflow.io/docs/latest/getstarted.html).
+
+* If you have [Java 11 or later](https://www.oracle.com/java/technologies/downloads), you can install Nextflow with below command:
+```
+curl -s https://get.nextflow.io | bash
+
+nextflow -v
+```
+
+* If you do not have Java, you can firstly install Conda, please follow this link ([https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)) to install Conda, such as [Install on Linux](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html):
+
+```
+wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+```
+
+Then you can install Nextflow through Conda:
+```
+conda create --name nanome python=3.9
+conda activate nanome
+
+# Install nextflow
+conda install -c conda-forge -c bioconda nextflow
+
+nextflow -v
+```
+
+#### 4.2 Run NANOME pipeline
+
 We developed NANOME, the first Nextflow based pipeline for consensus DNA methylation detection using XGBoost, a gradient boosting algorithm for nanopore long-read sequencing. The consensus outputs can obtain more accurate performance and  comprehensive CpG coverage.
 
 Run Nanome consensus pipeline for 5mC detection, if you use Singularity container, specify `-profile singularity`; for Docker container, use `-profile docker` instead. Below is an example of using Singularity container on JAX Sumner HPC:
 
 ```
-conda activate nanome
 module load singularity
 
-mkdir nanome
-cd nanome
 nextflow run TheJacksonLaboratory/nanome\
     -profile singularity\
     --dsname CIEcoli\
