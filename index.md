@@ -17,14 +17,23 @@ srun --pty -q batch --time=01:00:00 --mem=25G -n 8  bash
 ### 1. Software installation
 
 #### 1.1 Install Conda
-If you do not have conda, please follow this link ([https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)) to install conda, such as [Install on Linux](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html):
+Megalodon and Nextflow will be installed in Conda. If you do not have Conda, please follow this link ([https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)) to install Conda, such as [Install on Linux](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html):
 
 ```
 wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
 ```
 
-#### 1.2 Install Guppy
+
+#### 1.2 Install Docker or Singularity
+NANOME Nextflow pipeline use containers running consensus methylation-calling, the Docker or Singularity is needed. If your system have one of them, please skip this section.
+
+Install Docker from here: [https://docs.docker.com/get-docker](https://docs.docker.com/get-docker).
+
+Install Singularity from here: [https://sylabs.io/guides/3.0/user-guide/installation.html](https://sylabs.io/guides/3.0/user-guide/installation.html).
+
+
+#### 1.3 Install Guppy
 Install the latest version of Guppy:
 
 ```
@@ -35,7 +44,7 @@ tar -xzf ont-guppy-cpu_6.1.1_linux64.tar.gz && \
 ont-guppy-cpu/bin/guppy_basecaller  -v
 ```
 
-#### 1.3 Install Megalodon
+#### 1.4 Install Megalodon
 [Megalodon](https://github.com/nanoporetech/megalodon) is a popular and latest ONT developed methylation-calling tool. It can be installed in conda enviroment.
 
 ```
