@@ -2,7 +2,7 @@
 In this tutorial (20 min ~ 30 min), you will learn how to perform methylation calling on Oxford Nanopore sequencing data by latest tools. Please create a freshing new folder to execute following commands.
 
 
-**Prerequisites: Ability to connect to JAX Sumner HPC will accelerate working through the tutorial. Assume your system has `wget`, `tar` basic command line tools.**
+**Prerequisites: Ability to connect to JAX Sumner HPC will accelerate working through the tutorial. Assume your system has `wget`, `tar` basic command line tools, container support by `Singularity` or `Docker`.**
 
 **This tutorial is compatible with different platforms: Linux, Mac and Windows.** 
 
@@ -10,16 +10,16 @@ In this tutorial (20 min ~ 30 min), you will learn how to perform methylation ca
 > ## Notes:
 > **If you are HPC users, enter into an interactive node before running pipeline.**
 
-Enter an interactive node with 8 cpus for parallelly job running (HPC users only):
+> Enter an interactive node with 8 cpus for parallelly job running (HPC users only):
 
-```
-srun --pty -q batch --time=01:00:00 --mem=25G -n 8  bash
-```
+> ```
+> srun --pty -q batch --time=01:00:00 --mem=25G -n 8  bash
+> ```
 
 ### 1. Software installation
 
 #### 1.1 Install Conda
-Megalodon and Nextflow will be installed in Conda. If you do not have Conda, please follow this link ([https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)) to install Conda, such as [Install on Linux](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html):
+Nextflow will be installed in Conda. If you do not have Conda, please follow this link ([https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)) to install Conda, such as [Install on Linux](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html):
 
 ```
 wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
@@ -28,37 +28,15 @@ bash Miniconda3-latest-Linux-x86_64.sh
 
 
 #### 1.2 Install Docker or Singularity
-NANOME Nextflow pipeline use containers running consensus methylation-calling, the Docker or Singularity is needed. If your system have one of them, please skip this section.
+In this tutorial, the ONT developed methylation-calling tool Megalodon and our NANOME consensus methylation detection pipeline use container supported by Docker or Singularity. If your system have one of them, please skip this section.
 
 Install Docker from here: [https://docs.docker.com/get-docker](https://docs.docker.com/get-docker).
 
 Install Singularity from here: [https://sylabs.io/guides/3.0/user-guide/installation.html](https://sylabs.io/guides/3.0/user-guide/installation.html).
 
 
-#### 1.3 Install Guppy
-Install the latest version of Guppy:
-
-```
-wget https://americas.oxfordnanoportal.com/software/analysis/ont-guppy-cpu_6.1.1_linux64.tar.gz
-tar -xzf ont-guppy-cpu_6.1.1_linux64.tar.gz && \
-    rm -f ont-guppy-cpu_6.1.1_linux64.tar.gz
-
-ont-guppy-cpu/bin/guppy_basecaller  -v
-```
-
-#### 1.4 Install Megalodon
-[Megalodon](https://github.com/nanoporetech/megalodon) is a popular and latest ONT developed methylation-calling tool. It can be installed in conda enviroment.
-
-```
-conda create --name megalodon python=3.9
-conda activate megalodon
-
-pip install megalodon
-megalodon -v
-```
-
-### 2. Data preparation
-In this section, you will prepare the FAST5 files and reference genome for input data.
+### 2. Example data preparation
+In this section, you will prepare the Oxford Nanopore raw FAST5 files and a reference genome for input data.
 
 #### 2.1 Download FAST5 files
 
@@ -68,8 +46,6 @@ tar -xzf ecoli_ci_test_fast5.tar.gz && \
     rm -f ecoli_ci_test_fast5.tar.gz
     
 ls ecoli_ci_test_fast5/
-kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch138_read698_strand.fast5
-kelvin_20160617_FN_MN17519_sequencing_run_sample_id_74930_ch139_read4507_strand.fast5
 ```
 
 #### 2.2 Download reference genome
@@ -79,18 +55,26 @@ wget https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ec
 tar -xzf ecoli.tar.gz && rm ecoli.tar.gz
 
 ls ecoli/
-Ecoli_k12_mg1655.fasta      Ecoli_k12_mg1655.fasta.bwt           Ecoli_k12_mg1655.fasta.pac
-Ecoli_k12_mg1655.fasta.amb  Ecoli_k12_mg1655.fasta.fai           Ecoli_k12_mg1655.fasta.sa
-Ecoli_k12_mg1655.fasta.ann  Ecoli_k12_mg1655.fasta.genome.sizes
 ```
 
-### 3. 5mC & 5hmC detection by Megalodon
+### 3. 5mC & 5hmC detection by ONT developed tool Megalodon
+Define below bash variable for Docker running:
+```
+RUN_NANOME="docker run -v $PWD:$PWD -w $PWD -it liuyangzzu/nanome:latest"
+
+```
+
+
+Define below bash variable for Singularity running:
+```
+RUN_NANOME="singularity exec docker://liuyangzzu/nanome:latest"
+```
+
+
 Below is an example command to output basecalls, mappings, and CpG 5mC and 5hmC methylation in both per-read (``mod_mappings``) and aggregated (``mods``) formats on prepared data.
 
 ```
-conda activate megalodon
-
-megalodon \
+LC_ALL=C  $RUN_NANOME   megalodon \
     ecoli_ci_test_fast5/ \
     --guppy-config  dna_r9.4.1_450bps_fast.cfg\
     --remora-modified-bases dna_r9.4.1_e8 fast 0.0.0 5hmc_5mc CG 0 \
@@ -101,19 +85,15 @@ megalodon \
     --write-mods-text --overwrite 
 
 ls methcall_ecoli_data/
-basecalls.fastq  mappings.summary.txt     per_read_modified_base_calls.db
-guppy_log        modified_bases.5hmC.bed  per_read_modified_base_calls.txt
-log.txt          modified_bases.5mC.bed   sequencing_summary.txt
-mappings.bam     mod_mappings.bam
 ```
 
 > ## Notes:
 > **If your system supports GPU, the option `--devices 0` can be used for acceleration.**
 
-For meanings of options in Megalodon, please check link [https://github.com/nanoporetech/megalodon#getting-started](https://github.com/nanoporetech/megalodon#getting-started).
+> For meanings of options in Megalodon, please check link [https://github.com/nanoporetech/megalodon#getting-started](https://github.com/nanoporetech/megalodon#getting-started).
 
-### 4. Consensus 5mC detection by NANOME pipeline
-We developed NANOME, the first Nextflow based container environment (Docker and Singularity) for consensus DNA methylation detection using XGBoost, a gradient boosting algorithm for nanopore long-read sequencing. The consensus outputs can obtain more accurate performance and more comprehensive CpG coverage.
+### 4. Consensus 5mC detection by NANOME Nextflow pipeline
+We developed NANOME, the first Nextflow based pipeline for consensus DNA methylation detection using XGBoost, a gradient boosting algorithm for nanopore long-read sequencing. The consensus outputs can obtain more accurate performance and  comprehensive CpG coverage.
 
 Install Nextflow:
 
@@ -127,7 +107,7 @@ nextflow -v
 ```
 
 
-Run Nanome consensus pipeline for 5mC detection, if you use Singularity container, specify `-profile singularity`; for Docker container, use `-profile docker`. Below is an example of using Singularity container on JAX Sumner HPC:
+Run Nanome consensus pipeline for 5mC detection, if you use Singularity container, specify `-profile singularity`; for Docker container, use `-profile docker` instead. Below is an example of using Singularity container on JAX Sumner HPC:
 
 ```
 conda activate nanome
