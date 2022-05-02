@@ -70,8 +70,14 @@ Define below bash variable for Singularity running (Singularity user only):
 RUN_NANOME="singularity exec docker://liuyangzzu/nanome:latest"
 ```
 
+Check Guppy basecalling tool and Megalodon methylation-calling tool versions in container:
+```
+$RUN_NANOME guppy_basecaller -v
 
-Below is an example command to output basecalls, mappings, and CpG 5mC and 5hmC methylation in both per-read (``mod_mappings``) and aggregated (``mods``) formats on prepared data.
+$RUN_NANOME megalodon -v
+```
+
+Everything looks good now. Run below command to perform basecalls, mappings, and CpG 5mC and 5hmC methylation-calls in both per-read (``mod_mappings``) and aggregated (``mods``) formats on prepared example data.
 
 ```
 LC_ALL=C  $RUN_NANOME   megalodon \
@@ -79,7 +85,7 @@ LC_ALL=C  $RUN_NANOME   megalodon \
     --guppy-config  dna_r9.4.1_450bps_fast.cfg\
     --remora-modified-bases dna_r9.4.1_e8 fast 0.0.0 5hmc_5mc CG 0 \
     --outputs basecalls mappings mod_mappings mods per_read_mods \
-    --guppy-server-path  ./ont-guppy-cpu/bin/guppy_basecall_server\
+    --guppy-server-path  /usr/bin/guppy_basecall_server \
     --reference ./ecoli/Ecoli_k12_mg1655.fasta \
     --output-directory methcall_ecoli_data\
     --write-mods-text --overwrite 
