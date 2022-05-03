@@ -53,7 +53,7 @@ ls ecoli/
 
 
 ```
-RUN_NANOME="docker run -v $PWD:$PWD -w $PWD -it liuyangzzu/nanome:latest"
+RUN_NANOME="docker run -v $PWD:$PWD -w $PWD -it liuyangzzu/nanome"
 ```
 
 
@@ -61,7 +61,7 @@ RUN_NANOME="docker run -v $PWD:$PWD -w $PWD -it liuyangzzu/nanome:latest"
 
 
 ```
-RUN_NANOME="singularity exec docker://liuyangzzu/nanome:latest"
+RUN_NANOME="singularity exec docker://liuyangzzu/nanome"
 ```
 
 * Check Guppy basecalling tool and Megalodon methylation-calling tool versions in container:
