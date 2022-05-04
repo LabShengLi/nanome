@@ -143,12 +143,22 @@ nextflow run TheJacksonLaboratory/nanome\
 
 `-profile` is the bundle of paramters, `--dsname` is the dataset name, `--input` is the FAST5 input files, and `--genome` is the reference genome file.
 
-> For Mac/PC users with low bandwiths for internet network, below is the script for local inputs:
+> For Mac/PC users with low bandwidths for internet network, below is the local input running script:
 > ```
-> nextflow run
+> # Download DeepSignal model input file
+> wget https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz
+> 
+> # Run NANOME on local input file
+> nextflow run TheJacksonLaboratory/nanome \
+>   -profile docker \
+>   --dsname CIEcoli \
+>   --input ecoli_ci_test_fast5.tar.gz \
+>   --genome ecoli.tar.gz \
+>   --deepsignalDir model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz
 > ```
 
-The output of NANOME pipeline can be followings:
+
+The output of NANOME pipeline is followings:
 
 ```
 [b2/6dbf5d] process > EnvCheck (CIEcoli)                   [100%] 1 of 1 ✔
