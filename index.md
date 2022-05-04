@@ -71,7 +71,7 @@ RUN_NANOME="singularity exec docker://liuyangzzu/nanome"
 > singularity  --version
 > ```
 
-* Check Guppy basecalling tool and Megalodon methylation-calling tool versions in container (**Note: A fresh first time execution will take times to fetch the container to local cache**):
+* Check Guppy basecalling tool and Megalodon methylation-calling tool versions in container (**Note: The first time execution will take times (20 mins ~ 40 mins) to cache containers. The next time execution will be very quick.**):
 
 
 ```
