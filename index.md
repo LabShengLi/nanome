@@ -141,8 +141,11 @@ nextflow run TheJacksonLaboratory/nanome\
     --genome https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli.tar.gz
 ```
 
+
 `-profile` is the bundle of paramters, `--dsname` is the dataset name, `--input` is the FAST5 input files, and `--genome` is the reference genome file.
 
+
+> ## Notes:
 > For Mac/PC users with low bandwidths for internet network, below is the local input running script:
 > ```
 > # Download DeepSignal model input file
