@@ -32,9 +32,8 @@ In this section, you will prepare the Oxford Nanopore raw FAST5 files and a refe
 #### 2.1 Download FAST5 files
 
 ```
-wget https://github.com/TheJacksonLaboratory/nanome/raw/master/test_data/ecoli_ci_test_fast5.tar.gz
-tar -xzf ecoli_ci_test_fast5.tar.gz && \
-    rm -f ecoli_ci_test_fast5.tar.gz
+wget https://github.com/TheJacksonLaboratory/nanome/raw/master/test_data/ecoli_ci_test_fast5.tar.gz &&\
+    tar -xzf ecoli_ci_test_fast5.tar.gz
     
 ls ecoli_ci_test_fast5/
 ```
@@ -42,8 +41,8 @@ ls ecoli_ci_test_fast5/
 #### 2.2 Download reference genome
 
 ```
-wget https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli.tar.gz
-tar -xzf ecoli.tar.gz && rm ecoli.tar.gz
+wget https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli.tar.gz &&\
+    tar -xzf ecoli.tar.gz
 
 ls ecoli/
 ```
@@ -143,6 +142,11 @@ nextflow run TheJacksonLaboratory/nanome\
 ```
 
 `-profile` is the bundle of paramters, `--dsname` is the dataset name, `--input` is the FAST5 input files, and `--genome` is the reference genome file.
+
+> For Mac/PC users with low bandwiths for internet network, below is the script for local inputs:
+> ```
+> nextflow run
+> ```
 
 The output of NANOME pipeline can be followings:
 
