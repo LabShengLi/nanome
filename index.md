@@ -63,6 +63,14 @@ RUN_NANOME="docker run -v $PWD:$PWD -w $PWD -it liuyangzzu/nanome"
 RUN_NANOME="singularity exec docker://liuyangzzu/nanome"
 ```
 
+
+> ## Notes:
+> For HPC users, `Singularity` may need to be loaded from module:
+> ```
+> module load singularity
+> singularity  --version
+> ```
+
 * Check Guppy basecalling tool and Megalodon methylation-calling tool versions in container (**Note: A fresh first time execution will take times to fetch the container to local cache**):
 
 
