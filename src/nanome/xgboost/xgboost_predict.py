@@ -10,6 +10,7 @@ Predict NANOME consensus results
 """
 
 import argparse
+import numpy as np
 import os.path
 import sys
 from functools import reduce
@@ -20,8 +21,9 @@ from tqdm import tqdm
 
 from nanome.common.eval_common import load_tool_read_level_unified_as_df
 from nanome.common.global_config import set_log_debug_level, set_log_info_level, logger
-from nanome.common.global_settings import nanome_model_dict, CHUNKSIZE, NANOME_VERSION, xgboost_mode_base_dir
-from nanome.xgboost.xgboost_common import SITES_COLUMN_LIST, READS_COLUMN_LIST
+from nanome.common.global_settings import CHUNKSIZE, NANOME_VERSION
+from nanome.xgboost.xgboost_common import SITES_COLUMN_LIST, READS_COLUMN_LIST, nanome_model_dict, \
+    xgboost_mode_base_dir, nanome_model_tool_list_dict
 
 
 def parse_arguments():
@@ -64,13 +66,13 @@ if __name__ == '__main__':
         infn = os.path.join(xgboost_mode_base_dir, nanome_model_dict[args.m])
     else:
         infn = args.m
-    logger.debug(f"Model file: {infn}")
+    logger.info(f"XGBoost model file: {infn}")
     xgboost_cls = joblib.load(infn)
     try:
         logger.debug(f"Model info: xgboost_cls={xgboost_cls}")
         logger.debug(f"best_params={xgboost_cls.best_params_}")
     except:
-        logger.debug(f"WARNNING: print params encounter problem")
+        logger.debug(f"WARNING: print params encounter problem")
 
     if args.tsv_input:
         if len(args.i) != 1:
@@ -79,12 +81,15 @@ if __name__ == '__main__':
         tool_list = list(df_tsvfile[0])
         dflist = []
         for index, row in tqdm(df_tsvfile.iterrows()):
-            if row[1] == 'None':
-                empty_frame = {'Chr': [], "ID": [], "Pos": [], "Strand": [], row[0]: []}
+            if row[1] in ['None', 'NA', 'NULL']:
+                empty_frame = {'Chr': pd.Series(dtype='str'), "ID": pd.Series(dtype='str'),
+                               "Pos": pd.Series(dtype='int'), "Strand": pd.Series(dtype='str'),
+                               row[0]: pd.Series(dtype='float')}
                 df = pd.DataFrame(empty_frame)
             else:
                 df = load_tool_read_level_unified_as_df(row[1], toolname=row[0], filterChrSet=args.chrs,
                                                         chunksize=args.chunksize)
+            # logger.debug(f"df={df}, df_type={df.info()}")
             dflist.append(df)
         if args.contain_na:
             datadf = reduce(
@@ -99,7 +104,7 @@ if __name__ == '__main__':
         datadf.drop_duplicates(subset=["ID", "Chr", "Pos", "Strand"], inplace=True)
         if len(datadf) <= 0:
             key_list = ['Chr', "ID", "Pos", "Strand"] + tool_list + ['Prediction', 'Prob_methylation']
-            empty_frame = { keystr: [] for keystr in key_list}
+            empty_frame = {keystr: [] for keystr in key_list}
             outdf = pd.DataFrame(empty_frame)
             outdf.to_csv(args.o, sep='\t', index=False)
             logger.info(f"make no predictions")
@@ -135,6 +140,20 @@ if __name__ == '__main__':
         datadf.reset_index(inplace=True, drop=True)
     else:
         raise Exception(f"datadf can not be None")
+
+    if args.m in nanome_model_tool_list_dict:
+        # Check if model's tool is in
+        nanome_model_tool_list = nanome_model_tool_list_dict[args.m]
+        logger.info(f"XGBoost model {args.m} use tool order: nanome_model_tool_list={nanome_model_tool_list}")
+        for t1 in nanome_model_tool_list:
+            if t1 not in tool_list:
+                raise Exception(
+                    f"Input tool file not contain {t1}, tool_list={tool_list}, nanome_model_tool_list={nanome_model_tool_list}")
+        # Rearrange tool column as model used order, remove unused order
+        datadf = datadf[list(datadf.columns[0:4]) + nanome_model_tool_list]
+    else:
+        logger.info(
+            f"The order user input is: tool_list={tool_list}, please make sure you provde the same order of XGBoost model used.")
 
     ## Output read-level, site-level distributions
     logger.debug(f"Read stats: total={len(datadf):,}")

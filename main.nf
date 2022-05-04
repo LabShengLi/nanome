@@ -2313,7 +2313,7 @@ process Phasing {
 				-i \${infn}\
 				--haplotype-list ${params.dsname}_clair3_out/${params.dsname}_whatshap_haplotag_read_list_\${chr}.tsv\
 				--region \${chr}\
-				-o .  &>> ${params.dsname}.Phasing.run.log
+				-o .  --save-unified-read  &>> ${params.dsname}.Phasing.run.log
 		done
 	done
 	"""

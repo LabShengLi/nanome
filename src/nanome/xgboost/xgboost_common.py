@@ -1,10 +1,28 @@
 import joblib
+import os
+from pathlib import Path
 
 from nanome.common.global_config import logger
 
 TRUTH_LABEL_COLUMN = 'Truth_label'
 SITES_COLUMN_LIST = ["Chr", "Pos", "Strand"]
 READS_COLUMN_LIST = ['ID'] + SITES_COLUMN_LIST
+
+# XGBoost model default dir
+xgboost_mode_base_dir = os.path.join(Path(__file__).parent, 'trained_model')
+
+# XGBoost model name shortcuts
+nanome_model_dict = {
+    "NA12878_XGBoostNA2T": 'NANOME_NA12878_train1.0_megalodon_deepsignal_XGBoostNA2T_model.pkl',
+    "NA12878_XGBoostNA3T": 'NANOME_NA12878_train1.0_nanopolish_megalodon_deepsignal_XGBoostNA3T_niter10_model.pkl',
+}
+
+# XGBoost model tools' order for input
+nanome_model_tool_list_dict = {
+    "NA12878_XGBoostNA2T": ['megalodon', 'deepsignal'],
+    "NA12878_XGBoostNA3T": ['nanopolish', 'megalodon', 'deepsignal'],
+}
+
 
 default_xgboost_params = {
     'objective': 'binary:logistic',

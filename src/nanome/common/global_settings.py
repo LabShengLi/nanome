@@ -88,13 +88,6 @@ discord_tagname = 'Discordant'
 
 default_config_name = 'nanome_genome_annotation.csv'
 
-xgboost_mode_base_dir = os.path.join(Path(__file__).parent.parent, 'xgboost', 'trained_model')
-
-nanome_model_dict = {
-    "NA12878_XGBoostNA2T": 'NANOME_NA12878_train1.0_megalodon_deepsignal_XGBoostNA2T_model.pkl',
-    "NA12878_XGBoostNA3T": 'NANOME_NA12878_train1.0_nanopolish_megalodon_deepsignal_XGBoostNA3T_niter10_model.pkl',
-}
-
 
 def load_genome_annotation_config(verbose=False):
     ## config file can be located at pwd, then the module dir

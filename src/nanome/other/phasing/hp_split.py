@@ -27,12 +27,15 @@ def parse_arguments():
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('-i', type=str, help='input file for megalodon per-read', required=True)
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
-    parser.add_argument('--region', type=str, help="chr region filtered", required=True)
+    parser.add_argument('--region', nargs='+',
+                        help="chr list for region filtered, default is None, means all chr, no filter",
+                        default=None)
     parser.add_argument('--haplotype-list', type=str, help="haplotype list file", required=True)
-    parser.add_argument('--num-class', type=int, help="number of class for input file, 2 for 5mc/5c, 3 for 5c/5mc/5hmc, default is 3",
+    parser.add_argument('--num-class', type=int,
+                        help="number of class for input file, 2 for 5mc/5c, 3 for 5c/5mc/5hmc, default is 3",
                         default=3)
     parser.add_argument('--tool', type=str,
-                        help="input methylation file from tool-name, such as megalodon, nanome3t, nanome2t, etc, default is megalodon",
+                        help="input methylation file from tool-name, such as megalodon, nanome3t, nanome2t, megalodon_5hmc_5mc etc., default is megalodon",
                         default='megalodon')
     parser.add_argument('--encode', type=str,
                         help="input methylation file format encode: megalodon, nanome, etc, default is megalodon",
@@ -67,10 +70,12 @@ if __name__ == '__main__':
     else:
         hpdf = None
 
-    if args.region is not None:
-        chr_filter = [args.region]
+    if args.region is None:
+        chrFilter = None
+        chrTagname = ""
     else:
-        chr_filter = None
+        chrFilter = set(args.region)
+        chrTagname = "_" + '_'.join(chrFilter)
 
     for hp_type in hpdf['haplotype'].unique():
         logger.debug(f"hp_type={hp_type}")
@@ -82,13 +87,14 @@ if __name__ == '__main__':
 
         logger.debug(f"Load {str(args.encode).upper()}:{args.i}")
         outfn = os.path.join(outdir,
-                             f"{args.dsname}_{str(args.tool).lower()}{'' if args.region is None else f'_{args.region}'}_perRead_score_{hp_type}.tsv.gz")
+                             f"{args.dsname}_{str(args.tool).lower()}_perReadScore{chrTagname}_{hp_type}.tsv.gz")
+
         if str(args.encode).lower() == 'megalodon':
-            predDict = import_megalodon_per_read_file(args.i, readid_filter=set(readids), chr_filter=set([args.region]),
+            predDict = import_megalodon_per_read_file(args.i, readid_filter=set(readids), chr_filter=chrFilter,
                                                       only_test=args.only_test,
                                                       save_unified_format=args.save_unified_read, outfn=outfn)
         elif str(args.encode).lower() in ['nanome']:
-            predDict = import_nanome_per_read_file(args.i, readid_filter=set(readids), chr_filter=set([args.region]),
+            predDict = import_nanome_per_read_file(args.i, readid_filter=set(readids), chr_filter=chrFilter,
                                                    only_test=args.only_test, save_unified_format=args.save_unified_read,
                                                    outfn=outfn)
         else:
@@ -97,12 +103,12 @@ if __name__ == '__main__':
         siteDict = agg_read_to_site(predDict, num_class=args.num_class)
 
         outfn = os.path.join(outdir,
-                             f'{args.dsname}_{args.tool.lower()}_read_pred{"" if args.region is None else f"_{args.region}"}_{hp_type}.tsv.gz')
+                             f'{args.dsname}_{args.tool.lower()}_read_pred{chrTagname}_{hp_type}.tsv.gz')
         to_read_preds_file(predDict, outfn)
         logger.info(f"save to {outfn}")
 
         outfn = os.path.join(outdir,
-                             f'{args.dsname}_{args.tool.lower()}_site_freq{"" if args.region is None else f"_{args.region}"}_{hp_type}.tsv.gz')
+                             f'{args.dsname}_{args.tool.lower()}_site_freq{chrTagname}_{hp_type}.tsv.gz')
         to_site_freq_file(siteDict, outfn, num_class=args.num_class)
         logger.info(f"save to {outfn}")
         logger.info(f"### hp_split DONE")
