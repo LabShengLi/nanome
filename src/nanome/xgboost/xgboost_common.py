@@ -15,14 +15,14 @@ xgboost_mode_base_dir = os.path.join(Path(__file__).parent, 'trained_model')
 
 # XGBoost model name shortcuts
 nanome_model_dict = {
-    "NA12878_XGBoostNA2T": 'NANOME_NA12878_train1.0_megalodon_deepsignal_XGBoostNA2T_model.pkl',
-    "NA12878_XGBoostNA3T": 'NANOME_NA12878_train1.0_nanopolish_megalodon_deepsignal_XGBoostNA3T_niter10_model.pkl',
+    "NANOME2T": 'NANOME_NA12878_train1.0_megalodon_deepsignal_XGBoostNA2T_model.pkl',
+    "NANOME3T": 'NANOME_NA12878_train1.0_nanopolish_megalodon_deepsignal_XGBoostNA3T_niter10_model.pkl',
 }
 
 # XGBoost model tools' order for input
 nanome_model_tool_list_dict = {
-    "NA12878_XGBoostNA2T": ['megalodon', 'deepsignal'],
-    "NA12878_XGBoostNA3T": ['nanopolish', 'megalodon', 'deepsignal'],
+    "NANOME2T": ['megalodon', 'deepsignal'],
+    "NANOME3T": ['nanopolish', 'megalodon', 'deepsignal'],
 }
 
 default_xgboost_params = {

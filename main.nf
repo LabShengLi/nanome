@@ -2285,7 +2285,7 @@ process Phasing {
 	"""
 	echo "### hello phasing"
 
-	toolList=("megalodon" "nanome_NA12878_XGBoostNA3T")
+	toolList=("megalodon" "nanome_${params.NANOME_MODEL}")
 	encodeList=("megalodon" "nanome")
 	numClassList=(${params.hmc? "3" : "2"}  2)
 

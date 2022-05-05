@@ -128,7 +128,7 @@ results/TestData-methylation-callings/
 │   ├── TestData_guppy_fast5mod_per_site_combine.tsv.gz
 │   ├── TestData_megalodon_per_read_combine.bed.gz
 │   ├── TestData_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.tsv.gz
-│   ├── TestData_nanome_NA12878_XGBoostNA3T_per_read_combine.tsv.gz
+│   ├── TestData_nanome_NANOME3T_per_read_combine.tsv.gz
 │   ├── TestData_nanopolish_per_read_combine.tsv.gz
 │   └── TestData_tombo_per_read_combine.bed.gz
 ├── Read_Level-TestData

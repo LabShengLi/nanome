@@ -33,17 +33,6 @@ Succeeded   : 3
 Cached      : 6
 
 ls results/NA12878_CHR22_200-phasing/
-NA12878_CHR22_200_clair3_out  NA12878_CHR22_200_hp_split
-
-ls results/NA12878_CHR22_200-phasing/NA12878_CHR22_200_hp_split
-NA12878_CHR22_200_megalodon_read_pred_chr22_H1.tsv.gz
-NA12878_CHR22_200_megalodon_read_pred_chr22_H2.tsv.gz
-NA12878_CHR22_200_megalodon_site_freq_chr22_H1.tsv.gz
-NA12878_CHR22_200_megalodon_site_freq_chr22_H2.tsv.gz
-NA12878_CHR22_200_nanome_na12878_xgboostna3t_read_pred_chr22_H1.tsv.gz
-NA12878_CHR22_200_nanome_na12878_xgboostna3t_read_pred_chr22_H2.tsv.gz
-NA12878_CHR22_200_nanome_na12878_xgboostna3t_site_freq_chr22_H1.tsv.gz
-NA12878_CHR22_200_nanome_na12878_xgboostna3t_site_freq_chr22_H2.tsv.gz
 ```
 
 ## Call 5hmC by Megalodon
