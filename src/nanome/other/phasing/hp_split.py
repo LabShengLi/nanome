@@ -38,7 +38,7 @@ def parse_arguments():
                         help="input methylation file from tool-name, such as megalodon, nanome3t, nanome2t, megalodon_5hmc_5mc etc., default is megalodon",
                         default='megalodon')
     parser.add_argument('--encode', type=str,
-                        help="input methylation file format encode: megalodon, nanome, etc, default is megalodon",
+                        help="input methylation file format encode: megalodon/megalodon.ziwei, nanome, etc, default is megalodon",
                         default='megalodon')
     parser.add_argument('--only-test', type=int, help="only for test import few lines",
                         default=None)
@@ -56,9 +56,9 @@ if __name__ == '__main__':
     logger.debug(args)
 
     if args.o is None:
-        outdir = os.path.join(pic_base_dir, f'{args.dsname}_hp_split')
+        outdir = os.path.join(pic_base_dir, f'hp_split_{args.dsname}_{args.tool}')
     else:
-        outdir = os.path.join(args.o, f'{args.dsname}_hp_split')
+        outdir = os.path.join(args.o, f'hp_split_{args.dsname}_{args.tool}')
     os.makedirs(outdir, exist_ok=True)
     logger.debug(f"outdir={outdir}")
 
@@ -91,6 +91,11 @@ if __name__ == '__main__':
 
         if str(args.encode).lower() == 'megalodon':
             predDict = import_megalodon_per_read_file(args.i, readid_filter=set(readids), chr_filter=chrFilter,
+                                                      only_test=args.only_test,
+                                                      save_unified_format=args.save_unified_read, outfn=outfn)
+        elif str(args.encode).lower() == 'megalodon.ziwei':
+            predDict = import_megalodon_per_read_file(args.i, readid_filter=set(readids), chr_filter=chrFilter,
+                                                      chr_col=0, readid_col=2, pos_col=1, strand_col=3,
                                                       only_test=args.only_test,
                                                       save_unified_format=args.save_unified_read, outfn=outfn)
         elif str(args.encode).lower() in ['nanome']:
