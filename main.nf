@@ -2272,7 +2272,7 @@ process Phasing {
 	tag "${params.dsname}"
 
 	publishDir "${params.outdir}/${params.dsname}-phasing",
-		mode: "copy", pattern: "${params.dsname}_hp_split"
+		mode: "copy", pattern: "hp_split_${params.dsname}*"
 
 	input:
 	path mega_and_nanome_raw_list
@@ -2280,17 +2280,19 @@ process Phasing {
 	path ch_src
 
 	output:
-	path "${params.dsname}_hp_split",	emit:	hp_split_ch, optional: true
+	path "hp_split_${params.dsname}*",	emit:	hp_split_ch, optional: true
 
 	"""
 	echo "### hello phasing"
 
 	toolList=("megalodon" "nanome_NA12878_XGBoostNA3T")
 	encodeList=("megalodon" "nanome")
+	numClassList=(${params.hmc? "3" : "2"}  2)
 
 	for i in "\${!toolList[@]}"; do
 		tool="\${toolList[i]}"
     	encode="\${encodeList[i]}"
+    	numClass="\${numClassList[i]}"
 
 		infn=\$(find . -name "${params.dsname}_\${tool}_per_read_combine*.gz")
 		if [[ -z \${infn} ]] ; then
@@ -2309,7 +2311,7 @@ process Phasing {
 				--dsname ${params.dsname}\
 				--tool \${tool}\
 				--encode \${encode}\
-				--num-class ${params.hmc? "3" : "2"}\
+				--num-class \${numClass}\
 				-i \${infn}\
 				--haplotype-list ${params.dsname}_clair3_out/${params.dsname}_whatshap_haplotag_read_list_\${chr}.tsv\
 				--region \${chr}\

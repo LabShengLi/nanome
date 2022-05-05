@@ -89,7 +89,7 @@ if __name__ == '__main__':
             else:
                 df = load_tool_read_level_unified_as_df(row[1], toolname=row[0], filterChrSet=args.chrs,
                                                         chunksize=args.chunksize)
-            # logger.debug(f"df={df}, df_type={df.info()}")
+            logger.debug(f"df={df}, df_type={df.info()}")
             dflist.append(df)
         if args.contain_na:
             datadf = reduce(
@@ -150,14 +150,19 @@ if __name__ == '__main__':
                 raise Exception(
                     f"Input tool file not contain {t1}, tool_list={tool_list}, nanome_model_tool_list={nanome_model_tool_list}")
         # Rearrange tool column as model used order, remove unused order
-        datadf = datadf[list(datadf.columns[0:4]) + nanome_model_tool_list]
+        datadf = datadf[READS_COLUMN_LIST + nanome_model_tool_list]
+        # Update tool_list to model's input tool list
+        tool_list = nanome_model_tool_list
     else:
+        # The order will be ensured by user
         logger.info(
             f"The order user input is: tool_list={tool_list}, please make sure you provde the same order of XGBoost model used.")
 
     ## Output read-level, site-level distributions
     logger.debug(f"Read stats: total={len(datadf):,}")
 
+    logger.debug(f"datadf={datadf}")
+    logger.debug(f"datadf={datadf.info()}")
     sitedf = datadf[SITES_COLUMN_LIST].drop_duplicates()
     logger.debug(f"Site stats: total={len(sitedf):,}")
     sitedf = None

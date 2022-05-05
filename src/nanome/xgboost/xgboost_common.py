@@ -6,6 +6,8 @@ from nanome.common.global_config import logger
 
 TRUTH_LABEL_COLUMN = 'Truth_label'
 SITES_COLUMN_LIST = ["Chr", "Pos", "Strand"]
+
+## ID  Chr Pos Strand
 READS_COLUMN_LIST = ['ID'] + SITES_COLUMN_LIST
 
 # XGBoost model default dir
@@ -22,7 +24,6 @@ nanome_model_tool_list_dict = {
     "NA12878_XGBoostNA2T": ['megalodon', 'deepsignal'],
     "NA12878_XGBoostNA3T": ['nanopolish', 'megalodon', 'deepsignal'],
 }
-
 
 default_xgboost_params = {
     'objective': 'binary:logistic',
