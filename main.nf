@@ -272,6 +272,7 @@ if (workflow.profile.contains('hpc') || workflow.profile.contains('winter') ||\
     summary['qos']          = params.qos
     summary['memory']       = params.memory
     summary['time']         = params.time
+    summary['queueSize']    = params.queueSize
     if (params.gresOptions) {summary['gresOptions'] = params.gresOptions }
 }
 if (workflow.profile.contains('google') || (params.config && params.config.contains('lifebit'))) {
