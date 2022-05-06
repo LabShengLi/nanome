@@ -10,13 +10,13 @@ Converts perReadScore methylation results file to a bed
 format and also splits multi-group CpG sites to single group by read-id.
 """
 import argparse
+import gzip
 from collections import defaultdict
 
-import gzip
 from tqdm import tqdm
 
 from nanome.common.eval_common import open_file_gz_or_txt
-from nanome.common.global_config import set_log_debug_level, logger, pic_base_dir, set_log_info_level
+from nanome.common.global_config import set_log_debug_level, logger, set_log_info_level
 from nanome.common.global_settings import NANOME_VERSION
 
 
