@@ -8,6 +8,15 @@
 """
 Converts perReadScore methylation results file to a bed
 format and also splits multi-group CpG sites to single group by read-id.
+
+Input is 1-based per-read score file
+
+Output format:
+chrY    10624514        10633058        +       52a2067f-7588-4190-8c15-85887a0f671b    meth_log_ratio  unmeth_log_ratio  meth_sites  unmeth_sites
+
+Note:   start is 0-based, end is 1 based
+        for + strand, sites point to CG's C
+        for - strand, sites point to CG's C also. (Later will be aligned to CG's G by bam2bis function)
 """
 import argparse
 import gzip
@@ -23,6 +32,8 @@ from nanome.common.global_settings import NANOME_VERSION
 def process_read_score_by_readid(infn, outfn, sep='\t', readid_col=0, chr_col=1, pos_col=2, strand_col=3, score_col=4,
                                  label_col=5):
     """
+    Convert meth per read score results into bed for IGV view
+
     Sample format:
     ID      Chr     Pos     Strand  Score   Label
     0a0a8a8b-3671-4265-8b59-bc30f633e42b    chr11   104837006       -       -3.2771419743285506     c
@@ -44,8 +55,9 @@ def process_read_score_by_readid(infn, outfn, sep='\t', readid_col=0, chr_col=1,
         tmp = row.strip().split(sep)
         readid = tmp[readid_col]
         chr = tmp[chr_col]
-        pos = int(tmp[pos_col]) - 1  # input is 1-based, in-memory will be 0-based
         strand = tmp[strand_col]
+        # input is 1-based, in-memory will be 0-based, for - strand, also point to CG's C, this position will be modified by NanomethPhase later
+        pos = int(tmp[pos_col]) - (1 if strand == '+' else 2)
         score = float(tmp[score_col])
 
         key = (readid, chr, strand)
