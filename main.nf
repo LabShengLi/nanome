@@ -2244,7 +2244,8 @@ process Clair3 {
 			--reference ${referenceGenome}\
 			--output-haplotag-list \${tsvFile} \
 			-o \${haplotagBamFile} \
-			\${phasingGZFile}  ${params.dsname}_bam_data/${params.dsname}_merge_all_bam.bam
+			\${phasingGZFile}  ${params.dsname}_bam_data/${params.dsname}_merge_all_bam.bam \
+			&>> ${params.dsname}.Clair3.run.log
 
 		if [[ ! -z "\${tsvFile}" ]]; then
 			awk 'NR>1' \${tsvFile} \
@@ -2259,7 +2260,8 @@ process Clair3 {
 		--output-h2 ${params.dsname}_clair3_out/${params.dsname}_split_h2.bam \
 		--output-untagged ${params.dsname}_clair3_out/${params.dsname}_split_untagged.bam  \
 		${params.dsname}_bam_data/${params.dsname}_merge_all_bam.bam \
-		${params.dsname}_clair3_out/${params.dsname}_haplotag_read_list_combine.tsv
+		${params.dsname}_clair3_out/${params.dsname}_haplotag_read_list_combine.tsv \
+		&>> ${params.dsname}.Clair3.run.log
 	echo "### Split by haplotag DONE"
 
 	# Index bam files
@@ -2290,7 +2292,8 @@ process Phasing {
 	"""
 	echo "### hello phasing"
 
-	toolList=("megalodon" "nanome_${params.NANOME_MODEL}")
+	## TODO: change hmc filename in Megalodon raw output
+	toolList=(${params.hmc? "megalodon" : "megalodon"}  "nanome_${params.NANOME_MODEL}")
 	encodeList=("megalodon" "nanome")
 	numClassList=(${params.hmc? "3" : "2"}  2)
 
@@ -2358,7 +2361,7 @@ process Phasing {
 					--reference ${referenceGenome} \
 					--methylcallfile \${methCallFile} \
 					--output \${outdir}/${params.dsname}_\${tool}_\${chr}_\${hapType} \
-					-t 8 --window \${chr} --overwrite  &>> ${params.dsname}.Phasing.run.log
+					-t ${task.cpus} --window \${chr} --overwrite  &>> ${params.dsname}.Phasing.run.log
 
 				infn=\$(find \${outdir} -name "${params.dsname}_\${tool}_\${chr}_\${hapType}*.bam")
 				if [ ! -e "\${infn}" ] ; then
