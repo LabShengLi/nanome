@@ -936,6 +936,7 @@ process Megalodon {
 				--remora-modified-bases ${params.remoraModel} fast 0.0.0 ${params.hmc ? "5hmc_5mc" : "5mc"} CG 0\
 				--outputs mod_mappings mods per_read_mods\
 				--guppy-server-path \$(which guppy_basecall_server) \
+				--guppy-timeout ${params.GUPPY_TIMEOUT} \
 				--mod-output-formats bedmethyl wiggle \
 				--write-mods-text --write-mod-log-probs\
 				--reference ${referenceGenome}\
