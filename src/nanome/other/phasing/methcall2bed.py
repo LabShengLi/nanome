@@ -6,7 +6,7 @@
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
 
 """
-Converts perReadScore methylation results file to a bed
+Converts any tool's perReadScore methylation results file to a bed
 format and also splits multi-group CpG sites to single group by read-id.
 
 Input is 1-based per-read score file
