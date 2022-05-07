@@ -29,7 +29,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="nanome-jax",
-    version="2.0.4",
+    version="2.0.5",
     author="Yang Liu",
     author_email="yang.liu@jax.org",
     description="NANOME (Nanopore methylation) pipeline developed by Li Lab at The Jackson Laboratory",
@@ -102,6 +102,7 @@ setuptools.setup(
         'psutil',
         'xgboost',
         'pytabix',
-        'pysam'
+        'pysam',
+        'ont-fast5-api'
     ]
 )
