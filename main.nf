@@ -2274,15 +2274,18 @@ process Phasing {
 	tag "${params.dsname}"
 
 	publishDir "${params.outdir}/${params.dsname}-phasing",
-		mode: "copy", pattern: "hp_split_${params.dsname}*"
+		mode: "copy"
 
 	input:
 	path mega_and_nanome_raw_list
 	path clair3_out
 	path ch_src
+	path merged_bam
+	path reference_genome
 
 	output:
-	path "hp_split_${params.dsname}*",	emit:	hp_split_ch, optional: true
+	path "hp_split_${params.dsname}*",	emit: hp_split_ch, 	optional: true
+	path "mock_bam_${params.dsname}", 	emit: mock_bam_ch, 		optional: true
 
 	"""
 	echo "### hello phasing"
@@ -2318,6 +2321,55 @@ process Phasing {
 				--haplotype-list ${params.dsname}_clair3_out/${params.dsname}_whatshap_haplotag_read_list_\${chr}.tsv\
 				--region \${chr}\
 				-o .  --save-unified-read  &>> ${params.dsname}.Phasing.run.log
+
+			## Start generate mocked BAM files
+
+			## Step1: methcall2bed
+			## hp_split_NA12878_CHR22_200_megalodon
+			outdir=mock_bam_${params.dsname}
+			mkdir -p \${outdir}
+			find hp_split_${params.dsname}_\${tool} -name "${params.dsname}*_perReadScore_\${chr}_H*.tsv.gz" -print0 |
+				while IFS= read -r -d '' infn; do
+					basefn=\$(basename \$infn)
+					outfn=\${outdir}/\${basefn/.tsv.gz/_methcall2bed.bed.gz}
+					PYTHONPATH=src  python src/nanome/other/phasing/methcall2bed.py \
+						-i \${infn} \
+						-o \${outfn} \
+						--verbose  &>> ${params.dsname}.Phasing.run.log
+
+					zcat \${outfn} | sort -V -k1,1 -k2,2n -k3,3n |
+						bgzip -f >\${outfn/.bed.gz/.sort.bed.gz} &&
+						tabix -p bed \${outfn/.bed.gz/.sort.bed.gz}
+					rm -f \${outfn}
+					touch \${outfn/.bed.gz/.sort.bed.gz}.DONE
+				done
+
+			## Step2: bam2bis
+			bamFile=\$(find ${merged_bam}/ -name "*.bam")
+			## cd \${outdir}
+
+			for hapType in H1 H2; do
+				methCallFile=\$(find \${outdir} -name "${params.dsname}_\${tool,,}_perReadScore_\${chr}_\${hapType}_methcall2bed.sort.bed.gz")
+				if [ ! -e "\${methCallFile}" ] ; then
+					continue
+				fi
+				PYTHONPATH=src  python  src/nanome/other/phasing/nanomethphase.py bam2bis \
+					--bam \${bamFile} \
+					--reference ${referenceGenome} \
+					--methylcallfile \${methCallFile} \
+					--output \${outdir}/${params.dsname}_\${tool}_\${chr}_\${hapType} \
+					-t 8 --window \${chr} --overwrite  &>> ${params.dsname}.Phasing.run.log
+
+				infn=\$(find \${outdir} -name "${params.dsname}_\${tool}_\${chr}_\${hapType}*.bam")
+				if [ ! -e "\${infn}" ] ; then
+					continue
+				fi
+
+				samtools sort \$infn -o \${infn/.bam/.sort.bam} &&
+					samtools index \${infn/.bam/.sort.bam} &&
+					rm -f \${infn} &&
+					touch \${infn/.bam/.sort.bam}.DONE
+			done
 		done
 	done
 	"""
@@ -2485,6 +2537,6 @@ workflow {
 		Channel.fromPath("${projectDir}/utils/null1").concat(
 			MgldnComb.out.megalodon_combine, Report.out.nanome_combine_out
 			).toList().set { mega_and_nanome_ch }
-		Phasing(mega_and_nanome_ch, Clair3.out.clair3_out_ch, ch_src)
+		Phasing(mega_and_nanome_ch, Clair3.out.clair3_out_ch, ch_src, QCExport.out.bam_data, EnvCheck.out.reference_genome)
 	}
 }
