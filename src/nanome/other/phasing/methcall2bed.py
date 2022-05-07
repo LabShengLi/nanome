@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # @Author   : Yang Liu
-# @FileName : hp_split.py
+# @FileName : methcall2bed.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
