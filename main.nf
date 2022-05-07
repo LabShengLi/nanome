@@ -145,8 +145,8 @@ ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: fa
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
 
 // Reference genome, deepmod cluster settings
-def referenceGenome = 'reference_genome/ref.fasta'
-def chromSizesFile = 'reference_genome/chrom.sizes'
+def referenceGenome = "reference_genome/${params.GENOME_FN}"
+def chromSizesFile = "reference_genome/${params.CHROM_SIZE_FN}"
 
 if (dataType == 'human') { isDeepModCluster = params.useDeepModCluster }
 else { isDeepModCluster = false }
@@ -383,7 +383,7 @@ process EnvCheck {
 	fi
 
 	if [[ ${params.runBasecall} == true || ${params.runMethcall} == true ]]; then
-		## Get dir for reference_genome
+		## Build dir for reference_genome
 		mkdir -p reference_genome
 		find_dir="\$PWD/reference_genome"
 		if [[ ${reference_genome} == *.tar.gz && -f ${reference_genome}  ]] ; then
@@ -392,14 +392,24 @@ process EnvCheck {
 			tar -xf ${reference_genome} -C reference_genome
 		elif [[ -d ${reference_genome} ]] ; then
 			## for folder, use ln, note this is a symbolic link to a folder
-			find_dir=\$( readlink -f ${reference_genome} )
+			## find_dir=\$( readlink -f ${reference_genome} )
+			## Copy reference genome, avoid singularity/docker access out data problem
+			cp ${reference_genome}/*   reference_genome/ -f
 		else
 			echo "### ERROR: not recognized reference_genome=${reference_genome}"
 			exit -1
 		fi
 
-		find \${find_dir} -name '*.fasta*' | \
-			 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/\${fn/*.fasta/ref.fasta}'
+		# Rename reference file
+		if [[ ! -z \$(find \${find_dir}/ \\( -name '*.fasta' -o -name '*.fasta.gz' \\)  ) ]] ; then
+			find \${find_dir} -name '*.fasta*' | \
+				 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/\${fn/*.fasta/ref.fasta}'
+		elif [[ ! -z \$(find \${find_dir}/ \\( -name '*.fa' -o -name '*.fa.gz' \\)  ) ]] ; then
+			find \${find_dir} -name '*.fa*' | \
+				 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/\${fn/*.fa/ref.fasta}'
+		fi
+
+		## Chrom size file if exists
 		find \${find_dir} -name '*.sizes' | \
 				parallel -j1 -v ln -s -f {} reference_genome/chrom.sizes
 
