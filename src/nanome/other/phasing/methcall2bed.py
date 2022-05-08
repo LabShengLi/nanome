@@ -9,9 +9,9 @@
 Converts any tool's perReadScore methylation results file to a bed
 format and also splits multi-group CpG sites to single group by read-id.
 
-Input is 1-based per-read score file
+Input is 1-based per-read score (perReadScore unified) file
 
-Output format:
+Output format (methcall2bed):
 chrY    10624514        10633058        +       52a2067f-7588-4190-8c15-85887a0f671b    meth_log_ratio  unmeth_log_ratio  meth_sites  unmeth_sites
 
 Note:   start is 0-based, end is 1 based

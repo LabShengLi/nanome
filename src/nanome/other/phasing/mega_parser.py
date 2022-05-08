@@ -7,6 +7,10 @@
 
 """
 Read and parse megalodon per-read results
+Output files:
+    1. perReadScore         1-based
+    2. read_pred            1-based
+    3. site_pred            1-based
 """
 import argparse
 import gzip
@@ -52,7 +56,7 @@ def import_megalodon_per_read_file(infn, chr_filter=None, readid_filter=None, se
     2d39b6b0-75b4-4ef8-8c6b-75871c924fd2	chr1	+	412238	-7.546572208404541	-8.03528033495954	h
     2d39b6b0-75b4-4ef8-8c6b-75871c924fd2	chr1	+	412238	-0.0008521132986061275	-8.03528033495954	m
 
-    We validated 0-based start for Magelodon
+    We validated 0-based start for Megalodon
     """
     if outBase not in [0, 1]:
         raise Exception(f"outBase={outBase} is not allowed")
