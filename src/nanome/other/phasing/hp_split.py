@@ -6,7 +6,10 @@
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
 
 """
-Split megalodon results based on HP types on each chromosome
+Split megalodon results based on HP types (H1 and H2) of readid list for each chromosome
+For megalodon 5hmc_5mc results, also support splitting into:
+    1. H1 and H2 for 5mC and 5C
+    2. H1_5hmc and H2_5hmc for 5hmc and 5C
 """
 import argparse
 import os
@@ -32,8 +35,8 @@ def parse_arguments():
                         default=None)
     parser.add_argument('--haplotype-list', type=str, help="haplotype list file", required=True)
     parser.add_argument('--num-class', type=int,
-                        help="number of class for input file, 2 for 5mc/5c, 3 for 5c/5mc/5hmc, default is 3",
-                        default=3)
+                        help="number of class for input file, 2 for 5mc/5c, 3 for 5c/5mc/5hmc, default is 2",
+                        default=2)
     parser.add_argument('--tool', type=str,
                         help="input methylation file from tool-name, such as megalodon, nanome3t, nanome2t, megalodon_5hmc_5mc etc., default is megalodon",
                         default='megalodon')
@@ -92,7 +95,8 @@ if __name__ == '__main__':
         if str(args.encode).lower() == 'megalodon':
             predDict = import_megalodon_per_read_file(args.i, readid_filter=set(readids), chr_filter=chrFilter,
                                                       only_test=args.only_test,
-                                                      save_unified_format=args.save_unified_read, outfn=outfn)
+                                                      save_unified_format=args.save_unified_read, outfn=outfn,
+                                                      num_class=args.num_class)
         elif str(args.encode).lower() == 'megalodon.ziwei':
             predDict = import_megalodon_per_read_file(args.i, readid_filter=set(readids), chr_filter=chrFilter,
                                                       chr_col=0, readid_col=2, pos_col=1, strand_col=3,

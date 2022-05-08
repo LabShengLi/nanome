@@ -6,7 +6,7 @@
 # @Website  : https://github.com/TheJacksonLaboratory/nanome
 
 """
-Read and parse megalodon per-read results
+Read and parse megalodon/nanome per-read results
 Output files:
     1. perReadScore         1-based
     2. read_pred            1-based
@@ -40,7 +40,7 @@ def import_megalodon_per_read_file(infn, chr_filter=None, readid_filter=None, se
                                    strand_col=2, pos_col=3,
                                    meth_log_prob_col=4,
                                    unmeth_log_prob_col=5, meth_type_col=6, prob_cutoff=0.80, include_score=False,
-                                   outBase=1, only_test=None, save_unified_format=False, outfn=None):
+                                   outBase=1, only_test=None, save_unified_format=False, outfn=None, num_class=2):
     """
     Import read-level megalodon, compatible with 5mc or 5hmc_5mc input
     Args:
@@ -61,10 +61,19 @@ def import_megalodon_per_read_file(infn, chr_filter=None, readid_filter=None, se
     if outBase not in [0, 1]:
         raise Exception(f"outBase={outBase} is not allowed")
 
+    if num_class not in [2, 3]:
+        raise Exception(f"num_class={num_class} is not allowed")
+
     if save_unified_format:
+        if not outfn.endswith('tsv.gz'):
+            raise Exception(f"outfn is not correct named, outfn={outfn}")
         logger.debug(f"Save unified format to {outfn}")
-        outf = gzip.open(outfn, 'wt')
-        outf.write(f"ID\tChr\tPos\tStrand\tScore\tLabel\n")
+        outf1 = gzip.open(outfn, 'wt')
+        outf1.write(f"ID\tChr\tPos\tStrand\tScore\tLabel\n")
+        if num_class > 2:
+            # seperate 5mc and 5hmc
+            outf2 = gzip.open(outfn.replace(".tsv.gz", "_5hmc.tsv.gz"), 'wt')
+            outf2.write(f"ID\tChr\tPos\tStrand\tScore\tLabel\n")
 
     if chr_filter is not None:  # set is fast than list
         chr_filter = set(chr_filter)
@@ -124,14 +133,26 @@ def import_megalodon_per_read_file(infn, chr_filter=None, readid_filter=None, se
 
             ## keep only above cutoff reads
             if save_unified_format:
-                # output to 1-based for meteore, ref: https://github.com/comprna/METEORE/blob/master/script/format_megalodon.R#L16
                 score = math.log((meth_prob + EPSLONG) / (unmeth_prob + EPSLONG))
-                outf.write(
-                    f"{readid}\t{chr}\t{pos}\t{strand}\t{score}\t{class_label[meth_indicator]}\n")
+                if class_label[meth_indicator] == 'c':  # keep 5c to both files
+                    outf1.write(
+                        f"{readid}\t{chr}\t{pos}\t{strand}\t{score}\t{class_label[meth_indicator]}\n")
+                    if num_class > 2:
+                        outf2.write(
+                            f"{readid}\t{chr}\t{pos}\t{strand}\t{score}\t{class_label[meth_indicator]}\n")
+                elif class_label[meth_indicator] == 'm':  # keep 5mc to 5mc file
+                    outf1.write(
+                        f"{readid}\t{chr}\t{pos}\t{strand}\t{score}\t{class_label[meth_indicator]}\n")
+                elif class_label[meth_indicator] == 'h' and num_class > 2:  # keep 5hmc to 5hmc file
+                    outf2.write(
+                        f"{readid}\t{chr}\t{pos}\t{strand}\t{score}\t{class_label[meth_indicator]}\n")
 
     if save_unified_format:
-        outf.close()
+        outf1.close()
         logger.debug(f'Save unified output format to {outfn}')
+        if num_class > 2:
+            outf2.close()
+            logger.debug(f'Save unified output format for both 5mc and 5hmc')
 
     logger.debug(f"import Megalodon: cpgs={len(cpgDict):,}\t read_level_preds={nreads:,}")
     return cpgDict
