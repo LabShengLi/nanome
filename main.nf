@@ -2248,7 +2248,7 @@ process Clair3 {
     	> ${params.dsname}_clair3_out/${params.dsname}_haplotag_read_list_combine.tsv
 
 	for chr in chr{1..22} chrX chrY; do
-		if [[ ${params.ctg_name} != "null" && "\$chr" != "${params.ctg_name}" ]] ; then
+		if [[ ${params.ctg_name} != "null" &&  "${params.ctg_name}", != *"\$chr",* ]] ; then
 			continue
 		fi
 		echo "### haplotag chr=\$chr"
@@ -2308,7 +2308,7 @@ process Phasing {
 
 	output:
 	path "hp_split_${params.dsname}*",	emit: hp_split_ch, 	optional: true
-	path "mock_bam_${params.dsname}", 	emit: mock_bam_ch, 		optional: true
+	path "${params.dsname}*mock_bam", 	emit: mock_bam_ch, 		optional: true
 
 	"""
 	echo "### hello phasing"
@@ -2332,9 +2332,11 @@ process Phasing {
 
 		## Split methylation results by phasing tag for each chromosome
 		for chr in chr{1..22} chrX chrY; do
-			if [[ ${params.ctg_name} != "null" && "\$chr" != "${params.ctg_name}" ]] ; then
+			if [[ ${params.ctg_name} != "null" &&  "${params.ctg_name}", != *"\$chr",* ]] ; then
 				continue
 			fi
+
+			## Step1: HP split meth data
 			echo "### HP split for chr=\${chr}"
 			PYTHONPATH=src python src/nanome/other/phasing/hp_split.py \
 				--dsname ${params.dsname}\
@@ -2347,17 +2349,16 @@ process Phasing {
 				-o .  --save-unified-read  &>> ${params.dsname}.Phasing.run.log
 
 			## Start generate mocked BAM files
-
-			## Step1: methcall2bed
+			## Step2: methcall2bed
 			## hp_split_NA12878_CHR22_200_megalodon
-			outdir=mock_bam_${params.dsname}
+			outdir=${params.dsname}_\${tool}_methcall2bed
 			mkdir -p \${outdir}
 			find hp_split_${params.dsname}_\${tool} -name "${params.dsname}*_perReadScore_\${chr}_H*.tsv.gz" -print0 |
-				while IFS= read -r -d '' infn; do
-					basefn=\$(basename \$infn)
+				while IFS= read -r -d '' infn2; do
+					basefn=\$(basename \$infn2)
 					outfn=\${outdir}/\${basefn/.tsv.gz/_methcall2bed.bed.gz}
 					PYTHONPATH=src  python src/nanome/other/phasing/methcall2bed.py \
-						-i \${infn} \
+						-i \${infn2} \
 						-o \${outfn} \
 						--verbose  &>> ${params.dsname}.Phasing.run.log
 
@@ -2368,11 +2369,11 @@ process Phasing {
 					touch \${outfn/.bed.gz/.sort.bed.gz}.DONE
 				done
 
-			## Step2: bam2bis
+			## Step3: bam2bis
+			outdir2=${params.dsname}_\${tool}_mock_bam
+			mkdir -p \${outdir2}
 			bamFile=\$(find ${merged_bam}/ -name "*.bam")
-			## cd \${outdir}
-
-			for hapType in H1 H2; do
+			for hapType in H1 H2 H1_5hmc H2_5hmc; do
 				methCallFile=\$(find \${outdir} -name "${params.dsname}_\${tool,,}_perReadScore_\${chr}_\${hapType}_methcall2bed.sort.bed.gz")
 				if [ ! -e "\${methCallFile}" ] ; then
 					continue
@@ -2381,18 +2382,18 @@ process Phasing {
 					--bam \${bamFile} \
 					--reference ${referenceGenome} \
 					--methylcallfile \${methCallFile} \
-					--output \${outdir}/${params.dsname}_\${tool}_\${chr}_\${hapType} \
+					--output \${outdir2}/${params.dsname}_\${tool}_\${chr}_\${hapType} \
 					-t ${task.cpus} --window \${chr} --overwrite  &>> ${params.dsname}.Phasing.run.log
 
-				infn=\$(find \${outdir} -name "${params.dsname}_\${tool}_\${chr}_\${hapType}*.bam")
+				infn3=\$(find \${outdir2} -name "${params.dsname}_\${tool}_\${chr}_\${hapType}*.bam")
 				if [ ! -e "\${infn}" ] ; then
 					continue
 				fi
 
-				samtools sort \$infn -o \${infn/.bam/.sort.bam} &&
-					samtools index \${infn/.bam/.sort.bam} &&
-					rm -f \${infn} &&
-					touch \${infn/.bam/.sort.bam}.DONE
+				samtools sort \$infn3 -o \${infn3/.bam/.sort.bam} &&
+					samtools index \${infn3/.bam/.sort.bam} &&
+					rm -f \${infn3} &&
+					touch \${infn3/.bam/.sort.bam}.DONE
 			done
 		done
 	done
