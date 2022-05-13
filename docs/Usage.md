@@ -1,28 +1,28 @@
-**This is an explanation of how to use NANOME pipeline on raw Fast5 input. For specific scenarios, please check [Specific Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/SpecificUsage.md).**
+**This is an explanation of how to use NANOME pipeline on raw Fast5 input. For specific scenarios, please check [Specific Usage](https://github.com/LabShengLi/nanome/blob/master/docs/SpecificUsage.md).**
 
 The inputs of NANOME pipeline is a folder/tar/tar.gz or txt file list containing raw signal Fast5 files and a reference genome. We recommend allocate GPU resources to software such as Guppy, DeepSignal, DeepMod and Megalodon, in order to optimal running times. We integrated the latest tool METEORE, it depends on other tools' read-level outputs (e.g., Megalodon and DeepSignal), and running METEORE program directly on them, detailed please check [METEORE](https://github.com/comprna/METEORE).
 
 # 1. Running NANOME for human nanopore sequencing data
 
 ## Running samples
-The command for running NANOME pipeline is to run `nextflow run TheJacksonLaboratory/nanome`.
+The command for running NANOME pipeline is to run `nextflow run LabShengLi/nanome`.
 - `--dsname` is dataset/analysis name.
 - `--input` is input Fast5 files path. Nanome pipeline support three kinds of inputs: (1) folder, (2) tar/tar.gz file, (3) a txt file `.filelist.txt` contains list of compressed Fast5 files/folders.
 - `--genome` is reference genome.
 
-NANOME support **multiple runs input** as a file list if input file name is suffixed like `.filelist.txt`, example inputs are [benchmark.filelist.txt](https://github.com/TheJacksonLaboratory/nanome/blob/master/inputs/benchmark.filelist.txt) and [na12878_chr22.filelist.txt](https://github.com/TheJacksonLaboratory/nanome/blob/master/inputs/na12878_chr22.filelist.txt). Another option is to use wildcard matching features, i.e., `--input 'input_folders/dir_*'` (Note: the single quote character outside wildcard string is needed).
+NANOME support **multiple runs input** as a file list if input file name is suffixed like `.filelist.txt`, example inputs are [benchmark.filelist.txt](https://github.com/LabShengLi/nanome/blob/master/inputs/benchmark.filelist.txt) and [na12878_chr22.filelist.txt](https://github.com/LabShengLi/nanome/blob/master/inputs/na12878_chr22.filelist.txt). Another option is to use wildcard matching features, i.e., `--input 'input_folders/dir_*'` (Note: the single quote character outside wildcard string is needed).
 
 By default, NANOME uses `--genome=hg38` for human reference genome, and users can specify other reference genome using parameter `--genome=ecoli`. We defined a bunch of predefined running configuration params in profile in next section. 
 
 Please use followings for pipeline command help:
 ```angular2html
-nextflow run TheJacksonLaboratory/nanome --help
+nextflow run LabShengLi/nanome --help
 ```
 
 Examples of how to use NANOME pipeline are given below.
 ```angular2html
 # Running NANOME pipeline for human data on HPC
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile singularity,hpc\
     --dsname TestData\
     --input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/demo1_fast5_reads.tar.gz\
@@ -31,7 +31,7 @@ nextflow run TheJacksonLaboratory/nanome\
     --processors 8 --memory 32GB --time 1h --gresOptions gpu:v100:1
 
 # Running NANOME pipeline for E. coli data on HPC
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile singularity,hpc\
     --dsname EcoliData\
     --input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli_data_from_meteore.tar.gz\
@@ -61,7 +61,7 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
   * A generic configuration profile to be used with [Singularity](https://sylabs.io/docs/)
   * Pulls from [Docker Hub](https://hub.docker.com/repository/docker/liuyangzzu/nanome): docker://liuyangzzu/nanome:latest
 * `conda`
-  * A generic configuration profile to be used with [Conda](https://docker.com/), check [conda usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#5-conda-environment-for-local-running)
+  * A generic configuration profile to be used with [Conda](https://docker.com/), check [conda usage](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md#5-conda-environment-for-local-running)
 * `hpc`		
   * A generic configuration profile to be used on HPC cluster with [SLURM](https://slurm.schedmd.com/documentation.html) job submission support.
 * `google`	
@@ -70,7 +70,7 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
 You can also run NANOME pipeline on cloud computing platform ([google cloud platform](https://cloud.google.com/) or [Lifebit CloudOS](https://lifebit.gitbook.io/cloudos/)), sample of command line is below.
 ```angular2html
 # Running test on Google Cloud (https://cloud.google.com)
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile test,docker,google \
     -w [Google-storage-bucket]/TestData-work \
     --outputDir [Google-storage-bucket]/TestData-ouputs\
@@ -79,7 +79,7 @@ nextflow run TheJacksonLaboratory/nanome\
 
 ## Running results
 
-Pipeline running results is below, output directory trees are [results](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/outputs_demo.tree.txt) and [work](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/work_demo.tree.txt). It can also generate [timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_demo.pdf), [report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_demo.pdf) and [resource usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_demo.txt.tsv) with more Nextflow [options](https://www.nextflow.io/docs/latest/tracing.html) (e.g., `-with-report -with-timeline -with-trace -with-dag -resume`).
+Pipeline running results is below, output directory trees are [results](https://github.com/LabShengLi/nanome/blob/master/docs/resources/outputs_demo.tree.txt) and [work](https://github.com/LabShengLi/nanome/blob/master/docs/resources/work_demo.tree.txt). It can also generate [timeline](https://github.com/LabShengLi/nanome/blob/master/docs/resources/timeline_demo.pdf), [report](https://github.com/LabShengLi/nanome/blob/master/docs/resources/report_demo.pdf) and [resource usage](https://github.com/LabShengLi/nanome/blob/master/docs/resources/trace_demo.txt.tsv) with more Nextflow [options](https://www.nextflow.io/docs/latest/tracing.html) (e.g., `-with-report -with-timeline -with-trace -with-dag -resume`).
 
 ```angular2html
 N E X T F L O W  ~  version 20.10.0
@@ -159,10 +159,10 @@ results
 
 
 # 2. Experiment for E. coli data
-The NANOME pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--genome` need to be set as `ecoli`. Below is an example of pipeline running on E. coli data, please refer to the input parameters for pipeline params' config file [ecoli_demo.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/examples/ecoli_demo.config).
+The NANOME pipeline supports 5mC detection by all tools on both human and Escherichia coli data. Note that `--genome` need to be set as `ecoli`. Below is an example of pipeline running on E. coli data, please refer to the input parameters for pipeline params' config file [ecoli_demo.config](https://github.com/LabShengLi/nanome/blob/master/conf/examples/ecoli_demo.config).
 
 ```angular2html
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile singularity,hpc \
     -config  conf/examples/ecoli_demo.config
 ```
@@ -174,7 +174,7 @@ N E X T F L O W  ~  version 20.10.0
 Launching `main.nf` [maniac_poitras] - revision: 47f69be0ab
 NANOME - NF PIPELINE
 by Li Lab at The Jackson Laboratory
-https://github.com/TheJacksonLaboratory/nanome
+https://github.com/LabShengLi/nanome
 =================================
 executor >  slurm (14)
 [61/6ba4f5] process > EnvCheck (EnvCheck)                      [100%] 1 of 1 ✔
@@ -197,13 +197,13 @@ CPU hours   : 0.7
 Succeeded   : 14
 ```
 
-The output files of pipeline on E. coli data by all tools are below, please also check the pipeline output directory tree for [results](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/outputs_ecoli.tree.txt) and [work](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/work_ecoli.tree.txt). The pipeline can also generate [timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_ecoli.pdf), [report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_ecoli.pdf) and [resource usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_ecoli.txt.tsv).
+The output files of pipeline on E. coli data by all tools are below, please also check the pipeline output directory tree for [results](https://github.com/LabShengLi/nanome/blob/master/docs/resources/outputs_ecoli.tree.txt) and [work](https://github.com/LabShengLi/nanome/blob/master/docs/resources/work_ecoli.tree.txt). The pipeline can also generate [timeline](https://github.com/LabShengLi/nanome/blob/master/docs/resources/timeline_ecoli.pdf), [report](https://github.com/LabShengLi/nanome/blob/master/docs/resources/report_ecoli.pdf) and [resource usage](https://github.com/LabShengLi/nanome/blob/master/docs/resources/trace_ecoli.txt.tsv).
 
 # 3. Support for other reference genome
 We now support other reference genome. Below is an example of running NANOME for any other reference genomes, please make sure put reference genome file .fasta and the indexed file into directory [reference-genome-dir], the `--chrSet` is the chromosomes params for the specific genome. 
 
 ```angular2html
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile singularity \
     --dsname [the-dataset-name]\
     --input [input-file]\
@@ -214,24 +214,24 @@ nextflow run TheJacksonLaboratory/nanome\
 Note: NANOME support the default behaviour of each tool's running, if the tool performed on the specified genome which is same as human/E. coli data. 
 
 # 4. Benchmarking experiment
-We constructed a list of benchmarking datasets that contain Fast5 reads from 800 to 7,200  for NA19240. The datasets can be got by users upon request. Following command is running NANOME pipeline on our benchmarking datasets, please refer to the input parameters for config file [benchmarking_hpc.config](https://github.com/TheJacksonLaboratory/nanome/blob/master/conf/executors/benchmarking_hpc.config).
+We constructed a list of benchmarking datasets that contain Fast5 reads from 800 to 7,200  for NA19240. The datasets can be got by users upon request. Following command is running NANOME pipeline on our benchmarking datasets, please refer to the input parameters for config file [benchmarking_hpc.config](https://github.com/LabShengLi/nanome/blob/master/conf/executors/benchmarking_hpc.config).
 
 ```angular2html
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile singularity,hpc  \
     -config  conf/executors/benchmarking_hpc.config\
     --dsname  BenchmarkData\
     --input  inputs/benchmark.filelist.txt
 ```
 
-Resource usage are reported by [Nextflow](https://www.nextflow.io/) workflow reporting utilities. Please refer to the [Trace file](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_benchmark.txt.tsv), [Report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_benchmark.pdf) and [Timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_benchmark.pdf) of benchmarking results on our HPC.
+Resource usage are reported by [Nextflow](https://www.nextflow.io/) workflow reporting utilities. Please refer to the [Trace file](https://github.com/LabShengLi/nanome/blob/master/docs/resources/trace_benchmark.txt.tsv), [Report](https://github.com/LabShengLi/nanome/blob/master/docs/resources/report_benchmark.pdf) and [Timeline](https://github.com/LabShengLi/nanome/blob/master/docs/resources/timeline_benchmark.pdf) of benchmarking results on our HPC.
 
 # 5. Running pipeline on cloud computing platform
 
 Our Nextflow pipeline can run on CloudOS. The CloudOS recommend using the Docker image. Below is an example.
 
 ```angular2html
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile test,docker,google \
     -w [Google-storage-bucket]/nanome-work-ci \
     --outdir [Google-storage-bucket]/nanome-outputs-ci\
@@ -240,7 +240,7 @@ nextflow run TheJacksonLaboratory/nanome\
 
 The `[Google-project-name]` is the Google project name, and `[Google-storage-bucket]` is the **Data Bucket** name that user can access on Google Cloud. `-w` is pipeline output working directory, `--outdir` is the directory for methylation-calling results.
 
-For more detail of using cloud computing, please check [Cloud computing usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/CloudComputing.md).
+For more detail of using cloud computing, please check [Cloud computing usage](https://github.com/LabShengLi/nanome/blob/master/docs/CloudComputing.md).
 
 # 6. Conda environment for local running
 
@@ -249,7 +249,7 @@ NANOME support local running without Docker or Singularity support. Below is con
 * Create conda environment name:
 ```angular2html
 # Create conda environment for local running NANOME
-git clone https://github.com/TheJacksonLaboratory/nanome.git
+git clone https://github.com/LabShengLi/nanome.git
 cd nanome
 conda env create --name nanome --file=environment.yml
 conda activate nanome
@@ -263,18 +263,18 @@ conda install -c conda-forge -c bioconda nextflow
 ```
 # Run NANOME pipeline using local execution
 conda activate nanome
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile test\
     --guppyDir [guppy-installation-directory]
 
 # Another way
 conda run --no-capture-output  --name nanome\
-    nextflow run TheJacksonLaboratory/nanome\
+    nextflow run LabShengLi/nanome\
     -profile test\
     --guppyDir [guppy-installation-directory]
 
 # Run NANOME pipeline via conda environment
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile test,conda\
     --conda_name [conda-env-dir]\
     --conda_base_dir [conda-dir]\
@@ -294,7 +294,7 @@ echo $CUDA_VISIBLE_DEVICES
 
 Singularity can directly pass CUDA devices by default, however, docker need to provide `--gpus all` docker options to pass CUDA devices. Below is the docker command to use GPU resources:
 ```angular2html
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile test,docker\
     --containerOptions '--gpus all'
 ```
@@ -310,7 +310,7 @@ Check links for how to  install [Nvidia](https://www.nvidia.com/Download/index.a
 
 NANOME support adding any new methylation-calling module in a rapid way, without touching the main pipeline codes. Users only need to specify the container (or local running way) and methylation calling command line interface for each new tool in a configuration file.
 
-Below is the sample configuration text for adding new tool in NANOME ([conf/modules/newmodules.config](https://github.com/TheJacksonLaboratory/nanome/blob/robust6/conf/modules/newmodules.config)). There are two params predefined to be used in script: `${input}`: basecalling input, `${genome}`: reference genome.
+Below is the sample configuration text for adding new tool in NANOME ([conf/modules/newmodules.config](https://github.com/LabShengLi/nanome/blob/robust6/conf/modules/newmodules.config)). There are two params predefined to be used in script: `${input}`: basecalling input, `${genome}`: reference genome.
 ```angular2html
 [
       name      : 'megalodonNew1',
@@ -347,7 +347,7 @@ The execution command for running new tool is as below. `-config conf/modules/ne
 
 ```angular2html
 cd nanome
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile test,singularity\
     -config conf/modules/newmodules.config\
     --runNewTool

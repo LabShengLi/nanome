@@ -3,7 +3,7 @@
 # @FileName : xgboost_eval.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 
 """
 Evaluate NANOME consensus model on data (0% or 100% BS-seq sites), joined reads

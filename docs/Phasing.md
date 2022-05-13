@@ -1,11 +1,11 @@
-**This is an explanation of how to use NANOME pipeline phasing and 5hmC call. For general usage, please check [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md).**
+**This is an explanation of how to use NANOME pipeline phasing and 5hmC call. For general usage, please check [Usage](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md).**
 
 ## Phasing reads for methylaiton
 NANOME support phasing long-reads into H1 and H2 using [Clair3](https://github.com/HKU-BAL/Clair3) (variant calling) and [Whatshap](https://whatshap.readthedocs.io/en/latest/) (long-read phasing). The option for running phasing step is `--phasing`.
 
 Below is an example:
 ```angular2html
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile singularity,winter \
     --dsname NA12878_CHR22_200 \
     --input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/na12878_chr22_200.tar.gz\

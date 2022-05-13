@@ -3,7 +3,7 @@
 # @FileName : xgboost_train.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 """
 Train model on data using RF or XGBoost
 """

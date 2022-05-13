@@ -24,15 +24,15 @@ if( nextflow.version.matches(">= 20.07.1") ){
 def helpMessage() {
 	log.info"""
 	NANOME - Nextflow PIPELINE (v$workflow.manifest.version)
-	by Li Lab at The Jackson Laboratory
-	https://github.com/TheJacksonLaboratory/nanome
+	by Sheng Li Lab at The Jackson Laboratory
+	https://github.com/LabShengLi/nanome
 	=================================
 	Usage:
 	The typical command is as follows:
 
-	nextflow run TheJacksonLaboratory/nanome -profile test,docker
-	nextflow run TheJacksonLaboratory/nanome -profile test,singularity
-	nextflow run TheJacksonLaboratory/nanome -profile [docker/singularity] \\
+	nextflow run LabShengLi/nanome -profile test,docker
+	nextflow run LabShengLi/nanome -profile test,singularity
+	nextflow run LabShengLi/nanome -profile [docker/singularity] \\
 		--dsname DSNAME --input INPUT --genome GENOME
 
 	Mandatory arguments:
@@ -90,7 +90,7 @@ def helpMessage() {
 	  hpc		A generic configuration profile to be used on HPC cluster with SLURM
 	  google	A generic configuration profile to be used on Google Cloud platform with 'google-lifesciences'
 
-	Contact to https://github.com/TheJacksonLaboratory/nanome/issues for bug report.
+	Contact to https://github.com/LabShengLi/nanome/issues for bug report.
 	""".stripIndent()
 }
 
@@ -308,7 +308,7 @@ if (workflow.profile.contains('google') || (params.config && params.config.conta
 log.info """\
 NANOME - NF PIPELINE (v$workflow.manifest.version)
 by Li Lab at The Jackson Laboratory
-https://github.com/TheJacksonLaboratory/nanome
+https://github.com/LabShengLi/nanome
 ================================="""
 .stripIndent()
 

@@ -3,7 +3,7 @@
 # @FileName : pcc_region_eval.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 
 """
 Evaluate PCC at different regions in nanome paper

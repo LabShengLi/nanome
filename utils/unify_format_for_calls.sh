@@ -3,7 +3,7 @@
 # @FileName : unify_format_for_calls.sh
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 
 # Generate unified read-level and/or site-level format of calls
 # Usage:

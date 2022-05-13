@@ -3,7 +3,7 @@
 # @FileName : xgboost_prepdata.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 """
 Prepare data for training, join all tools log-likelyhood (log meth_prob/unmeth_prob) score, with bs-seq
 Note:   no-coverage filter for tools and bs-seq, guppy score is from gcf52ref for reference purpose, not certified by us

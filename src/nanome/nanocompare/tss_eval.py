@@ -3,7 +3,7 @@
 # @FileName : tss_eval.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 
 """
 Export read/site-level methylation results for TSS/METEORE analysis in nanome paper.

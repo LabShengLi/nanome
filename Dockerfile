@@ -2,7 +2,7 @@
 # @FileName : Dockerfile
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 
 # Set the base image to Ubuntu 18.04 and NVIDIA GPU from https://hub.docker.com/r/nvidia/cuda
 # or from https://ngc.nvidia.com/catalog/containers/nvidia:cuda/tags

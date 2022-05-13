@@ -3,7 +3,7 @@
 # @FileName : hp_split.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 
 """
 Split megalodon results based on HP types (H1 and H2) of readid list for each chromosome

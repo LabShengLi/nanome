@@ -3,7 +3,7 @@
 # @FileName : gen_html_report.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 
 import glob
 import os

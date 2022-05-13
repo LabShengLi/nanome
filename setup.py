@@ -3,7 +3,7 @@
 # @FileName : setup.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 """
 Install:
     pip install build twine
@@ -36,9 +36,9 @@ setuptools.setup(
     license='MIT License',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/TheJacksonLaboratory/nanome",
+    url="https://github.com/LabShengLi/nanome",
     project_urls={
-        'Bug Tracker': 'https://github.com/TheJacksonLaboratory/nanome/issues'
+        'Bug Tracker': 'https://github.com/LabShengLi/nanome/issues'
     },
     packages=(
         setuptools.find_packages(where="src", exclude=("*.*.resource", "*.*.*.saniti_ecoli", "*.xgboost.sanity",))

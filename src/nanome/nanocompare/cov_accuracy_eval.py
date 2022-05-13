@@ -3,7 +3,7 @@
 # @FileName : site_level_eval.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 
 """
 Generate site-level methylation correlation results in nanome paper.

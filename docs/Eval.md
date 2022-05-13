@@ -49,7 +49,7 @@ read_level_eval.py \
     --min-bgtruth-cov 1\
     --report-joined
 ```
-Sample results can be found at [read-level outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/read_level_output.txt).
+Sample results can be found at [read-level outputs](https://github.com/LabShengLi/nanome/blob/master/docs/resources/read_level_output.txt).
 
 For using docker or singularity, the command prefix is like below:
 ```angular2html
@@ -142,7 +142,7 @@ site_level_eval.py \
     --gen-venn --summary-coverage
 ```
 
-Sample results can be found at [site-level outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/site_level_output.txt).
+Sample results can be found at [site-level outputs](https://github.com/LabShengLi/nanome/blob/master/docs/resources/site_level_output.txt).
 
 ## Command options
 ```angular2html

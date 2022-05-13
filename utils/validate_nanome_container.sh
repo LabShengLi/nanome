@@ -3,7 +3,7 @@
 # @FileName : validate_nanome_container.sh
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 
 #versionFilename=${1:-"tools_version_table.tsv"}
 versionFilename=${1:-}

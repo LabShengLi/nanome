@@ -3,7 +3,7 @@
 # @FileName : methcall2bed.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 
 """
 Converts any tool's perReadScore methylation results file to a bed

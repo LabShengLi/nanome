@@ -1,11 +1,11 @@
 # NANOME pipeline (Nanopore long-read sequencing data consensus DNA methylation detection)   
 
-[![demo_gif.gif](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/demo_gif.gif)](https://www.youtube.com/watch?v=TfotM55KTVE)
+[![demo_gif.gif](https://github.com/LabShengLi/nanome/blob/master/docs/demo_gif.gif)](https://www.youtube.com/watch?v=TfotM55KTVE)
 
 ## Highlights of NANOME pipeline
 ### Several first highlights for NANOME
 
-![Figure_pipe_comp](https://github.com/TheJacksonLaboratory/nanome/blob/xgboost1/docs/resources/pipeline_comparison.jpg)
+![Figure_pipe_comp](https://github.com/LabShengLi/nanome/blob/xgboost1/docs/resources/pipeline_comparison.jpg)
 
 * Enables users to process **terabasescale** Oxford Nanopore sequencing datasets.
 * Provide a **one command line**/**web-based UI** for end-to-end analyzing Nanopore sequencing methylation-callings.
@@ -23,12 +23,12 @@
 [comment]: <> (**Background:** Nanopore long-read sequencing technology greatly expands the capacity of long-range, single-molecule DNA-modification detection. A growing number of analytical tools have been developed to detect DNA methylation from nanopore sequencing reads. Here, we assess the performance of different methylation calling tools to provide a systematic evaluation to guide researchers performing human epigenome-wide studies.)
 
 
-![Figure1A](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Fig1A.jpg)
+![Figure1A](https://github.com/LabShengLi/nanome/blob/master/docs/Fig1A.jpg)
 
 **Fig. 1A. Survey of methylation calling tools .**  Timeline of publication and technological developments of Oxford Nanopore Technologies (ONT) methylation calling tools to detect DNA cytosine modifications. 
 
 
-![Figure1B](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Fig1B.jpg)
+![Figure1B](https://github.com/LabShengLi/nanome/blob/master/docs/Fig1B.jpg)
 **Fig. 1B. Workflow for 5-methylcytosine (5mC) detection for nanopore sequencing.** 
 
 
@@ -40,7 +40,7 @@
 
 
 ### CI/CD features
-We use  CI Automation Tools to **enable the automated testing on every commit and on PRs** to make sure that updates are not introducing bugs. Please check the automatic testing results on [Github](https://github.com/TheJacksonLaboratory/nanome/actions).
+We use  CI Automation Tools to **enable the automated testing on every commit and on PRs** to make sure that updates are not introducing bugs. Please check the automatic testing results on [Github](https://github.com/LabShengLi/nanome/actions).
 
 
 ## System Requirements
@@ -91,32 +91,32 @@ NANOME pipeline support running with various ways in different platforms:
 
 
 ## Simple usage
-Please refer to [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md) and [Specific Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/SpecificUsage.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). We provide a **tutorial video** for running NANOME pipeline:
+Please refer to [Usage](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md) and [Specific Usage](https://github.com/LabShengLi/nanome/blob/master/docs/SpecificUsage.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). We provide a **tutorial video** for running NANOME pipeline:
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/TfotM55KTVE/0.jpg)](https://www.youtube.com/watch?v=TfotM55KTVE)
 
 When you have Nextflow software, NANOME pipeline can be directly executed without any other additional installation steps:
 ```angular2html
 # Run NANOME via docker
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile test,docker
 
 # Run NANOME via singularity
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile test,singularity
 
 # Run NANOME for human data
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile test_human,[docker/singularity]
 ```
-Please note that above commands are integrated in our **CI/CD test cases**. Our GitHub will automatically test and report results on every commit and PRs (https://github.com/TheJacksonLaboratory/nanome/actions). 
+Please note that above commands are integrated in our **CI/CD test cases**. Our GitHub will automatically test and report results on every commit and PRs (https://github.com/LabShengLi/nanome/actions). 
 
-We firstly proposed the **standardized whole genome-wide evaluation packages**, check [standardized evaluation tool usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Eval.md) for more detail. We do not suggest evaluating on a portion of CpGs for performance comparisons.
+We firstly proposed the **standardized whole genome-wide evaluation packages**, check [standardized evaluation tool usage](https://github.com/LabShengLi/nanome/blob/master/docs/Eval.md) for more detail. We do not suggest evaluating on a portion of CpGs for performance comparisons.
 
 
 ## Pipeline reports for NANOME
 ### Benchmarking reports on our HPC using [Nextflow](https://www.nextflow.io/)
-We constructed a set of benchmarking datasets that contain reads from 800 to about 7,200 reads for NA19240, and monitored job running timeline and resource usage on our HPC, reports generated by **Nextflow** workflows are: [Trace file](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/trace_benchmark.txt.tsv), [Report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/report_benchmark.pdf)  and [Timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_benchmark.pdf). 
+We constructed a set of benchmarking datasets that contain reads from 800 to about 7,200 reads for NA19240, and monitored job running timeline and resource usage on our HPC, reports generated by **Nextflow** workflows are: [Trace file](https://github.com/LabShengLi/nanome/blob/master/docs/resources/trace_benchmark.txt.tsv), [Report](https://github.com/LabShengLi/nanome/blob/master/docs/resources/report_benchmark.pdf)  and [Timeline](https://github.com/LabShengLi/nanome/blob/master/docs/resources/timeline_benchmark.pdf). 
 
 Our HPC hardware specifications are as follows:
 * CPU: Intel(R) Xeon(R) Gold 6136 CPU @ 3.00GHz
@@ -125,17 +125,17 @@ Our HPC hardware specifications are as follows:
 * Slurm manager version: 19.05.5
 
 Timeline figure for benchmarking experiments are below:
-![Bench-timeline](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/timeline_benchmark.jpg)
+![Bench-timeline](https://github.com/LabShengLi/nanome/blob/master/docs/resources/timeline_benchmark.jpg)
 
 
 ### Pipeline DAG
-![NanomeDag](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/nanome_dag.png)
+![NanomeDag](https://github.com/LabShengLi/nanome/blob/master/docs/nanome_dag.png)
 
 
 ### NANOME report
-Please check [NANOME report](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/NANOME_report_html.pdf) for the sample report by NANOME pipeline.
+Please check [NANOME report](https://github.com/LabShengLi/nanome/blob/master/docs/NANOME_report_html.pdf) for the sample report by NANOME pipeline.
 
-![NanomeReportHtml](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/nanome_report_html.png)
+![NanomeReportHtml](https://github.com/LabShengLi/nanome/blob/master/docs/nanome_report_html.png)
 
 
 ### Lifebit CloudOS report
@@ -147,11 +147,11 @@ We now support running NANOME on cloud computing platform. [Lifebit](https://lif
 
 
 ## Revision History
-For release history, please visit [here](https://github.com/TheJacksonLaboratory/nanome/releases). For details, please go [here](https://github.com/TheJacksonLaboratory/nanome/blob/master/README.md).
+For release history, please visit [here](https://github.com/LabShengLi/nanome/releases). For details, please go [here](https://github.com/LabShengLi/nanome/blob/master/README.md).
 
 
 ## Contact
-If you have any questions/issues/bugs, please post them on [GitHub](https://github.com/TheJacksonLaboratory/nanome/issues). We will continuously update the GitHub to support famous methylation-calling tools for Oxford Nanopore sequencing.
+If you have any questions/issues/bugs, please post them on [GitHub](https://github.com/LabShengLi/nanome/issues). We will continuously update the GitHub to support famous methylation-calling tools for Oxford Nanopore sequencing.
 
 
 ## Reference
