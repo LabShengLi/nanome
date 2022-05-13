@@ -16,8 +16,9 @@ In this tutorial (20 min ~ 30 min), you will learn how to perform methylation ca
 > srun --pty -q batch --time=01:00:00 --mem=25G -n 8  bash
 > ```
 
-### 1. Install Docker or Singularity
-In this tutorial, the ONT developed basecalling tool [Guppy](https://community.nanoporetech.com), methylation-calling tool [Megalodon](https://github.com/nanoporetech/megalodon) and our [NANOME](https://github.com/TheJacksonLaboratory/nanome) consensus methylation detection pipeline use containerized environment supported by Docker or Singularity. 
+## 1. Software installations
+### 1.1 Install Docker or Singularity
+In this tutorial, the ONT developed basecalling tool [Guppy](https://community.nanoporetech.com), methylation-calling tool [Megalodon](https://github.com/nanoporetech/megalodon) and our [NANOME](https://github.com/LabShengLi/nanome) consensus methylation detection pipeline use containerized environment supported by Docker or Singularity. 
 
 Container environment avoids users to encounter software installations steps/issues, and ensures running belowing same commands across different platforms (Linux, MacOS and Windows). **If your system already has Singularity or Docker container, please skip this section.**
 
@@ -25,6 +26,36 @@ Install Docker from here: [https://docs.docker.com/get-docker](https://docs.dock
 
 Install Singularity from here: [https://sylabs.io/guides/3.0/user-guide/installation.html](https://sylabs.io/guides/3.0/user-guide/installation.html).
 
+#### 1.2 Install Nextflow
+Running [NANOME](https://github.com/LabShengLi/nanome) consensus methylation detection pipeline needs install [Nextflow](https://www.nextflow.io/docs/latest/getstarted.html).
+
+* If you have [Java 11 or later](https://www.oracle.com/java/technologies/downloads), you can install Nextflow with below command:
+
+
+```
+curl -s https://get.nextflow.io | bash
+
+nextflow -v
+```
+
+* If you do not have Java, you can firstly install Conda, please follow this link ([https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)) to install Conda, such as [Install on Linux](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html):
+
+```
+wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+```
+
+Then you can install Nextflow through Conda:
+
+```
+conda create --name nanome python=3.9
+conda activate nanome
+
+# Install nextflow
+conda install -c conda-forge -c bioconda nextflow
+
+nextflow -v
+```
 
 ### 2. Example data preparation
 In this section, you will prepare the Oxford Nanopore raw FAST5 files and a reference genome for input data.
@@ -32,7 +63,7 @@ In this section, you will prepare the Oxford Nanopore raw FAST5 files and a refe
 #### 2.1 Download FAST5 files
 
 ```
-wget https://github.com/TheJacksonLaboratory/nanome/raw/master/test_data/ecoli_ci_test_fast5.tar.gz &&\
+wget https://github.com/LabShengLi/nanome/raw/master/test_data/ecoli_ci_test_fast5.tar.gz &&\
     tar -xzf ecoli_ci_test_fast5.tar.gz
     
 ls ecoli_ci_test_fast5/
@@ -102,38 +133,8 @@ ls methcall_ecoli_data/
 > For meanings of options in Megalodon, please check link [https://github.com/nanoporetech/megalodon#getting-started](https://github.com/nanoporetech/megalodon#getting-started).
 
 ### 4. Consensus 5mC detection by NANOME Nextflow pipeline
-#### 4.1 Install Nextflow
-Running [NANOME](https://github.com/TheJacksonLaboratory/nanome) consensus pipeline needs install [Nextflow](https://www.nextflow.io/docs/latest/getstarted.html).
 
-* If you have [Java 11 or later](https://www.oracle.com/java/technologies/downloads), you can install Nextflow with below command:
-
-
-```
-curl -s https://get.nextflow.io | bash
-
-nextflow -v
-```
-
-* If you do not have Java, you can firstly install Conda, please follow this link ([https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)) to install Conda, such as [Install on Linux](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html):
-
-```
-wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
-bash Miniconda3-latest-Linux-x86_64.sh
-```
-
-Then you can install Nextflow through Conda:
-
-```
-conda create --name nanome python=3.9
-conda activate nanome
-
-# Install nextflow
-conda install -c conda-forge -c bioconda nextflow
-
-nextflow -v
-```
-
-#### 4.2 Run NANOME pipeline
+#### 4.1 Run NANOME pipeline
 
 We developed NANOME, the first Nextflow based pipeline for consensus DNA methylation detection using XGBoost, a gradient boosting algorithm for nanopore long-read sequencing. The consensus outputs can obtain more accurate performance and  comprehensive CpG coverage.
 
@@ -142,10 +143,10 @@ Run Nanome consensus pipeline for 5mC detection, if you use Singularity containe
 ```
 module load singularity
 
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile singularity\
     --dsname CIEcoli\
-    --input  https://github.com/TheJacksonLaboratory/nanome/raw/master/test_data/ecoli_ci_test_fast5.tar.gz\
+    --input  https://github.com/LabShengLi/nanome/raw/master/test_data/ecoli_ci_test_fast5.tar.gz\
     --genome https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli.tar.gz
 ```
 
@@ -160,7 +161,7 @@ nextflow run TheJacksonLaboratory/nanome\
 > wget https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz
 > 
 > # Run NANOME on local input file
-> nextflow run TheJacksonLaboratory/nanome \
+> nextflow run LabShengLi/nanome \
 >   -profile docker \
 >   --dsname CIEcoli \
 >   --input ecoli_ci_test_fast5.tar.gz \
@@ -210,5 +211,5 @@ Raw_Results-CIEcoli  Read_Level-CIEcoli  Site_Level-CIEcoli  tools_version_table
 ### Reference
 1. [https://community.nanoporetech.com](https://community.nanoporetech.com)
 2. [https://github.com/nanoporetech/megalodon](https://github.com/nanoporetech/megalodon)
-3. [https://github.com/TheJacksonLaboratory/nanome](https://github.com/TheJacksonLaboratory/nanome)
+3. [https://github.com/LabShengLi/nanome](https://github.com/LabShengLi/nanome)
 4. DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation. Genome Biology 22, 295 (2021). [https://doi.org/10.1186/s13059-021-02510-z](https://doi.org/10.1186/s13059-021-02510-z)
