@@ -57,7 +57,7 @@ NANOME pipeline uses Nextflow technology. Users only need to install [Nextflow](
 * Docker
 * Singularity
 
-We provide conda, docker and singularity environments that depend on below well-known open-source packages for methylation calling on nanopore sequencing data:
+We provide conda, docker and singularity environments that depend on below well-known open-source packages for basecalling/methylation-calling/phasing on nanopore sequencing data:
 
 [nanopolish](https://github.com/jts/nanopolish) >=0.13.2  
 [megalodon](https://github.com/nanoporetech/megalodon) >=2.2.9  
@@ -66,9 +66,9 @@ We provide conda, docker and singularity environments that depend on below well-
 [deepmod](https://github.com/WGLab/DeepMod) >=0.1.3  
 [METEORE](https://github.com/comprna/METEORE) >=1.0.0  
 [ont-pyguppy-client-lib](https://github.com/nanoporetech/pyguppyclient) >=4.2.2  
-[fast5mod](https://github.com/nanoporetech/fast5mod) >=1.0.5
-[Clair3](https://github.com/HKU-BAL/Clair3) >=v0.1-r11
-[Whatshap](https://github.com/whatshap/whatshap) >=1.0
+[fast5mod](https://github.com/nanoporetech/fast5mod) >=1.0.5  
+[Clair3](https://github.com/HKU-BAL/Clair3) >=v0.1-r11  
+[Whatshap](https://github.com/whatshap/whatshap) >=1.0  
 
 Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https://nanoporetech.com)
 
