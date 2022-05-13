@@ -62,6 +62,9 @@ if __name__ == '__main__':
         set_log_info_level()
     logger.debug(f"args={args}")
 
+    import sklearn;
+    sklearn.show_versions()
+
     if args.m in nanome_model_dict:
         infn = os.path.join(xgboost_mode_base_dir, nanome_model_dict[args.m])
     else:

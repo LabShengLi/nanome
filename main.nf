@@ -2073,6 +2073,7 @@ process Report {
 		if [[ "\$passModelTsv" == true ]] ; then
 			## NANOME XGBoost model results, if there are model results exists
 			echo "### NANOME XGBoost predictions"
+			pip show scikit-learn
 			PYTHONPATH=src python src/nanome/xgboost/xgboost_predict.py \
 				--contain-na --tsv-input\
 				--dsname ${params.dsname} -i \${modelContentTSVFileName}\
