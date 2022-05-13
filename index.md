@@ -2,7 +2,7 @@
 In this tutorial (20 min ~ 30 min), you will learn how to perform methylation calling on Oxford Nanopore sequencing data by latest tools. Please create a freshing new folder to execute following commands.
 
 
-**Prerequisites: Assume your system has (1) basic command line utils (`wget` and `tar`); (2) container supported by `Singularity` or `Docker`; (3) good internet connection. (Ability to connect to JAX Sumner HPC will accelerate working through the tutorial.)**
+**Prerequisites: Assume your system has (1) basic command line utils (`curl`, `wget`, `zcat` and `tar`); (2) container supported by `Singularity` or `Docker`; (3) good internet connection. (Ability to connect to JAX Sumner HPC will accelerate working through the tutorial.)**
 
 **This tutorial is compatible with different platforms: Linux, Mac, Windows, and CloudOS.** 
 
