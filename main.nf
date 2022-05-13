@@ -5,7 +5,7 @@
 =========================================================================================
  NANOME Analysis Pipeline.
  #### Homepage / Documentation
- https://github.com/TheJacksonLaboratory/nanome
+ https://github.com/LabShengLi/nanome
  @Author   : Yang Liu
  @FileName : main.nf
  @Software : NANOME project
