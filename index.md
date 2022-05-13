@@ -207,7 +207,7 @@ Raw_Results-CIEcoli  Read_Level-CIEcoli  Site_Level-CIEcoli  tools_version_table
 #### 4.2 NANOME output format
 Read level output sample is below:
 ```
- zcat results/CIEcoli-methylation-callings/Read_Level-CIEcoli/CIEcoli_NANOME-perRead-score.tsv.gz | head -n 5
+zcat results/CIEcoli-methylation-callings/Read_Level-CIEcoli/CIEcoli_NANOME-perRead-score.tsv.gz | head -n 5
 ID	Chr	Pos	Strand	Score
 21a26cb9-0be2-4670-8694-a3cee91d49b8    NC_000913.3     3503574 -       0.88772296488891
 21a26cb9-0be2-4670-8694-a3cee91d49b8    NC_000913.3     3503665 -       2.434816964214898
