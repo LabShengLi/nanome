@@ -5,7 +5,7 @@
 =========================================================================================
  NANOME Analysis Pipeline.
  #### Homepage / Documentation
- https://github.com/TheJacksonLaboratory/nanome
+ https://github.com/LabShengLi/nanome
  @Author   : Yang Liu
  @FileName : main.nf
  @Software : NANOME project
@@ -24,15 +24,15 @@ if( nextflow.version.matches(">= 20.07.1") ){
 def helpMessage() {
 	log.info"""
 	NANOME - Nextflow PIPELINE (v$workflow.manifest.version)
-	by Li Lab at The Jackson Laboratory
-	https://github.com/TheJacksonLaboratory/nanome
+	by Sheng Li Lab at The Jackson Laboratory
+	https://github.com/LabShengLi/nanome
 	=================================
 	Usage:
 	The typical command is as follows:
 
-	nextflow run TheJacksonLaboratory/nanome -profile test,docker
-	nextflow run TheJacksonLaboratory/nanome -profile test,singularity
-	nextflow run TheJacksonLaboratory/nanome -profile [docker/singularity] \\
+	nextflow run LabShengLi/nanome -profile test,docker
+	nextflow run LabShengLi/nanome -profile test,singularity
+	nextflow run LabShengLi/nanome -profile [docker/singularity] \\
 		--dsname DSNAME --input INPUT --genome GENOME
 
 	Mandatory arguments:
@@ -90,7 +90,7 @@ def helpMessage() {
 	  hpc		A generic configuration profile to be used on HPC cluster with SLURM
 	  google	A generic configuration profile to be used on Google Cloud platform with 'google-lifesciences'
 
-	Contact to https://github.com/TheJacksonLaboratory/nanome/issues for bug report.
+	Contact to https://github.com/LabShengLi/nanome/issues for bug report.
 	""".stripIndent()
 }
 
@@ -145,8 +145,8 @@ ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: fa
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
 
 // Reference genome, deepmod cluster settings
-def referenceGenome = 'reference_genome/ref.fasta'
-def chromSizesFile = 'reference_genome/chrom.sizes'
+def referenceGenome = "reference_genome/${params.GENOME_FN}"
+def chromSizesFile = "reference_genome/${params.CHROM_SIZE_FN}"
 
 if (dataType == 'human') { isDeepModCluster = params.useDeepModCluster }
 else { isDeepModCluster = false }
@@ -272,6 +272,7 @@ if (workflow.profile.contains('hpc') || workflow.profile.contains('winter') ||\
     summary['qos']          = params.qos
     summary['memory']       = params.memory
     summary['time']         = params.time
+    summary['queueSize']    = params.queueSize
     if (params.gresOptions) {summary['gresOptions'] = params.gresOptions }
 }
 if (workflow.profile.contains('google') || (params.config && params.config.contains('lifebit'))) {
@@ -307,7 +308,7 @@ if (workflow.profile.contains('google') || (params.config && params.config.conta
 log.info """\
 NANOME - NF PIPELINE (v$workflow.manifest.version)
 by Li Lab at The Jackson Laboratory
-https://github.com/TheJacksonLaboratory/nanome
+https://github.com/LabShengLi/nanome
 ================================="""
 .stripIndent()
 
@@ -382,7 +383,7 @@ process EnvCheck {
 	fi
 
 	if [[ ${params.runBasecall} == true || ${params.runMethcall} == true ]]; then
-		## Get dir for reference_genome
+		## Build dir for reference_genome
 		mkdir -p reference_genome
 		find_dir="\$PWD/reference_genome"
 		if [[ ${reference_genome} == *.tar.gz && -f ${reference_genome}  ]] ; then
@@ -391,14 +392,24 @@ process EnvCheck {
 			tar -xf ${reference_genome} -C reference_genome
 		elif [[ -d ${reference_genome} ]] ; then
 			## for folder, use ln, note this is a symbolic link to a folder
-			find_dir=\$( readlink -f ${reference_genome} )
+			## find_dir=\$( readlink -f ${reference_genome} )
+			## Copy reference genome, avoid singularity/docker access out data problem
+			cp ${reference_genome}/*   reference_genome/ -f
 		else
 			echo "### ERROR: not recognized reference_genome=${reference_genome}"
 			exit -1
 		fi
 
-		find \${find_dir} -name '*.fasta*' | \
-			 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/\${fn/*.fasta/ref.fasta}'
+		# Rename reference file
+		if [[ ! -z \$(find \${find_dir}/ \\( -name '*.fasta' -o -name '*.fasta.gz' \\)  ) ]] ; then
+			find \${find_dir} -name '*.fasta*' | \
+				 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/\${fn/*.fasta/ref.fasta}'
+		elif [[ ! -z \$(find \${find_dir}/ \\( -name '*.fa' -o -name '*.fa.gz' \\)  ) ]] ; then
+			find \${find_dir} -name '*.fa*' | \
+				 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/\${fn/*.fa/ref.fasta}'
+		fi
+
+		## Chrom size file if exists
 		find \${find_dir} -name '*.sizes' | \
 				parallel -j1 -v ln -s -f {} reference_genome/chrom.sizes
 
@@ -563,8 +574,8 @@ process Basecall {
 	touch "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz
 
 	## Below is compatable with both Guppy v4.2.2 (old) and newest directory structures
-	find "${fast5_dir.baseName}.basecalled/" "${fast5_dir.baseName}.basecalled/pass/"\
-	 	"${fast5_dir.baseName}.basecalled/fail/" -maxdepth 1 -name '*.fastq.gz' -type f\
+	find "${fast5_dir.baseName}.basecalled/" "${fast5_dir.baseName}.basecalled/pass"\
+	 	${params.filter_fail_fq ? "" : "${fast5_dir.baseName}.basecalled/fail" } -maxdepth 1 -name '*.fastq.gz' -type f\
 	 	-print0 2>/dev/null | \
 	 	while read -d \$'\0' file ; do
 	 		cat \$file >> \
@@ -633,7 +644,7 @@ process QCExport {
 			--raw  -f pdf -p ${params.dsname}_   &>> ${params.dsname}.QCReport.run.log
 	fi
 
-	if [[ ${params.outputBam} == true  || ${params.outputONTCoverage} == true ]]; then
+	if [[ ${params.outputBam} == true  || ${params.outputONTCoverage} == true || ${params.phasing} == true ]]; then
 		## Combine all batch fq.gz
 		> merge_all_fq.fq.gz
 		cat *.basecalled/batch_basecall_combine_fq_*.fq.gz > merge_all_fq.fq.gz
@@ -680,7 +691,7 @@ process QCExport {
 		rm -f ${params.dsname}.coverage.positivestrand.bed.gz \
 		 	${params.dsname}.coverage.negativestrand.bed.gz
 		rm -f merge_all_fq.fq.gz
-		if [[ ${params.outputBam} == false ]]; then
+		if [[ ${params.outputBam} == false && ${params.phasing} == false ]]; then
 			rm -f ${params.dsname}_merge_all_bam.bam*
 		else
 			mkdir -p ${params.dsname}_bam_data
@@ -929,12 +940,13 @@ process Megalodon {
 				--processes $cores \${gpuOptions} \
 				&>> ${params.dsname}.${fast5_dir.baseName}.Megalodon.run.log
 	else
-		## Run Remora model
+		## Run Remora model 5mc or 5hmc_5mc
 		megalodon ${fast5_dir} --overwrite\
 				--guppy-config ${params.GUPPY_BASECALL_MODEL}\
-				--remora-modified-bases ${params.remoraModel} fast 0.0.0 5mc CG 0\
+				--remora-modified-bases ${params.remoraModel} fast 0.0.0 ${params.hmc ? "5hmc_5mc" : "5mc"} CG 0\
 				--outputs mod_mappings mods per_read_mods\
 				--guppy-server-path \$(which guppy_basecall_server) \
+				--guppy-timeout ${params.GUPPY_TIMEOUT} \
 				--mod-output-formats bedmethyl wiggle \
 				--write-mods-text --write-mod-log-probs\
 				--reference ${referenceGenome}\
@@ -1857,7 +1869,7 @@ process NewToolComb {
 	mkdir -p Read_Level-${params.dsname}
 	mkdir -p Site_Level-${params.dsname}
 
-	python src/nanocompare/newtool_parser.py\
+	python src/nanome/nanocompare/newtool_parser.py\
 	 	-i  ${params.dsname}_${module.name}_per_read_combine.tsv.gz\
 	 	--read-out Read_Level-${params.dsname}/${params.dsname}_${module.name}-perRead-score.tsv.gz \
 	 	--site-out Site_Level-${params.dsname}/${params.dsname}_${module.name}-perSite-cov1.sort.bed.gz\
@@ -2061,7 +2073,7 @@ process Report {
 		if [[ "\$passModelTsv" == true ]] ; then
 			## NANOME XGBoost model results, if there are model results exists
 			echo "### NANOME XGBoost predictions"
-			PYTHONPATH=src python src/nanocompare/xgboost/xgboost_predict.py \
+			PYTHONPATH=src python src/nanome/xgboost/xgboost_predict.py \
 				--contain-na --tsv-input\
 				--dsname ${params.dsname} -i \${modelContentTSVFileName}\
 				-m ${params.NANOME_MODEL}  \
@@ -2119,18 +2131,18 @@ process Report {
 		nanome_dir="."
 	fi
 	mkdir -p ${params.dsname}_NANOME_report
-	cp \${nanome_dir}/src/nanocompare/report/style.css ${params.dsname}_NANOME_report/
-	cp -rf \${nanome_dir}/src/nanocompare/report/icons ${params.dsname}_NANOME_report/
-	cp -rf \${nanome_dir}/src/nanocompare/report/js ${params.dsname}_NANOME_report/
+	cp \${nanome_dir}/src/nanome/nanocompare/report/style.css ${params.dsname}_NANOME_report/
+	cp -rf \${nanome_dir}/src/nanome/nanocompare/report/icons ${params.dsname}_NANOME_report/
+	cp -rf \${nanome_dir}/src/nanome/nanocompare/report/js ${params.dsname}_NANOME_report/
 
 	## Generate html NANOME report
-	PYTHONPATH=src python src/nanocompare/report/gen_html_report.py\
+	PYTHONPATH=src python src/nanome/nanocompare/report/gen_html_report.py\
 		${params.dsname} \
 		running_information.tsv \
 		\${basecallOutputFile} \
 		. \
 		${params.dsname}_NANOME_report \
-		./src/nanocompare/report\
+		./src/nanome/nanocompare/report\
 		${tools_version_tsv}  &>> ${params.dsname}.Report.run.log
 
 	## Combine a single html report
@@ -2142,8 +2154,8 @@ process Report {
 	cp ${params.dsname}_nanome_report.html   multiqc_report.html
 
 	## Generate readme.txt
-	PYTHONPATH=src PYTHONIOENCODING=UTF-8 python src/nanocompare/report/gen_txt_readme.py\
-		src/nanocompare/report/readme.txt.template ${params.dsname} ${params.outdir}\
+	PYTHONPATH=src PYTHONIOENCODING=UTF-8 python src/nanome/nanocompare/report/gen_txt_readme.py\
+		src/nanome/nanocompare/report/readme.txt.template ${params.dsname} ${params.outdir}\
 		${workflow.projectDir} ${workflow.workDir} "${workflow.commandLine}"\
 		${workflow.runName} "${workflow.start}"\
 		> README_${params.dsname}.txt   2>> ${params.dsname}.Report.run.log
@@ -2161,6 +2173,12 @@ process Report {
 					LC_COLLATE=C sort -u -k1,1 -k2,2n \
 						GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_methfreq.bedgraph} > \
 							GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_methfreq.sorted.bedgraph}
+
+					## Check if bedgraph is empty, issue ref: https://biostar.usegalaxy.org/p/6794/
+					if [[ ! -s GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_methfreq.sorted.bedgraph} ]] ; then
+						continue
+					fi
+
 					bedGraphToBigWig GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_methfreq.sorted.bedgraph} \
 						reference_genome/chrom.sizes   GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_methfreq.bw}
 					rm -f GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_methfreq.bedgraph}  \
@@ -2173,6 +2191,11 @@ process Report {
 					LC_COLLATE=C sort -u -k1,1 -k2,2n \
 						GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_coverage.bedgraph} > \
 							GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_coverage.sorted.bedgraph}
+
+					## Check if bedgraph is empty
+					if [[ ! -s GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_coverage.sorted.bedgraph} ]] ; then
+						continue
+					fi
 					bedGraphToBigWig GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_coverage.sorted.bedgraph} \
 						reference_genome/chrom.sizes   GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_coverage.bw}
 					rm -f GenomeBrowser-${params.dsname}/\${infn/-perSite-cov1.sort.bed.gz/_coverage.bedgraph}  \
@@ -2183,6 +2206,197 @@ process Report {
 		fi
 	fi
 	echo "### report html DONE"
+	"""
+}
+
+
+process Clair3 {
+	tag "${params.dsname}"
+
+	publishDir "${params.outdir}/${params.dsname}-phasing",
+		mode: "copy", pattern: "${params.dsname}_clair3_out"
+
+	input:
+	path merged_bam
+	path reference_genome
+
+	output:
+	path "${params.dsname}_clair3_out",	emit:	clair3_out_ch, optional: true
+
+	"""
+	run_clair3.sh --version
+
+	MODEL_NAME="r941_prom_sup_g5014"
+	mkdir -p ${params.dsname}_clair3_out
+	run_clair3.sh \
+	  --bam_fn=${params.dsname}_bam_data/${params.dsname}_merge_all_bam.bam \
+	  --ref_fn=${referenceGenome} \
+	  --threads=${task.cpus} \
+	  --platform="ont" \
+	  --model_path="/opt/models/\${MODEL_NAME}" \
+	  --output=${params.dsname}_clair3_out  ${params.ctg_name ? "--ctg_name=${params.ctg_name}": " "} \
+	  &> ${params.dsname}.Clair3.run.log
+
+	echo "### Clair3 for variant calling DONE"
+
+	## haplotag
+	whatshap --version
+
+	## print header for file list tags
+	head -n 1 \
+		\$(find ${params.dsname}_clair3_out  -name '*_whatshap_haplotag_read_list_chr*.tsv' | head -n 1) \
+    	> ${params.dsname}_clair3_out/${params.dsname}_haplotag_read_list_combine.tsv
+
+	for chr in chr{1..22} chrX chrY; do
+		if [[ ${params.ctg_name} != "null" &&  "${params.ctg_name}", != *"\$chr",* ]] ; then
+			continue
+		fi
+		echo "### haplotag chr=\$chr"
+		# run whatshap haplotag
+		tsvFile="${params.dsname}_clair3_out/${params.dsname}_whatshap_haplotag_read_list_\$chr.tsv"
+		haplotagBamFile="${params.dsname}_clair3_out/${params.dsname}_whatshap_haplotag_bam_\$chr.bam"
+		phasingGZFile="${params.dsname}_clair3_out/tmp/phase_output/phase_vcf/phased_\$chr.vcf.gz"
+
+		## Phasing tag extraction for each chromosome
+		## older version lacks: --skip-missing-contigs  --output-threads ${task.cpus}
+		whatshap  haplotag \
+			--ignore-read-groups\
+			--regions \${chr}\
+			--reference ${referenceGenome}\
+			--output-haplotag-list \${tsvFile} \
+			-o \${haplotagBamFile} \
+			\${phasingGZFile}  ${params.dsname}_bam_data/${params.dsname}_merge_all_bam.bam \
+			&>> ${params.dsname}.Clair3.run.log
+
+		if [[ ! -z "\${tsvFile}" ]]; then
+			awk 'NR>1' \${tsvFile} \
+				>> ${params.dsname}_clair3_out/${params.dsname}_haplotag_read_list_combine.tsv
+		fi
+		echo "### DONE for haplotag chr=\$chr"
+	done
+
+	# Extract h1 and h2 haplotype reads
+	whatshap split \
+		--output-h1 ${params.dsname}_clair3_out/${params.dsname}_split_h1.bam \
+		--output-h2 ${params.dsname}_clair3_out/${params.dsname}_split_h2.bam \
+		--output-untagged ${params.dsname}_clair3_out/${params.dsname}_split_untagged.bam  \
+		${params.dsname}_bam_data/${params.dsname}_merge_all_bam.bam \
+		${params.dsname}_clair3_out/${params.dsname}_haplotag_read_list_combine.tsv \
+		&>> ${params.dsname}.Clair3.run.log
+	echo "### Split by haplotag DONE"
+
+	# Index bam files
+	samtools index -@ ${task.cpus} ${params.dsname}_clair3_out/${params.dsname}_split_h1.bam
+	samtools index -@ ${task.cpus} ${params.dsname}_clair3_out/${params.dsname}_split_h2.bam
+	samtools index -@ ${task.cpus} ${params.dsname}_clair3_out/${params.dsname}_split_untagged.bam
+	"""
+}
+
+
+process Phasing {
+	tag "${params.dsname}"
+
+	publishDir "${params.outdir}/${params.dsname}-phasing",
+		mode: "copy"
+
+	input:
+	path mega_and_nanome_raw_list
+	path clair3_out
+	path ch_src
+	path merged_bam
+	path reference_genome
+
+	output:
+	path "hp_split_${params.dsname}*",	emit: hp_split_ch, 	optional: true
+	path "${params.dsname}*mock_bam", 	emit: mock_bam_ch, 		optional: true
+
+	"""
+	echo "### hello phasing"
+
+	## TODO: change hmc filename in Megalodon raw output
+	toolList=(${params.hmc? "megalodon" : "megalodon"}  "nanome_${params.NANOME_MODEL}")
+	encodeList=("megalodon" "nanome")
+	numClassList=(${params.hmc? "3" : "2"}  2)
+
+	for i in "\${!toolList[@]}"; do
+		tool="\${toolList[i]}"
+    	encode="\${encodeList[i]}"
+    	numClass="\${numClassList[i]}"
+
+		infn=\$(find . -name "${params.dsname}_\${tool}_per_read_combine*.gz")
+		if [[ -z \${infn} ]] ; then
+			continue
+		fi
+
+		echo "### tool=\${tool}, encode=\${encode}, infn=\${infn}"
+
+		## Split methylation results by phasing tag for each chromosome
+		for chr in chr{1..22} chrX chrY; do
+			if [[ ${params.ctg_name} != "null" &&  "${params.ctg_name}", != *"\$chr",* ]] ; then
+				continue
+			fi
+
+			## Step1: HP split meth data
+			echo "### HP split for chr=\${chr}"
+			PYTHONPATH=src python src/nanome/other/phasing/hp_split.py \
+				--dsname ${params.dsname}\
+				--tool \${tool}\
+				--encode \${encode}\
+				--num-class \${numClass}\
+				-i \${infn}\
+				--haplotype-list ${params.dsname}_clair3_out/${params.dsname}_whatshap_haplotag_read_list_\${chr}.tsv\
+				--region \${chr}\
+				-o .  --save-unified-read  &>> ${params.dsname}.Phasing.run.log
+
+			## Start generate mocked BAM files
+			## Step2: methcall2bed
+			## hp_split_NA12878_CHR22_200_megalodon
+			outdir=${params.dsname}_\${tool}_methcall2bed
+			mkdir -p \${outdir}
+			find hp_split_${params.dsname}_\${tool} -name "${params.dsname}*_perReadScore_\${chr}_H*.tsv.gz" -print0 |
+				while IFS= read -r -d '' infn2; do
+					basefn=\$(basename \$infn2)
+					outfn=\${outdir}/\${basefn/.tsv.gz/_methcall2bed.bed.gz}
+					PYTHONPATH=src  python src/nanome/other/phasing/methcall2bed.py \
+						-i \${infn2} \
+						-o \${outfn} \
+						--verbose  &>> ${params.dsname}.Phasing.run.log
+
+					zcat \${outfn} | sort -V -k1,1 -k2,2n -k3,3n |
+						bgzip -f >\${outfn/.bed.gz/.sort.bed.gz} &&
+						tabix -p bed \${outfn/.bed.gz/.sort.bed.gz}
+					rm -f \${outfn}
+					touch \${outfn/.bed.gz/.sort.bed.gz}.DONE
+				done
+
+			## Step3: bam2bis
+			outdir2=${params.dsname}_\${tool}_mock_bam
+			mkdir -p \${outdir2}
+			bamFile=\$(find ${merged_bam}/ -name "*.bam")
+			for hapType in H1 H2 H1_5hmc H2_5hmc; do
+				methCallFile=\$(find \${outdir} -name "${params.dsname}_\${tool,,}_perReadScore_\${chr}_\${hapType}_methcall2bed.sort.bed.gz")
+				if [ ! -e "\${methCallFile}" ] ; then
+					continue
+				fi
+				PYTHONPATH=src  python  src/nanome/other/phasing/nanomethphase.py bam2bis \
+					--bam \${bamFile} \
+					--reference ${referenceGenome} \
+					--methylcallfile \${methCallFile} \
+					--output \${outdir2}/${params.dsname}_\${tool}_\${chr}_\${hapType} \
+					-t ${task.cpus} --window \${chr} --overwrite  &>> ${params.dsname}.Phasing.run.log
+
+				infn3=\$(find \${outdir2} -name "${params.dsname}_\${tool}_\${chr}_\${hapType}*.bam")
+				if [ ! -e "\${infn}" ] ; then
+					continue
+				fi
+
+				samtools sort \$infn3 -o \${infn3/.bam/.sort.bam} &&
+					samtools index \${infn3/.bam/.sort.bam} &&
+					rm -f \${infn3} &&
+					touch \${infn3/.bam/.sort.bam}.DONE
+			done
+		done
+	done
 	"""
 }
 
@@ -2342,4 +2556,12 @@ workflow {
 	Report(tools_site_unify, tools_read_unify,
 			EnvCheck.out.tools_version_tsv, QCExport.out.qc_report,
 			EnvCheck.out.reference_genome, ch_src, ch_utils)
+
+	if (params.phasing) {
+		Clair3(QCExport.out.bam_data, EnvCheck.out.reference_genome)
+		Channel.fromPath("${projectDir}/utils/null1").concat(
+			MgldnComb.out.megalodon_combine, Report.out.nanome_combine_out
+			).toList().set { mega_and_nanome_ch }
+		Phasing(mega_and_nanome_ch, Clair3.out.clair3_out_ch, ch_src, QCExport.out.bam_data, EnvCheck.out.reference_genome)
+	}
 }

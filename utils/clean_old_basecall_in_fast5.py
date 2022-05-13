@@ -3,7 +3,7 @@
 # @FileName : clean_old_basecall_in_fast5.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 
 """
 This tool is to clean old basecall analyses for downloaded nanopore reads.

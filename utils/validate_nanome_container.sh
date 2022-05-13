@@ -3,7 +3,7 @@
 # @FileName : validate_nanome_container.sh
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 
 #versionFilename=${1:-"tools_version_table.tsv"}
 versionFilename=${1:-}
@@ -21,8 +21,7 @@ printf "====================\n"
 echo "### Check Guppy dir:"
 which guppy_basecaller
 guppy_basecaller -v | head -1
-guppy_version=$(guppy_basecaller -v | head -1 | awk '{print $NF}')
-guppy_version=${guppy_version/+*/}
+guppy_version=$(guppy_basecaller -v |  head -n 1 | getGuppyVersion.py)
 
 printf "====================\n"
 nanopolish --version | head -1

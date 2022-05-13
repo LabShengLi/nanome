@@ -1,0 +1,25 @@
+NANOME (Nanopore methylation) pipeline for Oxford Nanopore sequencing
+by Li Lab at The Jackson Laboratory
+
+==========================================
+Project : 			${projectDir}
+Working directory:	${workDir}
+Command line: 		${commandLine}
+Run name:			${runName}
+Start time:			${start}
+==========================================
+
+Outputs folder at ${outdir}:
+
+report						-	html report of NANOME pipeline
+${dsname}-basecallings		-	basecalling reports
+${dsname}-methylation-callings	-	methylation calling results
+			├── Raw_Results-${dsname}		-	raw format of methylation calling results for each tool
+			├── Read_Level-${dsname}		-	read-level unified format for methylation calling results
+			└── Site_Level-${dsname}		-	site-level unified format for methylation calling results
+
+Reference
+
+DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation. Genome Biology 22, 295 (2021). https://doi.org/10.1186/s13059-021-02510-z
+https://genomebiology.biomedcentral.com/articles/10.1186/s13059-021-02510-z
+https://github.com/LabShengLi/nanome

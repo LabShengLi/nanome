@@ -36,7 +36,7 @@
    3. Replace PROJECT_ID in google profile with your Project ID.
    
 ```angular2html
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
      -profile test,docker,google\
      -w [Google-storage-bucket]/nanome-work-test\
      --outdir [Google-storage-bucket]/nanome-outputs\
@@ -61,7 +61,7 @@ Check the Container Registry link like https://console.cloud.google.com/gcr/imag
 Note that our project id is `jax-nanopore-01`, used for `[PROJECT_ID]`, **Data Bucket** `[Google-storage-bucket]` name used in our project is `gs://jax-nanopore-01-project-data`.
 
 ```angular2html
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile test,docker,google\
     -w gs://jax-nanopore-01-project-data/nanome-work\
     --outdir gs://jax-nanopore-01-project-data/nanome-outputs\

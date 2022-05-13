@@ -2,7 +2,7 @@
 # @FileName : Dockerfile
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 
 # Set the base image to Ubuntu 18.04 and NVIDIA GPU from https://hub.docker.com/r/nvidia/cuda
 # or from https://ngc.nvidia.com/catalog/containers/nvidia:cuda/tags
@@ -14,17 +14,19 @@ LABEL description="Nanome project in Li Lab at The Jackson Laboratory" \
       author="yang.liu@jax.org"
 
 # Guppy version
-ARG GUPPY_VERSION=6.0.1
-ARG REMORA_VERSION=0.1.2
-ARG MEGALODON_VERSION=2.4.2
+ARG GUPPY_VERSION=6.1.3
+ARG REMORA_VERSION=1.0.0
+ARG MEGALODON_VERSION=2.5.0
 ARG BUILD_PACKAGES="wget apt-transport-https procps git curl libnvidia-compute-460-server"
 ARG DEBIAN_FRONTEND="noninteractive"
 
+# Check version of guppy, ref: wget https://americas.oxfordnanoportal.com/software/analysis/ont-guppy-cpu_6.1.3_linux64.tar.gz --no-check-certificate
+# Another way: https://pypi.org/project/ont-pyguppy-client-lib/
 # Install guppy-gpu version, ref: https://github.com/GenomicParisCentre/dockerfiles
 RUN apt-get -q update && \
     DEBIAN_FRONTEND="noninteractive" apt-get -q install --yes ${BUILD_PACKAGES} && \
     cd /tmp && \
-    wget -q https://mirror.oxfordnanoportal.com/software/analysis/ont_guppy_${GUPPY_VERSION}-1~bionic_amd64.deb && \
+    wget -q https://mirror.oxfordnanoportal.com/software/analysis/ont_guppy_${GUPPY_VERSION}-1~bionic_amd64.deb  --no-check-certificate && \
     DEBIAN_FRONTEND="noninteractive" apt-get -q install --yes /tmp/ont_guppy_${GUPPY_VERSION}-1~bionic_amd64.deb && \
     rm *.deb && \
     apt-get autoremove --purge --yes && \

@@ -20,10 +20,10 @@ pip show nanome-jax
 **If your system support docker or singularity, you can directly run evaluation tool without any installations**:
 ```angular2html
 ## Check nanome-jax package in docker
-docker run liuyangzzu/nanome:latest pip show nanome-jax
+docker run liuyangzzu/nanome pip show nanome-jax
 
 ## Check nanome-jax package in singularity 
-singularity exec docker://liuyangzzu/nanome:latest pip show nanome-jax
+singularity exec docker://liuyangzzu/nanome pip show nanome-jax
 ```
 
 # 1. Read-level performance evaluation
@@ -49,15 +49,15 @@ read_level_eval.py \
     --min-bgtruth-cov 1\
     --report-joined
 ```
-Sample results can be found at [read-level outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/read_level_output.txt).
+Sample results can be found at [read-level outputs](https://github.com/LabShengLi/nanome/blob/master/docs/resources/read_level_output.txt).
 
 For using docker or singularity, the command prefix is like below:
 ```angular2html
 # Docker style usage
-docker run -v $PWD:$PWD -w $PWD -it liuyangzzu/nanome:latest read_level_eval.py
+docker run -v $PWD:$PWD -w $PWD -it liuyangzzu/nanome read_level_eval.py
 
 # Singularity style usage
-singularity exec -e docker://liuyangzzu/nanome:latest read_level_eval.py
+singularity exec -e docker://liuyangzzu/nanome read_level_eval.py
 ```
 
 ## Command options
@@ -142,7 +142,7 @@ site_level_eval.py \
     --gen-venn --summary-coverage
 ```
 
-Sample results can be found at [site-level outputs](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/resources/site_level_output.txt).
+Sample results can be found at [site-level outputs](https://github.com/LabShengLi/nanome/blob/master/docs/resources/site_level_output.txt).
 
 ## Command options
 ```angular2html

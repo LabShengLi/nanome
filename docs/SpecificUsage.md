@@ -1,10 +1,10 @@
-**This is an explanation of how to use NANOME pipeline on some specific scenarios. For general usage, please check [Usage](https://github.com/TheJacksonLaboratory/nanome/blob/master/docs/Usage.md).**
+**This is an explanation of how to use NANOME pipeline on some specific scenarios. For general usage, please check [Usage](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md).**
 ## 1. How to use other reference genome in NANOME? 
 
 NANOME support other reference genome. Below is an example of running NANOME for any other reference genomes, please make sure put reference genome file .fasta and the indexed file into directory [reference-genome-dir], the `--chrSet` is the chromosomes params for the specific genome. 
 
 ```angular2html
-nextflow run TheJacksonLaboratory/nanome\
+nextflow run LabShengLi/nanome\
     -profile singularity \
     --dsname [dataset-name]\
     --input [input-file]\
@@ -62,7 +62,19 @@ Note:
 ## 3. Update latest version of NANOME.
 Below is the command for updating the latest version of NANOME, if users have executed NANOME old version previously. `-r [branch-name]` is used to get a specific version from a branch in the GitHub for Nextflow.
 ```angular2html
-nextflow pull TheJacksonLaboratory/nanome
+nextflow pull LabShengLi/nanome
 
-nextflow pull TheJacksonLaboratory/nanome -r [branch-name]
+nextflow pull LabShengLi/nanome -r [branch-name]
+```
+
+## 4. Perform only basecall and QC
+Using option `--runMethcall false` will not run methylation calling, it will only perform basecall and QC.
+
+```angular2html
+nextflow run LabShengLi/nanome\
+    -profile singularity,winter \
+    --dsname APL\
+    --input '/fastscratch/liuya/nanome/APL_ont_out/APL_sept/sept_dir/*'\
+    --genome hg38 \
+    --runMethcall false
 ```

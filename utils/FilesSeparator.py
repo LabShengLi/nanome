@@ -3,7 +3,7 @@
 # @FileName : FilesSeparator.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 
 """
 Seperate all fast5 file into more subfolders 1--N,

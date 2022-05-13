@@ -3,7 +3,7 @@
 # @FileName : unify_format_for_calls.sh
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 
 # Generate unified read-level and/or site-level format of calls
 # Usage:
@@ -27,7 +27,7 @@ fi
 if [[ "$step" == *"1"* ]]; then
     ## Read level unify
     echo "### Read level unify"
-    PYTHONPATH=src python src/nanocompare/tss_eval.py \
+    PYTHONPATH=src python src/nanome/nanocompare/tss_eval.py \
         --calls \
             ${toolname}:${encode}:${callfn} \
         --runid Read_Level-${dsname} \
@@ -51,7 +51,7 @@ fi
 if [[ "$step" == *"2"* ]]; then
     ## Site level unify
     echo "### Site level unify"
-    PYTHONPATH=src python src/nanocompare/tss_eval.py \
+    PYTHONPATH=src python src/nanome/nanocompare/tss_eval.py \
         --calls \
             ${toolname}:${encode}:${callfn} \
         --runid Site_Level-${dsname} \

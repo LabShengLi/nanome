@@ -3,7 +3,7 @@
 # @FileName : setup.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
-# @Website  : https://github.com/TheJacksonLaboratory/nanome
+# @Website  : https://github.com/LabShengLi/nanome
 """
 Install:
     pip install build twine
@@ -14,6 +14,12 @@ Build package command:
         python -m build
 
     twine upload dist/*
+
+Test package:
+    conda activate py36
+    pip install dist/nanome-jax-2.0.2.tar.gz
+    pip show nanome-jax
+    ls /pod/2/li-lab/yang/anaconda3/envs/py36/lib/python3.6/site-packages/nanome
 """
 
 import setuptools
@@ -23,36 +29,39 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="nanome-jax",
-    version="1.3.25",
+    version="2.0.5",
     author="Yang Liu",
     author_email="yang.liu@jax.org",
     description="NANOME (Nanopore methylation) pipeline developed by Li Lab at The Jackson Laboratory",
     license='MIT License',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/TheJacksonLaboratory/nanome",
+    url="https://github.com/LabShengLi/nanome",
     project_urls={
-        'Bug Tracker': 'https://github.com/TheJacksonLaboratory/nanome/issues'
+        'Bug Tracker': 'https://github.com/LabShengLi/nanome/issues'
     },
     packages=(
-        setuptools.find_packages(where="src", exclude=("*.resource", "*.*.saniti_ecoli", "*.*.xgboost.sanity",))
+        setuptools.find_packages(where="src", exclude=("*.*.resource", "*.*.*.saniti_ecoli", "*.xgboost.sanity",))
     ),
-    package_dir={'nanocompare': 'src/nanocompare'},
+    package_dir={'nanome': 'src/nanome'},
     scripts=[
-        'src/plot_figure.py',
-        'src/nanocompare/read_level_eval.py',
-        'src/nanocompare/site_level_eval.py',
-        'src/nanocompare/tss_eval.py',
-        'src/nanocompare/pcc_region_eval.py',
-        'src/nanocompare/nanome_consensus.py',
-        'src/nanocompare/region_intersect.py',
-        'src/nanocompare/newtool_parser.py',
-        'src/nanocompare/computeRawReadsCoverage.py',
-        'src/nanocompare/report/gen_html_report.py',
-        'src/nanocompare/report/gen_txt_readme.py',
-        'src/nanocompare/xgboost/xgboost_train.py',
-        'src/nanocompare/xgboost/xgboost_predict.py',
-        'src/nanocompare/xgboost/xgboost_prepdata.py',
+        'src/nanome/nanocompare/plot_figure.py',
+        'src/nanome/nanocompare/read_level_eval.py',
+        'src/nanome/nanocompare/site_level_eval.py',
+        'src/nanome/nanocompare/tss_eval.py',
+        'src/nanome/nanocompare/pcc_region_eval.py',
+        'src/nanome/nanocompare/region_intersect.py',
+        'src/nanome/nanocompare/newtool_parser.py',
+        'src/nanome/nanocompare/computeRawReadsCoverage.py',
+        'src/nanome/nanocompare/report/gen_html_report.py',
+        'src/nanome/nanocompare/report/gen_txt_readme.py',
+        'src/nanome/xgboost/xgboost_train.py',
+        'src/nanome/xgboost/xgboost_predict.py',
+        'src/nanome/xgboost/xgboost_prepdata.py',
+        'src/nanome/other/phasing/hp_split.py',
+        'src/nanome/other/phasing/mega_parser.py',
+        'src/nanome/other/phasing/methcall2bed.py',
+        'src/nanome/other/phasing/nanomethphase.py',
         'utils/FilesSeparator.py',
         'utils/clean_old_basecall_in_fast5.py',
         'utils/extract_methylation_fast5_support_dir.py',
@@ -62,9 +71,10 @@ setuptools.setup(
         'utils/tombo_extract_per_read_stats.py',
         'utils/validate_nanome_container.sh',
         'utils/unify_format_for_calls.sh',
+        'utils/getGuppyVersion.py',
     ],
     include_package_data=True,
-    package_data={'': ['src/nanocompare/*.csv', 'src/nanocompare/xgboost/trained_model/*.pkl']},
+    package_data={'': ['src/nanome/common/*.csv', 'src/nanome/xgboost/trained_model/*.pkl']},
     classifiers=[
         "Programming Language :: Python :: 3",
         'Intended Audience :: Science/Research',
@@ -90,6 +100,9 @@ setuptools.setup(
         'tqdm',
         'joblib',
         'psutil',
-        'xgboost'
+        'xgboost',
+        'pytabix',
+        'pysam',
+        'ont-fast5-api'
     ]
 )
