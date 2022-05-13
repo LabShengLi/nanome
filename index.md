@@ -151,7 +151,7 @@ nextflow run LabShengLi/nanome\
 ```
 
 
-`-profile` is the bundle of paramters, `--dsname` is the dataset name, `--input` is the FAST5 input files, and `--genome` is the reference genome file.
+`-profile` is the bundle of paramters, `--dsname` is the dataset name, `--input` is the FAST5 input files, and `--genome` is the reference genome file. For more options of NANOME, please check [NANOME options](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/nanome_params.md)
 
 
 > ## Notes:
