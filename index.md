@@ -173,24 +173,32 @@ nextflow run LabShengLi/nanome\
 The output of NANOME pipeline is followings:
 
 ```
-[b2/6dbf5d] process > EnvCheck (CIEcoli)                   [100%] 1 of 1 ✔
-[12/5b2e1f] process > Untar (ecoli_ci_test_fast5.tar)      [100%] 1 of 1 ✔
-[4f/21a254] process > Basecall (ecoli_ci_test_fast5.tar)   [100%] 1 of 1 ✔
-[70/a5ac63] process > QCExport (CIEcoli)                   [100%] 1 of 1 ✔
-[cb/2eff17] process > Resquiggle (ecoli_ci_test_fast5.tar) [100%] 1 of 1 ✔
-[dc/1747d1] process > Nanopolish (ecoli_ci_test_fast5.tar) [100%] 1 of 1 ✔
-[74/8add8f] process > NplshComb (CIEcoli)                  [100%] 1 of 1 ✔
-[d1/579953] process > Megalodon (ecoli_ci_test_fast5.tar)  [100%] 1 of 1 ✔
-[0e/644818] process > MgldnComb (CIEcoli)                  [100%] 1 of 1 ✔
-[07/4265fe] process > DeepSignal (ecoli_ci_test_fast5.tar) [100%] 1 of 1 ✔
-[db/653ac8] process > DpSigComb (CIEcoli)                  [100%] 1 of 1 ✔
-[0f/7a33dd] process > Guppy (ecoli_ci_test_fast5.tar)      [100%] 1 of 1 ✔
-[88/172383] process > GuppyComb (CIEcoli)                  [100%] 1 of 1 ✔
-[fc/1e66bb] process > Report (CIEcoli)                     [100%] 1 of 1 ✔
-Completed at: 07-Apr-2022 11:13:10
-Duration    : 5m 52s
-CPU hours   : 0.2
-Succeeded   : 14
+N E X T F L O W  ~  version 22.04.0
+Launching `https://github.com/LabShengLi/nanome` [stupefied_keller] DSL2 - revision: bcbf29ed93 [master]
+NANOME - NF PIPELINE (v2.0.0)
+by Li Lab at The Jackson Laboratory
+https://github.com/LabShengLi/nanome
+=================================
+dsname              : CIEcoli
+input               : https://github.com/LabShengLi/nanome/raw/master/test_data/ecoli_ci_test_fast5.tar.gz
+genome              : https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli.tar.gz
+=================================
+[79/843a67] process > EnvCheck (CIEcoli)             [100%] 1 of 1 ✔
+[c0/f26448] process > Untar (ecoli_ci_test_fast5.... [100%] 1 of 1 ✔
+[29/b92a57] process > Basecall (ecoli_ci_test_fas... [100%] 1 of 1 ✔
+[67/ed8b5e] process > QCExport (CIEcoli)             [100%] 1 of 1 ✔
+[39/f8cecd] process > Resquiggle (ecoli_ci_test_f... [100%] 1 of 1 ✔
+[2e/bd168a] process > Nanopolish (ecoli_ci_test_f... [100%] 1 of 1 ✔
+[c9/b4f6c4] process > NplshComb (CIEcoli)            [100%] 1 of 1 ✔
+[01/1d622d] process > Megalodon (ecoli_ci_test_fa... [100%] 1 of 1 ✔
+[7d/1e4098] process > MgldnComb (CIEcoli)            [100%] 1 of 1 ✔
+[b0/c64b3c] process > DeepSignal (ecoli_ci_test_f... [100%] 1 of 1 ✔
+[a1/c5c05b] process > DpSigComb (CIEcoli)            [100%] 1 of 1 ✔
+[5d/545b2a] process > Report (CIEcoli)               [100%] 1 of 1 ✔
+Completed at: 13-May-2022 14:02:37
+Duration    : 1m 42s
+CPU hours   : 0.1
+Succeeded   : 12
 ```
 
 Results of NANOME pipeline are located at `results/` folder as default:
