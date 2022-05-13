@@ -136,7 +136,7 @@ ls methcall_ecoli_data/
 
 #### 4.1 Run NANOME pipeline
 
-We developed NANOME, the first Nextflow based pipeline for consensus DNA methylation detection using XGBoost, a gradient boosting algorithm for nanopore long-read sequencing. The consensus outputs can obtain more accurate performance and  comprehensive CpG coverage.
+We developed NANOME, the first Nextflow based pipeline for consensus DNA methylation detection using XGBoost, a gradient boosting algorithm for nanopore long-read sequencing. The consensus outputs can obtain more accurate performance (9%-13% MSE improvement) and  comprehensive CpG coverage (1%-7% more CpGs).
 
 Run Nanome consensus pipeline for 5mC detection, if you use Singularity container, specify `-profile singularity`; for Docker container, use `-profile docker` instead. Below is an example of using Singularity container on JAX Sumner HPC:
 
@@ -203,6 +203,32 @@ CIEcoli-methylation-callings  MultiQC
 ls results/CIEcoli-methylation-callings/
 Raw_Results-CIEcoli  Read_Level-CIEcoli  Site_Level-CIEcoli  tools_version_table.tsv
 ```
+
+#### 4.2 NANOME output format
+Read level output sample is below:
+```
+ zcat results/CIEcoli-methylation-callings/Read_Level-CIEcoli/CIEcoli_NANOME-perRead-score.tsv.gz | head -n 5
+ID	Chr	Pos	Strand	Score
+21a26cb9-0be2-4670-8694-a3cee91d49b8    NC_000913.3     3503574 -       0.88772296488891
+21a26cb9-0be2-4670-8694-a3cee91d49b8    NC_000913.3     3503665 -       2.434816964214898
+21a26cb9-0be2-4670-8694-a3cee91d49b8    NC_000913.3     3503670 -       2.434816964214898
+21a26cb9-0be2-4670-8694-a3cee91d49b8    NC_000913.3     3503680 -       2.434816964214898
+21a26cb9-0be2-4670-8694-a3cee91d49b8    NC_000913.3     3503685 -       2.434816964214898
+```
+The columns in read level output are read-id, chromosome, position (1-based), strand, and score of log ratio probability for 5mC and 5C.
+
+
+Site level output sample is below:
+```
+zcat results/CIEcoli-methylation-callings/Site_Level-CIEcoli/CIEcoli_NANOME-perSite-cov1.sort.bed.gz  | head -n 5
+NC_000913.3	3503380	3503381	.	.	+	1.0	1
+NC_000913.3	3503387	3503388	.	.	+	1.0	1
+NC_000913.3	3503390	3503391	.	.	+	1.0	1
+NC_000913.3	3503396	3503397	.	.	+	1.0	1
+NC_000913.3	3503420	3503421	.	.	+	1.0	1
+```
+The columns in site level output are chromosome, start (0-based), end (1-based), NA, NA, strand, methylation frequency, and coverage.
+
 
 ### 5. Tutorial video for running NANOME pipeline
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/TfotM55KTVE/0.jpg)](https://www.youtube.com/watch?v=TfotM55KTVE)
