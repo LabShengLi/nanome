@@ -15,7 +15,7 @@
 * Allow **add new modules/tools** in simple config txt file, without need to touch the main pipeline codes, supporting rapid development and evaluation.
 * Consensus of top performers by XGBoost model, allow NA values.
 * Multi-modifications for 5mC and 5hmC.
-* Support phasing and allele-specific methylation detection.
+* Haplotype-awared phasing and allele-specific methylation detection.
 
 
 ## Methodology of NANOME pipeline
@@ -53,11 +53,11 @@ NANOME pipeline can be easily configured with different RAM, CPU/GPU resources s
 
 ### Software requirements
 NANOME pipeline uses Nextflow technology. Users only need to install [Nextflow](https://www.nextflow.io/) (check the installation guide from https://nf-co.re/usage/installation), and have one of below commonly used environment tool:
-* Conda
-* Docker
-* Singularity
+* [Conda](https://docs.conda.io/en/latest/miniconda.html)
+* [Docker](https://docs.docker.com/get-docker)
+* [Singularity](https://sylabs.io/guides/3.0/user-guide/installation.html)
 
-We provide conda, docker and singularity environments that depend on below well-known open-source packages for methylation calling on nanopore sequencing data:
+We provide conda, docker and singularity environments that depend on below well-known open-source packages for basecalling/methylation-calling/phasing on nanopore sequencing data:
 
 [nanopolish](https://github.com/jts/nanopolish) >=0.13.2  
 [megalodon](https://github.com/nanoporetech/megalodon) >=2.2.9  
@@ -66,9 +66,12 @@ We provide conda, docker and singularity environments that depend on below well-
 [deepmod](https://github.com/WGLab/DeepMod) >=0.1.3  
 [METEORE](https://github.com/comprna/METEORE) >=1.0.0  
 [ont-pyguppy-client-lib](https://github.com/nanoporetech/pyguppyclient) >=4.2.2  
-[fast5mod](https://github.com/nanoporetech/fast5mod) >=1.0.5
-[Clair3](https://github.com/HKU-BAL/Clair3) >=v0.1-r11
-[Whatshap](https://github.com/whatshap/whatshap) >=1.0
+[fast5mod](https://github.com/nanoporetech/fast5mod) >=1.0.5  
+[Clair3](https://github.com/HKU-BAL/Clair3) >=v0.1-r11  
+[Whatshap](https://github.com/whatshap/whatshap) >=1.0  
+[NanomethPhase bam2bis](https://github.com/vahidAK/NanoMethPhase) >= 1.0  
+[GNU Parallel](https://www.gnu.org/software/parallel) >=20170422  
+
 
 Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https://nanoporetech.com)
 
@@ -91,7 +94,7 @@ NANOME pipeline support running with various ways in different platforms:
 
 
 ## Simple usage
-Please refer to [Usage](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md) and [Specific Usage](https://github.com/LabShengLi/nanome/blob/master/docs/SpecificUsage.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). We provide a **tutorial video** for running NANOME pipeline:
+Please refer to [Usage](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md) and [Specific Usage](https://github.com/LabShengLi/nanome/blob/master/docs/SpecificUsage.md) and [NANOME options](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/nanome_params.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md#4-running-pipeline-on-cloud-computing-platform). We provide a **tutorial video** for running NANOME pipeline:
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/TfotM55KTVE/0.jpg)](https://www.youtube.com/watch?v=TfotM55KTVE)
 
@@ -137,6 +140,10 @@ Please check [NANOME report](https://github.com/LabShengLi/nanome/blob/master/do
 
 ![NanomeReportHtml](https://github.com/LabShengLi/nanome/blob/master/docs/nanome_report_html.png)
 
+
+### Haplotype-aware consensus methylations
+Please check [phasing usage](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/Phasing.md).
+![PhasingDemo](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/resources/nanome3t_5mc_phasing2.png)
 
 ### Lifebit CloudOS report
 We now support running NANOME on cloud computing platform. [Lifebit](https://lifebit.ai/lifebit-cloudos/) is a web-based cloud computing platform, and below is the running reports:
