@@ -246,11 +246,11 @@ The columns in site level output are chromosome, start (0-based), end (1-based),
 ### 6. More features for NANOME
 
 * Comparisons of state-of-the-art nanopore pipelines
-![Figure_pipe_comp](https://github.com/LabShengLi/nanome/blob/master/docs/resources/pipeline_comparison.jpg)
+![Figure_pipe_comp](https://raw.githubusercontent.com/LabShengLi/nanome/master/docs/resources/pipeline_comparison.jpg)
 
 
 * Haplotype-aware consensus methylations. Please check [phasing usage](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/Phasing.md).
-![PhasingDemo](https://github.com/LabShengLi/nanome/blob/master/docs/resources/nanome3t_5mc_phasing2.png)
+![PhasingDemo](https://raw.githubusercontent.com/LabShengLi/nanome/master/docs/resources/nanome3t_5mc_phasing2.png)
 
 
 ### Reference
