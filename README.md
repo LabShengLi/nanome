@@ -15,7 +15,7 @@
 * Allow **add new modules/tools** in simple config txt file, without need to touch the main pipeline codes, supporting rapid development and evaluation.
 * Consensus of top performers by XGBoost model, allow NA values.
 * Multi-modifications for 5mC and 5hmC.
-* Support phasing and allele-specific methylation detection.
+* Haplotype-awared phasing and allele-specific methylation detection.
 
 
 ## Methodology of NANOME pipeline
@@ -53,9 +53,9 @@ NANOME pipeline can be easily configured with different RAM, CPU/GPU resources s
 
 ### Software requirements
 NANOME pipeline uses Nextflow technology. Users only need to install [Nextflow](https://www.nextflow.io/) (check the installation guide from https://nf-co.re/usage/installation), and have one of below commonly used environment tool:
-* Conda
-* Docker
-* Singularity
+* [Conda](https://docs.conda.io/en/latest/miniconda.html)
+* [Docker](https://docs.docker.com/get-docker)
+* [Singularity](https://sylabs.io/guides/3.0/user-guide/installation.html)
 
 We provide conda, docker and singularity environments that depend on below well-known open-source packages for basecalling/methylation-calling/phasing on nanopore sequencing data:
 
