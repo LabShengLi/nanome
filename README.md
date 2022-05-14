@@ -69,6 +69,9 @@ We provide conda, docker and singularity environments that depend on below well-
 [fast5mod](https://github.com/nanoporetech/fast5mod) >=1.0.5  
 [Clair3](https://github.com/HKU-BAL/Clair3) >=v0.1-r11  
 [Whatshap](https://github.com/whatshap/whatshap) >=1.0  
+[NanomethPhase bam2bis](https://github.com/vahidAK/NanoMethPhase) >= 1.0  
+[GNU Parallel](https://www.gnu.org/software/parallel) >=20170422  
+
 
 Guppy software >= 4.2.2 from [ONT (Oxford Nanopore Technologies) website](https://nanoporetech.com)
 
