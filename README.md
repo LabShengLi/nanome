@@ -143,7 +143,7 @@ Please check [NANOME report](https://github.com/LabShengLi/nanome/blob/master/do
 
 ### Haplotype-aware consensus methylations
 Please check [phasing usage](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/Phasing.md).
-![PhasingDemo](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/resources/nanome3t_phasing.png)
+![PhasingDemo](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/resources/nanome3t_5mc_phasing2.png)
 
 ### Lifebit CloudOS report
 We now support running NANOME on cloud computing platform. [Lifebit](https://lifebit.ai/lifebit-cloudos/) is a web-based cloud computing platform, and below is the running reports:
