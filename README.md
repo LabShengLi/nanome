@@ -138,6 +138,10 @@ Please check [NANOME report](https://github.com/LabShengLi/nanome/blob/master/do
 ![NanomeReportHtml](https://github.com/LabShengLi/nanome/blob/master/docs/nanome_report_html.png)
 
 
+### Phasing output
+Please check [phasing usage](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/Phasing.md).
+![PhasingDemo](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/resources/nanome3t_phasing.png)
+
 ### Lifebit CloudOS report
 We now support running NANOME on cloud computing platform. [Lifebit](https://lifebit.ai/lifebit-cloudos/) is a web-based cloud computing platform, and below is the running reports:
 * Ecoli test report: https://cloudos.lifebit.ai/public/jobs/61c9fd328c574a01e8d31d2e
