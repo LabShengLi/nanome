@@ -163,5 +163,4 @@ If you have any questions/issues/bugs, please post them on [GitHub](https://gith
 
 ## Reference
 
-**DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation.** Genome Biology 22, 295 (2021). https://doi.org/10.1186/s13059-021-02510-z  
-https://genomebiology.biomedcentral.com/articles/10.1186/s13059-021-02510-z 
+**DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation.** Genome Biology 22, 295 (2021). https://doi.org/10.1186/s13059-021-02510-z
