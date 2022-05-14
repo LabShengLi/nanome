@@ -146,7 +146,7 @@ module load singularity
 nextflow run LabShengLi/nanome\
     -profile singularity\
     --dsname CIEcoli\
-    --input  https://github.com/LabShengLi/nanome/raw/master/test_data/ecoli_ci_test_fast5.tar.gz\
+    --input  https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli_ci_fast5_test2.tar.gz \
     --genome https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli.tar.gz
 ```
 
@@ -195,9 +195,9 @@ genome              : https://storage.googleapis.com/jax-nanopore-01-project-dat
 [b0/c64b3c] process > DeepSignal (ecoli_ci_test_f... [100%] 1 of 1 ✔
 [a1/c5c05b] process > DpSigComb (CIEcoli)            [100%] 1 of 1 ✔
 [5d/545b2a] process > Report (CIEcoli)               [100%] 1 of 1 ✔
-Completed at: 13-May-2022 14:02:37
-Duration    : 1m 42s
-CPU hours   : 0.1
+Completed at: 13-May-2022 20:38:30
+Duration    : 2m 35s
+CPU hours   : 0.2
 Succeeded   : 12
 ```
 
@@ -223,17 +223,17 @@ ID	Chr	Pos	Strand	Score
 21a26cb9-0be2-4670-8694-a3cee91d49b8    NC_000913.3     3503680 -       2.434816964214898
 21a26cb9-0be2-4670-8694-a3cee91d49b8    NC_000913.3     3503685 -       2.434816964214898
 ```
-The columns in read level output are read-id, chromosome, position (1-based), strand, and score of log ratio probability for 5mC and 5C.
+The columns in read level output are read-id, chromosome, position (1-based), strand, and score of log-ratio probability for 5mC and 5C.
 
 
 Site level output sample is below:
 ```
 zcat results/CIEcoli-methylation-callings/Site_Level-CIEcoli/CIEcoli_NANOME-perSite-cov1.sort.bed.gz  | head -n 5
-NC_000913.3	3503380	3503381	.	.	+	1.0	1
-NC_000913.3	3503387	3503388	.	.	+	1.0	1
-NC_000913.3	3503390	3503391	.	.	+	1.0	1
-NC_000913.3	3503396	3503397	.	.	+	1.0	1
-NC_000913.3	3503420	3503421	.	.	+	1.0	1
+NC_000913.3     3498244 3498245 .       .       +       0.0     1
+NC_000913.3     3500081 3500082 .       .       +       0.6666666666666666      3
+NC_000913.3     3500082 3500083 .       .       -       1.0     2
+NC_000913.3     3500091 3500092 .       .       +       0.6666666666666666      3
+NC_000913.3     3500092 3500093 .       .       -       1.0     2
 ```
 The columns in site level output are chromosome, start (0-based), end (1-based), NA, NA, strand, methylation frequency, and coverage.
 
