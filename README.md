@@ -138,7 +138,7 @@ Please check [NANOME report](https://github.com/LabShengLi/nanome/blob/master/do
 ![NanomeReportHtml](https://github.com/LabShengLi/nanome/blob/master/docs/nanome_report_html.png)
 
 
-### Phasing output
+### Haplotype-aware consensus methylations
 Please check [phasing usage](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/Phasing.md).
 ![PhasingDemo](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/resources/nanome3t_phasing.png)
 
