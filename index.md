@@ -146,7 +146,7 @@ module load singularity
 nextflow run LabShengLi/nanome\
     -profile singularity\
     --dsname CIEcoli\
-    --input  https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli_ci_fast5_test2.tar.gz \
+    --input  https://github.com/LabShengLi/nanome/raw/master/test_data/ecoli_ci_test_fast5.tar.gz \
     --genome https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ecoli.tar.gz
 ```
 
