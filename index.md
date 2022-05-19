@@ -223,7 +223,7 @@ ID	Chr	Pos	Strand	Score
 21a26cb9-0be2-4670-8694-a3cee91d49b8    NC_000913.3     3503680 -       2.434816964214898
 21a26cb9-0be2-4670-8694-a3cee91d49b8    NC_000913.3     3503685 -       2.434816964214898
 ```
-The columns in read level output are read-id, chromosome, position (1-based), strand, and score of log-ratio probability for 5mC and 5C.
+The columns in read level output are read-id, chromosome, position (1-based), strand, and score of log-ratio of probability for 5mC and 5C.
 
 
 Site level output sample is below:
