@@ -141,8 +141,6 @@ We developed NANOME, the first Nextflow based pipeline for consensus DNA methyla
 For execution of NANOME consensus pipeline for methylation detection, if you use Singularity container, specify `-profile singularity`; for Docker container, use `-profile docker` instead. Below is an example of using Singularity container on JAX Sumner HPC:
 
 ```
-module load singularity
-
 nextflow run LabShengLi/nanome\
     -profile singularity\
     --dsname CIEcoli\
