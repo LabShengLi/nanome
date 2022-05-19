@@ -155,7 +155,7 @@ nextflow run LabShengLi/nanome\
 
 
 > ## Notes:
-> For Mac/PC users with low bandwidths for internet network, below is the local input running script:
+> For Mac/PC users with low bandwidths/firewall permissions for accessing internet network, below is the local input running script:
 > ```
 > # Download DeepSignal model input file
 > wget https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/model.CpG.R9.4_1D.human_hx1.bn17.sn360.v0.1.7+.tar.gz
