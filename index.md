@@ -57,7 +57,7 @@ conda install -c conda-forge -c bioconda nextflow
 nextflow -v
 ```
 
-### 2. Example data preparation
+### 2. 5mC & 5hmC detection by ONT developed tool Megalodon
 In this section, you will prepare the Oxford Nanopore raw FAST5 files and a reference genome for input data.
 
 #### 2.1 Download FAST5 files
@@ -78,7 +78,7 @@ wget https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/ec
 ls ecoli/
 ```
 
-### 3. 5mC & 5hmC detection by ONT developed tool Megalodon
+#### 2.3 5mC & 5hmC detection by ONT developed tool Megalodon
 * Define a bash variable for Docker running (**Docker user only**):
 
 
@@ -102,7 +102,7 @@ RUN_NANOME="singularity exec docker://liuyangzzu/nanome"
 > singularity  --version
 > ```
 
-* Check Guppy basecalling tool and Megalodon methylation-calling tool versions in container (**Note: The first time execution will take times (20 mins ~ 40 mins) to cache containers. The next time execution will be very quick.**):
+* Check Guppy basecalling tool and Megalodon methylation-calling tool versions in container (**Note: The first time execution will take times (15 mins ~ 30 mins) to cache containers from DockerHub. The next time execution will be very quick.**):
 
 
 ```
@@ -132,13 +132,13 @@ ls methcall_ecoli_data/
 
 > For meanings of options in Megalodon, please check link [https://github.com/nanoporetech/megalodon#getting-started](https://github.com/nanoporetech/megalodon#getting-started).
 
-### 4. Consensus 5mC detection by NANOME Nextflow pipeline
+### 3. Consensus 5mC detection by NANOME Nextflow pipeline
 
-#### 4.1 Run NANOME pipeline
+#### 3.1 Run NANOME pipeline
 
-We developed NANOME, the first Nextflow based pipeline for consensus DNA methylation detection using XGBoost, a gradient boosting algorithm for nanopore long-read sequencing. The consensus outputs can obtain more accurate performance (9%-13% MSE improvement) and  comprehensive CpG coverage (1%-7% more CpGs).
+We developed NANOME, the first Nextflow based pipeline for consensus DNA methylation detection using XGBoost, a gradient boosting algorithm for nanopore long-read sequencing. The consensus outputs can obtain more accurate performance (9%-13% MSE improvement) and  comprehensive CpG coverage (1%-7% more CpGs). NANOME pipeline supports input from both local locations and internet/cloud storages.
 
-Run Nanome consensus pipeline for 5mC detection, if you use Singularity container, specify `-profile singularity`; for Docker container, use `-profile docker` instead. Below is an example of using Singularity container on JAX Sumner HPC:
+For execution of NANOME consensus pipeline for methylation detection, if you use Singularity container, specify `-profile singularity`; for Docker container, use `-profile docker` instead. Below is an example of using Singularity container on JAX Sumner HPC:
 
 ```
 module load singularity
@@ -212,7 +212,7 @@ ls results/CIEcoli-methylation-callings/
 Raw_Results-CIEcoli  Read_Level-CIEcoli  Site_Level-CIEcoli  tools_version_table.tsv
 ```
 
-#### 4.2 NANOME output format
+#### 3.2 NANOME output format
 Read level output sample is below:
 ```
 zcat results/CIEcoli-methylation-callings/Read_Level-CIEcoli/CIEcoli_NANOME-perRead-score.tsv.gz | head -n 5
@@ -238,12 +238,8 @@ NC_000913.3     3500092 3500093 .       .       -       1.0     2
 The columns in site level output are chromosome, start (0-based), end (1-based), NA, NA, strand, methylation frequency, and coverage.
 
 
-### 5. Tutorial video for running NANOME pipeline
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/TfotM55KTVE/0.jpg)](https://www.youtube.com/watch?v=TfotM55KTVE)
 
-
-
-### 6. More features for NANOME
+### 4. More features for NANOME
 
 * Comparisons of state-of-the-art nanopore pipelines
 ![Figure_pipe_comp](https://raw.githubusercontent.com/LabShengLi/nanome/master/docs/resources/pipeline_comparison.jpg)
@@ -251,6 +247,13 @@ The columns in site level output are chromosome, start (0-based), end (1-based),
 
 * Haplotype-aware consensus methylations. Please check [phasing usage](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/Phasing.md).
 ![PhasingDemo](https://raw.githubusercontent.com/LabShengLi/nanome/master/docs/resources/nanome3t_5mc_phasing2.png)
+
+
+
+### 5. Tutorial video for running NANOME pipeline
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/TfotM55KTVE/0.jpg)](https://www.youtube.com/watch?v=TfotM55KTVE)
+
+If you have any issues running NANOME, feel free to post at [GitHub](https://github.com/LabShengLi/nanome/issues).
 
 
 ### Reference
