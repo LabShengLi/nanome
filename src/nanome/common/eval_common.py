@@ -322,6 +322,7 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, readid_col=3, st
     chr1    8447761    8447761    c9339e26-1898-4483-a312-b78c3fafc6a9    -0.8580941645036908    -    ATGGACACAGA
     ============
     """
+    filterChr = set(filterChr)
     if score_cutoff is None:
         score_cutoff = (-1.5, 2.5)
     infile, lines = open_file_gz_or_txt(infileName)
@@ -449,6 +450,7 @@ def importPredictions_DeepMod_C(infileName, chr_col=0, start_col=1, strand_col=5
     Note: it is space-separated in original result file, not tab-separated file
     ============
     """
+    filterChr = set(filterChr)
     infile, lines = open_file_gz_or_txt(infileName)
 
     cpgDict = defaultdict(list)
@@ -545,6 +547,7 @@ def importPredictions_DeepMod_Clustered(infileName, chr_col=0, start_col=1, stra
     Note: it is white space separated, not tab-separated file
     ============
     """
+    filterChr = set(filterChr)
     infile, lines = open_file_gz_or_txt(infileName)
 
     cpgDict = defaultdict()
@@ -626,6 +629,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
     Note: it is white space separated, not tab-separated file
     ============
     """
+    filterChr = set(filterChr)
     infile, lines = open_file_gz_or_txt(infileName)
 
     cpgDict = defaultdict()
@@ -826,6 +830,7 @@ def importPredictions_Guppy(infileName, baseFormat=1, sep='\t', output_first=Fal
     :param filterChr:
     :return:
     """
+    filterChr = set(filterChr)
     if formatSource == 'raw':  # raw results of fast5mod
         chr_col = 0
         start_col = 1
@@ -1006,6 +1011,7 @@ def importPredictions_Guppy_gcf52ref(infileName, baseFormat=1, chr_col=0, strand
     :param filterChr:
     :return:
     """
+    filterChr = set(filterChr)
     ### Using scanner way
     if score_cutoff is None:
         score_cutoff = (0.25, 0.5)
