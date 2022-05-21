@@ -2330,7 +2330,7 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
 
     concordantSet = list(set(concordantList) - set(discordantList))  # remove duplicate and same in discordant
     # outfile_concordant = open(nsConcordantFileName, "w")
-    outfile_concordant = gzip.open(nsConcordantFileName, "wt")
+    outfile_concordant = gzip.open(nsConcordantFileName + ".tmp.gz", "wt")
     for cpgKey in concordantSet:  # (chrOut, startOut) -> (chrOut, startOut, methIndicator, methCov)
         cpg = concordantList[cpgKey]
         region_txt = '\t'.join([cpg[0], str(cpg[1]), str(cpg[1] + 1), str(cpg[2]), str(cpg[3])]) + '\n'
@@ -2339,12 +2339,18 @@ def nonSingletonsPostprocessing(absoluteBGTruth, nsRegionsBedFileName, nsConcord
 
     discordantSet = list(set(discordantList))  # remove duplicate
     # outfile_discordant = open(nsDisCordantFileName, "w")
-    outfile_discordant = gzip.open(nsDisCordantFileName, "wt")
+    outfile_discordant = gzip.open(nsDisCordantFileName + ".tmp.gz", "wt")
     for cpgKey in discordantSet:
         cpg = discordantList[cpgKey]
         region_txt = '\t'.join([cpg[0], str(cpg[1]), str(cpg[1] + 1), str(cpg[2]), str(cpg[3])]) + '\n'
         outfile_discordant.write(region_txt)
     outfile_discordant.close()
+
+    ## sort bed file
+    sort_bed_file(nsConcordantFileName + ".tmp.gz", nsConcordantFileName, deduplicate=True)
+    os.remove(nsConcordantFileName + ".tmp.gz")
+    sort_bed_file(nsDisCordantFileName + ".tmp.gz", nsDisCordantFileName, deduplicate=True)
+    os.remove(nsDisCordantFileName + ".tmp.gz")
 
     logger.debug(f'save to {[nsConcordantFileName, nsDisCordantFileName]}')
     # logger.debug(f'meth_cnt={meth_cnt_dict}, unmeth_cnt={unmeth_cnt_dict}')
