@@ -35,18 +35,19 @@ read_level_eval.py -v
 ```
 
 ## Sample usage
-User needs to specify methylation-calling raw results of each tool and BS-seq replicates to execute the read-level evaluation script.
+User needs to specify methylation-calling raw results of each tool and BS-seq replicates to execute the read-level evaluation script. 
+
+`--calls` params are raw input of all tools, format is like ` <tool-name>:<file-encode>:<file-name>`, where `tool-name` can be any name for your raw input, `file-encode` is the input format, can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod, NANOME, and `file-name` is the location of raw input. `--bgtruth` is the background truth param like `<encode-type>:<file-name1>;<file-name2>`, where `encode-type` can be 'encode' or 'bismark', and we support at most two replicates file inputs now.
 ```angular2html
 read_level_eval.py \
     --dsname TestData\
     --runid MethPerf-TestData_RRBS_2Reps\
     --calls\
-        Nanopolish:[Nanopolish-calls]\
-        Megalodon:[Megalodon-calls]\
-        DeepSignal:[DeepSignal-calls]\
+        Nanopolish:Nanopolish:[Nanopolish-calls]\
+        Megalodon:Megalodon:[Megalodon-calls]\
+        DeepSignal:DeepSignal:[DeepSignal-calls]\
     --bgtruth [encode-type]:[BS-seq-rep1];[BS-seq-rep2]\
     --genome-annotation [genome-annotation]\
-    --min-bgtruth-cov 1\
     --report-joined
 ```
 Sample results can be found at [read-level outputs](https://github.com/LabShengLi/nanome/blob/master/docs/resources/read_level_output.txt).
@@ -132,14 +133,13 @@ site_level_eval.py \
     --dsname TestData\    
     --runid MethCorr-TestData_RRBS_2Reps\
     --calls\
-        Nanopolish:[Nanopolish-calls]\
-        Megalodon:[Megalodon-calls]\
-        DeepSignal:[DeepSignal-calls]\
+        Nanopolish:Nanopolish:[Nanopolish-calls]\
+        Megalodon:Megalodon:[Megalodon-calls]\
+        DeepSignal:DeepSignal:[DeepSignal-calls]\
     --bgtruth [encode-type]:[BS-seq-rep1];[BS-seq-rep2]\
     --genome-annotation [genome-annotation]\
     --min-bgtruth-cov 3 --toolcov-cutoff 1\
-    --beddir [read-level-analysis-dir]\
-    --gen-venn --summary-coverage
+    --beddir [read-level-analysis-dir]
 ```
 
 Sample results can be found at [site-level outputs](https://github.com/LabShengLi/nanome/blob/master/docs/resources/site_level_output.txt).
@@ -218,7 +218,7 @@ tss_eval.py \
     --dsname [dataset-name]\
     --runid Read_Level-[dataset-name] \
     --calls \
-        [tool-name]:[tool-call-filename] \
+        [tool-name]:[encode-name]:[tool-call-filename] \
     --read-level-format\
     -o [output-dir]
 ```
@@ -241,7 +241,7 @@ tss_eval.py \
     --runid Site_Level-[dataset-name]\
     --bgtruth [encode-type]:[BS-seq-file1];[BS-seq-file2]\
     --calls \
-        [tool-name]:[tool-call-filename]\
+        [tool-name]:[encode-type]:[tool-call-filename]\
     -o [output-dir]
 ```
 
