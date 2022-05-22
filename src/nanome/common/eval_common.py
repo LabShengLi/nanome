@@ -3182,7 +3182,7 @@ def sort_set_txt_file(infn, outfn, deduplicate=False):
     return True
 
 
-def sort_per_read_tsv_file(infn, outfn, deduplicate=False):
+def sort_per_read_tsv_file(infn, outfn, delimiter="", deduplicate=False):
     """
     Sort and save bed files into outfn
     Args:
@@ -3191,11 +3191,23 @@ def sort_per_read_tsv_file(infn, outfn, deduplicate=False):
 
     Returns:
     """
-    command = f"zcat {infn} | sort -V {uniqueOption(deduplicate)} -k2,2 -k3,3n -k4,4 -k1,1 | gzip -f > {outfn}"
+    command = f"zcat {infn} | sort {delimiter}  -V {uniqueOption(deduplicate)} -k2,2 -k3,3n -k4,4 -k1,1 | gzip -f > {outfn}"
     subprocess.Popen(command, shell=True, stdout=subprocess.PIPE) \
         .stdout.read().decode("utf-8")
     logger.debug(f'Sort {infn} and save into {outfn}')
     return True
+
+
+def sort_per_read_csv_file(infn, outfn, delimiter="-t ,", deduplicate=False):
+    """
+    Sort and save csv files into outfn, need add -t option for sort
+    Args:
+        infn:
+        outfn:
+
+    Returns:
+    """
+    return sort_per_read_tsv_file(infn, outfn, delimiter=delimiter, deduplicate=deduplicate)
 
 
 def convert_size(size_bytes):
