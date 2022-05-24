@@ -91,7 +91,7 @@ RUN_NANOME="docker run -v $PWD:$PWD -w $PWD -it liuyangzzu/nanome"
 
 
 ```
-RUN_NANOME="singularity exec docker://liuyangzzu/nanome"
+RUN_NANOME="singularity exec -e docker://liuyangzzu/nanome"
 ```
 
 
@@ -114,7 +114,7 @@ $RUN_NANOME megalodon -v
 Everything looks good now. You can run below command to perform basecalls, mappings, and CpG 5mC and 5hmC methylation-calls in both per-read (``mod_mappings``) and aggregated (``mods``) formats on prepared example ONT data.
 
 ```
-LC_ALL=C  $RUN_NANOME   megalodon \
+$RUN_NANOME   megalodon \
     ecoli_ci_test_fast5/ \
     --guppy-config  dna_r9.4.1_450bps_fast.cfg\
     --remora-modified-bases dna_r9.4.1_e8 fast 0.0.0 5hmc_5mc CG 0 \
