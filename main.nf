@@ -1939,8 +1939,8 @@ process METEORE {
 	printf '%s\t%s\n' megalodon ${megalodon} >> \$modelContentFileName
 
 	## Degrade sk-learn for METEORE program if needed, it's model load need lower version
-	## pip install -U scikit-learn==0.21.3
-	pip install -U scikit-learn==0.23.2
+	## 0.23.2 version work both for NANOME>=0.23.2 and METEORE<=0.23.2
+	## pip install -U scikit-learn==0.23.2
 	combineScript="python utils/combination_model_prediction.py"
 	## combineScript="combination_model_prediction.py"
 
@@ -2075,7 +2075,7 @@ process Report {
 			## NANOME XGBoost model results, if there are model results exists
 			echo "### NANOME XGBoost predictions"
 
-			## cover sheng's error
+			## 0.23.2 version work both for NANOME>=0.23.2 and METEORE<=0.23.2
 			pip install -U scikit-learn==0.23.2
 
 			pip show scikit-learn

@@ -91,7 +91,7 @@ setuptools.setup(
         'scipy',
         'numpy',
         'statsmodels',
-        'scikit-learn <=0.23.2',
+        'scikit-learn',
         # upper version may not load model success, ref: https://github.com/EpistasisLab/tpot/issues/1171
         'matplotlib',
         'jinja2',
