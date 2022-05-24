@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # @Author   : Yang Liu
-# @FileName : read_level_eval.py
+# @FileName : join_preds_eval.py
 # @Software : NANOME project
 # @Organization : JAX Li Lab
 # @Website  : https://github.com/LabShengLi/nanome
@@ -480,29 +480,29 @@ def parse_arguments():
                         help="running prefix/output folder name, such as JoinPredsEval-Dataset_WGBS_2Reps",
                         required=True)
     parser.add_argument('--calls', nargs='+',
-                        help='all ONT call results <tool-name>:<unified-per-read-file> seperated by space, tool-name can be any name for the file, the file MUST be encoded in unified read-level format by NANOME definition',
+                        help='all ONT call results <tool-name>:<unified-per-read-file> seperated by space, tool-name can be any name for the file, the input file MUST be encoded in unified read-level format by NANOME definition',
                         required=True)
     parser.add_argument('--bs-seq-bed', type=str,
-                        help="background truth file of sorted BED unified format",
+                        help="background truth file of sorted BED unified format, unified site-level format by NANOME definition",
                         default=None)
     parser.add_argument('--genome-annotation', type=str,
                         help='genome annotation dir, contain BED files',
                         default=None)
-    parser.add_argument('--min-bgtruth-cov', type=int, help="min bg-truth coverage cutoff, default is %(default)s",
+    parser.add_argument('--min-bgtruth-cov', type=int, help="minimum bg-truth coverage cutoff, default is %(default)s",
                         default=5)
     parser.add_argument('--toolcov-site', type=int,
                         help="cutoff for coverage in nanopore tools of site level evaluation, default is >=%(default)s",
                         default=3)
-    parser.add_argument('--chunksize', type=int, help="min bg-truth coverage cutoff, default is %(default)s",
+    parser.add_argument('--chunksize', type=int, help="chunksize for read to memory, default is %(default)s",
                         default=1000000)
     parser.add_argument('--processors', type=int, help="number of processors used, default is %(default)s", default=1)
     parser.add_argument('--chrs', nargs='+', type=str, help='chromosome list, default is human chr1-22, X and Y',
                         default=HUMAN_CHR_SET)
     parser.add_argument('--score-cutoff', nargs='+', type=float,
-                        help='cutoff of LLR score for listed tool in --calls, default is 0 for all/not specified',
+                        help='cutoff of LLR score for listed tool in --calls, default is used for all/not specified',
                         default=None)
     parser.add_argument('--fully-meth-threshold', type=float, default=1.0,
-                        help='fully methylated threshold (e.g., 0.9), default is 1.0')
+                        help='fully methylated threshold (e.g., 0.9) for selection CpGs for read-level evaluation, default is 1.0')
     parser.add_argument('-o', type=str, help=f"output base dir, default is {pic_base_dir}", default=pic_base_dir)
     parser.add_argument('--bedtools-tmp', type=str, help=f'bedtools temp dir, default is %(default)s',
                         default=global_temp_dir)
@@ -512,12 +512,12 @@ def parse_arguments():
     parser.add_argument('--config', help="if print out config file for genome annotation", action='store_true')
     parser.add_argument('--test', type=int, help="only test for small lines, default is None", default=None)
     parser.add_argument('--beddir', type=str, help="concordant and discordant bed file find base dir", default=None)
-    parser.add_argument('--dbdir', type=str, help="specify the db file base dir", default=None)
-    parser.add_argument('--skip-join-preds', help="assumes the inputs has been there, you can skip this step",
+    parser.add_argument('--dbdir', type=str, help="specify the db file (joined preds data) base dir", default=None)
+    parser.add_argument('--skip-join-preds', help="assumes the inputs has been there, you can skip make preds data step",
                         action='store_true')
-    parser.add_argument('--skip-read-eval', help="if skip read level eval",
+    parser.add_argument('--skip-read-eval', help="if skip read level evaluation",
                         action='store_true')
-    parser.add_argument('--skip-site-eval', help="if skip site level eval",
+    parser.add_argument('--skip-site-eval', help="if skip site level evaluation",
                         action='store_true')
     parser.add_argument('--region-report', help="if report results at genomic regions",
                         action='store_true')
