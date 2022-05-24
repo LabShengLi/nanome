@@ -4,7 +4,7 @@
 
 User needs to provide two kind of files as input for our proposed standardized benchmarking framework:
 1. ONT tools' methylation-calling raw outputs,
-1. BS-seq data before evaluations. 
+1. BS-seq data. 
  
 The [genome-annotation](https://storage.googleapis.com/jax-nanopore-01-project-data/nanome_paper/genome-annotation.tar.gz) files may be needed if performances at specific genomic regions are interested. 
 
@@ -30,9 +30,9 @@ docker run liuyangzzu/nanome pip show nanome-jax
 singularity exec docker://liuyangzzu/nanome pip show nanome-jax
 ```
 
-# 1. Read-level performance evaluation
+# 1. Read-level performance evaluation on common CpGs
 ## Script for read-level evaluation
-The script `read_level_eval.py` is designed for general purpose of read-level performance evaluation for all kinds of tools.
+The script `read_level_eval.py` is designed for general purpose of read-level performance evaluation for all kinds of tools on joined CpGs by tools and BS-seq.
 
 ```angular2html
 read_level_eval.py -v
@@ -119,10 +119,10 @@ optional arguments:
   --verbose             if output verbose info
 ```
 
-# 2. Site-level performance evaluation
+# 2. Site-level performance evaluation on common CpGs
 
 ## Script for site-level evaluation
-The script `site_level_eval.py` is designed for general purpose of site-level performance evaluation for all kinds of tools.
+The script `site_level_eval.py` is designed for general purpose of site-level performance evaluation for all kinds of tools on joined CpGs by tools and BS-seq.
 
 ```angular2html
 site_level_eval.py -v
