@@ -1,15 +1,19 @@
 **This is an explanation of how to use script to perform read-level and site-level performance evaluation.**
 
-User needs to provide ONT tools' methylation-calling raw outputs and BS-seq data before evaluations. The genome-annotation files may be needed if performances at specific genomic regions are interested. 
-
 **Please note that we strongly suggest providing the whole genome-wide CpGs for performance comparison across tools, we do not suggest selecting a portion of CpGs for comparison**.
+
+User needs to provide two kind of files as input for our proposed standardized benchmarking framework:
+1. ONT tools' methylation-calling raw outputs,
+1. BS-seq data before evaluations. 
+ 
+The [genome-annotation](https://storage.googleapis.com/jax-nanopore-01-project-data/nanome_paper/genome-annotation.tar.gz) files may be needed if performances at specific genomic regions are interested. 
 
 You can install NANOME standardized genome-wide evaluation tool (**nanome-jax**) from [PyPI](https://pypi.org/project/nanome-jax/):
 ```angular2html
 # Creat conda environment and install required packages
 conda create --name py39 python=3.9
 conda activate py39
-conda install -c anaconda scikit-learn==0.23.2 cython
+conda install -c anaconda scikit-learn cython
 conda install -c conda-forge -c bioconda pybedtools
 
 # Install nanome-jax for genome-wide evaluation
@@ -232,6 +236,12 @@ ID	Chr	Pos	Strand	Score
 2414d963-488b-4987-9b28-6c5f2af76e4e	chr1	125179734	+	0.42996208256507207
 2414d963-488b-4987-9b28-6c5f2af76e4e	chr1	125179754	+	0.8669499128929393
 ```
+The columns for read level output are:
+1. read-id, 
+2. chromosome, 
+3. position (1-based), 
+4. strand, 
+5. score of log-ratio for probability of 5mC vs. 5C.
 
 ## Sample usage for site-level format unification
 Below will generate the site level unified format for tools/BS-seq data.
@@ -253,6 +263,16 @@ chr1	11344168	11344169	.	.	-	1.0	2
 chr1	11344219	11344220	.	.	-	1.0	2
 chr1	11344287	11344288	.	.	-	0.0	2
 ```
+
+The columns for site level output are:
+1. chromosome, 
+2. start (0-based), 
+3. end (1-based), 
+4. NA, 
+5. NA, 
+6. strand, 
+7. methylation frequency, 
+8. coverage.
 
 ## Command options
 ```angular2html
