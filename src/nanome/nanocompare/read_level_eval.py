@@ -586,7 +586,7 @@ if __name__ == '__main__':
 
     ## Set tmp dir for bedtools, each process use a bed tmp dir
     ## because the tmp dir files may be cleaned by the end of the process
-    bed_temp_dir = os.path.join(args.bedtools_tmp, dsname)
+    bed_temp_dir = os.path.join(args.bedtools_tmp, f"{dsname}_perf")
     os.makedirs(bed_temp_dir, exist_ok=True)
     pybedtools.helpers.set_tempdir(bed_temp_dir)
 
