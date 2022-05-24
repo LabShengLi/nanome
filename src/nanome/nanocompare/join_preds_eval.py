@@ -231,7 +231,11 @@ def find_join_preds_bgtruth_as_df(dsname, chrs, db_dir, cutoffDict, dtype=None, 
 
     dflist = []
     for infn in find_files:
-        df1 = pd.read_csv(infn, header=0, index_col=None, dtype=dtype)
+        try:
+            df1 = pd.read_csv(infn, header=0, index_col=None, dtype=dtype)
+        except:
+            logger.error(f"File read fail: {infn}")
+            continue
         if certainSites:
             df1 = df1[(df1['Freq'] <= EPSLONG) | (df1['Freq'] >= fully_meth_threshold - EPSLONG)]
         if sel_cols is not None:
@@ -286,9 +290,12 @@ def filter_preds_df_by_bedfile(df, coord_bed, coord_fn):
         raise Exception(f"The bed object is not correct")
 
     bed_of_intersect = intersect_bed_regions(bed_of_df, coord_bed, coord_fn)
+    ## logger.debug(f"bed_of_df={len(bed_of_df)}, bed_of_intersect={len(bed_of_intersect)}")
     if len(bed_of_intersect) > 0:
-        retdf = bed_of_intersect.to_dataframe().replace('.', np.NaN)
-        retdf.columns = df.columns
+        ### retdf = bed_of_intersect.to_dataframe().replace('.', np.NaN)
+        ### MUST set column names here, or else there is one row missing!!!
+        retdf = bed_of_intersect.to_dataframe(names=df.columns)
+        ## logger.debug(f"retdf={len(retdf)}")
     else:
         retdf = None
     return retdf
@@ -400,6 +407,67 @@ def report_site_level_performance(site_df, toolList, dsname=None, location="Geno
     return site_perf_df
 
 
+def eval_read_level_at_region(infn, regionName, read_df1, dsname, callDict):
+    """
+    Used for submit to multi-threading evaluation at a region for read-level
+    Args:
+        infn:
+        regionName:
+        read_df1:
+        dsname:
+        callDict:
+
+    Returns:
+
+    """
+    if regionName != genome_wide_tagname:
+        eval_coord_bed = get_region_bed_tuple(infn)[2]
+        if eval_coord_bed is None:
+            logger.warn(f"Region name={regionName} is not found, not compute read-level")
+            return None
+    if regionName == genome_wide_tagname:
+        eval_df = read_df1
+    else:
+        eval_df = filter_preds_df_by_bedfile(read_df1, eval_coord_bed, infn)
+    if eval_df is None:
+        logger.warn(f"No interset rows for {regionName}")
+        return None
+    df1 = report_read_level_performance(eval_df, toolList=list(callDict.keys()), dsname=dsname,
+                                        location=regionName)
+    return df1
+
+
+def eval_site_level_at_region(infn, regionName, site_df1, dsname, callDict):
+    """
+    Used for submit to multi-threading evaluation at a region for site-level
+    Args:
+        infn:
+        regionName:
+        site_df1:
+        dsname:
+        callDict:
+
+    Returns:
+
+    """
+    if regionName != genome_wide_tagname:
+        eval_coord_bed = get_region_bed_tuple(infn)[2]
+        if eval_coord_bed is None:
+            logger.warn(f"Region name={regionName} is not found, not compute read-level")
+            return None
+    if regionName == genome_wide_tagname:
+        eval_df = site_df1
+    else:
+        eval_df = filter_preds_df_by_bedfile(site_df1, eval_coord_bed, infn)
+
+    if eval_df is None:
+        logger.warn(f"No interset rows for {regionName}")
+        return None
+    df1 = report_site_level_performance(eval_df, toolList=list(callDict.keys()), dsname=dsname,
+                                        location=regionName)
+    return df1
+
+
 def parse_arguments():
     """
     :return:
@@ -492,6 +560,8 @@ if __name__ == '__main__':
                 cutoffDict[toolName] = 0.0
     logger.debug(f"callDict={callDict}, cutoffDict={cutoffDict}")
 
+    global progress_bar_global_join_preds
+
     if args.skip_join_preds:
         logger.info(
             f"Assume you have generated all joined preds db at:{out_dir} or {args.dbdir}, make sure this is correct if you skip make predictions joined db by --skip-join-preds.")
@@ -512,19 +582,18 @@ if __name__ == '__main__':
         ## join the preds for all tools
         logger.info(f"Start load tool files for tool:{callDict.keys()}")
         executor = ThreadPoolExecutor(max_workers=args.processors)
-        all_task_ret = []
+        all_task_future = []
 
-        global progress_bar_global_join_preds
         progress_bar_global_join_preds = tqdm(total=len(args.chrs))
         progress_bar_global_join_preds.set_description(f"MergePreds-{args.dsname}")
 
         for chr in args.chrs:
-            ret = executor.submit(joined_preds_for_all_tools, callDict, chrFilter=[chr],
-                                  bsseq_df=bsseq_df, dsname=args.dsname,
-                                  test=args.test, is_save=True, chunksize=args.chunksize,
-                                  outdir=os.path.join(out_dir, 'joined_db'))
-            ret.add_done_callback(update_progress_bar_join_preds_eval)
-            all_task_ret.append(ret)
+            future = executor.submit(joined_preds_for_all_tools, callDict, chrFilter=[chr],
+                                     bsseq_df=bsseq_df, dsname=args.dsname,
+                                     test=args.test, is_save=True, chunksize=args.chunksize,
+                                     outdir=os.path.join(out_dir, 'joined_db'))
+            future.add_done_callback(update_progress_bar_join_preds_eval)
+            all_task_future.append(future)
         executor.shutdown()
         progress_bar_global_join_preds.close()
         logger.info(f"Memory report: {get_current_memory_usage()}")
@@ -567,24 +636,26 @@ if __name__ == '__main__':
                 list(callDict.keys()) + ['Freq', 'Coverage']]
             logger.debug(f"read_df1={read_df1}")
 
-            dflist = []
+            ## preparing multi-threading
+            progress_bar_global_join_preds = tqdm(total=len(region_bed_list))
+            progress_bar_global_join_preds.set_description(f"Read-level-MT-{args.dsname}")
+            all_task_future = []
+            executor = ThreadPoolExecutor(max_workers=args.processors)
 
-            for infn, regionName, bedObj in tqdm(region_bed_list, desc=f"Read-level-{args.dsname}"):
-                if regionName != genome_wide_tagname:
-                    eval_coord_bed = get_region_bed_tuple(infn)[2]
-                    if eval_coord_bed is None:
-                        logger.warn(f"Region name={regionName} is not found, not compute read-level")
-                        continue
-                if regionName == genome_wide_tagname:
-                    eval_df = read_df1
-                else:
-                    eval_df = filter_preds_df_by_bedfile(read_df1, eval_coord_bed, infn)
-                if eval_df is None:
-                    logger.warn(f"No interset rows for {regionName}")
-                    continue
-                df1 = report_read_level_performance(eval_df, toolList=list(callDict.keys()), dsname=args.dsname,
-                                                    location=regionName)
-                dflist.append(df1)
+            ## submit multi-threading function
+            for infn, regionName, bedObj in region_bed_list:
+                future = executor.submit(
+                    eval_read_level_at_region, infn, regionName, read_df1, args.dsname, callDict)
+                future.add_done_callback(update_progress_bar_join_preds_eval)
+                all_task_future.append(future)
+            executor.shutdown()
+            progress_bar_global_join_preds.close()
+
+            ## collecting multi-threading results
+            dflist = []
+            for future in all_task_future:
+                if future.result() is not None:
+                    dflist.append(future.result())
             region_df = pd.concat(dflist)
             logger.debug(f"Read level region_df={region_df}")
 
@@ -624,26 +695,29 @@ if __name__ == '__main__':
                 list(callDict.keys()) + ['Freq', 'Reads']]
             logger.debug(f"site_df1={site_df1}")
 
-            dflist = []
-            for infn, regionName, bedObj in tqdm(region_bed_list, desc=f"Site-level-{args.dsname}"):
-                if regionName != genome_wide_tagname:
-                    eval_coord_bed = get_region_bed_tuple(infn)[2]
-                    if eval_coord_bed is None:
-                        logger.warn(f"Region name={regionName} is not found, not compute read-level")
-                        continue
-                if regionName == genome_wide_tagname:
-                    eval_df = site_df1
-                else:
-                    eval_df = filter_preds_df_by_bedfile(site_df1, eval_coord_bed, infn)
+            ## preparing multi-threading
+            progress_bar_global_join_preds = tqdm(total=len(region_bed_list))
+            progress_bar_global_join_preds.set_description(f"Site-level-MT-{args.dsname}")
+            all_task_future = []
+            executor = ThreadPoolExecutor(max_workers=args.processors)
 
-                if eval_df is None:
-                    logger.warn(f"No interset rows for {regionName}")
-                    continue
-                df1 = report_site_level_performance(eval_df, toolList=list(callDict.keys()), dsname=args.dsname,
-                                                    location=regionName)
-                dflist.append(df1)
+            ## submit multi-threading function
+            for infn, regionName, bedObj in region_bed_list:
+                future = executor.submit(
+                    eval_site_level_at_region, infn, regionName, site_df1, args.dsname, callDict)
+                future.add_done_callback(update_progress_bar_join_preds_eval)
+                all_task_future.append(future)
+            executor.shutdown()
+            progress_bar_global_join_preds.close()
+
+            ## collecting multi-threading results
+            dflist = []
+            for future in all_task_future:
+                if future.result() is not None:
+                    dflist.append(future.result())
             region_df = pd.concat(dflist)
             logger.debug(f"Site level region_df={region_df}")
+
             outfn = os.path.join(out_dir, f"{args.dsname}_site_level_joined_preds_perf_genomic_regions.csv")
             region_df.to_csv(outfn, index=False)
             logger.info(f"save to {outfn}")

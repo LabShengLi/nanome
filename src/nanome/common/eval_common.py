@@ -3056,8 +3056,8 @@ def filter_corrdata_df_by_bedfile(df, coord_bed, coord_fn):
     bed_of_intersect = intersect_bed_regions(bed_of_df, coord_bed, coord_fn)
 
     if len(bed_of_intersect) > 0:
-        retdf = bed_of_intersect.to_dataframe().replace('.', np.NaN)
-        retdf.columns = df.columns
+        ## replace NAN will be used to deal with non-joined corr meth data csv
+        retdf = bed_of_intersect.to_dataframe(names=df.columns).replace('.', np.NaN)
     else:
         retdf = None
     return retdf
