@@ -435,7 +435,7 @@ process Untar {
 	path fast5_tar
 
 	output:
-	path "${fast5_tar.baseName}.untar", emit:untar,  optional: true
+	path "${fast5_tar.baseName}.untar", emit: untar,  optional: true
 
 	script:
 	cores = task.cpus * params.highProcTimes
@@ -900,7 +900,8 @@ process Megalodon {
 	each path(rerio_dir)
 
 	output:
-	path "${params.dsname}_megalodon_batch_${fast5_dir.baseName}.*.gz", emit: megalodon_out
+	path "${params.dsname}_megalodon_batch_${fast5_dir.baseName}.*.gz", emit: megalodon_tsv
+	path "${params.dsname}_megalodon_batch_${fast5_dir.baseName}_mod_mappings.bam*", emit: megalodon_mod_mappings
 
 	when:
 	params.runMethcall && params.runMegalodon
@@ -929,7 +930,7 @@ process Megalodon {
 		megalodon \
 				${fast5_dir}   --overwrite \
 				--mod-motif m CG 0 \
-				--outputs per_read_mods mods per_read_refs \
+				--outputs per_read_mods mods mod_mappings per_read_refs \
 				--mod-output-formats bedmethyl wiggle \
 				--write-mods-text --write-mod-log-probs \
 				--guppy-server-path \$(which guppy_basecall_server) \
@@ -944,7 +945,7 @@ process Megalodon {
 		megalodon ${fast5_dir} --overwrite\
 				--guppy-config ${params.GUPPY_BASECALL_MODEL}\
 				--remora-modified-bases ${params.remoraModel} fast 0.0.0 ${params.hmc ? "5hmc_5mc" : "5mc"} CG 0\
-				--outputs mod_mappings mods per_read_mods\
+				--outputs mod_mappings mods per_read_mods \
 				--guppy-server-path \$(which guppy_basecall_server) \
 				--guppy-timeout ${params.GUPPY_TIMEOUT} \
 				--mod-output-formats bedmethyl wiggle \
@@ -956,6 +957,10 @@ process Megalodon {
 
 	awk 'NR>1' megalodon_results/per_read_modified_base_calls.txt | gzip -f > \
 		${params.dsname}_megalodon_batch_${fast5_dir.baseName}.tsv.gz
+
+	samtools sort megalodon_results/mod_mappings.bam -o \
+		${params.dsname}_megalodon_batch_${fast5_dir.baseName}_mod_mappings.bam
+	samtools index ${params.dsname}_megalodon_batch_${fast5_dir.baseName}_mod_mappings.bam
 
 	### Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -974,6 +979,11 @@ process MgldnComb {
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
 		mode: "copy",
+		pattern: "${params.dsname}_megalodon_merge_mod_mappings.bam*",
+		enabled: params.outputRaw
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
+		mode: "copy",
 		pattern: "${params.dsname}_megalodon_per_read_combine.*.gz",
 		enabled: params.outputRaw
 
@@ -985,7 +995,8 @@ process MgldnComb {
 		mode: "copy", pattern: "Site_Level-${params.dsname}/*-perSite-cov*.gz"
 
 	input:
-	path x
+	path x // read-level tsv.gz files
+	path y // mod_mappings.bam files
 	path ch_src
 	path ch_utils
 
@@ -993,6 +1004,7 @@ process MgldnComb {
 	path "${params.dsname}_megalodon_per_read_combine.*.gz",	emit: megalodon_combine
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify
 	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify
+	path "${params.dsname}_megalodon_merge_mod_mappings.bam*", emit: megalodon_merge_mod_mappings
 
 	when:
 	x.size() >= 1  && params.runCombine
@@ -1000,6 +1012,10 @@ process MgldnComb {
 	"""
 	> ${params.dsname}_megalodon_per_read_combine.bed.gz
 	cat ${x} > ${params.dsname}_megalodon_per_read_combine.bed.gz
+
+	samtools merge ${params.dsname}_megalodon_merge_mod_mappings.bam \
+		\$(find . -name "${params.dsname}_megalodon_batch_*_mod_mappings.bam")
+	samtools index ${params.dsname}_megalodon_merge_mod_mappings.bam
 
 	if [[ ${params.deduplicate} == true ]] ; then
 		echo "### Deduplicate for read-level outputs"
@@ -1037,7 +1053,7 @@ process DeepSignal {
 	each path(deepsignal_model_dir)
 
 	output:
-	path "${params.dsname}_deepsignal_batch_${indir.baseName}.*.gz",	emit: deepsignal_out
+	path "${params.dsname}_deepsignal_batch_${indir.baseName}.*.gz",	emit: deepsignal_tsv
 
 	when:
 	params.runMethcall && params.runDeepSignal
@@ -2460,7 +2476,9 @@ workflow {
 
 	if (params.runMegalodon && params.runMethcall) {
 		Megalodon(Untar.out.untar, EnvCheck.out.reference_genome, EnvCheck.out.rerio)
-		comb_megalodon = MgldnComb(Megalodon.out.megalodon_out.collect(), ch_src, ch_utils)
+		comb_megalodon = MgldnComb(Megalodon.out.megalodon_tsv.collect(),
+							Megalodon.out.megalodon_mod_mappings.collect(),
+							ch_src, ch_utils)
 		s2 = comb_megalodon.site_unify
 		r2 = comb_megalodon.read_unify
 	} else {
@@ -2470,7 +2488,7 @@ workflow {
 
 	if (params.runDeepSignal && params.runMethcall) {
 		DeepSignal(Resquiggle.out.resquiggle, EnvCheck.out.reference_genome, EnvCheck.out.deepsignal_model)
-		comb_deepsignal = DpSigComb(DeepSignal.out.deepsignal_out.collect(), ch_src, ch_utils)
+		comb_deepsignal = DpSigComb(DeepSignal.out.deepsignal_tsv.collect(), ch_src, ch_utils)
 		s3 = comb_deepsignal.site_unify
 		r3 = comb_deepsignal.read_unify
 	} else {
