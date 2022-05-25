@@ -615,7 +615,7 @@ process QCExport {
 	output:
 	path "${params.dsname}_basecall_report.html",	optional: true, emit: qc_html
 	path "${params.dsname}_QCReport",				emit: qc_report
-	path "${params.dsname}_bam_data",		optional: true,	 emit: bam_data
+	path "${params.dsname}_bam_data",				optional: true,	 emit: bam_data
 
 	script:
 	cores = task.cpus * params.highProcTimes
@@ -782,7 +782,7 @@ process Nanopolish {
 	each path(reference_genome)
 
 	output:
-	path "${params.dsname}_nanopolish_batch_${basecallDir.baseName}.*.gz", 	emit: nanopolish_out
+	path "${params.dsname}_nanopolish_batch_${basecallDir.baseName}.*.gz", 	emit: nanopolish_tsv
 
 	when:
 	params.runMethcall && params.runNanopolish
@@ -1449,7 +1449,7 @@ process Tombo {
 	each path(reference_genome)
 
 	output:
-	path "${params.dsname}_tombo_batch_${resquiggleDir.baseName}.*.gz",	emit: tombo_out, optional: true
+	path "${params.dsname}_tombo_batch_${resquiggleDir.baseName}.*.gz",	emit: tombo_tsv, optional: true
 
 	when:
 	params.runMethcall && params.runTombo
@@ -2466,7 +2466,7 @@ workflow {
 
 	if (params.runNanopolish && params.runMethcall) {
 		Nanopolish(Basecall.out.basecall, EnvCheck.out.reference_genome)
-		comb_nanopolish = NplshComb(Nanopolish.out.nanopolish_out.collect(), ch_src, ch_utils)
+		comb_nanopolish = NplshComb(Nanopolish.out.nanopolish_tsv.collect(), ch_src, ch_utils)
 		s1 = comb_nanopolish.site_unify
 		r1 = comb_nanopolish.read_unify
 	} else {
@@ -2514,7 +2514,7 @@ workflow {
 
 	if (params.runTombo && params.runMethcall) {
 		Tombo(Resquiggle.out.resquiggle, EnvCheck.out.reference_genome)
-		comb_tombo = TomboComb(Tombo.out.tombo_out.collect(), ch_src, ch_utils)
+		comb_tombo = TomboComb(Tombo.out.tombo_tsv.collect(), ch_src, ch_utils)
 		s5 = comb_tombo.site_unify
 		r5 = comb_tombo.read_unify
 	} else {
