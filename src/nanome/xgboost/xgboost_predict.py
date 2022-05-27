@@ -10,7 +10,6 @@ Predict NANOME consensus results
 """
 
 import argparse
-import numpy as np
 import os.path
 import sys
 from functools import reduce
@@ -23,7 +22,49 @@ from nanome.common.eval_common import load_tool_read_level_unified_as_df
 from nanome.common.global_config import set_log_debug_level, set_log_info_level, logger
 from nanome.common.global_settings import CHUNKSIZE, NANOME_VERSION
 from nanome.xgboost.xgboost_common import SITES_COLUMN_LIST, READS_COLUMN_LIST, nanome_model_dict, \
-    xgboost_mode_base_dir, nanome_model_tool_list_dict
+    xgboost_mode_base_dir, nanome_model_tool_list_dict, prob_to_llr_2
+
+
+class _Getch:
+    """Gets a single character from standard input.  Does not echo to the screen."""
+
+    def __init__(self):
+        try:
+            self.impl = _GetchUnix()
+        except ImportError:
+            self.impl = _GetchWindows()
+
+    def __call__(self):
+        return self.impl()
+
+
+class _GetchUnix:
+    def __init__(self):
+        pass
+
+    def __call__(self):
+        import sys, tty, termios
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
+
+
+class _GetchWindows:
+    def __init__(self):
+        pass
+
+    def __call__(self):
+        import msvcrt
+        return msvcrt.getch()
+
+
+## Get single character from input keyboard
+getch = _Getch()
 
 
 def parse_arguments():
@@ -37,8 +78,8 @@ def parse_arguments():
                         help='dataset name')
     parser.add_argument('-o', type=str, required=True,
                         help='output file name')
-    parser.add_argument('-t', nargs='+', help='tools used for prediction, default is: [megalodon, deepsignal]',
-                        default=['megalodon', 'deepsignal'])
+    parser.add_argument('-t', nargs='+', help='tools used for prediction, default is None',
+                        default=None)
     parser.add_argument('--random-state', type=int, default=42,
                         help='random state, default is 42')
     parser.add_argument('--processors', type=int, default=8,
@@ -49,6 +90,8 @@ def parse_arguments():
     parser.add_argument('--tsv-input', help="if input is tsv for tools' read-level format, or else is combined input",
                         action='store_true')
     parser.add_argument('--chrs', nargs='+', help='chromosomes used', default=None)
+    parser.add_argument('--interactive', help="if output to console as interactive mode, quit use q/Q",
+                        action='store_true')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     args = parser.parse_args()
     return args
@@ -63,6 +106,7 @@ if __name__ == '__main__':
     logger.debug(f"args={args}")
 
     import sklearn;
+
     sklearn.show_versions()
 
     if args.m in nanome_model_dict:
@@ -133,8 +177,14 @@ if __name__ == '__main__':
             dflist.append(datadf1)
         datadf = pd.concat(dflist)
 
-        tool_list = list(args.t)
-        datadf = datadf[list(datadf.columns[0:4]) + args.t]
+        if args.t is not None:
+            tool_list = list(args.t)
+        else:
+            if args.m in nanome_model_tool_list_dict:
+                tool_list = nanome_model_tool_list_dict[args.m]
+            else:
+                raise Exception(f"Can not find tool list for your model={args.m}, please specify -t params.")
+        datadf = datadf[list(datadf.columns[0:4]) + tool_list]
         datadf.drop_duplicates(subset=READS_COLUMN_LIST, inplace=True)
         logger.debug(f"tool_list={tool_list}")
         logger.debug(f"datadf={datadf}")
@@ -185,4 +235,15 @@ if __name__ == '__main__':
     nanome_df.to_csv(args.o, sep='\t', index=False)
     logger.info(f"make predictions:{len(nanome_df):,}")
     logger.info(f"save to {args.o}")
+
+    if args.interactive:
+        print("\n\nNow you are in interactive mode to check inference, use key q/Q to quit, any other key to continue")
+        nanome_df['LLR'] = nanome_df['Prob_methylation'].apply(prob_to_llr_2)
+        print('\t'.join(list(nanome_df.columns)))
+        for index, row in nanome_df.iterrows():
+            row_str_list = [str(k) for k in row]
+            print('\t'.join(row_str_list))
+            value = getch()
+            if value.lower() == 'q':
+                break
     logger.info(f"### Done for model:{args.m} predict")
