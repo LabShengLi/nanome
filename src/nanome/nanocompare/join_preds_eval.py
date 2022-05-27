@@ -149,7 +149,7 @@ def load_read_unified_df(infn, chrSet, cutoff=0.0, test=None, chunksize=1000000)
 
 
 def joined_preds_for_all_tools(callDict, chrFilter, dsname="dsname", bsseq_df=None, test=None,
-                               is_save=False, outdir=None, chunksize=1000000):
+                               is_save=False, outdir=None, outdir2=None, outer_join=False, chunksize=1000000):
     """
     Join the unified read-level for all tools by chromosome
     Args:
@@ -193,6 +193,36 @@ def joined_preds_for_all_tools(callDict, chrFilter, dsname="dsname", bsseq_df=No
         outfn = outfn.replace('csv.gz', 'sort.csv.gz')
         logger.debug(f"sort and save to {outfn}")
 
+    if outer_join:
+        logger.debug(f"Start processing outer joined predictions")
+        ## also report outer joined prediction database
+        dfall = None
+        for toolName in callDict:
+            df1 = load_read_unified_df(callDict[toolName], chrs, test=test,
+                                       chunksize=chunksize)
+            df1.rename(columns={'Score': toolName}, inplace=True)
+            logger.debug(f"df1={df1}")
+            if dfall is None:
+                dfall = df1
+            else:
+                dfall = dfall.merge(df1, on=READ_COLUMNS, how='outer')
+
+        if bsseq_df is not None:
+            dfall = dfall.merge(bsseq_df, on=SITE_COLUMNS, how='left')
+        logger.debug(f"dfall={dfall}")
+        if is_save and outdir2 is not None:
+            os.makedirs(outdir2, exist_ok=True)
+            chrListStr = '_'.join(chrs)
+            outfn = os.path.join(outdir2,
+                                 f'{dsname}_T{len(callDict.keys())}_{chrListStr}_outerjoin_preds_eval_db.csv.gz')
+            dfall.to_csv(outfn, index=False)
+            logger.debug(f"save to {outfn}")
+
+            ## sort db
+            sort_per_read_csv_file(outfn, outfn.replace('csv.gz', 'sort.csv.gz'), deduplicate=True)
+            os.remove(outfn)
+            outfn = outfn.replace('csv.gz', 'sort.csv.gz')
+            logger.debug(f"sort and save to {outfn}")
     return True
 
 
@@ -513,13 +543,16 @@ def parse_arguments():
     parser.add_argument('--test', type=int, help="only test for small lines, default is None", default=None)
     parser.add_argument('--beddir', type=str, help="concordant and discordant bed file find base dir", default=None)
     parser.add_argument('--dbdir', type=str, help="specify the db file (joined preds data) base dir", default=None)
-    parser.add_argument('--skip-join-preds', help="assumes the inputs has been there, you can skip make preds data step",
+    parser.add_argument('--join-preds',
+                        help="If perform join predictions for all read-level inputs and bs-seq data. You can skip make preds data step",
                         action='store_true')
-    parser.add_argument('--skip-read-eval', help="if skip read level evaluation",
+    parser.add_argument('--read-eval', help="if perform read level evaluation",
                         action='store_true')
-    parser.add_argument('--skip-site-eval', help="if skip site level evaluation",
+    parser.add_argument('--site-eval', help="if perform site level evaluation",
                         action='store_true')
     parser.add_argument('--region-report', help="if report results at genomic regions",
+                        action='store_true')
+    parser.add_argument('--outer-join', help="if generate outer joined prediction database",
                         action='store_true')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
@@ -546,7 +579,7 @@ if __name__ == '__main__':
     callDict = {}
     for callStr in args.calls:
         toolName, toolFile = callStr.strip().split(':')
-        callDict[toolName] = toolFile
+        callDict[toolName.lower()] = toolFile
     cutoffDict = {}
     for ind, toolName in enumerate(callDict.keys()):
         if args.score_cutoff is not None and ind < len(args.score_cutoff):  # preset cutoff
@@ -562,19 +595,22 @@ if __name__ == '__main__':
 
     global progress_bar_global_join_preds
 
-    if args.skip_join_preds:
-        logger.info(
-            f"Assume you have generated all joined preds db at:{out_dir} or {args.dbdir}, make sure this is correct if you skip make predictions joined db by --skip-join-preds.")
-    else:
+    if args.join_preds:
         logger.info("Join preds of bs-seq with tool, take times...")
         ## Step 1: load bs-seq, tool read-level unified inputs, make joined preds DF
         ## Load bs-seq
         if args.bs_seq_bed is not None:
             logger.info(f"Start load bs-seq from file:{args.bs_seq_bed}")
-            bsseq_df = pd.read_csv(args.bs_seq_bed, sep='\t', header=None, index_col=False).iloc[:, [0, 2, 5, 6, 7]]
+            iter_df = pd.read_csv(args.bs_seq_bed, header=None, index_col=False, sep="\t", iterator=True,
+                                  chunksize=args.chunksize)
+            bsseq_df = pd.concat(
+                [chunk[chunk[0].isin(set(args.chrs))].iloc[:, [0, 2, 5, 6, 7]] for chunk in iter_df])
+            # bsseq_df = pd.read_csv(args.bs_seq_bed, sep='\t', header=None, index_col=False).iloc[:, [0, 2, 5, 6, 7]]
             bsseq_df.columns = SITE_COLUMNS + ['Freq', 'Coverage']
+            # bsseq_df = bsseq_df[bsseq_df['Chr'].isin(set(args.chrs))]
             bsseq_df.drop_duplicates(subset=SITE_COLUMNS, inplace=True)
             bsseq_df = bsseq_df[bsseq_df['Coverage'] >= args.min_bgtruth_cov]
+            bsseq_df.reset_index(drop=True, inplace=True)
             logger.debug(f"bsseq_df={bsseq_df}")
         else:
             bsseq_df = None
@@ -590,14 +626,18 @@ if __name__ == '__main__':
         for chr in args.chrs:
             future = executor.submit(joined_preds_for_all_tools, callDict, chrFilter=[chr],
                                      bsseq_df=bsseq_df, dsname=args.dsname,
-                                     test=args.test, is_save=True, chunksize=args.chunksize,
-                                     outdir=os.path.join(out_dir, 'joined_db'))
+                                     test=args.test, is_save=True, outer_join=args.outer_join, chunksize=args.chunksize,
+                                     outdir=os.path.join(out_dir, 'joined_db'),
+                                     outdir2=os.path.join(out_dir, 'outer_joined_db'), )
             future.add_done_callback(update_progress_bar_join_preds_eval)
             all_task_future.append(future)
         executor.shutdown()
         progress_bar_global_join_preds.close()
         logger.info(f"Memory report: {get_current_memory_usage()}")
         logger.info(f"### DONE for make joined prediction db.")
+    else:
+        logger.info(
+            f"Assume you have generated all joined preds db at:{out_dir} or {args.dbdir}, make sure this is correct if you skip make predictions joined db by --skip-join-preds.")
 
     ## Step 2: read level eval on joined preds
     new_dtype = dict(DTYPE)
@@ -605,12 +645,12 @@ if __name__ == '__main__':
         new_dtype.update({toolName: float})
     logger.debug(f"new_dtype={new_dtype}")
 
-    if not args.skip_read_eval or not args.skip_site_eval:
+    if args.read_eval or args.site_eval:
         if args.region_report:
             logger.debug("Create region bed list firstly, take times......")
             region_bed_list = create_region_bed_list(args.genome_annotation, args.beddir, args.dsname)
 
-    if args.skip_read_eval:
+    if not args.read_eval:
         logger.info("You do not need read level eval, we will skip this section.")
     else:
         read_df = find_join_preds_bgtruth_as_df(args.dsname, args.chrs,
@@ -668,7 +708,7 @@ if __name__ == '__main__':
         read_df = read_df1 = None
 
     ## Step 3: site level eval on joined preds
-    if args.skip_site_eval:
+    if not args.site_eval:
         logger.info("You do not need site level eval, we will skip this section")
     else:
         read_df = find_join_preds_bgtruth_as_df(args.dsname, args.chrs,
