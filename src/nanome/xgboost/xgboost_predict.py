@@ -63,10 +63,6 @@ class _GetchWindows:
         return msvcrt.getch()
 
 
-## Get single character from input keyboard
-getch = _Getch()
-
-
 def parse_arguments():
     parser = argparse.ArgumentParser(prog='xgboost_predict (NANOME)', description='XGBoost predict for data')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
@@ -237,6 +233,9 @@ if __name__ == '__main__':
     logger.info(f"save to {args.o}")
 
     if args.interactive:
+        ## Get single character from input keyboard
+        getch = _Getch()
+
         print("\n\nNow you are in interactive mode to check inference, use key q/Q to quit, any other key to continue")
         nanome_df['LLR'] = nanome_df['Prob_methylation'].apply(prob_to_llr_2)
         print('\t'.join(list(nanome_df.columns)))
