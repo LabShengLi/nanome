@@ -2506,8 +2506,8 @@ def get_cache_filename(infn, params):
             cachefn += f'.inscore.{params["include_score"]}'
             if params["encode"] in ['DeepMod.Cluster', 'DeepMod.C', 'DeepMod', 'Guppy', 'Guppy.ZW', 'UNISITE']:
                 cachefn += f'.siteLevel.{params["siteLevel"]}'
-            if params['raw_cutoff'] is not None:
-                cachefn += "cutoff_" + "_".join([f"{k:.2f}" for k in params['raw_cutoff']])
+            if 'raw_cutoff' in params and params['raw_cutoff'] is not None:
+                cachefn += ".cutoff_" + "_".join([f"{k:.2f}" for k in params['raw_cutoff']])
         elif params["encode"] in BGTruthEncodeList:
             cachefn += f'.cov.{params["cov"]}.incov.{params["includeCov"]}'
         else:
