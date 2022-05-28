@@ -607,7 +607,7 @@ process Alignment {
 
 	input:
 	path 	basecallDir
-	path 	reference_genome
+	each 	path(reference_genome)
 
 	output:
 	path "${basecallDir.baseName}.alignment", 		optional:true,	emit: alignment

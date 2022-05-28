@@ -759,7 +759,7 @@ if __name__ == '__main__':
             elif len(callstr.split(':')) == 5:
                 toolname, callencode, callfn, cutoff1, cutoff2 = callstr.split(':')
                 cutoff1 = float(cutoff1)
-                cutoff2 = float(cutoff1)
+                cutoff2 = float(cutoff2)
                 score_cutoff = (cutoff1, cutoff2)
         except:
             raise Exception(f"--calls params is not correct: {callstr}")

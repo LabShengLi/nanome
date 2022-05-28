@@ -1768,7 +1768,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
 
     if enable_cache:
         save_to_cache(infn, calls0, encode=encode, baseFormat=baseFormat, include_score=include_score,
-                      siteLevel=siteLevel, cache_dir=cache_dir, file_type='ont-call')
+                      siteLevel=siteLevel, cache_dir=cache_dir, file_type='ont-call', raw_cutoff=raw_cutoff)
 
     logger.debug(f'Import {encode} finished!\n')
     return calls0
@@ -2506,6 +2506,8 @@ def get_cache_filename(infn, params):
             cachefn += f'.inscore.{params["include_score"]}'
             if params["encode"] in ['DeepMod.Cluster', 'DeepMod.C', 'DeepMod', 'Guppy', 'Guppy.ZW', 'UNISITE']:
                 cachefn += f'.siteLevel.{params["siteLevel"]}'
+            if params['raw_cutoff'] is not None:
+                cachefn += "cutoff_" + "_".join([f"{k:.2f}" for k in params['raw_cutoff']])
         elif params["encode"] in BGTruthEncodeList:
             cachefn += f'.cov.{params["cov"]}.incov.{params["includeCov"]}'
         else:
