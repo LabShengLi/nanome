@@ -164,15 +164,15 @@ if (params.input.endsWith(".filelist.txt")) {
 				return file(it[0])
 			}
 		}
-		.set{ fast5_tar_ch }
+		.set{ inputCh }
 } else if (params.input.contains('*') || params.input.contains('?')) {
 	// match all files in the folder, note: input must use '', prevent expand in advance
 	// such as --input '/fastscratch/liuya/nanome/NA12878/NA12878_CHR22/input_chr22/*'
 	Channel.fromPath(params.input, type: 'any', checkIfExists: true)
-		.set{ fast5_tar_ch }
+		.set{ inputCh }
 } else {
 	// For single file/wildcard matched files
-	Channel.fromPath( params.input, checkIfExists: true ).set{ fast5_tar_ch }
+	Channel.fromPath( params.input, checkIfExists: true ).set{ inputCh }
 }
 
 // Header log info
@@ -429,13 +429,13 @@ process EnvCheck {
 
 // Untar of subfolders named 'M1', ..., 'M10', etc.
 process Untar {
-	tag "${fast5_tar.baseName}"
+	tag "${fast5Input.baseName}"
 
 	input:
-	path fast5_tar
+	path fast5Input
 
 	output:
-	path "${fast5_tar.baseName}.untar", emit: untar,  optional: true
+	path "${fast5Input.baseName}.untar", emit: untar,  optional: true
 
 	script:
 	cores = task.cpus * params.highProcTimes
@@ -446,25 +446,25 @@ process Untar {
 
 		## Extract input files tar/tar.gz/folder
 		mkdir -p untarTempDir
-		if [[ ${fast5_tar} == *.tar && -f ${fast5_tar} ]] ; then
+		if [[ ${fast5Input} == *.tar && -f ${fast5Input} ]] ; then
 			### deal with tar
-			tar -xf ${fast5_tar} -C untarTempDir
-		elif [[ ${fast5_tar} == *.tar.gz && -f ${fast5_tar} ]] ; then
+			tar -xf ${fast5Input} -C untarTempDir
+		elif [[ ${fast5Input} == *.tar.gz && -f ${fast5Input} ]] ; then
 			### deal with tar.gz
-			tar -xzf ${fast5_tar} -C untarTempDir
-		elif [[ -d ${fast5_tar} ]]; then
+			tar -xzf ${fast5Input} -C untarTempDir
+		elif [[ -d ${fast5Input} ]]; then
 			## Copy files, do not change original files such as old analyses data
-			find ${fast5_tar}/ -name '*.fast5' | \
+			find ${fast5Input}/ -name '*.fast5' | \
 				parallel -j$cores  cp {} untarTempDir/
 		else
-			echo "### Untar error for input=${fast5_tar}"
+			echo "### Untar error for input=${fast5Input}"
 		fi
 
 		## Move fast5 raw/basecalled files into XXX.untar folder
-		mkdir -p ${fast5_tar.baseName}.untar
+		mkdir -p ${fast5Input.baseName}.untar
 
 		find untarTempDir -name "*.fast5" -type f | \
-			parallel -j$cores  mv {}  ${fast5_tar.baseName}.untar/
+			parallel -j$cores  mv {}  ${fast5Input.baseName}.untar/
 
 		## Clean temp files
 		rm -rf untarTempDir
@@ -474,15 +474,15 @@ process Untar {
 			echo "### Start cleaning old analysis"
 			## python -c 'import h5py; print(h5py.version.info)'
 			clean_old_basecall_in_fast5.py \
-				-i ${fast5_tar.baseName}.untar --is-indir --verbose\
+				-i ${fast5Input.baseName}.untar --is-indir --verbose\
 				--processor $cores
 		fi
 
-		totalFiles=\$( find ${fast5_tar.baseName}.untar -name "*.fast5" -type f | wc -l )
+		totalFiles=\$( find ${fast5Input.baseName}.untar -name "*.fast5" -type f | wc -l )
 		echo "### Total fast5 input files:\${totalFiles}"
 		if (( totalFiles==0 )); then
-			echo "### no fast5 files at ${fast5_tar.baseName}.untar, skip this job"
-			rm -rf ${fast5_tar.baseName}.untar
+			echo "### no fast5 files at ${fast5Input.baseName}.untar, skip this job"
+			rm -rf ${fast5Input.baseName}.untar
 		fi
 		echo "### Untar DONE"
 		"""
@@ -492,33 +492,33 @@ process Untar {
 
 		## Extract input files tar/tar.gz/folder
 		mkdir -p untarTempDir
-		if [[ ${fast5_tar} == *.tar && -f ${fast5_tar} ]] ; then
+		if [[ ${fast5Input} == *.tar && -f ${fast5Input} ]] ; then
 			### deal with tar
-			tar -xf ${fast5_tar} -C untarTempDir
-		elif [[ ${fast5_tar} == *.tar.gz && -f ${fast5_tar} ]] ; then
+			tar -xf ${fast5Input} -C untarTempDir
+		elif [[ ${fast5Input} == *.tar.gz && -f ${fast5Input} ]] ; then
 			### deal with tar.gz
-			tar -xzf ${fast5_tar} -C untarTempDir
-		elif [[ -d ${fast5_tar} ]] ; then
+			tar -xzf ${fast5Input} -C untarTempDir
+		elif [[ -d ${fast5Input} ]] ; then
 			## user provide basecalled input dir, just cp them
 			mkdir -p untarTempDir/test
-			cp -rf ${fast5_tar}/*   untarTempDir/test/
+			cp -rf ${fast5Input}/*   untarTempDir/test/
 		else
-			echo "### Untar error for input=${fast5_tar}"
+			echo "### Untar error for input=${fast5Input}"
 		fi
 
 		## Move fast5 raw/basecalled files into XXX.untar folder
-		mkdir -p ${fast5_tar.baseName}.untar
+		mkdir -p ${fast5Input.baseName}.untar
 		## Keep the directory structure for basecalled input
-		mv untarTempDir/*/*   ${fast5_tar.baseName}.untar/
+		mv untarTempDir/*/*   ${fast5Input.baseName}.untar/
 
 		## Clean temp files
 		rm -rf untarTempDir
 
-		totalFiles=\$( find ${fast5_tar.baseName}.untar -name "*.fast5" -type f | wc -l )
+		totalFiles=\$( find ${fast5Input.baseName}.untar -name "*.fast5" -type f | wc -l )
 		echo "### Total fast5 input files:\${totalFiles}"
 		if (( totalFiles==0 )); then
-			echo "### no fast5 files at ${fast5_tar.baseName}.untar, skip this job"
-			rm -rf ${fast5_tar.baseName}.untar
+			echo "### no fast5 files at ${fast5Input.baseName}.untar, skip this job"
+			rm -rf ${fast5Input.baseName}.untar
 		fi
 		echo "### Untar DONE"
 		"""
@@ -528,13 +528,13 @@ process Untar {
 
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process Basecall {
-	tag "${fast5_dir.baseName}"
+	tag "${fast5Untar.baseName}"
 
 	input:
-	path fast5_dir
+	path fast5Untar
 
 	output:
-	path "${fast5_dir.baseName}.basecalled", 	emit: basecall
+	path "${fast5Untar.baseName}.basecall", 	emit: basecall
 
 	when:
 	params.runBasecall
@@ -555,42 +555,42 @@ process Basecall {
 
 	which guppy_basecaller
 	guppy_basecaller -v
-	mkdir -p ${fast5_dir.baseName}.basecalled
+	mkdir -p ${fast5Untar.baseName}.basecall
 
 	if [[ ${params.skipBasecall} == false ]] ; then
 		## CPU/GPU version command
-		guppy_basecaller --input_path ${fast5_dir} \
-			--save_path "${fast5_dir.baseName}.basecalled" \
+		guppy_basecaller --input_path ${fast5Untar} \
+			--save_path "${fast5Untar.baseName}.basecall" \
 			--config ${params.GUPPY_BASECALL_MODEL} \
 			--num_callers ${task.cpus} \
 			--fast5_out --compress_fastq\
-			--verbose_logs  \${gpuOptions} &>> ${params.dsname}.${fast5_dir.baseName}.Basecall.run.log
+			--verbose_logs  \${gpuOptions} &>> ${params.dsname}.${fast5Untar.baseName}.Basecall.run.log
 	else
 		## Just use user's basecalled input
-		cp -rf ${fast5_dir}/*   ${fast5_dir.baseName}.basecalled/
+		cp -rf ${fast5Untar}/*   ${fast5Untar.baseName}.basecall/
 	fi
 
 	## Combine fastq
-	touch "${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz
+	touch "${fast5Untar.baseName}.basecall"/batch_basecall_combine_fq_${fast5Untar.baseName}.fq.gz
 
 	## Below is compatable with both Guppy v4.2.2 (old) and newest directory structures
-	find "${fast5_dir.baseName}.basecalled/" "${fast5_dir.baseName}.basecalled/pass"\
-	 	${params.filter_fail_fq ? "" : "${fast5_dir.baseName}.basecalled/fail" } -maxdepth 1 -name '*.fastq.gz' -type f\
+	find "${fast5Untar.baseName}.basecall/" "${fast5Untar.baseName}.basecall/pass"\
+	 	${params.filter_fail_fq ? "" : "${fast5Untar.baseName}.basecall/fail" } -maxdepth 1 -name '*.fastq.gz' -type f\
 	 	-print0 2>/dev/null | \
 	 	while read -d \$'\0' file ; do
 	 		cat \$file >> \
-	 			"${fast5_dir.baseName}.basecalled"/batch_basecall_combine_fq_${fast5_dir.baseName}.fq.gz
+	 			"${fast5Untar.baseName}.basecall"/batch_basecall_combine_fq_${fast5Untar.baseName}.fq.gz
 	 	done
 	echo "### Combine fastq.gz DONE"
 
 	## Remove fastq.gz
-	find "${fast5_dir.baseName}.basecalled/"   "${fast5_dir.baseName}.basecalled/pass/"\
-	 	"${fast5_dir.baseName}.basecalled/fail/" -maxdepth 1 -name '*.fastq.gz' -type f 2>/dev/null |\
+	find "${fast5Untar.baseName}.basecall/"   "${fast5Untar.baseName}.basecall/pass/"\
+	 	"${fast5Untar.baseName}.basecall/fail/" -maxdepth 1 -name '*.fastq.gz' -type f 2>/dev/null |\
 	 	parallel -j${task.cpus * params.highProcTimes} 'rm -f {}'
 
 	## After basecall, rename and publish summary filenames, summary may also be used by resquiggle
-	mv ${fast5_dir.baseName}.basecalled/sequencing_summary.txt \
-		${fast5_dir.baseName}.basecalled/${fast5_dir.baseName}-sequencing_summary.txt
+	mv ${fast5Untar.baseName}.basecall/sequencing_summary.txt \
+		${fast5Untar.baseName}.basecall/${fast5Untar.baseName}-sequencing_summary.txt
 
     ## Clean
     if [[ ${params.cleanStep} == "true" ]]; then
@@ -624,7 +624,7 @@ process QCExport {
 	## Combine all sequencing summary files
 	touch ${params.dsname}_combine_sequencing_summary.txt.gz
 	firstFile=true
-	find *.basecalled/ -name '*-sequencing_summary.txt' -type f -print0 |\
+	find *.basecall/ -name '*-sequencing_summary.txt' -type f -print0 |\
 		while read -d \$'\0' file ; do
 			if \$firstFile ; then
 				awk 'NR>=1' \$file | \
@@ -647,7 +647,7 @@ process QCExport {
 	if [[ ${params.outputBam} == true  || ${params.outputONTCoverage} == true || ${params.phasing} == true ]]; then
 		## Combine all batch fq.gz
 		> merge_all_fq.fq.gz
-		cat *.basecalled/batch_basecall_combine_fq_*.fq.gz > merge_all_fq.fq.gz
+		cat *.basecall/batch_basecall_combine_fq_*.fq.gz > merge_all_fq.fq.gz
 		echo "### Fastq merge from all batches done!"
 
 		## After basecall, we align results to merged, sorted bam, can be for ONT coverage analyses/output bam
@@ -706,14 +706,14 @@ process QCExport {
 
 // Resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.
 process Resquiggle {
-	tag "${basecallIndir.baseName}"
+	tag "${basecallDir.baseName}"
 
 	input:
-	path 	basecallIndir
+	path 	basecallDir
 	each 	path(reference_genome)
 
 	output:
-	path "${basecallIndir.baseName}.resquiggle", 	emit: resquiggle
+	path "${basecallDir.baseName}.resquiggle", 	emit: resquiggle
 
 	when:
 	params.runMethcall && (params.runDeepSignal || params.runTombo)
@@ -724,29 +724,29 @@ process Resquiggle {
 	resquiggle_cores = (task.cpus*params.reduceProcTimes).intValue()
 	"""
 	### copy basecall workspace files, due to tombo resquiggle modify base folder
-	rm -rf ${basecallIndir.baseName}.resquiggle
-	mkdir -p ${basecallIndir.baseName}.resquiggle/workspace
+	rm -rf ${basecallDir.baseName}.resquiggle
+	mkdir -p ${basecallDir.baseName}.resquiggle/workspace
 
 	### original basecalled results will be parrallelly used by other processes
-	cp -f ${basecallIndir}/batch_basecall_combine_fq_*.fq.gz  \
-		${basecallIndir.baseName}.resquiggle/
+	cp -f ${basecallDir}/batch_basecall_combine_fq_*.fq.gz  \
+		${basecallDir.baseName}.resquiggle/
 
-	## cp -rf ${basecallIndir}/workspace  ${basecallIndir.baseName}.resquiggle/
-	find ${basecallIndir}/workspace -name '*.fast5' -type f| \
+	## cp -rf ${basecallDir}/workspace  ${basecallDir.baseName}.resquiggle/
+	find ${basecallDir}/workspace -name '*.fast5' -type f| \
 		parallel -j${task.cpus * params.highProcTimes}  \
-		'cp {}   ${basecallIndir.baseName}.resquiggle/workspace/'
+		'cp {}   ${basecallDir.baseName}.resquiggle/workspace/'
 	echo "### Duplicate from basecall DONE"
 
 	### Prerocessing, using combined fq.gz
 	### ref: https://github.com/bioinfomaticsCSU/deepsignal#quick-start
-	gunzip ${basecallIndir.baseName}.resquiggle/batch_basecall_combine_fq_*.fq.gz
+	gunzip ${basecallDir.baseName}.resquiggle/batch_basecall_combine_fq_*.fq.gz
 	tombo preprocess annotate_raw_with_fastqs\
-		--fast5-basedir ${basecallIndir.baseName}.resquiggle/workspace\
-		--fastq-filenames ${basecallIndir.baseName}.resquiggle/batch_basecall_combine_fq_*.fq\
+		--fast5-basedir ${basecallDir.baseName}.resquiggle/workspace\
+		--fastq-filenames ${basecallDir.baseName}.resquiggle/batch_basecall_combine_fq_*.fq\
 		--basecall-group ${params.BasecallGroupName}\
 		--basecall-subgroup ${params.BasecallSubGroupName}\
 		--overwrite --processes  ${samtools_cores} \
-		&>> ${params.dsname}.${basecallIndir.baseName}.Resquiggle.run.log
+		&>> ${params.dsname}.${basecallDir.baseName}.Resquiggle.run.log
 	echo "### tombo preprocess DONE"
 
 	### Need to check Tombo resquiggle bugs, lots of users report long runtime and hang at nearly completion for large data
@@ -761,8 +761,8 @@ process Resquiggle {
 		--basecall-subgroup ${params.BasecallSubGroupName}\
 		--ignore-read-locks ${params.tomboResquiggleOptions ? params.tomboResquiggleOptions : ''}\
 		--overwrite \
-		${basecallIndir.baseName}.resquiggle/workspace \
-		${referenceGenome} &>> ${params.dsname}.${basecallIndir.baseName}.Resquiggle.run.log
+		${basecallDir.baseName}.resquiggle/workspace \
+		${referenceGenome} &>> ${params.dsname}.${basecallDir.baseName}.Resquiggle.run.log
 
 	echo "### tombo resquiggle DONE"
 	"""
@@ -888,20 +888,20 @@ process NplshComb {
 
 // Megalodon runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process Megalodon {
-	tag "${fast5_dir.baseName}"
+	tag "${fast5Untar.baseName}"
 
 	publishDir "${params.outdir}/${params.dsname}_intermediate/megalodon",
 		mode: "copy",
 		enabled: params.outputIntermediate
 
 	input:
-	path fast5_dir
+	path fast5Untar
 	each path(reference_genome)
 	each path(rerio_dir)
 
 	output:
-	path "${params.dsname}_megalodon_batch_${fast5_dir.baseName}.*.gz", emit: megalodon_tsv
-	path "${params.dsname}_megalodon_batch_${fast5_dir.baseName}_mod_mappings.bam*", emit: megalodon_mod_mappings
+	path "${params.dsname}_megalodon_batch_${fast5Untar.baseName}.*.gz", emit: megalodon_tsv
+	path "${params.dsname}_megalodon_batch_${fast5Untar.baseName}_mod_mappings.bam*", emit: megalodon_mod_mappings
 
 	when:
 	params.runMethcall && params.runMegalodon
@@ -928,7 +928,7 @@ process Megalodon {
 	if [[ ${params.rerio} == true ]] ; then
 		## Rerio model running
 		megalodon \
-				${fast5_dir}   --overwrite \
+				${fast5Untar}   --overwrite \
 				--mod-motif m CG 0 \
 				--outputs per_read_mods mods mod_mappings per_read_refs \
 				--mod-output-formats bedmethyl wiggle \
@@ -939,10 +939,10 @@ process Megalodon {
 				--guppy-timeout ${params.GUPPY_TIMEOUT} \
 				--reference ${referenceGenome} \
 				--processes $cores \${gpuOptions} \
-				&>> ${params.dsname}.${fast5_dir.baseName}.Megalodon.run.log
+				&>> ${params.dsname}.${fast5Untar.baseName}.Megalodon.run.log
 	else
 		## Run Remora model 5mc or 5hmc_5mc
-		megalodon ${fast5_dir} --overwrite\
+		megalodon ${fast5Untar} --overwrite\
 				--guppy-config ${params.GUPPY_BASECALL_MODEL}\
 				--remora-modified-bases ${params.remoraModel} fast 0.0.0 ${params.hmc ? "5hmc_5mc" : "5mc"} CG 0\
 				--outputs mod_mappings mods per_read_mods \
@@ -952,15 +952,15 @@ process Megalodon {
 				--write-mods-text --write-mod-log-probs\
 				--reference ${referenceGenome}\
 				--processes $cores \${gpuOptions} \
-				&>> ${params.dsname}.${fast5_dir.baseName}.Megalodon.run.log
+				&>> ${params.dsname}.${fast5Untar.baseName}.Megalodon.run.log
 	fi
 
 	awk 'NR>1' megalodon_results/per_read_modified_base_calls.txt | gzip -f > \
-		${params.dsname}_megalodon_batch_${fast5_dir.baseName}.tsv.gz
+		${params.dsname}_megalodon_batch_${fast5Untar.baseName}.tsv.gz
 
-	samtools sort megalodon_results/mod_mappings.bam -o \
-		${params.dsname}_megalodon_batch_${fast5_dir.baseName}_mod_mappings.bam
-	samtools index ${params.dsname}_megalodon_batch_${fast5_dir.baseName}_mod_mappings.bam
+	samtools sort -@ ${cores} megalodon_results/mod_mappings.bam -o \
+		${params.dsname}_megalodon_batch_${fast5Untar.baseName}_mod_mappings.bam
+	samtools index -@ ${cores} ${params.dsname}_megalodon_batch_${fast5Untar.baseName}_mod_mappings.bam
 
 	### Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -1009,13 +1009,15 @@ process MgldnComb {
 	when:
 	x.size() >= 1  && params.runCombine
 
+	script:
+	cores = task.cpus * params.mediumProcTimes
 	"""
 	> ${params.dsname}_megalodon_per_read_combine.bed.gz
 	cat ${x} > ${params.dsname}_megalodon_per_read_combine.bed.gz
 
-	samtools merge ${params.dsname}_megalodon_merge_mod_mappings.bam \
+	samtools merge -@ ${cores} ${params.dsname}_megalodon_merge_mod_mappings.bam \
 		\$(find . -name "${params.dsname}_megalodon_batch_*_mod_mappings.bam")
-	samtools index ${params.dsname}_megalodon_merge_mod_mappings.bam
+	samtools index -@ ${cores} ${params.dsname}_megalodon_merge_mod_mappings.bam
 
 	if [[ ${params.deduplicate} == true ]] ; then
 		echo "### Deduplicate for read-level outputs"
@@ -1152,28 +1154,28 @@ process DpSigComb {
 
 // methylation calling for Guppy
 process Guppy {
-	tag "${fast5_dir.baseName}"
+	tag "${fast5Untar.baseName}"
 
 	publishDir "${params.outdir}/${params.dsname}_intermediate/guppy",
 		mode: "copy",
-		pattern: "bamfile_${params.dsname}_guppy_fast5mod_batch_${fast5_dir.baseName}_guppy2sam.bam.tar.gz",
+		pattern: "bamfile_${params.dsname}_guppy_fast5mod_batch_${fast5Untar.baseName}_guppy2sam.bam.tar.gz",
 		enabled: params.outputIntermediate
 
 	publishDir "${params.outdir}/${params.dsname}_intermediate/guppy",
 		mode: "copy",
-		pattern: "${params.dsname}_guppy_gcf52ref_batch_${fast5_dir.baseName}.*.gz",
+		pattern: "${params.dsname}_guppy_gcf52ref_batch_${fast5Untar.baseName}.*.gz",
 		enabled: params.outputIntermediate && params.runGuppyGcf52ref
 
 	input:
-	path fast5_dir
+	path fast5Untar
 	each path(reference_genome)
 	each path(utils)
 
 	output:
-	path "${params.dsname}_guppy_fast5mod_batch_${fast5_dir.baseName}_guppy2sam.bam*",	emit: guppy_fast5mod_bam
-	path "${params.dsname}_guppy_gcf52ref_batch_${fast5_dir.baseName}.*.gz",	optional: true, emit: guppy_gcf52ref_tsv
+	path "${params.dsname}_guppy_fast5mod_batch_${fast5Untar.baseName}_guppy2sam.bam*",	emit: guppy_fast5mod_bam
+	path "${params.dsname}_guppy_gcf52ref_batch_${fast5Untar.baseName}.*.gz",	optional: true, emit: guppy_gcf52ref_tsv
 
-	path "bamfile_${params.dsname}_guppy_fast5mod_batch_${fast5_dir.baseName}_guppy2sam.bam.tar.gz",	optional: true,	emit: guppy_fast5mod_bam_gz
+	path "bamfile_${params.dsname}_guppy_fast5mod_batch_${fast5Untar.baseName}_guppy2sam.bam.tar.gz",	optional: true,	emit: guppy_fast5mod_bam_gz
 
 	when:
 	params.runMethcall && params.runGuppy
@@ -1196,20 +1198,20 @@ process Guppy {
 	fi
 
 	if [[ ${params.skipBasecall} == false ]]; then
-		indir=${fast5_dir}
+		indir=${fast5Untar}
 	else
-		indir=${fast5_dir}/workspace
+		indir=${fast5Untar}/workspace
 	fi
 
-	mkdir -p ${fast5_dir.baseName}.methcalled
+	mkdir -p ${fast5Untar.baseName}.methcalled
 
 	## CPU/GPU version command
 	guppy_basecaller --input_path \${indir} --recursive\
-		--save_path ${fast5_dir.baseName}.methcalled \
+		--save_path ${fast5Untar.baseName}.methcalled \
 		--config ${params.GUPPY_METHCALL_MODEL} \
 		--num_callers $task.cpus \
 		--fast5_out --compress_fastq\
-		--verbose_logs  \${gpuOptions} &>> ${params.dsname}.${fast5_dir.baseName}.Guppy.run.log
+		--verbose_logs  \${gpuOptions} &>> ${params.dsname}.${fast5Untar.baseName}.Guppy.run.log
 
 	echo "### Guppy methylation calling DONE"
 
@@ -1217,16 +1219,16 @@ process Guppy {
 	## Combine fastq
 	touch batch_combine_fq.fq.gz
 
-	find "${fast5_dir.baseName}.methcalled/" "${fast5_dir.baseName}.methcalled/pass/"\
-		"${fast5_dir.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq.gz' -type f\
+	find "${fast5Untar.baseName}.methcalled/" "${fast5Untar.baseName}.methcalled/pass/"\
+		"${fast5Untar.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq.gz' -type f\
 		-print0 2>/dev/null | \
 		while read -d \$'\0' file ; do
 			cat \$file >> batch_combine_fq.fq.gz
 		done
 
 	## Remove fastq.gz
-	find "${fast5_dir.baseName}.methcalled/"   "${fast5_dir.baseName}.methcalled/pass/"\
-		"${fast5_dir.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq.gz' \
+	find "${fast5Untar.baseName}.methcalled/"   "${fast5Untar.baseName}.methcalled/pass/"\
+		"${fast5Untar.baseName}.methcalled/fail/" -maxdepth 1 -name '*.fastq.gz' \
 		-type f 2>/dev/null |\
 		parallel -j${task.cpus * params.mediumProcTimes} 'rm -f {}'
 
@@ -1235,14 +1237,14 @@ process Guppy {
 		minimap2 -t ${task.cpus * params.mediumProcTimes} -a -x map-ont ${referenceGenome} \
 			batch_combine_fq.fq.gz | \
 			samtools sort -@ ${samtools_cores} \
-				-T tmp -o gcf52ref.batch.${fast5_dir.baseName}.bam &&\
+				-T tmp -o gcf52ref.batch.${fast5Untar.baseName}.bam &&\
 			samtools index -@ ${samtools_cores} \
-				gcf52ref.batch.${fast5_dir.baseName}.bam
+				gcf52ref.batch.${fast5Untar.baseName}.bam
 		echo "### gcf52ref minimap2 alignment is done"
 
 		## Modified version, support dir input, not all fast5 files (too long arguments)
 		extract_methylation_fast5_support_dir.py \
-			-p ${samtools_cores}  ${fast5_dir.baseName}.methcalled/workspace
+			-p ${samtools_cores}  ${fast5Untar.baseName}.methcalled/workspace
 		echo "### gcf52ref extract to db done"
 
 		## gcf52ref files preparation
@@ -1253,20 +1255,20 @@ process Guppy {
 
 		python gcf52ref/scripts/extract_methylation_from_rocks.py \
 			-d base_mods.rocksdb \
-			-a gcf52ref.batch.${fast5_dir.baseName}.bam \
+			-a gcf52ref.batch.${fast5Untar.baseName}.bam \
 			-r ${referenceGenome} \
-			-o tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv
+			-o tmp.batch_${fast5Untar.baseName}.guppy.gcf52ref_per_read.tsv
 		echo "### gcf52ref extract to tsv done"
 
-		awk 'NR>1' tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv | gzip -f > \
-			${params.dsname}_guppy_gcf52ref_batch_${fast5_dir.baseName}.tsv.gz &&\
-			rm -f tmp.batch_${fast5_dir.baseName}.guppy.gcf52ref_per_read.tsv
+		awk 'NR>1' tmp.batch_${fast5Untar.baseName}.guppy.gcf52ref_per_read.tsv | gzip -f > \
+			${params.dsname}_guppy_gcf52ref_batch_${fast5Untar.baseName}.tsv.gz &&\
+			rm -f tmp.batch_${fast5Untar.baseName}.guppy.gcf52ref_per_read.tsv
 		echo "### gcf52ref extraction DONE"
 	fi
 
 	## fast5mod ways
-	FAST5PATH=${fast5_dir.baseName}.methcalled/workspace
-	OUTBAM=${params.dsname}_guppy_fast5mod_batch_${fast5_dir.baseName}_guppy2sam.bam
+	FAST5PATH=${fast5Untar.baseName}.methcalled/workspace
+	OUTBAM=${params.dsname}_guppy_fast5mod_batch_${fast5Untar.baseName}_guppy2sam.bam
 
 	fast5mod guppy2sam \${FAST5PATH} --reference ${referenceGenome} \
 		--workers ${samtools_cores}  --recursive --quiet \
@@ -1283,7 +1285,7 @@ process Guppy {
 	## Clean
 	## methcalled folder is no need, keep only gcf52ref's tsv and fast5mod's bam for combine step
 	if [[ ${params.cleanStep} == "true" ]]; then
-		rm -rf ${fast5_dir.baseName}.methcalled
+		rm -rf ${fast5Untar.baseName}.methcalled
 		rm -f gcf52ref.*.bam gcf52ref.*.bam.bai tmp*.tsv batch_combine_fq.fq.gz
 		rm -rf gcf52ref/
 		rm -rf base_mods.rocksdb/
@@ -1345,7 +1347,7 @@ process GuppyComb {
 	## find name like batch_*.guppy.fast5mod_guppy2sam.bam*
 	find . -maxdepth 1  -name '${params.dsname}_guppy_fast5mod_batch_*_guppy2sam.bam' |
 		parallel -j$task.cpus --xargs -v \
-		samtools merge -@${task.cpus * params.mediumProcTimes} \
+		samtools merge -@${samtools_cores} \
 		 	${params.dsname}_guppy_fast5mod_combine.bam {}
 
 	### sort is not needed due to merge the sorted bam, ref: http://www.htslib.org/doc/samtools-merge.html
@@ -2412,8 +2414,8 @@ process Phasing {
 					continue
 				fi
 
-				samtools sort \$infn3 -o \${infn3/.bam/.sort.bam} &&
-					samtools index \${infn3/.bam/.sort.bam} &&
+				samtools sort -@ ${task.cpus} \$infn3 -o \${infn3/.bam/.sort.bam} &&
+					samtools index -@ ${task.cpus} \${infn3/.bam/.sort.bam} &&
 					rm -f \${infn3} &&
 					touch \${infn3/.bam/.sort.bam}.DONE
 			done
@@ -2453,7 +2455,7 @@ workflow {
 	}
 
 	EnvCheck(genome_ch, ch_utils, rerioDir, deepsignalDir)
-	Untar(fast5_tar_ch)
+	Untar(inputCh)
 	if (params.runBasecall) {
 		Basecall(Untar.out.untar)
 		QCExport(Basecall.out.basecall.collect(), EnvCheck.out.reference_genome)
