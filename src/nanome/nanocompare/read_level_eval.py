@@ -531,7 +531,7 @@ def parse_arguments():
                         help="running prefix/output folder name, such as MethPerf-Dataset_WGBS_2Reps",
                         required=True)
     parser.add_argument('--calls', nargs='+',
-                        help='all ONT call results <tool-name>:<file-encode>:<file-name> seperated by space, tool-name/file-encode can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod, NANOME',
+                        help='all ONT call results <tool-name>:<file-encode>:<file-name>[<cutoff0>:<cutoff1>] seperated by space, tool-name/file-encode can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod, NANOME. The optional cutoff0 and cutoff1 can be specified if user wants to change default cutoff values, i.e., Nanpolish uses -2:2, Megalodon uses 0.2:0.8, etc..',
                         required=True)
     parser.add_argument('--bgtruth', type=str,
                         help="background truth file <encode-type>:<file-name1>;<file-name2>, encode-type can be 'encode' or 'bismark'",

@@ -1149,7 +1149,7 @@ def importPredictions_NANOME(infileName, readid_col=0, chr_col=1, start_col=2, m
         outf.close()
         logger.debug(f'Save {toolname} output format to {outfn}')
     logger.debug(
-        f"###\timportPredictions_{toolname} SUCCESS: rows={row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs (include + and -) from {infileName} file")
+        f"###\timportPredictions_{toolname} SUCCESS: rows={row_count:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-calls={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs (include + and -), with score_cutoff={score_cutoff} from {infileName} file")
     return cpgDict
 
 
