@@ -601,6 +601,35 @@ process Basecall {
 }
 
 
+// Align each basecalled outputs
+process Alignment {
+	tag "${basecallDir.baseName}"
+
+	input:
+	path 	basecallDir
+	path 	reference_genome
+
+	output:
+	path "${basecallDir.baseName}.alignment", 		optional:true,	emit: alignment
+
+	script:
+	cores = task.cpus * params.mediumProcTimes
+	"""
+	mkdir -p "${basecallDir.baseName}.alignment"
+
+	## After basecall, we align results to merged, sorted bam, can be for ONT coverage analyses/output bam
+	# align FASTQ files to reference genome, write sorted alignments to a BAM file
+	minimap2 -t ${cores} -a  -x map-ont \
+		${referenceGenome} \
+		${basecallDir}/batch_basecall_combine_fq_*.fq.gz | \
+		samtools sort -@ ${cores} -T tmp -o \
+			${basecallDir.baseName}.alignment/${basecallDir.baseName}_bam.bam &&\
+		samtools index -@ ${cores}  ${basecallDir.baseName}.alignment/${basecallDir.baseName}_bam.bam
+	echo "### Samtools alignment DONE"
+	"""
+}
+
+
 // Collect and output QC results for basecall, and report ONT coverage
 process QCExport {
 	tag "${params.dsname}"
@@ -609,7 +638,8 @@ process QCExport {
 		mode: "copy", enabled: params.outputQC, overwrite: true
 
 	input:
-	path qc_basecall_list
+	path basecall_list
+	path alignment_list
 	path reference_genome
 
 	output:
@@ -645,20 +675,10 @@ process QCExport {
 	fi
 
 	if [[ ${params.outputBam} == true  || ${params.outputONTCoverage} == true || ${params.phasing} == true ]]; then
-		## Combine all batch fq.gz
-		> merge_all_fq.fq.gz
-		cat *.basecall/batch_basecall_combine_fq_*.fq.gz > merge_all_fq.fq.gz
-		echo "### Fastq merge from all batches done!"
-
-		## After basecall, we align results to merged, sorted bam, can be for ONT coverage analyses/output bam
-		# align FASTQ files to reference genome, write sorted alignments to a BAM file
-		minimap2 -t ${samtools_cores} -a  -x map-ont \
-			${referenceGenome} \
-			merge_all_fq.fq.gz | \
-			samtools sort -@ ${samtools_cores} -T tmp -o \
-				${params.dsname}_merge_all_bam.bam &&\
-			samtools index -@ ${samtools_cores}  ${params.dsname}_merge_all_bam.bam
-		echo "### Samtools alignment done"
+		## Combine all bam files
+		samtools merge -@ ${samtools_cores}  ${params.dsname}_merge_all_bam.bam  *.alignment/*_bam.bam  &&\
+			samtools index -@ ${samtools_cores}   ${params.dsname}_merge_all_bam.bam
+		echo "### Samtools merge done"
 	fi
 
 	if [[ ${params.outputONTCoverage} == true ]]; then
@@ -2458,7 +2478,10 @@ workflow {
 	Untar(inputCh)
 	if (params.runBasecall) {
 		Basecall(Untar.out.untar)
-		QCExport(Basecall.out.basecall.collect(), EnvCheck.out.reference_genome)
+		Alignment(Basecall.out.basecall, EnvCheck.out.reference_genome)
+		QCExport(Basecall.out.basecall.collect(),
+					Alignment.out.alignment.collect(),
+					EnvCheck.out.reference_genome)
 	}
 
 	// Resquiggle running if use Tombo or DeepSignal

@@ -558,7 +558,7 @@ if __name__ == '__main__':
             callfn, callencode, baseFormat=baseFormat, filterChr=args.chrSet,
             enable_cache=enable_cache, using_cache=using_cache,
             include_score=False, siteLevel=True, cache_dir=ds_cache_dir,
-            toolname=toolname, score_cutoff=score_cutoff)
+            toolname=toolname, raw_cutoff=score_cutoff)
 
         # Stats the total cpgs and calls for each calls
         cnt_calls = 0

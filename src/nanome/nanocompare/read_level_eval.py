@@ -334,7 +334,7 @@ def import_ont_calls_for_read_level(toolname, call_encode, callfn, score_cutoff,
     ## ont_call0 is raw ont-calls, too large, it will be cut to only with bs-seq, named ont_call1
     ont_call0 = import_call(callfn, call_encode, baseFormat=baseFormat, include_score=True, siteLevel=False,
                             filterChr=args.chrSet, using_cache=using_cache, enable_cache=enable_cache,
-                            cache_dir=ds_cache_dir, toolname=toolname, score_cutoff=score_cutoff)
+                            cache_dir=ds_cache_dir, toolname=toolname, raw_cutoff=score_cutoff)
     sites_summary = {'Dataset': dsname,
                      'Method': toolname,
                      'Sites': len(ont_call0),

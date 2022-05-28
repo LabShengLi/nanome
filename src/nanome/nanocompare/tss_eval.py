@@ -27,7 +27,7 @@ def import_and_save_read_level(callfn, callencode, score_cutoff, outfn):
     """
     import_call(callfn, callencode, baseFormat=1, filterChr=args.chrSet,
                 include_score=False, siteLevel=False, save_unified_format=True, outfn=outfn,
-                enable_cache=False, using_cache=False, score_cutoff=score_cutoff)
+                enable_cache=False, using_cache=False, raw_cutoff=score_cutoff)
 
 
 def output_calldict_to_unified_bed_as_0base(dictCalls, outfn, sep='\t'):
@@ -65,7 +65,7 @@ def import_and_save_site_level(callfn, callname, callencode, score_cutoff, minTo
     """
     ontCall = import_call(callfn, callencode, baseFormat=baseFormat,
                           enable_cache=enable_cache,
-                          score_cutoff=score_cutoff,
+                          raw_cutoff=score_cutoff,
                           using_cache=using_cache, include_score=False,
                           siteLevel=True, filterChr=args.chrSet,
                           cache_dir=ds_cache_dir)
