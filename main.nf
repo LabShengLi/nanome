@@ -534,7 +534,8 @@ process Basecall {
 	path fast5Untar
 
 	output:
-	path "${fast5Untar.baseName}.basecall", 	emit: basecall
+	path "${fast5Untar.baseName}.basecall", optional:true,	emit: basecall
+	tuple val(fast5Untar.baseName), path ("${fast5Untar.baseName}.basecall"),	optional:true,  emit: basecall_tuple  // must use Name value, not file var, or will failed for B
 
 	when:
 	params.runBasecall
@@ -611,6 +612,7 @@ process Alignment {
 
 	output:
 	path "${basecallDir.baseName}.alignment", 		optional:true,	emit: alignment
+	tuple val(basecallDir.baseName), path ("${basecallDir.baseName}.alignment"),	optional:true,		emit: alignment_tuple
 
 	script:
 	cores = task.cpus * params.mediumProcTimes
@@ -798,7 +800,8 @@ process Nanopolish {
 		enabled: params.outputIntermediate
 
 	input:
-	path basecallDir
+	// path basecallDir
+	tuple val(id), path (basecallDir), path(alignmentDir)
 	each path(reference_genome)
 
 	output:
@@ -813,7 +816,8 @@ process Nanopolish {
 
 	"""
 	## Put all fq and bam files into working dir, DO NOT affect the basecall dir
-	bamFileName="${params.dsname}.batch_${basecallDir.baseName}.sorted.bam"
+	## bamFileName="${params.dsname}.batch_${basecallDir.baseName}.sorted.bam"
+	bamFileName=\$(find ${alignmentDir}/ -name "*_bam.bam")
 
 	## Do alignment firstly, find the combined fastq file
 	fastqFile=\$(find ${basecallDir}/ -name 'batch_basecall_combine_fq_*.fq.gz' -type f)
@@ -824,12 +828,6 @@ process Nanopolish {
 	nanopolish index -d ${basecallDir}/workspace \
 		-s ${basecallDir}/${basecallDir.baseName}-sequencing_summary.txt \
 		\${fastqFile##*/}
-
-	## Aligning reads to the reference genome, ref: https://nanopolish.readthedocs.io/en/latest/quickstart_call_methylation.html#aligning-reads-to-the-reference-genome
-	minimap2 -t ${samtools_cores}  -a -x map-ont ${referenceGenome} \${fastqFile##*/} | \
-		samtools sort -@ ${samtools_cores} -T tmp -o \${bamFileName} &&\
-		samtools index -@ ${samtools_cores}  \${bamFileName}
-	echo "### Alignment step: minimap2 and samtools DONE"
 
 	## Calling methylation, ref: https://nanopolish.readthedocs.io/en/latest/quickstart_call_methylation.html#calling-methylation
 	## there are segment fault issues, if set -t to a large number or use low memory,
@@ -2490,7 +2488,7 @@ workflow {
 	}
 
 	if (params.runNanopolish && params.runMethcall) {
-		Nanopolish(Basecall.out.basecall, EnvCheck.out.reference_genome)
+		Nanopolish(Basecall.out.basecall_tuple.join(Alignment.out.alignment_tuple), EnvCheck.out.reference_genome)
 		comb_nanopolish = NplshComb(Nanopolish.out.nanopolish_tsv.collect(), ch_src, ch_utils)
 		s1 = comb_nanopolish.site_unify
 		r1 = comb_nanopolish.read_unify
