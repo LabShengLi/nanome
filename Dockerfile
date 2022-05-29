@@ -14,8 +14,8 @@ LABEL description="Nanome project in Li Lab at The Jackson Laboratory" \
       author="yang.liu@jax.org"
 
 # Guppy version
-ARG GUPPY_VERSION=6.1.3
-ARG REMORA_VERSION=1.0.0
+ARG GUPPY_VERSION=6.1.5
+ARG REMORA_VERSION=1.1.0
 ARG MEGALODON_VERSION=2.5.0
 ARG BUILD_PACKAGES="wget apt-transport-https procps git curl libnvidia-compute-460-server"
 ARG DEBIAN_FRONTEND="noninteractive"
