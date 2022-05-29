@@ -2112,7 +2112,7 @@ process Report {
 			echo "### NANOME XGBoost predictions"
 
 			## 0.23.2 version work both for NANOME>=0.23.2 and METEORE<=0.23.2
-			pip install -U scikit-learn==0.23.2
+			## pip install -U scikit-learn==0.23.2
 
 			pip show scikit-learn
 			PYTHONPATH=src python src/nanome/xgboost/xgboost_predict.py \
