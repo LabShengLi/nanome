@@ -86,7 +86,7 @@ def parse_arguments():
     parser.add_argument('--runid', type=str, help="running prefix/output dir name", required=True)
     parser.add_argument('--calls', nargs='+',
                         help='all ONT call results <tool-name>:<encode>:<file-name> seperated by spaces',
-                        required=True)
+                        default=None)
     parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name2>",
                         default=None)
     parser.add_argument('--read-level-format',
@@ -148,6 +148,9 @@ if __name__ == '__main__':
     if args.read_level_format:
         ## Output read-level unified format with 1-based start for ONT tools
         logger.info(f"We are outputing each tool's unified results for read-level, same as METEORE format")
+        if args.calls is None:
+            logger.info(f"Found no --calls, exit")
+            sys.exit(0)
         input_list = []
         outfn_list = []
         for callstr in args.calls:
@@ -184,7 +187,7 @@ if __name__ == '__main__':
             input_params_list = []
             for infn in outfn_list:
                 outfn = infn.replace('-perRead-score.tsv.gz', '-perRead-score.sort.tsv.gz')
-                input_params_list.append((infn, outfn, args.deduplicate,))
+                input_params_list.append((infn, outfn, "", args.deduplicate,))
             with Pool(args.processors) as p:
                 p.starmap(sort_per_read_tsv_file, input_params_list)
             for infn in outfn_list:
@@ -230,7 +233,7 @@ if __name__ == '__main__':
             logger.debug(f"Start to sort bsseq site level outputs")
             ## Sort bed file
             sort_outfn = os.path.join(out_dir, f'{args.dsname}_BSseq-perSite-cov{bs_cov_cutoff}.sort.bed.gz')
-            sort_bed_file(outfn, sort_outfn, args.deduplicate)
+            sort_bed_file(outfn, sort_outfn, False, args.deduplicate)
             os.remove(outfn)
 
         # Clean up bgTruth, not used anymore
@@ -241,6 +244,14 @@ if __name__ == '__main__':
 
     logger.debug("We are outputing bed CpG results for each tool")
 
+    ## Convert unified sites format for all tools
+
+    if args.calls is None:
+        logger.info(f"No need for ont tools' conversion to site-level unified format")
+        save_done_file(out_dir)
+        logger.info(f"Memory report: {get_current_memory_usage()}")
+        logger.info("### TSS unified format generation DONE")
+        sys.exit(0)
     # callname -> # of sites
     ontcall_tools_dict = dict()
 
@@ -282,7 +293,7 @@ if __name__ == '__main__':
         in_params_list = []
         for outfn in outfn_list:
             sort_outfn = outfn.replace(f'cov{tool_cov_cutoff}.bed.gz', f'cov{tool_cov_cutoff}.sort.bed.gz')
-            in_params_list.append((outfn, sort_outfn, args.deduplicate,))
+            in_params_list.append((outfn, sort_outfn, False, args.deduplicate,))
 
         with Pool(args.processors) as p:
             p.starmap(sort_bed_file, in_params_list)
