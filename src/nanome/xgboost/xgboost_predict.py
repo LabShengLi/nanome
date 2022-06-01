@@ -117,20 +117,30 @@ if __name__ == '__main__':
     except:
         logger.debug(f"WARNING: print params encounter problem")
 
+    ## Infer tool list if possible
+    if args.t is not None:
+        tool_list = list(args.t)
+    else:
+        if args.m in nanome_model_tool_list_dict:
+            tool_list = nanome_model_tool_list_dict[args.m]
+        else:
+            raise Exception(f"Can not find tool list for your model={args.m}, please specify -t params.")
+    logger.info(f"tool_list={tool_list}")
+
     if args.tsv_input:
         if len(args.i) != 1:
             raise Exception(f"Not support args.i={args.i}, in tsv_input mode")
         df_tsvfile = pd.read_csv(args.i[0], header=None, sep='\t')
-        tool_list = list(df_tsvfile[0])
+        # tool_list = list(df_tsvfile[0])
         dflist = []
         for index, row in tqdm(df_tsvfile.iterrows()):
             if row[1] in ['None', 'NA', 'NULL']:
                 empty_frame = {'Chr': pd.Series(dtype='str'), "ID": pd.Series(dtype='str'),
                                "Pos": pd.Series(dtype='int'), "Strand": pd.Series(dtype='str'),
-                               row[0]: pd.Series(dtype='float')}
+                               row[0].lower(): pd.Series(dtype='float')}
                 df = pd.DataFrame(empty_frame)
             else:
-                df = load_tool_read_level_unified_as_df(row[1], toolname=row[0], filterChrSet=args.chrs,
+                df = load_tool_read_level_unified_as_df(row[1], toolname=row[0], filterChrSet=set(args.chrs) if args.chrs is not None else None,
                                                         chunksize=args.chunksize)
             # logger.debug(f"df={df}, df_type={df.info()}")
             dflist.append(df)
@@ -153,16 +163,17 @@ if __name__ == '__main__':
             logger.info(f"make no predictions")
             logger.error(f"The combined results are empty, for tool_list={tool_list}, fn_list={df_tsvfile[1]}")
             sys.exit(0)
-
-        logger.debug(f"tool_list={tool_list}")
         logger.debug(f"datadf={datadf}")
-    else:  # combined input as default input
+    else:  # combined joined preds db as input
         dflist = []
         for infn in tqdm(args.i):
             if args.chrs is not None and len(args.chrs) >= 1:
                 iter_df = pd.read_csv(infn, header=0, index_col=False, sep=",", iterator=True,
                                       chunksize=args.chunksize)
-                datadf1 = pd.concat([chunk[chunk['Chr'].isin(args.chrs)] for chunk in iter_df])
+                if args.chrs is not None:
+                    datadf1 = pd.concat([chunk[chunk['Chr'].isin(set(args.chrs))] for chunk in iter_df])
+                else:
+                    datadf1 = pd.concat([chunk for chunk in iter_df])
             else:
                 datadf1 = pd.read_csv(infn, header=0, sep=',', index_col=False)
             if not args.contain_na:  ## remove any NAs
@@ -173,13 +184,6 @@ if __name__ == '__main__':
             dflist.append(datadf1)
         datadf = pd.concat(dflist)
 
-        if args.t is not None:
-            tool_list = list(args.t)
-        else:
-            if args.m in nanome_model_tool_list_dict:
-                tool_list = nanome_model_tool_list_dict[args.m]
-            else:
-                raise Exception(f"Can not find tool list for your model={args.m}, please specify -t params.")
         datadf = datadf[list(datadf.columns[0:4]) + tool_list]
         datadf.drop_duplicates(subset=READS_COLUMN_LIST, inplace=True)
         logger.debug(f"tool_list={tool_list}")

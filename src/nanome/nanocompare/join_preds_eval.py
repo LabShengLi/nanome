@@ -579,6 +579,8 @@ if __name__ == '__main__':
     callDict = {}
     for callStr in args.calls:
         toolName, toolFile = callStr.strip().split(':')
+        if len(toolFile.strip()) < 1:
+            continue
         callDict[toolName.lower()] = toolFile
     cutoffDict = {}
     for ind, toolName in enumerate(callDict.keys()):
