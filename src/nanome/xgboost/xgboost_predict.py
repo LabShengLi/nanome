@@ -63,6 +63,54 @@ class _GetchWindows:
         return msvcrt.getch()
 
 
+def xgb_pred(datadf, model, tool_list, outfn, reads_column_list=READS_COLUMN_LIST, header=True, mode='w',
+             interactive=False):
+    """
+    Make xgboost prediction on DF
+    Args:
+        datadf:
+        model:
+        tool_list:
+        outfn:
+        reads_column_list:
+        header:
+        mode:
+        interactive:
+
+    Returns:
+
+    """
+    predX = datadf.loc[:, tool_list].astype(float)
+    prediction = pd.DataFrame(xgboost_cls.predict(predX))
+    prediction.rename(columns={0: "Prediction"}, inplace=True)
+
+    prediction_prob = pd.DataFrame(model.predict_proba(predX))[[1]]
+    prediction_prob.rename(columns={1: "Prob_methylation"}, inplace=True)
+
+    outdf = pd.concat([datadf, prediction, prediction_prob], axis=1)
+    outdf = outdf[reads_column_list + tool_list + ["Prediction", "Prob_methylation"]]
+    logger.debug(f"outdf={outdf}")
+
+    outdf.to_csv(outfn, sep='\t', index=False, header=header, mode=mode)
+    logger.info(f"make predictions:{len(outdf):,}")
+    logger.info(f"save to {outfn}")
+
+    if interactive:
+        ## Get single character from input keyboard
+        getch = _Getch()
+
+        print("\n\nNow you are in interactive mode to check inference, use key q/Q to quit, any other key to continue")
+        outdf['LLR'] = outdf['Prob_methylation'].apply(prob_to_llr_2)
+        print('\t'.join(list(outdf.columns)))
+        for index, row in outdf.iterrows():
+            row_str_list = [str(k) for k in row]
+            print('\t'.join(row_str_list))
+            value = getch()
+            if value.lower() == 'q':
+                break
+    logger.info(f"### Done for model:{args.m} predict")
+
+
 def parse_arguments():
     parser = argparse.ArgumentParser(prog='xgboost_predict (NANOME)', description='XGBoost predict for data')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
@@ -82,7 +130,7 @@ def parse_arguments():
                         help='num of processors, default is 8')
     parser.add_argument('--chunksize', type=int, default=CHUNKSIZE,
                         help=f'chunk size for load large data, default is {CHUNKSIZE}')
-    parser.add_argument('--contain-na', help="if make prediction on NA values", action='store_true')
+    parser.add_argument('--dropna', help="if drop NA values before prediction", action='store_true')
     parser.add_argument('--tsv-input', help="if input is tsv for tools' read-level format, or else is combined input",
                         action='store_true')
     parser.add_argument('--chrs', nargs='+', help='chromosomes used', default=None)
@@ -119,10 +167,11 @@ if __name__ == '__main__':
 
     ## Infer tool list if possible
     if args.t is not None:
-        tool_list = list(args.t)
+        tool_list = list([tool.lower() for tool in args.t])
     else:
         if args.m in nanome_model_tool_list_dict:
             tool_list = nanome_model_tool_list_dict[args.m]
+            logger.debug(f"Load tool list from default config")
         else:
             raise Exception(f"Can not find tool list for your model={args.m}, please specify -t params.")
     logger.info(f"tool_list={tool_list}")
@@ -131,7 +180,6 @@ if __name__ == '__main__':
         if len(args.i) != 1:
             raise Exception(f"Not support args.i={args.i}, in tsv_input mode")
         df_tsvfile = pd.read_csv(args.i[0], header=None, sep='\t')
-        # tool_list = list(df_tsvfile[0])
         dflist = []
         for index, row in tqdm(df_tsvfile.iterrows()):
             if row[1] in ['None', 'NA', 'NULL']:
@@ -140,30 +188,36 @@ if __name__ == '__main__':
                                row[0].lower(): pd.Series(dtype='float')}
                 df = pd.DataFrame(empty_frame)
             else:
-                df = load_tool_read_level_unified_as_df(row[1], toolname=row[0], filterChrSet=set(args.chrs) if args.chrs is not None else None,
+                df = load_tool_read_level_unified_as_df(row[1], toolname=row[0],
+                                                        filterChrSet=set(args.chrs) if args.chrs is not None else None,
                                                         chunksize=args.chunksize)
             # logger.debug(f"df={df}, df_type={df.info()}")
             dflist.append(df)
-        if args.contain_na:
-            datadf = reduce(
-                lambda left, right: pd.merge(left, right, how='outer', on=["ID", "Chr", "Pos", "Strand"]),
-                dflist)
-        else:
+        if args.dropna:
             datadf = reduce(
                 lambda left, right: pd.merge(left, right, how='inner', on=["ID", "Chr", "Pos", "Strand"]),
                 dflist)
+            # drop na for any tools are NAs
+            datadf.dropna(subset=tool_list, inplace=True)
+        else:
+            datadf = reduce(
+                lambda left, right: pd.merge(left, right, how='outer', on=["ID", "Chr", "Pos", "Strand"]),
+                dflist)
+            # drop na for all tools are NAs
+            datadf.dropna(subset=tool_list, inplace=True, how='all')
+
         # release memory
         dflist = None
         datadf.drop_duplicates(subset=["ID", "Chr", "Pos", "Strand"], inplace=True)
         if len(datadf) <= 0:
+            ## Build empty outputs with header only
             key_list = ['Chr', "ID", "Pos", "Strand"] + tool_list + ['Prediction', 'Prob_methylation']
             empty_frame = {keystr: [] for keystr in key_list}
             outdf = pd.DataFrame(empty_frame)
             outdf.to_csv(args.o, sep='\t', index=False)
             logger.info(f"make no predictions")
-            logger.error(f"The combined results are empty, for tool_list={tool_list}, fn_list={df_tsvfile[1]}")
+            logger.warn(f"The combined results are empty, for tool_list={tool_list}, fn_list={df_tsvfile[1]}")
             sys.exit(0)
-        logger.debug(f"datadf={datadf}")
     else:  # combined joined preds db as input
         dflist = []
         for infn in tqdm(args.i):
@@ -176,36 +230,38 @@ if __name__ == '__main__':
                     datadf1 = pd.concat([chunk for chunk in iter_df])
             else:
                 datadf1 = pd.read_csv(infn, header=0, sep=',', index_col=False)
-            if not args.contain_na:  ## remove any NAs
-                datadf1.dropna(subset=args.t, inplace=True)
+
+            if args.dropna:  ## remove any NAs
+                datadf1.dropna(subset=tool_list, inplace=True)
             else:
-                datadf1.dropna(subset=args.t, inplace=True, how='all')
+                datadf1.dropna(subset=tool_list, inplace=True, how='all')
             datadf1.drop_duplicates(subset=READS_COLUMN_LIST, inplace=True)
             dflist.append(datadf1)
         datadf = pd.concat(dflist)
 
         datadf = datadf[list(datadf.columns[0:4]) + tool_list]
         datadf.drop_duplicates(subset=READS_COLUMN_LIST, inplace=True)
-        logger.debug(f"tool_list={tool_list}")
-        logger.debug(f"datadf={datadf}")
 
-    if datadf is not None:
-        datadf.reset_index(inplace=True, drop=True)
-    else:
+    logger.debug(f"datadf={datadf}")
+
+    if datadf is None:
         raise Exception(f"datadf can not be None")
+    elif len(datadf) < 1:
+        empty_df = pd.DataFrame(columns=[READS_COLUMN_LIST + tool_list + ["Prediction", "Prob_methylation"]])
+        empty_df.to_csv(args.o, sep='\t', index=False, header=True)
+        logger.info(f"Save empty DF, due to empty datadf={datadf}")
+        sys.exit(0)
+    else:
+        datadf.reset_index(inplace=True, drop=True)
 
     if args.m in nanome_model_tool_list_dict:
-        # Check if model's tool is in
-        nanome_model_tool_list = nanome_model_tool_list_dict[args.m]
-        logger.info(f"XGBoost model {args.m} use tool order: nanome_model_tool_list={nanome_model_tool_list}")
-        for t1 in nanome_model_tool_list:
-            if t1 not in tool_list:
-                raise Exception(
-                    f"Input tool file not contain {t1}, tool_list={tool_list}, nanome_model_tool_list={nanome_model_tool_list}")
+        # Check if model's tool is in default tool list
+        default_tool_list = nanome_model_tool_list_dict[args.m]
         # Rearrange tool column as model used order, remove unused order
-        datadf = datadf[READS_COLUMN_LIST + nanome_model_tool_list]
+        datadf = datadf[READS_COLUMN_LIST + default_tool_list]
         # Update tool_list to model's input tool list
-        tool_list = nanome_model_tool_list
+        tool_list = default_tool_list
+        logger.info(f"Rearranged DF by default tool_list={tool_list}")
     else:
         # The order will be ensured by user
         logger.info(
@@ -221,32 +277,5 @@ if __name__ == '__main__':
     sitedf = None
 
     logger.debug(f"Start predict by XGBoost......")
-    predX = datadf.loc[:, tool_list].astype(float)
-    prediction = pd.DataFrame(xgboost_cls.predict(predX))
-    prediction.rename(columns={0: "Prediction"}, inplace=True)
-
-    prediction_prob = pd.DataFrame(xgboost_cls.predict_proba(predX))[[1]]
-    prediction_prob.rename(columns={1: "Prob_methylation"}, inplace=True)
-
-    nanome_df = pd.concat([datadf, prediction, prediction_prob], axis=1)
-    nanome_df = nanome_df[READS_COLUMN_LIST + tool_list + ["Prediction", "Prob_methylation"]]
-    logger.debug(f"nanome_df={nanome_df}")
-
-    nanome_df.to_csv(args.o, sep='\t', index=False)
-    logger.info(f"make predictions:{len(nanome_df):,}")
-    logger.info(f"save to {args.o}")
-
-    if args.interactive:
-        ## Get single character from input keyboard
-        getch = _Getch()
-
-        print("\n\nNow you are in interactive mode to check inference, use key q/Q to quit, any other key to continue")
-        nanome_df['LLR'] = nanome_df['Prob_methylation'].apply(prob_to_llr_2)
-        print('\t'.join(list(nanome_df.columns)))
-        for index, row in nanome_df.iterrows():
-            row_str_list = [str(k) for k in row]
-            print('\t'.join(row_str_list))
-            value = getch()
-            if value.lower() == 'q':
-                break
+    xgb_pred(datadf, xgboost_cls, tool_list, args.o, interactive=args.interactive)
     logger.info(f"### Done for model:{args.m} predict")

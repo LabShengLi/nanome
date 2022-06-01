@@ -2116,11 +2116,11 @@ process Report {
 
 			pip show scikit-learn
 			PYTHONPATH=src python src/nanome/xgboost/xgboost_predict.py \
-				--contain-na --tsv-input\
+				--tsv-input\
 				--dsname ${params.dsname} -i \${modelContentTSVFileName}\
 				-m ${params.NANOME_MODEL}  \
 				-o ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz \
-				&>> ${params.dsname}.Report.run.log  || true
+				&>> ${params.dsname}.Report.run.log
 
 			if [[ ${params.deduplicate} == true ]] ; then
 				echo "### Deduplicate for read-level outputs"
