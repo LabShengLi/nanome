@@ -36,7 +36,7 @@ from tqdm import tqdm
 
 from nanome.common.global_config import *
 from nanome.common.global_settings import HUMAN_CHR_SET, ToolEncodeList, BGTruthEncodeList, reference_genome_hg38_fn, \
-    enable_base_detection_bedfile, region_filename_dict, genome_wide_tagname, EPSLONG, CHUNKSIZE, RAW_CUTOFF_BY_TOOLS, \
+    enable_base_detection_bedfile, region_filename_dict, genome_wide_tagname, EPSLONG, CHUNKSIZE, DEFAULT_RAW_CUTOFF_BY_TOOLS, \
     prob_to_llr2
 
 
@@ -65,8 +65,8 @@ def importPredictions_Nanopolish(infileName, chr_col=0, start_col=2, strand_col=
     https://github.com/jts/nanopolish/blob/master/scripts/calculate_methylation_frequency.py
     """
     filterChr = set(filterChr)
-    if raw_cutoff is None and 'nanopolish' in RAW_CUTOFF_BY_TOOLS:
-        raw_cutoff = RAW_CUTOFF_BY_TOOLS['nanopolish']
+    if raw_cutoff is None and 'nanopolish' in DEFAULT_RAW_CUTOFF_BY_TOOLS:
+        raw_cutoff = DEFAULT_RAW_CUTOFF_BY_TOOLS['nanopolish']
         llr_cutoff = abs(raw_cutoff[1])
     else:
         llr_cutoff = 0.0
@@ -231,8 +231,8 @@ def importPredictions_DeepSignal(infileName, chr_col=0, start_col=1, strand_col=
     ** by default if this probability will be higher than > 0.5, DeepSignal will tell that this is methylated site, or else is unmethylated
     """
     filterChr = set(filterChr)
-    if raw_cutoff is None and 'deepsignal' in RAW_CUTOFF_BY_TOOLS:
-        raw_cutoff = RAW_CUTOFF_BY_TOOLS['deepsignal']
+    if raw_cutoff is None and 'deepsignal' in DEFAULT_RAW_CUTOFF_BY_TOOLS:
+        raw_cutoff = DEFAULT_RAW_CUTOFF_BY_TOOLS['deepsignal']
 
     infile, lines = open_file_gz_or_txt(infileName)
 
@@ -331,8 +331,8 @@ def importPredictions_Tombo(infileName, chr_col=0, start_col=1, readid_col=3, st
     ============
     """
     filterChr = set(filterChr)
-    if raw_cutoff is None and 'tombo' in RAW_CUTOFF_BY_TOOLS:
-        raw_cutoff = RAW_CUTOFF_BY_TOOLS['tombo']
+    if raw_cutoff is None and 'tombo' in DEFAULT_RAW_CUTOFF_BY_TOOLS:
+        raw_cutoff = DEFAULT_RAW_CUTOFF_BY_TOOLS['tombo']
     infile, lines = open_file_gz_or_txt(infileName)
 
     if save_unified_format:
@@ -1098,8 +1098,8 @@ def importPredictions_NANOME(infileName, readid_col=0, chr_col=1, start_col=2, m
     abcc33b7-2895-4e0e-830c-3d0ed441760d	chr1	104243	0	0.3042032634832675	-
     """
     filterChr = set(filterChr)
-    if raw_cutoff is None and toolname.lower() in RAW_CUTOFF_BY_TOOLS:  # default is no cutoff, for probability
-        raw_cutoff = RAW_CUTOFF_BY_TOOLS[toolname.lower()]
+    if raw_cutoff is None and toolname.lower() in DEFAULT_RAW_CUTOFF_BY_TOOLS:  # default is no cutoff, for probability
+        raw_cutoff = DEFAULT_RAW_CUTOFF_BY_TOOLS[toolname.lower()]
 
     infile, lines = open_file_gz_or_txt(infileName)
 

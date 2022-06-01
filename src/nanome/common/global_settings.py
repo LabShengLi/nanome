@@ -42,13 +42,6 @@ ToolEncodeList = ['Nanopolish', 'Megalodon', 'Megalodon.ZW', 'DeepSignal',
                   'METEORE', 'DeepMod', 'DeepMod.C', 'DeepMod.Cluster',
                   'NANOME', 'UNIREAD', 'UNISITE']
 
-# default cutoff settings for tools' raw input
-RAW_CUTOFF_BY_TOOLS = {
-    'nanopolish': (-2.0, 2.0),  # LLR
-    'megalodon': (0.2, 0.8),  # prob
-    'tombo': (-1.5, 2.5),  # LLR, <-1.5 is meth, >2.5 is unmeth
-}
-
 # format for bs-seq
 BGTruthEncodeList = ['bismark', 'encode', 'UNISITE']
 
@@ -191,6 +184,23 @@ def llr2_to_prob(llr):
 
     """
     return 1 / (1 + math.pow(2, -llr))
+
+
+# default cutoff settings for tools' raw input
+DEFAULT_RAW_CUTOFF_BY_TOOLS = {
+    'nanopolish': (-2.0, 2.0),  # LLR
+    'megalodon': (0.2, 0.8),  # prob
+    'tombo': (-1.5, 2.5),  # LLR, <-1.5 is meth, >2.5 is unmeth
+}
+
+DEFAULT_SCORE_CUTOFF_MEGALODON = prob_to_llre(0.8)
+DEFAULT_SCORE_CUTOFF_NANOPOLISH = 2.0
+
+# default cutoff settings for tools' unified score (LLR), None means 0.0, no-cutoff
+DEFAULT_SCORE_CUTOFF_BY_TOOLS = {
+    'nanopolish': DEFAULT_SCORE_CUTOFF_NANOPOLISH,
+    'megalodon': DEFAULT_SCORE_CUTOFF_MEGALODON,
+}
 
 
 def save_done_file(outdir, filename=None):

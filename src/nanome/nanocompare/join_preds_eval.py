@@ -19,46 +19,13 @@ from sklearn.metrics import accuracy_score, roc_auc_score, mean_squared_error
 
 from nanome.common.eval_common import *
 from nanome.common.global_settings import NANOME_VERSION, save_done_file, \
-    region_filename_dict
+    region_filename_dict, DEFAULT_SCORE_CUTOFF_BY_TOOLS
 
 SITE_COLUMNS = ['Chr', 'Pos', 'Strand']
 READ_COLUMNS = ['ID'] + SITE_COLUMNS
 
-DTYPE = {'ID': str, 'Chr': str, 'Pos': int, 'Strand': str,
+DTYPE_BASIC_DF = {'ID': str, 'Chr': str, 'Pos': int, 'Strand': str,
          'Freq': float, 'Coverage': int}
-
-
-def prob_to_llr_2(meth_prob):
-    """
-    METEORE, NANOME manner
-    Args:
-        meth_prob:
-
-    Returns:
-
-    """
-    return math.log2((meth_prob + EPSLONG) / (1 - meth_prob + EPSLONG))
-
-
-def prob_to_llr_e(meth_prob):
-    """
-    Megalodon manner:
-    prob_to_llr_2(0.8)
-    1.999945900626566
-    prob_to_llr_e(0.8)
-    1.3862568622917248
-
-    Args:
-        meth_prob:
-
-    Returns:
-
-    """
-    return math.log((meth_prob + EPSLONG) / (1 - meth_prob + EPSLONG))
-
-
-DEFAULT_CUTOFF_MEGALODON = prob_to_llr_e(0.8)
-DEFAULT_CUTOFF_NANOPOLISH = 2
 
 
 def update_progress_bar_join_preds_eval(*a):
@@ -567,6 +534,7 @@ if __name__ == '__main__':
         set_log_info_level()
 
     logger.debug(f"args={args}")
+    global progress_bar_global_join_preds
 
     out_dir = os.path.join(args.o, args.runid)
     os.makedirs(out_dir, exist_ok=True)
@@ -588,16 +556,12 @@ if __name__ == '__main__':
         if args.score_cutoff is not None and ind < len(args.score_cutoff):  # preset cutoff
             cutoffDict[toolName] = args.score_cutoff[ind]
         else:  # default values
-            if toolName.lower() == 'nanopolish':
-                cutoffDict[toolName] = DEFAULT_CUTOFF_NANOPOLISH
-            elif toolName.lower() == 'megalodon':
-                cutoffDict[toolName] = DEFAULT_CUTOFF_MEGALODON
+            if toolName in DEFAULT_SCORE_CUTOFF_BY_TOOLS:
+                cutoffDict[toolName] = DEFAULT_SCORE_CUTOFF_BY_TOOLS[toolName]
             else:
                 # means no cutoff
                 cutoffDict[toolName] = 0.0
     logger.info(f"callDict={callDict}, cutoffDict={cutoffDict}")
-
-    global progress_bar_global_join_preds
 
     if args.join_preds:
         logger.info("Join preds of bs-seq with tool, take times...")
@@ -644,7 +608,7 @@ if __name__ == '__main__':
             f"Assume you have generated all joined preds db at:{out_dir} or {args.dbdir}, make sure this is correct if you skip make predictions joined db by --skip-join-preds.")
 
     ## Step 2: read level eval on joined preds
-    new_dtype = dict(DTYPE)
+    new_dtype = dict(DTYPE_BASIC_DF)
     for toolName in callDict:
         new_dtype.update({toolName: float})
     logger.debug(f"new_dtype={new_dtype}")
