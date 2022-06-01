@@ -211,11 +211,11 @@ if __name__ == '__main__':
         datadf.drop_duplicates(subset=["ID", "Chr", "Pos", "Strand"], inplace=True)
         if len(datadf) <= 0:
             ## Build empty outputs with header only
-            key_list = ['Chr', "ID", "Pos", "Strand"] + tool_list + ['Prediction', 'Prob_methylation']
+            key_list = READS_COLUMN_LIST + tool_list + ['Prediction', 'Prob_methylation']
             empty_frame = {keystr: [] for keystr in key_list}
             outdf = pd.DataFrame(empty_frame)
             outdf.to_csv(args.o, sep='\t', index=False)
-            logger.info(f"make no predictions")
+            logger.info(f"make no predictions!!!")
             logger.warn(f"The combined results are empty, for tool_list={tool_list}, fn_list={df_tsvfile[1]}")
             sys.exit(0)
     else:  # combined joined preds db as input
@@ -239,7 +239,7 @@ if __name__ == '__main__':
             dflist.append(datadf1)
         datadf = pd.concat(dflist)
 
-        datadf = datadf[list(datadf.columns[0:4]) + tool_list]
+        datadf = datadf[READS_COLUMN_LIST + tool_list]
         datadf.drop_duplicates(subset=READS_COLUMN_LIST, inplace=True)
 
     logger.debug(f"datadf={datadf}")
@@ -249,7 +249,7 @@ if __name__ == '__main__':
     elif len(datadf) < 1:
         empty_df = pd.DataFrame(columns=[READS_COLUMN_LIST + tool_list + ["Prediction", "Prob_methylation"]])
         empty_df.to_csv(args.o, sep='\t', index=False, header=True)
-        logger.info(f"Save empty DF, due to empty datadf={datadf}")
+        logger.warn(f"Save empty DF, due to empty datadf={datadf}!!!")
         sys.exit(0)
     else:
         datadf.reset_index(inplace=True, drop=True)

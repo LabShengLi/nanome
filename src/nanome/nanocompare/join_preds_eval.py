@@ -529,7 +529,7 @@ def parse_arguments():
     parser.add_argument('--chrs', nargs='+', type=str, help='chromosome list, default is human chr1-22, X and Y',
                         default=HUMAN_CHR_SET)
     parser.add_argument('--score-cutoff', nargs='+', type=float,
-                        help='cutoff of LLR score for listed tool in --calls, default is used for all/not specified',
+                        help='cutoff of LLR score for listed tool in --calls, default is used for all/not specified. This cutoff only used in evaluation, not in make preds db step.',
                         default=None)
     parser.add_argument('--fully-meth-threshold', type=float, default=1.0,
                         help='fully methylated threshold (e.g., 0.9) for selection CpGs for read-level evaluation, default is 1.0')
@@ -582,6 +582,7 @@ if __name__ == '__main__':
         if len(toolFile.strip()) < 1:
             continue
         callDict[toolName.lower()] = toolFile
+    # cutoff only used for evalutation, not used for make preds db step
     cutoffDict = {}
     for ind, toolName in enumerate(callDict.keys()):
         if args.score_cutoff is not None and ind < len(args.score_cutoff):  # preset cutoff
@@ -592,8 +593,9 @@ if __name__ == '__main__':
             elif toolName.lower() == 'megalodon':
                 cutoffDict[toolName] = DEFAULT_CUTOFF_MEGALODON
             else:
+                # means no cutoff
                 cutoffDict[toolName] = 0.0
-    logger.debug(f"callDict={callDict}, cutoffDict={cutoffDict}")
+    logger.info(f"callDict={callDict}, cutoffDict={cutoffDict}")
 
     global progress_bar_global_join_preds
 
