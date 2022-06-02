@@ -25,7 +25,7 @@ SITE_COLUMNS = ['Chr', 'Pos', 'Strand']
 READ_COLUMNS = ['ID'] + SITE_COLUMNS
 
 DTYPE_BASIC_DF = {'ID': str, 'Chr': str, 'Pos': int, 'Strand': str,
-         'Freq': float, 'Coverage': int}
+                  'Freq': float, 'Coverage': int}
 
 
 def update_progress_bar_join_preds_eval(*a):
@@ -213,6 +213,7 @@ def find_join_preds_bgtruth_as_df(dsname, chrs, db_dir, cutoffDict, dtype=None, 
     Returns:
 
     """
+    logger.debug(f"Find joined preds db at: {db_dir}")
     find_files = []
     for chr in chrs:
         fnlist = glob.glob(os.path.join(db_dir, '**', f'{dsname}_T*_{chr}_join_preds_eval_db.sort.csv.gz'),
@@ -224,7 +225,7 @@ def find_join_preds_bgtruth_as_df(dsname, chrs, db_dir, cutoffDict, dtype=None, 
                 f"Found more than one file for {chr} for {dsname} at {db_dir}: {fnlist}, we use only first one.")
         if len(fnlist) >= 1:
             find_files.append(fnlist[0])
-    logger.debug(f"find_files={find_files}, len={len(find_files)}")
+    logger.debug(f"find_files[0]={find_files[0]}, len={len(find_files)}")
 
     dflist = []
     for infn in find_files:
@@ -605,13 +606,13 @@ if __name__ == '__main__':
         logger.info(f"### DONE for make joined prediction db.")
     else:
         logger.info(
-            f"Assume you have generated all joined preds db at:{out_dir} or {args.dbdir}, make sure this is correct if you skip make predictions joined db by --skip-join-preds.")
+            f"Assume you have generated all joined preds db at:{out_dir} or {args.dbdir}, make sure this is correct if you skip make predictions joined db by skip option: --join-preds.")
 
     ## Step 2: read level eval on joined preds
     new_dtype = dict(DTYPE_BASIC_DF)
     for toolName in callDict:
         new_dtype.update({toolName: float})
-    logger.debug(f"new_dtype={new_dtype}")
+    # logger.debug(f"new_dtype={new_dtype}")
 
     if args.read_eval or args.site_eval:
         if args.region_report:
