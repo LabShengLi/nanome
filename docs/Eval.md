@@ -30,7 +30,7 @@ docker run liuyangzzu/nanome pip show nanome-jax
 singularity exec docker://liuyangzzu/nanome pip show nanome-jax
 ```
 
-# 1. Read-level performance evaluation on common CpGs
+# 1. Read-level performance evaluation on common/shared CpGs
 ## Script for read-level evaluation
 The script `read_level_eval.py` is designed for general purpose of read-level performance evaluation for all kinds of tools on common CpGs reported by tools and BS-seq.
 
@@ -119,7 +119,7 @@ optional arguments:
   --verbose             if output verbose info
 ```
 
-# 2. Site-level performance evaluation on common CpGs
+# 2. Site-level performance evaluation on common/shared CpGs
 
 ## Script for site-level evaluation
 The script `site_level_eval.py` is designed for general purpose of site-level performance evaluation for all kinds of tools on common CpGs reported by tools and BS-seq.
