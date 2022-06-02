@@ -85,7 +85,7 @@ def parse_arguments():
     parser.add_argument('--dsname', type=str, help="dataset name", required=True)
     parser.add_argument('--runid', type=str, help="running prefix/output dir name", required=True)
     parser.add_argument('--calls', nargs='+',
-                        help='all ONT call results <tool-name>:<encode>:<file-name> seperated by spaces',
+                        help='all ONT call results <tool-name>:<file-encode>:<file-name>[<cutoff0>:<cutoff1>] seperated by space, tool-name/file-encode can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod, NANOME. The optional cutoff0 and cutoff1 can be specified if user wants to change default cutoff values, i.e., Nanpolish uses -2:2, Megalodon uses 0.2:0.8, etc.',
                         default=None)
     parser.add_argument('--bgtruth', type=str, help="background truth file <encode-type>:<file-name1>;<file-name2>",
                         default=None)
