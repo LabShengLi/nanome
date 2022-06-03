@@ -9,6 +9,7 @@ Install:
     pip install build twine
 
 Build package command:
+    conda activate py39
     find . -name '*.egg-info' -type d -exec rm -rf {} \+ &&\
         rm -rf dist/*  &&\
         python -m build
@@ -17,7 +18,7 @@ Build package command:
 
 Test package:
     conda activate py36
-    pip install dist/nanome-jax-2.0.2.tar.gz
+    pip install dist/nanome-jax-2.0.6.tar.gz
     pip show nanome-jax
     ls /pod/2/li-lab/yang/anaconda3/envs/py36/lib/python3.6/site-packages/nanome
 """
@@ -29,7 +30,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="nanome-jax",
-    version="2.0.5",
+    version="2.0.8",
     author="Yang Liu",
     author_email="yang.liu@jax.org",
     description="NANOME (Nanopore methylation) pipeline developed by Li Lab at The Jackson Laboratory",
@@ -50,6 +51,7 @@ setuptools.setup(
         'src/nanome/nanocompare/site_level_eval.py',
         'src/nanome/nanocompare/tss_eval.py',
         'src/nanome/nanocompare/pcc_region_eval.py',
+        'src/nanome/nanocompare/join_preds_eval.py',
         'src/nanome/nanocompare/region_intersect.py',
         'src/nanome/nanocompare/newtool_parser.py',
         'src/nanome/nanocompare/computeRawReadsCoverage.py',
@@ -91,7 +93,7 @@ setuptools.setup(
         'scipy',
         'numpy',
         'statsmodels',
-        'scikit-learn <=0.23.2',
+        'scikit-learn',
         # upper version may not load model success, ref: https://github.com/EpistasisLab/tpot/issues/1171
         'matplotlib',
         'jinja2',

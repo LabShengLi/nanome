@@ -8,7 +8,7 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - python=3.6.13 # need 3.6 for some software
+  - python=3.6 # need 3.6 for some software
   - pip
   - nodejs
   - scipy
@@ -18,35 +18,35 @@ dependencies:
   - tabix
   - pytabix
   - pysam
+  - parallel
   - biopython>=1.79
   - jinja2>=3.0.2
-  - joblib=1.1.0
+  - joblib>=1.1.0
   - matplotlib>=3.3.4
   - minimap2>=2.23
-  - parallel=20170422
   - pillow>=8.3.2
   - samtools>=1.12
   - statsmodels>=0.12.2
-  - rocksdb=6.13.3
-  - python-rocksdb=0.7.0
+  - rocksdb>=6.13.3
+  - python-rocksdb>=0.7.0
   - cython>=0.29.24
   - openpyxl>=2.4.0
   - nanocomp>=1.16.1
-  - pybedtools>=0.8.2 # nanome need upper version of pybedtools, deal with NAs
-  - h5py=2.8 # due to tombo/DeepMod issue, must < 3.0, ref: https://github.com/nanoporetech/tombo/issues/325
+  - h5py # due to tombo/DeepMod issue (resquiggle is ok for higher version), must < 3.0, ref: https://github.com/nanoporetech/tombo/issues/325
+  - scikit-learn # NANOME needs >=0.23.2, but METEORE needs older version <=0.23.2, it needs old package for RF model load, ref: https://github.com/comprna/METEORE/blob/master/combination_model_prediction.py#L44, https://stackoverflow.com/questions/65758102/no-module-name-sklearn-forest-ensemble
+  - ont-fast5-api # =3.0 needed by fast5mod, will upgrade by pip install for Megalodon, but it's ok for running both >3.0
+  - tensorflow>=1.8.0, <=1.13.1  # deepsignal needs: https://github.com/bioinfomaticsCSU/deepsignal#installation  tensorflow (1.8.0<=tensorflow<=1.13.1)
+  - pybedtools>=0.8.2 # nanome needs upper version of pybedtools, deal with NAs
   - tqdm>=4.60 # need by Megalodon, ref: https://github.com/nanoporetech/megalodon/issues/105
-  - scikit-learn<=0.23.2 # need by METEORE, it needs old package for RF model load, ref: https://github.com/comprna/METEORE/blob/master/combination_model_prediction.py#L44, https://stackoverflow.com/questions/65758102/no-module-name-sklearn-forest-ensemble
-  - ont-fast5-api=3.0 # need by fast5mod, will upgrade by pip install for Megalodon, but it's ok for running both >3.0
-  - deepmod=0.1.3
-  - ont-tombo=1.5.1
-  - nanopolish=0.13.2
+  - ont-tombo>=1.5.1
+  - nanopolish>=0.13.2
   - pip:
-    - xgboost
-    - ont-pyguppy-client-lib==6.1.3
-    - deepsignal==0.1.10
-    - fast5mod==1.0.5
-    - nanome-jax==2.0.5
-    - megalodon
+      - xgboost
+      - ont-pyguppy-client-lib>=6.1.3
+      - deepsignal==0.1.10
+      - fast5mod==1.0.5
+      - nanome-jax>=2.0.8
+      - megalodon
 #The conflict is caused by:
 #    fast5mod 1.0.5 depends on ont-fast5-api==3.0.0, but it can be use higher
 #    megalodon 2.3.4+ depends on ont-fast5-api>=3.2, it must be higher, so later install it

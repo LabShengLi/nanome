@@ -71,7 +71,7 @@ if __name__ == '__main__':
                 if len(args.score_cols) != 1:
                     raise Exception(f"not support score_cols={args.score_cols}")
                 score_col = args.score_cols[0]
-                log_score = prob_to_log(float(tmp[score_col]))
+                log_score = prob_to_llr2(float(tmp[score_col]))
             else:
                 if len(args.score_cols) == 2:
                     log_score = float(tmp[args.score_cols[0]]) - float(tmp[args.score_cols[1]])

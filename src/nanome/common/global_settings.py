@@ -10,12 +10,13 @@ Define names and global variables
 """
 import json
 import os
-from pathlib import Path
 
+import math
 import pandas as pd
+
 from nanome.common.global_config import set_log_debug_level, current_time_str
 
-NANOME_VERSION = "2.0.5"
+NANOME_VERSION = "2.0.8"
 
 # define the small error of 0 and 1, for fully-meth and unmeth eval
 EPSLONG = 1e-5
@@ -128,6 +129,78 @@ def get_tool_name(encode_name):
     if encode_name.find('.') != -1:  # cut of DeepMod.C or DeepMod.Cluster
         return encode_name[:encode_name.find('.')]
     return encode_name
+
+
+def prob_to_llr2(prob):
+    """
+    convert probability of 5mC to log-likelyhood for log2, used by NANOME/DeepSignal
+    Args:
+        prob:
+
+    Returns:
+
+    """
+    return math.log2((prob + EPSLONG) / (1 - prob + EPSLONG))
+
+
+def prob_to_llre(meth_prob):
+    """
+    convert probability of 5mC to log-likelyhood for loge
+    Megalodon manner:
+    prob_to_llr_2(0.8)
+    1.999945900626566
+    prob_to_llr_e(0.8)
+    1.3862568622917248
+
+    Args:
+        meth_prob:
+
+    Returns:
+
+    """
+    return math.log((meth_prob + EPSLONG) / (1 - meth_prob + EPSLONG))
+
+
+def llre_to_prob(llr):
+    """
+    convert llr (e base) into prob
+    Args:
+        llr:
+
+    Returns:
+
+    """
+
+    return 1 / (1 + math.exp(-llr))
+
+
+def llr2_to_prob(llr):
+    """
+    convert llr (2 base) into prob
+    Args:
+        llr:
+
+    Returns:
+
+    """
+    return 1 / (1 + math.pow(2, -llr))
+
+
+# default cutoff settings for tools' raw input
+DEFAULT_RAW_CUTOFF_BY_TOOLS = {
+    'nanopolish': (-2.0, 2.0),  # LLR
+    'megalodon': (0.2, 0.8),  # prob
+    'tombo': (-1.5, 2.5),  # LLR, <-1.5 is meth, >2.5 is unmeth
+}
+
+DEFAULT_SCORE_CUTOFF_MEGALODON = prob_to_llre(0.8)
+DEFAULT_SCORE_CUTOFF_NANOPOLISH = 2.0
+
+# default cutoff settings for tools' unified score (LLR), None means 0.0, no-cutoff
+DEFAULT_SCORE_CUTOFF_BY_TOOLS = {
+    'nanopolish': DEFAULT_SCORE_CUTOFF_NANOPOLISH,
+    'megalodon': DEFAULT_SCORE_CUTOFF_MEGALODON,
+}
 
 
 def save_done_file(outdir, filename=None):

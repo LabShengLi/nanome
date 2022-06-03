@@ -1,6 +1,9 @@
-import joblib
 import os
 from pathlib import Path
+
+import joblib
+import math
+from nanome.common.global_settings import EPSLONG
 
 from nanome.common.global_config import logger
 
@@ -72,6 +75,35 @@ gridcv_rf_params = {
     'oob_score': [True, False],
     'min_samples_leaf': [1, 5, 10, 50, 100]
 }
+
+
+def prob_to_llr_2(meth_prob):
+    """
+    METEORE, NANOME manner
+    Args:
+        meth_prob:
+
+    Returns:
+
+    """
+    return math.log2((meth_prob + EPSLONG) / (1 - meth_prob + EPSLONG))
+
+
+def prob_to_llr_e(meth_prob):
+    """
+    Megalodon manner:
+    prob_to_llr_2(0.8)
+    1.999945900626566
+    prob_to_llr_e(0.8)
+    1.3862568622917248
+
+    Args:
+        meth_prob:
+
+    Returns:
+
+    """
+    return math.log((meth_prob + EPSLONG) / (1 - meth_prob + EPSLONG))
 
 
 def load_meteore_model(infn):

@@ -1,15 +1,19 @@
 **This is an explanation of how to use script to perform read-level and site-level performance evaluation.**
 
-User needs to provide ONT tools' methylation-calling raw outputs and BS-seq data before evaluations. The genome-annotation files may be needed if performances at specific genomic regions are interested. 
-
 **Please note that we strongly suggest providing the whole genome-wide CpGs for performance comparison across tools, we do not suggest selecting a portion of CpGs for comparison**.
+
+User needs to provide two kind of files as input for our proposed standardized benchmarking framework:
+1. ONT tools' methylation-calling raw outputs,
+1. BS-seq data. 
+ 
+The [genome-annotation](https://storage.googleapis.com/jax-nanopore-01-project-data/nanome_paper/genome-annotation.tar.gz) files may be needed if performances at specific genomic regions are interested. 
 
 You can install NANOME standardized genome-wide evaluation tool (**nanome-jax**) from [PyPI](https://pypi.org/project/nanome-jax/):
 ```angular2html
 # Creat conda environment and install required packages
 conda create --name py39 python=3.9
 conda activate py39
-conda install -c anaconda scikit-learn==0.23.2 cython
+conda install -c anaconda scikit-learn cython
 conda install -c conda-forge -c bioconda pybedtools
 
 # Install nanome-jax for genome-wide evaluation
@@ -26,27 +30,28 @@ docker run liuyangzzu/nanome pip show nanome-jax
 singularity exec docker://liuyangzzu/nanome pip show nanome-jax
 ```
 
-# 1. Read-level performance evaluation
+# 1. Read-level performance evaluation on common/shared CpGs
 ## Script for read-level evaluation
-The script `read_level_eval.py` is designed for general purpose of read-level performance evaluation for all kinds of tools.
+The script `read_level_eval.py` is designed for general purpose of read-level performance evaluation for all kinds of tools on common CpGs reported by tools and BS-seq.
 
 ```angular2html
 read_level_eval.py -v
 ```
 
 ## Sample usage
-User needs to specify methylation-calling raw results of each tool and BS-seq replicates to execute the read-level evaluation script.
+User needs to specify methylation-calling raw results of each tool and BS-seq replicates to execute the read-level evaluation script. 
+
+`--calls` params are raw input of all tools, format is like ` <tool-name>:<file-encode>:<file-name>`, where `tool-name` can be any name for your raw input, `file-encode` is the input format, can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod, NANOME, and `file-name` is the location of raw input. `--bgtruth` is the background truth param like `<encode-type>:<file-name1>;<file-name2>`, where `encode-type` can be 'encode' or 'bismark', and we support at most two replicates file inputs now.
 ```angular2html
 read_level_eval.py \
     --dsname TestData\
     --runid MethPerf-TestData_RRBS_2Reps\
     --calls\
-        Nanopolish:[Nanopolish-calls]\
-        Megalodon:[Megalodon-calls]\
-        DeepSignal:[DeepSignal-calls]\
+        Nanopolish:Nanopolish:[Nanopolish-calls]\
+        Megalodon:Megalodon:[Megalodon-calls]\
+        DeepSignal:DeepSignal:[DeepSignal-calls]\
     --bgtruth [encode-type]:[BS-seq-rep1];[BS-seq-rep2]\
     --genome-annotation [genome-annotation]\
-    --min-bgtruth-cov 1\
     --report-joined
 ```
 Sample results can be found at [read-level outputs](https://github.com/LabShengLi/nanome/blob/master/docs/resources/read_level_output.txt).
@@ -114,10 +119,10 @@ optional arguments:
   --verbose             if output verbose info
 ```
 
-# 2. Site-level performance evaluation
+# 2. Site-level performance evaluation on common/shared CpGs
 
 ## Script for site-level evaluation
-The script `site_level_eval.py` is designed for general purpose of site-level performance evaluation for all kinds of tools.
+The script `site_level_eval.py` is designed for general purpose of site-level performance evaluation for all kinds of tools on common CpGs reported by tools and BS-seq.
 
 ```angular2html
 site_level_eval.py -v
@@ -132,14 +137,13 @@ site_level_eval.py \
     --dsname TestData\    
     --runid MethCorr-TestData_RRBS_2Reps\
     --calls\
-        Nanopolish:[Nanopolish-calls]\
-        Megalodon:[Megalodon-calls]\
-        DeepSignal:[DeepSignal-calls]\
+        Nanopolish:Nanopolish:[Nanopolish-calls]\
+        Megalodon:Megalodon:[Megalodon-calls]\
+        DeepSignal:DeepSignal:[DeepSignal-calls]\
     --bgtruth [encode-type]:[BS-seq-rep1];[BS-seq-rep2]\
     --genome-annotation [genome-annotation]\
     --min-bgtruth-cov 3 --toolcov-cutoff 1\
-    --beddir [read-level-analysis-dir]\
-    --gen-venn --summary-coverage
+    --beddir [read-level-analysis-dir]
 ```
 
 Sample results can be found at [site-level outputs](https://github.com/LabShengLi/nanome/blob/master/docs/resources/site_level_output.txt).
@@ -218,7 +222,7 @@ tss_eval.py \
     --dsname [dataset-name]\
     --runid Read_Level-[dataset-name] \
     --calls \
-        [tool-name]:[tool-call-filename] \
+        [tool-name]:[encode-name]:[tool-call-filename] \
     --read-level-format\
     -o [output-dir]
 ```
@@ -232,6 +236,12 @@ ID	Chr	Pos	Strand	Score
 2414d963-488b-4987-9b28-6c5f2af76e4e	chr1	125179734	+	0.42996208256507207
 2414d963-488b-4987-9b28-6c5f2af76e4e	chr1	125179754	+	0.8669499128929393
 ```
+The columns for read level output are:
+1. read-id, 
+2. chromosome, 
+3. position (1-based), 
+4. strand, 
+5. score of log-ratio for probability of 5mC vs. 5C.
 
 ## Sample usage for site-level format unification
 Below will generate the site level unified format for tools/BS-seq data.
@@ -241,7 +251,7 @@ tss_eval.py \
     --runid Site_Level-[dataset-name]\
     --bgtruth [encode-type]:[BS-seq-file1];[BS-seq-file2]\
     --calls \
-        [tool-name]:[tool-call-filename]\
+        [tool-name]:[encode-type]:[tool-call-filename]\
     -o [output-dir]
 ```
 
@@ -253,6 +263,16 @@ chr1	11344168	11344169	.	.	-	1.0	2
 chr1	11344219	11344220	.	.	-	1.0	2
 chr1	11344287	11344288	.	.	-	0.0	2
 ```
+
+The columns for site level output are:
+1. chromosome, 
+2. start (0-based), 
+3. end (1-based), 
+4. NA, 
+5. NA, 
+6. strand, 
+7. methylation frequency, 
+8. coverage.
 
 ## Command options
 ```angular2html

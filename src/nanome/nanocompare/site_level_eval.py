@@ -391,7 +391,7 @@ def parse_arguments():
                         help="running prefix/output folder name, such as MethCorr-Dataset_WGBS_2Reps",
                         required=True)
     parser.add_argument('--calls', nargs='+',
-                        help='all ONT call results <tool-name>:<file-encode>:<file-name> seperated by spaces, tool-name/file-encode can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod, NANOME',
+                        help='all ONT call results <tool-name>:<file-encode>:<file-name> seperated by spaces, tool-name/file-encode can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod, NANOME. The optional cutoff0 and cutoff1 can be specified if user wants to change default cutoff values, i.e., Nanpolish uses -2:2, Megalodon uses 0.2:0.8, etc.',
                         required=True)
     parser.add_argument('--bgtruth', type=str,
                         help="background truth file <encode-type>:<file-name1>;<file-name2>, encode-type can be 'encode' or 'bismark'",
@@ -451,7 +451,7 @@ if __name__ == '__main__':
     dsname = args.dsname
     ## Set tmp dir for bedtools, each process use a bed tmp dir
     ## because the tmp dir files may be cleaned by the end of the process
-    bed_temp_dir = os.path.join(args.bedtools_tmp, dsname)
+    bed_temp_dir = os.path.join(args.bedtools_tmp, f"{dsname}_corr")
     os.makedirs(bed_temp_dir, exist_ok=True)
     pybedtools.helpers.set_tempdir(bed_temp_dir)
 
@@ -540,7 +540,7 @@ if __name__ == '__main__':
             elif len(callstr.split(':')) == 5:
                 toolname, callencode, callfn, cutoff1, cutoff2 = callstr.split(':')
                 cutoff1 = float(cutoff1)
-                cutoff2 = float(cutoff1)
+                cutoff2 = float(cutoff2)
                 score_cutoff = (cutoff1, cutoff2)
         except:
             raise Exception(f"--calls params is not correct: {callstr}")
@@ -558,7 +558,7 @@ if __name__ == '__main__':
             callfn, callencode, baseFormat=baseFormat, filterChr=args.chrSet,
             enable_cache=enable_cache, using_cache=using_cache,
             include_score=False, siteLevel=True, cache_dir=ds_cache_dir,
-            toolname=toolname, score_cutoff=score_cutoff)
+            toolname=toolname, raw_cutoff=score_cutoff)
 
         # Stats the total cpgs and calls for each calls
         cnt_calls = 0
