@@ -211,7 +211,8 @@ Raw_Results-CIEcoli  Read_Level-CIEcoli  Site_Level-CIEcoli  tools_version_table
 ```
 
 #### 3.2 NANOME output format
-Read level output sample is below:
+
+#### Read level output sample is below:
 ```
 zcat results/CIEcoli-methylation-callings/Read_Level-CIEcoli/CIEcoli_NANOME-perRead-score.tsv.gz | head -n 5
 ID	Chr	Pos	Strand	Score
@@ -221,10 +222,16 @@ ID	Chr	Pos	Strand	Score
 21a26cb9-0be2-4670-8694-a3cee91d49b8    NC_000913.3     3503680 -       2.434816964214898
 21a26cb9-0be2-4670-8694-a3cee91d49b8    NC_000913.3     3503685 -       2.434816964214898
 ```
-The columns in read level output are read-id, chromosome, position (1-based), strand, and score of log-ratio of probability for 5mC and 5C.
+The columns in read level output are:
+1. read-id,
+1. chromosome,
+1. position (1-based),
+1. strand,
+1. score of log-ratio for probability of 5mC vs. 5C.
 
 
-Site level output sample is below:
+
+#### Site level output sample is below:
 ```
 zcat results/CIEcoli-methylation-callings/Site_Level-CIEcoli/CIEcoli_NANOME-perSite-cov1.sort.bed.gz  | head -n 5
 NC_000913.3     3498244 3498245 .       .       +       0.0     1
@@ -233,7 +240,15 @@ NC_000913.3     3500082 3500083 .       .       -       1.0     2
 NC_000913.3     3500091 3500092 .       .       +       0.6666666666666666      3
 NC_000913.3     3500092 3500093 .       .       -       1.0     2
 ```
-The columns in site level output are chromosome, start (0-based), end (1-based), NA, NA, strand, methylation frequency, and coverage.
+The columns in site level output are:
+1. chromosome,
+1. start (0-based),
+1. end (1-based),
+1. NA,
+1. NA,
+1. strand,
+1. methylation frequency,
+1. coverage.
 
 
 
