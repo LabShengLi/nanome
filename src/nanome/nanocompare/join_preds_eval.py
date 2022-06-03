@@ -527,18 +527,20 @@ def parse_arguments():
 
 
 if __name__ == '__main__':
-    args = parse_arguments()
+    global progress_bar_global_join_preds
 
+    args = parse_arguments()
     if args.verbose:
         set_log_debug_level()
     else:
         set_log_info_level()
 
-    logger.debug(f"args={args}")
-    global progress_bar_global_join_preds
-
     out_dir = os.path.join(args.o, args.runid)
     os.makedirs(out_dir, exist_ok=True)
+
+    # Add logging files also to result output dir
+    add_logging_file(os.path.join(out_dir, f'run-results-{current_time_str()}.log'))
+    logger.debug(f"args={args}")
 
     bed_temp_dir = os.path.join(args.bedtools_tmp, f"{args.dsname}_join_preds")
     os.makedirs(bed_temp_dir, exist_ok=True)
