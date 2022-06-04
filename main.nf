@@ -1737,7 +1737,7 @@ process DpmodComb {
 
 	## merge different runs of modification detection
 	## ref: https://github.com/WGLab/DeepMod/blob/master/docs/Usage.md#2-how-to-merge-different-runs-of-modification-detection
-	sum_chr_mod.py \
+	python utils/sum_chr_mod.py \
 		indir/ C ${params.dsname}.deepmod ${chrSet.split(' ').join(',')} \
 		&>> ${params.dsname}.DpmodComb.run.log
 
