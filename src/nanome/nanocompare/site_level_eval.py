@@ -421,7 +421,7 @@ def parse_arguments():
                         action='store_true')
     parser.add_argument('--report-no-join', help="if output no-join cpgs report also", action='store_true')
     parser.add_argument('--enable-cache', help="if enable cache functions, will store cache files", action='store_true')
-    parser.add_argument('--using-cache', help="if use cache files, will use cache files, it also needs the option: --enable-cache", action='store_true')
+    parser.add_argument('--using-cache', help="if use cache files, will use cache files if possible", action='store_true')
     parser.add_argument('--plot', help="if plot the correlation matrix figure", action='store_true')
     parser.add_argument('--bedtools-tmp', type=str, help=f'bedtools temp dir, default is {global_temp_dir}',
                         default=global_temp_dir)

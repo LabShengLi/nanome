@@ -548,7 +548,7 @@ def parse_arguments():
                         default=HUMAN_CHR_SET)
     parser.add_argument('-o', type=str, help=f"output base dir, default is {pic_base_dir}", default=pic_base_dir)
     parser.add_argument('--enable-cache', help="if enable cache functions, will store cache files", action='store_true')
-    parser.add_argument('--using-cache', help="if use cache files, will use cache files, it also needs the option: --enable-cache", action='store_true')
+    parser.add_argument('--using-cache', help="if use cache files, will use cache files if possible", action='store_true')
     parser.add_argument('--distribution', help="if report singleton/nonsingleton distributions at all regions",
                         action='store_true')
     parser.add_argument('--bsseq-report', help="if report singleton/nonsingleton in bs-seq", action='store_true')

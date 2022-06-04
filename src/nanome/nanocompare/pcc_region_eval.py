@@ -187,8 +187,8 @@ def parse_arguments():
 
     parser.add_argument('-o', type=str, help=f"output base dir, default is {pic_base_dir}", default=pic_base_dir)
     parser.add_argument('--report-no-join', help="if output no-join report also", action='store_true')
-    parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
-    parser.add_argument('--using-cache', help="if use cache files", action='store_true')
+    parser.add_argument('--enable-cache', help="if enable cache functions, will store cache files", action='store_true')
+    parser.add_argument('--using-cache', help="if use cache files, will use cache files if possible", action='store_true')
     parser.add_argument('--bedtools-tmp', type=str, help=f'bedtools temp dir, default is {global_temp_dir}',
                         default=global_temp_dir)
     parser.add_argument('--cache-dir', type=str,
@@ -196,7 +196,7 @@ def parse_arguments():
                         default=global_cache_dir)
     parser.add_argument('--large-mem', help="if using large memory (>100GB) for speed up", action='store_true')
     parser.add_argument('--disable-bed-check',
-                        help="if disable auto-checking the 0/1 base format for genome annotations",
+                        help="if disable checking the 0/1 base format for genome annotations, use this option will assume all input BED as 1-based",
                         action='store_true')
     parser.add_argument('--mpi',
                         help="if using multi-processing/threading for evaluation, it can speed-up but need more memory",

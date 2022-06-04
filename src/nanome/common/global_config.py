@@ -141,6 +141,7 @@ def set_log_error_level():
     if file_handler is not None:
         file_handler.setLevel(logging.ERROR)
     console_handler.setLevel(logging.ERROR)
+    logging.getLogger().setLevel(logging.ERROR)
 
 
 def current_time_str():
