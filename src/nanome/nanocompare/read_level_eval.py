@@ -543,12 +543,12 @@ def parse_arguments():
     parser.add_argument('--toolcov-cutoff', type=int, help="cutoff for coverage in nanopore tools, default is >=1",
                         default=1)
     parser.add_argument('--processors', type=int, help="number of processors used, default is 1", default=1)
-    parser.add_argument('--report-no-join', action='store_true', help="true if report not on joined sets")
+    parser.add_argument('--report-no-join', action='store_true', help="true if report not on shared/common cpgs sets")
     parser.add_argument('--chrSet', nargs='+', help='chromosome list, default is human chr1-22, X and Y',
                         default=HUMAN_CHR_SET)
     parser.add_argument('-o', type=str, help=f"output base dir, default is {pic_base_dir}", default=pic_base_dir)
-    parser.add_argument('--enable-cache', help="if enable cache functions", action='store_true')
-    parser.add_argument('--using-cache', help="if use cache files", action='store_true')
+    parser.add_argument('--enable-cache', help="if enable cache functions, will store cache files", action='store_true')
+    parser.add_argument('--using-cache', help="if use cache files, will use cache files, it also needs the option: --enable-cache", action='store_true')
     parser.add_argument('--distribution', help="if report singleton/nonsingleton distributions at all regions",
                         action='store_true')
     parser.add_argument('--bsseq-report', help="if report singleton/nonsingleton in bs-seq", action='store_true')
@@ -561,13 +561,13 @@ def parse_arguments():
                         help=f'cache dir used for loading calls/bs-seq (speed up running), default is {global_cache_dir}',
                         default=global_cache_dir)
     parser.add_argument('--disable-bed-check',
-                        help="if disable auto-checking the 0/1 base format for genome annotations",
+                        help="if disable checking the 0/1 base format for genome annotations, use this option will assume all input BED as 1-based",
                         action='store_true')
     parser.add_argument('--mpi',
                         help="if using multi-processing/threading for evaluation, it can speed-up but may need more memory",
                         action='store_true')
     parser.add_argument('--mpi-import',
-                        help="if using multi-processing/threading for import, it can speed-up, only for small size data",
+                        help="if using multi-processing/threading for import ont-calls, it can speed-up but may need more memory",
                         action='store_true')
     parser.add_argument('--config', help="if print out config file for genome annotation", action='store_true')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
