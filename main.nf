@@ -190,6 +190,7 @@ summary['dataType'] 		= dataType
 
 if (params.runBasecall) summary['runBasecall'] = 'Yes'
 if (params.skipBasecall) summary['skipBasecall'] = 'Yes'
+if (params.runResquiggle) summary['runResquiggle'] = 'Yes'
 
 if (params.runMethcall) {
 	if (params.runNanopolish) summary['runNanopolish'] = 'Yes'
@@ -738,7 +739,7 @@ process Resquiggle {
 	path "${basecallDir.baseName}.resquiggle", 	emit: resquiggle
 
 	when:
-	params.runMethcall && (params.runDeepSignal || params.runTombo)
+	(params.runMethcall && (params.runDeepSignal || params.runTombo)) || params.runResquiggle
 
 	script:
 	cores = task.cpus * params.highProcTimes
@@ -2483,7 +2484,7 @@ workflow {
 	}
 
 	// Resquiggle running if use Tombo or DeepSignal
-	if ((params.runDeepSignal || params.runTombo) && params.runMethcall) {
+	if (((params.runDeepSignal || params.runTombo) && params.runMethcall) || params.runResquiggle) {
 		Resquiggle(Basecall.out.basecall, EnvCheck.out.reference_genome)
 	}
 

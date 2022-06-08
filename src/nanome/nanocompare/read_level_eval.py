@@ -381,7 +381,7 @@ def import_bsseq_for_read_level(infn, encode, multi_processor=False):
     """
     # import if cov >= 1 firstly, then after join two replicates step, remove low coverage
     # bgTruth1 is dict of key->value, key=(chr, start, strand), and value=[meth.freq, cov]
-    bg1 = import_bgtruth(infn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True,
+    bg1 = import_bgtruth(infn, encode, covCutoff=1, baseFormat=baseFormat, includeCov=True, filterChr=args.chrSet,
                          using_cache=using_cache, enable_cache=enable_cache, cache_dir=ds_cache_dir)
     if not multi_processor:  # in same process, directly return
         return bg1
