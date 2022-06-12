@@ -148,6 +148,10 @@ ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: fals
 def referenceGenome = "reference_genome/${params.GENOME_FN}"
 def chromSizesFile = "reference_genome/${params.CHROM_SIZE_FN}"
 
+params.referenceGenome = "${params.GENOME_DIR}/${params.GENOME_FN}"
+params.chromSizesFile = "${params.GENOME_DIR}/${params.CHROM_SIZE_FN}"
+
+
 if (dataType == 'human') { isDeepModCluster = params.useDeepModCluster }
 else { isDeepModCluster = false }
 
@@ -316,294 +320,15 @@ https://github.com/LabShengLi/nanome
 log.info summary.collect { k,v -> "${k.padRight(20)}: $v" }.join("\n")
 log.info "================================="
 
-// Check all tools work well
-process EnvCheck {
-	tag "${params.dsname}"
-	errorStrategy 'terminate'
+// chrSet1 and dataType1 is the infered params, defined from chrSet and dataType (not in scope of params)
+params.chrSet1 = chrSet
+params.dataType1 = dataType
 
-	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
-		mode: "copy", pattern: "tools_version_table.tsv", overwrite: true
-
-	input:
-	path reference_genome
-	path utils
-	path rerioDir
-	path deepsignalDir
-
-	output:
-	path "reference_genome",				emit: reference_genome, optional: true
-	path "rerio", 							emit: rerio, optional: true  // used by Megalodon
-	path "${params.DEEPSIGNAL_MODEL_DIR}",	emit: deepsignal_model, optional: true
-	path "tools_version_table.tsv",			emit: tools_version_tsv, optional: true
-
-	script:
-	"""
-	date; hostname; pwd
-	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
-
-	## Validate nanome container/environment is correct
-	bash utils/validate_nanome_container.sh  tools_version_table.tsv
-
-	if [[ ${params.runNewTool} == true ]] ; then
-		newTools=(${params.newModuleConfigs.collect{it.name}.join(' ')})
-		newToolsVersion=(${params.newModuleConfigs.collect{it.version}.join(' ')})
-
-		for i in "\${!newTools[@]}"; do
-			printf "%s\t%s\n" "\${newTools[\$i]}" "\${newToolsVersion[\$i]}" >> tools_version_table.tsv
-		done
-	fi
-
-	## Untar and prepare megalodon model
-	if [[ ${params.runMegalodon} == true && ${params.runMethcall} == true ]]; then
-		if [[ ${rerioDir} == null* && ${params.rerio} == true ]] ; then
-			# Obtain and run R9.4.1, MinION, 5mC CpG model from Rerio
-			git clone ${params.rerioGithub}
-			rerio/download_model.py rerio/basecall_models/${params.MEGALODON_MODEL.replace('.cfg', '')}
-		elif [[ ${rerioDir} != rerio && -d ${rerioDir} && ${params.rerio} == true ]] ; then
-			## rename it to rerio for output channel
-			cp  -a ${rerioDir}  rerio
-		else
-			mkdir -p rerio
-			touch rerio/test.txt
-		fi
-		## Check Rerio model
-		ls -lh rerio/
-	fi
-
-	## Untar and prepare deepsignal model
-	if [[ ${params.runDeepSignal} == true && ${params.runMethcall} == true ]]; then
-		if [[ ${deepsignalDir} == *.tar.gz ]] ; then
-			## Get DeepSignal Model online
-			tar -xzf ${deepsignalDir}
-		elif [[ ${deepsignalDir} != ${params.DEEPSIGNAL_MODEL_DIR} && -d ${deepsignalDir}  ]] ; then
-			## rename it to deepsignal default dir name
-			cp  -a ${deepsignalDir}  ${params.DEEPSIGNAL_MODEL_DIR}
-		fi
-		## Check DeepSignal model
-		ls -lh ${params.DEEPSIGNAL_MODEL_DIR}/
-	fi
-
-	if [[ ${params.runBasecall} == true || ${params.runMethcall} == true ]]; then
-		## Build dir for reference_genome
-		mkdir -p reference_genome
-		find_dir="\$PWD/reference_genome"
-		if [[ ${reference_genome} == *.tar.gz && -f ${reference_genome}  ]] ; then
-			tar -xzf ${reference_genome} -C reference_genome
-		elif [[ ${reference_genome} == *.tar && -f ${reference_genome} ]] ; then
-			tar -xf ${reference_genome} -C reference_genome
-		elif [[ -d ${reference_genome} ]] ; then
-			## for folder, use ln, note this is a symbolic link to a folder
-			## find_dir=\$( readlink -f ${reference_genome} )
-			## Copy reference genome, avoid singularity/docker access out data problem
-			cp ${reference_genome}/*   reference_genome/ -f
-		else
-			echo "### ERROR: not recognized reference_genome=${reference_genome}"
-			exit -1
-		fi
-
-		# Rename reference file
-		if [[ ! -z \$(find \${find_dir}/ \\( -name '*.fasta' -o -name '*.fasta.gz' \\)  ) ]] ; then
-			find \${find_dir} -name '*.fasta*' | \
-				 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/\${fn/*.fasta/ref.fasta}'
-		elif [[ ! -z \$(find \${find_dir}/ \\( -name '*.fa' -o -name '*.fa.gz' \\)  ) ]] ; then
-			find \${find_dir} -name '*.fa*' | \
-				 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/\${fn/*.fa/ref.fasta}'
-		fi
-
-		## Chrom size file if exists
-		find \${find_dir} -name '*.sizes' | \
-				parallel -j1 -v ln -s -f {} reference_genome/chrom.sizes
-
-		ls -lh reference_genome/
-	fi
-
-	echo "### Check reference genome and chrSet"
-	echo "referenceGenome=${referenceGenome}"
-	echo "chromSizesFile=${chromSizesFile}"
-	echo "chrSet=[${chrSet}]"
-	echo "dataType=${dataType}"
-	echo "cpus=$task.cpus"
-	echo "### Check env DONE"
-	"""
-}
-
-
-// Untar of subfolders named 'M1', ..., 'M10', etc.
-//process Untar {
-//	tag "${fast5Input.baseName}"
-//
-//	input:
-//	path fast5Input
-//
-//	output:
-//	path "${fast5Input.baseName}.untar", emit: untar,  optional: true
-//
-//	script:
-//	cores = task.cpus * params.highProcTimes
-//	if (!params.skipBasecall) { // perform basecall
-//		"""
-//		date; hostname; pwd
-//		echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
-//
-//		## Extract input files tar/tar.gz/folder
-//		mkdir -p untarTempDir
-//		if [[ ${fast5Input} == *.tar && -f ${fast5Input} ]] ; then
-//			### deal with tar
-//			tar -xf ${fast5Input} -C untarTempDir
-//		elif [[ ${fast5Input} == *.tar.gz && -f ${fast5Input} ]] ; then
-//			### deal with tar.gz
-//			tar -xzf ${fast5Input} -C untarTempDir
-//		elif [[ -d ${fast5Input} ]]; then
-//			## Copy files, do not change original files such as old analyses data
-//			find ${fast5Input}/ -name '*.fast5' | \
-//				parallel -j$cores  cp {} untarTempDir/
-//		else
-//			echo "### Untar error for input=${fast5Input}"
-//		fi
-//
-//		## Move fast5 raw/basecalled files into XXX.untar folder
-//		mkdir -p ${fast5Input.baseName}.untar
-//
-//		find untarTempDir -name "*.fast5" -type f | \
-//			parallel -j$cores  mv {}  ${fast5Input.baseName}.untar/
-//
-//		## Clean temp files
-//		rm -rf untarTempDir
-//
-//		## Clean old basecalled analyses in input fast5 files
-//		if [[ "${params.cleanAnalyses}" == true ]] ; then
-//			echo "### Start cleaning old analysis"
-//			## python -c 'import h5py; print(h5py.version.info)'
-//			clean_old_basecall_in_fast5.py \
-//				-i ${fast5Input.baseName}.untar --is-indir --verbose\
-//				--processor $cores
-//		fi
-//
-//		totalFiles=\$( find ${fast5Input.baseName}.untar -name "*.fast5" -type f | wc -l )
-//		echo "### Total fast5 input files:\${totalFiles}"
-//		if (( totalFiles==0 )); then
-//			echo "### no fast5 files at ${fast5Input.baseName}.untar, skip this job"
-//			rm -rf ${fast5Input.baseName}.untar
-//		fi
-//		echo "### Untar DONE"
-//		"""
-//	} else {
-//		"""
-//		date; hostname; pwd
-//
-//		## Extract input files tar/tar.gz/folder
-//		mkdir -p untarTempDir
-//		if [[ ${fast5Input} == *.tar && -f ${fast5Input} ]] ; then
-//			### deal with tar
-//			tar -xf ${fast5Input} -C untarTempDir
-//		elif [[ ${fast5Input} == *.tar.gz && -f ${fast5Input} ]] ; then
-//			### deal with tar.gz
-//			tar -xzf ${fast5Input} -C untarTempDir
-//		elif [[ -d ${fast5Input} ]] ; then
-//			## user provide basecalled input dir, just cp them
-//			mkdir -p untarTempDir/test
-//			cp -rf ${fast5Input}/*   untarTempDir/test/
-//		else
-//			echo "### Untar error for input=${fast5Input}"
-//		fi
-//
-//		## Move fast5 raw/basecalled files into XXX.untar folder
-//		mkdir -p ${fast5Input.baseName}.untar
-//		## Keep the directory structure for basecalled input
-//		mv untarTempDir/*/*   ${fast5Input.baseName}.untar/
-//
-//		## Clean temp files
-//		rm -rf untarTempDir
-//
-//		totalFiles=\$( find ${fast5Input.baseName}.untar -name "*.fast5" -type f | wc -l )
-//		echo "### Total fast5 input files:\${totalFiles}"
-//		if (( totalFiles==0 )); then
-//			echo "### no fast5 files at ${fast5Input.baseName}.untar, skip this job"
-//			rm -rf ${fast5Input.baseName}.untar
-//		fi
-//		echo "### Untar DONE"
-//		"""
-//	}
-//}
-
+include { ENVCHECK } from './modules/ENVCHECK'  // addParams(chrSet1: "${chrSet}", dataType1:"${dataType}")
 
 include { UNTAR } from './modules/UNTAR'
 
-
-// basecall of subfolders named 'M1', ..., 'M10', etc.
-process Basecall {
-	tag "${fast5Untar.baseName}"
-
-	input:
-	path fast5Untar
-
-	output:
-	path "${fast5Untar.baseName}.basecall", optional:true,	emit: basecall
-	tuple val(fast5Untar.baseName), path ("${fast5Untar.baseName}.basecall"),	optional:true,  emit: basecall_tuple  // must use Name value, not file var, or will failed for B
-
-	when:
-	params.runBasecall
-
-	"""
-	date; hostname; pwd
-
-	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
-	if [[ "\${CUDA_VISIBLE_DEVICES:-}" == "" ]] ; then
-		echo "Detect no GPU, using CPU commandType"
-		commandType='cpu'
-		gpuOptions=" "
-	else
-		echo "Detect GPU, using GPU commandType"
-		commandType='gpu'
-		gpuOptions="-x auto"
-	fi
-
-	which guppy_basecaller
-	guppy_basecaller -v
-	mkdir -p ${fast5Untar.baseName}.basecall
-
-	if [[ ${params.skipBasecall} == false ]] ; then
-		## CPU/GPU version command
-		guppy_basecaller --input_path ${fast5Untar} \
-			--save_path "${fast5Untar.baseName}.basecall" \
-			--config ${params.GUPPY_BASECALL_MODEL} \
-			--num_callers ${task.cpus} \
-			--fast5_out --compress_fastq\
-			--verbose_logs  \${gpuOptions} &>> ${params.dsname}.${fast5Untar.baseName}.Basecall.run.log
-	else
-		## Just use user's basecalled input
-		cp -rf ${fast5Untar}/*   ${fast5Untar.baseName}.basecall/
-	fi
-
-	## Combine fastq
-	touch "${fast5Untar.baseName}.basecall"/batch_basecall_combine_fq_${fast5Untar.baseName}.fq.gz
-
-	## Below is compatable with both Guppy v4.2.2 (old) and newest directory structures
-	find "${fast5Untar.baseName}.basecall/" "${fast5Untar.baseName}.basecall/pass"\
-	 	${params.filter_fail_fq ? "" : "${fast5Untar.baseName}.basecall/fail" } -maxdepth 1 -name '*.fastq.gz' -type f\
-	 	-print0 2>/dev/null | \
-	 	while read -d \$'\0' file ; do
-	 		cat \$file >> \
-	 			"${fast5Untar.baseName}.basecall"/batch_basecall_combine_fq_${fast5Untar.baseName}.fq.gz
-	 	done
-	echo "### Combine fastq.gz DONE"
-
-	## Remove fastq.gz
-	find "${fast5Untar.baseName}.basecall/"   "${fast5Untar.baseName}.basecall/pass/"\
-	 	"${fast5Untar.baseName}.basecall/fail/" -maxdepth 1 -name '*.fastq.gz' -type f 2>/dev/null |\
-	 	parallel -j${task.cpus * params.highProcTimes} 'rm -f {}'
-
-	## After basecall, rename and publish summary filenames, summary may also be used by resquiggle
-	mv ${fast5Untar.baseName}.basecall/sequencing_summary.txt \
-		${fast5Untar.baseName}.basecall/${fast5Untar.baseName}-sequencing_summary.txt
-
-    ## Clean
-    if [[ ${params.cleanStep} == "true" ]]; then
-    	echo "### No need to clean"
-    fi
-	echo "### Basecalled by Guppy DONE"
-	"""
-}
+include { BASECALL } from './modules/BASECALL'
 
 
 // Align each basecalled outputs
@@ -2476,25 +2201,24 @@ workflow {
 		deepsignalDir = Channel.fromPath(params.deepsignalDir, type: 'any', checkIfExists: true)
 	}
 
-	EnvCheck(genome_ch, ch_utils, rerioDir, deepsignalDir)
-	// Untar(inputCh)
+	ENVCHECK(genome_ch, ch_utils, rerioDir, deepsignalDir)
 	UNTAR(inputCh)
 
 	if (params.runBasecall) {
-		Basecall(UNTAR.out.untar)
-		Alignment(Basecall.out.basecall, EnvCheck.out.reference_genome)
-		QCExport(Basecall.out.basecall.collect(),
+		BASECALL(UNTAR.out.untar)
+		Alignment(BASECALL.out.basecall, ENVCHECK.out.reference_genome)
+		QCExport(BASECALL.out.basecall.collect(),
 					Alignment.out.alignment.collect(),
-					EnvCheck.out.reference_genome)
+					ENVCHECK.out.reference_genome)
 	}
 
 	// Resquiggle running if use Tombo or DeepSignal
 	if (((params.runDeepSignal || params.runTombo) && params.runMethcall) || params.runResquiggle) {
-		Resquiggle(Basecall.out.basecall, EnvCheck.out.reference_genome)
+		Resquiggle(BASECALL.out.basecall, ENVCHECK.out.reference_genome)
 	}
 
 	if (params.runNanopolish && params.runMethcall) {
-		Nanopolish(Basecall.out.basecall_tuple.join(Alignment.out.alignment_tuple), EnvCheck.out.reference_genome)
+		Nanopolish(BASECALL.out.basecall_tuple.join(Alignment.out.alignment_tuple), ENVCHECK.out.reference_genome)
 		comb_nanopolish = NplshComb(Nanopolish.out.nanopolish_tsv.collect(), ch_src, ch_utils)
 		s1 = comb_nanopolish.site_unify
 		r1 = comb_nanopolish.read_unify
@@ -2504,7 +2228,7 @@ workflow {
 	}
 
 	if (params.runMegalodon && params.runMethcall) {
-		Megalodon(UNTAR.out.untar, EnvCheck.out.reference_genome, EnvCheck.out.rerio)
+		Megalodon(UNTAR.out.untar, ENVCHECK.out.reference_genome, ENVCHECK.out.rerio)
 		comb_megalodon = MgldnComb(Megalodon.out.megalodon_tsv.collect(),
 							Megalodon.out.megalodon_mod_mappings.collect(),
 							ch_src, ch_utils)
@@ -2516,7 +2240,7 @@ workflow {
 	}
 
 	if (params.runDeepSignal && params.runMethcall) {
-		DeepSignal(Resquiggle.out.resquiggle, EnvCheck.out.reference_genome, EnvCheck.out.deepsignal_model)
+		DeepSignal(Resquiggle.out.resquiggle, ENVCHECK.out.reference_genome, ENVCHECK.out.deepsignal_model)
 		comb_deepsignal = DpSigComb(DeepSignal.out.deepsignal_tsv.collect(), ch_src, ch_utils)
 		s3 = comb_deepsignal.site_unify
 		r3 = comb_deepsignal.read_unify
@@ -2526,13 +2250,13 @@ workflow {
 	}
 
 	if (params.runGuppy && params.runMethcall) {
-		Guppy(UNTAR.out.untar, EnvCheck.out.reference_genome, ch_utils)
+		Guppy(UNTAR.out.untar, ENVCHECK.out.reference_genome, ch_utils)
 
 		gcf52ref_ch = Channel.fromPath("${projectDir}/utils/null1").concat(Guppy.out.guppy_gcf52ref_tsv.collect())
 
 		comb_guppy = GuppyComb(Guppy.out.guppy_fast5mod_bam.collect(),
 								gcf52ref_ch,
-								EnvCheck.out.reference_genome,
+								ENVCHECK.out.reference_genome,
 								ch_src, ch_utils)
 		s4 = comb_guppy.site_unify
 		r4 = comb_guppy.read_unify
@@ -2542,7 +2266,7 @@ workflow {
 	}
 
 	if (params.runTombo && params.runMethcall) {
-		Tombo(Resquiggle.out.resquiggle, EnvCheck.out.reference_genome)
+		Tombo(Resquiggle.out.resquiggle, ENVCHECK.out.reference_genome)
 		comb_tombo = TomboComb(Tombo.out.tombo_tsv.collect(), ch_src, ch_utils)
 		s5 = comb_tombo.site_unify
 		r5 = comb_tombo.read_unify
@@ -2560,7 +2284,7 @@ workflow {
 				exit 1, "DEEPMOD_CFILE does not exist, check params: --DEEPMOD_CFILE ${params.DEEPMOD_CFILE}"
 			ch_ctar = Channel.fromPath(params.DEEPMOD_CFILE, type:'any', checkIfExists: true)
 		}
-		DeepMod(Basecall.out.basecall, EnvCheck.out.reference_genome)
+		DeepMod(BASECALL.out.basecall, ENVCHECK.out.reference_genome)
 		comb_deepmod = DpmodComb(DeepMod.out.deepmod_out.collect(), ch_ctar, ch_src, ch_utils)
 		s6 = comb_deepmod.site_unify
 	} else {
@@ -2587,7 +2311,7 @@ workflow {
 	if (params.runNewTool && params.newModuleConfigs) {
 		newModuleCh = Channel.of( params.newModuleConfigs ).flatten()
 		// ref: https://www.nextflow.io/docs/latest/operator.html#combine
-		NewTool(newModuleCh.combine(Basecall.out.basecall), EnvCheck.out.reference_genome, referenceGenome)
+		NewTool(newModuleCh.combine(BASECALL.out.basecall), ENVCHECK.out.reference_genome, referenceGenome)
 		NewToolComb(NewTool.out.batch_out.collect(), newModuleCh, ch_src)
 
 		s_new = NewToolComb.out.site_unify
@@ -2607,14 +2331,15 @@ workflow {
 		).toList().set { tools_read_unify }
 
 	Report(tools_site_unify, tools_read_unify,
-			EnvCheck.out.tools_version_tsv, QCExport.out.qc_report,
-			EnvCheck.out.reference_genome, ch_src, ch_utils)
+			ENVCHECK.out.tools_version_tsv, QCExport.out.qc_report,
+			ENVCHECK.out.reference_genome, ch_src, ch_utils)
 
 	if (params.phasing) {
-		Clair3(QCExport.out.bam_data, EnvCheck.out.reference_genome)
+		Clair3(QCExport.out.bam_data, ENVCHECK.out.reference_genome)
 		Channel.fromPath("${projectDir}/utils/null1").concat(
 			MgldnComb.out.megalodon_combine, Report.out.nanome_combine_out
 			).toList().set { mega_and_nanome_ch }
-		Phasing(mega_and_nanome_ch, Clair3.out.clair3_out_ch, ch_src, QCExport.out.bam_data, EnvCheck.out.reference_genome)
+		Phasing(mega_and_nanome_ch, Clair3.out.clair3_out_ch,
+				ch_src, QCExport.out.bam_data, ENVCHECK.out.reference_genome)
 	}
 }
