@@ -330,35 +330,7 @@ include { UNTAR } from './modules/UNTAR'
 
 include { BASECALL } from './modules/BASECALL'
 
-
-// Align each basecalled outputs
-process Alignment {
-	tag "${basecallDir.baseName}"
-
-	input:
-	path 	basecallDir
-	each 	path(reference_genome)
-
-	output:
-	path "${basecallDir.baseName}.alignment", 		optional:true,	emit: alignment
-	tuple val(basecallDir.baseName), path ("${basecallDir.baseName}.alignment"),	optional:true,		emit: alignment_tuple
-
-	script:
-	cores = task.cpus * params.mediumProcTimes
-	"""
-	mkdir -p "${basecallDir.baseName}.alignment"
-
-	## After basecall, we align results to merged, sorted bam, can be for ONT coverage analyses/output bam
-	# align FASTQ files to reference genome, write sorted alignments to a BAM file
-	minimap2 -t ${cores} -a  -x map-ont \
-		${referenceGenome} \
-		${basecallDir}/batch_basecall_combine_fq_*.fq.gz | \
-		samtools sort -@ ${cores} -T tmp -o \
-			${basecallDir.baseName}.alignment/${basecallDir.baseName}_bam.bam &&\
-		samtools index -@ ${cores}  ${basecallDir.baseName}.alignment/${basecallDir.baseName}_bam.bam
-	echo "### Samtools alignment DONE"
-	"""
-}
+include { ALIGNMENT } from './modules/ALIGNMENT'
 
 
 // Collect and output QC results for basecall, and report ONT coverage
@@ -2206,9 +2178,9 @@ workflow {
 
 	if (params.runBasecall) {
 		BASECALL(UNTAR.out.untar)
-		Alignment(BASECALL.out.basecall, ENVCHECK.out.reference_genome)
+		ALIGNMENT(BASECALL.out.basecall, ENVCHECK.out.reference_genome)
 		QCExport(BASECALL.out.basecall.collect(),
-					Alignment.out.alignment.collect(),
+					ALIGNMENT.out.alignment.collect(),
 					ENVCHECK.out.reference_genome)
 	}
 
@@ -2218,7 +2190,7 @@ workflow {
 	}
 
 	if (params.runNanopolish && params.runMethcall) {
-		Nanopolish(BASECALL.out.basecall_tuple.join(Alignment.out.alignment_tuple), ENVCHECK.out.reference_genome)
+		Nanopolish(BASECALL.out.basecall_tuple.join(ALIGNMENT.out.alignment_tuple), ENVCHECK.out.reference_genome)
 		comb_nanopolish = NplshComb(Nanopolish.out.nanopolish_tsv.collect(), ch_src, ch_utils)
 		s1 = comb_nanopolish.site_unify
 		r1 = comb_nanopolish.read_unify

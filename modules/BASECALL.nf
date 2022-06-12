@@ -12,11 +12,12 @@ process BASECALL {
 	when:
 	params.runBasecall
 
-	"""
+	shell:
+	'''
 	date; hostname; pwd
 
-	echo "CUDA_VISIBLE_DEVICES=\${CUDA_VISIBLE_DEVICES:-}"
-	if [[ "\${CUDA_VISIBLE_DEVICES:-}" == "" ]] ; then
+	echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-}"
+	if [[ ${CUDA_VISIBLE_DEVICES:-} == "" ]] ; then
 		echo "Detect no GPU, using CPU commandType"
 		commandType='cpu'
 		gpuOptions=" "
@@ -28,47 +29,55 @@ process BASECALL {
 
 	which guppy_basecaller
 	guppy_basecaller -v
-	mkdir -p ${fast5Untar.baseName}.basecall
+	mkdir -p !{fast5Untar.baseName}.basecall
 
-	if [[ ${params.skipBasecall} == false ]] ; then
+	if [[ !{params.skipBasecall} == false ]] ; then
 		## CPU/GPU version command
-		guppy_basecaller --input_path ${fast5Untar} \
-			--save_path "${fast5Untar.baseName}.basecall" \
-			--config ${params.GUPPY_BASECALL_MODEL} \
-			--num_callers ${task.cpus} \
+		guppy_basecaller --input_path !{fast5Untar} \
+			--save_path  !{fast5Untar.baseName}.basecall \
+			--config !{params.GUPPY_BASECALL_MODEL} \
+			--num_callers !{task.cpus} \
 			--fast5_out --compress_fastq\
-			--verbose_logs  \${gpuOptions} &>> ${params.dsname}.${fast5Untar.baseName}.Basecall.run.log
+			--verbose_logs  ${gpuOptions} &>> !{params.dsname}.!{fast5Untar.baseName}.Basecall.run.log
 	else
 		## Just use user's basecalled input
-		cp -rf ${fast5Untar}/*   ${fast5Untar.baseName}.basecall/
+		cp -rf !{fast5Untar}/*   !{fast5Untar.baseName}.basecall/
 	fi
 
 	## Combine fastq
-	touch "${fast5Untar.baseName}.basecall"/batch_basecall_combine_fq_${fast5Untar.baseName}.fq.gz
+	touch !{fast5Untar.baseName}.basecall/batch_basecall_combine_fq_!{fast5Untar.baseName}.fq.gz
 
 	## Below is compatable with both Guppy v4.2.2 (old) and newest directory structures
-	find "${fast5Untar.baseName}.basecall/" "${fast5Untar.baseName}.basecall/pass"\
-	 	${params.filter_fail_fq ? "" : "${fast5Untar.baseName}.basecall/fail" } -maxdepth 1 -name '*.fastq.gz' -type f\
+	## !{fast5Untar.baseName}.basecall/fail
+
+	if [[ params.filter_fail_fq == true ]] ; then
+		failDir=
+	else
+		failDir=!{fast5Untar.baseName}.basecall/fail
+	fi
+
+	find !{fast5Untar.baseName}.basecall/ !{fast5Untar.baseName}.basecall/pass \
+	 	${failDir}  -maxdepth 1 -name '*.fastq.gz' -type f\
 	 	-print0 2>/dev/null | \
-	 	while read -d \$'\0' file ; do
-	 		cat \$file >> \
-	 			"${fast5Untar.baseName}.basecall"/batch_basecall_combine_fq_${fast5Untar.baseName}.fq.gz
+	 	while IFS= read -r -d '' file;  do
+	 		cat $file >> \
+	 			!{fast5Untar.baseName}.basecall/batch_basecall_combine_fq_!{fast5Untar.baseName}.fq.gz
 	 	done
 	echo "### Combine fastq.gz DONE"
 
 	## Remove fastq.gz
-	find "${fast5Untar.baseName}.basecall/"   "${fast5Untar.baseName}.basecall/pass/"\
-	 	"${fast5Untar.baseName}.basecall/fail/" -maxdepth 1 -name '*.fastq.gz' -type f 2>/dev/null |\
-	 	parallel -j${task.cpus * params.highProcTimes} 'rm -f {}'
+	find !{fast5Untar.baseName}.basecall/   !{fast5Untar.baseName}.basecall/pass/ \
+	 	!{fast5Untar.baseName}.basecall/fail/ -maxdepth 1 -name '*.fastq.gz' -type f 2>/dev/null |\
+	 	parallel -j!{task.cpus * params.highProcTimes} 'rm -f {}'
 
 	## After basecall, rename and publish summary filenames, summary may also be used by resquiggle
-	mv ${fast5Untar.baseName}.basecall/sequencing_summary.txt \
-		${fast5Untar.baseName}.basecall/${fast5Untar.baseName}-sequencing_summary.txt
+	mv !{fast5Untar.baseName}.basecall/sequencing_summary.txt \
+		!{fast5Untar.baseName}.basecall/!{fast5Untar.baseName}-sequencing_summary.txt
 
     ## Clean
-    if [[ ${params.cleanStep} == "true" ]]; then
+    if [[ !{params.cleanStep} == "true" ]]; then
     	echo "### No need to clean"
     fi
 	echo "### Basecalled by Guppy DONE"
-	"""
+	'''
 }
