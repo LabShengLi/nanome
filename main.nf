@@ -12,9 +12,14 @@
  @Organization : JAX Li Lab
 ----------------------------------------------------------------------------------------
 */
-include {nextflowVersionCheck} from './modules/COMMONS'
-
-nextflowVersionCheck()
+// We now support both latest and lower versions, due to Lifebit CloudOS is only support 20.04
+// Note: NXF_VER=20.04.1 nextflow run main.nf -profile test,singularity
+if( nextflow.version.matches(">= 20.07.1") ){
+	nextflow.enable.dsl = 2
+} else {
+	// Support lower version of nextflow
+	nextflow.preview.dsl = 2
+}
 
 include {helpMessage} from './modules/HELP'
 
