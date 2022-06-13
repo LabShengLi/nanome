@@ -32,14 +32,23 @@ process UNTAR {
 			echo "### Untar error for input=!{fast5Input}"
 		fi
 
+		if [[ !{params.multi_to_single_fast5} == true ]] ; then
+			echo "### Do multi_to_single_fast5"
+			untarTempDir=untarTempDir2
+			mkdir -p ${untarTempDir}
+			multi_to_single_fast5 -i untarTempDir -s untarTempDir2 -t !{cores}  --recursive
+		else
+			untarTempDir=untarTempDir
+		fi
+
 		## Move fast5 raw/basecalled files into XXX.untar folder
 		mkdir -p !{fast5Input.baseName}.untar
 
-		find untarTempDir -name "*.fast5" -type f | \
+		find ${untarTempDir} -name "*.fast5" -type f | \
 			parallel -j!{cores}  mv {}  !{fast5Input.baseName}.untar/
 
 		## Clean temp files
-		rm -rf untarTempDir
+		rm -rf untarTempDir  untarTempDir2
 
 		## Clean old basecalled analyses in input fast5 files
 		if [[ "!{params.cleanAnalyses}" == true ]] ; then
@@ -58,7 +67,7 @@ process UNTAR {
 		fi
 		echo "### Untar DONE"
 		'''
-	} else {
+	} else { // deal with basecalled input data
 		'''
 		date; hostname; pwd
 

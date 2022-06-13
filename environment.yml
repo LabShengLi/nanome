@@ -34,6 +34,7 @@ dependencies:
   - nanocomp>=1.16.1
   - h5py # due to tombo/DeepMod issue (resquiggle is ok for higher version), must < 3.0, ref: https://github.com/nanoporetech/tombo/issues/325
   - scikit-learn # NANOME needs >=0.23.2, but METEORE needs older version <=0.23.2, it needs old package for RF model load, ref: https://github.com/comprna/METEORE/blob/master/combination_model_prediction.py#L44, https://stackoverflow.com/questions/65758102/no-module-name-sklearn-forest-ensemble
+  - ont_vbz_hdf_plugin # used for multi-fast5 and gz format, ref: https://github.com/jts/nanopolish/issues/620
   - ont-fast5-api # =3.0 needed by fast5mod, will upgrade by pip install for Megalodon, but it's ok for running both >3.0
   - tensorflow>=1.8.0, <=1.13.1  # deepsignal needs: https://github.com/bioinfomaticsCSU/deepsignal#installation  tensorflow (1.8.0<=tensorflow<=1.13.1)
   - pybedtools>=0.8.2 # nanome needs upper version of pybedtools, deal with NAs
