@@ -1,3 +1,16 @@
+/*
+=========================================================================================
+  		NANOME(Nanopore methylation) pipeline for Oxford Nanopore sequencing
+=========================================================================================
+ NANOME Analysis Pipeline.
+ #### Homepage / Documentation
+ https://github.com/LabShengLi/nanome
+ @Author   : Yang Liu
+ @FileName : BASECALL.nf
+ @Software : NANOME project
+ @Organization : JAX Sheng Li Lab
+----------------------------------------------------------------------------------------
+*/
 // basecall of subfolders named 'M1', ..., 'M10', etc.
 process BASECALL {
 	tag "${fast5Untar.baseName}"

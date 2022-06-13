@@ -1,3 +1,16 @@
+/*
+=========================================================================================
+  		NANOME(Nanopore methylation) pipeline for Oxford Nanopore sequencing
+=========================================================================================
+ NANOME Analysis Pipeline.
+ #### Homepage / Documentation
+ https://github.com/LabShengLi/nanome
+ @Author   : Yang Liu
+ @FileName : QCEXPORT.nf
+ @Software : NANOME project
+ @Organization : JAX Sheng Li Lab
+----------------------------------------------------------------------------------------
+*/
 // Collect and output QC results for basecall, and report ONT coverage
 process QCEXPORT {
 	tag "${params.dsname}"

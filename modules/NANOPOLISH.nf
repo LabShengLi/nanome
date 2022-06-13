@@ -1,3 +1,16 @@
+/*
+=========================================================================================
+  		NANOME(Nanopore methylation) pipeline for Oxford Nanopore sequencing
+=========================================================================================
+ NANOME Analysis Pipeline.
+ #### Homepage / Documentation
+ https://github.com/LabShengLi/nanome
+ @Author   : Yang Liu
+ @FileName : NANOPOLISH.nf
+ @Software : NANOME project
+ @Organization : JAX Sheng Li Lab
+----------------------------------------------------------------------------------------
+*/
 // Nanopolish runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
 process NANOPOLISH {
 	tag "${basecallDir.baseName}"
