@@ -1,5 +1,5 @@
 **This is an explanation of how to use NANOME pipeline on some specific scenarios. For general usage, please check [Usage](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md).**
-## 1. How to use other reference genome in NANOME? 
+## 1. How to use other reference genome in NANOME?
 
 NANOME support other reference genome. Below is an example of running NANOME for any other reference genomes, please make sure put reference genome file .fasta and the indexed file into directory [reference-genome-dir], the `--chrSet` is the chromosomes params for the specific genome. 
 
@@ -67,7 +67,7 @@ nextflow pull LabShengLi/nanome
 nextflow pull LabShengLi/nanome -r [branch-name]
 ```
 
-## 4. Perform only basecall and QC
+## 4. Perform only basecall and QC.
 Using option `--runMethcall false` will not run methylation calling, it will only perform basecall and QC.
 
 ```angular2html

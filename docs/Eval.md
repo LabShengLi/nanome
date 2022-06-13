@@ -51,8 +51,7 @@ read_level_eval.py \
         Megalodon:Megalodon:[Megalodon-calls]\
         DeepSignal:DeepSignal:[DeepSignal-calls]\
     --bgtruth [encode-type]:[BS-seq-rep1];[BS-seq-rep2]\
-    --genome-annotation [genome-annotation]\
-    --report-joined
+    --genome-annotation [genome-annotation]
 ```
 Sample results can be found at [read-level outputs](https://github.com/LabShengLi/nanome/blob/master/docs/resources/read_level_output.txt).
 
@@ -69,13 +68,19 @@ singularity exec -e docker://liuyangzzu/nanome read_level_eval.py
 ```angular2html
 read_level_eval.py -h
 
-usage: read_level_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID --calls CALLS [CALLS ...] [--bgtruth BGTRUTH]
-                                [--genome-annotation GENOME_ANNOTATION] [--min-bgtruth-cov MIN_BGTRUTH_COV]
-                                [--toolcov-cutoff TOOLCOV_CUTOFF] [--processors PROCESSORS] [--report-no-join]
-                                [--chrSet CHRSET [CHRSET ...]] [-o O] [--enable-cache] [--using-cache] [--distribution]
-                                [--bsseq-report] [--analysis ANALYSIS] [--save-curve-data] [--large-mem]
-                                [--bedtools-tmp BEDTOOLS_TMP] [--cache-dir CACHE_DIR] [--disable-bed-check] [--mpi]
-                                [--mpi-import] [--config] [--verbose]
+usage: read_level_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID
+                                --calls CALLS [CALLS ...] [--bgtruth BGTRUTH]
+                                [--genome-annotation GENOME_ANNOTATION]
+                                [--min-bgtruth-cov MIN_BGTRUTH_COV]
+                                [--toolcov-cutoff TOOLCOV_CUTOFF]
+                                [--processors PROCESSORS] [--report-no-join]
+                                [--chrSet CHRSET [CHRSET ...]] [-o O]
+                                [--enable-cache] [--using-cache]
+                                [--distribution] [--bsseq-report]
+                                [--analysis ANALYSIS] [--save-curve-data]
+                                [--large-mem] [--bedtools-tmp BEDTOOLS_TMP]
+                                [--cache-dir CACHE_DIR] [--disable-bed-check]
+                                [--mpi] [--mpi-import] [--config] [--verbose]
 
 Read-level performance evaluation in nanome paper
 
@@ -83,11 +88,18 @@ optional arguments:
   -h, --help            show this help message and exit
   -v, --version         show program's version number and exit
   --dsname DSNAME       dataset name
-  --runid RUNID         running prefix/output folder name, such as MethPerf-Dataset_WGBS_2Reps
+  --runid RUNID         running prefix/output folder name, such as MethPerf-
+                        Dataset_WGBS_2Reps
   --calls CALLS [CALLS ...]
-                        all ONT call results <tool-name>:<file-encode>:<file-name> seperated by space, tool-name/file-
-                        encode can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod, NANOME
-  --bgtruth BGTRUTH     background truth file <encode-type>:<file-name1>;<file-name2>, encode-type can be 'encode' or
+                        all ONT call results <tool-name>:<file-encode>:<file-
+                        name>[<cutoff0>:<cutoff1>] seperated by space, tool-
+                        name/file-encode can be Nanopolish, Megalodon,
+                        DeepSignal, Guppy, Tombo, METEORE, DeepMod, NANOME.
+                        The optional cutoff0 and cutoff1 can be specified if
+                        user wants to change default cutoff values, i.e.,
+                        Nanpolish uses -2:2, Megalodon uses 0.2:0.8, etc.
+  --bgtruth BGTRUTH     background truth file <encode-type>:<file-
+                        name1>;<file-name2>, encode-type can be 'encode' or
                         'bismark'
   --genome-annotation GENOME_ANNOTATION
                         genome annotation dir, contain BED files
@@ -103,7 +115,8 @@ optional arguments:
   -o O                  output base dir
   --enable-cache        if enable cache functions
   --using-cache         if use cache files
-  --distribution        if report singleton/nonsingleton distributions at all regions
+  --distribution        if report singleton/nonsingleton distributions at all
+                        regions
   --bsseq-report        if report singleton/nonsingleton in bs-seq
   --analysis ANALYSIS   special analysis specifications for ecoli
   --save-curve-data     if save pred/truth points for curve plot
@@ -111,10 +124,14 @@ optional arguments:
   --bedtools-tmp BEDTOOLS_TMP
                         bedtools temp dir
   --cache-dir CACHE_DIR
-                        cache dir used for loading calls/bs-seq (speed up running)
-  --disable-bed-check   if disable auto-checking the 0/1 base format for genome annotations
-  --mpi                 if using multi-processing/threading for evaluation, it can speed-up but may need more memory
-  --mpi-import          if using multi-processing/threading for import, it can speed-up, only for small size data
+                        cache dir used for loading calls/bs-seq (speed up
+                        running)
+  --disable-bed-check   if disable auto-checking the 0/1 base format for
+                        genome annotations
+  --mpi                 if using multi-processing/threading for evaluation, it
+                        can speed-up but may need more memory
+  --mpi-import          if using multi-processing/threading for import, it can
+                        speed-up, only for small size data
   --config              if print out config file for genome annotation
   --verbose             if output verbose info
 ```
@@ -158,8 +175,7 @@ usage: site_level_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID --calls 
                                 [--chrSet CHRSET [CHRSET ...]] [--sep SEP] [--processors PROCESSORS] [-o O] [--gen-venn]
                                 [--sort] [--deduplicate] [--summary-coverage] [--region-coe-report] [--report-no-join]
                                 [--enable-cache] [--using-cache] [--plot] [--bedtools-tmp BEDTOOLS_TMP]
-                                [--cache-dir CACHE_DIR] [--large-mem] [--disable-bed-check] [--mpi] [--config]
-                                [--verbose]
+                                [--cache-dir CACHE_DIR] [--large-mem] [--disable-bed-check] [--mpi] [--config] [--verbose]
 
 Site-level correlation analysis in nanome paper
 
@@ -169,19 +185,23 @@ optional arguments:
   --dsname DSNAME       dataset name
   --runid RUNID         running prefix/output folder name, such as MethCorr-Dataset_WGBS_2Reps
   --calls CALLS [CALLS ...]
-                        all ONT call results <tool-name>:<file-encode>:<file-name> seperated by spaces, tool-name/file-encode can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod, NANOME
-  --bgtruth BGTRUTH     background truth file <encode-type>:<file-name1>;<file-name2>, encode-type can be 'encode' or  'bismark'
+                        all ONT call results <tool-name>:<file-encode>:<file-name> seperated by spaces, tool-name/file-
+                        encode can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod, NANOME. The
+                        optional cutoff0 and cutoff1 can be specified if user wants to change default cutoff values, i.e.,
+                        Nanpolish uses -2:2, Megalodon uses 0.2:0.8, etc.
+  --bgtruth BGTRUTH     background truth file <encode-type>:<file-name1>;<file-name2>, encode-type can be 'encode' or
+                        'bismark'
   --genome-annotation GENOME_ANNOTATION
                         genome annotation dir, contain BED files
-  --beddir BEDDIR       base dir for concordant/discordant BED files generated by read-level analysis, make sure the
-                        dsname is same
+  --beddir BEDDIR       base dir for concordant/discordant BED files generated by read-level analysis, make sure the dsname
+                        is same
   --min-bgtruth-cov MIN_BGTRUTH_COV
                         cutoff for coverage in bg-truth, default is >=5
   --toolcov-cutoff TOOLCOV_CUTOFF
                         cutoff for coverage in nanopore tools, default is >=3
   --chrSet CHRSET [CHRSET ...]
                         chromosome list, default is human chr1-22, X and Y
-  --sep SEP             separator for output csv file
+  --sep SEP             seperator for output csv file
   --processors PROCESSORS
                         number of processors used, default is 1
   -o O                  output base dir
@@ -278,10 +298,10 @@ The columns for site level output are:
 ```angular2html
 tss_eval.py -h
 
-usage: tss_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID --calls CALLS [CALLS ...] [--bgtruth BGTRUTH]
-                         [--read-level-format] [--sep SEP] [--processors PROCESSORS] [-o O] [--enable-cache]
-                         [--using-cache] [--sort] [--deduplicate] [--cache-dir CACHE_DIR] [--chrSet CHRSET [CHRSET ...]]
-                         [--tagname TAGNAME] [--verbose]
+usage: tss_eval (NANOME) [-h] [-v] --dsname DSNAME --runid RUNID [--calls CALLS [CALLS ...]] [--bgtruth BGTRUTH]
+                         [--read-level-format] [--sep SEP] [--processors PROCESSORS] [-o O] [--enable-cache] [--using-cache]
+                         [--sort] [--deduplicate] [--cache-dir CACHE_DIR] [--chrSet CHRSET [CHRSET ...]] [--tagname TAGNAME]
+                         [--verbose]
 
 Export read/site level methylation results of all nanopore tools in nanome paper
 
@@ -291,10 +311,14 @@ optional arguments:
   --dsname DSNAME       dataset name
   --runid RUNID         running prefix/output dir name
   --calls CALLS [CALLS ...]
-                        all ONT call results <tool-name>:<encode>:<file-name> seperated by spaces
+                        all ONT call results <tool-name>:<file-encode>:<file-name>[<cutoff0>:<cutoff1>] seperated by space,
+                        tool-name/file-encode can be Nanopolish, Megalodon, DeepSignal, Guppy, Tombo, METEORE, DeepMod,
+                        NANOME. The optional cutoff0 and cutoff1 can be specified if user wants to change default cutoff
+                        values, i.e., Nanpolish uses -2:2, Megalodon uses 0.2:0.8, etc.
   --bgtruth BGTRUTH     background truth file <encode-type>:<file-name1>;<file-name2>
-  --read-level-format   if true, it will output read level results (1-based start), else it will output site-level results (0-based start, 1-based end)
-  --sep SEP             separators for output csv file, default is tab character
+  --read-level-format   if true, it will output read level results (1-based start), else it will output site-level results
+                        (0-based start, 1-based end)
+  --sep SEP             seperator for output csv file, default is tab character
   --processors PROCESSORS
                         running processors, default is 1
   -o O                  output base dir
@@ -316,10 +340,9 @@ For specific genomic region analysis, below is the tool to intersect data file w
 
 ```angular2html
 region_intersect.py -h
-usage: region_intersect (NANOME) [-h] [-v] -i I -r R -o O [--sep SEP]
-                                 [--bed-format BED_FORMAT]
-                                 [--strand-intersect] [--header HEADER]
-                                 [--verbose]
+
+usage: region_intersect (NANOME) [-h] [-v] -i I -r R -o O [--sep SEP] [--bed-format BED_FORMAT] [--strand-intersect]
+                                 [--header HEADER] [--verbose]
 
 Intersect data with region file
 
@@ -329,12 +352,12 @@ optional arguments:
   -i I                  input data file
   -r R                  region BED file
   -o O                  output file
-  --sep SEP             file separator, default is TAB
+  --sep SEP             file seperator, default is TAB
   --bed-format BED_FORMAT
                         BED file start format 0/1, default is 1
   --strand-intersect    if BED file intersect using strand sensitive mode
-  --header HEADER       if input file contain header, set to 0, default is
-                        None
+  --header HEADER       if input file contain header, set to 0, default is None
   --verbose             if output verbose info
 ```
+
 We provide a list of regions on GCP storage: https://storage.googleapis.com/jax-nanopore-01-project-data/nanome_paper/genome-annotation.tar.gz .

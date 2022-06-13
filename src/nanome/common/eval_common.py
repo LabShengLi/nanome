@@ -36,7 +36,8 @@ from tqdm import tqdm
 
 from nanome.common.global_config import *
 from nanome.common.global_settings import HUMAN_CHR_SET, ToolEncodeList, BGTruthEncodeList, reference_genome_hg38_fn, \
-    enable_base_detection_bedfile, region_filename_dict, genome_wide_tagname, EPSLONG, CHUNKSIZE, DEFAULT_RAW_CUTOFF_BY_TOOLS, \
+    enable_base_detection_bedfile, region_filename_dict, genome_wide_tagname, EPSLONG, CHUNKSIZE, \
+    DEFAULT_RAW_CUTOFF_BY_TOOLS, \
     prob_to_llr2
 
 
@@ -1693,7 +1694,7 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     logger.debug("\n\n####################\n\n")
     logger.debug(f"Start load encode={encode}, infn={infn}")
 
-    if enable_cache and using_cache:
+    if using_cache:
         ret = check_cache_available(infn=infn, encode=encode, baseFormat=baseFormat, include_score=include_score,
                                     siteLevel=siteLevel, cache_dir=cache_dir, file_type='ont-call')
         if ret is not None:
@@ -1786,7 +1787,7 @@ def import_bgtruth(infn, encode, covCutoff=1, baseFormat=1, includeCov=True, fil
     :param includeCov:  if true return (freq, cov) as value of each key=(chr, (int)start, strand), or just value=freq. Note: freq is in range of [0,1]
     :return:
     """
-    if enable_cache and using_cache:
+    if using_cache:
         ret = check_cache_available(infn, encode=encode, cov=covCutoff, baseFormat=baseFormat, includeCov=includeCov,
                                     cache_dir=cache_dir, file_type='bs-seq')
         if ret is not None:
@@ -2898,7 +2899,7 @@ def get_region_bed_tuple(infn, enable_base_detection_bedfile=enable_base_detecti
         baseFormat = 1
     else:
         baseFormat = -1
-    if enable_cache and using_cache:
+    if using_cache:
         ret = check_cache_available(infn=infn, file_type='genome-annotation',
                                     baseFormat=baseFormat, cache_dir=cache_dir)
         ## If pkl in cache is avalable, and the BED file's tempdir/filename.tmp is available, import it

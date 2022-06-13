@@ -6,7 +6,7 @@
 # @Website  : https://github.com/LabShengLi/nanome
 
 """
-Define names and global variables
+Define names and global variables in nanome project
 """
 import json
 import os

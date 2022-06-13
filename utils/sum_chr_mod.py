@@ -54,7 +54,7 @@ def mergeMod(g_ad, cur_ad):
 def save_mod(res_file, amod_dict, baseOfin):
    poskeys = sorted(list(amod_dict.keys()))
    for pk in poskeys:
-      if amod_dict[pk][1]==0: del amod_dict[pk] ## We correct bug for DeepMod using [0] instead of [1], TODO:
+      if amod_dict[pk][0]==0: del amod_dict[pk] ## We correct bug for DeepMod using [0] instead of [1], confirmed by DeepMod author
 
    poskeys = list(amod_dict.keys())
    poskeys = sorted(poskeys);
