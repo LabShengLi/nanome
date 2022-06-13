@@ -138,6 +138,9 @@ if (params.genome.contains('hg') || (params.dataType && params.dataType == 'huma
 	chrSet = params.chrSet
 }
 
+// chrSet1 and dataType1 is the infered params, defined from chrSet and dataType (not in scope of params)
+params.chrSet1 = chrSet
+params.dataType1 = dataType
 
 // Get src and utils dir
 projectDir = workflow.projectDir
@@ -322,9 +325,6 @@ https://github.com/LabShengLi/nanome
 log.info summary.collect { k,v -> "${k.padRight(20)}: $v" }.join("\n")
 log.info "================================="
 
-// chrSet1 and dataType1 is the infered params, defined from chrSet and dataType (not in scope of params)
-params.chrSet1 = chrSet
-params.dataType1 = dataType
 
 include { ENVCHECK } from './modules/ENVCHECK'  // addParams(chrSet1: "${chrSet}", dataType1:"${dataType}")
 
