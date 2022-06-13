@@ -92,12 +92,39 @@ process REPORT {
 			## pip install -U scikit-learn==0.23.2
 
 			pip show scikit-learn
-			PYTHONPATH=src python src/nanome/xgboost/xgboost_predict.py \
-				--tsv-input\
-				--dsname ${params.dsname} -i \${modelContentTSVFileName}\
-				-m ${params.NANOME_MODEL}  \
-				-o ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz \
-				&>> ${params.dsname}.Report.run.log
+
+			if [[ ${params.consensus_by_chr} == true ]] ; then
+				mkdir -p consensus_by_chr
+				for chr in ${params.chrSet1.replaceAll(',', ' ')} ; do
+					echo "### consensus for chr=\${chr}"
+					PYTHONPATH=src python src/nanome/xgboost/xgboost_predict.py \
+						--tsv-input\
+						--dsname ${params.dsname} -i \${modelContentTSVFileName}\
+						-m ${params.NANOME_MODEL}  \
+						-o consensus_by_chr/${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_\${chr}.tsv.gz \
+						--chrs \${chr} \
+						&>> ${params.dsname}.Report.run.log
+				done
+				## combine all chrs
+				touch ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
+				zcat \$(ls consensus_by_chr/*.gz| head -n 1) | head -n 1 | gzip -f >> \
+					${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
+
+				find consensus_by_chr -name '*.tsv.gz' -print0 |
+					sort -V -z |
+   					while IFS= read -r -d '' infn; do
+						zcat \${infn}  | awk 'NR>1' | gzip -f >> \
+							${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
+					done
+				echo "### consensus combine chr DONE"
+			else
+				PYTHONPATH=src python src/nanome/xgboost/xgboost_predict.py \
+					--tsv-input\
+					--dsname ${params.dsname} -i \${modelContentTSVFileName}\
+					-m ${params.NANOME_MODEL}  \
+					-o ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz \
+					&>> ${params.dsname}.Report.run.log
+			fi
 
 			if [[ ${params.deduplicate} == true ]] ; then
 				echo "### Deduplicate for read-level outputs"
@@ -115,7 +142,7 @@ process REPORT {
 			bash utils/unify_format_for_calls.sh \
 				${params.dsname}  NANOME NANOME\
 				${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz \
-				.  $task.cpus  12  ${params.sort ? true : false}  "${params.chrSet1}"
+				.  $task.cpus  12  ${params.sort ? true : false}  "${params.chrSet1.replaceAll(',', ' ')}"
 			ln -s Site_Level-${params.dsname}/${params.dsname}_NANOME-perSite-cov1.sort.bed.gz\
 				${params.dsname}_NANOME-perSite-cov1.sort.bed.gz
 		fi

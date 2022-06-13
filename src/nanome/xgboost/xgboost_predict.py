@@ -108,7 +108,7 @@ def xgb_pred(datadf, model, tool_list, outfn, reads_column_list=READS_COLUMN_LIS
             value = getch()
             if value.lower() == 'q':
                 break
-    logger.info(f"### Done for model:{args.m} predict")
+    # logger.info(f"### Done for model:{args.m} predict")
 
 
 def parse_arguments():

@@ -104,7 +104,7 @@ process NPLSHCOMB {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Nanopolish Nanopolish \
 		${params.dsname}_nanopolish_per_read_combine.tsv.gz \
-		.  ${task.cpus}  12 ${params.sort  ? true : false}   "${params.chrSet1}"
+		.  ${task.cpus}  12 ${params.sort  ? true : false}   "${params.chrSet1.replaceAll(',', ' ')}"
 
 	echo "### Nanopolish combine DONE"
 	"""

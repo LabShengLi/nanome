@@ -112,11 +112,12 @@ if (genome_map[params.genome]) { genome_path = genome_map[params.genome] }
 else { 	genome_path = params.genome }
 
 // infer dataType, chrSet based on reference genome name, hg - human, ecoli - ecoli, otherwise is other reference genome
+humanChrSet = 'chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY'
 if (params.genome.contains('hg') || (params.dataType && params.dataType == 'human')) {
 	dataType = "human"
 	if (!params.chrSet) {
 		// default for human, if false or 'false' (string), using '  '
-		chrSet = 'chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY'
+		chrSet = humanChrSet
 	} else {
 		chrSet = params.chrSet
 	}
@@ -124,7 +125,7 @@ if (params.genome.contains('hg') || (params.dataType && params.dataType == 'huma
 	dataType = "mouse"
 	if (!params.chrSet) {
 		// default for human, if false or 'false' (string), using '  '
-		chrSet = 'chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY'
+		chrSet = humanChrSet
 	} else {
 		chrSet = params.chrSet
 	}
@@ -202,7 +203,7 @@ else { summary['genome'] = params.genome }
 
 summary['\nRunning settings']         = "--------"
 summary['processors'] 		= params.processors
-summary['chrSet'] 			= chrSet.split(' ').join(',')
+summary['chrSet'] 			= chrSet   // .split(' ').join(',')
 summary['dataType'] 		= dataType
 
 if (params.runBasecall) summary['runBasecall'] = 'Yes'
@@ -249,6 +250,12 @@ if (params.outputRaw) { summary['outputRaw'] 	= params.outputRaw }
 if (params.outputGenomeBrowser) { summary['outputGenomeBrowser'] 	= params.outputGenomeBrowser }
 if (params.deduplicate) { summary['deduplicate'] 	= params.deduplicate }
 if (params.sort) { summary['sort'] 	= params.sort }
+if (params.multi_to_single_fast5) { summary['multi_to_single_fast5'] 	= params.multi_to_single_fast5 }
+if (params.phasing) { summary['phasing'] 	= params.phasing }
+if (params.hmc) { summary['hmc'] 	= params.hmc }
+if (params.ctg_name) { summary['ctg_name'] 	= params.ctg_name }
+
+
 
 summary['\nModel summary']         = "--------"
 if (params.runBasecall && !params.skipBasecall) summary['GUPPY_BASECALL_MODEL'] 	= params.GUPPY_BASECALL_MODEL

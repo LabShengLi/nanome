@@ -213,7 +213,7 @@ process GuppyComb {
 	if [[ "${params.dataType1}" == "human" ]] ; then
 		echo "### For human, extract chr1-22, X and Y"
 		> chr_all_list.txt
-		for chrname in ${params.chrSet1}
+		for chrname in ${params.chrSet1.replaceAll(',', ' ')}
 		do
 			if cat rf_chr_all_list.txt | grep -w ">\${chrname}" -q ; then
 				echo \${chrname} >> chr_all_list.txt
@@ -230,7 +230,7 @@ process GuppyComb {
 				gzip -f meth.chr_{}.tsv" :::: chr_all_list.txt
 
 		touch ${params.dsname}_guppy_fast5mod_per_site_combine.tsv.gz
-		for chrname in ${params.chrSet1}
+		for chrname in ${params.chrSet1.replaceAll(',', ' ')}
 		do
 			if [ -f "meth.chr_\${chrname}.tsv.gz" ]; then
 				cat  meth.chr_\${chrname}.tsv.gz >> \
@@ -239,7 +239,7 @@ process GuppyComb {
 		done
 	else
 		echo "### For other genome, params.chrSet1=[${params.chrSet1}]"
-		for chrname in ${params.chrSet1} ;
+		for chrname in ${params.chrSet1.replaceAll(',', ' ')} ;
 		do
 			fast5mod call ${params.dsname}_guppy_fast5mod_combine.bam  ${params.referenceGenome} \
 				meth.chr_\${chrname}.tsv \
@@ -267,14 +267,14 @@ process GuppyComb {
 		bash utils/unify_format_for_calls.sh \
 			${params.dsname}  Guppy Guppy.gcf52ref\
 			 ${params.dsname}_guppy_gcf52ref_per_read_combine.tsv.gz \
-			.  ${task.cpus}  1  ${params.sort  ? true : false}  "${params.chrSet1}"
+			.  ${task.cpus}  1  ${params.sort  ? true : false}  "${params.chrSet1.replaceAll(',', ' ')}"
 	fi
 
 	## Unify format output for site level
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Guppy Guppy\
 		${params.dsname}_guppy_fast5mod_per_site_combine.tsv.gz \
-		.  ${task.cpus}  2  ${params.sort  ? true : false}  "${params.chrSet1}"
+		.  ${task.cpus}  2  ${params.sort  ? true : false}  "${params.chrSet1.replaceAll(',', ' ')}"
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
@@ -424,7 +424,7 @@ process TomboComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Tombo Tombo\
 		${params.dsname}_tombo_per_read_combine.bed.gz \
-		.  $task.cpus  12  ${params.sort  ? true : false}  "${params.chrSet1}"
+		.  $task.cpus  12  ${params.sort  ? true : false}  "${params.chrSet1.replaceAll(',', ' ')}"
 	echo "### Tombo combine DONE"
 	"""
 }
@@ -632,7 +632,7 @@ process DpmodComb {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  DeepMod DeepMod\
 		\${callfn} \
-		.  $task.cpus  2  ${params.sort ? true : false} "${params.chrSet1}"\
+		.  $task.cpus  2  ${params.sort ? true : false} "${params.chrSet1.replaceAll(',', ' ')}"\
 		&>> ${params.dsname}.DpmodComb.run.log
 
 	## Clean
@@ -740,7 +740,7 @@ process METEORE {
 		bash utils/unify_format_for_calls.sh \
 			${params.dsname}  METEORE METEORE\
 			${params.dsname}_meteore_deepsignal_megalodon_optimized_rf_model_per_read_combine.tsv.gz \
-			.  $task.cpus  12   ${params.sort ? true : false}  "${params.chrSet1}"\
+			.  $task.cpus  12   ${params.sort ? true : false}  "${params.chrSet1.replaceAll(',', ' ')}"\
 			&>> ${params.dsname}.METEORE.run.log
 	fi
 	echo "### METEORE consensus DONE"

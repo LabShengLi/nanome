@@ -103,7 +103,7 @@ process DPSIGCOMB {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  DeepSignal DeepSignal\
 		${params.dsname}_deepsignal_per_read_combine.tsv.gz \
-		.  $task.cpus  12 ${params.sort  ? true : false}  "${params.chrSet1}"
+		.  $task.cpus  12 ${params.sort  ? true : false}  "${params.chrSet1.replaceAll(',', ' ')}"
 	echo "### DeepSignal combine DONE"
 	"""
 }
