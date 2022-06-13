@@ -80,17 +80,12 @@ projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
 
-// Reference genome, deepmod cluster settings
-// def referenceGenome = "reference_genome/${params.GENOME_FN}"
-// def chromSizesFile = "reference_genome/${params.CHROM_SIZE_FN}"
-
+// Reference genome, chom size file
 params.referenceGenome = "${params.GENOME_DIR}/${params.GENOME_FN}"
 params.chromSizesFile = "${params.GENOME_DIR}/${params.CHROM_SIZE_FN}"
 
-
 if (dataType == 'human') { isDeepModCluster = params.useDeepModCluster }
 else { isDeepModCluster = false }
-
 params.isDeepModCluster = isDeepModCluster
 
 
