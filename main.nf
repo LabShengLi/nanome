@@ -120,6 +120,14 @@ if (params.genome.contains('hg') || (params.dataType && params.dataType == 'huma
 	} else {
 		chrSet = params.chrSet
 	}
+} else if (params.dataType && params.dataType == 'mouse') {
+	dataType = "mouse"
+	if (!params.chrSet) {
+		// default for human, if false or 'false' (string), using '  '
+		chrSet = 'chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY'
+	} else {
+		chrSet = params.chrSet
+	}
 } else if (params.genome.contains('ecoli') || (params.dataType && params.dataType == 'ecoli')) {
 	dataType = "ecoli"
 	if (!params.chrSet) {
