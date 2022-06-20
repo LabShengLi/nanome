@@ -1,3 +1,16 @@
+/*
+=========================================================================================
+  		NANOME(Nanopore methylation) pipeline for Oxford Nanopore sequencing
+=========================================================================================
+ NANOME Analysis Pipeline.
+ #### Homepage / Documentation
+ https://github.com/LabShengLi/nanome
+ @Author   : Yang Liu
+ @FileName : ALIGNMENT.nf
+ @Software : NANOME project
+ @Organization : JAX Sheng Li Lab
+----------------------------------------------------------------------------------------
+*/
 // Align each basecalled outputs
 process ALIGNMENT {
 	tag "${basecallDir.baseName}"

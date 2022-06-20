@@ -1,3 +1,16 @@
+/*
+=========================================================================================
+  		NANOME(Nanopore methylation) pipeline for Oxford Nanopore sequencing
+=========================================================================================
+ NANOME Analysis Pipeline.
+ #### Homepage / Documentation
+ https://github.com/LabShengLi/nanome
+ @Author   : Yang Liu
+ @FileName : OLDTOOLS.nf
+ @Software : NANOME project
+ @Organization : JAX Sheng Li Lab
+----------------------------------------------------------------------------------------
+*/
 // These tools will be deprecated soon
 
 // methylation calling for Guppy
