@@ -58,6 +58,9 @@ process REPORT {
 	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify, optional: true
 	path "${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.*.gz", emit: nanome_combine_out, optional: true
 
+	when:
+	params.runNANOME
+
 	"""
 	if [[ ${params.runNANOME} == true ]] ; then
 		## NANOME XGBoost method

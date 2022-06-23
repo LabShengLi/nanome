@@ -23,7 +23,7 @@ process RESQUIGGLE {
 	path "${basecallDir.baseName}.resquiggle", 	emit: resquiggle
 
 	when:
-	(params.runMethcall && (params.runDeepSignal || params.runTombo)) || params.runResquiggle
+	(params.runMethcall && ((params.runDeepSignal && ! params.stopDeepSignal) || params.runTombo)) || params.runResquiggle
 
 	shell:
 	cores = task.cpus * params.highProcTimes

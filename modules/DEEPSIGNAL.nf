@@ -28,7 +28,7 @@ process DEEPSIGNAL {
 	path "${params.dsname}_deepsignal_batch_${indir.baseName}.*.gz",	emit: deepsignal_tsv
 
 	when:
-	params.runMethcall && params.runDeepSignal
+	params.runMethcall && params.runDeepSignal && ! params.stopDeepSignal
 
 	script:
 	cores = task.cpus * params.highProcTimes

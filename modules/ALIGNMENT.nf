@@ -23,6 +23,9 @@ process ALIGNMENT {
 	path "${basecallDir.baseName}.alignment", 		optional:true,	emit: alignment
 	tuple val(basecallDir.baseName), path ("${basecallDir.baseName}.alignment"),	optional:true,		emit: alignment_tuple
 
+	when:
+	params.runAlignment
+
 	shell:
 	cores = task.cpus * params.mediumProcTimes
 	'''
