@@ -17,7 +17,7 @@ process RESQUIGGLE {
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Features-${params.dsname}",
 		mode: "copy",
-		pattern: "${basecallDir.baseName}.batch_features.tsv.gz",
+		pattern: "${basecallDir.baseName}.deepsignal1_batch_features.tsv.gz",
 		enabled: params.feature_extract
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Features-${params.dsname}",
@@ -31,10 +31,10 @@ process RESQUIGGLE {
 
 	output:
 	path "${basecallDir.baseName}.resquiggle", 	emit: resquiggle
-	path "${basecallDir.baseName}.batch_features.tsv.gz", 	emit: feature_extract, optional: true
+	path "${basecallDir.baseName}.deepsignal1_batch_features.tsv.gz", 	emit: feature_extract, optional: true
 
 	when:
-	(params.runMethcall && ((params.runDeepSignal && ! params.stopDeepSignal) || params.runTombo)) || params.runResquiggle
+	(params.runMethcall && ((params.runDeepSignal && ! params.stopDeepSignal) || params.runTombo || params.runDeepSignal2)) || params.runResquiggle
 
 	shell:
 	cores = task.cpus * params.highProcTimes
@@ -93,7 +93,7 @@ process RESQUIGGLE {
 			--write_path !{basecallDir.baseName}.batch_features.tsv \
 			--corrected_group !{params.ResquiggleCorrectedGroup} \
 			--nproc !{cores}
-		gzip -f !{basecallDir.baseName}.batch_features.tsv
+		gzip -f !{basecallDir.baseName}.deepsignal1_batch_features.tsv
 	fi
 	'''
 }
