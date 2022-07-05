@@ -26,7 +26,7 @@ process DEEPSIGNAL2 {
 	input:
 	path resquiggle_collect
 	// path feature_collect
-	each path(reference_genome)
+	path reference_genome
 	path ch_src
 	path ch_utils
 
