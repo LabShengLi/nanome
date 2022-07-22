@@ -11,6 +11,18 @@ Output files:
     1. perReadScore         1-based
     2. read_pred            1-based
     3. site_pred            1-based
+
+zcat NA12878_nanopolish_perReadScore_chr22_H2.tsv.gz| head -n 2
+ID	Chr	Pos	Strand	Score	Label
+bb7fc4f9-3986-4b00-a545-6e6ee2a0d531	chr22	10560213	-	-2.94	c
+
+zcat NA12878_nanopolish_read_pred_chr22_H2.tsv.gz| head -n 2
+Chr	Pos_base1	Strand	Preds	Coverage
+chr22	10560213	-	0	1
+
+zcat NA12878_nanopolish_site_freq_chr22_H2.tsv.gz| head -n 2
+Chr	Pos_base1	Strand	P5c	P5mc	Coverage
+chr22	10560213	-	1.000	0.000	1
 """
 import argparse
 import gzip
@@ -236,6 +248,93 @@ def import_nanome_per_read_file(infn, chr_filter=None, readid_filter=None, sep='
         logger.debug(f'Save unified output format to {outfn}')
 
     logger.debug(f"import NANOME: cpgs={len(cpgDict):,}\t read_level_preds={nreads:,}")
+    return cpgDict
+
+
+def import_uni_per_read_file(infn, chr_filter=None, readid_filter=None, sep='\t', readid_col=0, chr_col=1,
+                             strand_col=3, pos_col=2,
+                             meth_llr_col=-1, llr_cutoff=None,
+                             include_score=False,
+                             outBase=1, only_test=None, save_unified_format=False, outfn=None):
+    """
+    Import read-level unified input
+    Args:
+        infn:
+        readid_filter: must be set type for fast running!!!
+        sep:
+        readid_col:
+
+    Returns: CPG -> [0 1 0 1 2], or [ (0, 0.88), (1, 0.99) ], in which 0-5c, 1-5mc, 2-5hmc
+
+    Input samples:
+    ID	Chr	Pos	Strand	Score
+    fbca3118-6a88-4687-ad67-f26ba78c1cd4	chr1	10469	+	2.21
+    fbca3118-6a88-4687-ad67-f26ba78c1cd4	chr1	10471	+	2.21
+
+    We checked input as 1-based format for start col
+    """
+    if outBase not in [0, 1]:
+        raise Exception(f"outBase={outBase} is not allowed")
+
+    if save_unified_format:
+        logger.debug(f"Save unified format to {outfn}")
+        outf = gzip.open(outfn, 'wt')
+        outf.write(f"ID\tChr\tPos\tStrand\tScore\tLabel\n")
+
+    if chr_filter is not None:  # set is fast than list
+        chr_filter = set(chr_filter)
+
+    if readid_filter is not None:  # set is fast than list
+        readid_filter = set(readid_filter)
+
+    cpgDict = defaultdict(list)
+    infile, lines = open_file_gz_or_txt(infn)
+    nreads = 0  # count pred prob > cutoff
+    for row in tqdm(infile, total=lines, desc="Import-UNIREAD"):
+        if row.startswith('ID\tChr'):
+            continue
+        if only_test and nreads >= only_test:
+            break
+        tmp = row.strip().split(sep)
+        readid = tmp[readid_col]
+        if readid_filter is not None and readid not in readid_filter:
+            continue
+
+        chr = tmp[chr_col]
+        if chr_filter is not None and chr not in chr_filter:
+            continue
+
+        strand = tmp[strand_col]
+        pos = int(tmp[pos_col]) + (outBase - 1)
+
+        meth_llr = float(tmp[meth_llr_col])
+
+        if llr_cutoff is not None and abs(meth_llr) < llr_cutoff:
+            continue
+
+        if meth_llr > 0:
+            meth_indicator = 1
+        else:
+            meth_indicator = 0
+
+        key = (chr, pos, strand)
+        if include_score:
+            cpgDict[key].append((meth_indicator, meth_llr))
+        else:
+            cpgDict[key].append(meth_indicator)
+        nreads += 1
+
+        ## keep only above cutoff reads
+        if save_unified_format:
+            score = meth_llr
+            outf.write(
+                f"{readid}\t{chr}\t{pos}\t{strand}\t{score}\t{class_label[meth_indicator]}\n")
+
+    if save_unified_format:
+        outf.close()
+        logger.debug(f'Save unified output format to {outfn}')
+
+    logger.debug(f"import UNIREAD: cpgs={len(cpgDict):,}\t read_level_preds={nreads:,}")
     return cpgDict
 
 

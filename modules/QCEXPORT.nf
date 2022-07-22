@@ -28,6 +28,9 @@ process QCEXPORT {
 	path "${params.dsname}_QCReport",				emit: qc_report
 	path "${params.dsname}_bam_data",				optional: true,	 emit: bam_data
 
+	when:
+	params.runQC
+
 	shell:
 	cores = task.cpus * params.highProcTimes
 	samtools_cores = task.cpus * params.mediumProcTimes

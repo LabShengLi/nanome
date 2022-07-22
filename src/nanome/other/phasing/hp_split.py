@@ -20,7 +20,7 @@ from nanome.common.global_config import set_log_debug_level, logger, pic_base_di
 from nanome.common.global_settings import NANOME_VERSION
 from nanome.other.phasing.mega_parser import import_megalodon_per_read_file, agg_read_to_site, to_read_preds_file, \
     to_site_freq_file, \
-    import_nanome_per_read_file
+    import_nanome_per_read_file, import_uni_per_read_file
 
 hp_set = ['H1', 'H2']
 
@@ -37,6 +37,9 @@ def parse_arguments():
     parser.add_argument('--num-class', type=int,
                         help="number of class for input file, 2 for 5mc/5c, 3 for 5c/5mc/5hmc, default is 2",
                         default=2)
+    parser.add_argument('--llr-cutoff', type=float,
+                        help="cutoff of LLR score for UNIREAD format, default is None",
+                        default=None)
     parser.add_argument('--tool', type=str,
                         help="input methylation file from tool-name, such as megalodon, nanome3t, nanome2t, megalodon_5hmc_5mc etc., default is megalodon",
                         default='megalodon')
@@ -106,6 +109,11 @@ if __name__ == '__main__':
             predDict = import_nanome_per_read_file(args.i, readid_filter=set(readids), chr_filter=chrFilter,
                                                    only_test=args.only_test, save_unified_format=args.save_unified_read,
                                                    outfn=outfn)
+        elif str(args.encode).lower() in ['uniread']:
+            predDict = import_uni_per_read_file(args.i, readid_filter=set(readids), chr_filter=chrFilter,
+                                                only_test=args.only_test, llr_cutoff=args.llr_cutoff,
+                                                save_unified_format=args.save_unified_read,
+                                                outfn=outfn)
         else:
             raise Exception(f"Not support param tool, args.tool={args.tool}")
 

@@ -282,6 +282,8 @@ include { MEGALODON; MGLDNCOMB } from './modules/MEGALODON'
 
 include { DEEPSIGNAL; DPSIGCOMB } from './modules/DEEPSIGNAL'
 
+include { DEEPSIGNAL2; DEEPSIGNAL2COMB } from './modules/DEEPSIGNAL2'
+
 include { REPORT } from './modules/REPORT'
 
 include { Guppy; GuppyComb; Tombo; TomboComb; DeepMod; DpmodComb; METEORE } from './modules/OLDTOOLS'
@@ -332,7 +334,8 @@ workflow {
 	}
 
 	// Resquiggle running if use Tombo or DeepSignal
-	if (((params.runDeepSignal || params.runTombo) && params.runMethcall) || params.runResquiggle) {
+	if (((params.runDeepSignal || params.runTombo || params.runDeepSignal2) && params.runMethcall) || params.runResquiggle) {
+		// BASECALL.out.basecall.subscribe({ println("BASECALL.out.basecall: $it") })
 		RESQUIGGLE(BASECALL.out.basecall, ENVCHECK.out.reference_genome)
 	}
 
@@ -367,6 +370,15 @@ workflow {
 	} else {
 		s3 = Channel.empty()
 		r3 = Channel.empty()
+	}
+
+	if (params.runDeepSignal2 && params.runMethcall) {
+		DEEPSIGNAL2(RESQUIGGLE.out.resquiggle.collect(),
+					ENVCHECK.out.reference_genome,
+					ch_src, ch_utils)
+		DEEPSIGNAL2COMB(DEEPSIGNAL2.out.deepsignal2_combine_out,
+						ch_src, ch_utils
+						)
 	}
 
 	if (params.runGuppy && params.runMethcall) {
