@@ -336,7 +336,13 @@ workflow {
 	// Resquiggle running if use Tombo or DeepSignal
 	if (((params.runDeepSignal || params.runTombo || params.runDeepSignal2) && params.runMethcall) || params.runResquiggle) {
 		// BASECALL.out.basecall.subscribe({ println("BASECALL.out.basecall: $it") })
-		RESQUIGGLE(BASECALL.out.basecall, ENVCHECK.out.reference_genome)
+		resquiggle = RESQUIGGLE(BASECALL.out.basecall, ENVCHECK.out.reference_genome)
+		if (params.feature_extract)
+			f1 = resquiggle.feature_extract
+		else
+			f1 = Channel.empty()
+	} else {
+		f1 = Channel.empty()
 	}
 
 	if (params.runNanopolish && params.runMethcall) {
@@ -373,12 +379,15 @@ workflow {
 	}
 
 	if (params.runDeepSignal2 && params.runMethcall) {
-		DEEPSIGNAL2(RESQUIGGLE.out.resquiggle.collect(),
+		deepsignal2 = DEEPSIGNAL2(RESQUIGGLE.out.resquiggle.collect(),
 					ENVCHECK.out.reference_genome,
 					ch_src, ch_utils)
 		DEEPSIGNAL2COMB(DEEPSIGNAL2.out.deepsignal2_combine_out,
 						ch_src, ch_utils
 						)
+		f2 = deepsignal2.deepsignal2_feature_out
+	} else {
+		f2 = Channel.empty()
 	}
 
 	if (params.runGuppy && params.runMethcall) {
@@ -459,7 +468,7 @@ workflow {
 		).toList().set { tools_site_unify }
 
 	Channel.fromPath("${projectDir}/utils/null2").concat(
-		r1, r2, r3
+		r1, r2, r3, f1, f2
 		).toList().set { tools_read_unify }
 
 	REPORT(tools_site_unify, tools_read_unify,

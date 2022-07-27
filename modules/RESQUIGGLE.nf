@@ -90,7 +90,7 @@ process RESQUIGGLE {
 		deepsignal extract \
 			--fast5_dir !{basecallDir.baseName}.resquiggle/workspace/ \
 			--reference_path !{params.referenceGenome} \
-			--write_path !{basecallDir.baseName}.batch_features.tsv \
+			--write_path !{basecallDir.baseName}.deepsignal1_batch_features.tsv \
 			--corrected_group !{params.ResquiggleCorrectedGroup} \
 			--nproc !{cores}
 		gzip -f !{basecallDir.baseName}.deepsignal1_batch_features.tsv

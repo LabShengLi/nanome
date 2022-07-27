@@ -62,7 +62,90 @@ process REPORT {
 	params.runNANOME
 
 	"""
-	if [[ ${params.runNANOME} == true ]] ; then
+	if [[ ${params.NANOME_MODEL} == "NANOME3T_W" ]] ; then
+		echo "### TODO"
+
+		cat *.deepsignal1_batch_features.tsv.gz > \
+			${params.dsname}_deepsignal1_feature_combine.tsv.gz
+
+		MegalodonReadReport=\$(find . -maxdepth 1 -name '*Megalodon-perRead-score.tsv.gz')
+		if [[ -z \$MegalodonReadReport ]] ; then
+			echo "### Not found Megalodon read-level outputs"
+			MegalodonOptions=" "
+		else
+			MegalodonOptions="--megalodon_file \$MegalodonReadReport"
+		fi
+
+		NanopolishReadReport=\$(find . -maxdepth 1 -name '*Nanopolish-perRead-score.tsv.gz')
+		if [[ -z \$NanopolishReadReport ]] ; then
+			echo "### Not found Nanopolish read-level outputs"
+			NanopolishOptions=" "
+		else
+			NanopolishOptions="--nanopolish_file \$NanopolishReadReport"
+		fi
+
+		DeepSignalReadReport=\$(find . -maxdepth 1 -name '*DeepSignal-perRead-score.tsv.gz')
+		if [[ -z \$DeepSignalReadReport ]] ; then
+			echo "### Not found DeepSignal read-level outputs"
+			DeepSignalOptions=" "
+		else
+			DeepSignalOptions="--deepsignal_file \$DeepSignalReadReport"
+		fi
+
+		FeatureFile=\$(find . -maxdepth 1 -name '*_deepsignal1_feature_combine.tsv.gz')
+		if [[ -z \$FeatureFile ]] ; then
+			echo "### Not found Feature file"
+			FeatureOptions=" "
+		else
+			FeatureOptions="--feature_file \$FeatureFile"
+		fi
+
+		importmodelfile=${params.NANOME_MODEL_FILE}
+
+		if [[ ${params.consensus_by_chr} == true ]] ; then
+			mkdir -p consensus_by_chr
+			for chr in ${params.chrSet1.replaceAll(',', ' ')} ; do
+				echo "### consensus for chr=\${chr}"
+				PYTHONPATH=src python src/nanome/xgboost/weight/model_predict.py \
+					--dsname ${params.dsname} \
+					--importmodelfile \${importmodelfile} \
+					--base_model_type XGBoost \
+					--specific_model_type xgboost_seq_weight \
+					--one_hot_sequence true  --chrs \${chr} \
+					\${MegalodonOptions}  \${NanopolishOptions} \${DeepSignalOptions} \
+					\${FeatureOptions} --outdir consensus_by_chr\
+					&>> ${params.dsname}.Report.run.log
+			done
+			## combine all chrs
+			touch ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
+			zcat \$(ls consensus_by_chr/*.gz| head -n 1) | head -n 1 | \
+				awk -v FS='\t' -v OFS='\t' '{print \$4,\$1,\$2,\$3,\$5,\$6,\$7,\$8,\$9,\$10}' |\
+				gzip -f >> \
+				${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
+
+			find consensus_by_chr -name '*.tsv.gz' -print0 |
+				sort -V -z |
+				while IFS= read -r -d '' infn; do
+					zcat \${infn}  | \
+					awk -v FS='\t' -v OFS='\t' 'NR>1 {print \$4,\$1,\$2,\$3,\$5,\$6,\$7,\$8,\$9,\$10}' | \
+					gzip -f >> \
+						${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
+				done
+			echo "### consensus combine chr DONE"
+		else
+			echo PYTHONPATH=src python src/nanome/xgboost/weight/model_predict.py \
+				--dsname ${params.dsname} \
+				--importmodelfile \${importmodelfile} \
+				--base_model_type XGBoost \
+				--specific_model_type xgboost_seq_weight \
+				--one_hot_sequence true  \
+				\${MegalodonOptions}  \${NanopolishOptions} \${DeepSignalOptions} \
+				\${FeatureOptions} --outdir .
+			echo "### Not support yet"
+			exit 1
+		fi
+		echo "### TODO DONE"
+	elif [[ ${params.NANOME_MODEL} == "NANOME3T" ]] ; then
 		## NANOME XGBoost method
 		modelContentTSVFileName=${params.dsname}_nanome_${params.NANOME_MODEL}_model_content.tsv
 		> \$modelContentTSVFileName
@@ -141,27 +224,29 @@ process REPORT {
 					-o ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz \
 					&>> ${params.dsname}.Report.run.log
 			fi
-
-			if [[ ${params.deduplicate} == true ]] ; then
-				echo "### Deduplicate for read-level outputs"
-				## sort order: Chr, Start, (End), ID, Strand
-				zcat ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz |\
-					sort -V -u -k2,2 -k3,3n -k1,1 -k4,4 |\
-					gzip -f > ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.sort.tsv.gz
-				rm ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz &&\
-					mv ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.sort.tsv.gz\
-						${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
-			fi
-
-			## Unify format output
-			echo "### NANOME read/site level results"
-			bash utils/unify_format_for_calls.sh \
-				${params.dsname}  NANOME NANOME\
-				${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz \
-				.  $task.cpus  12  ${params.sort ? true : false}  "${params.chrSet1.replaceAll(',', ' ')}"
-			ln -s Site_Level-${params.dsname}/${params.dsname}_NANOME-perSite-cov1.sort.bed.gz\
-				${params.dsname}_NANOME-perSite-cov1.sort.bed.gz
 		fi
+	fi
+
+	if [[ -f ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz ]] ; then
+		if [[ ${params.deduplicate} == true ]] ; then
+			echo "### Deduplicate for read-level outputs"
+			## sort order: Chr, Start, (End), ID, Strand
+			zcat ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz |\
+				sort -V -u -k2,2 -k3,3n -k1,1 -k4,4 |\
+				gzip -f > ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.sort.tsv.gz
+			rm ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz &&\
+				mv ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.sort.tsv.gz\
+					${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
+		fi
+
+		## Unify format output
+		echo "### NANOME read/site level results"
+		bash utils/unify_format_for_calls.sh \
+			${params.dsname}  NANOME NANOME\
+			${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz \
+			.  $task.cpus  12  ${params.sort ? true : false}  "${params.chrSet1.replaceAll(',', ' ')}"
+		ln -s Site_Level-${params.dsname}/${params.dsname}_NANOME-perSite-cov1.sort.bed.gz\
+			${params.dsname}_NANOME-perSite-cov1.sort.bed.gz
 	fi
 
 	## Generate NF pipeline running information tsv
