@@ -46,5 +46,5 @@ dependencies:
       - ont-pyguppy-client-lib>=6.1.3
       - deepsignal>=0.1.10  # try 0.2.0
       - fast5mod==1.0.5
-      - nanome-jax>=2.0.8
+      - nanome-jax>=2.0.9
       - megalodon
