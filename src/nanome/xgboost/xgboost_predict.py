@@ -21,7 +21,7 @@ from tqdm import tqdm
 from nanome.common.eval_common import load_tool_read_level_unified_as_df
 from nanome.common.global_config import set_log_debug_level, set_log_info_level, logger
 from nanome.common.global_settings import CHUNKSIZE, NANOME_VERSION
-from nanome.xgboost.xgboost_common import SITES_COLUMN_LIST, READS_COLUMN_LIST, nanome_model_dict, \
+from nanome.xgboost.ml_common import SITES_COLUMN_LIST, READS_COLUMN_LIST, nanome_model_dict, \
     xgboost_mode_base_dir, nanome_model_tool_list_dict, prob_to_llr_2
 
 
