@@ -109,8 +109,8 @@ process REPORT {
 				PYTHONPATH=src python src/nanome/xgboost/weight/model_predict.py \
 					--dsname ${params.dsname} \
 					--importmodelfile \${importmodelfile} \
-					--base_model_type XGBoost \
-					--specific_model_type xgboost_seq_weight \
+					--base_model_type ${params.NANOME_MODEL_BASE} \
+					--specific_model_type ${params.NANOME_SPECIFIC_MODEL_TYPE} \
 					--one_hot_sequence true  --chrs \${chr} \
 					\${MegalodonOptions}  \${NanopolishOptions} \${DeepSignalOptions} \
 					\${FeatureOptions} --outdir consensus_by_chr\
@@ -136,8 +136,8 @@ process REPORT {
 			echo PYTHONPATH=src python src/nanome/xgboost/weight/model_predict.py \
 				--dsname ${params.dsname} \
 				--importmodelfile \${importmodelfile} \
-				--base_model_type XGBoost \
-				--specific_model_type xgboost_seq_weight \
+				--base_model_type ${params.NANOME_MODEL_BASE} \
+				--specific_model_type ${params.NANOME_SPECIFIC_MODEL_TYPE} \
 				--one_hot_sequence true  \
 				\${MegalodonOptions}  \${NanopolishOptions} \${DeepSignalOptions} \
 				\${FeatureOptions} --outdir .
