@@ -222,6 +222,7 @@ if __name__ == '__main__':
         logger.debug(f"WARNING: print params encounter problem")
 
     feature_out = list(READS_COLUMN_LIST)
+    chr_col_in_feature = args.feature_readids_col_order[1]
 
     if 'basic' in args.model_specific.lower():
         feature_out += top3_tools
@@ -291,7 +292,8 @@ if __name__ == '__main__':
                                   iterator=True,
                                   chunksize=args.chunksize)
             if args.chrs is not None:
-                seqDF = pd.concat([chunk[chunk['Chr'].isin(args.chrs)].iloc[:, col_order] for chunk in iter_df])
+                seqDF = pd.concat(
+                    [chunk[chunk.iloc[:, chr_col_in_feature].isin(args.chrs)].iloc[:, col_order] for chunk in iter_df])
             else:
                 seqDF = pd.concat([chunk.iloc[:, col_order] for chunk in iter_df])
             seqDF.columns = ['ID', 'Chr', 'Pos', 'Strand', 'Seq']
