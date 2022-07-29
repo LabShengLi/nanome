@@ -196,6 +196,11 @@ if (params.runMethcall && params.runDeepMod) {
 		summary['DEEPMOD_RNN_MODEL'] = "${params.DEEPMOD_RNN_MODEL}"
 	}
 }
+if (params.runNANOME) {
+	summary['NANOME_MODEL'] = "${params.NANOME_MODEL}"
+	summary['CS_MODEL_FILE'] = "${params.CS_MODEL_FILE}"
+	summary['CS_MODEL_SPEC'] = "${params.CS_MODEL_SPEC}"
+}
 
 summary['\nPipeline settings']         = "--------"
 summary['Working dir'] 		= workflow.workDir
