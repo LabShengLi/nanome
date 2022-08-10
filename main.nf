@@ -289,6 +289,8 @@ include { DEEPSIGNAL; DPSIGCOMB } from './modules/DEEPSIGNAL'
 
 include { DEEPSIGNAL2; DEEPSIGNAL2COMB } from './modules/DEEPSIGNAL2'
 
+include { CONSENSUS } from './modules/CONSENSUS'
+
 include { REPORT } from './modules/REPORT'
 
 include { Guppy; GuppyComb; Tombo; TomboComb; DeepMod; DpmodComb; METEORE } from './modules/OLDTOOLS'
@@ -467,16 +469,25 @@ workflow {
 		r_new = Channel.empty()
 	}
 
-	// Site level combine a list
-	Channel.fromPath("${projectDir}/utils/null1").concat(
-		s1, s2, s3, s4, s5, s6, s7, s_new
-		).toList().set { tools_site_unify }
-
 	Channel.fromPath("${projectDir}/utils/null2").concat(
 		r1, r2, r3, f1, f2
-		).toList().set { tools_read_unify }
+		).toList().set { top3_tools_read_unify }
 
-	REPORT(tools_site_unify, tools_read_unify,
+	if (params.runNANOME) {
+		consensus = CONSENSUS(top3_tools_read_unify, ch_src, ch_utils)
+		s8 = consensus.site_unify
+		r8 = consensus.read_unify
+	} else {
+		s8 = Channel.empty()
+		r8 = Channel.empty()
+	}
+
+	// Site level combine a list
+	Channel.fromPath("${projectDir}/utils/null1").concat(
+		s1, s2, s3, s4, s5, s6, s7, s_new, s8
+		).toList().set { tools_site_unify }
+
+	REPORT(tools_site_unify, top3_tools_read_unify,
 			ENVCHECK.out.tools_version_tsv, QCEXPORT.out.qc_report,
 			ENVCHECK.out.reference_genome, ch_src, ch_utils)
 

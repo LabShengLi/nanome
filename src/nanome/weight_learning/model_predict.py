@@ -9,7 +9,7 @@ import argparse
 import joblib
 import pandas as pd
 
-from nanome.xgboost.weight.utils import str2bool, prepare_one_hot_sequence, prepare_performer
+from nanome.weight_learning.utils import str2bool, prepare_one_hot_sequence, prepare_performer
 
 CHUNKSIZE = 500000
 

@@ -20,6 +20,7 @@ import sys
 from collections import defaultdict
 
 import joblib
+import math
 import numpy as np
 import pandas as pd
 from sklearn.compose import make_column_transformer
@@ -33,6 +34,7 @@ from sklearn.preprocessing import OneHotEncoder
 from xgboost import XGBClassifier
 
 from nanome.common.global_config import logger, set_log_debug_level, set_log_info_level
+from nanome.common.global_settings import prob_to_llr2
 from nanome.xgboost.ml_common import SITES_COLUMN_LIST, READS_COLUMN_LIST, top3_tools
 
 default_rf_params = {
@@ -73,6 +75,16 @@ gridcv_xgboost_params = {
     'cls__reg_lambda': [0.5, 1, 2],
 }
 
+gridcv_xgboost_params = {
+    'cls__learning_rate': [0.01, 0.05, 0.1, 0.2],
+    'cls__n_estimators': [10, 20, 40, 60],
+    'cls__max_depth': [3, 6, 9],
+    'cls__subsample': [0.6, 0.8, 1],
+    'cls__colsample_bytree': [0.4, 0.6, 0.8, 1],
+    'cls__reg_alpha': [0.5, 0, 1],
+    'cls__reg_lambda': [0.5, 1, 2],
+}
+
 tool_list = ['megalodon', 'nanopolish', 'deepsignal', 'nanome3t', 'nanome2t', 'meteore']
 
 exclude_report_tools = ['nanome3t', 'nanome2t', 'meteore']
@@ -81,10 +93,16 @@ region_order = ['Genome-wide', 'Discordant', 'Concordant', 'Singleton']
 
 dna_seq_order = ['A', 'C', 'G', 'T']
 
-site_colums = ["Chr", "Pos", "Strand"]
-
 # will be infered later
 k_mer_k = 17
+
+cutoff_llr_tools = {'nanopolish': 2, 'megalodon': math.log(4),
+                    'xgboost_basic': 2, 'xgboost_basic_w': 2, 'xgboost_basic_seq_w': 2,
+                    'rf_basic': 2, 'rf_basic_w': 2, 'rf_basic_seq_w': 2,
+                    }
+
+
+# cutoff_llr_tools = {'nanopolish': 2, 'megalodon': math.log(4)}
 
 
 def describe_data(df):
@@ -125,8 +143,8 @@ def compute_sample_weights(regionList):
     num_class = len(vc)
 
     class_weight = total / (num_class * vc)
-    logger.debug(vc)
-    logger.debug(class_weight)
+    logger.debug(f"vc={vc}")
+    logger.debug(f"class_weight={class_weight}")
 
     sample_weight = regionList.apply(lambda x: class_weight[x])
     logger.debug(f"sample_weight={sample_weight}")
@@ -170,6 +188,9 @@ def get_data(infn, model_name="basic"):
         infn:
 
     Returns:
+        X       tools +/- DNAseq
+        y       label
+        toolDF  contains 'Region'
 
     """
     ## determin usecols
@@ -199,7 +220,7 @@ def get_data(infn, model_name="basic"):
     describe_data(df)
 
     y = df['Label'].copy()
-    toolDF = df[tool_list + ['Region']].copy()
+    toolDF = df[top3_tools + ['Region']].copy()
 
     if model_name.lower() in ["basic", "basic_w"]:
         X = df[top3_tools].copy()
@@ -220,6 +241,10 @@ def get_data(infn, model_name="basic"):
     else:
         raise Exception(f"not support model_name={model_name}")
 
+    X.reset_index(drop=True, inplace=True)
+    y.reset_index(drop=True, inplace=True)
+    toolDF.reset_index(drop=True, inplace=True)
+    logger.debug(f"X.shape={X.shape}, y.shape={y.shape}, toolDF.shape={toolDF.shape}")
     logger.debug(f"X={X}, y={y}, toolDF={toolDF}")
 
     return X, y, toolDF
@@ -330,7 +355,10 @@ def report_model_performance(model_name, y_test, y_pred, y_score, region_name="G
     precision = precision_score(y_test, y_pred)
     recall = recall_score(y_test, y_pred)
     f1 = f1_score(y_test, y_pred)
-    roc_auc = roc_auc_score(y_test, y_score)
+    try:
+        roc_auc = roc_auc_score(y_test, y_score)
+    except:
+        roc_auc = None
     conf_matrix = confusion_matrix(y_test, y_pred)
     class_report = classification_report(y_test, y_pred)
 
@@ -357,60 +385,46 @@ def report_model_performance(model_name, y_test, y_pred, y_score, region_name="G
     return ret
 
 
-def eval_model(mm, X_test, y_test, toolDF=None, dsname=None):
+def model_predict(mm, X_test):
+    """
+    Return prediction class and probabilities [0,1]
+    Args:
+        mm:
+        X_test:
+
+    Returns:
+
+    """
+    y_pred = pd.Series(mm.predict(X_test), index=X_test.index)
+    y_score = pd.DataFrame(mm.predict_proba(X_test), index=X_test.index)[1]
+    return y_pred, y_score
+
+
+def eval_tools(y_test, toolDF=None, regionList=None, dsname=None):
     # used for aggregate all test data
     ret_pred = defaultdict(list)
     dataset = []
-    ## make prediction on test data
-    y_pred = mm.predict(X_test)
-    y_score = pd.DataFrame(mm.predict_proba(X_test))[1]
 
-    ret_pred[(report_mm_name + "_pred", 'Genome-wide')] = list(y_pred)
-    ret_pred[(report_mm_name + "_score", 'Genome-wide')] = list(y_score)
-    ret_pred[('y_test', 'Genome-wide')] = list(y_test)
-
-    ret = report_model_performance(report_mm_name, y_test, y_pred, y_score, region_name="Genome-wide", dsname=dsname)
-    dataset.append(ret)
-
-    ## region report
-    if toolDF is not None:
-        region_vector = toolDF['Region']
-        for region in region_vector.unique():
-            y_test1 = y_test[region_vector == region]
-            y_pred1 = y_pred[region_vector == region]
-            y_score1 = y_score[region_vector == region]
-            ret_pred[(report_mm_name + "_pred", region)] = list(y_pred1)
-            ret_pred[(report_mm_name + "_score", region)] = list(y_score1)
-            ret_pred[('y_test', region)] = list(y_test1)
-
-            ret = report_model_performance(report_mm_name, y_test1, y_pred1, y_score1,
-                                           region_name=region,
-                                           dsname=dsname)
-            dataset.append(ret)
-
-    if toolDF is not None:
-        for tool in tool_list:
-            if tool not in toolDF:
-                continue
+    for region in ['Genome-wide'] + list(regionList.unique()):
+        for tool in toolDF.columns:
             y_score = toolDF[tool]
             y_pred = toolDF[tool].apply(lambda x: 1 if x > 0 else 0)
 
-            ret_pred[(tool + "_pred", 'Genome-wide')] = list(y_pred)
-            ret_pred[(tool + "_score", 'Genome-wide')] = list(y_score)
+            if region == 'Genome-wide':
+                y_score1 = y_score
+                y_pred1 = y_pred
+                y_test1 = y_test
+            else:
+                region_index = (regionList == region)
+                y_score1 = y_score[region_index]
+                y_pred1 = y_pred[region_index]
+                y_test1 = y_test[region_index]
+            ret_pred[(tool + "_pred", region)] = list(y_pred1)
+            ret_pred[(tool + "_score", region)] = list(y_score1)
+            ret_pred[('y_test', region)] = list(y_test1)
 
-            ret = report_model_performance(tool, y_test, y_pred, y_score, dsname=dsname)
-
+            ret = report_model_performance(tool, y_test1, y_pred1, y_score1, region_name=region, dsname=dsname)
             dataset.append(ret)
-            for region in region_vector.unique():
-                y_test1 = y_test[region_vector == region]
-                y_pred1 = y_pred[region_vector == region]
-                y_score1 = y_score[region_vector == region]
-
-                ret_pred[(tool + "_pred", region)] = list(y_pred1)
-                ret_pred[(tool + "_score", region)] = list(y_score1)
-
-                ret = report_model_performance(tool, y_test1, y_pred1, y_score1, region_name=region, dsname=dsname)
-                dataset.append(ret)
     perfDF = pd.DataFrame.from_dict(dataset)
     logger.info(f"perfDF={perfDF}")
 
@@ -455,6 +469,9 @@ def parse_arguments():
     parser.add_argument('--test-lines', type=int, default=None,
                         help='test top N rows, such as 10000, default is None')
     parser.add_argument('--show-confusion-matrix', help="if output verbose info", action='store_true')
+    parser.add_argument('--apply-cutoff', help="if apply default cutoff of tools", action='store_true')
+    parser.add_argument('--apply-cutoff-train', help="if apply default cutoff of tools before train",
+                        action='store_true')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
 
@@ -474,8 +491,29 @@ if __name__ == '__main__':
     logger.info(
         f"Train model name: {args.model_name}_{train_chrs}, base_mode={args.base_model}, report_mm_name={report_mm_name}")
 
-    ## Train model
+    ## Get train data
     X, y, toolDF = get_data(args.train, model_name=args.model_name)
+
+    ## apply cutoff before train
+    if args.apply_cutoff_train:
+        ## apply cutoff of tools, filter X_test, y_test, etc.
+        logger.debug(f"cutoff_llr_tools={cutoff_llr_tools}")
+        logger.debug(f"Apply cutoff to train data, before cutoff, len={len(toolDF)}")
+        keep_index = None
+        for tool in cutoff_llr_tools:
+            if tool not in toolDF:
+                continue
+            logger.debug(f"Apply LLR cutoff={cutoff_llr_tools[tool]:.2f} for tool={tool}")
+            if keep_index is None:
+                keep_index = toolDF[tool].abs() >= cutoff_llr_tools[tool]
+            else:
+                keep_index = keep_index & (toolDF[tool].abs() >= cutoff_llr_tools[tool])
+        X = X[keep_index].reset_index(drop=True).copy()
+        y = y[keep_index].reset_index(drop=True).copy()
+        toolDF = toolDF[keep_index].reset_index(drop=True).copy()
+        logger.debug(f"Apply cutoff, after cutoff, len={len(toolDF)}")
+
+    ## train model
     mm = train_model(X, y, region_vector=toolDF['Region'], scoring=args.scoring)
 
     ## Eval the trained model
@@ -486,14 +524,47 @@ if __name__ == '__main__':
         X_test, y_test, toolDF = get_data(infn, model_name=args.model_name)
 
         dsname = '_'.join([args.dsname, chr])  # NA12878_chr1
-        df, ret_pred = eval_model(mm, X_test, y_test, toolDF=toolDF, dsname=dsname)
-        outdflist.append(df)
+        y_pred, y_score = model_predict(mm, X_test)
+        y_llr2 = y_score.apply(prob_to_llr2)
+        y_llr2.rename(report_mm_name, inplace=True)
+        logger.debug(f"y_pred={y_pred}, y_score={y_score}, y_llr2={y_llr2}")
+        toolDF = pd.concat([toolDF, y_llr2], axis=1)
+        # logger.debug(f"toolDF={toolDF}")
 
-        if total_ret_pred is None:
-            total_ret_pred = ret_pred
+        regionList = toolDF['Region']
+        toolDF = toolDF[top3_tools + [report_mm_name]]
+        # logger.debug(f"toolDF={toolDF}, regionList={regionList}")
+
+        if args.apply_cutoff:
+            ## apply cutoff of tools, filter X_test, y_test, etc.
+            logger.debug(f"cutoff_llr_tools={cutoff_llr_tools}")
+            logger.debug(f"Apply cutoff, before cutoff, len={len(toolDF)}")
+            keep_index = None
+            for tool in cutoff_llr_tools:
+                if tool not in toolDF:
+                    continue
+                logger.debug(f"Apply LLR cutoff={cutoff_llr_tools[tool]:.2f} for tool={tool}")
+                if keep_index is None:
+                    keep_index = toolDF[tool].abs() >= cutoff_llr_tools[tool]
+                else:
+                    keep_index = keep_index & (toolDF[tool].abs() >= cutoff_llr_tools[tool])
+            y_test = y_test[keep_index].reset_index(drop=True).copy()
+            toolDF = toolDF[keep_index].reset_index(drop=True).copy()
+            regionList = regionList[keep_index].reset_index(drop=True).copy()
+            logger.debug(f"Apply cutoff, after cutoff, len={len(toolDF)}")
+            # logger.debug(f"toolDF={toolDF}, regionList={regionList}, y_test={y_test}")
+
+        if len(y_test) > 0:
+            df, ret_pred = eval_tools(y_test, toolDF=toolDF, regionList=regionList, dsname=dsname)
+            outdflist.append(df)
+
+            if total_ret_pred is None:
+                total_ret_pred = ret_pred
+            else:
+                for key in ret_pred:
+                    total_ret_pred[key].extend(ret_pred[key])
         else:
-            for key in ret_pred:
-                total_ret_pred[key].extend(ret_pred[key])
+            logger.error(f"After cutoff, no data exist for chr={chr}, infn={infn}")
     outdf = pd.concat(outdflist)
 
     ## aggregate all test data predictions, report the performance
@@ -505,9 +576,17 @@ if __name__ == '__main__':
             y_test = pd.Series(total_ret_pred[('y_test', region)])
             y_pred = total_ret_pred[(f"{tool}_pred", region)]
             y_score = total_ret_pred[(f"{tool}_score", region)]
-            ret = report_model_performance(tool, y_test, y_pred, y_score, region_name=region,
-                                           dsname="NA12878_test_all")
-            dataset_all.append(ret)
+
+            if len(y_test) > 0:
+                ret = report_model_performance(tool, y_test, y_pred, y_score, region_name=region,
+                                               dsname="NA12878_test_all")
+                dataset_all.append(ret)
+            else:
+                logger.error(f"No data for agg all, tool={tool}, region={region}")
+
+    if len(dataset_all) < 1:
+        logger.error("No perf results, bye bye")
+        sys.exit(0)
     perf_on_all_test = pd.DataFrame.from_dict(dataset_all)
     logger.debug(perf_on_all_test)
 
