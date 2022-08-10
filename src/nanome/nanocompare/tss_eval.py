@@ -14,7 +14,7 @@ from nanome.common.eval_common import *
 from nanome.common.global_settings import save_done_file, NANOME_VERSION
 
 
-def import_and_save_read_level(callfn, callencode, score_cutoff, outfn):
+def import_and_save_read_level(callfn, callencode, score_cutoff, outfn, force_llr2):
     """
     Export to unified read-level output format for each tool
     Args:
@@ -27,7 +27,7 @@ def import_and_save_read_level(callfn, callencode, score_cutoff, outfn):
     """
     import_call(callfn, callencode, baseFormat=1, filterChr=args.chrSet,
                 include_score=False, siteLevel=False, save_unified_format=True, outfn=outfn,
-                enable_cache=False, using_cache=False, raw_cutoff=score_cutoff)
+                enable_cache=False, using_cache=False, raw_cutoff=score_cutoff, force_llr2=force_llr2)
 
 
 def output_calldict_to_unified_bed_as_0base(dictCalls, outfn, sep='\t'):
@@ -105,6 +105,8 @@ def parse_arguments():
     parser.add_argument('--chrSet', nargs='+', help='chromosome list, default is human chromosome chr1-22, X and Y',
                         default=HUMAN_CHR_SET)
     parser.add_argument('--tagname', type=str, help="output unified file's tagname", default=None)
+    parser.add_argument('--force-llr2', help="if convert to LLR2 for all tools, note megalodon is llr_e for default",
+                        action='store_true')
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
     return parser.parse_args()
 
@@ -175,7 +177,7 @@ if __name__ == '__main__':
                                  f"{args.dsname}_{toolname}{f'-{args.tagname}' if args.tagname else ''}-perRead-score.tsv.gz")
             outfn_list.append(outfn)
 
-            input_list.append((callfn, callencode, score_cutoff, outfn,))
+            input_list.append((callfn, callencode, score_cutoff, outfn, args.force_llr2,))
 
         executor = ThreadPoolExecutor(max_workers=args.processors)
         for arg in input_list:
