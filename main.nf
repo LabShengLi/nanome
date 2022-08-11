@@ -57,8 +57,9 @@ if (genome_basefn.startsWith('hg') || (params.dataType && params.dataType == 'hu
 } else {
 	// if not infer data type, use other
 	dataType = params.dataType ? params.dataType : "other"
-	chrSet = params.chrSet ? params.chrSet :
-		(exit 1, "Missing --chrSet option for other reference genome, please specify chromosomes used in reference genome [${params.genome}]")
+
+	if (params.chrSet)  chrSet = params.chrSet
+	else exit 1, "Missing --chrSet option for other reference genome, please specify chromosomes used in reference genome [${params.genome}]"
 }
 
 // chrSet1 and dataType1 is the infered params, defined from chrSet and dataType (not in scope of params), will be used in every modules
