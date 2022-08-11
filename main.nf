@@ -289,15 +289,17 @@ include { DEEPSIGNAL; DPSIGCOMB } from './modules/DEEPSIGNAL'
 
 include { DEEPSIGNAL2; DEEPSIGNAL2COMB } from './modules/DEEPSIGNAL2'
 
-include { CONSENSUS } from './modules/CONSENSUS'
-
-include { REPORT } from './modules/REPORT'
-
 include { Guppy; GuppyComb; Tombo; TomboComb; DeepMod; DpmodComb; METEORE } from './modules/OLDTOOLS'
 
 include { NewTool; NewToolComb } from './modules/NEWTOOLS'
 
 include { CLAIR3; PHASING } from './modules/PHASING'
+
+include { CONSENSUS } from './modules/CONSENSUS'
+
+include { REPORT } from './modules/REPORT'
+
+include { EVAL } from './modules/EVAL'
 
 
 workflow {
@@ -480,6 +482,27 @@ workflow {
 	} else {
 		s8 = Channel.empty()
 		r8 = Channel.empty()
+	}
+
+	Channel.fromPath("${projectDir}/utils/null2").concat(
+		r1, r2, r3, r8, f1, f2
+		).toList().set { tools_read_unify }
+
+	if (params.runEval) {
+		bg1 = params.bg1 ? Channel.fromPath(params.bg1) : Channel.empty()
+		bg2 = params.bg2 ? Channel.fromPath(params.bg2) : Channel.empty()
+
+		Channel.fromPath("${projectDir}/utils/null1").concat(
+			bg1, bg2
+		).toList().set { bg_list }
+
+		if (params.genome_annotation_dir) {
+			genome_annotation_ch = Channel.fromPath(params.genome_annotation_dir)
+		} else {
+			genome_annotation_ch = Channel.fromPath("${projectDir}/utils/null3")
+		}
+
+		EVAL(tools_read_unify, bg_list, ch_src, ch_utils, genome_annotation_ch)
 	}
 
 	// Site level combine a list
