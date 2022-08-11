@@ -159,7 +159,8 @@ process MGLDNCOMB {
 	bash utils/unify_format_for_calls.sh \
 		${params.dsname}  Megalodon Megalodon \
 		${params.dsname}_megalodon_per_read_combine.bed.gz \
-		.  ${task.cpus}  12  ${params.sort  ? true : false}  "${params.chrSet1.replaceAll(',', ' ')}"
+		.  ${task.cpus}  12  ${params.sort  ? true : false}  "${params.chrSet1.replaceAll(',', ' ')}" \
+		${params.force_llr2 ? "--force-llr2" : ""}
 
 	echo "### Megalodon combine DONE"
 	"""

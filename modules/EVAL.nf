@@ -15,7 +15,7 @@
 process EVAL {
 	tag "${params.dsname}"
 
- 	debug true
+ 	// debug true
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Evaluation-${params.dsname}",
 		mode: "copy"
