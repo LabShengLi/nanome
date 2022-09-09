@@ -278,7 +278,7 @@ if __name__ == '__main__':
     logger.debug(f"datadf={datadf}")
 
     ## load features (DNAseq)
-    if 'basic_seq' in args.model_specific.lower():
+    if 'basic_w_seq' in args.model_specific.lower():
         # include DNA seq feature
         logger.info(f"Load DNA seq feature")
         feature_out += ['Seq']
@@ -300,7 +300,7 @@ if __name__ == '__main__':
         # note the extracted feature file is 0-based, and read-level unified is 1-based
         # align the feature file into read-level unified file
         seqDF['Pos'] = seqDF['Pos'] + 1
-        datadf = datadf.merge(seqDF, on=READS_COLUMN_LIST, how=how_merge)
+        datadf = datadf.merge(seqDF, on=READS_COLUMN_LIST, how='left')
 
     datadf.drop_duplicates(subset=READS_COLUMN_LIST, inplace=True)
     datadf.reset_index(drop=True, inplace=True)

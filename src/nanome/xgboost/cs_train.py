@@ -12,7 +12,7 @@ Base model: xgboost, rf
 Model name:
     basic (top3 tools),
     basic_w (top3 tools with weight learning),
-    basic_seq_w (top3 tools + DNA seq with weight learning)
+    basic_w_seq (top3 tools + DNA seq with weight learning)
 """
 import argparse
 import os.path
@@ -97,8 +97,8 @@ dna_seq_order = ['A', 'C', 'G', 'T']
 k_mer_k = 17
 
 cutoff_llr_tools = {'nanopolish': 2, 'megalodon': math.log(4),
-                    'xgboost_basic': 2, 'xgboost_basic_w': 2, 'xgboost_basic_seq_w': 2,
-                    'rf_basic': 2, 'rf_basic_w': 2, 'rf_basic_seq_w': 2,
+                    'xgboost_basic': 2, 'xgboost_basic_w': 2, 'xgboost_basic_w_seq': 2,
+                    'rf_basic': 2, 'rf_basic_w': 2, 'rf_basic_w_seq': 2,
                     }
 
 
@@ -196,7 +196,7 @@ def get_data(infn, model_name="basic"):
     ## determin usecols
     if model_name.lower() in ["basic", "basic_w"]:
         usecols = READS_COLUMN_LIST + tool_list + ['Region', 'Label']
-    elif model_name.lower() in ["basic_seq_w"]:
+    elif model_name.lower() in ["basic_w_seq"]:
         usecols = READS_COLUMN_LIST + tool_list + ['k_mer'] + ['Region', 'Label']
     else:
         raise Exception(f"model_name={model_name} is not support")
@@ -224,7 +224,7 @@ def get_data(infn, model_name="basic"):
 
     if model_name.lower() in ["basic", "basic_w"]:
         X = df[top3_tools].copy()
-    elif model_name.lower() in ["basic_seq_w"]:
+    elif model_name.lower() in ["basic_w_seq"]:
         # top3 + DNA seq as feature, i.e., ACCACACCCGGCTAATT
         global k_mer_k
         k_mer_k = len(df['k_mer'].iloc[0])
@@ -259,7 +259,7 @@ def train_model(X, y, region_vector=None, scoring='f1'):
     logger.debug(f"numeric_columns={numeric_columns}, cat_columns={cat_columns}")
 
     ## compute weights
-    if args.model_name.lower() in ['basic_w', 'basic_seq_w']:
+    if args.model_name.lower() in ['basic_w', 'basic_w_seq']:
         ## compute sample weights
         sample_weight = compute_sample_weights(region_vector)
     else:

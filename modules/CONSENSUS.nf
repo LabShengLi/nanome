@@ -41,90 +41,7 @@ process CONSENSUS {
 	params.runNANOME
 
 	"""
-	if [[ ${params.NANOME_MODEL} == "NANOME_W" ]] ; then
-		echo "### NANOME3T_W"
-
-		cat *.deepsignal1_batch_features.tsv.gz > \
-			${params.dsname}_deepsignal1_feature_combine.tsv.gz
-
-		MegalodonReadReport=\$(find . -maxdepth 1 -name '*Megalodon-perRead-score.tsv.gz')
-		if [[ -z \$MegalodonReadReport ]] ; then
-			echo "### Not found Megalodon read-level outputs"
-			MegalodonOptions=" "
-		else
-			MegalodonOptions="--megalodon_file \$MegalodonReadReport"
-		fi
-
-		NanopolishReadReport=\$(find . -maxdepth 1 -name '*Nanopolish-perRead-score.tsv.gz')
-		if [[ -z \$NanopolishReadReport ]] ; then
-			echo "### Not found Nanopolish read-level outputs"
-			NanopolishOptions=" "
-		else
-			NanopolishOptions="--nanopolish_file \$NanopolishReadReport"
-		fi
-
-		DeepSignalReadReport=\$(find . -maxdepth 1 -name '*DeepSignal-perRead-score.tsv.gz')
-		if [[ -z \$DeepSignalReadReport ]] ; then
-			echo "### Not found DeepSignal read-level outputs"
-			DeepSignalOptions=" "
-		else
-			DeepSignalOptions="--deepsignal_file \$DeepSignalReadReport"
-		fi
-
-		FeatureFile=\$(find . -maxdepth 1 -name '*_deepsignal1_feature_combine.tsv.gz')
-		if [[ -z \$FeatureFile ]] ; then
-			echo "### Not found Feature file"
-			FeatureOptions=" "
-		else
-			FeatureOptions="--feature_file \$FeatureFile"
-		fi
-
-		importmodelfile=${params.NANOME_MODEL_FILE}
-
-		if [[ ${params.consensus_by_chr} == true ]] ; then
-			mkdir -p consensus_by_chr
-			for chr in ${params.chrSet1.replaceAll(',', ' ')} ; do
-				echo "### consensus for chr=\${chr}"
-				PYTHONPATH=src python src/nanome/weight_learning/model_predict.py \
-					--dsname ${params.dsname} \
-					--importmodelfile \${importmodelfile} \
-					--base_model_type ${params.NANOME_MODEL_BASE} \
-					--specific_model_type ${params.NANOME_SPECIFIC_MODEL_TYPE} \
-					--one_hot_sequence true  --chrs \${chr} \
-					\${MegalodonOptions}  \${NanopolishOptions} \${DeepSignalOptions} \
-					\${FeatureOptions} --outdir consensus_by_chr\
-					&>> ${params.dsname}.Report.run.log
-			done
-			## combine all chrs
-			touch ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
-			zcat \$(ls consensus_by_chr/*.gz| head -n 1) | head -n 1 | \
-				awk -v FS='\t' -v OFS='\t' '{print \$4,\$1,\$2,\$3,\$5,\$6,\$7,\$8,\$9,\$10}' |\
-				gzip -f >> \
-				${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
-
-			find consensus_by_chr -name '*.tsv.gz' -print0 |
-				sort -V -z |
-				while IFS= read -r -d '' infn; do
-					zcat \${infn}  | \
-					awk -v FS='\t' -v OFS='\t' 'NR>1 {print \$4,\$1,\$2,\$3,\$5,\$6,\$7,\$8,\$9,\$10}' | \
-					gzip -f >> \
-						${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
-				done
-			echo "### consensus combine chr DONE"
-		else
-			echo PYTHONPATH=src python src/nanome/xgboost/weight/model_predict.py \
-				--dsname ${params.dsname} \
-				--importmodelfile \${importmodelfile} \
-				--base_model_type ${params.NANOME_MODEL_BASE} \
-				--specific_model_type ${params.NANOME_SPECIFIC_MODEL_TYPE} \
-				--one_hot_sequence true  \
-				\${MegalodonOptions}  \${NanopolishOptions} \${DeepSignalOptions} \
-				\${FeatureOptions} --outdir .
-			echo "### Not support yet"
-			exit 1
-		fi
-		echo "### TODO DONE"
-	elif [[ ${params.NANOME_MODEL} == "nanome_cs" ]] ; then
+	if [[ ${params.NANOME_MODEL} == "nanome_cs" ]] ; then
 		echo "### nanome_cs"
 
 		if test -n "\$(find . -maxdepth 1 -name '*.deepsignal1_batch_features.tsv.gz' -print -quit)"
@@ -179,7 +96,7 @@ process CONSENSUS {
 					\${MegalodonOptions}  \${NanopolishOptions} \${DeepSignalOptions} \
 					\${FeatureOptions} \
 					-o  consensus_by_chr/${params.dsname}_nanome_${params.CS_MODEL_SPEC}_per_read_\${chr}.tsv.gz   \
-					&>> ${params.dsname}.Report.run.log
+					&>> ${params.dsname}.Consensus.run.log
 			done
 			## combine all chrs
 			touch ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
@@ -203,7 +120,7 @@ process CONSENSUS {
 				\${MegalodonOptions}  \${NanopolishOptions} \${DeepSignalOptions} \
 				\${FeatureOptions} \
 				-o  ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz   \
-				&>> ${params.dsname}.Report.run.log
+				&>> ${params.dsname}.Consensus.run.log
 		fi
 	elif [[ ${params.NANOME_MODEL} == "NANOME3T" ]] ; then
 		## NANOME XGBoost method
@@ -262,7 +179,7 @@ process CONSENSUS {
 						-m ${params.NANOME_MODEL}  \
 						-o consensus_by_chr/${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_\${chr}.tsv.gz \
 						--chrs \${chr} \
-						&>> ${params.dsname}.Report.run.log
+						&>> ${params.dsname}.Consensus.run.log
 				done
 				## combine all chrs
 				touch ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
@@ -282,7 +199,7 @@ process CONSENSUS {
 					--dsname ${params.dsname} -i \${modelContentTSVFileName}\
 					-m ${params.NANOME_MODEL}  \
 					-o ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz \
-					&>> ${params.dsname}.Report.run.log
+					&>> ${params.dsname}.Consensus.run.log
 			fi
 		fi
 	fi
