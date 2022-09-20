@@ -6,7 +6,7 @@
 # @Website  : https://github.com/LabShengLi/nanome
 
 """
-Evaluate consensus model
+Evaluate consensus model at read-level
 """
 import argparse
 import os.path
@@ -20,21 +20,7 @@ from tqdm import tqdm
 
 from nanome.common.global_config import logger, set_log_debug_level, set_log_info_level
 from nanome.common.global_settings import CHUNKSIZE
-from nanome.xgboost.ml_common import READS_COLUMN_LIST, prob_to_llr_2
-
-SITE_COLUMNS = ['Chr', 'Pos', 'Strand']
-READ_COLUMNS = ['ID'] + SITE_COLUMNS
-
-top3_tools = ['megalodon', 'nanopolish', 'deepsignal']
-region_order = ['Genome-wide', 'Discordant', 'Concordant', 'Singleton']
-
-dna_seq_order = ['A', 'C', 'G', 'T']
-
-# will be infered later
-k_mer_k = 17
-
-
-# cutoff_llr_tools = {'nanopolish': 2, 'megalodon': math.log(4)}
+from nanome.xgboost.ml_common import READS_COLUMN_LIST, prob_to_llr_2, top3_tools, region_order, tool_feature_dict
 
 
 def report_model_performance(model_name, y_test, y_pred, y_score, region_name="Genome-wide", dsname="NA12878"):
@@ -139,7 +125,7 @@ if __name__ == '__main__':
         df_list = []
         for chunck_df in df_iter:
             df1 = chunck_df[
-                READ_COLUMNS + top3_tools + ['k_mer'] +
+                READS_COLUMN_LIST + top3_tools + ['k_mer'] +
                 ['Freq', 'Coverage', 'Label', 'Region']]
             df_list.append(df1)
         df = pd.concat(df_list)
@@ -153,23 +139,32 @@ if __name__ == '__main__':
         # logger.debug(f"df={df.shape}")
 
         llr2_df1 = df[top3_tools + ['Label', 'Region']].copy()
-        top3Features = df[top3_tools]
-        # logger.debug(top3Features.shape)
+
         seqFeatures = df['k_mer'].apply(lambda x: pd.Series(list(x))).copy()
         seqFeatures.columns = [f"DNASeq_{k}" for k in range(len(seqFeatures.columns))]
         # logger.debug(seqFeatures.shape)
 
-        X12 = pd.concat([top3Features, seqFeatures], axis=1)
-        # logger.debug(X12.shape)
-
         for model_name in model_list:
             mm = model_list[model_name]
-            if not model_name.endswith('_seq'):
-                y_score = pd.DataFrame(mm.predict_proba(top3Features), index=top3Features.index)[1]
-            else:
-                y_score = pd.DataFrame(mm.predict_proba(X12), index=X12.index)[1]
-            # logger.debug(f"y_score.shape={y_score.shape}, model_name={model_name}")
 
+            if '_basic' in model_name:
+                X1 = df[tool_feature_dict['basic']]
+            elif '_megalodon_deepsignal' in model_name:
+                X1 = df[tool_feature_dict['megalodon_deepsignal']]
+            else:
+                raise Exception(f"Not support model_name={model_name}")
+
+            if model_name.endswith('_seq'):
+                X2 = seqFeatures
+            else:
+                X2 = None
+
+            if X2 is not None:
+                X12 = pd.concat([X1, X2], axis=1)
+            else:
+                X12 = X1
+
+            y_score = pd.DataFrame(mm.predict_proba(X12), index=X12.index)[1]
             llr2_df1[model_name] = y_score.apply(prob_to_llr_2)
         # logger.debug(llr2_df1)
         llr2_df_list.append(llr2_df1)

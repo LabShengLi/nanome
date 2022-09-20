@@ -19,12 +19,13 @@ from sklearn.metrics import mean_squared_error
 
 from nanome.common.global_config import logger, set_log_debug_level, set_log_info_level
 from nanome.common.global_settings import CHUNKSIZE
+from nanome.xgboost.ml_common import top3_tools, region_order
 
 SITE_COLUMNS = ['Chr', 'Pos', 'Strand']
 READ_COLUMNS = ['ID'] + SITE_COLUMNS
 
-top3_tools = ['megalodon', 'nanopolish', 'deepsignal']
-region_order = ['Genome-wide', 'Discordant', 'Concordant', 'Singleton', 'Nonsingleton']
+# top3_tools = ['megalodon', 'nanopolish', 'deepsignal']
+# region_order = ['Genome-wide', 'Discordant', 'Concordant', 'Singleton', 'Nonsingleton']
 
 dna_seq_order = ['A', 'C', 'G', 'T']
 

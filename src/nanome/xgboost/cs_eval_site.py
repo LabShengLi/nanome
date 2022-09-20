@@ -22,21 +22,7 @@ from tqdm import tqdm
 
 from nanome.common.global_config import logger, set_log_debug_level, set_log_info_level
 from nanome.common.global_settings import CHUNKSIZE
-from nanome.xgboost.ml_common import READS_COLUMN_LIST, prob_to_llr_2
-
-SITE_COLUMNS = ['Chr', 'Pos', 'Strand']
-READ_COLUMNS = ['ID'] + SITE_COLUMNS
-
-top3_tools = ['megalodon', 'nanopolish', 'deepsignal']
-region_order = ['Genome-wide', 'Discordant', 'Concordant', 'Singleton', 'Nonsingleton']
-
-dna_seq_order = ['A', 'C', 'G', 'T']
-
-# will be infered later
-k_mer_k = 17
-
-
-# cutoff_llr_tools = {'nanopolish': 2, 'megalodon': math.log(4)}
+from nanome.xgboost.ml_common import READS_COLUMN_LIST, prob_to_llr_2, top3_tools, region_order
 
 
 def report_pcc(tool, y_test, y_pred, region_name="Genome-wide", dsname="NA12878"):
@@ -137,7 +123,7 @@ if __name__ == '__main__':
         df_list = []
         for chunck_df in df_iter:
             df1 = chunck_df[
-                READ_COLUMNS + top3_tools + ['k_mer'] +
+                READS_COLUMN_LIST + top3_tools + ['k_mer'] +
                 ['Freq', 'Coverage', 'Region']].copy()
             df1.dropna(subset=top3_tools, inplace=True, how='any')
             df1.dropna(subset=['Freq', 'Coverage', 'Region'], inplace=True, how='any')

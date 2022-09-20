@@ -13,6 +13,9 @@ Model name:
     basic (top3 tools),
     basic_w (top3 tools with weight learning),
     basic_w_seq (top3 tools + DNA seq with weight learning)
+
+    megalodon_deepsignal_w
+    megalodon_deepsignal_w_seq
 """
 import argparse
 import os.path
@@ -65,15 +68,15 @@ default_xgboost_params = {
     'reg_lambda': 1,
 }
 
-gridcv_xgboost_params = {
-    'cls__learning_rate': [0.01, 0.05, 0.1, 0.2, 0.3],
-    'cls__n_estimators': [5, 10, 20, 40, 60],
-    'cls__max_depth': [3, 6, 9, 12],
-    'cls__subsample': [0.4, 0.6, 0.8, 1],
-    'cls__colsample_bytree': [0.4, 0.6, 0.8, 1],
-    'cls__reg_alpha': [0.5, 0, 2, 5],
-    'cls__reg_lambda': [0.5, 1, 2],
-}
+# gridcv_xgboost_params = {
+#     'cls__learning_rate': [0.01, 0.05, 0.1, 0.2, 0.3],
+#     'cls__n_estimators': [5, 10, 20, 40, 60],
+#     'cls__max_depth': [3, 6, 9, 12],
+#     'cls__subsample': [0.4, 0.6, 0.8, 1],
+#     'cls__colsample_bytree': [0.4, 0.6, 0.8, 1],
+#     'cls__reg_alpha': [0.5, 0, 2, 5],
+#     'cls__reg_lambda': [0.5, 1, 2],
+# }
 
 gridcv_xgboost_params = {
     'cls__learning_rate': [0.01, 0.05, 0.1, 0.2],
@@ -96,13 +99,10 @@ dna_seq_order = ['A', 'C', 'G', 'T']
 # will be infered later
 k_mer_k = 17
 
-cutoff_llr_tools = {'nanopolish': 2, 'megalodon': math.log(4),
-                    'xgboost_basic': 2, 'xgboost_basic_w': 2, 'xgboost_basic_w_seq': 2,
-                    'rf_basic': 2, 'rf_basic_w': 2, 'rf_basic_w_seq': 2,
-                    }
-
-
-# cutoff_llr_tools = {'nanopolish': 2, 'megalodon': math.log(4)}
+# cutoff_llr_tools = {'nanopolish': 2, 'megalodon': math.log(4),
+#                     'xgboost_basic': 2, 'xgboost_basic_w': 2, 'xgboost_basic_w_seq': 2,
+#                     'rf_basic': 2, 'rf_basic_w': 2, 'rf_basic_w_seq': 2,
+#                     }
 
 
 def describe_data(df):
@@ -151,7 +151,7 @@ def compute_sample_weights(regionList):
     return sample_weight
 
 
-def get_data(infn, model_name="basic"):
+def get_data(infn, model_name="basic", input_tools=top3_tools):
     """
     Input data format:
     <class 'pandas.core.frame.DataFrame'>
@@ -193,13 +193,11 @@ def get_data(infn, model_name="basic"):
         toolDF  contains 'Region'
 
     """
-    ## determin usecols
-    if model_name.lower() in ["basic", "basic_w"]:
-        usecols = READS_COLUMN_LIST + tool_list + ['Region', 'Label']
-    elif model_name.lower() in ["basic_w_seq"]:
+    ## decide including usecols
+    if "_seq" in model_name.lower():
         usecols = READS_COLUMN_LIST + tool_list + ['k_mer'] + ['Region', 'Label']
     else:
-        raise Exception(f"model_name={model_name} is not support")
+        usecols = READS_COLUMN_LIST + tool_list + ['Region', 'Label']
 
     if type(infn) == list:
         dflist = []
@@ -222,15 +220,13 @@ def get_data(infn, model_name="basic"):
     y = df['Label'].copy()
     toolDF = df[top3_tools + ['Region']].copy()
 
-    if model_name.lower() in ["basic", "basic_w"]:
-        X = df[top3_tools].copy()
-    elif model_name.lower() in ["basic_w_seq"]:
+    if "_seq" in model_name.lower():
         # top3 + DNA seq as feature, i.e., ACCACACCCGGCTAATT
         global k_mer_k
         k_mer_k = len(df['k_mer'].iloc[0])
         logger.debug(f"Detect k_mer_k={k_mer_k}")
 
-        X1 = df[top3_tools].copy()
+        X1 = df[input_tools].copy()
         X2 = df['k_mer'].apply(lambda x: pd.Series(list(x))).copy()
         X2.columns = [f"DNASeq_{k}" for k in range(len(X2.columns))]
         global cat_columns
@@ -239,7 +235,7 @@ def get_data(infn, model_name="basic"):
         X = pd.concat([X1, X2], axis=1)
         logger.debug(f"X1.shape={X1.shape}, X2.shape={X2.shape}, X.shape={X.shape}, X.dtypes={X.dtypes}")
     else:
-        raise Exception(f"not support model_name={model_name}")
+        X = df[input_tools].copy()
 
     X.reset_index(drop=True, inplace=True)
     y.reset_index(drop=True, inplace=True)
@@ -250,7 +246,7 @@ def get_data(infn, model_name="basic"):
     return X, y, toolDF
 
 
-def train_model(X, y, region_vector=None, scoring='f1'):
+def train_model(X, y, model_name="basic", region_vector=None, scoring='f1'):
     logger.info(f"Start train, base_model={args.base_model}")
 
     ## two types of features
@@ -259,7 +255,7 @@ def train_model(X, y, region_vector=None, scoring='f1'):
     logger.debug(f"numeric_columns={numeric_columns}, cat_columns={cat_columns}")
 
     ## compute weights
-    if args.model_name.lower() in ['basic_w', 'basic_w_seq']:
+    if "_w" in model_name.lower() or "_w_seq" in model_name.lower():
         ## compute sample weights
         sample_weight = compute_sample_weights(region_vector)
     else:
@@ -448,6 +444,8 @@ def parse_arguments():
                         help='test data file')
     parser.add_argument('--test-chr', nargs='+', required=True,
                         help='train chr file')
+    parser.add_argument('--input-tools', nargs='+', type=str, default=['megalodon', 'nanopolish', 'deepsignal'],
+                        help='input features for train, default is megalodon, nanopolish, and deepsignal')
     parser.add_argument('--dsname', type=str, default="NA12878",
                         help='dataset name, default is NA12878')
     parser.add_argument('--model-name', type=str, default="basic",
@@ -492,10 +490,11 @@ if __name__ == '__main__':
         f"Train model name: {args.model_name}_{train_chrs}, base_mode={args.base_model}, report_mm_name={report_mm_name}")
 
     ## Get train data
-    X, y, toolDF = get_data(args.train, model_name=args.model_name)
+    X, y, toolDF = get_data(args.train, model_name=args.model_name, input_tools=args.input_tools)
 
     ## apply cutoff before train
     if args.apply_cutoff_train:
+        raise Exception("Under development")
         ## apply cutoff of tools, filter X_test, y_test, etc.
         logger.debug(f"cutoff_llr_tools={cutoff_llr_tools}")
         logger.debug(f"Apply cutoff to train data, before cutoff, len={len(toolDF)}")
@@ -514,14 +513,14 @@ if __name__ == '__main__':
         logger.debug(f"Apply cutoff, after cutoff, len={len(toolDF)}")
 
     ## train model
-    mm = train_model(X, y, region_vector=toolDF['Region'], scoring=args.scoring)
+    mm = train_model(X, y, model_name=args.model_name, region_vector=toolDF['Region'], scoring=args.scoring)
 
     ## Eval the trained model
     total_ret_pred = None
     outdflist = []
     for infn, chr in zip(args.test, args.test_chr):
         logger.info(f"Evaluate chr={chr}, infn={infn}")
-        X_test, y_test, toolDF = get_data(infn, model_name=args.model_name)
+        X_test, y_test, toolDF = get_data(infn, model_name=args.model_name, input_tools=args.input_tools)
 
         dsname = '_'.join([args.dsname, chr])  # NA12878_chr1
         y_pred, y_score = model_predict(mm, X_test)

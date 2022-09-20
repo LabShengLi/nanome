@@ -9,14 +9,20 @@ from nanome.common.global_settings import EPSLONG
 
 # consensus model on top of top3 tools
 top3_tools = ['megalodon', 'nanopolish', 'deepsignal']
+
+region_order = ['Genome-wide', 'Discordant', 'Concordant', 'Singleton', 'Nonsingleton']
+
 # use k_mer for DNAseq features
 k_mer = 17
 
 TRUTH_LABEL_COLUMN = 'Truth_label'
 SITES_COLUMN_LIST = ["Chr", "Pos", "Strand"]
-
 ## ID  Chr Pos Strand
 READS_COLUMN_LIST = ['ID'] + SITES_COLUMN_LIST
+
+# each type of tools' input features
+tool_feature_dict = {'basic': top3_tools,
+                     'megalodon_deepsignal': ['megalodon', 'deepsignal']}
 
 # XGBoost model default dir
 xgboost_mode_base_dir = os.path.join(Path(__file__).parent, 'trained_model')
