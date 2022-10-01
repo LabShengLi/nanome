@@ -500,7 +500,11 @@ workflow {
 	if (params.phasing) {
 		CLAIR3(QCEXPORT.out.bam_data, ENVCHECK.out.reference_genome)
 		null1.concat(
-			MGLDNCOMB.out.megalodon_combine, CONSENSUS.out.nanome_combine_out
+			MGLDNCOMB.out.megalodon_combine,
+			MGLDNCOMB.out.read_unify,
+			CONSENSUS.out.nanome_combine_out,
+			CONSENSUS.out.read_unify,
+			NPLSHCOMB.out.nanopolish_combine_out_ch
 			).toList().set { mega_and_nanome_ch }
 		PHASING(mega_and_nanome_ch, CLAIR3.out.clair3_out_ch,
 				ch_src, QCEXPORT.out.bam_data, ENVCHECK.out.reference_genome)

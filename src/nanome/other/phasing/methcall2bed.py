@@ -30,7 +30,7 @@ from nanome.common.global_settings import NANOME_VERSION
 
 
 def process_read_score_by_readid(infn, outfn, sep='\t', readid_col=0, chr_col=1, pos_col=2, strand_col=3, score_col=4,
-                                 label_col=5):
+                                 label_col=5, score_cutoff=2.0):
     """
     Convert meth per read score results into bed for IGV view
 
@@ -56,9 +56,13 @@ def process_read_score_by_readid(infn, outfn, sep='\t', readid_col=0, chr_col=1,
         readid = tmp[readid_col]
         chr = tmp[chr_col]
         strand = tmp[strand_col]
-        # input is 1-based, in-memory will be 0-based, for - strand, also point to CG's C, this position will be modified by NanomethPhase later
+        # input is 1-based (our per-read unified format), in-memory will be 0-based, for - strand, also point to CG's C, this position will be modified by NanomethPhase later
         pos = int(tmp[pos_col]) - (1 if strand == '+' else 2)
         score = float(tmp[score_col])
+
+        ## filter out unconfident predictions
+        if abs(score) < score_cutoff:
+            continue
 
         key = (readid, chr, strand)
         if key not in retDict:
@@ -73,13 +77,12 @@ def process_read_score_by_readid(infn, outfn, sep='\t', readid_col=0, chr_col=1,
     logger.debug(f"### read in DONE")
 
     outf = gzip.open(outfn, 'wt')
-    # outf.write(f"ID\tChr\tPos\tStrand\tScore\tLabel\n")
     for key in tqdm(retDict, desc="Save-file"):
         readid = key[0]
         chr = key[1]
         strand = key[2]
         all_positions = sorted(retDict[key]['methylate_sites'] + retDict[key]['unmethylate_sites'])
-        start = str(all_positions[0])  # output is 0-based start, 1-based end
+        start = str(all_positions[0])  # output is 0-based start, 1-based end, e.g., [CG......CG]
         end = str(all_positions[-1] + 1)
         if len(retDict[key]['methylate_sites']) == 0:
             retDict[key]['methylate_sites'].append('NA')
@@ -108,6 +111,8 @@ def parse_arguments():
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('-i', type=str, help='input file for sorted per-read score file', required=True)
     parser.add_argument('-o', type=str, help="output file for bed.gz file", required=True)
+    parser.add_argument('--score-cutoff', type=float, help="score cutoff (LLR2) for filter predictions, default is 2.0",
+                        default=1.5)
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
 
     args = parser.parse_args()
@@ -122,5 +127,5 @@ if __name__ == '__main__':
         set_log_info_level()
     logger.debug(args)
 
-    process_read_score_by_readid(args.i, args.o)
+    process_read_score_by_readid(args.i, args.o, score_cutoff=args.score_cutoff)
     logger.info(f"### process_per_read_score DONE")
