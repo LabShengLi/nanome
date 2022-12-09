@@ -43,8 +43,8 @@ dependencies:
   - nanopolish>=0.14.0
   - pip:
       - xgboost<=1.5.2  # nanome model load need <=1.5.x
-      - ont-pyguppy-client-lib>=6.4.2
+      - ont-pyguppy-client-lib==6.3.9
       - deepsignal>=0.2.0
       - fast5mod==1.0.5
-      - nanome-jax>=2.0.9
+      - nanome-jax>=2.0.10
       - megalodon
