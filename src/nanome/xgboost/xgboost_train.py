@@ -18,7 +18,7 @@ import math
 from tqdm import tqdm
 
 from nanome.common.eval_common import freq_to_label
-from nanome.xgboost.xgboost_common import TRUTH_LABEL_COLUMN, default_xgboost_params, gridcv_xgboost_params, \
+from nanome.xgboost.ml_common import TRUTH_LABEL_COLUMN, default_xgboost_params, gridcv_xgboost_params, \
     gridcv_rf_params, SITES_COLUMN_LIST, default_rf_params
 
 simplefilter(action='ignore', category=FutureWarning)

@@ -19,6 +19,7 @@ processors=${6}
 step=${7:-'12'}
 read_sort=${8:-'false'}
 chr_options=${9:-''}
+force_llr2_options=${10:-''}
 
 if [[ "${chr_options}" != "" ]] ; then
 	chr_options="--chrSet ${chr_options}"
@@ -34,7 +35,7 @@ if [[ "$step" == *"1"* ]]; then
         --dsname ${dsname}\
         --read-level-format \
         --processors ${processors}	\
-        -o ${outdir}   ${chr_options}
+        -o ${outdir}   ${chr_options}  ${force_llr2_options}
 
     ## sort read-level outputs if needed
     if [[ ${read_sort} == true ]] ; then

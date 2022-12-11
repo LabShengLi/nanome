@@ -3,15 +3,26 @@ from pathlib import Path
 
 import joblib
 import math
-from nanome.common.global_settings import EPSLONG
 
 from nanome.common.global_config import logger
+from nanome.common.global_settings import EPSLONG
+
+# consensus model on top of top3 tools
+top3_tools = ['megalodon', 'nanopolish', 'deepsignal']
+
+region_order = ['Genome-wide', 'Discordant', 'Concordant', 'Singleton', 'Nonsingleton']
+
+# use k_mer for DNAseq features
+k_mer = 17
 
 TRUTH_LABEL_COLUMN = 'Truth_label'
 SITES_COLUMN_LIST = ["Chr", "Pos", "Strand"]
-
 ## ID  Chr Pos Strand
 READS_COLUMN_LIST = ['ID'] + SITES_COLUMN_LIST
+
+# each type of tools' input features
+tool_feature_dict = {'basic': top3_tools,
+                     'megalodon_deepsignal': ['megalodon', 'deepsignal']}
 
 # XGBoost model default dir
 xgboost_mode_base_dir = os.path.join(Path(__file__).parent, 'trained_model')
@@ -20,6 +31,9 @@ xgboost_mode_base_dir = os.path.join(Path(__file__).parent, 'trained_model')
 nanome_model_dict = {
     "NANOME2T": 'NANOME_NA12878_train1.0_megalodon_deepsignal_XGBoostNA2T_model.pkl',
     "NANOME3T": 'NANOME_NA12878_train1.0_nanopolish_megalodon_deepsignal_XGBoostNA3T_niter10_model.pkl',
+    "xgboost_basic": 'NA12878_chr1_xgboost_basic_model.pkl',
+    "xgboost_basic_w": 'NA12878_chr1_xgboost_basic_w_model.pkl',
+    "xgboost_basic_w_seq": 'NA12878_chr1_xgboost_basic_w_seq_model.pkl',
 }
 
 # XGBoost model tools' order for input

@@ -56,3 +56,9 @@ testdemo.py
 /src/nanome/nanocompare/utils/na12878.filelist.txt
 /guppy_basecaller-core-dump-db/
 /locations/
+/test_data/NA19240_RRBS_ENCFF000LZT_chr22.txt.gz
+/test_data/two_split2/ecoli_ci_basecalled.tar.gz
+/test_data/two_split2/ecoli_ci_test_fast5.tar.gz
+/test_data/multi_fast5_demo.tar.gz
+/test_data/na12878_chr22_p3_100.tar.gz
+/test_data/NA19240_RRBS_ENCFF000LZS_chr22.txt.gz

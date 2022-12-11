@@ -27,7 +27,7 @@ process CLAIR3 {
 	"""
 	run_clair3.sh --version
 
-	MODEL_NAME="r941_prom_sup_g5014"
+	MODEL_NAME="${params.CLAIR3_MODEL_NAME}"  ##"r941_prom_sup_g5014"
 	mkdir -p ${params.dsname}_clair3_out
 	run_clair3.sh \
 	  --bam_fn=${params.dsname}_bam_data/${params.dsname}_merge_all_bam.bam \
@@ -35,10 +35,42 @@ process CLAIR3 {
 	  --threads=${task.cpus} \
 	  --platform="ont" \
 	  --model_path="/opt/models/\${MODEL_NAME}" \
+	  --enable_phasing --var_pct_phasing=${params.CLAIR3_var_pct_phasing} \
 	  --output=${params.dsname}_clair3_out  ${params.ctg_name ? "--ctg_name=${params.ctg_name}": " "} \
 	  &> ${params.dsname}.Clair3.run.log
 
 	echo "### Clair3 for variant calling DONE"
+
+    ## combine phasing vcf files
+    phase_dir=${params.dsname}_clair3_out/tmp/phase_output/phase_vcf
+    > \${phase_dir}/${params.dsname}_phasing_vcf.vcf
+
+    hfn=\$(find \${phase_dir} -name '*.vcf.gz' | head -n 1)
+    zcat \${hfn} | awk '\$1 ~ /^#/' >> \
+        \${phase_dir}/${params.dsname}_phasing_vcf.vcf
+
+    find \${phase_dir} -name '*.vcf.gz'  -print0 |
+        sort -V -z |
+	    while IFS= read -r -d '' infn2; do
+	        zcat \${infn2} | awk '\$1 !~ /^#/' >> \
+	            \${phase_dir}/${params.dsname}_phasing_vcf.vcf
+	    done
+
+	> \${phase_dir}/${params.dsname}_phasing_vcf_QUAL_${params.CLAIR3_phasing_qual}.vcf
+	awk '\$1 ~ /^#/' \${phase_dir}/${params.dsname}_phasing_vcf.vcf >> \
+        \${phase_dir}/${params.dsname}_phasing_vcf_QUAL_${params.CLAIR3_phasing_qual}.vcf
+    awk "\\\$6 >= ${params.CLAIR3_phasing_qual}" \${phase_dir}/${params.dsname}_phasing_vcf.vcf >> \
+        \${phase_dir}/${params.dsname}_phasing_vcf_QUAL_${params.CLAIR3_phasing_qual}.vcf
+
+    bgzip -c \${phase_dir}/${params.dsname}_phasing_vcf.vcf > \
+        \${phase_dir}/${params.dsname}_phasing_vcf.vcf.gz
+    tabix -p vcf \${phase_dir}/${params.dsname}_phasing_vcf.vcf.gz
+
+    bgzip -c \${phase_dir}/${params.dsname}_phasing_vcf_QUAL_${params.CLAIR3_phasing_qual}.vcf > \
+        \${phase_dir}/${params.dsname}_phasing_vcf_QUAL_${params.CLAIR3_phasing_qual}.vcf.gz
+    tabix -p vcf \${phase_dir}/${params.dsname}_phasing_vcf_QUAL_${params.CLAIR3_phasing_qual}.vcf.gz
+
+	echo "### combine phasing vcf DONE"
 
 	## haplotag
 	whatshap --version
@@ -110,12 +142,66 @@ process PHASING {
 	output:
 	path "hp_split_${params.dsname}*",	emit: hp_split_ch, 	optional: true
 	path "${params.dsname}*mock_bam", 	emit: mock_bam_ch, 		optional: true
+    path "${params.dsname}*methcall2bed", 	emit: methcall2bed_ch, 		optional: true
+	path "${params.dsname}*meth_phasing", 	emit: meth_phasing_ch, 		optional: true
 
 	"""
 	echo "### hello phasing"
+    ## deal with meth2bed+nanomethphase_phase
+    phaseToolList=("nanopolish" "megalodon" "nanome")
+    for i in "\${!phaseToolList[@]}"; do
+		tool="\${phaseToolList[i]}"
 
+		if [[ \${tool} == "nanopolish" ]] ; then
+            infn=\$(find . -maxdepth 1 \
+                -name "${params.dsname}_\${tool}*_per_read_combine*.gz")
+        else
+            ## find file: NA19240_chr11_chr15_n49_Megalodon-perRead-score.tsv.gz
+            infn=\$(find . -maxdepth 1 \
+                -iname "${params.dsname}_\${tool}*perRead-score.*.gz")
+        fi
+		if [[ -z \${infn} ]] ; then
+			continue
+		fi
+
+		echo "deal with \${infn}"
+
+        outdir="${params.dsname}_\${tool}_meth_phasing"
+        mkdir -p \${outdir}
+		if [[ \${tool} == "nanopolish" ]] ; then
+            PYTHONPATH=src python src/nanome/other/phasing/nanomethphase.py \
+                methyl_call_processor -mc \${infn} -t ${task.cpus} |
+                sort -k1,1 -k2,2n -k3,3n |
+                bgzip -f > \${outdir}/${params.dsname}_\${tool}_MethylationCall.bed.gz &&
+                tabix -p bed \${outdir}/${params.dsname}_\${tool}_MethylationCall.bed.gz
+		else
+            PYTHONPATH=src  python src/nanome/other/phasing/methcall2bed.py \
+                -i \${infn} \
+                -o \${outdir}/${params.dsname}_\${tool}_MethylationCall1.bed.gz \
+                --verbose  &>> ${params.dsname}.Phasing.run.log
+
+            zcat \${outdir}/${params.dsname}_\${tool}_MethylationCall1.bed.gz | \
+                sort -V -k1,1 -k2,2n -k3,3n |
+                bgzip -f >\${outdir}/${params.dsname}_\${tool}_MethylationCall.bed.gz &&
+                tabix -p bed \${outdir}/${params.dsname}_\${tool}_MethylationCall.bed.gz  &&
+                rm -f \${outdir}/${params.dsname}_\${tool}_MethylationCall1.bed.gz
+		fi
+
+		## phase meth
+		vcffn=${params.dsname}_clair3_out/tmp/phase_output/phase_vcf/${params.dsname}_phasing_vcf_QUAL_${params.CLAIR3_phasing_qual}.vcf.gz
+		ref=${params.referenceGenome}
+		bamfn=${params.dsname}_bam_data/${params.dsname}_merge_all_bam.bam
+
+		PYTHONPATH=src python src/nanome/other/phasing/nanomethphase.py \
+		    phase -mc \${outdir}/${params.dsname}_\${tool}_MethylationCall.bed.gz \
+            -o \${outdir}/${params.dsname}_\${tool} \
+            -of bam,methylcall,bam2bis \
+            -b \${bamfn} -r \${ref} -v \${vcffn} -t ${task.cpus}  --overwrite
+	done
+
+    ## deal with hpsplit+meth2bed+nanomethphase_vis_bam
 	## TODO: change hmc filename in Megalodon raw output
-	toolList=(${params.hmc? "megalodon" : "megalodon"}  "nanome_${params.NANOME_MODEL}")
+	toolList=("megalodon" "nanome_${params.NANOME_MODEL}")
 	encodeList=("megalodon" "nanome")
 	numClassList=(${params.hmc? "3" : "2"}  2)
 

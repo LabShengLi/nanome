@@ -96,6 +96,11 @@ process NPLSHCOMB {
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify
 	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify
 
+	//tuple val("Nanopolish"), path ("Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz"),
+	//	optional:true,		emit: read_unify_map
+	//tuple val("Nanopolish"), path ("Site_Level-${params.dsname}/*-perSite-cov*.gz"),
+	//	optional:true,		emit: site_unify_map
+
 	when:
 	x.size() >= 1 && params.runCombine
 

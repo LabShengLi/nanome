@@ -22,7 +22,7 @@ from tqdm import tqdm
 from nanome.common.eval_common import freq_to_label
 from nanome.common.global_config import set_log_debug_level, set_log_info_level, logger
 from nanome.common.global_settings import CHUNKSIZE, NANOME_VERSION, EPSLONG
-from nanome.xgboost.xgboost_common import SITES_COLUMN_LIST, READS_COLUMN_LIST, nanome_model_dict, xgboost_mode_base_dir
+from nanome.xgboost.ml_common import SITES_COLUMN_LIST, READS_COLUMN_LIST, nanome_model_dict, xgboost_mode_base_dir
 
 
 def report_read_level_performance(df):

@@ -717,7 +717,7 @@ def importPredictions_DeepMod(infileName, chr_col=0, start_col=1, strand_col=5, 
 
 def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3, strand_col=2, mod_log_prob_col=4,
                                 can_log_prob_col=5, meth_type_col=6, baseFormat=1, raw_cutoff=None, sep='\t',
-                                output_first=False,
+                                output_first=False, force_llr2=False,
                                 include_score=False, filterChr=HUMAN_CHR_SET, save_unified_format=False, outfn=None):
     """
     0-based start for Magelodon：
@@ -726,6 +726,7 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
     Return dict of key='chr1 123 +', and values=list of [1 1 0 0 1 1], in which 0-unmehylated, 1-methylated.
 
     Note that the function requires per-read file, not per-site methlyation level.
+    LLR in megalodon is LLR e based
 
     ### Example default input format from Megalondon (pre-processed to containing strand-info):
     head /fastscratch/c-panz/K562/megalodon/per_read_modified_base_calls.merged.sorted.bed
@@ -790,6 +791,8 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
         if save_unified_format:
             # output to 1-based, ref: https://github.com/comprna/METEORE/blob/master/script/format_megalodon.R#L16
             llr_score = float(tmp[mod_log_prob_col]) - float(tmp[can_log_prob_col])
+            if force_llr2:  # convert ln to log2
+                llr_score = llr_score / math.log(2)
             outf.write(f"{tmp[readid_col]}\t{tmp[chr_col]}\t{start}\t{tmp[strand_col]}\t{llr_score}\n")
 
         key = (tmp[chr_col], start, strand)
@@ -823,7 +826,7 @@ def importPredictions_Megalodon(infileName, readid_col=0, chr_col=1, start_col=3
         logger.debug(f'Save NANOME unified output format to {outfn}')
 
     logger.debug(
-        f"###\timportPredictions_Megalodon SUCCESS: {call_cnt:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with raw_cutoff={raw_cutoff} from {infileName} file")
+        f"###\timportPredictions_Megalodon SUCCESS: {call_cnt:,} methylation calls (meth-calls={meth_cnt:,}, unmeth-call={unmeth_cnt:,}) mapped to {len(cpgDict):,} CpGs with raw_cutoff={raw_cutoff} from {infileName} file, force_llr2={force_llr2}")
     return cpgDict
 
 
@@ -1679,7 +1682,7 @@ def importGroundTruth_from_5hmc_ziwei(infn, chr_col=0, start_col=1, strand_col=7
 
 def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False, enable_cache=False, using_cache=False,
                 filterChr=HUMAN_CHR_SET, save_unified_format=False, outfn=None, cache_dir=None, toolname=None,
-                raw_cutoff=None):
+                raw_cutoff=None, force_llr2=False):
     """
     General purpose for import any tools methylation calling input files.
 
@@ -1717,12 +1720,14 @@ def import_call(infn, encode, baseFormat=1, include_score=False, siteLevel=False
     elif encode.lower() == 'Megalodon'.lower():  # Original format
         calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score,
                                              raw_cutoff=raw_cutoff,
-                                             filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn)
+                                             filterChr=filterChr, save_unified_format=save_unified_format, outfn=outfn,
+                                             force_llr2=force_llr2)
     elif encode.lower() == 'Megalodon.ZW'.lower():  # Here, ziwei preprocess the raw file to this format: chr_col=0, start_col=1, strand_col=3
         calls0 = importPredictions_Megalodon(infn, baseFormat=baseFormat, include_score=include_score,
                                              raw_cutoff=raw_cutoff,
                                              readid_col=2, chr_col=0, start_col=1, strand_col=3, filterChr=filterChr,
-                                             save_unified_format=save_unified_format, outfn=outfn)
+                                             save_unified_format=save_unified_format, outfn=outfn,
+                                             force_llr2=force_llr2)
     elif encode.lower() == 'DeepMod'.lower():  # import DeepMod, support both C and Cluster input format
         calls0 = importPredictions_DeepMod(infn, baseFormat=baseFormat, siteLevel=siteLevel,
                                            include_score=include_score, filterChr=filterChr)

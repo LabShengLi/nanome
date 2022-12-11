@@ -40,14 +40,11 @@ dependencies:
   - pybedtools>=0.8.2 # nanome needs upper version of pybedtools, deal with NAs
   - tqdm>=4.60 # need by Megalodon, ref: https://github.com/nanoporetech/megalodon/issues/105
   - ont-tombo>=1.5.1
-  - nanopolish>=0.13.2
+  - nanopolish>=0.14.0
   - pip:
-      - xgboost
-      - ont-pyguppy-client-lib>=6.1.3
-      - deepsignal==0.1.10
+      - xgboost<=1.5.2  # nanome model load need <=1.5.x
+      - ont-pyguppy-client-lib==6.3.9
+      - deepsignal>=0.2.0
       - fast5mod==1.0.5
-      - nanome-jax>=2.0.8
+      - nanome-jax>=2.0.10
       - megalodon
-#The conflict is caused by:
-#    fast5mod 1.0.5 depends on ont-fast5-api==3.0.0, but it can be use higher
-#    megalodon 2.3.4+ depends on ont-fast5-api>=3.2, it must be higher, so later install it

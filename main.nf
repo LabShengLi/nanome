@@ -35,48 +35,34 @@ if (! params.input)  exit 1, "Missing --input option for input data, check comma
 //if ( !file(params.input.toString()).exists() )   exit 1, "input does not exist, check params: --input ${params.input}"
 
 // Parse genome params
-genome_map = params.genome_map
+gbl_genome_map = params.genome_map
 
-if (genome_map[params.genome]) { genome_path = genome_map[params.genome] }
-else { 	genome_path = params.genome }
+gbl_genome_path = gbl_genome_map[params.genome] ? gbl_genome_map[params.genome] : params.genome
 
 // infer dataType, chrSet based on reference genome name, hg - human, ecoli - ecoli, otherwise is other reference genome
 humanChrSet = 'chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY'
-if (params.genome.contains('hg') || (params.dataType && params.dataType == 'human')) {
-	dataType = "human"
-	if (!params.chrSet) {
-		// default for human, if false or 'false' (string), using '  '
-		chrSet = humanChrSet
-	} else {
-		chrSet = params.chrSet
-	}
-} else if (params.dataType && params.dataType == 'mouse') {
-	dataType = "mouse"
-	if (!params.chrSet) {
-		// default for human, if false or 'false' (string), using '  '
-		chrSet = humanChrSet
-	} else {
-		chrSet = params.chrSet
-	}
-} else if (params.genome.contains('ecoli') || (params.dataType && params.dataType == 'ecoli')) {
-	dataType = "ecoli"
-	if (!params.chrSet) {
-		// default for ecoli
-		chrSet = 'NC_000913.3'
-	} else {
-		chrSet = params.chrSet
-	}
+
+genome_basefn = (new File(params.genome)).name
+if (genome_basefn.startsWith('hg') || (params.dataType && params.dataType == 'human')) {
+	dataType = params.dataType ? params.dataType : "human"
+	// default for human chr
+	chrSet = params.chrSet ? params.chrSet : humanChrSet
+} else if (genome_basefn.startsWith('mm') || (params.dataType && params.dataType == 'mouse') ){
+	dataType = params.dataType ? params.dataType : "mouse"
+	// default for mouse chr
+	chrSet = params.chrSet ? params.chrSet : humanChrSet
+} else if (genome_basefn.startsWith('ecoli') || (params.dataType && params.dataType == 'ecoli')) {
+	dataType = params.dataType ? params.dataType : "ecoli"
+	chrSet = params.chrSet ? params.chrSet : 'NC_000913.3'
 } else {
-	// default will not found name, use other
-	if (!params.dataType) { dataType = 'other' } else { dataType = params.dataType }
-	if (!params.chrSet) {
-		// No default value for other reference genome
-		exit 1, "Missing --chrSet option for other reference genome, please specify chromosomes used in reference genome [${params.genome}]"
-	}
-	chrSet = params.chrSet
+	// if not infer data type, use other
+	dataType = params.dataType ? params.dataType : "other"
+
+	if (params.chrSet)  chrSet = params.chrSet
+	else exit 1, "Missing --chrSet option for other reference genome, please specify chromosomes used in reference genome [${params.genome}]"
 }
 
-// chrSet1 and dataType1 is the infered params, defined from chrSet and dataType (not in scope of params)
+// chrSet1 and dataType1 is the infered params, defined from chrSet and dataType (not in scope of params), will be used in every modules
 params.chrSet1 = chrSet
 params.dataType1 = dataType
 
@@ -85,7 +71,7 @@ projectDir = workflow.projectDir
 ch_utils = Channel.fromPath("${projectDir}/utils",  type: 'dir', followLinks: false)
 ch_src   = Channel.fromPath("${projectDir}/src",  type: 'dir', followLinks: false)
 
-// Reference genome, chom size file
+// Reference genome, chom size file name, will be used in every modules
 params.referenceGenome = "${params.GENOME_DIR}/${params.GENOME_FN}"
 params.chromSizesFile = "${params.GENOME_DIR}/${params.CHROM_SIZE_FN}"
 
@@ -106,15 +92,15 @@ if (params.input.endsWith(".filelist.txt")) {
 				return file(it[0])
 			}
 		}
-		.set{ inputCh }
+		.set{ ch_inputs }
 } else if (params.input.contains('*') || params.input.contains('?')) {
 	// match all files in the folder, note: input must use quote string '', prevent expand in advance
 	// such as --input '/fastscratch/liuya/nanome/NA12878/NA12878_CHR22/input_chr22/*'
 	Channel.fromPath(params.input, type: 'any', checkIfExists: true)
-		.set{ inputCh }
+		.set{ ch_inputs }
 } else {
 	// For single file/wildcard matched files
-	Channel.fromPath( params.input, checkIfExists: true ).set{ inputCh }
+	Channel.fromPath( params.input, checkIfExists: true ).set{ ch_inputs }
 }
 
 // Header log info
@@ -122,7 +108,7 @@ def summary = [:]
 summary['dsname'] 			= params.dsname
 summary['input'] 			= params.input
 
-if (genome_map[params.genome] != null) { summary['genome'] = "${params.genome} - [${genome_path}]" }
+if (gbl_genome_map[params.genome]) { summary['genome'] = "${params.genome} - [${gbl_genome_path}]" }
 else { summary['genome'] = params.genome }
 
 summary['\nRunning settings']         = "--------"
@@ -195,6 +181,11 @@ if (params.runMethcall && params.runDeepMod) {
 	} else {
 		summary['DEEPMOD_RNN_MODEL'] = "${params.DEEPMOD_RNN_MODEL}"
 	}
+}
+if (params.runNANOME) {
+	summary['NANOME_MODEL'] = "${params.NANOME_MODEL}"
+	summary['CS_MODEL_FILE'] = "${params.CS_MODEL_FILE}"
+	summary['CS_MODEL_SPEC'] = "${params.CS_MODEL_SPEC}"
 }
 
 summary['\nPipeline settings']         = "--------"
@@ -284,46 +275,45 @@ include { DEEPSIGNAL; DPSIGCOMB } from './modules/DEEPSIGNAL'
 
 include { DEEPSIGNAL2; DEEPSIGNAL2COMB } from './modules/DEEPSIGNAL2'
 
-include { REPORT } from './modules/REPORT'
-
 include { Guppy; GuppyComb; Tombo; TomboComb; DeepMod; DpmodComb; METEORE } from './modules/OLDTOOLS'
 
 include { NewTool; NewToolComb } from './modules/NEWTOOLS'
 
 include { CLAIR3; PHASING } from './modules/PHASING'
 
+include { CONSENSUS } from './modules/CONSENSUS'
+
+include { EVAL } from './modules/EVAL'
+
+include { REPORT } from './modules/REPORT'
+
+// place holder channel, used for empty file of a channel
+null1 = Channel.fromPath("${projectDir}/utils/null1")
+null2 = Channel.fromPath("${projectDir}/utils/null2")
+null3 = Channel.fromPath("${projectDir}/utils/null3")
 
 workflow {
-	if ( !file(genome_path.toString()).exists() )
+	if ( !file(gbl_genome_path.toString()).exists() )
 		exit 1, "genome reference path does not exist, check params: --genome ${params.genome}"
 
-	genome_ch = Channel.fromPath(genome_path, type: 'any', checkIfExists: true)
+	ch_genome = Channel.fromPath(gbl_genome_path, type: 'any', checkIfExists: true)
 
-	if (!params.rerioDir) { // default if null, will online downloading
-		// This is only a place holder for input
-		rerioDir = Channel.fromPath("${projectDir}/utils/null1", type: 'any', checkIfExists: false)
+	// rerio model dir will be download in ENVCHECK if needed
+	ch_rerio_dir = (params.rerio && params.rerioDir) ? Channel.fromPath(params.rerioDir, type: 'any', checkIfExists: true) :
+							null1
+
+	// deepsignal model dir will be downloaded in ENVCHECK if needed
+	if (params.runDeepSignal) {
+		ch_deepsignal_dir = params.deepsignalDir ?
+				Channel.fromPath(params.deepsignalDir, type: 'any', checkIfExists: true) :
+				Channel.fromPath(params.DEEPSIGNAL_MODEL_ONLINE, type: 'any', checkIfExists: true)
 	} else {
-		// User provide the dir
-		if ( !file(params.rerioDir.toString()).exists() )
-			exit 1, "rerioDir does not exist, check params: --rerioDir ${params.rerioDir}"
-		rerioDir = Channel.fromPath(params.rerioDir, type: 'any', checkIfExists: true)
-	}
-
-	if (! params.runDeepSignal) {
 		// use null placeholder
-		deepsignalDir = Channel.fromPath("${projectDir}/utils/null2", type: 'any', checkIfExists: true)
-	} else if (!params.deepsignalDir) {
-		// default if null, will online staging
-		deepsignalDir = Channel.fromPath(params.DEEPSIGNAL_MODEL_ONLINE, type: 'any', checkIfExists: true)
-	} else {
-		// User provide the dir
-		if ( !file(params.deepsignalDir.toString()).exists() )
-			exit 1, "deepsignalDir does not exist, check params: --deepsignalDir ${params.deepsignalDir}"
-		deepsignalDir = Channel.fromPath(params.deepsignalDir, type: 'any', checkIfExists: true)
+		ch_deepsignal_dir = null2
 	}
 
-	ENVCHECK(genome_ch, ch_utils, rerioDir, deepsignalDir)
-	UNTAR(inputCh)
+	ENVCHECK(ch_genome, ch_utils, ch_rerio_dir, ch_deepsignal_dir)
+	UNTAR(ch_inputs)
 
 	if (params.runBasecall) {
 		BASECALL(UNTAR.out.untar)
@@ -334,9 +324,12 @@ workflow {
 	}
 
 	// Resquiggle running if use Tombo or DeepSignal
-	if (((params.runDeepSignal || params.runTombo || params.runDeepSignal2) && params.runMethcall) || params.runResquiggle) {
-		// BASECALL.out.basecall.subscribe({ println("BASECALL.out.basecall: $it") })
-		RESQUIGGLE(BASECALL.out.basecall, ENVCHECK.out.reference_genome)
+	if (((params.runDeepSignal || params.runTombo || params.runDeepSignal2) && params.runMethcall)
+		|| params.runResquiggle) {
+		resquiggle = RESQUIGGLE(BASECALL.out.basecall, ENVCHECK.out.reference_genome)
+		f1 = params.feature_extract ? resquiggle.feature_extract : Channel.empty()
+	} else {
+		f1 = Channel.empty()
 	}
 
 	if (params.runNanopolish && params.runMethcall) {
@@ -373,12 +366,19 @@ workflow {
 	}
 
 	if (params.runDeepSignal2 && params.runMethcall) {
-		DEEPSIGNAL2(RESQUIGGLE.out.resquiggle.collect(),
+		deepsignal2 = DEEPSIGNAL2(RESQUIGGLE.out.resquiggle.collect(),
 					ENVCHECK.out.reference_genome,
 					ch_src, ch_utils)
-		DEEPSIGNAL2COMB(DEEPSIGNAL2.out.deepsignal2_combine_out,
+		comb_deepsignal2 = DEEPSIGNAL2COMB(DEEPSIGNAL2.out.deepsignal2_combine_out,
 						ch_src, ch_utils
 						)
+		f2 = deepsignal2.deepsignal2_feature_out
+		s3_1 = comb_deepsignal2.site_unify
+		r3_1 = comb_deepsignal2.read_unify
+	} else {
+		f2 = Channel.empty()
+		s3_1 = Channel.empty()
+		r3_1 = Channel.empty()
 	}
 
 	if (params.runGuppy && params.runMethcall) {
@@ -453,23 +453,58 @@ workflow {
 		r_new = Channel.empty()
 	}
 
-	// Site level combine a list
-	Channel.fromPath("${projectDir}/utils/null1").concat(
-		s1, s2, s3, s4, s5, s6, s7, s_new
-		).toList().set { tools_site_unify }
+	null2.concat(
+		r1, r2, r3, f1, f2
+		).toList().set { top3_tools_read_unify }
 
-	Channel.fromPath("${projectDir}/utils/null2").concat(
-		r1, r2, r3
+	if (params.runNANOME) {
+		consensus = CONSENSUS(top3_tools_read_unify, ch_src, ch_utils)
+		s8 = consensus.site_unify
+		r8 = consensus.read_unify
+	} else {
+		s8 = Channel.empty()
+		r8 = Channel.empty()
+	}
+
+	null2.concat(
+		r1, r2, r3, r8, f1, f2
 		).toList().set { tools_read_unify }
 
-	REPORT(tools_site_unify, tools_read_unify,
+	// perform evaluation of tools' methylation results
+	if (params.runEval) {
+		bg1 = params.bg1 ? Channel.fromPath(params.bg1) : Channel.empty()
+		bg2 = params.bg2 ? Channel.fromPath(params.bg2) : Channel.empty()
+
+		null1.concat(
+			bg1, bg2
+		).toList().set { bg_list }
+
+		if (params.genome_annotation_dir) {
+			genome_annotation_ch = Channel.fromPath(params.genome_annotation_dir)
+		} else {
+			genome_annotation_ch = null3
+		}
+
+		EVAL(tools_read_unify, bg_list, ch_src, ch_utils, genome_annotation_ch)
+	}
+
+	// Site level combine a list
+	null1.concat(
+		s1, s2, s3, s4, s5, s6, s7, s_new, s8
+		).toList().set { tools_site_unify }
+
+	REPORT(tools_site_unify, top3_tools_read_unify,
 			ENVCHECK.out.tools_version_tsv, QCEXPORT.out.qc_report,
 			ENVCHECK.out.reference_genome, ch_src, ch_utils)
 
 	if (params.phasing) {
 		CLAIR3(QCEXPORT.out.bam_data, ENVCHECK.out.reference_genome)
-		Channel.fromPath("${projectDir}/utils/null1").concat(
-			MGLDNCOMB.out.megalodon_combine, REPORT.out.nanome_combine_out
+		null1.concat(
+			MGLDNCOMB.out.megalodon_combine,
+			MGLDNCOMB.out.read_unify,
+			CONSENSUS.out.nanome_combine_out,
+			CONSENSUS.out.read_unify,
+			NPLSHCOMB.out.nanopolish_combine_out_ch
 			).toList().set { mega_and_nanome_ch }
 		PHASING(mega_and_nanome_ch, CLAIR3.out.clair3_out_ch,
 				ch_src, QCEXPORT.out.bam_data, ENVCHECK.out.reference_genome)
