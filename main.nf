@@ -123,6 +123,7 @@ if (params.runResquiggle) summary['runResquiggle'] = 'Yes'
 if (params.runMethcall) {
 	if (params.runNanopolish) summary['runNanopolish'] = 'Yes'
 	if (params.runMegalodon) summary['runMegalodon'] = 'Yes'
+	if (params.runDeepSignal2) summary['runDeepSignal2'] = 'Yes'
 	if (params.runDeepSignal) summary['runDeepSignal'] = 'Yes'
 	if (params.runGuppy) summary['runGuppy'] = 'Yes'
 	if (params.runTombo) summary['runTombo'] = 'Yes'
