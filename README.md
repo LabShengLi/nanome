@@ -5,7 +5,7 @@
 ## Highlights of NANOME pipeline
 ### Several first highlights for NANOME
 
-![Figure_pipe_comp](https://github.com/LabShengLi/nanome/blob/xgboost1/docs/resources/pipeline_comparison.jpg)
+![Figure_pipe_comp](https://github.com/LabShengLi/nanome/blob/master/docs/resources/pipeline_comparison.jpg)
 
 * Enables users to process **terabasescale** Oxford Nanopore sequencing datasets.
 * Provide a **one command line**/**web-based UI** for end-to-end analyzing Nanopore sequencing methylation-callings.
@@ -143,7 +143,7 @@ Please check [NANOME report](https://github.com/LabShengLi/nanome/blob/master/do
 
 ### Haplotype-aware consensus methylations
 Please check [phasing usage](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/Phasing.md).
-![PhasingDemo](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/resources/nanome3t_5mc_phasing2.png)
+![PhasingDemo](https://github.com/LabShengLi/nanome/blob/master/docs/resources/nanome3t_5mc_phasing2.png)
 
 ### Lifebit CloudOS report
 We now support running NANOME on cloud computing platform. [Lifebit](https://lifebit.ai/lifebit-cloudos/) is a web-based cloud computing platform, and below is the running reports:

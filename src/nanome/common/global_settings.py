@@ -16,7 +16,7 @@ import pandas as pd
 
 from nanome.common.global_config import set_log_debug_level, current_time_str
 
-NANOME_VERSION = "2.0.10"
+NANOME_VERSION = "2.0.11"
 
 # define the small error of 0 and 1, for fully-meth and unmeth eval
 EPSLONG = 1e-5
