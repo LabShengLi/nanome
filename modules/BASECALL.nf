@@ -50,7 +50,7 @@ process BASECALL {
 			--save_path  !{fast5Untar.baseName}.basecall \
 			--config !{params.GUPPY_BASECALL_MODEL} \
 			--num_callers !{task.cpus} \
-			--fast5_out --compress_fastq\
+			--compress_fastq\
 			--verbose_logs  ${gpuOptions} &>> !{params.dsname}.!{fast5Untar.baseName}.Basecall.run.log
 	else
 		## Just use user's basecalled input

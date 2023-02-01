@@ -326,14 +326,15 @@ workflow {
 	// Resquiggle running if use Tombo or DeepSignal
 	if (((params.runDeepSignal || params.runTombo || params.runDeepSignal2) && params.runMethcall)
 		|| params.runResquiggle) {
-		resquiggle = RESQUIGGLE(BASECALL.out.basecall, ENVCHECK.out.reference_genome)
+		resquiggle = RESQUIGGLE(UNTAR.out.untar_tuple.join(BASECALL.out.basecall_tuple), ENVCHECK.out.reference_genome)
 		f1 = params.feature_extract ? resquiggle.feature_extract : Channel.empty()
 	} else {
 		f1 = Channel.empty()
 	}
 
 	if (params.runNanopolish && params.runMethcall) {
-		NANOPOLISH(BASECALL.out.basecall_tuple.join(ALIGNMENT.out.alignment_tuple), ENVCHECK.out.reference_genome)
+		NANOPOLISH(UNTAR.out.untar_tuple.join(BASECALL.out.basecall_tuple).join(ALIGNMENT.out.alignment_tuple),
+			ENVCHECK.out.reference_genome)
 		comb_nanopolish = NPLSHCOMB(NANOPOLISH.out.nanopolish_tsv.collect(), ch_src, ch_utils)
 		s1 = comb_nanopolish.site_unify
 		r1 = comb_nanopolish.read_unify
