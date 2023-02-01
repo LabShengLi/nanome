@@ -48,9 +48,9 @@ process CONSENSUS {
 		then
 			echo "### found deepsignal1_batch_features"
 			cat *.deepsignal1_batch_features.tsv.gz > \
-				${params.dsname}_deepsignal1_feature_combine.tsv.gz
+				${params.dsname}_deepsignal_feature_combine.tsv.gz
 		else
-			echo "### not found deepsignal1_batch_features"
+			echo "### not found deepsignal_batch_features"
 		fi
 
 		MegalodonReadReport=\$(find . -maxdepth 1 -name '*Megalodon-perRead-score.tsv.gz')
@@ -69,7 +69,7 @@ process CONSENSUS {
 			NanopolishOptions="--nanopolish \$NanopolishReadReport"
 		fi
 
-		DeepSignalReadReport=\$(find . -maxdepth 1 -name '*DeepSignal-perRead-score.tsv.gz')
+		DeepSignalReadReport=\$(find . -maxdepth 1 -name '*DeepSignal*-perRead-score.tsv.gz' | head -n 1)
 		if [[ -z \$DeepSignalReadReport ]] ; then
 			echo "### Not found DeepSignal read-level outputs"
 			DeepSignalOptions=" "
@@ -77,7 +77,7 @@ process CONSENSUS {
 			DeepSignalOptions="--deepsignal \$DeepSignalReadReport"
 		fi
 
-		FeatureFile=\$(find . -maxdepth 1 -name '*_deepsignal1_feature_combine.tsv.gz')
+		FeatureFile=\$(find . -maxdepth 1 -name '*_deepsignal*_feature_combine.tsv.gz' | head -n 1)
 		if [[ -z \$FeatureFile ]] ; then
 			echo "### Not found Feature file"
 			FeatureOptions=" "

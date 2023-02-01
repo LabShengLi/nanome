@@ -455,7 +455,7 @@ workflow {
 	}
 
 	null2.concat(
-		r1, r2, r3, f1, f2
+		r1, r2, r3, r3_1, f1, f2
 		).toList().set { top3_tools_read_unify }
 
 	if (params.runNANOME) {
@@ -491,7 +491,7 @@ workflow {
 
 	// Site level combine a list
 	null1.concat(
-		s1, s2, s3, s4, s5, s6, s7, s_new, s8
+		s1, s2, s3, s3_1, s4, s5, s6, s7, s_new, s8
 		).toList().set { tools_site_unify }
 
 	REPORT(tools_site_unify, top3_tools_read_unify,
