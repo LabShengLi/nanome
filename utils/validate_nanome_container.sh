@@ -84,13 +84,14 @@ else
     > ${versionFilename}
     printf '%s\t%s\n' Tool Version >> ${versionFilename}
     printf '%s\t%s\n' NANOME 1.0 >> ${versionFilename}
-    printf '%s\t%s\n' Nanopolish ${nanopolish_version} >> ${versionFilename}
     printf '%s\t%s\n' Megalodon ${megalodon_version} >> ${versionFilename}
+    printf '%s\t%s\n' Nanopolish ${nanopolish_version} >> ${versionFilename}
+    printf '%s\t%s\n' DeepSignal2 0.1.3 >> ${versionFilename}
     printf '%s\t%s\n' DeepSignal ${deepsignal_version} >> ${versionFilename}
     printf '%s\t%s\n' Guppy ${guppy_version} >> ${versionFilename}
     printf '%s\t%s\n' Tombo ${tombo_version} >> ${versionFilename}
     printf '%s\t%s\n' METEORE 1.0.0 >> ${versionFilename}
-    printf '%s\t%s\n' DeepMod ${deepmod_version} >> ${versionFilename}
+    printf '%s\t%s\n' DeepMod 0.1.3 >> ${versionFilename}
 
     echo "### check tools version file:${versionFilename}"
     cat ${versionFilename}

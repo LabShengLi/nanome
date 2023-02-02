@@ -21,6 +21,7 @@ process UNTAR {
 	output:
 	// untar dir or basecalled dir structure
 	path "${fast5Input.baseName}.untar", emit: untar,  optional: true
+	tuple val(fast5Input.baseName), path ("${fast5Input.baseName}.untar"),	optional:true,  emit: untar_tuple
 
 	shell:
 	cores = task.cpus * params.highProcTimes

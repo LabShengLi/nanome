@@ -21,7 +21,7 @@ process NANOPOLISH {
 
 	input:
 	// path basecallDir
-	tuple val(id), path (basecallDir), path(alignmentDir)
+	tuple val(id), path (untarDir), path (basecallDir), path(alignmentDir)
 	each path(reference_genome)
 
 	output:
@@ -45,7 +45,7 @@ process NANOPOLISH {
 	## Index, ref: https://github.com/jts/nanopolish#data-preprocessing
 	## Index the raw read with fastq, we do not index in basecalled dir, in case of cache can be work
 	ln -s \${fastqFile}  \${fastqFile##*/}
-	nanopolish index -d ${basecallDir}/workspace \
+	nanopolish index -d ${untarDir}/ \
 		-s ${basecallDir}/${basecallDir.baseName}-sequencing_summary.txt \
 		\${fastqFile##*/}
 

@@ -26,7 +26,7 @@ process RESQUIGGLE {
 		enabled: params.publishResquiggle
 
 	input:
-	path 	basecallDir
+	tuple 	val(id), path (untarDir), path (basecallDir)
 	each 	path(reference_genome)
 
 	output:
@@ -49,11 +49,11 @@ process RESQUIGGLE {
 	cp -f !{basecallDir}/batch_basecall_combine_fq_*.fq.gz  \
 		!{basecallDir.baseName}.resquiggle/
 
-	## cp -rf !{basecallDir}/workspace  !{basecallDir.baseName}.resquiggle/
-	find !{basecallDir}/workspace -name '*.fast5' -type f| \
+	## cp -rf !{untarDir}/*.fast5  !{basecallDir.baseName}.resquiggle/
+	find !{untarDir}/ -name '*.fast5' -type f| \
 		parallel -j!{task.cpus * params.highProcTimes}  \
 		'cp {}   !{basecallDir.baseName}.resquiggle/workspace/'
-	echo "### Duplicate from basecall DONE"
+	echo "### Duplicate from untar DONE"
 
 	### Prerocessing, using combined fq.gz
 	### ref: https://github.com/bioinfomaticsCSU/deepsignal#quick-start
@@ -61,6 +61,7 @@ process RESQUIGGLE {
 	tombo preprocess annotate_raw_with_fastqs\
 		--fast5-basedir !{basecallDir.baseName}.resquiggle/workspace\
 		--fastq-filenames !{basecallDir.baseName}.resquiggle/batch_basecall_combine_fq_*.fq\
+		--sequencing-summary-filenames !{basecallDir}/!{untarDir.baseName}-sequencing_summary.txt \
 		--basecall-group !{params.BasecallGroupName}\
 		--basecall-subgroup !{params.BasecallSubGroupName}\
 		--overwrite --processes  !{samtools_cores} \
