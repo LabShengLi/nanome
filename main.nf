@@ -43,7 +43,8 @@ gbl_genome_path = gbl_genome_map[params.genome] ? gbl_genome_map[params.genome] 
 humanChrSet = 'chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY'
 
 genome_basefn = (new File(params.genome)).name
-if (genome_basefn.startsWith('hg') || (params.dataType && params.dataType == 'human')) {
+if (genome_basefn.startsWith('hg') || genome_basefn.startsWith('chm13') ||
+		(params.dataType && params.dataType == 'human')) {
 	dataType = params.dataType ? params.dataType : "human"
 	// default for human chr
 	chrSet = params.chrSet ? params.chrSet : humanChrSet
