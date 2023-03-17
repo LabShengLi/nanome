@@ -94,7 +94,7 @@ NANOME pipeline support running with various ways in different platforms:
 
 
 ## Simple usage
-Please refer to [Usage](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md) and [Specific Usage](https://github.com/LabShengLi/nanome/blob/master/docs/SpecificUsage.md) and [NANOME options](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/nanome_params.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md#5-running-pipeline-on-cloud-computing-platform). We provide a **tutorial video** for running NANOME pipeline:
+Please refer to [Usage](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md) and [Specific Usage](https://github.com/LabShengLi/nanome/blob/master/docs/SpecificUsage.md) and [NANOME options](https://github.com/LabShengLi/nanome/blob/master/docs/nanome_params.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md#5-running-pipeline-on-cloud-computing-platform). We provide a **tutorial video** for running NANOME pipeline:
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/TfotM55KTVE/0.jpg)](https://www.youtube.com/watch?v=TfotM55KTVE)
 
@@ -142,7 +142,7 @@ Please check [NANOME report](https://github.com/LabShengLi/nanome/blob/master/do
 
 
 ### Haplotype-aware consensus methylations
-Please check [phasing usage](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/Phasing.md).
+Please check [phasing usage](https://github.com/LabShengLi/nanome/blob/master/docs/Phasing.md).
 ![PhasingDemo](https://github.com/LabShengLi/nanome/blob/master/docs/resources/nanome3t_5mc_phasing2.png)
 
 ### Lifebit CloudOS report
