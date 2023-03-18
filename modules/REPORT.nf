@@ -42,9 +42,6 @@ process REPORT {
 	path "multiqc_report.html",	emit: 	lbt_report_ch
 	path "GenomeBrowser-${params.dsname}", emit:  genome_browser_ch, optional: true
 
-	when:
-	params.runNANOME
-
 	"""
 	## Generate NF pipeline running information tsv
 	> running_information.tsv

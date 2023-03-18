@@ -38,11 +38,13 @@ process CONSENSUS {
 	path "${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.*.gz", emit: nanome_combine_out, optional: true
 
 	when:
-	params.runNANOME
+	params.runNANOME && (params.runNanopolish || params.runDeepSignal2 || params.runMegalodon)
 
 	"""
 	if [[ ${params.NANOME_MODEL} == "nanome_cs" ]] ; then
 		echo "### nanome_cs"
+		## check if consensus method input exists
+		canRun="false"
 
 		if test -n "\$(find . -maxdepth 1 -name '*.deepsignal1_batch_features.tsv.gz' -print -quit)"
 		then
@@ -59,6 +61,7 @@ process CONSENSUS {
 			MegalodonOptions=" "
 		else
 			MegalodonOptions="--megalodon \$MegalodonReadReport"
+			canRun="true"
 		fi
 
 		NanopolishReadReport=\$(find . -maxdepth 1 -name '*Nanopolish-perRead-score.tsv.gz')
@@ -67,6 +70,7 @@ process CONSENSUS {
 			NanopolishOptions=" "
 		else
 			NanopolishOptions="--nanopolish \$NanopolishReadReport"
+			canRun="true"
 		fi
 
 		DeepSignalReadReport=\$(find . -maxdepth 1 -name '*DeepSignal*-perRead-score.tsv.gz' | head -n 1)
@@ -75,6 +79,7 @@ process CONSENSUS {
 			DeepSignalOptions=" "
 		else
 			DeepSignalOptions="--deepsignal \$DeepSignalReadReport"
+			canRun="true"
 		fi
 
 		FeatureFile=\$(find . -maxdepth 1 -name '*_deepsignal*_feature_combine.tsv.gz' | head -n 1)
@@ -83,6 +88,11 @@ process CONSENSUS {
 			FeatureOptions=" "
 		else
 			FeatureOptions="--feature \$FeatureFile"
+		fi
+
+		if [[ \$canRun == false ]] ; then
+			echo "No input for NANOME, exit"
+			exit 0
 		fi
 
 		if [[ ${params.consensus_by_chr} == true ]] ; then
@@ -123,7 +133,7 @@ process CONSENSUS {
 				&>> ${params.dsname}.Consensus.run.log
 		fi
 	elif [[ ${params.NANOME_MODEL} == "NANOME3T" ]] ; then
-		## NANOME XGBoost method
+		## NANOME XGBoost method, will be deprecated
 		modelContentTSVFileName=${params.dsname}_nanome_${params.NANOME_MODEL}_model_content.tsv
 		> \$modelContentTSVFileName
 		passModelTsv=false
