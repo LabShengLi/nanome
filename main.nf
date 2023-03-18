@@ -187,7 +187,7 @@ if (params.runMethcall && params.runDeepMod) {
 if (params.runNANOME) {
 	summary['NANOME_MODEL'] = "${params.NANOME_MODEL}"
 	summary['CS_MODEL_FILE'] = "${params.CS_MODEL_FILE}"
-	summary['CS_MODEL_SPEC'] = "${params.CS_MODEL_SPEC}"
+	// summary['CS_MODEL_SPEC'] = "${params.CS_MODEL_SPEC}"
 }
 
 summary['\nPipeline settings']         = "--------"
@@ -278,6 +278,8 @@ include { DEEPSIGNAL; DPSIGCOMB } from './modules/DEEPSIGNAL'
 include { DEEPSIGNAL2; DEEPSIGNAL2COMB } from './modules/DEEPSIGNAL2'
 
 include { Guppy; GuppyComb; Tombo; TomboComb; DeepMod; DpmodComb; METEORE } from './modules/OLDTOOLS'
+
+include { Guppy6; Guppy6Comb } from './modules/GUPPY6'
 
 include { NewTool; NewToolComb } from './modules/NEWTOOLS'
 
@@ -385,16 +387,16 @@ workflow {
 	}
 
 	if (params.runGuppy && params.runMethcall) {
-		Guppy(UNTAR.out.untar, ENVCHECK.out.reference_genome, ch_utils)
+		Guppy6(UNTAR.out.untar, ENVCHECK.out.reference_genome, ch_utils)
 
-		gcf52ref_ch = Channel.fromPath("${projectDir}/utils/null1").concat(Guppy.out.guppy_gcf52ref_tsv.collect())
-
-		comb_guppy = GuppyComb(Guppy.out.guppy_fast5mod_bam.collect(),
-								gcf52ref_ch,
+		comb_guppy6 = Guppy6Comb(Guppy6.out.guppy_batch_bam_out.collect(),
 								ENVCHECK.out.reference_genome,
 								ch_src, ch_utils)
-		s4 = comb_guppy.site_unify
-		r4 = comb_guppy.read_unify
+
+		s4 = Channel.empty()
+		r4 = Channel.empty()
+//		s4 = comb_guppy.site_unify
+//		r4 = comb_guppy.read_unify
 	} else {
 		s4 = Channel.empty()
 		r4 = Channel.empty()
