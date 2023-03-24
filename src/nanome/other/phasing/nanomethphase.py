@@ -26,20 +26,20 @@ __copyright__ = "Copyright (C) 2020, " + __author__
 __license__ = "GPLv3"
 __collaborator__ = "Jean-Michel Garant"
 
-import os
-import re
+import argparse
+import bz2
 import glob
 import gzip
-import bz2
-import argparse
-import warnings
-import textwrap
-import subprocess
 import multiprocessing as mp
+import os
+import re
+import statistics
+import subprocess
 import sys
+import warnings
 from collections import defaultdict
 from itertools import repeat
-import statistics
+
 import pysam
 import tabix
 from tqdm import tqdm
@@ -439,7 +439,7 @@ def methcall2bed(readlist,
         llr_unmethylated = []
         for line in read:
             line = line.split('\t')
-            try: ## avoid exceptions for line:443
+            try:  ## avoid exceptions for line:443, added by Yang
                 num_sites = int(line[9])
                 logratio = float(line[5])
                 sequence = line[10].upper()
@@ -619,7 +619,11 @@ def main_methyl_call_processor(args):
             tqdm_add += 1
             line = line.rstrip()
             line_info = line.split('\t')
+            if (len(line_info) < 5): # added by Yang
+                print(f'Not parsed line_info:{line_info}', file=sys.stderr)
+                continue
             start = int(line_info[2])
+            # TODO: may failed for nanopolish
             if (line_info[4] == prev_readID and
                     line_info[1] == prev_strand and
                     abs(start - prev_start) < 100000):
