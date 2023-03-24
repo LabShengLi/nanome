@@ -439,11 +439,15 @@ def methcall2bed(readlist,
         llr_unmethylated = []
         for line in read:
             line = line.split('\t')
-            num_sites = int(line[9])
-            logratio = float(line[5])
-            sequence = line[10].upper()
-            strand = line[1]
-            read_id = line[4]
+            try: ## avoid exceptions for line:443
+                num_sites = int(line[9])
+                logratio = float(line[5])
+                sequence = line[10].upper()
+                strand = line[1]
+                read_id = line[4]
+            except:
+                print(f'Not parsed line:{line}', file=sys.stderr)
+                continue
             # Skipping ambiguous call in methyl call file
             if abs(logratio) < callthresh * num_sites:
                 continue

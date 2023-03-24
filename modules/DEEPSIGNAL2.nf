@@ -60,15 +60,13 @@ process DEEPSIGNAL2 {
 		gpuOptions="--nproc_gpu 1"
 	fi
 
-	> batch_!{resquiggle.baseName}_deepsignal2_feature.tsv.gz
-	> batch_!{resquiggle.baseName}_deepsignal2_per_read.tsv.gz
-
 	deepsignal2  extract  \
 		-i !{resquiggle}/workspace/ \
 		-o batch_!{resquiggle.baseName}_deepsignal2_feature.tsv  \
 		--corrected_group !{params.ResquiggleCorrectedGroup} \
 		--nproc !{cores}  --motifs CG \
 		&>> !{params.dsname}.DeepSignal2.run.log
+	echo "### DeepSignal2 feature extract DONE"
 
 	deepsignal2 call_mods \
 		--model_path !{params.DEEPSIGNAL2_MODEL_NAME} \
@@ -76,13 +74,23 @@ process DEEPSIGNAL2 {
 		--result_file batch_!{resquiggle.baseName}_deepsignal2_per_read.tsv \
 		--nproc !{cores}  ${gpuOptions} \
 		&>> !{params.dsname}.DeepSignal2.run.log
+	echo "### DeepSignal2 methylation DONE"
+
+	> batch_!{resquiggle.baseName}_deepsignal2_feature.tsv.gz
+	> batch_!{resquiggle.baseName}_deepsignal2_per_read.tsv.gz
 
 	cat batch_!{resquiggle.baseName}_deepsignal2_feature.tsv | gzip -f >> \
 		batch_!{resquiggle.baseName}_deepsignal2_feature.tsv.gz
 
 	cat batch_!{resquiggle.baseName}_deepsignal2_per_read.tsv| gzip -f >> \
 		batch_!{resquiggle.baseName}_deepsignal2_per_read.tsv.gz
-	echo "### DeepSignal2 methylation DONE"
+
+	## Clean
+	if [[ !{params.cleanStep} == "true" ]]; then
+		rm -rf batch_!{resquiggle.baseName}_deepsignal2_feature.tsv \
+			batch_!{resquiggle.baseName}_deepsignal2_per_read.tsv \
+			!{params.DEEPSIGNAL2_MODEL_NAME}
+	fi
 	echo "### DeepSignal2 batch DONE"
 	'''
 }

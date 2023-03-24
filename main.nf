@@ -379,7 +379,7 @@ workflow {
 						DEEPSIGNAL2.out.deepsignal2_batch_feature.collect(),
 						ch_src, ch_utils
 						)
-		f2 = Channel.empty() //deepsignal2.deepsignal2_feature_out
+		f2 = comb_deepsignal2.deepsignal2_feature_combine
 		s3_1 = comb_deepsignal2.site_unify
 		r3_1 = comb_deepsignal2.read_unify
 	} else {
