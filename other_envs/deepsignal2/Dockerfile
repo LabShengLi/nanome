@@ -41,16 +41,16 @@ RUN wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.s
 ENV PATH /opt/conda/bin:$PATH
 
 # Create the environment:
-COPY environment.yml /
-RUN conda env create --name guppy_stable --file=environment.yml && conda clean -a
+COPY deepsignal2_env.yml /
+RUN conda env create --name deepsignal2 --file=deepsignal2_env.yml && conda clean -a
 
 # Make RUN commands use the new environment:
-SHELL ["conda", "run", "-n", "guppy_stable", "/bin/bash", "-c"]
+SHELL ["conda", "run", "-n", "deepsignal2", "/bin/bash", "-c"]
 
 # Set env path into PATH
-ENV PATH /opt/conda/envs/guppy_stable/bin:$PATH
-ENV LD_LIBRARY_PATH /opt/conda/envs/guppy_stable/lib:$LD_LIBRARY_PATH
-ENV HDF5_PLUGIN_PATH /opt/conda/envs/guppy_stable/hdf5/lib/plugin:$HDF5_PLUGIN_PATH
+ENV PATH /opt/conda/envs/deepsignal2/bin:$PATH
+ENV LD_LIBRARY_PATH /opt/conda/envs/deepsignal2/lib:$LD_LIBRARY_PATH
+ENV HDF5_PLUGIN_PATH /opt/conda/envs/deepsignal2/hdf5/lib/plugin:$HDF5_PLUGIN_PATH
 
 USER root
 WORKDIR /data/
