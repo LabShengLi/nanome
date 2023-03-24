@@ -1,0 +1,15 @@
+# @Author   : Yang Liu
+# @FileName : environment.yml
+# @Software : NANOME project
+# @Organization : JAX Li Lab
+# @Website  : https://github.com/LabShengLi/nanome
+name: guppy_stable
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - samtools
+  - pip:
+      - ont-pyguppy-client-lib
