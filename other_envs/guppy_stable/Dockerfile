@@ -49,6 +49,9 @@ SHELL ["conda", "run", "-n", "guppy_stable", "/bin/bash", "-c"]
 
 # Set env path into PATH
 ENV PATH /opt/conda/envs/guppy_stable/bin:$PATH
+ENV LD_LIBRARY_PATH /opt/conda/envs/guppy_stable/lib:$LD_LIBRARY_PATH
+ENV HDF5_PLUGIN_PATH /opt/conda/envs/guppy_stable/hdf5/lib/plugin:$HDF5_PLUGIN_PATH
+
 USER root
 WORKDIR /data/
 
