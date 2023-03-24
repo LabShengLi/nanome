@@ -20,10 +20,10 @@ process DEEPSIGNAL2 {
 
 	input:
 	path resquiggle
-	path reference_genome
-	path ch_src
-	path ch_utils
-	path deepsignal2_model_file // online model file
+	each path (reference_genome)
+	each path (ch_src)
+	each path (ch_utils)
+	each path (deepsignal2_model_file) // online model file
 
 	output:
 	path "batch_${resquiggle.baseName}_deepsignal2_per_read.tsv.gz",	emit: deepsignal2_batch_per_read, optional: true
