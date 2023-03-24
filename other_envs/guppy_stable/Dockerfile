@@ -41,8 +41,8 @@ RUN wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.s
 ENV PATH /opt/conda/bin:$PATH
 
 # Create the environment:
-COPY environment.yml /
-RUN conda env create --name guppy_stable --file=environment.yml && conda clean -a
+COPY guppy_stable_env.yml /
+RUN conda env create --name guppy_stable --file=guppy_stable_env.yml && conda clean -a
 
 # Make RUN commands use the new environment:
 SHELL ["conda", "run", "-n", "guppy_stable", "/bin/bash", "-c"]
