@@ -31,6 +31,7 @@ process REPORT {
 	path site_fileList
 	path read_fileList
 	path tools_version_tsv
+	path basecall_version_txt
 	path qc_report
 	path reference_genome
 	path ch_src
@@ -54,6 +55,8 @@ process REPORT {
 	printf '%s\t%s\n' start ${workflow.start} >> running_information.tsv
 	printf '%s\t%s\n' input "${params.input}" >> running_information.tsv
 	printf '%s\t%s\n' outputs ${params.outdir} >> running_information.tsv
+	printf '%s\t%s\n' Basecaller "Guppy v\$(cat ${basecall_version_txt})" >> running_information.tsv
+
 
 	## Note that the reason of report process can not be cached, is due to
 	## Above script codes will be changed each time, so report can not apply old cached script

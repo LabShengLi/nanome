@@ -501,8 +501,10 @@ workflow {
 		).toList().set { tools_site_unify }
 
 	REPORT(tools_site_unify, top3_tools_read_unify,
-			ENVCHECK.out.tools_version_tsv, QCEXPORT.out.qc_report,
-			ENVCHECK.out.reference_genome, ch_src, ch_utils)
+			ENVCHECK.out.tools_version_tsv, ENVCHECK.out.basecall_version_txt,
+			QCEXPORT.out.qc_report,
+			ENVCHECK.out.reference_genome, ch_src, ch_utils
+			)
 
 	if (params.phasing) {
 		CLAIR3(QCEXPORT.out.bam_data, ENVCHECK.out.reference_genome)

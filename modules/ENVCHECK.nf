@@ -30,6 +30,7 @@ process ENVCHECK {
 	path "rerio", 							emit: rerio, optional: true  // used by Megalodon
 	path "${params.DEEPSIGNAL_MODEL_DIR}",	emit: deepsignal_model, optional: true
 	path "tools_version_table.tsv",			emit: tools_version_tsv, optional: true
+	path "basecall_version.txt",			emit: basecall_version_txt, optional: true
 
 	shell:
 	'''
@@ -38,6 +39,8 @@ process ENVCHECK {
 
 	## Validate nanome container/environment is correct
 	bash utils/validate_nanome_container.sh  tools_version_table.tsv
+
+	guppy_basecaller -v |  head -n 1 | python utils/getGuppyVersion.py > basecall_version.txt
 
 	if [[ !{params.runNewTool} == true ]] ; then
 		newTools=(!{params.newModuleConfigs.collect{it.name}.join(' ')})
