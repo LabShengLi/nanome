@@ -111,7 +111,7 @@ def parse_arguments():
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s v{NANOME_VERSION}')
     parser.add_argument('-i', type=str, help='input file for sorted per-read score file', required=True)
     parser.add_argument('-o', type=str, help="output file for bed.gz file", required=True)
-    parser.add_argument('--score-cutoff', type=float, help="score cutoff (LLR2) for filter predictions, default is 2.0",
+    parser.add_argument('--score-cutoff', type=float, help="score cutoff (LLR2) for filter predictions, default is 1.5",
                         default=1.5)
     parser.add_argument('--verbose', help="if output verbose info", action='store_true')
 

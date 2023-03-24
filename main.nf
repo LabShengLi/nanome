@@ -371,13 +371,15 @@ workflow {
 	}
 
 	if (params.runDeepSignal2 && params.runMethcall) {
-		deepsignal2 = DEEPSIGNAL2(RESQUIGGLE.out.resquiggle.collect(),
+		deepsignal2_model_file = Channel.fromPath(params.DEEPSIGNAL2_MODEL_FILE, type: 'any', checkIfExists: true)
+		deepsignal2 = DEEPSIGNAL2(RESQUIGGLE.out.resquiggle,
 					ENVCHECK.out.reference_genome,
-					ch_src, ch_utils)
-		comb_deepsignal2 = DEEPSIGNAL2COMB(DEEPSIGNAL2.out.deepsignal2_combine_out,
+					ch_src, ch_utils, deepsignal2_model_file)
+		comb_deepsignal2 = DEEPSIGNAL2COMB(DEEPSIGNAL2.out.deepsignal2_batch_per_read.collect(),
+						DEEPSIGNAL2.out.deepsignal2_batch_feature.collect(),
 						ch_src, ch_utils
 						)
-		f2 = deepsignal2.deepsignal2_feature_out
+		f2 = Channel.empty() //deepsignal2.deepsignal2_feature_out
 		s3_1 = comb_deepsignal2.site_unify
 		r3_1 = comb_deepsignal2.read_unify
 	} else {

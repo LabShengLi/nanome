@@ -111,13 +111,15 @@ process ENVCHECK {
 
 		ls -lh reference_genome/
 	fi
+	echo "### Check env DONE"
+	'''
+}
 
+/**
 	echo "### Check reference genome and chrSet"
 	echo "params.referenceGenome=!{params.referenceGenome}"
 	echo "params.chromSizesFile=!{params.chromSizesFile}"
 	echo "params.chrSet1=[!{params.chrSet1}]"
 	echo "params.dataType1=!{params.dataType1}"
 	echo "cpus=!{task.cpus}"
-	echo "### Check env DONE"
-	'''
-}
+**/

@@ -12,27 +12,22 @@
 ----------------------------------------------------------------------------------------
 */
 process DEEPSIGNAL2 {
-	tag "${params.dsname}"
+	tag "${resquiggle.baseName}"
 
-	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
+	publishDir "${params.outdir}/${params.dsname}_intermediate/deepsignal2",
 		mode: "copy",
-		pattern: "${params.dsname}_deepsignal2_per_read_combine.*.gz",
-		enabled: params.outputRaw
-
-	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Features-${params.dsname}",
-		mode: "copy",
-		pattern: "${params.dsname}_deepsignal2_feature_combine.*.gz"
+		enabled: params.outputIntermediate
 
 	input:
-	path resquiggle_collect
-	// path feature_collect
+	path resquiggle
 	path reference_genome
 	path ch_src
 	path ch_utils
+	path deepsignal2_model_file // online model file
 
 	output:
-	path "${params.dsname}_deepsignal2_per_read_combine.*.gz",	emit: deepsignal2_combine_out
-	path "${params.dsname}_deepsignal2_feature_combine.*.gz",	emit: deepsignal2_feature_out, optional: true
+	path "batch_${resquiggle.baseName}_deepsignal2_per_read.tsv.gz",	emit: deepsignal2_batch_per_read, optional: true
+	path "batch_${resquiggle.baseName}_deepsignal2_feature.tsv.gz",		emit: deepsignal2_batch_feature, optional: true
 
 	when:
 	params.runMethcall && params.runDeepSignal2
@@ -51,8 +46,8 @@ process DEEPSIGNAL2 {
 	export HDF5_PLUGIN_PATH="$CONDA_PREFIX/hdf5/lib/plugin"
 	which deepsignal2
 
-	wget !{params.DEEPSIGNAL2_MODEL_FILE}
-	tar -xzf !{params.DEEPSIGNAL2_MODEL_NAME}.tar.gz
+	## wget !{params.DEEPSIGNAL2_MODEL_FILE}
+	tar -xzf !{deepsignal2_model_file}
 
 	echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-}"
 	if [[ "${CUDA_VISIBLE_DEVICES:-}" == "" ]] ; then
@@ -65,32 +60,79 @@ process DEEPSIGNAL2 {
 		gpuOptions="--nproc_gpu 1"
 	fi
 
+	> batch_!{resquiggle.baseName}_deepsignal2_feature.tsv.gz
+	> batch_!{resquiggle.baseName}_deepsignal2_per_read.tsv.gz
+
+	deepsignal2  extract  \
+		-i !{resquiggle}/workspace/ \
+		-o batch_!{resquiggle.baseName}_deepsignal2_feature.tsv  \
+		--corrected_group !{params.ResquiggleCorrectedGroup} \
+		--nproc !{cores}  --motifs CG \
+		&>> !{params.dsname}.DeepSignal2.run.log
+
+	deepsignal2 call_mods \
+		--model_path !{params.DEEPSIGNAL2_MODEL_NAME} \
+		--input_path batch_!{resquiggle.baseName}_deepsignal2_feature.tsv \
+		--result_file batch_!{resquiggle.baseName}_deepsignal2_per_read.tsv \
+		--nproc !{cores}  ${gpuOptions} \
+		&>> !{params.dsname}.DeepSignal2.run.log
+
+	cat batch_!{resquiggle.baseName}_deepsignal2_feature.tsv | gzip -f >> \
+		batch_!{resquiggle.baseName}_deepsignal2_feature.tsv.gz
+
+	cat batch_!{resquiggle.baseName}_deepsignal2_per_read.tsv| gzip -f >> \
+		batch_!{resquiggle.baseName}_deepsignal2_per_read.tsv.gz
+	echo "### DeepSignal2 methylation DONE"
+	echo "### DeepSignal2 batch DONE"
+	'''
+}
+
+process DEEPSIGNAL2COMB {
+	tag "${params.dsname}"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
+		mode: "copy",
+		pattern: "${params.dsname}_deepsignal2_per_read_combine.*.gz",
+		enabled: params.outputRaw
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Features-${params.dsname}",
+		mode: "copy",
+		pattern: "${params.dsname}_deepsignal2_feature_combine.*.gz"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy",
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy",
+		pattern: "Site_Level-${params.dsname}/*-perSite-cov1*.gz"
+
+	input:
+	path deepsignal2_batch_per_read_collect
+	path deepsignal2_batch_feature_collect
+	path ch_src
+	path ch_utils
+
+	output:
+	path "${params.dsname}_deepsignal2_per_read_combine.tsv.gz",	emit: deepsignal2_per_read_combine
+	path "${params.dsname}_deepsignal2_feature_combine.tsv.gz",	emit: deepsignal2_feature_combine
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify
+	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify
+
+	when:
+	params.runCombine
+
+	script:
+	cores = task.cpus * params.highProcTimes
+
+	shell:
+	'''
+	## combine batches
 	> !{params.dsname}_deepsignal2_feature_combine.tsv.gz
 	> !{params.dsname}_deepsignal2_per_read_combine.tsv.gz
 
-	find . -maxdepth 1 -name '*.resquiggle' -print0 |
-		while IFS= read -r -d '' infn; do
-			deepsignal2  extract  \
-				-i ${infn}/workspace/ \
-				-o ${infn}_feature.tsv  \
-				--corrected_group RawGenomeCorrected_000 \
-				--nproc !{cores}  --motifs CG \
-				&>> !{params.dsname}.DeepSignal2.run.log
-
-			deepsignal2 call_mods \
-				--model_path !{params.DEEPSIGNAL2_MODEL_NAME} \
-				--input_path ${infn}_feature.tsv \
-				--result_file ${infn/.resquiggle/_deepsignal2_batch_per_read.tsv} \
-				--nproc !{cores}  ${gpuOptions} \
-				&>> !{params.dsname}.DeepSignal2.run.log
-
-			cat ${infn}_feature.tsv | gzip -f >> \
-				!{params.dsname}_deepsignal2_feature_combine.tsv.gz
-
-			cat ${infn/.resquiggle/_deepsignal2_batch_per_read.tsv} | gzip -f >> \
-				!{params.dsname}_deepsignal2_per_read_combine.tsv.gz
-		done
-	echo "### DeepSignal2 methylation DONE"
+	cat batch_*deepsignal2_feature.tsv.gz > !{params.dsname}_deepsignal2_feature_combine.tsv.gz
+	cat batch_*deepsignal2_per_read.tsv.gz > !{params.dsname}_deepsignal2_per_read_combine.tsv.gz
 
 	if [[ !{params.deduplicate} == true ]] ; then
 		echo "### Deduplicate for read-level outputs"
@@ -103,42 +145,10 @@ process DEEPSIGNAL2 {
 				!{params.dsname}_deepsignal2_per_read_combine.tsv.gz
 	fi
 
-	echo "### DeepSignal2 all combine DONE"
-	'''
-}
-
-process DEEPSIGNAL2COMB {
-	tag "${params.dsname}"
-
-	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
-		mode: "copy",
-		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz"
-
-	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
-		mode: "copy",
-		pattern: "Site_Level-${params.dsname}/*-perSite-cov1*.gz"
-
-	input:
-	path deepsignal2_combine_out
-	path ch_src
-	path ch_utils
-
-	output:
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify
-	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify
-
-	when:
-	params.runCombine
-
-	script:
-	cores = task.cpus * params.highProcTimes
-
-	shell:
-	'''
 	## Unify format output
 	bash utils/unify_format_for_calls.sh \
 		!{params.dsname}  DeepSignal2 DeepSignal\
-		!{deepsignal2_combine_out} \
+		!{params.dsname}_deepsignal2_per_read_combine.tsv.gz \
 		.  !{cores}  12 !{params.sort  ? true : false} \
 		"!{params.chrSet1.replaceAll(',', ' ')}"
 	'''

@@ -147,7 +147,7 @@ process PHASING {
 
 	"""
 	echo "### hello phasing"
-    ## deal with meth2bed+nanomethphase_phase
+    ## deal with meth2bed+nanomethphase_phase , phased meth looks good
     phaseToolList=("nanopolish" "megalodon" "nanome")
     for i in "\${!phaseToolList[@]}"; do
 		tool="\${phaseToolList[i]}"
@@ -169,6 +169,7 @@ process PHASING {
         outdir="${params.dsname}_\${tool}_meth_phasing"
         mkdir -p \${outdir}
 		if [[ \${tool} == "nanopolish" ]] ; then
+			## nanopolish way, keep same with NanomethPhase
             PYTHONPATH=src python src/nanome/other/phasing/nanomethphase.py \
                 methyl_call_processor -mc \${infn} -t ${task.cpus} |
                 sort -k1,1 -k2,2n -k3,3n |
@@ -178,6 +179,7 @@ process PHASING {
             PYTHONPATH=src  python src/nanome/other/phasing/methcall2bed.py \
                 -i \${infn} \
                 -o \${outdir}/${params.dsname}_\${tool}_MethylationCall1.bed.gz \
+                --score-cutoff ${params.PHASE_meth_score_cutoff} \
                 --verbose  &>> ${params.dsname}.Phasing.run.log
 
             zcat \${outdir}/${params.dsname}_\${tool}_MethylationCall1.bed.gz | \
@@ -187,7 +189,7 @@ process PHASING {
                 rm -f \${outdir}/${params.dsname}_\${tool}_MethylationCall1.bed.gz
 		fi
 
-		## phase meth
+		## phase meth, results looks good
 		vcffn=${params.dsname}_clair3_out/tmp/phase_output/phase_vcf/${params.dsname}_phasing_vcf_QUAL_${params.CLAIR3_phasing_qual}.vcf.gz
 		ref=${params.referenceGenome}
 		bamfn=${params.dsname}_bam_data/${params.dsname}_merge_all_bam.bam
@@ -247,6 +249,7 @@ process PHASING {
 					PYTHONPATH=src  python src/nanome/other/phasing/methcall2bed.py \
 						-i \${infn2} \
 						-o \${outfn} \
+					 	--score-cutoff ${params.PHASE_meth_score_cutoff} \
 						--verbose  &>> ${params.dsname}.Phasing.run.log
 
 					zcat \${outfn} | sort -V -k1,1 -k2,2n -k3,3n |

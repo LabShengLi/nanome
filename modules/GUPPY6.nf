@@ -63,7 +63,9 @@ process Guppy6 {
 		--align_ref ${params.referenceGenome} \
 		-i \${indir}  \
 		-s ${fast5Untar.baseName}.methcalled \
-		--num_callers  $task.cpus \
+		--num_callers  ${params.guppy_num_callers} \
+		--gpu_runners_per_device  ${params.guppy_gpu_runners_per_device} \
+		--cpu_threads_per_caller  ${params.guppy_cpu_threads_per_caller} \
 		--bam_out --recursive --compress_fastq \
 		--verbose_logs \
 		\${gpuOptions} &>> ${params.dsname}.${fast5Untar.baseName}.Guppy6.run.log
