@@ -40,7 +40,7 @@ nextflow run LabShengLi/nanome\
      -profile test,docker,google\
      -w [Google-storage-bucket]/nanome-work-test\
      --outdir [Google-storage-bucket]/nanome-outputs\
-     --googleProjectName  [PROJECT_ID]
+     --projectCloud  [PROJECT_ID]
 ```
 
 ## Build and submit to container registry of google cloud computing
@@ -65,7 +65,7 @@ nextflow run LabShengLi/nanome\
     -profile test,docker,google\
     -w gs://jax-nanopore-01-project-data/nanome-work\
     --outdir gs://jax-nanopore-01-project-data/nanome-outputs\
-    --googleProjectName  jax-nanopore-01
+    --projectCloud  jax-nanopore-01
 ```
 
 

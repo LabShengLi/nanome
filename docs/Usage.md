@@ -73,8 +73,8 @@ You can also run NANOME pipeline on cloud computing platform ([google cloud plat
 nextflow run LabShengLi/nanome\
     -profile test,docker,google \
     -w [Google-storage-bucket]/TestData-work \
-    --outputDir [Google-storage-bucket]/TestData-ouputs\
-    --googleProjectName  [Google-project-name]
+    --outdir [Google-storage-bucket]/TestData-ouputs\
+    --projectCloud  [Google-project-name]
 ```
 
 ## Running results
@@ -235,7 +235,7 @@ nextflow run LabShengLi/nanome\
     -profile test,docker,google \
     -w [Google-storage-bucket]/nanome-work-ci \
     --outdir [Google-storage-bucket]/nanome-outputs-ci\
-    --googleProjectName  [Google-project-name]
+    --projectCloud  [Google-project-name]
 ```
 
 The `[Google-project-name]` is the Google project name, and `[Google-storage-bucket]` is the **Data Bucket** name that user can access on Google Cloud. `-w` is pipeline output working directory, `--outdir` is the directory for methylation-calling results.
