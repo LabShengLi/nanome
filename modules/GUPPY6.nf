@@ -72,25 +72,21 @@ process Guppy6 {
 
 	echo "### Guppy6 methylation calling DONE"
 
-	## sort and combine bam output
-	mkdir -p  sort_bam
+	samtools cat -@ ${samtools_cores} \
+		-o ${fast5Untar.baseName}_batch_merge_bam_out.bam \
+    	\$(find "${fast5Untar.baseName}.methcalled/" "${fast5Untar.baseName}.methcalled/pass/" \
+    		-maxdepth 1 -name '*.bam' -type f)
 
-	find "${fast5Untar.baseName}.methcalled/" "${fast5Untar.baseName}.methcalled/pass/" \
-		-maxdepth 1 -name '*.bam' -type f\
-		-print0 2>/dev/null | \
-		while read -d \$'\0' file ; do
-			basefn=\$(basename \$file)
-			samtools sort -@ ${samtools_cores} \$file \
-				-o  sort_bam/sort_\${basefn}
-		done
+	samtools sort -@ ${samtools_cores}  ${fast5Untar.baseName}_batch_merge_bam_out.bam \
+		-o ${fast5Untar.baseName}_batch_merge_bam_out.sort.bam
 
-	samtools merge -@ ${samtools_cores}  ${fast5Untar.baseName}_batch_merge_bam_out.bam  \
-		sort_bam/sort*.bam  &&\
-		samtools index -@ ${samtools_cores}   ${fast5Untar.baseName}_batch_merge_bam_out.bam
+	rm -f ${fast5Untar.baseName}_batch_merge_bam_out.bam
+	mv ${fast5Untar.baseName}_batch_merge_bam_out.sort.bam \
+		${fast5Untar.baseName}_batch_merge_bam_out.bam
+	samtools index -@ ${samtools_cores}  ${fast5Untar.baseName}_batch_merge_bam_out.bam
 
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
-		rm -rf sort_bam/
 		rm -rf ${fast5Untar.baseName}.methcalled/{pass,fail}
 	fi
 
@@ -123,9 +119,19 @@ process Guppy6Comb {
 	cores = task.cpus * params.highProcTimes
 	samtools_cores = task.cpus * params.mediumProcTimes
 	"""
-	samtools merge -@ ${samtools_cores}  ${params.dsname}_guppy6_merge_bam_out.bam  \
-		*_batch_merge_bam_out.bam  &&\
-		samtools index -@ ${samtools_cores}  ${params.dsname}_guppy6_merge_bam_out.bam
+	samtools --version
+
+	## using cat instead of merge, due to issues for merge large NA12878 chr22 data
+	samtools cat -@ ${samtools_cores} -o ${params.dsname}_guppy6_merge_bam_out.bam \
+    	\$(find . -maxdepth 1 -name '*_batch_merge_bam_out.bam')
+
+	samtools sort -@ ${samtools_cores}  ${params.dsname}_guppy6_merge_bam_out.bam  \
+		-o ${params.dsname}_guppy6_merge_bam_out.sort.bam
+
+	rm -f ${params.dsname}_guppy6_merge_bam_out.bam
+	mv ${params.dsname}_guppy6_merge_bam_out.sort.bam \
+		${params.dsname}_guppy6_merge_bam_out.bam
+	samtools index -@ ${samtools_cores}  ${params.dsname}_guppy6_merge_bam_out.bam
 
 	echo "### Guppy6Comb DONE"
 	"""
