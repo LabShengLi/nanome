@@ -34,7 +34,7 @@ process RESQUIGGLE {
 	path "${basecallDir.baseName}.deepsignal1_batch_features.tsv.gz", 	emit: feature_extract, optional: true
 
 	when:
-	(params.runMethcall && ((params.runDeepSignal && ! params.stopDeepSignal) || params.runTombo || params.runDeepSignal2)) || params.runResquiggle
+	(params.runMethcall && ((params.runDeepSignal1 && ! params.stopDeepSignal) || params.runTombo || params.runDeepSignal)) || params.runResquiggle
 
 	shell:
 	cores = task.cpus * params.highProcTimes

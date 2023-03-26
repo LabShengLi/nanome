@@ -1,5 +1,5 @@
 #!/usr/bin/env nextflow
-/*
+/**
 =========================================================================================
   		NANOME(Nanopore methylation) pipeline for Oxford Nanopore sequencing
 =========================================================================================
@@ -11,7 +11,7 @@
  @Software : NANOME project
  @Organization : JAX Li Lab
 ----------------------------------------------------------------------------------------
-*/
+**/
 // We now support both latest and lower versions, due to Lifebit CloudOS is only support 20.04
 // Note: NXF_VER=20.04.1 nextflow run main.nf -profile test,singularity
 if( nextflow.version.matches(">= 20.07.1") ){
@@ -124,8 +124,8 @@ if (params.runResquiggle) summary['runResquiggle'] = 'Yes'
 if (params.runMethcall) {
 	if (params.runNanopolish) summary['runNanopolish'] = 'Yes'
 	if (params.runMegalodon) summary['runMegalodon'] = 'Yes'
-	if (params.runDeepSignal2) summary['runDeepSignal2'] = 'Yes'
 	if (params.runDeepSignal) summary['runDeepSignal'] = 'Yes'
+	if (params.runDeepSignal1) summary['runDeepSignal1'] = 'Yes'
 	if (params.runGuppy) summary['runGuppy'] = 'Yes'
 	if (params.runTombo) summary['runTombo'] = 'Yes'
 	if (params.runMETEORE) summary['runMETEORE'] = 'Yes'
@@ -170,11 +170,23 @@ if (params.ctg_name) { summary['ctg_name'] 	= params.ctg_name }
 
 summary['\nModel summary']         = "--------"
 if (params.runBasecall && !params.skipBasecall) summary['GUPPY_BASECALL_MODEL'] 	= params.GUPPY_BASECALL_MODEL
+
+if (params.runNANOME) {
+	summary['NANOME_MODEL/CS_MODEL_FILE'] = "${params.NANOME_MODEL}/${params.CS_MODEL_FILE}"
+	// summary['CS_MODEL_SPEC'] = "${params.CS_MODEL_SPEC}"
+}
+
 if (params.runMethcall && params.runMegalodon)
 	summary['MEGALODON_MODEL'] 	= params.rerio? 'Rerio:' + params.MEGALODON_MODEL : 'Remora:' + params.remoraModel
-if (params.runMethcall && params.runDeepSignal) summary['DEEPSIGNAL_MODEL_DIR/DEEPSIGNAL_MODEL'] =\
+
+if (params.runMethcall && params.runDeepSignal) summary['DEEPSIGNAL2_MODEL_FILE/DEEPSIGNAL2_MODEL_NAME'] =\
+ 	params.DEEPSIGNAL2_MODEL_FILE + "/" + params.DEEPSIGNAL2_MODEL_NAME
+
+if (params.runMethcall && params.runDeepSignal1) summary['DEEPSIGNAL_MODEL_DIR/DEEPSIGNAL_MODEL'] =\
  	params.DEEPSIGNAL_MODEL_DIR + "/" + params.DEEPSIGNAL_MODEL
+
 if (params.runMethcall && params.runGuppy) summary['GUPPY_METHCALL_MODEL'] 	= params.GUPPY_METHCALL_MODEL
+
 if (params.runMethcall && params.runDeepMod) {
 	if (isDeepModCluster) {
 		summary['DEEPMOD_RNN_MODEL;DEEPMOD_CLUSTER_MODEL'] = \
@@ -183,11 +195,6 @@ if (params.runMethcall && params.runDeepMod) {
 	} else {
 		summary['DEEPMOD_RNN_MODEL'] = "${params.DEEPMOD_RNN_MODEL}"
 	}
-}
-if (params.runNANOME) {
-	summary['NANOME_MODEL'] = "${params.NANOME_MODEL}"
-	summary['CS_MODEL_FILE'] = "${params.CS_MODEL_FILE}"
-	// summary['CS_MODEL_SPEC'] = "${params.CS_MODEL_SPEC}"
 }
 
 summary['\nPipeline settings']         = "--------"
@@ -307,7 +314,7 @@ workflow {
 							null1
 
 	// deepsignal model dir will be downloaded in ENVCHECK if needed
-	if (params.runDeepSignal) {
+	if (params.runDeepSignal1) {
 		ch_deepsignal_dir = params.deepsignalDir ?
 				Channel.fromPath(params.deepsignalDir, type: 'any', checkIfExists: true) :
 				Channel.fromPath(params.DEEPSIGNAL_MODEL_ONLINE, type: 'any', checkIfExists: true)
@@ -328,7 +335,7 @@ workflow {
 	}
 
 	// Resquiggle running if use Tombo or DeepSignal
-	if (((params.runDeepSignal || params.runTombo || params.runDeepSignal2) && params.runMethcall)
+	if (((params.runDeepSignal1 || params.runTombo || params.runDeepSignal) && params.runMethcall)
 		|| params.runResquiggle) {
 		resquiggle = RESQUIGGLE(UNTAR.out.untar_tuple.join(BASECALL.out.basecall_tuple), ENVCHECK.out.reference_genome)
 		f1 = params.feature_extract ? resquiggle.feature_extract : Channel.empty()
@@ -359,7 +366,7 @@ workflow {
 		r2 = Channel.empty()
 	}
 
-	if (params.runDeepSignal && params.runMethcall) {
+	if (params.runDeepSignal1 && params.runMethcall) {
 		DEEPSIGNAL(RESQUIGGLE.out.resquiggle, ENVCHECK.out.reference_genome,
 					ENVCHECK.out.deepsignal_model)
 		comb_deepsignal = DPSIGCOMB(DEEPSIGNAL.out.deepsignal_tsv.collect(), ch_src, ch_utils)
@@ -370,7 +377,7 @@ workflow {
 		r3 = Channel.empty()
 	}
 
-	if (params.runDeepSignal2 && params.runMethcall) {
+	if (params.runDeepSignal && params.runMethcall) {
 		deepsignal2_model_file = Channel.fromPath(params.DEEPSIGNAL2_MODEL_FILE, type: 'any', checkIfExists: true)
 		deepsignal2 = DEEPSIGNAL2(RESQUIGGLE.out.resquiggle,
 					ENVCHECK.out.reference_genome,
@@ -500,11 +507,13 @@ workflow {
 		s1, s2, s3, s3_1, s4, s5, s6, s7, s_new, s8
 		).toList().set { tools_site_unify }
 
-	REPORT(tools_site_unify, top3_tools_read_unify,
+	if (params.runBasecall) {
+		REPORT(tools_site_unify, top3_tools_read_unify,
 			ENVCHECK.out.tools_version_tsv, ENVCHECK.out.basecall_version_txt,
 			QCEXPORT.out.qc_report,
 			ENVCHECK.out.reference_genome, ch_src, ch_utils
 			)
+	}
 
 	if (params.phasing) {
 		CLAIR3(QCEXPORT.out.bam_data, ENVCHECK.out.reference_genome)

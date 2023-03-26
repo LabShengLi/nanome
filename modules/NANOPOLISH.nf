@@ -28,7 +28,7 @@ process NANOPOLISH {
 	path "${params.dsname}_nanopolish_batch_${basecallDir.baseName}.*.gz", 	emit: nanopolish_tsv
 
 	when:
-	params.runMethcall && params.runNanopolish
+	params.runBasecall && params.runMethcall && params.runNanopolish
 
 	script:
 	samtools_cores = task.cpus * params.mediumProcTimes

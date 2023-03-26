@@ -1,4 +1,4 @@
-/*
+/**
 =========================================================================================
   		NANOME(Nanopore methylation) pipeline for Oxford Nanopore sequencing
 =========================================================================================
@@ -10,7 +10,7 @@
  @Software : NANOME project
  @Organization : JAX Sheng Li Lab
 ----------------------------------------------------------------------------------------
-*/
+**/
 
 // methylation calling for Guppy6
 process Guppy6 {
@@ -84,9 +84,15 @@ process Guppy6 {
 				-o  sort_bam/sort_\${basefn}
 		done
 
-	samtools merge -@ !{samtools_cores}  ${fast5Untar.baseName}_batch_merge_bam_out.bam  \
+	samtools merge -@ ${samtools_cores}  ${fast5Untar.baseName}_batch_merge_bam_out.bam  \
 		sort_bam/sort*.bam  &&\
-		samtools index -@ !{samtools_cores}   ${fast5Untar.baseName}_batch_merge_bam_out.bam
+		samtools index -@ ${samtools_cores}   ${fast5Untar.baseName}_batch_merge_bam_out.bam
+
+	## Clean
+	if [[ ${params.cleanStep} == "true" ]]; then
+		rm -rf sort_bam/
+		rm -rf ${fast5Untar.baseName}.methcalled/{pass,fail}
+	fi
 
 	echo "### Guppy6 merged bam_out DONE"
 	"""
@@ -117,9 +123,9 @@ process Guppy6Comb {
 	cores = task.cpus * params.highProcTimes
 	samtools_cores = task.cpus * params.mediumProcTimes
 	"""
-	samtools merge -@ !{samtools_cores}  ${params.dsname}_guppy6_merge_bam_out.bam  \
+	samtools merge -@ ${samtools_cores}  ${params.dsname}_guppy6_merge_bam_out.bam  \
 		*_batch_merge_bam_out.bam  &&\
-		samtools index -@ !{samtools_cores}  ${params.dsname}_guppy6_merge_bam_out.bam
+		samtools index -@ ${samtools_cores}  ${params.dsname}_guppy6_merge_bam_out.bam
 
 	echo "### Guppy6Comb DONE"
 	"""

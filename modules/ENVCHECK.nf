@@ -28,7 +28,7 @@ process ENVCHECK {
 	output:
 	path "reference_genome",				emit: reference_genome, optional: true
 	path "rerio", 							emit: rerio, optional: true  // used by Megalodon
-	path "${params.DEEPSIGNAL_MODEL_DIR}",	emit: deepsignal_model, optional: true
+	path "${params.DEEPSIGNAL_MODEL_DIR}",	emit: deepsignal_model, optional: true // used by DeepSignal v1, will be deprecated
 	path "tools_version_table.tsv",			emit: tools_version_tsv, optional: true
 	path "basecall_version.txt",			emit: basecall_version_txt, optional: true
 
@@ -68,19 +68,6 @@ process ENVCHECK {
 		ls -lh rerio/
 	fi
 
-	## Untar and prepare deepsignal model
-	if [[ !{params.runDeepSignal} == true && !{params.runMethcall} == true ]]; then
-		if [[ !{deepsignalDir} == *.tar.gz ]] ; then
-			## Get DeepSignal Model online
-			tar -xzf !{deepsignalDir}
-		elif [[ !{deepsignalDir} != !{params.DEEPSIGNAL_MODEL_DIR} && -d !{deepsignalDir}  ]] ; then
-			## rename it to deepsignal default dir name
-			cp  -a !{deepsignalDir}  !{params.DEEPSIGNAL_MODEL_DIR}
-		fi
-		## Check DeepSignal model
-		ls -lh !{params.DEEPSIGNAL_MODEL_DIR}/
-	fi
-
 	if [[ !{params.runBasecall} == true || !{params.runMethcall} == true ]]; then
 		## Build dir for reference_genome
 		mkdir -p reference_genome
@@ -93,13 +80,13 @@ process ENVCHECK {
 			## for folder, use ln, note this is a symbolic link to a folder
 			## find_dir=$( readlink -f !{reference_genome} )
 			## Copy reference genome, avoid singularity/docker access out data problem
-			cp !{reference_genome}/*   reference_genome/ -f
+			cp -f -L !{reference_genome}/*   reference_genome/
 		else
 			echo "### ERROR: not recognized reference_genome=!{reference_genome}"
 			exit -1
 		fi
 
-		# Rename reference file
+		# Rename and link reference file
 		if [[ ! -z $(find ${find_dir}/ \\( -name '*.fasta' -o -name '*.fasta.gz' \\)  ) ]] ; then
 			find ${find_dir} -name '*.fasta*' | \
 				 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/${fn/*.fasta/ref.fasta}'

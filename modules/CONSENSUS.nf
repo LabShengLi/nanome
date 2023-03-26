@@ -38,7 +38,7 @@ process CONSENSUS {
 	path "${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.*.gz", emit: nanome_combine_out, optional: true
 
 	when:
-	params.runNANOME && (params.runNanopolish || params.runDeepSignal2 || params.runMegalodon)
+	params.runNANOME && (params.runNanopolish || params.runDeepSignal || params.runMegalodon)
 
 	"""
 	if [[ ${params.NANOME_MODEL} == "nanome_cs" ]] ; then

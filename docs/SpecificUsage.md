@@ -98,5 +98,5 @@ nextflow run $NANOME_DIR \
     --runGuppy \
     --GUPPY_BASECALL_MODEL dna_r10.4.1_e8.2_400bps_hac.cfg \
     --GUPPY_METHCALL_MODEL dna_r10.4.1_e8.2_400bps_modbases_5mc_cg_hac.cfg \
-    --runNanopolish false --runDeepSignal2 false --runMegalodon false
+    --runNanopolish false --runDeepSignal false --runMegalodon false
 ```

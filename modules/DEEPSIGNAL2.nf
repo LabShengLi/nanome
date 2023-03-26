@@ -30,7 +30,7 @@ process DEEPSIGNAL2 {
 	path "batch_${resquiggle.baseName}_deepsignal2_feature.tsv.gz",		emit: deepsignal2_batch_feature, optional: true
 
 	when:
-	params.runMethcall && params.runDeepSignal2
+	params.runBasecall && params.runMethcall && params.runDeepSignal
 
 	script:
 	cores = task.cpus * params.highProcTimes
