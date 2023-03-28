@@ -8,10 +8,12 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - python=3.6 # ont-pyguppy-client-lib only support under v3.8, ref: https://github.com/nanoporetech/megalodon/issues/127
+  - python=3.8 # ont-pyguppy-client-lib only support under v3.8, ref: https://github.com/nanoporetech/megalodon/issues/127
   - pip
   - samtools
   - ont_vbz_hdf_plugin # used for multi-fast5 and gz format, ref: https://github.com/jts/nanopolish/issues/620
+  - pysam
+  - biopython # used for guppy extract read level
   - pip:
-      - ont-pyguppy-client-lib>=6.3.8
-
+      - modbampy # used for guppy extract read level
+      - ont-pyguppy-client-lib
