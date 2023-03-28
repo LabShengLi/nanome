@@ -89,7 +89,8 @@ process Guppy6 {
 	python utils/modbam2bed_extract_read_cpg.py \
 		-r ${params.referenceGenome} \
 		-i ${fast5Untar.baseName}_batch_merge_bam_out.bam \
-    	-o ${fast5Untar.baseName}_guppy6_per_read_batch.tsv
+    	-o ${fast5Untar.baseName}_guppy6_per_read_batch.tsv \
+    	-a ${params.guppy_canon_threshold} -b ${params.guppy_mod_threshold}
 
     gzip -f  ${fast5Untar.baseName}_guppy6_per_read_batch.tsv
 
