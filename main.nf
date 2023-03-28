@@ -399,13 +399,12 @@ workflow {
 		Guppy6(UNTAR.out.untar, ENVCHECK.out.reference_genome, ch_utils)
 
 		comb_guppy6 = Guppy6Comb(Guppy6.out.guppy_batch_bam_out.collect(),
+								Guppy6.out.guppy_batch_per_read.collect(),
 								ENVCHECK.out.reference_genome,
 								ch_src, ch_utils)
 
-		s4 = Channel.empty()
-		r4 = Channel.empty()
-//		s4 = comb_guppy.site_unify
-//		r4 = comb_guppy.read_unify
+		s4 = comb_guppy6.site_unify
+		r4 = comb_guppy6.read_unify
 	} else {
 		s4 = Channel.empty()
 		r4 = Channel.empty()

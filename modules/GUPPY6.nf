@@ -28,6 +28,7 @@ process Guppy6 {
 
 	output:
 	path "${fast5Untar.baseName}_batch_merge_bam_out.bam*",	emit: guppy_batch_bam_out, optional: true
+	path "${fast5Untar.baseName}_guppy6_per_read_batch.tsv.gz", emit: guppy_batch_per_read, optional: true
 
 	when:
 	params.runMethcall && params.runGuppy
@@ -85,6 +86,13 @@ process Guppy6 {
 		${fast5Untar.baseName}_batch_merge_bam_out.bam
 	samtools index -@ ${samtools_cores}  ${fast5Untar.baseName}_batch_merge_bam_out.bam
 
+	python utils/modbam2bed_extract_read_cpg.py \
+		-r ${params.referenceGenome} \
+		-i ${fast5Untar.baseName}_batch_merge_bam_out.bam \
+    	-o ${fast5Untar.baseName}_guppy6_per_read_batch.tsv
+
+    gzip -f  ${fast5Untar.baseName}_guppy6_per_read_batch.tsv
+
 	## Clean
 	if [[ ${params.cleanStep} == "true" ]]; then
 		rm -rf ${fast5Untar.baseName}.methcalled/{pass,fail}
@@ -100,20 +108,36 @@ process Guppy6Comb {
 	tag "${params.dsname}"
 
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
-		mode: "copy", pattern: "${params.dsname}_guppy6_merge_bam_out.bam*",
+		mode: "copy", pattern: "${params.dsname}_guppy6_bam_out_combine.bam*",
 		enabled: params.outputRaw
 
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings/Raw_Results-${params.dsname}",
+		mode: "copy", pattern: "${params.dsname}_guppy6_per_read_combine.tsv.gz",
+		enabled: params.outputRaw
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy",
+		pattern: "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz"
+
+	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
+		mode: "copy",
+		pattern: "Site_Level-${params.dsname}/*-perSite-cov*.gz"
+
 	input:
-	path batch_bam_out
+	path batch_bam_out_collect
+	path batch_per_read_collect
 	path reference_genome
 	path ch_src
 	path ch_utils
 
 	output:
-	path "${params.dsname}_guppy6_merge_bam_out.bam*", emit: guppy6_combine_bam_out, optional: true
+	path "${params.dsname}_guppy6_bam_out_combine.bam*", emit: guppy6_combine_bam_out, optional: true
+	path "${params.dsname}_guppy6_per_read_combine.tsv.gz", emit: guppy6_combine_out_ch, optional: true
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify
+	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify
 
 	when:
-	batch_bam_out.size() >= 1 && params.runCombine
+	batch_bam_out_collect.size() >= 1 && params.runCombine
 
 	script:
 	cores = task.cpus * params.highProcTimes
@@ -121,17 +145,49 @@ process Guppy6Comb {
 	"""
 	samtools --version
 
+	## combine bam output for Guppy6
 	## using cat instead of merge, due to issues for merge large NA12878 chr22 data
-	samtools cat -@ ${samtools_cores} -o ${params.dsname}_guppy6_merge_bam_out.bam \
+	samtools cat -@ ${samtools_cores} -o ${params.dsname}_guppy6_bam_out_combine.bam \
     	\$(find . -maxdepth 1 -name '*_batch_merge_bam_out.bam')
 
-	samtools sort -@ ${samtools_cores}  ${params.dsname}_guppy6_merge_bam_out.bam  \
-		-o ${params.dsname}_guppy6_merge_bam_out.sort.bam
+	samtools sort -@ ${samtools_cores}  ${params.dsname}_guppy6_bam_out_combine.bam  \
+		-o ${params.dsname}_guppy6_bam_out_combine.sort.bam
 
-	rm -f ${params.dsname}_guppy6_merge_bam_out.bam
-	mv ${params.dsname}_guppy6_merge_bam_out.sort.bam \
-		${params.dsname}_guppy6_merge_bam_out.bam
-	samtools index -@ ${samtools_cores}  ${params.dsname}_guppy6_merge_bam_out.bam
+	rm -f ${params.dsname}_guppy6_bam_out_combine.bam
+	mv ${params.dsname}_guppy6_bam_out_combine.sort.bam \
+		${params.dsname}_guppy6_bam_out_combine.bam
+	samtools index -@ ${samtools_cores}  ${params.dsname}_guppy6_bam_out_combine.bam
+
+	## combine per read results
+
+	headerFile=\$(ls *_guppy6_per_read_batch.tsv.gz|sort| head -n 1)
+	zcat \${headerFile} | head -n 1 | gzip -f > \
+		${params.dsname}_guppy6_per_read_combine.tsv.gz
+
+	ls *_guppy6_per_read_batch.tsv.gz | sort | \
+		while read infn ; do
+			echo \$infn
+			zcat \$infn | awk 'NR>1' | gzip -f >> \
+				${params.dsname}_guppy6_per_read_combine.tsv.gz
+		done
+
+	if [[ ${params.deduplicate} == true ]] ; then
+		echo "### Deduplicate for read-level outputs"
+		## sort order: Chr, Start, (End), ID, Strand
+		zcat ${params.dsname}_guppy6_per_read_combine.tsv.gz |\
+			sort -V -u -k2,2 -k3,3n -k1,1 -k4,4 |\
+			gzip -f > ${params.dsname}_guppy6_per_read_combine.sort.tsv.gz
+		rm ${params.dsname}_guppy6_per_read_combine.tsv.gz &&\
+			mv ${params.dsname}_guppy6_per_read_combine.sort.tsv.gz\
+				${params.dsname}_guppy6_per_read_combine.tsv.gz
+	fi
+
+	## Unify format output
+	echo "### generate read/site level results"
+	bash utils/unify_format_for_calls.sh \
+		${params.dsname}  Guppy  NANOME\
+		${params.dsname}_guppy6_per_read_combine.tsv.gz \
+		.  $task.cpus  12  ${params.sort ? true : false}  "${params.chrSet1.replaceAll(',', ' ')}"
 
 	echo "### Guppy6Comb DONE"
 	"""
