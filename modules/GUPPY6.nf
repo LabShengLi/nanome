@@ -133,9 +133,9 @@ process Guppy6Comb {
 
 	output:
 	path "${params.dsname}_guppy6_bam_out_combine.bam*", emit: guppy6_combine_bam_out, optional: true
-	path "${params.dsname}_guppy6_per_read_combine.tsv.gz", emit: guppy6_combine_out_ch, optional: true
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify
-	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify
+	path "${params.dsname}_guppy6_per_read_combine.tsv.gz", emit: guppy6_combine_tsv, optional: true
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify, optional: true
+	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify, optional: true
 
 	when:
 	batch_bam_out_collect.size() >= 1 && params.runCombine

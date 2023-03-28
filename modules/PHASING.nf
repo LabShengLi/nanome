@@ -133,7 +133,7 @@ process PHASING {
 		mode: "copy"
 
 	input:
-	path mega_and_nanome_raw_list
+	path meth_for_phasing_inputs
 	path clair3_out
 	path ch_src
 	path merged_bam
@@ -148,7 +148,7 @@ process PHASING {
 	"""
 	echo "### hello phasing"
     ## deal with meth2bed+nanomethphase_phase , phased meth looks good
-    phaseToolList=("nanopolish" "megalodon" "nanome")
+    phaseToolList=("nanopolish" "megalodon" "nanome" "deepsignal" "guppy")
     for i in "\${!phaseToolList[@]}"; do
 		tool="\${phaseToolList[i]}"
 

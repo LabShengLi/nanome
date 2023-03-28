@@ -349,9 +349,11 @@ workflow {
 		comb_nanopolish = NPLSHCOMB(NANOPOLISH.out.nanopolish_tsv.collect(), ch_src, ch_utils)
 		s1 = comb_nanopolish.site_unify
 		r1 = comb_nanopolish.read_unify
+		co1 = comb_nanopolish.nanopolish_combine
 	} else {
 		s1 = Channel.empty()
 		r1 = Channel.empty()
+		co1 = Channel.empty()
 	}
 
 	if (params.runMegalodon && params.runMethcall) {
@@ -361,9 +363,11 @@ workflow {
 							ch_src, ch_utils)
 		s2 = comb_megalodon.site_unify
 		r2 = comb_megalodon.read_unify
+		co2 = comb_megalodon.megalodon_combine
 	} else {
 		s2 = Channel.empty()
 		r2 = Channel.empty()
+		co2 = Channel.empty()
 	}
 
 	if (params.runDeepSignal1 && params.runMethcall) {
@@ -389,10 +393,12 @@ workflow {
 		f2 = comb_deepsignal2.deepsignal2_feature_combine
 		s3_1 = comb_deepsignal2.site_unify
 		r3_1 = comb_deepsignal2.read_unify
+		co3_1 = comb_deepsignal2.deepsignal2_per_read_combine
 	} else {
 		f2 = Channel.empty()
 		s3_1 = Channel.empty()
 		r3_1 = Channel.empty()
+		co3_1 = Channel.empty()
 	}
 
 	if (params.runGuppy && params.runMethcall) {
@@ -405,9 +411,11 @@ workflow {
 
 		s4 = comb_guppy6.site_unify
 		r4 = comb_guppy6.read_unify
+		co4 = comb_guppy6.guppy6_combine_tsv
 	} else {
 		s4 = Channel.empty()
 		r4 = Channel.empty()
+		co4 = Channel.empty()
 	}
 
 	if (params.runTombo && params.runMethcall) {
@@ -474,9 +482,11 @@ workflow {
 		consensus = CONSENSUS(top3_tools_read_unify, ch_src, ch_utils)
 		s8 = consensus.site_unify
 		r8 = consensus.read_unify
+		co8 = consensus.nanome_combine_out
 	} else {
 		s8 = Channel.empty()
 		r8 = Channel.empty()
+		co8 = Channel.empty()
 	}
 
 	null2.concat(
@@ -517,13 +527,13 @@ workflow {
 	if (params.phasing) {
 		CLAIR3(QCEXPORT.out.bam_data, ENVCHECK.out.reference_genome)
 		null1.concat(
-			MGLDNCOMB.out.megalodon_combine,
-			MGLDNCOMB.out.read_unify,
-			CONSENSUS.out.nanome_combine_out,
-			CONSENSUS.out.read_unify,
-			NPLSHCOMB.out.nanopolish_combine_out_ch
-			).toList().set { mega_and_nanome_ch }
-		PHASING(mega_and_nanome_ch, CLAIR3.out.clair3_out_ch,
+			co1,
+			co2, r2,
+			co3_1, r3_1,
+			co4, r4,
+			co8, r8
+			).toList().set { meth_for_phasing_input_ch }
+		PHASING(meth_for_phasing_input_ch, CLAIR3.out.clair3_out_ch,
 				ch_src, QCEXPORT.out.bam_data, ENVCHECK.out.reference_genome)
 	}
 }
