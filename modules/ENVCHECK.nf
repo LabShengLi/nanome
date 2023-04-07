@@ -11,7 +11,7 @@
  @Organization : JAX Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
-// Check all tools work well
+// Check all tools and conditions work well
 process ENVCHECK {
 	tag "${params.dsname}"
 	errorStrategy 'terminate'
@@ -70,17 +70,17 @@ process ENVCHECK {
 
 	if [[ !{params.runBasecall} == true || !{params.runMethcall} == true ]]; then
 		## Build dir for reference_genome
-		mkdir -p reference_genome
-		find_dir="$PWD/reference_genome"
+		mkdir -p !{params.GENOME_DIR}
+		find_dir="$PWD/!{params.GENOME_DIR}"
 		if [[ !{reference_genome} == *.tar.gz && -f !{reference_genome}  ]] ; then
-			tar -xzf !{reference_genome} -C reference_genome
+			tar -xzf !{reference_genome} -C !{params.GENOME_DIR}
 		elif [[ !{reference_genome} == *.tar && -f !{reference_genome} ]] ; then
-			tar -xf !{reference_genome} -C reference_genome
+			tar -xf !{reference_genome} -C !{params.GENOME_DIR}
 		elif [[ -d !{reference_genome} ]] ; then
-			## for folder, use ln, note this is a symbolic link to a folder
+			## for folder, use ln, note this is a link to a folder
 			## find_dir=$( readlink -f !{reference_genome} )
 			## Copy reference genome, avoid singularity/docker access out data problem
-			cp -f -L !{reference_genome}/*   reference_genome/
+			cp -f -L !{reference_genome}/*   !{params.GENOME_DIR}/
 		else
 			echo "### ERROR: not recognized reference_genome=!{reference_genome}"
 			exit -1
@@ -88,28 +88,23 @@ process ENVCHECK {
 
 		# Rename and link reference file
 		if [[ ! -z $(find ${find_dir}/ \\( -name '*.fasta' -o -name '*.fasta.gz' \\)  ) ]] ; then
-			find ${find_dir} -name '*.fasta*' | \
-				 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/${fn/*.fasta/ref.fasta}'
+			[[ ! -f !{params.GENOME_DIR}/!{params.GENOME_FN} ]] && \
+			 	find ${find_dir} -name '*.fasta*' | \
+				 	parallel -j1 -v  'fn={/} ; ln  {}   !{params.GENOME_DIR}/${fn/*.fasta/!{params.GENOME_FN}}'
 		elif [[ ! -z $(find ${find_dir}/ \\( -name '*.fa' -o -name '*.fa.gz' \\)  ) ]] ; then
-			find ${find_dir} -name '*.fa*' | \
-				 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/${fn/*.fa/ref.fasta}'
+			## note here, do not replace .fa, due to example.fa.fai will match all fa pattern
+			[[ ! -f !{params.GENOME_DIR}/!{params.GENOME_FN} ]] && \
+				find ${find_dir} -name '*.fa*' | \
+				 	parallel -j1 -v  'fn={/} ; ln  {}   !{params.GENOME_DIR}/!{params.GENOME_FN}${fn#*.fa}'
 		fi
 
-		## Chrom size file if exists
-		find ${find_dir} -name '*.sizes' | \
-				parallel -j1 -v ln -s -f {} reference_genome/chrom.sizes
+		## Chrom size file if exists, relink it if name is not same
+		[[ ! -f !{params.GENOME_DIR}/!{params.CHROM_SIZE_FN} ]] && \
+			find ${find_dir} -name '*.sizes' | head -n 1 |\
+				parallel -j1 -v ln  -f {} !{params.GENOME_DIR}/!{params.CHROM_SIZE_FN}
 
-		ls -lh reference_genome/
+		ls -lhiR reference_genome/
 	fi
 	echo "### Check env DONE"
 	'''
 }
-
-/**
-	echo "### Check reference genome and chrSet"
-	echo "params.referenceGenome=!{params.referenceGenome}"
-	echo "params.chromSizesFile=!{params.chromSizesFile}"
-	echo "params.chrSet1=[!{params.chrSet1}]"
-	echo "params.dataType1=!{params.dataType1}"
-	echo "cpus=!{task.cpus}"
-**/
