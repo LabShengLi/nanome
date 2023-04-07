@@ -18,6 +18,9 @@ process DEEPSIGNAL2 {
 		mode: "copy",
 		enabled: params.outputIntermediate
 
+	publishDir "${params.outdir}/${params.dsname}-run-log",
+		mode: "copy", pattern: "*.DeepSignal2.run.log"
+
 	input:
 	path resquiggle
 	each path (reference_genome)
@@ -28,6 +31,7 @@ process DEEPSIGNAL2 {
 	output:
 	path "batch_${resquiggle.baseName}_deepsignal2_per_read.tsv.gz",	emit: deepsignal2_batch_per_read, optional: true
 	path "batch_${resquiggle.baseName}_deepsignal2_feature.tsv.gz",		emit: deepsignal2_batch_feature, optional: true
+	path "*.DeepSignal2.run.log", optional:true,	emit: runlog
 
 	when:
 	params.runBasecall && params.runMethcall && params.runDeepSignal
@@ -65,7 +69,7 @@ process DEEPSIGNAL2 {
 		-o batch_!{resquiggle.baseName}_deepsignal2_feature.tsv  \
 		--corrected_group !{params.ResquiggleCorrectedGroup} \
 		--nproc !{cores}  --motifs CG \
-		&>> !{params.dsname}.DeepSignal2.run.log
+		&>> !{resquiggle.baseName}.DeepSignal2.run.log
 	echo "### DeepSignal2 feature extract DONE"
 
 	deepsignal2 call_mods \
@@ -73,7 +77,7 @@ process DEEPSIGNAL2 {
 		--input_path batch_!{resquiggle.baseName}_deepsignal2_feature.tsv \
 		--result_file batch_!{resquiggle.baseName}_deepsignal2_per_read.tsv \
 		--nproc !{cores}  ${gpuOptions} \
-		&>> !{params.dsname}.DeepSignal2.run.log
+		&>> !{resquiggle.baseName}.DeepSignal2.run.log
 	echo "### DeepSignal2 methylation DONE"
 
 	> batch_!{resquiggle.baseName}_deepsignal2_feature.tsv.gz

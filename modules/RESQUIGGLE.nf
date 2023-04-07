@@ -25,6 +25,9 @@ process RESQUIGGLE {
 		pattern: "${basecallDir.baseName}.resquiggle",
 		enabled: params.publishResquiggle
 
+	publishDir "${params.outdir}/${params.dsname}-run-log",
+		mode: "copy", pattern: "*.Resquiggle.run.log"
+
 	input:
 	tuple 	val(id), path (untarDir), path (basecallDir)
 	each 	path(reference_genome)
@@ -32,6 +35,8 @@ process RESQUIGGLE {
 	output:
 	path "${basecallDir.baseName}.resquiggle", 	emit: resquiggle
 	path "${basecallDir.baseName}.deepsignal1_batch_features.tsv.gz", 	emit: feature_extract, optional: true
+	path "*.Resquiggle.run.log", optional:true,	emit: runlog
+
 
 	when:
 	(params.runMethcall && ((params.runDeepSignal1 && ! params.stopDeepSignal) || params.runTombo || params.runDeepSignal)) || params.runResquiggle

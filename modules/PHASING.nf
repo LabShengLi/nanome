@@ -17,12 +17,16 @@ process CLAIR3 {
 	publishDir "${params.outdir}/${params.dsname}-phasing",
 		mode: "copy", pattern: "${params.dsname}_clair3_out"
 
+	publishDir "${params.outdir}/${params.dsname}-run-log",
+		mode: "copy", pattern: "*.Clair3.run.log"
+
 	input:
 	path merged_bam
 	path reference_genome
 
 	output:
 	path "${params.dsname}_clair3_out",	emit:	clair3_out_ch, optional: true
+	path "*.Clair3.run.log", optional:true,	emit: runlog
 
 	"""
 	run_clair3.sh --version
@@ -132,6 +136,9 @@ process PHASING {
 	publishDir "${params.outdir}/${params.dsname}-phasing",
 		mode: "copy"
 
+	publishDir "${params.outdir}/${params.dsname}-run-log",
+		mode: "copy", pattern: "*.Phasing.run.log"
+
 	input:
 	path meth_for_phasing_inputs
 	path clair3_out
@@ -144,6 +151,7 @@ process PHASING {
 	path "${params.dsname}*mock_bam", 	emit: mock_bam_ch, 		optional: true
     path "${params.dsname}*methcall2bed", 	emit: methcall2bed_ch, 		optional: true
 	path "${params.dsname}*meth_phasing", 	emit: meth_phasing_ch, 		optional: true
+	path "*.Phasing.run.log", optional:true,	emit: runlog
 
 	"""
 	echo "### hello phasing"

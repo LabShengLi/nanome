@@ -21,6 +21,9 @@ process Guppy6 {
 		pattern: "${fast5Untar.baseName}_batch_merge_bam_out.bam*",
 		enabled: params.outputIntermediate
 
+	publishDir "${params.outdir}/${params.dsname}-run-log",
+		mode: "copy", pattern: "*.Guppy6.run.log"
+
 	input:
 	path fast5Untar
 	each path(reference_genome)
@@ -29,6 +32,7 @@ process Guppy6 {
 	output:
 	path "${fast5Untar.baseName}_batch_merge_bam_out.bam*",	emit: guppy_batch_bam_out, optional: true
 	path "${fast5Untar.baseName}_guppy6_per_read_batch.tsv.gz", emit: guppy_batch_per_read, optional: true
+	path "*.Guppy6.run.log", optional:true,	emit: runlog
 
 	when:
 	params.runMethcall && params.runGuppy

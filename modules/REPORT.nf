@@ -27,6 +27,9 @@ process REPORT {
 	publishDir "${params.outdir}/${params.dsname}-methylation-callings",
 		mode: "copy", pattern: "GenomeBrowser-${params.dsname}"
 
+	publishDir "${params.outdir}/${params.dsname}-run-log",
+		mode: "copy", pattern: "*.Report.run.log"
+
 	input:
 	path site_fileList
 	path read_fileList
@@ -42,6 +45,7 @@ process REPORT {
 	path "README_${params.dsname}.txt",	emit: 	readme_out_ch
 	path "multiqc_report.html",	emit: 	lbt_report_ch
 	path "GenomeBrowser-${params.dsname}", emit:  genome_browser_ch, optional: true
+	path "*.Report.run.log", optional:true,	emit: runlog
 
 	"""
 	## Generate NF pipeline running information tsv

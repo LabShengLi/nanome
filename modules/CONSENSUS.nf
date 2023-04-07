@@ -27,6 +27,9 @@ process CONSENSUS {
 		pattern: "${params.dsname}_nanome_*_per_read_combine.*.gz",
 		enabled: params.outputRaw
 
+	publishDir "${params.outdir}/${params.dsname}-run-log",
+		mode: "copy", pattern: "*.Consensus.run.log"
+
 	input:
 	path read_fileList
 	path ch_src
@@ -36,6 +39,7 @@ process CONSENSUS {
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify, optional: true
 	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify, optional: true
 	path "${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.*.gz", emit: nanome_combine_out, optional: true
+	path "*.Consensus.run.log", optional:true,	emit: runlog
 
 	when:
 	params.runNANOME && (params.runNanopolish || params.runDeepSignal || params.runMegalodon)

@@ -15,12 +15,16 @@
 process BASECALL {
 	tag "${fast5Untar.baseName}"
 
+	publishDir "${params.outdir}/${params.dsname}-run-log",
+		mode: "copy", pattern: "*.Basecall.run.log"
+
 	input:
 	path fast5Untar
 
 	output:
 	path "${fast5Untar.baseName}.basecall", optional:true,	emit: basecall
 	tuple val(fast5Untar.baseName), path ("${fast5Untar.baseName}.basecall"),	optional:true,  emit: basecall_tuple  // must use Name value, not file var, or will failed for B
+	path "*.Basecall.run.log", optional:true,	emit: runlog
 
 	when:
 	params.runBasecall
