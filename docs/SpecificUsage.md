@@ -83,7 +83,7 @@ nextflow run LabShengLi/nanome\
 
 Example as below:
 ```angular2html
-nextflow run $NANOME_DIR \
+nextflow run LabShengLi/nanome \
     -profile test_human,singularity \
     --genome chm13
 ```
@@ -92,7 +92,7 @@ nextflow run $NANOME_DIR \
 
 Example as below:
 ```angular2html
-nextflow run $NANOME_DIR \
+nextflow run LabShengLi/nanome \
     -profile test_human,singularity \
     --input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/testdata_r10_4_1.tar.gz \
     --runGuppy \
