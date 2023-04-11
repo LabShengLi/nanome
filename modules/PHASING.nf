@@ -154,9 +154,13 @@ process PHASING {
 	path "*.Phasing.run.log", optional:true,	emit: runlog
 
 	"""
-	echo "### hello phasing"
+	echo "### start phasing"
+
+	# manner1
+	if [[ ${params.phase_manner1} == true ]] ; then
     ## deal with meth2bed+nanomethphase_phase , phased meth looks good
-    phaseToolList=("nanopolish" "megalodon" "nanome" "deepsignal" "guppy")
+    ## phaseToolList=("nanopolish" "megalodon" "nanome" "deepsignal" "guppy")
+    phaseToolList=(${params.phasing_tools.replaceAll(',',' ')})
     for i in "\${!phaseToolList[@]}"; do
 		tool="\${phaseToolList[i]}"
 
@@ -208,7 +212,10 @@ process PHASING {
             -of bam,methylcall,bam2bis \
             -b \${bamfn} -r \${ref} -v \${vcffn} -t ${task.cpus}  --overwrite
 	done
+	fi
 
+	# manner2
+	if [[ ${params.phase_manner2} == true ]] ; then
     ## deal with hpsplit+meth2bed+nanomethphase_vis_bam
 	## TODO: change hmc filename in Megalodon raw output
 	toolList=("megalodon" "nanome_${params.NANOME_MODEL}")
@@ -292,8 +299,9 @@ process PHASING {
 					samtools index -@ ${task.cpus} \${infn3/.bam/.sort.bam} &&
 					rm -f \${infn3} &&
 					touch \${infn3/.bam/.sort.bam}.DONE
-			done
-		done
-	done
+			done # hapType
+		done # chr
+	done # i
+	fi
 	"""
 }

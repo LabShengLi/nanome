@@ -77,9 +77,17 @@ process Guppy6 {
 
 	echo "### Guppy6 methylation calling DONE"
 
+	# if filter fail dir
+	if [[ params.filter_fail_methcall == true ]] ; then
+		failDir=
+	else
+		failDir=${fast5Untar.baseName}.methcalled/fail
+	fi
+
 	samtools cat -@ ${samtools_cores} \
 		-o ${fast5Untar.baseName}_batch_merge_bam_out.bam \
     	\$(find "${fast5Untar.baseName}.methcalled/" "${fast5Untar.baseName}.methcalled/pass/" \
+    		\${failDir} \
     		-maxdepth 1 -name '*.bam' -type f)
 
 	samtools sort -@ ${samtools_cores}  ${fast5Untar.baseName}_batch_merge_bam_out.bam \
