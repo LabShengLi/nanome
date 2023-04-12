@@ -136,86 +136,9 @@ process CONSENSUS {
 				-o  ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz   \
 				&>> ${params.dsname}.Consensus.run.log
 		fi
-	elif [[ ${params.NANOME_MODEL} == "NANOME3T" ]] ; then
-		## NANOME XGBoost method, will be deprecated
-		modelContentTSVFileName=${params.dsname}_nanome_${params.NANOME_MODEL}_model_content.tsv
-		> \$modelContentTSVFileName
-		passModelTsv=false
-		if [[ "${params.NANOME_CONSENSUS_TOOLS}" == *"Nanopolish"* ]]; then
-			NanopolishReadReport=\$(find . -maxdepth 1 -name '*Nanopolish-perRead-score.tsv.gz')
-			if [[ -z \$NanopolishReadReport ]] ; then
-				echo "### Not found Nanopolish read-level outputs"
-				NanopolishReadReport="None"
-			else
-				passModelTsv=true
-			fi
-			printf '%s\t%s\n' nanopolish \${NanopolishReadReport} >> \$modelContentTSVFileName
-		fi
-
-		if [[ "${params.NANOME_CONSENSUS_TOOLS}" == *"Megalodon"* ]]; then
-			MegalodonReadReport=\$(find . -maxdepth 1 -name '*Megalodon-perRead-score.tsv.gz')
-			if [[ -z \$MegalodonReadReport ]] ; then
-				echo "### Not found Megalodon read-level outputs"
-				MegalodonReadReport="None"
-			else
-				passModelTsv=true
-			fi
-			printf '%s\t%s\n' megalodon \${MegalodonReadReport} >> \$modelContentTSVFileName
-		fi
-
-		if [[ "${params.NANOME_CONSENSUS_TOOLS}" == *"DeepSignal"* ]]; then
-			DeepSignalReadReport=\$(find . -maxdepth 1 -name '*DeepSignal-perRead-score.tsv.gz')
-			if [[ -z \$DeepSignalReadReport ]] ; then
-				echo "### Not found DeepSignal read-level outputs"
-				DeepSignalReadReport="None"
-			else
-				passModelTsv=true
-			fi
-			printf '%s\t%s\n' deepsignal \${DeepSignalReadReport} >> \$modelContentTSVFileName
-		fi
-
-		if [[ "\$passModelTsv" == true ]] ; then
-			## NANOME XGBoost model results, if there are model results exists
-			echo "### NANOME XGBoost predictions"
-
-			## 0.23.2 version work both for NANOME>=0.23.2 and METEORE<=0.23.2
-			## pip install -U scikit-learn==0.23.2
-
-			pip show scikit-learn
-
-			if [[ ${params.consensus_by_chr} == true ]] ; then
-				mkdir -p consensus_by_chr
-				for chr in ${params.chrSet1.replaceAll(',', ' ')} ; do
-					echo "### consensus for chr=\${chr}"
-					PYTHONPATH=src python src/nanome/xgboost/xgboost_predict.py \
-						--tsv-input\
-						--dsname ${params.dsname} -i \${modelContentTSVFileName}\
-						-m ${params.NANOME_MODEL}  \
-						-o consensus_by_chr/${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_\${chr}.tsv.gz \
-						--chrs \${chr} \
-						&>> ${params.dsname}.Consensus.run.log
-				done
-				## combine all chrs
-				touch ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
-				zcat \$(ls consensus_by_chr/*.gz| head -n 1) | head -n 1 | gzip -f >> \
-					${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
-
-				find consensus_by_chr -name '*.tsv.gz' -print0 |
-					sort -V -z |
-   					while IFS= read -r -d '' infn; do
-						zcat \${infn}  | awk 'NR>1' | gzip -f >> \
-							${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz
-					done
-				echo "### consensus combine chr DONE"
-			else
-				PYTHONPATH=src python src/nanome/xgboost/xgboost_predict.py \
-					--tsv-input\
-					--dsname ${params.dsname} -i \${modelContentTSVFileName}\
-					-m ${params.NANOME_MODEL}  \
-					-o ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz \
-					&>> ${params.dsname}.Consensus.run.log
-			fi
-		fi
+	else
+		echo "Not support ${params.NANOME_MODEL}"
+		exit -1
 	fi
 
 	if [[ -f ${params.dsname}_nanome_${params.NANOME_MODEL}_per_read_combine.tsv.gz ]] ; then
