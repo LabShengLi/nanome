@@ -57,13 +57,21 @@ def process_modbam2bed(input_bam, chr_list, reference_fasta, output_bed, canon_t
                                 continue
                             ### Filter out CpG sites
                             if ref_strand == "+":
-                                reference_base = reference_fasta.fetch(chr_name, ref_pos, ref_pos + 2).upper()
+                                try:
+                                    reference_base = reference_fasta.fetch(chr_name, ref_pos, ref_pos + 2).upper()
+                                except:
+                                    continue
                             elif ref_strand == "-":
                                 # For "-" strand, get the reverse complement of the reference sequence
-                                reference_base = reverse_complement(
-                                    reference_fasta.fetch(chr_name, ref_pos - 1, ref_pos + 1)).upper()
+                                try:
+                                    reference_base = reverse_complement(
+                                        reference_fasta.fetch(chr_name, ref_pos - 1, ref_pos + 1)).upper()
+                                except:
+                                    continue
                             else:
+                                reference_base = "NANA"
                                 print("ref_strand is not correct!")
+
                             if reference_base in ['CG' or 'GC']:
                                 if prob_mod < canon_threshold:  # Extract canon_read and label as 0
                                     # read_data.append([chr_name, ref_pos, ref_pos + 1, read_id, prob_mod, ref_strand, 0])

@@ -80,7 +80,9 @@ process ENVCHECK {
 			## for folder, use ln, note this is a link to a folder
 			## find_dir=$( readlink -f !{reference_genome} )
 			## Copy reference genome, avoid singularity/docker access out data problem
-			cp -f -L !{reference_genome}/*   !{params.GENOME_DIR}/
+			## cp -f -L !{reference_genome}/*   !{params.GENOME_DIR}/
+			find !{reference_genome}/ -maxdepth 1 -type f  | \
+				parallel -j0 cp -f -L {} !{params.GENOME_DIR}/
 		else
 			echo "### ERROR: not recognized reference_genome=!{reference_genome}"
 			exit -1
