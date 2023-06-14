@@ -80,6 +80,7 @@ setuptools.setup(
         'utils/unify_format_for_calls.sh',
         'utils/getGuppyVersion.py',
         'utils/modbam2bed_extract_read_cpg.py',
+        'utils/nanomethphaseMethylFreq2methylkit.py',
     ],
     include_package_data=True,
     package_data={'': ['src/nanome/common/*.csv', 'src/nanome/xgboost/trained_model/*.pkl']},
