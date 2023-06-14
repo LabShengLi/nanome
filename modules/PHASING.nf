@@ -211,6 +211,10 @@ process PHASING {
             -o \${outdir}/${params.dsname}_\${tool} \
             -of bam,methylcall,bam2bis \
             -b \${bamfn} -r \${ref} -v \${vcffn} -t ${task.cpus}  --overwrite
+
+        ## gzip tsv files
+        ls \${outdir}/*.tsv | \
+        	parallel -j0 gzip {}
 	done
 	fi
 

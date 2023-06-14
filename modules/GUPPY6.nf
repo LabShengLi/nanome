@@ -21,6 +21,11 @@ process Guppy6 {
 		pattern: "${fast5Untar.baseName}_batch_merge_bam_out.bam*",
 		enabled: params.outputIntermediate
 
+	publishDir "${params.outdir}/${params.dsname}_intermediate/guppy6",
+		mode: "copy",
+		pattern: "${fast5Untar.baseName}_guppy6_per_read_batch.tsv.gz",
+		enabled: params.outputIntermediate
+
 	publishDir "${params.outdir}/${params.dsname}-run-log",
 		mode: "copy", pattern: "*.Guppy6.run.log"
 
