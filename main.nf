@@ -1,5 +1,5 @@
 #!/usr/bin/env nextflow
-/*
+/**
 =========================================================================================
   		NANOME(Nanopore methylation) pipeline for Oxford Nanopore sequencing
 =========================================================================================
@@ -11,7 +11,7 @@
  @Software : NANOME project
  @Organization : JAX Li Lab
 ----------------------------------------------------------------------------------------
-*/
+**/
 // We now support both latest and lower versions, due to Lifebit CloudOS is only support 20.04
 // Note: NXF_VER=20.04.1 nextflow run main.nf -profile test,singularity
 if( nextflow.version.matches(">= 20.07.1") ){
@@ -43,7 +43,8 @@ gbl_genome_path = gbl_genome_map[params.genome] ? gbl_genome_map[params.genome] 
 humanChrSet = 'chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY'
 
 genome_basefn = (new File(params.genome)).name
-if (genome_basefn.startsWith('hg') || (params.dataType && params.dataType == 'human')) {
+if (genome_basefn.startsWith('hg') || genome_basefn.startsWith('chm13') ||
+		(params.dataType && params.dataType == 'human')) {
 	dataType = params.dataType ? params.dataType : "human"
 	// default for human chr
 	chrSet = params.chrSet ? params.chrSet : humanChrSet
@@ -123,8 +124,8 @@ if (params.runResquiggle) summary['runResquiggle'] = 'Yes'
 if (params.runMethcall) {
 	if (params.runNanopolish) summary['runNanopolish'] = 'Yes'
 	if (params.runMegalodon) summary['runMegalodon'] = 'Yes'
-	if (params.runDeepSignal2) summary['runDeepSignal2'] = 'Yes'
 	if (params.runDeepSignal) summary['runDeepSignal'] = 'Yes'
+	if (params.runDeepSignal1) summary['runDeepSignal1'] = 'Yes'
 	if (params.runGuppy) summary['runGuppy'] = 'Yes'
 	if (params.runTombo) summary['runTombo'] = 'Yes'
 	if (params.runMETEORE) summary['runMETEORE'] = 'Yes'
@@ -169,11 +170,23 @@ if (params.ctg_name) { summary['ctg_name'] 	= params.ctg_name }
 
 summary['\nModel summary']         = "--------"
 if (params.runBasecall && !params.skipBasecall) summary['GUPPY_BASECALL_MODEL'] 	= params.GUPPY_BASECALL_MODEL
+
+if (params.runNANOME) {
+	summary['NANOME_MODEL/CS_MODEL_FILE'] = "${params.NANOME_MODEL}/${params.CS_MODEL_FILE}"
+	// summary['CS_MODEL_SPEC'] = "${params.CS_MODEL_SPEC}"
+}
+
 if (params.runMethcall && params.runMegalodon)
 	summary['MEGALODON_MODEL'] 	= params.rerio? 'Rerio:' + params.MEGALODON_MODEL : 'Remora:' + params.remoraModel
-if (params.runMethcall && params.runDeepSignal) summary['DEEPSIGNAL_MODEL_DIR/DEEPSIGNAL_MODEL'] =\
+
+if (params.runMethcall && params.runDeepSignal) summary['DEEPSIGNAL2_MODEL_FILE/DEEPSIGNAL2_MODEL_NAME'] =\
+ 	params.DEEPSIGNAL2_MODEL_FILE + "/" + params.DEEPSIGNAL2_MODEL_NAME
+
+if (params.runMethcall && params.runDeepSignal1) summary['DEEPSIGNAL_MODEL_DIR/DEEPSIGNAL_MODEL'] =\
  	params.DEEPSIGNAL_MODEL_DIR + "/" + params.DEEPSIGNAL_MODEL
+
 if (params.runMethcall && params.runGuppy) summary['GUPPY_METHCALL_MODEL'] 	= params.GUPPY_METHCALL_MODEL
+
 if (params.runMethcall && params.runDeepMod) {
 	if (isDeepModCluster) {
 		summary['DEEPMOD_RNN_MODEL;DEEPMOD_CLUSTER_MODEL'] = \
@@ -182,11 +195,6 @@ if (params.runMethcall && params.runDeepMod) {
 	} else {
 		summary['DEEPMOD_RNN_MODEL'] = "${params.DEEPMOD_RNN_MODEL}"
 	}
-}
-if (params.runNANOME) {
-	summary['NANOME_MODEL'] = "${params.NANOME_MODEL}"
-	summary['CS_MODEL_FILE'] = "${params.CS_MODEL_FILE}"
-	summary['CS_MODEL_SPEC'] = "${params.CS_MODEL_SPEC}"
 }
 
 summary['\nPipeline settings']         = "--------"
@@ -278,6 +286,8 @@ include { DEEPSIGNAL2; DEEPSIGNAL2COMB } from './modules/DEEPSIGNAL2'
 
 include { Guppy; GuppyComb; Tombo; TomboComb; DeepMod; DpmodComb; METEORE } from './modules/OLDTOOLS'
 
+include { Guppy6; Guppy6Comb } from './modules/GUPPY6'
+
 include { NewTool; NewToolComb } from './modules/NEWTOOLS'
 
 include { CLAIR3; PHASING } from './modules/PHASING'
@@ -304,7 +314,7 @@ workflow {
 							null1
 
 	// deepsignal model dir will be downloaded in ENVCHECK if needed
-	if (params.runDeepSignal) {
+	if (params.runDeepSignal1) {
 		ch_deepsignal_dir = params.deepsignalDir ?
 				Channel.fromPath(params.deepsignalDir, type: 'any', checkIfExists: true) :
 				Channel.fromPath(params.DEEPSIGNAL_MODEL_ONLINE, type: 'any', checkIfExists: true)
@@ -325,7 +335,7 @@ workflow {
 	}
 
 	// Resquiggle running if use Tombo or DeepSignal
-	if (((params.runDeepSignal || params.runTombo || params.runDeepSignal2) && params.runMethcall)
+	if (((params.runDeepSignal1 || params.runTombo || params.runDeepSignal) && params.runMethcall)
 		|| params.runResquiggle) {
 		resquiggle = RESQUIGGLE(UNTAR.out.untar_tuple.join(BASECALL.out.basecall_tuple), ENVCHECK.out.reference_genome)
 		f1 = params.feature_extract ? resquiggle.feature_extract : Channel.empty()
@@ -339,9 +349,11 @@ workflow {
 		comb_nanopolish = NPLSHCOMB(NANOPOLISH.out.nanopolish_tsv.collect(), ch_src, ch_utils)
 		s1 = comb_nanopolish.site_unify
 		r1 = comb_nanopolish.read_unify
+		co1 = comb_nanopolish.nanopolish_combine
 	} else {
 		s1 = Channel.empty()
 		r1 = Channel.empty()
+		co1 = Channel.empty()
 	}
 
 	if (params.runMegalodon && params.runMethcall) {
@@ -351,12 +363,14 @@ workflow {
 							ch_src, ch_utils)
 		s2 = comb_megalodon.site_unify
 		r2 = comb_megalodon.read_unify
+		co2 = comb_megalodon.megalodon_combine
 	} else {
 		s2 = Channel.empty()
 		r2 = Channel.empty()
+		co2 = Channel.empty()
 	}
 
-	if (params.runDeepSignal && params.runMethcall) {
+	if (params.runDeepSignal1 && params.runMethcall) {
 		DEEPSIGNAL(RESQUIGGLE.out.resquiggle, ENVCHECK.out.reference_genome,
 					ENVCHECK.out.deepsignal_model)
 		comb_deepsignal = DPSIGCOMB(DEEPSIGNAL.out.deepsignal_tsv.collect(), ch_src, ch_utils)
@@ -367,36 +381,41 @@ workflow {
 		r3 = Channel.empty()
 	}
 
-	if (params.runDeepSignal2 && params.runMethcall) {
-		deepsignal2 = DEEPSIGNAL2(RESQUIGGLE.out.resquiggle.collect(),
+	if (params.runDeepSignal && params.runMethcall) {
+		deepsignal2_model_file = Channel.fromPath(params.DEEPSIGNAL2_MODEL_FILE, type: 'any', checkIfExists: true)
+		deepsignal2 = DEEPSIGNAL2(RESQUIGGLE.out.resquiggle,
 					ENVCHECK.out.reference_genome,
-					ch_src, ch_utils)
-		comb_deepsignal2 = DEEPSIGNAL2COMB(DEEPSIGNAL2.out.deepsignal2_combine_out,
+					ch_src, ch_utils, deepsignal2_model_file)
+		comb_deepsignal2 = DEEPSIGNAL2COMB(DEEPSIGNAL2.out.deepsignal2_batch_per_read.collect(),
+						DEEPSIGNAL2.out.deepsignal2_batch_feature.collect(),
 						ch_src, ch_utils
 						)
-		f2 = deepsignal2.deepsignal2_feature_out
+		f2 = comb_deepsignal2.deepsignal2_feature_combine
 		s3_1 = comb_deepsignal2.site_unify
 		r3_1 = comb_deepsignal2.read_unify
+		co3_1 = comb_deepsignal2.deepsignal2_per_read_combine
 	} else {
 		f2 = Channel.empty()
 		s3_1 = Channel.empty()
 		r3_1 = Channel.empty()
+		co3_1 = Channel.empty()
 	}
 
 	if (params.runGuppy && params.runMethcall) {
-		Guppy(UNTAR.out.untar, ENVCHECK.out.reference_genome, ch_utils)
+		Guppy6(UNTAR.out.untar, ENVCHECK.out.reference_genome, ch_utils)
 
-		gcf52ref_ch = Channel.fromPath("${projectDir}/utils/null1").concat(Guppy.out.guppy_gcf52ref_tsv.collect())
-
-		comb_guppy = GuppyComb(Guppy.out.guppy_fast5mod_bam.collect(),
-								gcf52ref_ch,
+		comb_guppy6 = Guppy6Comb(Guppy6.out.guppy_batch_bam_out.collect(),
+								Guppy6.out.guppy_batch_per_read.collect(),
 								ENVCHECK.out.reference_genome,
 								ch_src, ch_utils)
-		s4 = comb_guppy.site_unify
-		r4 = comb_guppy.read_unify
+
+		s4 = comb_guppy6.site_unify
+		r4 = comb_guppy6.read_unify
+		co4 = comb_guppy6.guppy6_combine_tsv
 	} else {
 		s4 = Channel.empty()
 		r4 = Channel.empty()
+		co4 = Channel.empty()
 	}
 
 	if (params.runTombo && params.runMethcall) {
@@ -463,9 +482,11 @@ workflow {
 		consensus = CONSENSUS(top3_tools_read_unify, ch_src, ch_utils)
 		s8 = consensus.site_unify
 		r8 = consensus.read_unify
+		co8 = consensus.nanome_combine_out
 	} else {
 		s8 = Channel.empty()
 		r8 = Channel.empty()
+		co8 = Channel.empty()
 	}
 
 	null2.concat(
@@ -495,20 +516,24 @@ workflow {
 		s1, s2, s3, s3_1, s4, s5, s6, s7, s_new, s8
 		).toList().set { tools_site_unify }
 
-	REPORT(tools_site_unify, top3_tools_read_unify,
-			ENVCHECK.out.tools_version_tsv, QCEXPORT.out.qc_report,
-			ENVCHECK.out.reference_genome, ch_src, ch_utils)
+	if (params.runBasecall) {
+		REPORT(tools_site_unify, top3_tools_read_unify,
+			ENVCHECK.out.tools_version_tsv, ENVCHECK.out.basecall_version_txt,
+			QCEXPORT.out.qc_report,
+			ENVCHECK.out.reference_genome, ch_src, ch_utils
+			)
+	}
 
 	if (params.phasing) {
 		CLAIR3(QCEXPORT.out.bam_data, ENVCHECK.out.reference_genome)
 		null1.concat(
-			MGLDNCOMB.out.megalodon_combine,
-			MGLDNCOMB.out.read_unify,
-			CONSENSUS.out.nanome_combine_out,
-			CONSENSUS.out.read_unify,
-			NPLSHCOMB.out.nanopolish_combine_out_ch
-			).toList().set { mega_and_nanome_ch }
-		PHASING(mega_and_nanome_ch, CLAIR3.out.clair3_out_ch,
+			co1,
+			co2, r2,
+			co3_1, r3_1,
+			co4, r4,
+			co8, r8
+			).toList().set { meth_for_phasing_input_ch }
+		PHASING(meth_for_phasing_input_ch, CLAIR3.out.clair3_out_ch,
 				ch_src, QCEXPORT.out.bam_data, ENVCHECK.out.reference_genome)
 	}
 }

@@ -78,3 +78,25 @@ nextflow run LabShengLi/nanome\
     --genome hg38 \
     --runMethcall false
 ```
+
+## 5. Support T2T-CHM13 genome
+
+Example as below:
+```angular2html
+nextflow run LabShengLi/nanome \
+    -profile test_human,singularity \
+    --genome chm13
+```
+
+## 6. Support R10.4.1 flow cells
+
+Example as below:
+```angular2html
+nextflow run LabShengLi/nanome \
+    -profile test_human,singularity \
+    --input https://storage.googleapis.com/jax-nanopore-01-project-data/nanome-input/testdata_r10_4_1.tar.gz \
+    --runGuppy \
+    --GUPPY_BASECALL_MODEL dna_r10.4.1_e8.2_400bps_hac.cfg \
+    --GUPPY_METHCALL_MODEL dna_r10.4.1_e8.2_400bps_modbases_5mc_cg_hac.cfg \
+    --runNanopolish false --runDeepSignal false --runMegalodon false
+```

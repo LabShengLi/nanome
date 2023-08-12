@@ -1,4 +1,4 @@
-/*
+/**
 =========================================================================================
   		NANOME(Nanopore methylation) pipeline for Oxford Nanopore sequencing
 =========================================================================================
@@ -10,8 +10,9 @@
  @Software : NANOME project
  @Organization : JAX Sheng Li Lab
 ----------------------------------------------------------------------------------------
-*/
+**/
 // DeepSignal runs on resquiggled subfolders named 'M1', ..., 'M10', etc.
+// will be deprecated, use DeepSignal v2 instead
 process DEEPSIGNAL {
 	tag "${indir.baseName}"
 
@@ -25,10 +26,10 @@ process DEEPSIGNAL {
 	each path(deepsignal_model_dir)
 
 	output:
-	path "${params.dsname}_deepsignal_batch_${indir.baseName}.*.gz",	emit: deepsignal_tsv
+	path "${params.dsname}_deepsignal_batch_${indir.baseName}.*.gz",	emit: deepsignal_tsv, optional: true
 
 	when:
-	params.runMethcall && params.runDeepSignal && ! params.stopDeepSignal
+	params.runBasecall && params.runMethcall && params.runDeepSignal1 && ! params.stopDeepSignal
 
 	script:
 	cores = task.cpus * params.highProcTimes
@@ -90,9 +91,9 @@ process DPSIGCOMB {
 	path ch_utils
 
 	output:
-	path "${params.dsname}_deepsignal_per_read_combine.*.gz",	emit: deepsignal_combine_out
-	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify
-	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify
+	path "${params.dsname}_deepsignal_per_read_combine.*.gz",	emit: deepsignal_combine_out, optional: true
+	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify, optional: true
+	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify, optional: true
 
 	when:
 	x.size() >= 1 && params.runCombine

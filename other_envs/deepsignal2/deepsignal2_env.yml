@@ -1,5 +1,5 @@
 # @Author   : Yang Liu
-# @FileName : environment.yml
+# @FileName : deepsignal2_env.yml
 # @Software : NANOME project
 # @Organization : JAX Li Lab
 # @Website  : https://github.com/LabShengLi/nanome
@@ -8,9 +8,9 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - python=3.7
+  - python=3.7 # deepsignal only support 3.7
   - pip
-  - ont-tombo
+  - ont-tombo # used for extract features/resquiggle
   - ont_vbz_hdf_plugin # used for multi-fast5 and gz format, ref: https://github.com/jts/nanopolish/issues/620
   - pip:
       - deepsignal2

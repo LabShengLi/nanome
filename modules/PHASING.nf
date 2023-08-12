@@ -17,12 +17,16 @@ process CLAIR3 {
 	publishDir "${params.outdir}/${params.dsname}-phasing",
 		mode: "copy", pattern: "${params.dsname}_clair3_out"
 
+	publishDir "${params.outdir}/${params.dsname}-run-log",
+		mode: "copy", pattern: "*.Clair3.run.log"
+
 	input:
 	path merged_bam
 	path reference_genome
 
 	output:
 	path "${params.dsname}_clair3_out",	emit:	clair3_out_ch, optional: true
+	path "*.Clair3.run.log", optional:true,	emit: runlog
 
 	"""
 	run_clair3.sh --version
@@ -132,8 +136,11 @@ process PHASING {
 	publishDir "${params.outdir}/${params.dsname}-phasing",
 		mode: "copy"
 
+	publishDir "${params.outdir}/${params.dsname}-run-log",
+		mode: "copy", pattern: "*.Phasing.run.log"
+
 	input:
-	path mega_and_nanome_raw_list
+	path meth_for_phasing_inputs
 	path clair3_out
 	path ch_src
 	path merged_bam
@@ -144,11 +151,16 @@ process PHASING {
 	path "${params.dsname}*mock_bam", 	emit: mock_bam_ch, 		optional: true
     path "${params.dsname}*methcall2bed", 	emit: methcall2bed_ch, 		optional: true
 	path "${params.dsname}*meth_phasing", 	emit: meth_phasing_ch, 		optional: true
+	path "*.Phasing.run.log", optional:true,	emit: runlog
 
 	"""
-	echo "### hello phasing"
-    ## deal with meth2bed+nanomethphase_phase
-    phaseToolList=("nanopolish" "megalodon" "nanome")
+	echo "### start phasing"
+
+	# manner1
+	if [[ ${params.phase_manner1} == true ]] ; then
+    ## deal with meth2bed+nanomethphase_phase , phased meth looks good
+    ## phaseToolList=("nanopolish" "megalodon" "nanome" "deepsignal" "guppy")
+    phaseToolList=(${params.phasing_tools.replaceAll(',',' ')})
     for i in "\${!phaseToolList[@]}"; do
 		tool="\${phaseToolList[i]}"
 
@@ -169,6 +181,7 @@ process PHASING {
         outdir="${params.dsname}_\${tool}_meth_phasing"
         mkdir -p \${outdir}
 		if [[ \${tool} == "nanopolish" ]] ; then
+			## nanopolish way, keep same with NanomethPhase
             PYTHONPATH=src python src/nanome/other/phasing/nanomethphase.py \
                 methyl_call_processor -mc \${infn} -t ${task.cpus} |
                 sort -k1,1 -k2,2n -k3,3n |
@@ -178,6 +191,7 @@ process PHASING {
             PYTHONPATH=src  python src/nanome/other/phasing/methcall2bed.py \
                 -i \${infn} \
                 -o \${outdir}/${params.dsname}_\${tool}_MethylationCall1.bed.gz \
+                --score-cutoff ${params.PHASE_meth_score_cutoff} \
                 --verbose  &>> ${params.dsname}.Phasing.run.log
 
             zcat \${outdir}/${params.dsname}_\${tool}_MethylationCall1.bed.gz | \
@@ -187,7 +201,7 @@ process PHASING {
                 rm -f \${outdir}/${params.dsname}_\${tool}_MethylationCall1.bed.gz
 		fi
 
-		## phase meth
+		## phase meth, results looks good
 		vcffn=${params.dsname}_clair3_out/tmp/phase_output/phase_vcf/${params.dsname}_phasing_vcf_QUAL_${params.CLAIR3_phasing_qual}.vcf.gz
 		ref=${params.referenceGenome}
 		bamfn=${params.dsname}_bam_data/${params.dsname}_merge_all_bam.bam
@@ -197,8 +211,15 @@ process PHASING {
             -o \${outdir}/${params.dsname}_\${tool} \
             -of bam,methylcall,bam2bis \
             -b \${bamfn} -r \${ref} -v \${vcffn} -t ${task.cpus}  --overwrite
-	done
 
+        ## gzip tsv files
+        ls \${outdir}/*.tsv | \
+        	parallel -j0 gzip {}
+	done
+	fi
+
+	# manner2
+	if [[ ${params.phase_manner2} == true ]] ; then
     ## deal with hpsplit+meth2bed+nanomethphase_vis_bam
 	## TODO: change hmc filename in Megalodon raw output
 	toolList=("megalodon" "nanome_${params.NANOME_MODEL}")
@@ -247,6 +268,7 @@ process PHASING {
 					PYTHONPATH=src  python src/nanome/other/phasing/methcall2bed.py \
 						-i \${infn2} \
 						-o \${outfn} \
+					 	--score-cutoff ${params.PHASE_meth_score_cutoff} \
 						--verbose  &>> ${params.dsname}.Phasing.run.log
 
 					zcat \${outfn} | sort -V -k1,1 -k2,2n -k3,3n |
@@ -281,8 +303,9 @@ process PHASING {
 					samtools index -@ ${task.cpus} \${infn3/.bam/.sort.bam} &&
 					rm -f \${infn3} &&
 					touch \${infn3/.bam/.sort.bam}.DONE
-			done
-		done
-	done
+			done # hapType
+		done # chr
+	done # i
+	fi
 	"""
 }

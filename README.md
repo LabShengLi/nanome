@@ -94,7 +94,7 @@ NANOME pipeline support running with various ways in different platforms:
 
 
 ## Simple usage
-Please refer to [Usage](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md) and [Specific Usage](https://github.com/LabShengLi/nanome/blob/master/docs/SpecificUsage.md) and [NANOME options](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/nanome_params.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md#5-running-pipeline-on-cloud-computing-platform). We provide a **tutorial video** for running NANOME pipeline:
+Please refer to [Usage](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md) and [Specific Usage](https://github.com/LabShengLi/nanome/blob/master/docs/SpecificUsage.md) and [NANOME options](https://github.com/LabShengLi/nanome/blob/master/docs/nanome_params.md) for how to use NANOME pipeline. For running on CloudOS platform (e.g., google cloud), please check [Usage on CloudOS](https://github.com/LabShengLi/nanome/blob/master/docs/Usage.md#5-running-pipeline-on-cloud-computing-platform). We provide a **tutorial video** for running NANOME pipeline:
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/TfotM55KTVE/0.jpg)](https://www.youtube.com/watch?v=TfotM55KTVE)
 
@@ -142,15 +142,14 @@ Please check [NANOME report](https://github.com/LabShengLi/nanome/blob/master/do
 
 
 ### Haplotype-aware consensus methylations
-Please check [phasing usage](https://github.com/LabShengLi/nanome/blob/tutorial1/docs/Phasing.md).
+Please check [phasing usage](https://github.com/LabShengLi/nanome/blob/master/docs/Phasing.md).
 ![PhasingDemo](https://github.com/LabShengLi/nanome/blob/master/docs/resources/nanome3t_5mc_phasing2.png)
 
 ### Lifebit CloudOS report
 We now support running NANOME on cloud computing platform. [Lifebit](https://lifebit.ai/lifebit-cloudos/) is a web-based cloud computing platform, and below is the running reports:
-* Ecoli test report: https://cloudos.lifebit.ai/public/jobs/61c9fd328c574a01e8d31d2e
-* Human test report: https://cloudos.lifebit.ai/public/jobs/61c9fe618c574a01e8d31e99
-* NA12878 chr22 report: https://cloudos.lifebit.ai/public/jobs/61c4f2ad8c574a01e8d0eee3
-* NA12878 chr20 part5 report: https://cloudos.lifebit.ai/public/jobs/61c770748c574a01e8d2062b
+* Ecoli test report: https://cloudos.lifebit.ai/public/jobs/6430509445941801546e5f8f
+* Human test report: https://cloudos.lifebit.ai/public/jobs/6430639045941801546e627f
+* NA12878 chr22 report: https://cloudos.lifebit.ai/public/jobs/6430b64645941801546e7400
 
 
 ## Revision History

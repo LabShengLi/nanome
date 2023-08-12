@@ -1,0 +1,19 @@
+# @Author   : Yang Liu
+# @FileName : guppy_stable_env.yml
+# @Software : NANOME project
+# @Organization : JAX Li Lab
+# @Website  : https://github.com/LabShengLi/nanome
+name: guppy_stable
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - python=3.8 # ont-pyguppy-client-lib only support under v3.8, ref: https://github.com/nanoporetech/megalodon/issues/127
+  - pip
+  - samtools
+  - ont_vbz_hdf_plugin # used for multi-fast5 and gz format, ref: https://github.com/jts/nanopolish/issues/620
+  - pysam
+  - biopython # used for guppy extract read level
+  - pip:
+      - modbampy # used for guppy extract read level
+      - ont-pyguppy-client-lib

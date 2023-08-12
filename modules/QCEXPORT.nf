@@ -18,6 +18,9 @@ process QCEXPORT {
 	publishDir "${params.outdir}/${params.dsname}-basecallings",
 		mode: "copy", enabled: params.outputQC, overwrite: true
 
+	publishDir "${params.outdir}/${params.dsname}-run-log",
+		mode: "copy", pattern: "*.QCReport.run.log"
+
 	input:
 	path basecall_list
 	path alignment_list
@@ -27,6 +30,7 @@ process QCEXPORT {
 	path "${params.dsname}_basecall_report.html",	optional: true, emit: qc_html
 	path "${params.dsname}_QCReport",				emit: qc_report
 	path "${params.dsname}_bam_data",				optional: true,	 emit: bam_data
+	path "*.QCReport.run.log", optional:true,	emit: runlog
 
 	when:
 	params.runQC

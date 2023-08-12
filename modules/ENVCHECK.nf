@@ -11,7 +11,7 @@
  @Organization : JAX Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
-// Check all tools work well
+// Check all tools and conditions work well
 process ENVCHECK {
 	tag "${params.dsname}"
 	errorStrategy 'terminate'
@@ -28,8 +28,9 @@ process ENVCHECK {
 	output:
 	path "reference_genome",				emit: reference_genome, optional: true
 	path "rerio", 							emit: rerio, optional: true  // used by Megalodon
-	path "${params.DEEPSIGNAL_MODEL_DIR}",	emit: deepsignal_model, optional: true
+	path "${params.DEEPSIGNAL_MODEL_DIR}",	emit: deepsignal_model, optional: true // used by DeepSignal v1, will be deprecated
 	path "tools_version_table.tsv",			emit: tools_version_tsv, optional: true
+	path "basecall_version.txt",			emit: basecall_version_txt, optional: true
 
 	shell:
 	'''
@@ -38,6 +39,8 @@ process ENVCHECK {
 
 	## Validate nanome container/environment is correct
 	bash utils/validate_nanome_container.sh  tools_version_table.tsv
+
+	guppy_basecaller -v |  head -n 1 | python utils/getGuppyVersion.py > basecall_version.txt
 
 	if [[ !{params.runNewTool} == true ]] ; then
 		newTools=(!{params.newModuleConfigs.collect{it.name}.join(' ')})
@@ -65,59 +68,45 @@ process ENVCHECK {
 		ls -lh rerio/
 	fi
 
-	## Untar and prepare deepsignal model
-	if [[ !{params.runDeepSignal} == true && !{params.runMethcall} == true ]]; then
-		if [[ !{deepsignalDir} == *.tar.gz ]] ; then
-			## Get DeepSignal Model online
-			tar -xzf !{deepsignalDir}
-		elif [[ !{deepsignalDir} != !{params.DEEPSIGNAL_MODEL_DIR} && -d !{deepsignalDir}  ]] ; then
-			## rename it to deepsignal default dir name
-			cp  -a !{deepsignalDir}  !{params.DEEPSIGNAL_MODEL_DIR}
-		fi
-		## Check DeepSignal model
-		ls -lh !{params.DEEPSIGNAL_MODEL_DIR}/
-	fi
-
 	if [[ !{params.runBasecall} == true || !{params.runMethcall} == true ]]; then
 		## Build dir for reference_genome
-		mkdir -p reference_genome
-		find_dir="$PWD/reference_genome"
+		mkdir -p !{params.GENOME_DIR}
+		find_dir="$PWD/!{params.GENOME_DIR}"
 		if [[ !{reference_genome} == *.tar.gz && -f !{reference_genome}  ]] ; then
-			tar -xzf !{reference_genome} -C reference_genome
+			tar -xzf !{reference_genome} -C !{params.GENOME_DIR}
 		elif [[ !{reference_genome} == *.tar && -f !{reference_genome} ]] ; then
-			tar -xf !{reference_genome} -C reference_genome
+			tar -xf !{reference_genome} -C !{params.GENOME_DIR}
 		elif [[ -d !{reference_genome} ]] ; then
-			## for folder, use ln, note this is a symbolic link to a folder
+			## for folder, use ln, note this is a link to a folder
 			## find_dir=$( readlink -f !{reference_genome} )
 			## Copy reference genome, avoid singularity/docker access out data problem
-			cp !{reference_genome}/*   reference_genome/ -f
+			## cp -f -L !{reference_genome}/*   !{params.GENOME_DIR}/
+			find !{reference_genome}/ -maxdepth 1 -type f  | \
+				parallel -j0 cp -f -L {} !{params.GENOME_DIR}/
 		else
 			echo "### ERROR: not recognized reference_genome=!{reference_genome}"
 			exit -1
 		fi
 
-		# Rename reference file
+		# Rename and link reference file
 		if [[ ! -z $(find ${find_dir}/ \\( -name '*.fasta' -o -name '*.fasta.gz' \\)  ) ]] ; then
-			find ${find_dir} -name '*.fasta*' | \
-				 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/${fn/*.fasta/ref.fasta}'
+			[[ ! -f !{params.GENOME_DIR}/!{params.GENOME_FN} ]] && \
+			 	find ${find_dir} -name '*.fasta*' | \
+				 	parallel -j1 -v  'fn={/} ; ln  {}   !{params.GENOME_DIR}/${fn/*.fasta/!{params.GENOME_FN}}'
 		elif [[ ! -z $(find ${find_dir}/ \\( -name '*.fa' -o -name '*.fa.gz' \\)  ) ]] ; then
-			find ${find_dir} -name '*.fa*' | \
-				 parallel -j0 -v  'fn={/} ; ln -s -f  {}   reference_genome/${fn/*.fa/ref.fasta}'
+			## note here, do not replace .fa, due to example.fa.fai will match all fa pattern
+			[[ ! -f !{params.GENOME_DIR}/!{params.GENOME_FN} ]] && \
+				find ${find_dir} -name '*.fa*' | \
+				 	parallel -j1 -v  'fn={/} ; ln  {}   !{params.GENOME_DIR}/!{params.GENOME_FN}${fn#*.fa}'
 		fi
 
-		## Chrom size file if exists
-		find ${find_dir} -name '*.sizes' | \
-				parallel -j1 -v ln -s -f {} reference_genome/chrom.sizes
+		## Chrom size file if exists, relink it if name is not same
+		[[ ! -f !{params.GENOME_DIR}/!{params.CHROM_SIZE_FN} ]] && \
+			find ${find_dir} -name '*.sizes' | head -n 1 |\
+				parallel -j1 -v ln  -f {} !{params.GENOME_DIR}/!{params.CHROM_SIZE_FN}
 
-		ls -lh reference_genome/
+		ls -lhiR reference_genome/
 	fi
-
-	echo "### Check reference genome and chrSet"
-	echo "params.referenceGenome=!{params.referenceGenome}"
-	echo "params.chromSizesFile=!{params.chromSizesFile}"
-	echo "params.chrSet1=[!{params.chrSet1}]"
-	echo "params.dataType1=!{params.dataType1}"
-	echo "cpus=!{task.cpus}"
 	echo "### Check env DONE"
 	'''
 }

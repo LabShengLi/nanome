@@ -19,6 +19,9 @@ process MEGALODON {
 		mode: "copy",
 		enabled: params.outputIntermediate
 
+	publishDir "${params.outdir}/${params.dsname}-run-log",
+		mode: "copy", pattern: "*.Megalodon.run.log"
+
 	input:
 	path fast5Untar
 	each path(reference_genome)
@@ -27,6 +30,7 @@ process MEGALODON {
 	output:
 	path "${params.dsname}_megalodon_batch_${fast5Untar.baseName}.*.gz", emit: megalodon_tsv
 	path "${params.dsname}_megalodon_batch_${fast5Untar.baseName}_mod_mappings.bam*", emit: megalodon_mod_mappings
+	path "*.Megalodon.run.log", optional:true,	emit: runlog
 
 	when:
 	params.runMethcall && params.runMegalodon
@@ -165,4 +169,3 @@ process MGLDNCOMB {
 	echo "### Megalodon combine DONE"
 	"""
 }
-

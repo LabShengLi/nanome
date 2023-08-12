@@ -25,6 +25,9 @@ process RESQUIGGLE {
 		pattern: "${basecallDir.baseName}.resquiggle",
 		enabled: params.publishResquiggle
 
+	publishDir "${params.outdir}/${params.dsname}-run-log",
+		mode: "copy", pattern: "*.Resquiggle.run.log"
+
 	input:
 	tuple 	val(id), path (untarDir), path (basecallDir)
 	each 	path(reference_genome)
@@ -32,9 +35,11 @@ process RESQUIGGLE {
 	output:
 	path "${basecallDir.baseName}.resquiggle", 	emit: resquiggle
 	path "${basecallDir.baseName}.deepsignal1_batch_features.tsv.gz", 	emit: feature_extract, optional: true
+	path "*.Resquiggle.run.log", optional:true,	emit: runlog
+
 
 	when:
-	(params.runMethcall && ((params.runDeepSignal && ! params.stopDeepSignal) || params.runTombo || params.runDeepSignal2)) || params.runResquiggle
+	(params.runMethcall && ((params.runDeepSignal1 && ! params.stopDeepSignal) || params.runTombo || params.runDeepSignal)) || params.runResquiggle
 
 	shell:
 	cores = task.cpus * params.highProcTimes
@@ -72,7 +77,7 @@ process RESQUIGGLE {
 	### ref: https://github.com/nanoporetech/tombo/issues/139, https://github.com/nanoporetech/tombo/issues/111
 	### ref: https://github.com/nanoporetech/tombo/issues/365, https://github.com/nanoporetech/tombo/issues/167
 	### ref: https://nanoporetech.github.io/tombo/resquiggle.html?highlight=processes
-	### Out of memory solution for large data: --tomboResquiggleOptions '--signal-length-range 0 500000  --sequence-length-range 0 50000'
+	### Out of memory solution for large data, e.g. NA12878: --tomboResquiggleOptions '--signal-length-range 0 500000  --sequence-length-range 0 50000'
 	tombo resquiggle\
 		--processes !{resquiggle_cores} \
 		--threads-per-process !{params.tomboThreadsPerProcess} \

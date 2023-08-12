@@ -28,7 +28,7 @@ process NANOPOLISH {
 	path "${params.dsname}_nanopolish_batch_${basecallDir.baseName}.*.gz", 	emit: nanopolish_tsv
 
 	when:
-	params.runMethcall && params.runNanopolish
+	params.runBasecall && params.runMethcall && params.runNanopolish
 
 	script:
 	samtools_cores = task.cpus * params.mediumProcTimes
@@ -92,7 +92,7 @@ process NPLSHCOMB {
 	path ch_utils
 
 	output:
-	path "${params.dsname}_nanopolish_per_read_combine.tsv.gz",	emit: nanopolish_combine_out_ch
+	path "${params.dsname}_nanopolish_per_read_combine.tsv.gz",	emit: nanopolish_combine
 	path "Read_Level-${params.dsname}/${params.dsname}_*-perRead-score*.gz",	emit: read_unify
 	path "Site_Level-${params.dsname}/*-perSite-cov*.gz",	emit: site_unify
 

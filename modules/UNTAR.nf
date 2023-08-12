@@ -41,7 +41,7 @@ process UNTAR {
 		elif [[ -d !{fast5Input} ]]; then
 			## Copy files, do not change original files such as old analyses data
 			find !{fast5Input}/ -name '*.fast5' | \
-				parallel -j!{cores}  cp {} untarTempDir/
+				parallel -j!{cores}  cp -L -f {} untarTempDir/
 		else
 			echo "### Untar error for input=!{fast5Input}"
 		fi
