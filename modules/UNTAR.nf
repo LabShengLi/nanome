@@ -46,6 +46,20 @@ process UNTAR {
 			echo "### Untar error for input=!{fast5Input}"
 		fi
 
+		# convert pod5 to fast5
+		if [[ !{params.pod5} == true ]] ; then
+			mv untarTempDir untarTempDir_v2
+			mkdir -p untarTempDir_v3
+			find untarTempDir_v2/ -name '*.pod5' -type f |
+				parallel -j0 mv {} untarTempDir_v3/ -f
+
+			mkdir -p untarTempDir
+			pod5 convert to_fast5 untarTempDir_v3/ \
+				--out untarTempDir/ \
+				-t !{cores} -f
+			rm -rf untarTempDir_v2 untarTempDir_v3
+		fi
+
 		if [[ !{params.multi_to_single_fast5} == true ]] ; then
 			echo "### Do multi_to_single_fast5"
 			untarTempDir=untarTempDir2
