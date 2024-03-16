@@ -39,8 +39,8 @@ process UNTAR {
 			### deal with tar.gz
 			tar -xzf !{fast5Input} -C untarTempDir
 		elif [[ -d !{fast5Input} ]]; then
-			## Copy files, do not change original files such as old analyses data
-			find !{fast5Input}/ -name '*.fast5' | \
+			## For dir, should copy files, we do not want to change original files such as old analyses data in fast5
+			find !{fast5Input}/ \\( -name "*.fast5" -o -name "*.pod5" \\)  | \
 				parallel -j!{cores}  cp -L -f {} untarTempDir/
 		else
 			echo "### Untar error for input=!{fast5Input}"
