@@ -18,7 +18,7 @@
 * Haplotype-awared phasing and allele-specific methylation detection.
 
 
-## Methodology of NANOME pipeline
+## Background
 
 [comment]: <> (**Background:** Nanopore long-read sequencing technology greatly expands the capacity of long-range, single-molecule DNA-modification detection. A growing number of analytical tools have been developed to detect DNA methylation from nanopore sequencing reads. Here, we assess the performance of different methylation calling tools to provide a systematic evaluation to guide researchers performing human epigenome-wide studies.)
 
@@ -39,7 +39,7 @@
 
 
 
-### CI/CD features
+## CI/CD features
 We use  CI Automation Tools to **enable the automated testing on every commit and on PRs** to make sure that updates are not introducing bugs. Please check the automatic testing results on [Github](https://github.com/LabShengLi/nanome/actions).
 
 
