@@ -117,6 +117,195 @@ Please note that above commands are integrated in our **CI/CD test cases**. Our 
 We firstly proposed the **standardized whole genome-wide evaluation packages**, check [standardized evaluation tool usage](https://github.com/LabShengLi/nanome/blob/master/docs/Eval.md) for more detail. We do not suggest evaluating on a portion of CpGs for performance comparisons.
 
 
+## Train and test script for consensus model in NANOME
+
+We train an xgboost model on top performers: Nanopolish, DeepSignal and Megalodon, the training script usage is below:
+```angular2html
+cs_train.py  -h
+usage: cs_train (NANOME) [-h] --train TRAIN [TRAIN ...] --train-chr TRAIN_CHR
+                         [TRAIN_CHR ...] --test TEST [TEST ...] --test-chr
+                         TEST_CHR [TEST_CHR ...]
+                         [--input-tools INPUT_TOOLS [INPUT_TOOLS ...]]
+                         [--dsname DSNAME] [--model-name MODEL_NAME]
+                         [--base-model BASE_MODEL] -o O [--niter NITER]
+                         [--cv CV] [--scoring SCORING]
+                         [--random-state RANDOM_STATE]
+                         [--processors PROCESSORS] [--test-lines TEST_LINES]
+                         [--show-confusion-matrix] [--apply-cutoff]
+                         [--apply-cutoff-train] [--verbose]
+
+Consensus model train on data
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --train TRAIN [TRAIN ...]
+                        train data file
+  --train-chr TRAIN_CHR [TRAIN_CHR ...]
+                        train chr file
+  --test TEST [TEST ...]
+                        test data file
+  --test-chr TEST_CHR [TEST_CHR ...]
+                        train chr file
+  --input-tools INPUT_TOOLS [INPUT_TOOLS ...]
+                        input features for train, default is megalodon,
+                        nanopolish, and deepsignal
+  --dsname DSNAME       dataset name, default is NA12878
+  --model-name MODEL_NAME
+                        model name: basic, etc.
+  --base-model BASE_MODEL
+                        base model name: rf, xgboost, etc.
+  -o O                  output file dir
+  --niter NITER         number of iterations for random CV, default is 20
+  --cv CV               number of CV, default is 3
+  --scoring SCORING     optimized score name, i.e., f1, roc_auc, etc., default
+                        is f1
+  --random-state RANDOM_STATE
+                        random state 42
+  --processors PROCESSORS
+                        number of processors, default is 1
+  --test-lines TEST_LINES
+                        test top N rows, such as 10000, default is None
+  --show-confusion-matrix
+                        if output verbose info
+  --apply-cutoff        if apply default cutoff of tools
+  --apply-cutoff-train  if apply default cutoff of tools before train
+  --verbose             if output verbose info
+```
+
+Prediction script usage for xgboost model is below:
+```angular2html
+cs_predict.py -h
+usage: cs_predict (NANOME) [-h] [-v] [-i I [I ...]] [--nanopolish NANOPOLISH]
+                           [--megalodon MEGALODON] [--deepsignal DEEPSIGNAL]
+                           [--feature FEATURE]
+                           [--feature-readids-col FEATURE_READIDS_COL [FEATURE_READIDS_COL ...]]
+                           [--feature-readids-col-order FEATURE_READIDS_COL_ORDER [FEATURE_READIDS_COL_ORDER ...]]
+                           [--feature-seq-col FEATURE_SEQ_COL]
+                           [--model_specific MODEL_SPECIFIC] -m M --dsname
+                           DSNAME -o O [-t T [T ...]]
+                           [--random-state RANDOM_STATE]
+                           [--processors PROCESSORS] [--chunksize CHUNKSIZE]
+                           [--inner-join] [--chrs CHRS [CHRS ...]]
+                           [--interactive] [--verbose]
+
+Consensus model predict for data
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --version         show program's version number and exit
+  -i I [I ...]          input tsv combined data for predicting
+  --nanopolish NANOPOLISH
+                        input nanopolish unified read-level file
+  --megalodon MEGALODON
+                        input megalodon unified read-level file
+  --deepsignal DEEPSIGNAL
+                        input deepsignal unified read-level file
+  --feature FEATURE     input feature file for DNAseq
+  --feature-readids-col FEATURE_READIDS_COL [FEATURE_READIDS_COL ...]
+                        column index for ID, Chr, Pos and Strand
+  --feature-readids-col-order FEATURE_READIDS_COL_ORDER [FEATURE_READIDS_COL_ORDER ...]
+                        column index order for ID, Chr, Pos and Strand
+  --feature-seq-col FEATURE_SEQ_COL
+                        column index for DNA seq feature
+  --model_specific MODEL_SPECIFIC
+                        specific model info
+  -m M                  model file, existing model list: NANOME2T,NANOME3T,xgb
+                        oost_basic,xgboost_basic_w,xgboost_basic_w_seq
+  --dsname DSNAME       dataset name
+  -o O                  output file name
+  -t T [T ...]          tools used for prediction, default is None
+  --random-state RANDOM_STATE
+                        random state, default is 42
+  --processors PROCESSORS
+                        num of processors, default is 8
+  --chunksize CHUNKSIZE
+                        chunk size for load large data, default is 500000
+  --inner-join          if inner join for merge data, default is outer join
+  --chrs CHRS [CHRS ...]
+                        chromosomes used
+  --interactive         if output to console as interactive mode, quit use q/Q
+  --verbose             if output verbose info
+```
+
+Script for read-level performance comparison (accuracy, F1-score, etc.) on joined predictions by all tools:
+```
+cs_eval_read.py  -h
+
+                        [--model-name MODEL_NAME [MODEL_NAME ...]]
+                        [--model-file MODEL_FILE [MODEL_FILE ...]] -o O
+                        [--processors PROCESSORS] [--bs-cov BS_COV]
+                        [--tool-cov TOOL_COV] [--eval-type EVAL_TYPE]
+                        [--model-base-dir MODEL_BASE_DIR]
+                        [--test-lines TEST_LINES] [--chunksize CHUNKSIZE]
+                        [--force-llr2] [--verbose]
+
+Consensus model train on data
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i I [I ...]          input data file
+  --dsname DSNAME       dataset name, default is NA12878
+  --model-name MODEL_NAME [MODEL_NAME ...]
+                        model name: rf, xgboost, etc.
+  --model-file MODEL_FILE [MODEL_FILE ...]
+                        model file
+  -o O                  output file dir
+  --processors PROCESSORS
+                        number of processors, default is 1
+  --bs-cov BS_COV       bs-seq coverage cutoff, default is 5
+  --tool-cov TOOL_COV   ONT tool coverage cutoff, default is 1
+  --eval-type EVAL_TYPE
+                        evaluation type, read-level or site-level
+  --model-base-dir MODEL_BASE_DIR
+                        model file's base dir
+  --test-lines TEST_LINES
+                        test top N rows, such as 10000, default is None
+  --chunksize CHUNKSIZE
+                        chunk size for load large data, default is 500000
+  --force-llr2          if convert megalodon llr to llr2
+  --verbose             if output verbose info
+```
+
+Script for site-level performance comparison (MSE, PCC) on joined predictions by all tools:
+```
+cs_eval_site.py -h
+
+                        [--processors PROCESSORS] [--bs-cov BS_COV]
+                        [--tool-cov TOOL_COV] [--eval-type EVAL_TYPE]
+                        [--model-base-dir MODEL_BASE_DIR]
+                        [--test-lines TEST_LINES] [--chunksize CHUNKSIZE]
+                        [--save-data SAVE_DATA] [--force-llr2] [--verbose]
+
+Consensus model train on data
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i I [I ...]          input data file
+  --dsname DSNAME       dataset name, default is NA12878
+  --model-name MODEL_NAME [MODEL_NAME ...]
+                        model name: rf, xgboost, etc.
+  --model-file MODEL_FILE [MODEL_FILE ...]
+                        model file
+  -o O                  output file dir
+  --processors PROCESSORS
+                        number of processors, default is 1
+  --bs-cov BS_COV       bs-seq coverage cutoff, default is 5
+  --tool-cov TOOL_COV   ONT tool coverage cutoff, default is 1
+  --eval-type EVAL_TYPE
+                        evaluation type, i.e., site-level
+  --model-base-dir MODEL_BASE_DIR
+                        model file's base dir
+  --test-lines TEST_LINES
+                        test top N rows, such as 10000, default is None
+  --chunksize CHUNKSIZE
+                        chunk size for load large data, default is 500000
+  --save-data SAVE_DATA
+                        if save prediction outputs
+  --force-llr2          if convert megalodon llr to llr2
+  --verbose             if output verbose info
+```
+
+
 ## Pipeline reports for NANOME
 ### Benchmarking reports on our HPC using [Nextflow](https://www.nextflow.io/)
 We constructed a set of benchmarking datasets that contain reads from 800 to about 7,200 reads for NA19240, and monitored job running timeline and resource usage on our HPC, reports generated by **Nextflow** workflows are: [Trace file](https://github.com/LabShengLi/nanome/blob/master/docs/resources/trace_benchmark.txt.tsv), [Report](https://github.com/LabShengLi/nanome/blob/master/docs/resources/report_benchmark.pdf)  and [Timeline](https://github.com/LabShengLi/nanome/blob/master/docs/resources/timeline_benchmark.pdf). 
@@ -160,6 +349,7 @@ For release history, please visit [here](https://github.com/LabShengLi/nanome/re
 If you have any questions/issues/bugs, please post them on [GitHub](https://github.com/LabShengLi/nanome/issues). We will continuously update the GitHub to support famous methylation-calling tools for Oxford Nanopore sequencing.
 
 
-## Reference
+[//]: # (## Reference)
 
-**DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation.** Genome Biology 22, 295 (2021). https://doi.org/10.1186/s13059-021-02510-z
+[//]: # ()
+[//]: # (**DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation.** Genome Biology 22, 295 &#40;2021&#41;. https://doi.org/10.1186/s13059-021-02510-z)
