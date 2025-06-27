@@ -79,7 +79,8 @@ process CLAIR3 {
 	## haplotag
 	whatshap --version
 
-	## print header for file list tags
+	# TODO:
+	## print header for file list tags,  there will be no this file at firsts
 	head -n 1 \
 		\$(find ${params.dsname}_clair3_out  -name '*_whatshap_haplotag_read_list_chr*.tsv' | head -n 1) \
     	> ${params.dsname}_clair3_out/${params.dsname}_haplotag_read_list_combine.tsv
@@ -93,6 +94,9 @@ process CLAIR3 {
 		tsvFile="${params.dsname}_clair3_out/${params.dsname}_whatshap_haplotag_read_list_\$chr.tsv"
 		haplotagBamFile="${params.dsname}_clair3_out/${params.dsname}_whatshap_haplotag_bam_\$chr.bam"
 		phasingGZFile="${params.dsname}_clair3_out/tmp/phase_output/phase_vcf/phased_\$chr.vcf.gz"
+
+		# index phased vcf.gz
+	 	tabix -p vcf \${phasingGZFile}
 
 		## Phasing tag extraction for each chromosome
 		## older version lacks: --skip-missing-contigs  --output-threads ${task.cpus}

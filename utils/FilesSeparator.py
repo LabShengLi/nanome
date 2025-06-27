@@ -33,16 +33,16 @@ import math
 from tqdm import tqdm
 
 
-def recursive_find_fast5(basedir):
+def recursive_find_fast5_or_pod5(basedir, suffix_name='fast5'):
     """
     Find all fast5 files recursively in folder
     """
-    fast5files = []
+    raw_files = []
     for root, dirs, files in os.walk(basedir):
         for file in files:
-            if file.endswith(".fast5"):
-                fast5files.append(os.path.join(root, file))
-    return fast5files
+            if file.endswith(f".{suffix_name}"):
+                raw_files.append(os.path.join(root, file))
+    return raw_files
 
 
 def main():
@@ -50,21 +50,26 @@ def main():
     outdir = os.path.join(args.o, 'sept_dir')
     os.makedirs(outdir, exist_ok=True)
     prefix_str = args.prefix_name
-    fast5files = recursive_find_fast5(indir)  # [1,2,3,4,5,6,7,8,9,0]
-    print(f'total files: {len(fast5files)}, indir={indir}, TargetNum={target_num}, outdir={outdir}', flush=True)
+    raw_files = recursive_find_fast5_or_pod5(indir,
+                                             suffix_name=args.file_suffix_name
+                                             )  # [1,2,3,4,5,6,7,8,9,0]
+    print(f'total files: {len(raw_files)}, indir={indir}, TargetNum={target_num}, outdir={outdir}', flush=True)
 
     if args.fix_folder_size:
-        num_folders = math.ceil(len(fast5files) / args.n)
+        num_folders = math.ceil(len(raw_files) / args.n)
         print(f"Fixed folder size={args.n}, total folders={num_folders}", flush=True)
 
         for k in range(num_folders):
             destdir = os.path.join(outdir, f'{prefix_str}{(k % target_num) + 1}')
             os.makedirs(destdir, exist_ok=True)
-            for fn in fast5files[k * args.n: (k + 1) * args.n]:
+            for fn in raw_files[k * args.n: (k + 1) * args.n]:
                 if args.copy:
                     shutil.copy(fn, destdir)
-                else:
+                elif args.move:
                     shutil.move(fn, destdir)
+                else:
+                    os.symlink(fn, os.path.join(destdir, os.path.basename(fn)))
+
     else:
         print(f"Fixed number of folders={args.n}", flush=True)
         for k in range(target_num):
@@ -74,12 +79,17 @@ def main():
                 os.makedirs(fdir, exist_ok=True)
 
         print(f"Start seperate into N={target_num}", flush=True)
-        for k, fn in tqdm(enumerate(fast5files)):
+        for k, fn in tqdm(enumerate(raw_files)):
             destdir = os.path.join(outdir, f'{prefix_str}{(k % target_num) + 1}')
             if args.copy:
                 shutil.copy(fn, destdir)
-            else:
+            elif args.move:
                 shutil.move(fn, destdir)
+            else:
+                dest = os.path.join(destdir, os.path.basename(fn))
+                if os.path.exists(dest) or os.path.islink(dest):
+                    os.remove(dest)  # Remove the existing file or symlink
+                os.symlink(fn, dest)
 
 
 def untar_file(fn, outdir):
@@ -113,7 +123,11 @@ def parse_arguments():
     parser.add_argument('-n', type=int, help="number of seperated folders", required=True)
     parser.add_argument('-p', type=int, help="number of processors", default=8)
     parser.add_argument('--prefix-name', type=str, help="subfolder prefix string", default="")
-    parser.add_argument('--copy', action='store_true', help="true if using copy, else using move")
+    parser.add_argument('--file-suffix-name', type=str, help="fast5 or pod5 suffix name", default="fast5")
+    parser.add_argument('--copy', action='store_true',
+                        help="true if using copy, else using move or soft link (default)")
+    parser.add_argument('--move', action='store_true',
+                        help="true if using move, else using copy or soft link (default)")
     parser.add_argument('--tar-file', action='store_true',
                         help="true if deal with tar/tar.gz files, else are fast5 files")
     parser.add_argument('--fix-folder-size', action='store_true',

@@ -48,7 +48,13 @@ def process_modbam2bed(input_bam, chr_list, reference_fasta, output_bed, canon_t
                     else:
                         for pos_mod in read.mod_sites:
                             # Check modbampy part in https://github.com/epi2me-labs/modbam2bed
+                            # each pos_mod is like: [ModInfo(query_name='54649f3e-9587-47ad-8f6d-d6f2177c7c4d', rpos=-1, qpos=2, strand='-', mstrand=0, cbase='C', mbase='m', qual=13)]
                             read_id, ref_pos, read_pos, ref_strand, mod_strand, canon_base, mod_base, mod_score = pos_mod
+
+                            # skip 5hmC results up to now
+                            if mod_base=='h':
+                                continue
+
                             prob_mod = round(mod_score / 255, 3)
 
                             ## Ignore the read that doesn't have lignment (ref_pos=-1)

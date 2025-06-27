@@ -1,0 +1,13 @@
+name: py39
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pip
+  - parallel
+  - samtools
+  - bedtools
+  - scikit-learn
+  - pip:
+      - pandas

@@ -81,8 +81,8 @@ process ENVCHECK {
 			## find_dir=$( readlink -f !{reference_genome} )
 			## Copy reference genome, avoid singularity/docker access out data problem
 			## cp -f -L !{reference_genome}/*   !{params.GENOME_DIR}/
-			find !{reference_genome}/ -maxdepth 1 -type f  | \
-				parallel -j0 cp -f -L {} !{params.GENOME_DIR}/
+			find !{reference_genome}/ -maxdepth 1 \\( -type f -o -type l \\) | \
+				parallel -j0 'cp -f -L {} !{params.GENOME_DIR}/ || echo "File {} not copied!!!"'
 		else
 			echo "### ERROR: not recognized reference_genome=!{reference_genome}"
 			exit -1
@@ -92,18 +92,18 @@ process ENVCHECK {
 		if [[ ! -z $(find ${find_dir}/ \\( -name '*.fasta' -o -name '*.fasta.gz' \\)  ) ]] ; then
 			[[ ! -f !{params.GENOME_DIR}/!{params.GENOME_FN} ]] && \
 			 	find ${find_dir} -name '*.fasta*' | \
-				 	parallel -j1 -v  'fn={/} ; ln  {}   !{params.GENOME_DIR}/${fn/*.fasta/!{params.GENOME_FN}}'
+				 	parallel -j1 -v  'fn={/} ; ln  -s {}   !{params.GENOME_DIR}/${fn/*.fasta/!{params.GENOME_FN}}'
 		elif [[ ! -z $(find ${find_dir}/ \\( -name '*.fa' -o -name '*.fa.gz' \\)  ) ]] ; then
 			## note here, do not replace .fa, due to example.fa.fai will match all fa pattern
 			[[ ! -f !{params.GENOME_DIR}/!{params.GENOME_FN} ]] && \
 				find ${find_dir} -name '*.fa*' | \
-				 	parallel -j1 -v  'fn={/} ; ln  {}   !{params.GENOME_DIR}/!{params.GENOME_FN}${fn#*.fa}'
+				 	parallel -j1 -v  'fn={/} ; ln -s {}   !{params.GENOME_DIR}/!{params.GENOME_FN}${fn#*.fa}'
 		fi
 
 		## Chrom size file if exists, relink it if name is not same
 		[[ ! -f !{params.GENOME_DIR}/!{params.CHROM_SIZE_FN} ]] && \
 			find ${find_dir} -name '*.sizes' | head -n 1 |\
-				parallel -j1 -v ln  -f {} !{params.GENOME_DIR}/!{params.CHROM_SIZE_FN}
+				parallel -j1 -v ln  -s -f {} !{params.GENOME_DIR}/!{params.CHROM_SIZE_FN}
 
 		ls -lhiR reference_genome/
 	fi
