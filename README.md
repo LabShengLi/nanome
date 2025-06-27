@@ -1,4 +1,4 @@
-# NANOME pipeline (Nanopore long-read sequencing data consensus DNA methylation detection)   
+# NANOME pipeline (Nanopore sequencing consensus DNA methylation detection method and pipeline)   
 
 [![demo_gif.gif](https://github.com/LabShengLi/nanome/blob/master/docs/demo_gif.gif)](https://www.youtube.com/watch?v=TfotM55KTVE)
 
@@ -353,3 +353,4 @@ If you have any questions/issues/bugs, please post them on [GitHub](https://gith
 
 [//]: # ()
 [//]: # (**DNA methylation-calling tools for Oxford Nanopore sequencing: a survey and human epigenome-wide evaluation.** Genome Biology 22, 295 &#40;2021&#41;. https://doi.org/10.1186/s13059-021-02510-z)
+=======
