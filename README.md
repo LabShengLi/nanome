@@ -25,11 +25,12 @@
 
 ![Figure1A](https://github.com/LabShengLi/nanome/blob/master/docs/Fig1A.jpg)
 
-**Fig. 1A. Survey of methylation calling tools .**  Timeline of publication and technological developments of Oxford Nanopore Technologies (ONT) methylation calling tools to detect DNA cytosine modifications. 
+**Survey of methylation calling tools .**  Timeline of publication and technological developments of Oxford Nanopore Technologies (ONT) methylation calling tools to detect DNA cytosine modifications. 
 
 
 ![Figure1B](https://github.com/LabShengLi/nanome/blob/master/docs/Fig1B.jpg)
-**Fig. 1B. Workflow for 5-methylcytosine (5mC) detection for nanopore sequencing.** 
+
+**Workflow for 5-methylcytosine (5mC) detection for nanopore sequencing.** 
 
 
 [comment]: <> (**Results:** We compared several analytic tools for detecting DNA modifications from nanopore long-read sequencing data. We evaluated the CpG methylation-detection accuracy, CpG site coverage, and running time using nanopore sequencing data across different genomic contexts, using natural human DNA. Furthermore, we provide an online DNA methylation database &#40;https://nanome.jax.org&#41; with which to display the DNA methylation levels detected by nanopore sequencing and bisulfite sequencing data across different genomic contexts.)
@@ -37,9 +38,7 @@
 
 [comment]: <> (**Conclusions:** Our study is the first benchmark of state-of-the-art methods for detection of mammalian whole-genome DNA-modifications in nanopore sequencing. We provide a broad foundation for cross-platform standardization, and an evaluation of analytical tools designed for genome-scale modified-base detection using nanopore sequencing. )
 
-
-
-## CI/CD features
+## CI/CD automation features
 We use  CI Automation Tools to **enable the automated testing on every commit and on PRs** to make sure that updates are not introducing bugs. Please check the automatic testing results on [Github](https://github.com/LabShengLi/nanome/actions).
 
 
