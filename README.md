@@ -119,7 +119,9 @@ We firstly proposed the **standardized whole genome-wide evaluation packages**, 
 
 ## Train and test script for consensus model in NANOME
 
-We train an xgboost model on top performers: Nanopolish, DeepSignal and Megalodon, the training script usage is below:
+We train an xgboost model on top performers: Nanopolish, DeepSignal and Megalodon, for detailed input/output format of consensus model train and predict, check [consensus model format](https://github.com/LabShengLi/nanome/blob/master/docs/XGBoost_format.md). 
+
+The training script usage is below:
 ```angular2html
 cs_train.py  -h
 usage: cs_train (NANOME) [-h] --train TRAIN [TRAIN ...] --train-chr TRAIN_CHR
