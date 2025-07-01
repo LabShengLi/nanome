@@ -2,7 +2,7 @@
 # @Author   : Yang Liu
 # @FileName : setup.py
 # @Software : NANOME project
-# @Organization : JAX Li Lab
+# @Organization : Sheng Li Lab
 # @Website  : https://github.com/LabShengLi/nanome
 """
 Install:
@@ -32,8 +32,8 @@ setuptools.setup(
     name="nanome-jax",
     version="2.0.11",
     author="Yang Liu",
-    author_email="yang.liu@jax.org",
-    description="NANOME (Nanopore methylation) pipeline developed by Li Lab at The Jackson Laboratory",
+    author_email="liuyang2006@gmail.com",
+    description="NANOME (Nanopore methylation) pipeline developed by Sheng Li Lab",
     license='MIT License',
     long_description=long_description,
     long_description_content_type="text/markdown",

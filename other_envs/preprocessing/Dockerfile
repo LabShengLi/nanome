@@ -1,15 +1,15 @@
 # @Author   : Yang Liu
 # @FileName : Dockerfile
 # @Software : NANOME project
-# @Organization : JAX Li Lab
+# @Organization : Li Lab
 # @Website  : https://github.com/LabShengLi/nanome
 
 FROM ubuntu
 
 # Author and maintainer
 MAINTAINER Yang Liu <yang.liu@jax.org>
-LABEL description="Nanome project in Li Lab at The Jackson Laboratory" \
-      author="yang.liu@jax.org"
+LABEL description="Nanome project in Sheng Li Lab" \
+      author="liuyang2006@gmail.com"
 
 ARG BUILD_PACKAGES="wget apt-transport-https procps git curl libnvidia-compute-460-server"
 ARG DEBIAN_FRONTEND="noninteractive"

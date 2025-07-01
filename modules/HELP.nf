@@ -8,13 +8,13 @@
  @Author   : Yang Liu
  @FileName : HELP.nf
  @Software : NANOME project
- @Organization : JAX Sheng Li Lab
+ @Organization : Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
 def helpMessage() {
 	log.info"""
 	NANOME - Nextflow PIPELINE (v$workflow.manifest.version)
-	by Sheng Li Lab at The Jackson Laboratory
+	by Sheng Li Lab
 	https://github.com/LabShengLi/nanome
 	=================================
 	Usage:

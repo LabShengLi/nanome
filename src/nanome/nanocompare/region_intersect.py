@@ -2,7 +2,7 @@
 # @Author   : Yang Liu
 # @FileName : region_intersect.py
 # @Software : NANOME project
-# @Organization : JAX Li Lab
+# @Organization : Li Lab
 # @Website  : https://github.com/LabShengLi/nanome
 """
 Tool for CpGs intersect with regions in nanome paper

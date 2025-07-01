@@ -8,7 +8,7 @@
  @Author   : Yang Liu
  @FileName : DORADO_UNTAR.nf, etc.
  @Software : NANOME project
- @Organization : JAX Sheng Li Lab
+ @Organization : Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
 process DORADO_UNTAR {

@@ -1,7 +1,7 @@
 # @Author   : Yang Liu
 # @FileName : Dockerfile
 # @Software : NANOME project
-# @Organization : JAX Li Lab
+# @Organization : Sheng Li Lab
 # @Website  : https://github.com/LabShengLi/nanome
 
 # Set the base image to Ubuntu 18.04 and NVIDIA GPU from https://hub.docker.com/r/nvidia/cuda
@@ -9,9 +9,9 @@
 FROM nvidia/cuda:11.6.0-base-ubuntu18.04
 
 # Author and maintainer
-MAINTAINER Yang Liu <yang.liu@jax.org>
-LABEL description="Nanome project in Li Lab at The Jackson Laboratory" \
-      author="yang.liu@jax.org"
+MAINTAINER Yang Liu <liuyang2006@gmail.com>
+LABEL description="Nanome project in Sheng Li Lab" \
+      author="liuyang2006@gmail.com"
 
 # Guppy version 6.4.x is not support, due to no fast5_out option
 # ont-remora 2.x is not support, due to pod5 needs python 3.7+

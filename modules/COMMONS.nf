@@ -8,7 +8,7 @@
  @Author   : Yang Liu
  @FileName : COMMONS.nf
  @Software : NANOME project
- @Organization : JAX Sheng Li Lab
+ @Organization : Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
 // check nextflow version, then declare DSL2 in two ways

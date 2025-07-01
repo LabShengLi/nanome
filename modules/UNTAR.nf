@@ -8,7 +8,7 @@
  @Author   : Yang Liu
  @FileName : UNTAR.nf
  @Software : NANOME project
- @Organization : JAX Sheng Li Lab
+ @Organization : Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
 // Untar of subfolders named 'M1', ..., 'M10', etc.
