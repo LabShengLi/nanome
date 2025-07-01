@@ -110,6 +110,10 @@ nextflow run LabShengLi/nanome\
 # Run NANOME for human data
 nextflow run LabShengLi/nanome\
     -profile test_human,[docker/singularity]
+
+# Run NANOME for dorado call
+nextflow run LabShengLi/nanome\
+    -profile test_dorado,singularity
 ```
 Please note that above commands are integrated in our **CI/CD test cases**. Our GitHub will automatically test and report results on every commit and PRs (https://github.com/LabShengLi/nanome/actions). 
 
