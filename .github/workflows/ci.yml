@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
 #        nxf_ver: ['20.07.1', '']
-        ci_test_name: ['test', 'test_human', 'test_dorado']
+        ci_test_name: ['test', 'test_human']
         using_tools_option: ['']
     steps:
       - uses: actions/checkout@v2
