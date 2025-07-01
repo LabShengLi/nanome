@@ -2,7 +2,7 @@
 # @Author   : Yang Liu
 # @FileName : cs_eval_read.py
 # @Software : NANOME project
-# @Organization : JAX Li Lab
+# @Organization : Li Lab
 # @Website  : https://github.com/LabShengLi/nanome
 
 """

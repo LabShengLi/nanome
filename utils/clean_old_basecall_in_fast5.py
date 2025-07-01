@@ -2,7 +2,7 @@
 # @Author   : Yang Liu
 # @FileName : clean_old_basecall_in_fast5.py
 # @Software : NANOME project
-# @Organization : JAX Li Lab
+# @Organization : Li Lab
 # @Website  : https://github.com/LabShengLi/nanome
 
 """

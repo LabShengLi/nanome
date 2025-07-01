@@ -2,7 +2,7 @@
 # @Author   : Yang Liu
 # @FileName : methcall2bed.py
 # @Software : NANOME project
-# @Organization : JAX Li Lab
+# @Organization : Li Lab
 # @Website  : https://github.com/LabShengLi/nanome
 
 """
