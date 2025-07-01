@@ -8,7 +8,7 @@
  @Author   : Yang Liu
  @FileName : RESQUIGGLE.nf
  @Software : NANOME project
- @Organization : JAX Sheng Li Lab
+ @Organization : Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
 // Resquiggle on basecalled subfolders named 'M1', ..., 'M10', etc.

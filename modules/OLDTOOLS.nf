@@ -8,7 +8,7 @@
  @Author   : Yang Liu
  @FileName : OLDTOOLS.nf
  @Software : NANOME project
- @Organization : JAX Sheng Li Lab
+ @Organization : Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
 // These tools will be deprecated soon

@@ -8,7 +8,7 @@
  @Author   : Yang Liu
  @FileName : CONSENSUS.nf
  @Software : NANOME project
- @Organization : JAX Sheng Li Lab
+ @Organization : Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
 process CONSENSUS {

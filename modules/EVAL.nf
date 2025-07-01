@@ -8,7 +8,7 @@
  @Author   : Yang Liu
  @FileName : EVAL.nf
  @Software : NANOME project
- @Organization : JAX Sheng Li Lab
+ @Organization : Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
 // Check all tools work well

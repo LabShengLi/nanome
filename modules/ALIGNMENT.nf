@@ -8,7 +8,7 @@
  @Author   : Yang Liu
  @FileName : ALIGNMENT.nf
  @Software : NANOME project
- @Organization : JAX Sheng Li Lab
+ @Organization : Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
 // Align each basecalled outputs

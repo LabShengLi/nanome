@@ -8,7 +8,7 @@
  @Author   : Yang Liu
  @FileName : MEGALODON.nf
  @Software : NANOME project
- @Organization : JAX Sheng Li Lab
+ @Organization : Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
 // Megalodon runs on resquiggled subfolders named 'M1', ..., 'M10', etc.

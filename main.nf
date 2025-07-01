@@ -9,7 +9,7 @@
  @Author   : Yang Liu
  @FileName : main.nf
  @Software : NANOME project
- @Organization : JAX Li Lab
+ @Organization : Sheng Li Lab
 ----------------------------------------------------------------------------------------
 **/
 // We now support both latest and lower versions, due to Lifebit CloudOS is only support 20.04

@@ -8,7 +8,7 @@
  @Author   : Yang Liu
  @FileName : QCEXPORT.nf
  @Software : NANOME project
- @Organization : JAX Sheng Li Lab
+ @Organization : Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
 // Collect and output QC results for basecall, and report ONT coverage

@@ -8,7 +8,7 @@
  @Author   : Yang Liu
  @FileName : BASECALL.nf
  @Software : NANOME project
- @Organization : JAX Sheng Li Lab
+ @Organization : Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
 // basecall of subfolders named 'M1', ..., 'M10', etc.

@@ -8,7 +8,7 @@
  @Author   : Yang Liu
  @FileName : DEEPSIGNAL2.nf
  @Software : NANOME project
- @Organization : JAX Sheng Li Lab
+ @Organization : Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
 process DEEPSIGNAL2 {

@@ -8,7 +8,7 @@
  @Author   : Yang Liu
  @FileName : REPORT.nf
  @Software : NANOME project
- @Organization : JAX Sheng Li Lab
+ @Organization : Sheng Li Lab
 ----------------------------------------------------------------------------------------
 */
 // Not cache due to the script contains run information, each time of resume run will need updated

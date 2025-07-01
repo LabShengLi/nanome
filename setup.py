@@ -2,7 +2,7 @@
 # @Author   : Yang Liu
 # @FileName : setup.py
 # @Software : NANOME project
-# @Organization : JAX Li Lab
+# @Organization : Sheng Li Lab
 # @Website  : https://github.com/LabShengLi/nanome
 """
 Install:
