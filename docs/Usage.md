@@ -85,8 +85,8 @@ Pipeline running results is below, output directory trees are [results](https://
 N E X T F L O W  ~  version 20.10.0
 Launching `main.nf` [wise_crick] - revision: efbaa90697
 NANOME - NF PIPELINE
-by Li Lab at The Jackson Laboratory
-https://nanome.jax.org
+by Sheng Li Lab
+https://github.com/LabShengLi/nanome
 =================================
 executor >  slurm (28)
 [30/56fb5a] process > EnvCheck (EnvCheck)            [100%] 1 of 1 ✔
@@ -173,7 +173,7 @@ Pipeline results for E. coli data is below.
 N E X T F L O W  ~  version 20.10.0
 Launching `main.nf` [maniac_poitras] - revision: 47f69be0ab
 NANOME - NF PIPELINE
-by Li Lab at The Jackson Laboratory
+by Sheng Li Lab
 https://github.com/LabShengLi/nanome
 =================================
 executor >  slurm (14)

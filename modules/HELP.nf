@@ -14,7 +14,7 @@
 def helpMessage() {
 	log.info"""
 	NANOME - Nextflow PIPELINE (v$workflow.manifest.version)
-	by Sheng Li Lab at The Jackson Laboratory
+	by Sheng Li Lab
 	https://github.com/LabShengLi/nanome
 	=================================
 	Usage:

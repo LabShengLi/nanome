@@ -10,8 +10,8 @@ FROM nvidia/cuda:11.6.0-base-ubuntu18.04
 
 # Author and maintainer
 MAINTAINER Yang Liu <yang.liu@jax.org>
-LABEL description="Nanome project in Li Lab at The Jackson Laboratory" \
-      author="yang.liu@jax.org"
+LABEL description="Nanome project in Sheng Li Lab" \
+      author="liuyang2006@gmail.com"
 
 # Guppy version 6.4.6 is not robust for meth call
 # We choose v6.3.8 as stable one

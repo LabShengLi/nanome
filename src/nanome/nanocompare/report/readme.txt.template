@@ -1,6 +1,6 @@
 NANOME (Nanopore methylation) pipeline for Oxford Nanopore sequencing
-by Li Lab at The Jackson Laboratory
-
+by Sheng Li Lab
+https://github.com/LabShengLi/nanome
 ==========================================
 Project : 			${projectDir}
 Working directory:	${workDir}

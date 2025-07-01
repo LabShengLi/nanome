@@ -260,7 +260,7 @@ if (workflow.profile.contains('google') || (params.config && params.config.conta
 
 log.info """\
 NANOME - NF PIPELINE (v$workflow.manifest.version)
-by Li Lab at The Jackson Laboratory
+by Sheng Li Lab
 https://github.com/LabShengLi/nanome
 ================================="""
 .stripIndent()
