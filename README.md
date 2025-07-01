@@ -16,7 +16,7 @@
 * Consensus of top performers by XGBoost model, allow NA values.
 * Multi-modifications for 5mC and 5hmC.
 * Haplotype-awared phasing and allele-specific methylation detection.
-
+* Support [Dorado](https://github.com/nanoporetech/dorado) basecall and methylation call.
 
 ## Background
 
