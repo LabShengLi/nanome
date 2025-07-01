@@ -143,3 +143,5 @@ process DORADO_QC {
     echo "### Dorado QC all DONE"
 	'''
 }
+
+

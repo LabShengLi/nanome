@@ -197,6 +197,7 @@ if (params.runMethcall && params.runDeepMod) {
 	}
 }
 
+
 if (params.dorado) {
 	summary['DORADO_BASECALL_MODEL'] = "${params.dorado_basecall_model}"
 	summary['DORADO_METHCALL_MODEL'] = "${params.dorado_methcall_model}"
