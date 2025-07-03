@@ -339,11 +339,15 @@ Please check [NANOME report](https://github.com/LabShengLi/nanome/blob/master/do
 Please check [phasing usage](https://github.com/LabShengLi/nanome/blob/master/docs/Phasing.md).
 ![PhasingDemo](https://github.com/LabShengLi/nanome/blob/master/docs/resources/nanome3t_5mc_phasing2.png)
 
-### Lifebit CloudOS report
-We now support running NANOME on cloud computing platform. [Lifebit](https://lifebit.ai/lifebit-cloudos/) is a web-based cloud computing platform, and below is the running reports:
-* Ecoli test report: https://cloudos.lifebit.ai/public/jobs/6430509445941801546e5f8f
-* Human test report: https://cloudos.lifebit.ai/public/jobs/6430639045941801546e627f
-* NA12878 chr22 report: https://cloudos.lifebit.ai/public/jobs/6430b64645941801546e7400
+[//]: # (### Lifebit CloudOS report)
+
+[//]: # (We now support running NANOME on cloud computing platform. [Lifebit]&#40;https://lifebit.ai/lifebit-cloudos/&#41; is a web-based cloud computing platform, and below is the running reports:)
+
+[//]: # (* Ecoli test report: https://cloudos.lifebit.ai/public/jobs/6430509445941801546e5f8f)
+
+[//]: # (* Human test report: https://cloudos.lifebit.ai/public/jobs/6430639045941801546e627f)
+
+[//]: # (* NA12878 chr22 report: https://cloudos.lifebit.ai/public/jobs/6430b64645941801546e7400)
 
 
 ## Revision History
