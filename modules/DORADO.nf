@@ -34,21 +34,23 @@ process DORADO_UNTAR {
 		## Extract input files tar/tar.gz/folder
 		mkdir -p untarTempDir
 
-		fast5Input=!{fast5InputList}
-		if [[ $fast5Input == *.tar && -f ${fast5Input} ]] ; then
-			### deal with tar
-			tar -xf ${fast5Input} -C untarTempDir
-		elif [[ ${fast5Input} == *.tar.gz && -f ${fast5Input} ]] ; then
-			### deal with tar.gz
-			tar -xzf ${fast5Input} -C untarTempDir
-		elif [[ -d ${fast5Input} ]]; then
-			## For dir, should copy files, we do not want to change original files such as old analyses data in fast5
-			find ${fast5Input}/ -name "*.!{params.file_format}"   | \
-				parallel -j!{cores}  cp -L -f {} untarTempDir/
-		else
-			echo "### Untar error for input=${fast5Input}"
-		fi
-
+		for fast5Input in !{fast5InputList}; do
+			echo "Unpacking $fast5Input..."
+			## fast5Input=!{fast5InputList}
+			if [[ $fast5Input == *.tar && -f ${fast5Input} ]] ; then
+				### deal with tar
+				tar -xf ${fast5Input} -C untarTempDir
+			elif [[ ${fast5Input} == *.tar.gz && -f ${fast5Input} ]] ; then
+				### deal with tar.gz
+				tar -xzf ${fast5Input} -C untarTempDir
+			elif [[ -d ${fast5Input} ]]; then
+				## For dir, should copy files, we do not want to change original files such as old analyses data in fast5
+				find ${fast5Input}/ -name "*.!{params.file_format}"   | \
+					parallel -j!{cores}  cp -L -f {} untarTempDir/
+			else
+				echo "### Untar error for input=${fast5Input}"
+			fi
+		done
 		## Move fast5 raw/basecalled files into XXX.untar folder
 		mkdir -p !{params.dsname}.untar
 
