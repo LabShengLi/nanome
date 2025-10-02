@@ -85,13 +85,13 @@ process DORADO_CALL {
 
 	shell:
 	cores = task.cpus * params.highProcTimes
+	kitOpt = params.kit_name ? "--kit-name ${params.kit_name}" : ""
 	'''
 		date; hostname; pwd
 
-
 		echo untar_dir=!{untar_dir}
 		echo reference_genome=!{reference_genome}
-``
+		echo !{kitOpt}
 		dorado -vv
 
 		ls /models
@@ -101,6 +101,7 @@ process DORADO_CALL {
 		dorado basecaller \
 			!{params.dorado_model_dir}/!{params.dorado_basecall_model} \
 			!{untar_dir}/ \
+			!{kitOpt} \
 			--models-directory !{params.dorado_model_dir} \
 			--modified-bases-models !{params.dorado_model_dir}/!{params.dorado_methcall_model} \
 			-x auto --verbose -r \
@@ -110,6 +111,14 @@ process DORADO_CALL {
 
 		mv !{params.dsname}.dorado_call/*.bam !{params.dsname}.dorado_call/!{params.dsname}.dorado_call.bam
 		mv !{params.dsname}.dorado_call/*.bam.bai !{params.dsname}.dorado_call/!{params.dsname}.dorado_call.bam.bai
+
+		if [[ "!{params.kit_name}" != "null" ]]; then
+			mkdir -p !{params.dsname}.dorado_call_demux_!{params.kit_name}
+			dorado demux \
+				--output-dir !{params.dsname}.dorado_call_demux_!{params.kit_name} \
+				--no-classify !{params.dsname}.dorado_call/!{params.dsname}.dorado_call.bam -v \
+				2> >(tee -a !{params.dsname}_dorado_demux.run.log)
+		fi
 		echo "### Dorado call DONE"
 	'''
 }
@@ -184,7 +193,7 @@ process DORADO_CALL_EXTRACT {
 
 	input:
 	val call_tagname // call's tagname
-	val bam_fn // BAM file location
+	// val bam_fn // BAM file location
 	path dorado_call // can be a folder contains files of BAM and BAM.BAI
 	path reference_genome
 	path ch_src
@@ -202,12 +211,13 @@ process DORADO_CALL_EXTRACT {
 		date; hostname; pwd
 
 		echo !{call_tagname}
-		echo !{bam_fn}
 		echo !{dorado_call}
+
+		bam_fn=!{dorado_call}/*.bam
 
 		python utils/modbam2bed_extract_read_cpg.py   \
 				-r !{params.referenceGenome} \
-				-i !{bam_fn} \
+				-i ${bam_fn} \
 				-o !{params.dsname}.!{call_tagname}.dorado_call_extract.tsv \
 				-a !{params.guppy_canon_threshold} -b !{params.guppy_mod_threshold}
 

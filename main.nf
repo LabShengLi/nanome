@@ -333,7 +333,6 @@ workflow {
 	// environment check
 	ENVCHECK(ch_genome, ch_utils, ch_rerio_dir, ch_deepsignal_dir)
 
-
 	if (params.dorado) { // Dorado ecosystems
 		// ch_inputs.collect().view()
 		if (!params.input_bam) {
@@ -344,17 +343,22 @@ workflow {
 			dorado_call = ch_inputs.collect()
 		}
 
-		DORADO_QC(dorado_call, ENVCHECK.out.reference_genome)
+		if (params.kit_name == null) {
+			DORADO_QC(dorado_call, ENVCHECK.out.reference_genome)
 
-		bam_fn = "${params.dsname}.dorado_call/${params.dsname}.dorado_call.bam"
-		DORADO_CALL_EXTRACT("per_read", bam_fn,
-							dorado_call, ENVCHECK.out.reference_genome,
-							ch_src, ch_utils)
+			// bam_fn = "${params.dsname}.dorado_call/${params.dsname}.dorado_call.bam"
+			// extract per read
+			DORADO_CALL_EXTRACT("per_read",
+								dorado_call, ENVCHECK.out.reference_genome,
+								ch_src, ch_utils)
 
-		UNIFY("Dorado","NANOME", "all",
-				DORADO_CALL_EXTRACT.out.dorado_call_extract,
-				ENVCHECK.out.reference_genome,
-				ch_src, ch_utils)
+			// convert to per site
+			UNIFY("Dorado","NANOME", "all",
+					DORADO_CALL_EXTRACT.out.dorado_call_extract,
+					ENVCHECK.out.reference_genome,
+					ch_src, ch_utils)
+		}
+
 	} else { // Guppy ecosystems
 		if (params.runBasecall) {
 			UNTAR(ch_inputs)
