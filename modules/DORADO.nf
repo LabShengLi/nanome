@@ -136,11 +136,38 @@ process DORADO_QC {
 	samtools_cores = task.cpus * params.mediumProcTimes
 	'''
 
-	mkdir -p !{params.dsname}_dorado_qc
+	mkdir -p !{params.dsname}.dorado_qc
 
-	NanoComp --bam !{dorado_call}/!{params.dsname}.dorado_call.bam \
+	bam_file=!{dorado_call}/*.bam
+	NanoComp --bam ${bam_file} \
 			--names !{params.dsname} --outdir !{params.dsname}.dorado_qc -t !{cores} \
 			--raw  -f pdf -p !{params.dsname}_   &>> !{params.dsname}.DORADO_QC.run.log
+
+	## extract QC metrics to tsv
+	infer_input=(!{params.dsname}.dorado_qc/*_NanoStats.txt)
+
+	input="${infer_input[0]}"
+	output=!{params.dsname}.dorado_qc/!{params.dsname}_NanoStatsQC.tsv
+
+	# Extract only the top 13 lines (the summary section)
+	# Parse top 13 lines into one row (header + values)
+	head -n 13 -- "$input" | \
+	awk -F: -v output="$output" '
+	{
+	  key=$1
+	  gsub(/^[ \t]+|[ \t]+$/, "", key)   # trim
+	  gsub(/ /, "_", key)                # spaces -> _
+	  val=$2
+	  gsub(/,/, "", val)                 # remove commas in numbers
+	  gsub(/^[ \t]+|[ \t]+$/, "", val)   # trim
+	  keys   = keys   ? keys   "\t" key : key
+	  values = values ? values "\t" val : val
+	}
+	END {
+	  print keys  >  output   # header (overwrite)
+	  print values >> output  # one row of values (append)
+	}'
+	echo "TSV file created: $output"
 
     echo "### Dorado QC all DONE"
 	'''
