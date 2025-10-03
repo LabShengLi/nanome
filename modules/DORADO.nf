@@ -85,7 +85,7 @@ process DORADO_CALL {
 
 	shell:
 	cores = task.cpus * params.highProcTimes
-	kitOpt = params.kit_name ? "--kit-name ${params.kit_name}" : ""
+	kitOpt = params.demux ? "--kit-name ${params.kit_name}" : ""
 	'''
 		date; hostname; pwd
 
