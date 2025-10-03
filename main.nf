@@ -303,7 +303,7 @@ include { EVAL } from './modules/EVAL'
 
 include { REPORT } from './modules/REPORT'
 
-include { DORADO_UNTAR; DORADO_CALL; DORADO_QC; DORADO_CALL_EXTRACT; UNIFY } from './modules/DORADO'
+include { DORADO_UNTAR; DORADO_CALL; DORADO_DEMUX; DORADO_QC; DORADO_CALL_EXTRACT; UNIFY; CLAIR3_dorado } from './modules/DORADO'
 
 // place holder channel, used for empty file of a channel
 null1 = Channel.fromPath("${projectDir}/utils/null1")
@@ -343,7 +343,9 @@ workflow {
 			dorado_call = ch_inputs.collect()
 		}
 
-		if (params.kit_name == null) {
+		if (params.demux) {
+			DORADO_DEMUX(dorado_call)
+		} else { // demux will not run QC
 			DORADO_QC(dorado_call, ENVCHECK.out.reference_genome)
 
 			// bam_fn = "${params.dsname}.dorado_call/${params.dsname}.dorado_call.bam"
@@ -357,6 +359,10 @@ workflow {
 					DORADO_CALL_EXTRACT.out.dorado_call_extract,
 					ENVCHECK.out.reference_genome,
 					ch_src, ch_utils)
+
+			if (params.phasing) {
+				CLAIR3_dorado(dorado_call, ENVCHECK.out.reference_genome)
+			}
 		}
 
 	} else { // Guppy ecosystems
