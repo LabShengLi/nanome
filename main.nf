@@ -303,7 +303,7 @@ include { EVAL } from './modules/EVAL'
 
 include { REPORT } from './modules/REPORT'
 
-include { DORADO_UNTAR; DORADO_CALL; DORADO_QC; DORADO_CALL_EXTRACT; UNIFY } from './modules/DORADO'
+include { DORADO_UNTAR; DORADO_CALL; DORADO_DEMUX; DORADO_QC; DORADO_CALL_EXTRACT; UNIFY; CLAIR3_dorado } from './modules/DORADO'
 
 // place holder channel, used for empty file of a channel
 null1 = Channel.fromPath("${projectDir}/utils/null1")
@@ -333,23 +333,38 @@ workflow {
 	// environment check
 	ENVCHECK(ch_genome, ch_utils, ch_rerio_dir, ch_deepsignal_dir)
 
-
 	if (params.dorado) { // Dorado ecosystems
 		// ch_inputs.collect().view()
+		if (!params.input_bam) {
+			DORADO_UNTAR(ch_inputs.collect())
+			DORADO_CALL(DORADO_UNTAR.out.untar, ENVCHECK.out.reference_genome)
+			dorado_call = DORADO_CALL.out.dorado_call
+		} else {
+			dorado_call = ch_inputs.collect()
+		}
 
-		DORADO_UNTAR(ch_inputs.collect())
-		DORADO_CALL(DORADO_UNTAR.out.untar, ENVCHECK.out.reference_genome)
-		DORADO_QC(DORADO_CALL.out.dorado_call, ENVCHECK.out.reference_genome)
+		if (params.demux) {
+			DORADO_DEMUX(dorado_call)
+		} else { // demux will not run QC
+			DORADO_QC(dorado_call, ENVCHECK.out.reference_genome)
 
-		bam_fn = "${params.dsname}.dorado_call/${params.dsname}.dorado_call.bam"
-		DORADO_CALL_EXTRACT("per_read", bam_fn,
-							DORADO_CALL.out.dorado_call, ENVCHECK.out.reference_genome,
-							ch_src, ch_utils)
+			// bam_fn = "${params.dsname}.dorado_call/${params.dsname}.dorado_call.bam"
+			// extract per read
+			DORADO_CALL_EXTRACT("per_read",
+								dorado_call, ENVCHECK.out.reference_genome,
+								ch_src, ch_utils)
 
-		UNIFY("Dorado","NANOME", "all",
-				DORADO_CALL_EXTRACT.out.dorado_call_extract,
-				ENVCHECK.out.reference_genome,
-				ch_src, ch_utils)
+			// convert to per site
+			UNIFY("Dorado","NANOME", "all",
+					DORADO_CALL_EXTRACT.out.dorado_call_extract,
+					ENVCHECK.out.reference_genome,
+					ch_src, ch_utils)
+
+			if (params.phasing) {
+				CLAIR3_dorado(dorado_call, ENVCHECK.out.reference_genome)
+			}
+		}
+
 	} else { // Guppy ecosystems
 		if (params.runBasecall) {
 			UNTAR(ch_inputs)
