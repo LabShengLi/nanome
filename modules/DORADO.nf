@@ -342,6 +342,8 @@ process CLAIR3_dorado {
 	path "${params.dsname}_phased_intermediate",	emit:	phased_intermediate_out_ch, optional: true
 	path "${params.dsname}_phased_bam",	emit:	phased_bam_out_ch, optional: true
 	path "*.Clair3.run.log", optional:true,	emit: runlog
+	path "${params.dsname}_phased_bam/${params.dsname}_HP1",	emit:	phased_bam_hp1_out_ch, optional: true
+	path "${params.dsname}_phased_bam/${params.dsname}_HP2",	emit:	phased_bam_hp2_out_ch, optional: true
 
 	"""
 	run_clair3.sh --version
@@ -397,5 +399,11 @@ process CLAIR3_dorado {
 	samtools index -@ ${task.cpus} \${outdir}/${params.dsname}_split_HP2.bam
 	samtools index -@ ${task.cpus} \${outdir}/${params.dsname}_split_untagged.bam
 	echo "### whatshap split DONE"
+
+	mkdir -p \${outdir}/${params.dsname}_HP1 &&
+		mv \${outdir}/${params.dsname}_split_HP1.bam* \${outdir}/${params.dsname}_HP1
+
+	mkdir -p \${outdir}/${params.dsname}_HP2 &&
+		mv \${outdir}/${params.dsname}_split_HP2.bam* \${outdir}/${params.dsname}_HP2
 	"""
 }

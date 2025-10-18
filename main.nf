@@ -305,6 +305,9 @@ include { REPORT } from './modules/REPORT'
 
 include { DORADO_UNTAR; DORADO_CALL; DORADO_DEMUX; DORADO_QC; DORADO_CALL_EXTRACT; UNIFY; CLAIR3_dorado } from './modules/DORADO'
 
+include { DORADO_CALL_EXTRACT as DORADO_CALL_EXTRACT_POST_HP1; UNIFY as UNIFY_POST_HP1 } from './modules/DORADO'
+include { DORADO_CALL_EXTRACT as DORADO_CALL_EXTRACT_POST_HP2; UNIFY as UNIFY_POST_HP2 } from './modules/DORADO'
+
 // place holder channel, used for empty file of a channel
 null1 = Channel.fromPath("${projectDir}/utils/null1")
 null2 = Channel.fromPath("${projectDir}/utils/null2")
@@ -362,6 +365,27 @@ workflow {
 
 			if (params.phasing) {
 				CLAIR3_dorado(dorado_call, ENVCHECK.out.reference_genome)
+
+				// extract and unify
+				DORADO_CALL_EXTRACT_POST_HP1("per_read_HP1",
+								CLAIR3_dorado.out.phased_bam_hp1_out_ch,
+								ENVCHECK.out.reference_genome,
+								ch_src, ch_utils)
+
+				DORADO_CALL_EXTRACT_POST_HP2("per_read_HP2",
+								CLAIR3_dorado.out.phased_bam_hp2_out_ch,
+								ENVCHECK.out.reference_genome,
+								ch_src, ch_utils)
+
+				UNIFY_POST_HP1("Dorado","NANOME", "HP1",
+					DORADO_CALL_EXTRACT_POST_HP1.out.dorado_call_extract,
+					ENVCHECK.out.reference_genome,
+					ch_src, ch_utils)
+
+				UNIFY_POST_HP2("Dorado","NANOME", "HP2",
+					DORADO_CALL_EXTRACT_POST_HP2.out.dorado_call_extract,
+					ENVCHECK.out.reference_genome,
+					ch_src, ch_utils)
 			}
 		}
 
