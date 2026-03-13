@@ -348,7 +348,8 @@ process CLAIR3_dorado {
 	"""
 	run_clair3.sh --version
 
-	bam_fn=${dorado_call}/*.bam
+    # support only one bam file
+	bam_fn=\$(echo ${dorado_call}/*.bam)
 	MODEL_NAME="${params.CLAIR3_MODEL_NAME}"  ##"r941_prom_sup_g5014"
 
 	mkdir -p ${params.dsname}_clair3_out
